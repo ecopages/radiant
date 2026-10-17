@@ -88,7 +88,7 @@ function readStoredAppearance(): DocsAppearance {
 		}
 		return {
 			colors: parseDocsThemeSelection(localStorage.getItem(DOCS_THEME_STORAGE_KEY)).colors,
-			tuning: parseDocsDefaultThemeTuning(localStorage.getItem(DOCS_DEFAULT_TUNING_STORAGE_KEY)),
+			tuning: DOCS_DEFAULT_THEME_TUNING,
 		};
 	} catch {
 		return { colors: defaultDocsThemeSelection.colors, tuning: DOCS_DEFAULT_THEME_TUNING };
@@ -99,7 +99,6 @@ function writeStoredAppearance(appearance: DocsAppearance): void {
 	try {
 		localStorage.setItem(DOCS_APPEARANCE_STORAGE_KEY, JSON.stringify(appearance));
 		localStorage.removeItem(DOCS_THEME_STORAGE_KEY);
-		localStorage.removeItem(DOCS_DEFAULT_TUNING_STORAGE_KEY);
 	} catch {}
 }
 
@@ -298,8 +297,6 @@ export function applyDocumentTokens(selection: DocsThemeSelection, options: { pe
 	if (typeof document === 'undefined' || !document.documentElement) return;
 	const root = document.documentElement;
 	root.dataset.ruiTheme = selection.colors;
-	delete root.dataset.ruiTypography;
-	for (const name of ['--font-sans', '--font-heading', '--font-mono']) root.style.removeProperty(name);
 	if (selection.colors === 'rui-default') applyDefaultThemeTuning(root, readDocsDefaultThemeTuning());
 	else clearDefaultThemeTuning(root);
 	if (options.persist !== false) {
@@ -343,18 +340,14 @@ export function createDocsThemeBootScript(stylesheets: DocsThemeStylesheets): st
 		const resolvedMode = mode === 'system'
 			? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
 			: mode;
-	const savedTheme = appearance.colors || (typeof legacyTheme === 'string' ? legacyTheme : legacyTheme.colors);
+	const savedTheme = appearance.colors || legacyTheme.colors;
 	const urlTheme = params.get(${JSON.stringify(DOCS_THEME_QUERY_KEY)});
 	const requestedTheme = ${JSON.stringify(docsThemeColorOptions.map((option) => option.value))}.includes(urlTheme) ? urlTheme : savedTheme;
 	const colors = ${JSON.stringify(docsThemeColorOptions.map((option) => option.value))}.includes(requestedTheme) ? requestedTheme : 'rui-default';
 		const stylesheets = ${stylesheetsLiteral};
 		const defaults = ${tuningLiteral};
 		const tuningSchema = ${tuningSchemaLiteral};
-		let storedTuning = {};
-	try {
-		const legacyTuning = JSON.parse(read(${JSON.stringify(DOCS_DEFAULT_TUNING_STORAGE_KEY)}) || '{}');
-		storedTuning = appearance.tuning || legacyTuning;
-	} catch { storedTuning = appearance.tuning || {}; }
+		const storedTuning = appearance.tuning || {};
 		const tuning = { ...storedTuning };
 		const clamp = (value, min, max, fallback) => Number.isFinite(Number(value)) ? Math.min(max, Math.max(min, Number(value))) : fallback;
 	for (const [key, queryKey] of Object.entries(${JSON.stringify(TUNING_QUERY_KEYS)})) {
@@ -373,8 +366,6 @@ export function createDocsThemeBootScript(stylesheets: DocsThemeStylesheets): st
 		root.setAttribute('data-theme', resolvedMode);
 		root.classList.toggle('dark', resolvedMode === 'dark');
 		root.dataset.ruiTheme = colors;
-		delete root.dataset.ruiTypography;
-		for (const name of ['--font-sans', '--font-heading', '--font-mono']) root.style.removeProperty(name);
 		if (colors === 'rui-default') applyDefaultTuning();
 		else clearDefaultTuning();
 		globalThis[${JSON.stringify(DOCS_THEME_STYLESHEETS_GLOBAL)}] = stylesheets;
@@ -428,9 +419,6 @@ export function createDocsThemeBootScript(stylesheets: DocsThemeStylesheets): st
 	} catch {}
 })();`;
 }
-
-/** Legacy split tuning key; read during migration and removed after a write. */
-export const DOCS_DEFAULT_TUNING_STORAGE_KEY = 'radiant-ui-docs:default-theme-tuning';
 
 export type DocsDefaultThemeTuning = {
 	primaryHue: number;

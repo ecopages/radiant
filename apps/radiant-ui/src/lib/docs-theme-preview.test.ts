@@ -9,7 +9,6 @@ import {
 	createDocsThemeBootScript,
 	defaultDocsThemeSelection,
 	DOCS_DEFAULT_THEME_TUNING,
-	DOCS_DEFAULT_TUNING_STORAGE_KEY,
 	DOCS_THEME_STORAGE_KEY,
 	DOCS_THEME_QUERY_KEY,
 	DOCS_MODE_QUERY_KEY,
@@ -64,7 +63,6 @@ function clearThemeStylesheets(): void {
 
 function clearTuning(): void {
 	clearDefaultThemeTuning(document.documentElement);
-	localStorage.removeItem(DOCS_DEFAULT_TUNING_STORAGE_KEY);
 	localStorage.removeItem(DOCS_APPEARANCE_STORAGE_KEY);
 }
 
@@ -97,10 +95,6 @@ describe('docs-theme-preview', () => {
 		vi.restoreAllMocks();
 		const root = document.documentElement;
 		delete root.dataset.ruiTheme;
-		delete root.dataset.ruiTypography;
-		root.style.removeProperty('--font-sans');
-		root.style.removeProperty('--font-heading');
-		root.style.removeProperty('--font-mono');
 		root.style.removeProperty('visibility');
 	});
 
@@ -160,13 +154,9 @@ describe('docs-theme-preview', () => {
 		});
 	});
 
-	it('keeps typography inside the selected theme and clears stale preview overrides', () => {
+	it('loads the selected theme stylesheet when tokens are applied', () => {
 		installDocsThemeStylesheets(docsThemeStylesheets);
-		document.documentElement.dataset.ruiTypography = 'editorial';
-		document.documentElement.style.setProperty('--font-heading', 'Georgia, serif');
 		applyDocumentTokens({ colors: 'material' });
-		expect(document.documentElement.dataset.ruiTypography).toBeUndefined();
-		expect(document.documentElement.style.getPropertyValue('--font-heading')).toBe('');
 		expect(
 			appendedThemeLinks
 				.find((link) => link.getAttribute(DOCS_THEME_STYLESHEET_ATTR) === 'material')
@@ -214,7 +204,6 @@ describe('docs-theme-preview', () => {
 
 		const root = document.documentElement;
 		expect(root.dataset.ruiTheme).toBe('material');
-		expect(root.dataset.ruiTypography).toBeUndefined();
 		expect(root.style.getPropertyValue('--rui-primary')).toBe('');
 		expect(root.getAttribute('data-theme')).toBe('dark');
 		expect(root.classList.contains('dark')).toBe(true);
@@ -232,8 +221,7 @@ describe('docs-theme-preview', () => {
 	});
 
 	it('keeps booting when an invalid tuning preference is stored', () => {
-		localStorage.setItem(DOCS_APPEARANCE_STORAGE_KEY, JSON.stringify({ colors: 'material' }));
-		localStorage.setItem(DOCS_DEFAULT_TUNING_STORAGE_KEY, '{invalid');
+		localStorage.setItem(DOCS_APPEARANCE_STORAGE_KEY, JSON.stringify({ colors: 'material', tuning: '{invalid' }));
 		runBootScript();
 		expect(document.documentElement.dataset.ruiTheme).toBe('material');
 	});
@@ -307,7 +295,6 @@ describe('docs-theme-preview', () => {
 		expect(url.searchParams.has('rui-primary-hue')).toBe(false);
 		expect(url.hash).toBe('#examples');
 		expect(localStorage.getItem(DOCS_THEME_STORAGE_KEY)).toBeNull();
-		expect(localStorage.getItem(DOCS_DEFAULT_TUNING_STORAGE_KEY)).toBeNull();
 	});
 
 	it('applies URL appearance overrides in the generated reload boot script', () => {
@@ -336,9 +323,7 @@ describe('docs-theme-preview', () => {
 	});
 
 	it('keeps shared tuning overrides out of first-visit stored preferences', () => {
-		const storedTuning = { ...DOCS_DEFAULT_THEME_TUNING, primaryHue: 285, borderAlpha: 36 };
 		localStorage.setItem(DOCS_THEME_STORAGE_KEY, JSON.stringify({ colors: 'github' }));
-		localStorage.setItem(DOCS_DEFAULT_TUNING_STORAGE_KEY, JSON.stringify(storedTuning));
 		history.replaceState(
 			history.state,
 			'',
@@ -351,7 +336,7 @@ describe('docs-theme-preview', () => {
 		expect(document.documentElement.style.getPropertyValue('--rui-border-alpha')).toBe('80%');
 		expect(JSON.parse(localStorage.getItem(DOCS_APPEARANCE_STORAGE_KEY) ?? '')).toEqual({
 			colors: 'github',
-			tuning: storedTuning,
+			tuning: DOCS_DEFAULT_THEME_TUNING,
 		});
 	});
 

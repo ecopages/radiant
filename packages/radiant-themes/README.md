@@ -66,6 +66,10 @@ reproducing the products pixel for pixel.
 The themes draw on public guidance for role mapping and component behavior: [Material Design 3 color
 roles](https://m3.material.io/styles/color/the-color-system), [Primer's color token layers](https://primer.style/product/getting-started/foundations/color-usage/), [Vercel Geist colors](https://vercel.com/geist/colors), [VS Code theme color roles](https://code.visualstudio.com/api/references/theme-color), [Cloudflare Kumo](https://github.com/cloudflare/kumo), [Apple's Human Interface Guidelines](https://developer.apple.com/design/human-interface-guidelines/), [the Mac OS 8 Platinum guidelines](https://dev.os9.ca/techpubs/mac/pdf/HIGOS8Guidelines.pdf), and [Microsoft property sheet guidance](https://learn.microsoft.com/en-us/windows/win32/controls/property-sheets). These sources informed the design decisions; all theme CSS is authored for Radiant's tokens and components.
 
+Radiant Themes is an independent project. It is not affiliated with, sponsored by, or endorsed by GitHub, Cloudflare,
+Vercel, Microsoft, Apple, or Google. Product names such as GitHub, Cloudflare, Vercel, VS Code, Windows 95, Mac OS, macOS,
+and Material Design are trademarks of their respective owners and are used only to describe the design inspiration.
+
 ## Browser-ready CSS
 
 For applications that consume compiled CSS rather than Tailwind theme sources, load the base bundle, one compiled

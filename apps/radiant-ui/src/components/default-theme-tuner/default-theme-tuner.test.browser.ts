@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
 	DOCS_APPEARANCE_STORAGE_KEY,
-	DOCS_DEFAULT_TUNING_STORAGE_KEY,
 	DOCS_DEFAULT_THEME_TUNING,
 } from '@/lib/docs-theme-preview';
 import { DefaultThemeTunerElement } from './default-theme-tuner.script';
@@ -19,7 +18,6 @@ describe('DefaultThemeTunerElement', () => {
 	afterEach(() => {
 		vi.useRealTimers();
 		document.body.innerHTML = '';
-		localStorage.removeItem(DOCS_DEFAULT_TUNING_STORAGE_KEY);
 		localStorage.removeItem(DOCS_APPEARANCE_STORAGE_KEY);
 		delete document.documentElement.dataset.ruiTheme;
 		for (const property of [
