@@ -190,11 +190,11 @@
 	}
 
 	:root .rui-treegrid__cell {
-		@apply border-b border-r-0 border-border bg-transparent px-control-x py-2 text-on-surface;
+		@apply border-0 bg-transparent px-control-x py-2 text-on-surface;
 	}
 
 	:root .rui-treegrid__row--header .rui-treegrid__cell {
-		@apply bg-surface-container-low font-semibold;
+		@apply border-b border-border bg-surface-container-low font-semibold;
 	}
 
 	:root .rui-treegrid__row:not(.rui-treegrid__row--header):hover .rui-treegrid__cell:not([aria-selected='true']) {

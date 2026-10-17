@@ -28,7 +28,7 @@ rui-treegrid {
 
 	.rui-treegrid__cell {
 		display: table-cell;
-		@apply border-b border-border bg-background px-control-x py-2.5 align-middle text-on-background;
+		@apply bg-background px-control-x py-2.5 align-middle text-on-background;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
@@ -37,12 +37,8 @@ rui-treegrid {
 			color var(--duration-fast) var(--ease-standard);
 	}
 
-	.rui-treegrid__row:last-child .rui-treegrid__cell {
-		@apply border-b-0;
-	}
-
 	.rui-treegrid__cell--header {
-		@apply bg-surface font-semibold text-on-background;
+		@apply border-b border-border bg-surface font-semibold text-on-background;
 	}
 
 	.rui-treegrid__cell[aria-selected='true'] {
