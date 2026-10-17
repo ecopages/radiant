@@ -3,12 +3,16 @@ import { unsafeHtml } from '@ecopages/jsx';
 import { RuiButton } from '@ecopages/radiant-ui/button';
 import { RuiTab, RuiTabList, RuiTabPanel, RuiTabPanels, RuiTabs } from '@ecopages/radiant-ui/tabs';
 import { RadiantElement, customElement, onEvent, prop, state } from '@ecopages/radiant';
+import { DOCS_DEFAULT_THEME_IMPORT, docsThemeImportSpecifier, isDocsThemeColor } from '@/lib/docs-theme-preview';
 import { renderTabLabel } from './code-tab-icons';
 
 /**
  * Plain-text tabs escape `code`. Rich tabs pass highlighted HTML in `html` and
  * clipboard text in `content` — strings survive host-attribute JSON round-trips;
  * JSX/`unsafeHtml` brands do not.
+ *
+ * @remarks A rich tab with `themeImport` is written for Radiant Default; the element swaps that import for the one the
+ * selected docs theme needs, in both the displayed code and the copied text.
  */
 export type RadiantCodeTabItem =
 	| {
@@ -21,6 +25,7 @@ export type RadiantCodeTabItem =
 			label: string;
 			html: string;
 			content: string;
+			themeImport?: boolean;
 	  };
 
 export type RadiantCodeTabsProps = {
@@ -35,8 +40,8 @@ function isRichTab(tab: RadiantCodeTabItem): tab is Extract<RadiantCodeTabItem, 
 	return 'html' in tab;
 }
 
-function tabClipboardText(tab: RadiantCodeTabItem): string {
-	return isRichTab(tab) ? tab.content : tab.code;
+function withThemeImport(tab: RadiantCodeTabItem, text: string, specifier: string): string {
+	return isRichTab(tab) && tab.themeImport ? text.replaceAll(DOCS_DEFAULT_THEME_IMPORT, specifier) : text;
 }
 
 @customElement('radiant-code-tabs')
@@ -47,6 +52,29 @@ export class RadiantCodeTabs extends RadiantElement {
 	@prop({ type: String }) defaultSelectedKey = '';
 	@prop({ type: String, reflect: true }) selectedKey = '';
 	@state copyStatus = '';
+	@state themeImport = DOCS_DEFAULT_THEME_IMPORT;
+	private rootObserver: MutationObserver | null = null;
+
+	override connectedCallback(): void {
+		super.connectedCallback();
+		this.syncThemeImport();
+		const root = typeof document === 'undefined' ? null : document.documentElement;
+		if (root && typeof MutationObserver !== 'undefined') {
+			this.rootObserver = new MutationObserver(() => this.syncThemeImport());
+			this.rootObserver.observe(root, { attributes: true, attributeFilter: ['data-rui-theme'] });
+		}
+	}
+
+	override disconnectedCallback(): void {
+		this.rootObserver?.disconnect();
+		this.rootObserver = null;
+		super.disconnectedCallback();
+	}
+
+	private syncThemeImport(): void {
+		const theme = typeof document === 'undefined' ? undefined : document.documentElement.dataset.ruiTheme;
+		this.themeImport = isDocsThemeColor(theme) ? docsThemeImportSpecifier(theme) : DOCS_DEFAULT_THEME_IMPORT;
+	}
 
 	private resolveTabs(): RadiantCodeTabItem[] {
 		if (Array.isArray(this.tabs) && this.tabs.length > 0) {
@@ -68,7 +96,9 @@ export class RadiantCodeTabs extends RadiantElement {
 
 	private handleCopy = async (tab: RadiantCodeTabItem): Promise<void> => {
 		try {
-			await navigator.clipboard.writeText(tabClipboardText(tab));
+			await navigator.clipboard.writeText(
+				withThemeImport(tab, isRichTab(tab) ? tab.content : tab.code, this.themeImport),
+			);
 			this.copyStatus = `${tab.label} copied to clipboard`;
 		} catch (error) {
 			console.error('Failed to copy code', error);
@@ -101,7 +131,7 @@ export class RadiantCodeTabs extends RadiantElement {
 							{renderTabLabel({
 								id: tab.id,
 								label: tab.label,
-								code: tabClipboardText(tab),
+								code: isRichTab(tab) ? tab.content : tab.code,
 							})}
 						</RuiTab>
 					))}
@@ -110,7 +140,11 @@ export class RadiantCodeTabs extends RadiantElement {
 					{tabs.map((tab) => (
 						<RuiTabPanel id={tab.id} class="code-tabs__panel" selected={tab.id === selectedKey}>
 							<div class="code-tabs__body">
-								<span class="code-tabs__code">{isRichTab(tab) ? unsafeHtml(tab.html) : tab.code}</span>
+								<span class="code-tabs__code">
+									{isRichTab(tab)
+										? unsafeHtml(withThemeImport(tab, tab.html, this.themeImport))
+										: tab.code}
+								</span>
 								<RuiButton
 									size="sm"
 									variant="ghost"

@@ -17,8 +17,9 @@ import { CodeTabs } from '@/components/code-tabs';
 import { previewExampleCode } from '@/data/home-code-examples';
 import { BaseLayout } from '@/layouts/base-layout';
 import { componentNavEntries, firstComponentHref, groupedComponentNavEntries } from '@/lib/component-nav';
+import { DOCS_DEFAULT_THEME_IMPORT } from '@/lib/docs-theme-preview';
 
-const previewStylesExample = `@import '@ecopages/radiant-ui/themes/default';
+const previewStylesExample = `@import '${DOCS_DEFAULT_THEME_IMPORT}';
 @import '@ecopages/radiant-ui/styles.css';`;
 
 const previewExample = await codeToHtml(previewExampleCode, {
@@ -58,6 +59,7 @@ const PREVIEW_TABS = [
 		label: 'styles.css',
 		html: highlightedCodeFigure(previewStyles),
 		content: previewStylesExample,
+		themeImport: true,
 	},
 ];
 
