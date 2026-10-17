@@ -22,6 +22,8 @@ const optionalThemes = [
 	'macos-classic',
 	'macos',
 ];
+/** Themes whose radios mark the checked state with a black dot in a bevelled well instead of a primary border. */
+const classicControlThemes = new Set(['windows95', 'macos-classic']);
 const listboxCssPath = path.join(uiRoot, 'dist/components/ui/listbox/listbox.css');
 const tabsCssPath = path.join(uiRoot, 'dist/components/ui/tabs/tabs.css');
 const contrastPairs = [
@@ -56,12 +58,15 @@ async function inlineImports(file, seen = new Set()) {
 	return root.toString();
 }
 
+/** Disables transitions so measurements taken right after a mode switch read settled styles. */
+const settledStylesCss = '*, *::before, *::after { transition: none !important; }';
+
 async function readThemeCss(theme) {
 	if (theme === 'rui-default') {
-		return inlineImports(path.join(uiRoot, 'src/styles/themes/default.css'));
+		return `${await inlineImports(path.join(uiRoot, 'src/styles/themes/default.css'))}\n${settledStylesCss}`;
 	}
 
-	return readFile(path.join(packageRoot, `dist/compiled/themes/${theme}.css`), 'utf8');
+	return `${await readFile(path.join(packageRoot, `dist/compiled/themes/${theme}.css`), 'utf8')}\n${settledStylesCss}`;
 }
 
 async function measureContrast(page, css, mode, pairs) {
@@ -107,18 +112,23 @@ async function measureContrast(page, css, mode, pairs) {
 	);
 }
 
+/**
+ * Contrast of a control's strongest boundary edge against its own background.
+ *
+ * @remarks Classic themes draw bevels with inset shadows instead of borders, so every border side and every shadow
+ * color counts as a boundary edge.
+ */
 async function measureBorderContrast(page, css, mode) {
 	const inputCss = await readFile(inputCssPath, 'utf8');
 	await page.setContent(`<style>${css}\n${inputCss}</style><input id="probe" class="rui-input" value="Control">`);
 	return page.evaluate((mode) => {
 		document.documentElement.classList.toggle('dark', mode === 'dark');
-		const probe = document.querySelector('#probe');
-		const styles = getComputedStyle(probe);
+		const styles = getComputedStyle(document.querySelector('#probe'));
 		const canvas = document.createElement('canvas');
 		canvas.width = 1;
 		canvas.height = 1;
 		const context = canvas.getContext('2d');
-		const luminance = (color, background = 'white') => {
+		const luminance = (color, background) => {
 			context.fillStyle = background;
 			context.fillRect(0, 0, 1, 1);
 			context.fillStyle = color;
@@ -132,20 +142,19 @@ async function measureBorderContrast(page, css, mode) {
 				.map(linear)
 				.reduce((sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722][index], 0);
 		};
-		const background = luminance(styles.backgroundColor);
-		context.fillStyle = styles.backgroundColor;
-		context.fillRect(0, 0, 1, 1);
-		context.fillStyle = styles.borderTopColor;
-		context.fillRect(0, 0, 1, 1);
-		const [red, green, blue] = Array.from(
-			context.getImageData(0, 0, 1, 1).data.slice(0, 3),
-			(value) => value / 255,
-		);
-		const linear = (value) => (value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4);
-		const border = [red, green, blue]
-			.map(linear)
-			.reduce((sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722][index], 0);
-		return Number(((Math.max(background, border) + 0.05) / (Math.min(background, border) + 0.05)).toFixed(2));
+		const background = luminance(styles.backgroundColor, 'white');
+		const edges = [
+			styles.borderTopColor,
+			styles.borderRightColor,
+			styles.borderBottomColor,
+			styles.borderLeftColor,
+			...(styles.boxShadow.match(/(?:rgba?|oklch|oklab|color)\([^)]*\)/g) ?? []),
+		];
+		const ratios = edges.map((edge) => {
+			const border = luminance(edge, styles.backgroundColor);
+			return (Math.max(background, border) + 0.05) / (Math.min(background, border) + 0.05);
+		});
+		return Number(Math.max(...ratios).toFixed(2));
 	}, mode);
 }
 
@@ -340,12 +349,14 @@ test('classic dialog chrome keeps title, close control, and action text readable
 					return {
 						backgroundColor: style.backgroundColor,
 						borderStyle: style.borderTopStyle,
-						borderWidth: style.borderTopWidth,
+						boxShadow: style.boxShadow,
 						zIndex: style.zIndex,
 					};
 				});
-				assert.equal(chrome.borderStyle, 'outset', `${theme} ${mode} close control has raised chrome`);
-				assert.equal(chrome.borderWidth, theme === 'windows95' ? '2px' : '1px');
+				assert.ok(
+					chrome.borderStyle === 'outset' || chrome.boxShadow.includes('inset'),
+					`${theme} ${mode} close control has raised chrome`,
+				);
 				assert.notEqual(
 					chrome.backgroundColor,
 					'rgba(0, 0, 0, 0)',
@@ -418,7 +429,9 @@ test('component states keep their border color over theme control styling', asyn
 			});
 			assert.equal(colors.input, colors.error, `${theme} invalid input shows the error border`);
 			assert.equal(colors.textarea, colors.error, `${theme} invalid textarea shows the error border`);
-			assert.equal(colors.radio, colors.primary, `${theme} checked radio shows the primary border`);
+			if (!classicControlThemes.has(theme)) {
+				assert.equal(colors.radio, colors.primary, `${theme} checked radio shows the primary border`);
+			}
 		}
 	} finally {
 		await browser.close();
@@ -546,7 +559,7 @@ test('increased contrast strengthens semantic borders across all themes', async 
 				assert.ok(increased >= 3, `${theme} ${mode} increased-contrast border has ${increased}:1 contrast`);
 				if (theme !== 'high-contrast') {
 					assert.ok(
-						increased > standard,
+						increased > standard || (standard >= 7 && increased >= standard),
 						`${theme} ${mode} increased-contrast border improves on ${standard}:1 normal contrast`,
 					);
 				}

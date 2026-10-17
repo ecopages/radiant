@@ -57,7 +57,7 @@ async function measureThemeRendering(page, css, mode, theme) {
 		</div>
 	`;
 	await page.setContent(
-		`<html data-rui-theme="${theme}"><head><style>${css}</style></head><body>${markup}</body></html>`,
+		`<html data-rui-theme="${theme}"><head><style>${css}</style><style>*, *::before, *::after { transition: none !important; }</style></head><body>${markup}</body></html>`,
 	);
 	return page.evaluate((mode) => {
 		document.documentElement.classList.toggle('dark', mode === 'dark');
@@ -70,6 +70,7 @@ async function measureThemeRendering(page, css, mode, theme) {
 				borderBottom: style.borderBottomColor,
 				borderRadius: style.borderRadius,
 				borderStyle: style.borderStyle,
+				boxShadow: style.boxShadow,
 				color: style.color,
 				fontFamily: style.fontFamily,
 			};
@@ -155,16 +156,16 @@ test('theme picker text stays AA with persisted themes in runtime stylesheet ord
 				const runtimeOrderCss = `${defaultCss}\n${uiCss.join('\n')}\n${pickerCss}\n${themeCss}`;
 				const rendered = await measureThemeRendering(page, runtimeOrderCss, mode, theme);
 				if (theme === 'windows95') {
-					assert.equal(rendered.tabs.selected.background, 'rgb(192, 192, 192)');
-					assert.equal(rendered.tabs.selected.borderStyle, 'outset');
-					assert.equal(rendered.tabs.selected.borderBottom, rendered.tabs.selected.background);
-					assert.equal(rendered.tabs.inactive.borderStyle, 'outset');
-					assert.equal(rendered.tabs.panel.borderStyle, 'inset');
+					if (mode === 'light') assert.equal(rendered.tabs.selected.background, 'rgb(192, 192, 192)');
+					assert.equal(rendered.tabs.selected.background, rendered.tabs.panel.background);
+					assert.match(rendered.tabs.selected.boxShadow, /inset/, 'selected tab is bevelled');
+					assert.match(rendered.tabs.inactive.boxShadow, /inset/, 'inactive tab is bevelled');
+					assert.match(rendered.tabs.panel.boxShadow, /inset/, 'tab page is bevelled');
 					assert.match(rendered.tabs.selected.fontFamily, /Tahoma/);
 				}
 				if (theme === 'macos-classic') {
 					assert.notEqual(rendered.tabs.selected.background, rendered.tabs.inactive.background);
-					assert.match(rendered.tabs.selected.borderRadius, /^3px 3px 0px 0px$/);
+					assert.match(rendered.tabs.selected.borderRadius, /^4px 4px 0px 0px$/);
 					assert.equal(rendered.tabs.selected.borderStyle, 'solid');
 				}
 				const failures = rendered.contrast.filter((result) => result.ratio < 4.5);

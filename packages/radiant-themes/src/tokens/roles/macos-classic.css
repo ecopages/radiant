@@ -66,7 +66,7 @@
 	--background: var(--macos-classic-canvas);
 	--on-background: var(--macos-classic-text);
 	--rui-border-color: var(--macos-classic-shadow);
-	--rui-control-border-color: var(--macos-classic-shadow);
+	--rui-control-border-color: var(--macos-classic-dark);
 	--border: color-mix(in srgb, var(--rui-border-color) var(--rui-border-alpha), transparent);
 	--focus-ring: var(--macos-classic-blue);
 	--on-focus-ring: #ffffff;
@@ -134,7 +134,7 @@
 	--rui-border-color: #888888;
 	--rui-control-border-color: #b0b0b0;
 	--border: color-mix(in srgb, var(--rui-border-color) var(--rui-border-alpha), transparent);
-	--focus-ring: #ffff00;
+	--focus-ring: var(--macos-classic-blue);
 	--on-focus-ring: #000000;
 	--link: #a9c5ff;
 	--background-code: #171717;

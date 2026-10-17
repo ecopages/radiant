@@ -1,9 +1,13 @@
 @reference 'tailwindcss';
 
+/**
+ * @remarks Bevels follow the Windows 95 two-tone edges: an outer light and dark pair plus an inner highlight and shadow
+ * pair, drawn with inset shadows so they never change a control's box size.
+ */
 :root, :root[data-rui-theme='windows95'] {
 	--font-sans: Tahoma, 'MS Sans Serif', Arial, sans-serif;
 	--font-heading: Tahoma, 'MS Sans Serif', Arial, sans-serif;
-	--font-mono: 'Lucida Console', Consolas, monospace;
+	--font-mono: 'Lucida Console', Consolas, Menlo, Monaco, 'Courier New', monospace;
 	--border-radius-xs: 0;
 	--border-radius-sm: 0;
 	--border-radius-md: 0;
@@ -16,125 +20,211 @@
 	--rui-border-alpha: 100%;
 	--focus-ring-width: 2px;
 	--focus-ring-offset: 2px;
+	--windows95-raised:
+		inset -1px -1px var(--windows95-dark), inset 1px 1px var(--windows95-light),
+		inset -2px -2px var(--windows95-shadow), inset 2px 2px var(--windows95-highlight);
+	--windows95-pressed:
+		inset -1px -1px var(--windows95-light), inset 1px 1px var(--windows95-dark),
+		inset -2px -2px var(--windows95-highlight), inset 2px 2px var(--windows95-shadow);
+	--windows95-sunken:
+		inset -1px -1px var(--windows95-light), inset 1px 1px var(--windows95-shadow),
+		inset -2px -2px var(--windows95-highlight), inset 2px 2px var(--windows95-dark);
+	--windows95-raised-thin: inset -1px -1px var(--windows95-shadow), inset 1px 1px var(--windows95-light);
+	--windows95-sunken-thin: inset -1px -1px var(--windows95-light), inset 1px 1px var(--windows95-shadow);
 }
 
 @layer components {
-	:root .rui-button {
-		@apply rounded-none border-2 bg-surface text-on-surface font-semibold shadow-none;
+	:root .rui-switch {
+		--rui-switch-track: var(--windows95-field);
+		--rui-switch-track-hover: var(--windows95-field);
+		--rui-switch-track-on: var(--windows95-selection);
+		--rui-switch-track-on-hover: var(--windows95-selection);
+		--rui-switch-thumb: var(--windows95-face);
+		--rui-switch-thumb-on: var(--windows95-face);
+	}
+
+	:root .rui-button,
+	:root .rui-button--filled,
+	:root .rui-button--outline,
+	:root .rui-button--destructive {
+		@apply rounded-none font-normal;
+		border-color: transparent;
+		background-clip: padding-box;
 		background-color: var(--windows95-face);
+		background-image: none;
 		color: var(--windows95-text);
-		border-style: outset;
-		border-color: var(--windows95-light) var(--windows95-dark) var(--windows95-dark) var(--windows95-light);
-		box-shadow: inset -1px -1px 0 var(--windows95-shadow);
+		box-shadow: var(--windows95-raised);
 		transition: none;
 	}
 
 	:root .rui-button--filled {
-		@apply bg-primary text-on-primary;
+		border-color: var(--windows95-dark);
 	}
 
 	:root .rui-button--destructive {
-		@apply bg-error text-on-error;
+		color: var(--windows95-red);
 	}
 
-	:root .rui-button:hover:not(:disabled) {
-		@apply bg-surface-container-low;
-		background-color: var(--windows95-highlight);
+	:root .rui-button--ghost {
+		@apply rounded-none;
+		background-color: transparent;
 		color: var(--windows95-text);
+		box-shadow: none;
+		transition: none;
 	}
 
-	:root .rui-button--filled:hover:not(:disabled) {
-		@apply bg-primary-dark text-on-primary;
-	}
-
+	:root .rui-button:hover:not(:disabled),
+	:root .rui-button--filled:hover:not(:disabled),
+	:root .rui-button--outline:hover:not(:disabled),
 	:root .rui-button--destructive:hover:not(:disabled) {
-		@apply bg-error-dark text-on-error;
+		background-color: var(--windows95-face);
 	}
 
-	:root.dark .rui-button--filled:hover:not(:disabled) {
-		@apply bg-primary-light text-on-primary;
-	}
-
-	:root.dark .rui-button--destructive:hover:not(:disabled) {
-		background-color: color-mix(in srgb, var(--error) 70%, white);
-		color: var(--on-error);
+	:root .rui-button--ghost:hover:not(:disabled) {
+		background-color: transparent;
+		box-shadow: var(--windows95-raised-thin);
 	}
 
 	:root .rui-button:active:not(:disabled),
+	:root .rui-button--filled:active:not(:disabled),
+	:root .rui-button--outline:active:not(:disabled),
+	:root .rui-button--destructive:active:not(:disabled),
 	:root .rui-button[aria-pressed='true'] {
-		border-style: inset;
-		border-color: var(--windows95-dark) var(--windows95-light) var(--windows95-light) var(--windows95-dark);
-		box-shadow: inset 1px 1px 0 var(--windows95-shadow);
+		background-color: var(--windows95-face);
+		box-shadow: var(--windows95-pressed);
+	}
+
+	:root .rui-button--ghost:active:not(:disabled),
+	:root .rui-button--ghost[aria-pressed='true'] {
+		background-color: transparent;
+		box-shadow: var(--windows95-sunken-thin);
 	}
 
 	:root .rui-button:focus-visible {
-		outline: 2px dotted var(--on-background);
-		outline-offset: 2px;
+		outline: 1px dotted var(--windows95-text);
+		outline-offset: -5px;
 	}
 
 	:root .rui-button:disabled {
-		@apply text-on-background;
-		opacity: 0.75;
+		opacity: 1;
+		color: var(--windows95-shadow);
+		text-shadow: 1px 1px 0 var(--windows95-light);
 	}
 
 	:root .rui-input,
 	:root .rui-textarea,
 	:root .rui-autocomplete__input,
-	:root .rui-combobox__input,
-	:root .rui-date-field__input,
-	:root .rui-date-input__segment,
-	:root .rui-number-field__input,
+	:root .rui-combobox__control,
+	:root .rui-date-field__group,
+	:root .rui-date-range-picker__group,
+	:root .rui-input-group,
+	:root .rui-number-field__group,
 	:root .rui-select__control {
-		@apply rounded-none border bg-white text-black shadow-none;
-		border-color: var(--windows95-shadow) var(--windows95-light) var(--windows95-light) var(--windows95-shadow);
-		box-shadow: inset 1px 1px 0 var(--windows95-dark);
+		@apply rounded-none;
+		border-color: transparent;
+		background-clip: padding-box;
+		background-color: var(--windows95-field);
+		color: var(--windows95-field-text);
+		box-shadow: var(--windows95-sunken);
+	}
+
+	:root .rui-input-group .rui-input,
+	:root .rui-combobox__input,
+	:root .rui-number-field__input {
+		background-color: transparent;
+		color: var(--windows95-field-text);
+		box-shadow: none;
 	}
 
 	:root .rui-input:focus-visible,
 	:root .rui-textarea:focus-visible,
 	:root .rui-select__control:focus-visible {
-		@apply outline-2 outline-primary;
+		outline: 1px dotted var(--windows95-text);
 		outline-offset: 2px;
 	}
 
 	:root .rui-checkbox__control,
-	:root .rui-radio__control,
-	:root .rui-switch__track {
-		@apply border bg-white shadow-none;
-		border-color: var(--windows95-shadow) var(--windows95-light) var(--windows95-light) var(--windows95-shadow);
+	:root .rui-radio__control {
+		border-color: transparent;
+		background-color: var(--windows95-field);
+		box-shadow: var(--windows95-sunken);
 	}
 
 	:root .rui-checkbox__control {
 		@apply rounded-none;
+		width: 0.8125rem;
+		height: 0.8125rem;
 	}
 
-	:root .rui-feed__article {
-		@apply rounded-none border-2 bg-surface-container-lowest text-on-surface shadow-none;
-		border-style: outset;
-		border-color: var(--windows95-light) var(--windows95-dark) var(--windows95-dark) var(--windows95-light);
+	:root .rui-checkbox__input:checked:not(:indeterminate):not([aria-checked='mixed']) + .rui-checkbox__control,
+	:root .rui-checkbox__input:indeterminate + .rui-checkbox__control,
+	:root .rui-checkbox__input[aria-checked='mixed'] + .rui-checkbox__control,
+	:root .rui-radio__input:checked + .rui-radio__control {
+		border-color: transparent;
+		background-color: var(--windows95-field);
 	}
 
-	:root .rui-feed__article:hover {
-		background-color: var(--windows95-face);
-		box-shadow: none;
+	:root .rui-checkbox__input:checked:not(:indeterminate):not([aria-checked='mixed']) + .rui-checkbox__control::after {
+		color: var(--windows95-field-text);
+	}
+
+	:root .rui-checkbox__input:indeterminate + .rui-checkbox__control::after,
+	:root .rui-checkbox__input[aria-checked='mixed'] + .rui-checkbox__control::after,
+	:root .rui-radio__input:checked + .rui-radio__control::after {
+		background-color: var(--windows95-field-text);
+	}
+
+	:root .rui-checkbox__input:indeterminate + .rui-checkbox__control::after,
+	:root .rui-checkbox__input[aria-checked='mixed'] + .rui-checkbox__control::after {
+		@apply rounded-none;
 	}
 
 	:root .rui-radio__control {
 		@apply rounded-full;
 	}
 
-	:root .rui-checkbox__input:checked + .rui-checkbox__control,
-	:root .rui-radio__input:checked + .rui-radio__control,
-	:root .rui-switch__input:checked + .rui-switch__track {
-		@apply bg-primary border-primary;
+	:root .rui-radio__input:checked + .rui-radio__control::after {
+		width: 0.25rem;
+		height: 0.25rem;
+	}
+
+	:root .rui-checkbox__input:focus-visible + .rui-checkbox__control,
+	:root .rui-radio__input:focus-visible + .rui-radio__control {
+		outline: 1px dotted var(--windows95-text);
+		outline-offset: 2px;
+		--tw-ring-shadow: 0 0 #0000;
+	}
+
+	:root .rui-switch__track {
+		@apply rounded-none;
+		border-color: transparent;
+		box-shadow: var(--windows95-sunken);
+	}
+
+	:root .rui-switch__thumb {
+		@apply rounded-none;
+		box-shadow: var(--windows95-raised);
+	}
+
+	:root .rui-feed__article {
+		@apply rounded-none border-0 text-on-surface;
+		background-color: var(--windows95-face);
+		box-shadow: var(--windows95-raised);
+	}
+
+	:root .rui-feed__article:hover {
+		background-color: var(--windows95-face);
 	}
 
 	:root .rui-listbox__option[aria-selected='true'],
 	:root .rui-menu-button__item[aria-checked='true'],
 	:root .rui-menubar__menu-item[aria-checked='true'],
 	:root .rui-tree__node[aria-selected='true'],
-	:root .rui-calendar__day[aria-selected='true'] {
-		@apply bg-primary text-on-primary;
+	:root .rui-calendar__day[aria-selected='true'],
+	:root .rui-sidebar__menu-button--active,
+	:root .rui-navigation-menu__link-list a[aria-current='page'] {
+		background-color: var(--windows95-selection);
+		color: var(--windows95-selection-text);
 	}
 
 	:root .rui-menu-button__menu,
@@ -145,35 +235,44 @@
 	:root .rui-dialog__surface,
 	:root .rui-popover-host,
 	:root .rui-hover-card__content {
-		@apply rounded-none border-2 border-border bg-surface shadow-none;
-		border-style: outset;
-		border-color: var(--windows95-light) var(--windows95-dark) var(--windows95-dark) var(--windows95-light);
-		box-shadow: 2px 2px 0 var(--windows95-dark);
+		@apply rounded-none border-0 bg-surface;
+		background-color: var(--windows95-face);
+		box-shadow: var(--windows95-raised);
+	}
+
+	:root .rui-select__listbox,
+	:root .rui-combobox__listbox {
+		background-color: var(--windows95-field);
+		color: var(--windows95-field-text);
+		box-shadow:
+			inset -1px -1px var(--windows95-dark),
+			inset 1px 1px var(--windows95-dark);
 	}
 
 	:root .rui-dialog__title,
 	:root .rui-calendar__header,
 	:root .rui-sidebar__header {
-		@apply bg-primary text-on-primary font-bold;
+		@apply font-bold;
+		background-color: var(--windows95-selection);
+		color: var(--windows95-selection-text);
 	}
 
 	:root .rui-dialog__title {
-		min-height: 2rem;
-		margin: calc(0px - var(--rui-dialog-padding)) calc(0px - var(--rui-dialog-padding)) var(--space-3);
-		padding: 0.375rem 2.5rem 0.375rem 0.5rem;
+		min-height: 1.5rem;
+		margin: calc(3px - var(--rui-dialog-padding)) calc(3px - var(--rui-dialog-padding)) var(--space-3);
+		padding: 0.1875rem 2rem 0.1875rem 0.25rem;
 	}
 
 	:root .rui-dialog__close {
-		@apply rounded-none border-2 bg-surface-container-low text-on-surface shadow-none;
+		@apply rounded-none border-0;
 		z-index: 1;
 		background-color: var(--windows95-face);
 		color: var(--windows95-text);
-		top: 0.25rem;
-		right: 0.25rem;
-		width: 1.5rem;
-		height: 1.5rem;
-		border-style: outset;
-		border-color: var(--windows95-light) var(--windows95-dark) var(--windows95-dark) var(--windows95-light);
+		top: 0.375rem;
+		right: 0.375rem;
+		width: 1rem;
+		height: 0.875rem;
+		box-shadow: var(--windows95-raised);
 	}
 
 	:root rui-tabs[variant='boxed'] {
@@ -181,85 +280,107 @@
 	}
 
 	:root rui-tabs[variant='boxed'] .rui-tabs__list {
-		@apply min-w-0 max-w-full overflow-x-auto overflow-y-clip border-0 bg-transparent px-0 pt-0;
+		@apply min-w-0 max-w-full overflow-x-auto overflow-y-clip border-0 bg-transparent px-0 pt-0.5;
 		gap: 0;
 	}
 
 	:root rui-tabs[variant='boxed'] .rui-tabs__tab {
-		@apply relative rounded-none border-2 bg-surface text-on-surface font-normal;
+		@apply relative rounded-none border-0 text-on-surface font-normal;
 		z-index: 0;
 		margin-bottom: -2px;
 		background-color: var(--windows95-face);
-		border-style: outset;
-		border-color: var(--windows95-light) var(--windows95-dark) var(--windows95-dark) var(--windows95-light);
+		box-shadow:
+			inset -1px 0 var(--windows95-dark),
+			inset 1px 1px var(--windows95-light),
+			inset -2px 0 var(--windows95-shadow),
+			inset 2px 2px var(--windows95-highlight);
 	}
 
 	:root rui-tabs[variant='boxed'] .rui-tabs__tab[aria-selected='true'] {
 		@apply font-normal;
 		z-index: 1;
-		border-bottom-color: var(--windows95-face);
+		margin-top: -2px;
+		padding-bottom: calc(var(--rui-tabs-tab-padding-y, 0.375rem) + 2px);
 	}
 
 	:root rui-tabs[variant='boxed'] .rui-tabs__panel {
-		@apply rounded-none border-2 bg-surface text-on-surface shadow-none;
+		@apply rounded-none border-0 text-on-surface;
 		position: relative;
 		z-index: 0;
-		border-style: inset;
-		border-color: var(--windows95-dark) var(--windows95-light) var(--windows95-light) var(--windows95-dark);
 		background-color: var(--windows95-face);
+		box-shadow: var(--windows95-raised);
 		padding: var(--rui-tabs-panel-padding);
 	}
 
 	:root .rui-alert,
 	:root .rui-toast__content {
-		@apply rounded-none border border-border bg-surface text-on-surface shadow-none;
-		border-style: outset;
+		@apply rounded-none border-0 text-on-surface;
+		background-color: var(--windows95-face);
+		box-shadow: var(--windows95-raised);
+	}
+
+	:root .rui-alert--error .rui-alert__icon {
+		color: var(--windows95-red);
+	}
+
+	:root .rui-alert--warning .rui-alert__icon {
+		color: var(--windows95-amber);
 	}
 
 	:root .rui-table__header,
 	:root .rui-treegrid__row--header,
 	:root .rui-calendar__weekdays {
-		@apply bg-surface-container-low font-bold;
+		@apply font-normal;
+		background-color: var(--windows95-face);
 	}
 
-	:root .rui-table__row:nth-child(even),
-	:root .rui-grid__row:nth-child(even) {
-		@apply bg-surface-container-low;
+	:root .rui-table__header th,
+	:root .rui-table__header .rui-table__cell {
+		box-shadow: var(--windows95-raised-thin);
 	}
 
-	:root .rui-sidebar__menu-button--active,
-	:root .rui-navigation-menu__link-list a[aria-current='page'] {
-		@apply bg-primary text-on-primary;
+	:root .rui-table,
+	:root .rui-grid {
+		background-color: var(--windows95-field);
+		color: var(--windows95-field-text);
 	}
 
 	:root .rui-badge,
 	:root .rui-chip,
 	:root .rui-pagination__link {
-		@apply rounded-none border border-border bg-surface text-on-surface;
+		@apply rounded-none border-0 text-on-surface;
+		background-color: var(--windows95-face);
+		box-shadow: var(--windows95-raised-thin);
 	}
 
 	:root .rui-separator,
 	:root .rui-sidebar__separator {
-		@apply bg-border;
+		background-color: var(--windows95-shadow);
 		box-shadow: 0 1px 0 var(--windows95-light);
 	}
 
 	:root .rui-slider__thumb,
 	:root .rui-number-field__stepper {
-		@apply rounded-none border border-border bg-surface;
-		box-shadow:
-			inset 1px 1px var(--windows95-light),
-			inset -1px -1px var(--windows95-shadow);
+		@apply rounded-none border-0;
+		background-color: var(--windows95-face);
+		box-shadow: var(--windows95-raised);
 	}
 
 	:root .rui-meter__track,
 	:root .rui-slider__range-track {
-		@apply rounded-none border border-border bg-white;
+		@apply rounded-none border-0;
+		background-color: var(--windows95-field);
+		box-shadow: var(--windows95-sunken-thin);
 	}
 
-	:root .rui-meter__fill,
+	:root .rui-meter__fill {
+		@apply rounded-none;
+		background-color: var(--windows95-selection);
+	}
+
 	:root .rui-slider__range-fill {
-		@apply rounded-none bg-primary;
+		@apply rounded-none;
+		background-color: transparent;
 	}
 }
 
@@ -268,20 +389,24 @@
 		:root .rui-input,
 		:root .rui-textarea,
 		:root .rui-autocomplete__input,
-		:root .rui-combobox__input,
-		:root .rui-date-field__input,
-		:root .rui-date-input__segment,
-		:root .rui-number-field__input,
+		:root .rui-combobox__control,
+		:root .rui-date-field__group,
+		:root .rui-date-range-picker__group,
+		:root .rui-input-group,
+		:root .rui-number-field__group,
 		:root .rui-select__control,
 		:root .rui-checkbox__control,
 		:root .rui-radio__control,
 		:root .rui-switch__track {
-			border-color: var(--windows95-dark);
+			border: 1px solid var(--windows95-field-text);
 			box-shadow: none;
 		}
 
-		:root .rui-button {
-			border-color: var(--on-background);
+		:root .rui-button,
+		:root .rui-button--filled,
+		:root .rui-button--outline,
+		:root .rui-button--destructive {
+			border-color: var(--windows95-dark);
 			box-shadow: none;
 		}
 	}

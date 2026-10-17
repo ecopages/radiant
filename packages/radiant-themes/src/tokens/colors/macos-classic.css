@@ -1,32 +1,48 @@
 :where(:root), :root[data-rui-theme='macos-classic'] {
-	--macos-classic-canvas: #f2f2f2;
-	--macos-classic-surface: #d7d7d7;
-	--macos-classic-container: #c5c5c5;
+	--macos-classic-canvas: #dddddd;
+	--macos-classic-surface: #dddddd;
+	--macos-classic-container: #cccccc;
+	--macos-classic-face: #e3e3e3;
+	--macos-classic-face-pressed: #666666;
 	--macos-classic-light: #ffffff;
 	--macos-classic-titlebar-stripe: #ffffff;
-	--macos-classic-shadow: #777777;
-	--macos-classic-dark: #222222;
-	--macos-classic-text: #111111;
+	--macos-classic-shadow: #8a8a8a;
+	--macos-classic-dark: #000000;
+	--macos-classic-text: #000000;
 	--macos-classic-muted: #383838;
-	--macos-classic-blue: #244a9b;
-	--macos-classic-blue-light: #315fc0;
+	--macos-classic-field: #ffffff;
+	--macos-classic-field-text: #000000;
+	--macos-classic-selection: #33339a;
+	--macos-classic-selection-text: #ffffff;
+	--macos-classic-blue: #33339a;
+	--macos-classic-blue-light: #6666cc;
 	--macos-classic-green: #176b42;
 	--macos-classic-red: #8c1c1c;
 	--macos-classic-amber: #644100;
 }
 
+/**
+ * @remarks Mac OS 8 and 9 had no dark appearance. This scheme keeps Platinum's bevels, black outlines, and striped
+ * title bars, and darkens the faces and fields.
+ */
 :where(.dark), :root.dark[data-rui-theme='macos-classic'] {
-	--macos-classic-canvas: #171717;
-	--macos-classic-surface: #292929;
+	--macos-classic-canvas: #262626;
+	--macos-classic-surface: #2e2e2e;
 	--macos-classic-container: #3a3a3a;
-	--macos-classic-light: #f5f5f5;
-	--macos-classic-titlebar-stripe: #626262;
-	--macos-classic-shadow: #111111;
+	--macos-classic-face: #4a4a4a;
+	--macos-classic-face-pressed: #2a2a2a;
+	--macos-classic-light: #777777;
+	--macos-classic-titlebar-stripe: #555555;
+	--macos-classic-shadow: #1a1a1a;
 	--macos-classic-dark: #000000;
-	--macos-classic-text: #ffffff;
-	--macos-classic-muted: #e0e0e0;
-	--macos-classic-blue: #8db2ff;
-	--macos-classic-blue-light: #a9c5ff;
+	--macos-classic-text: #f2f2f2;
+	--macos-classic-muted: #d0d0d0;
+	--macos-classic-field: #1a1a1a;
+	--macos-classic-field-text: #f2f2f2;
+	--macos-classic-selection: #5a5ac8;
+	--macos-classic-selection-text: #ffffff;
+	--macos-classic-blue: #a9a9ff;
+	--macos-classic-blue-light: #c4c4ff;
 	--macos-classic-green: #80d9a2;
 	--macos-classic-red: #ffaaa0;
 	--macos-classic-amber: #ffd27a;

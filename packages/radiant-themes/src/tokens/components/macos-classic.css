@@ -1,9 +1,13 @@
 @reference 'tailwindcss';
 
+/**
+ * @remarks Platinum controls pair a 1px black outline with an inner white and gray bevel. The default push button adds
+ * the thick rounded ring Mac OS drew around the action triggered by Return.
+ */
 :root, :root[data-rui-theme='macos-classic'] {
-	--font-sans: Geneva, 'Helvetica Neue', Arial, sans-serif;
-	--font-heading: Geneva, 'Helvetica Neue', Arial, sans-serif;
-	--font-mono: Monaco, 'Courier New', monospace;
+	--font-sans: Charcoal, Geneva, 'Helvetica Neue', Arial, sans-serif;
+	--font-heading: Charcoal, Geneva, 'Helvetica Neue', Arial, sans-serif;
+	--font-mono: Monaco, Menlo, 'Courier New', monospace;
 	--border-radius-xs: 0.125rem;
 	--border-radius-sm: 0.1875rem;
 	--border-radius-md: 0.25rem;
@@ -16,112 +20,195 @@
 	--rui-border-alpha: 100%;
 	--focus-ring-width: 2px;
 	--focus-ring-offset: 2px;
+	--macos-classic-bevel: inset 1px 1px 0 var(--macos-classic-light), inset -1px -1px 0 var(--macos-classic-shadow);
+	--macos-classic-bevel-pressed: inset 1px 1px 0 var(--macos-classic-shadow), inset -1px -1px 0 var(--macos-classic-face);
+	--macos-classic-well: inset 1px 1px 0 var(--macos-classic-shadow), inset -1px -1px 0 var(--macos-classic-light);
 }
 
 @layer components {
-	:root .rui-button {
-		@apply rounded-sm border border-border bg-surface text-on-surface font-medium shadow-none;
-		background-color: var(--macos-classic-surface);
+	:root .rui-switch {
+		--rui-switch-track: var(--macos-classic-field);
+		--rui-switch-track-hover: var(--macos-classic-field);
+		--rui-switch-track-on: var(--macos-classic-selection);
+		--rui-switch-track-on-hover: var(--macos-classic-selection);
+		--rui-switch-thumb: var(--macos-classic-face);
+		--rui-switch-thumb-on: var(--macos-classic-face);
+	}
+
+	:root .rui-button,
+	:root .rui-button--filled,
+	:root .rui-button--outline,
+	:root .rui-button--destructive {
+		@apply rounded-sm font-normal;
+		border-color: var(--macos-classic-dark);
+		background-color: var(--macos-classic-face);
+		background-image: linear-gradient(to bottom, var(--macos-classic-light) -60%, var(--macos-classic-face) 60%);
 		color: var(--macos-classic-text);
-		border-style: outset;
-		border-color: var(--macos-classic-light) var(--macos-classic-shadow) var(--macos-classic-shadow)
-			var(--macos-classic-light);
-		box-shadow: inset 1px 1px 0 var(--macos-classic-light);
+		box-shadow: var(--macos-classic-bevel);
 		transition: none;
 	}
 
 	:root .rui-button--filled {
-		@apply bg-primary text-on-primary;
+		@apply rounded-md;
+		box-shadow:
+			var(--macos-classic-bevel),
+			0 0 0 2px var(--macos-classic-surface),
+			0 0 0 3px var(--macos-classic-dark),
+			0 0 0 4px var(--macos-classic-shadow),
+			0 0 0 5px var(--macos-classic-dark);
 	}
 
 	:root .rui-button--destructive {
-		@apply bg-error text-on-error;
+		color: var(--macos-classic-red);
 	}
 
-	:root .rui-button:hover:not(:disabled) {
-		@apply bg-surface-container-low;
-		background-color: var(--macos-classic-container);
+	:root .rui-button--ghost {
+		@apply rounded-sm;
+		background-color: transparent;
 		color: var(--macos-classic-text);
+		box-shadow: none;
+		transition: none;
 	}
 
-	:root .rui-button--filled:hover:not(:disabled) {
-		@apply bg-primary-dark text-on-primary;
-	}
-
+	:root .rui-button:hover:not(:disabled),
+	:root .rui-button--filled:hover:not(:disabled),
+	:root .rui-button--outline:hover:not(:disabled),
 	:root .rui-button--destructive:hover:not(:disabled) {
-		@apply bg-error-dark text-on-error;
+		background-color: var(--macos-classic-face);
 	}
 
-	:root.dark .rui-button--filled:hover:not(:disabled) {
-		@apply bg-primary-light text-on-primary;
-	}
-
-	:root.dark .rui-button--destructive:hover:not(:disabled) {
-		background-color: color-mix(in srgb, var(--error) 70%, white);
-		color: var(--on-error);
+	:root .rui-button--ghost:hover:not(:disabled) {
+		background-color: var(--macos-classic-container);
 	}
 
 	:root .rui-button:active:not(:disabled),
+	:root .rui-button--filled:active:not(:disabled),
+	:root .rui-button--outline:active:not(:disabled),
+	:root .rui-button--destructive:active:not(:disabled),
+	:root .rui-button--ghost:active:not(:disabled),
 	:root .rui-button[aria-pressed='true'] {
-		border-style: inset;
-		box-shadow: inset 1px 1px 0 var(--macos-classic-shadow);
+		background-color: var(--macos-classic-face-pressed);
+		background-image: none;
+		color: var(--macos-classic-selection-text);
+		box-shadow: var(--macos-classic-bevel-pressed);
 	}
 
 	:root .rui-button:focus-visible {
 		outline: 2px solid var(--focus-ring);
-		outline-offset: 2px;
+		outline-offset: 3px;
+	}
+
+	:root .rui-button--filled:focus-visible {
+		outline-offset: 6px;
+	}
+
+	:root .rui-button:disabled {
+		opacity: 1;
+		color: var(--macos-classic-shadow);
+		border-color: var(--macos-classic-shadow);
 	}
 
 	:root .rui-input,
 	:root .rui-textarea,
 	:root .rui-autocomplete__input,
-	:root .rui-combobox__input,
-	:root .rui-date-field__input,
-	:root .rui-date-input__segment,
-	:root .rui-number-field__input,
+	:root .rui-combobox__control,
+	:root .rui-date-field__group,
+	:root .rui-date-range-picker__group,
+	:root .rui-input-group,
+	:root .rui-number-field__group,
 	:root .rui-select__control {
-		@apply rounded-sm border border-border bg-white text-black;
-		border-color: var(--macos-classic-shadow) var(--macos-classic-light) var(--macos-classic-light)
-			var(--macos-classic-shadow);
-		box-shadow: inset 1px 1px 0 var(--macos-classic-container);
+		@apply rounded-none;
+		border-color: var(--macos-classic-dark);
+		background-color: var(--macos-classic-field);
+		color: var(--macos-classic-field-text);
+		box-shadow:
+			inset 1px 1px 0 var(--macos-classic-container),
+			0 0 0 1px var(--macos-classic-surface),
+			1px 1px 0 1px var(--macos-classic-light),
+			-1px -1px 0 1px var(--macos-classic-shadow);
+	}
+
+	:root .rui-select__control {
+		@apply rounded-sm;
+		background-color: var(--macos-classic-face);
+		background-image: linear-gradient(to bottom, var(--macos-classic-light) -60%, var(--macos-classic-face) 60%);
+		color: var(--macos-classic-text);
+		box-shadow: var(--macos-classic-bevel);
+	}
+
+	:root .rui-input-group .rui-input,
+	:root .rui-combobox__input,
+	:root .rui-number-field__input {
+		background-color: transparent;
+		color: var(--macos-classic-field-text);
+		box-shadow: none;
 	}
 
 	:root .rui-checkbox__control,
-	:root .rui-radio__control,
-	:root .rui-switch__track {
-		@apply border border-border bg-surface;
-		box-shadow:
-			inset 1px 1px 0 var(--macos-classic-light),
-			inset -1px -1px 0 var(--macos-classic-shadow);
+	:root .rui-radio__control {
+		border-color: var(--macos-classic-dark);
+		background-color: var(--macos-classic-face);
+		background-image: linear-gradient(135deg, var(--macos-classic-light) 0%, var(--macos-classic-face) 70%);
+		box-shadow: var(--macos-classic-bevel);
 	}
 
 	:root .rui-checkbox__control {
 		@apply rounded-none;
 	}
 
+	:root .rui-checkbox__input:checked:not(:indeterminate):not([aria-checked='mixed']) + .rui-checkbox__control,
+	:root .rui-checkbox__input:indeterminate + .rui-checkbox__control,
+	:root .rui-checkbox__input[aria-checked='mixed'] + .rui-checkbox__control,
+	:root .rui-radio__input:checked + .rui-radio__control {
+		border-color: var(--macos-classic-dark);
+		background-color: var(--macos-classic-face);
+	}
+
+	:root .rui-checkbox__input:checked:not(:indeterminate):not([aria-checked='mixed']) + .rui-checkbox__control::after {
+		color: var(--macos-classic-text);
+	}
+
+	:root .rui-checkbox__input:indeterminate + .rui-checkbox__control::after,
+	:root .rui-checkbox__input[aria-checked='mixed'] + .rui-checkbox__control::after,
+	:root .rui-radio__input:checked + .rui-radio__control::after {
+		background-color: var(--macos-classic-text);
+	}
+
+	:root .rui-radio__input:checked + .rui-radio__control::after {
+		width: 0.375rem;
+		height: 0.375rem;
+	}
+
+	:root .rui-switch__track {
+		@apply rounded-sm;
+		border: 1px solid var(--macos-classic-dark);
+		box-shadow: var(--macos-classic-well);
+	}
+
+	:root .rui-switch__thumb {
+		@apply rounded-xs;
+		outline: 1px solid var(--macos-classic-dark);
+		background-image: linear-gradient(135deg, var(--macos-classic-light) 0%, var(--macos-classic-face) 70%);
+		box-shadow: var(--macos-classic-bevel);
+	}
+
 	:root .rui-feed__article {
-		@apply rounded-sm border border-border bg-surface text-on-surface shadow-none;
-		border-style: outset;
-		border-color: var(--macos-classic-light) var(--macos-classic-shadow) var(--macos-classic-shadow)
-			var(--macos-classic-light);
+		@apply rounded-sm text-on-surface;
+		border-color: var(--macos-classic-dark);
+		background-color: var(--macos-classic-surface);
+		box-shadow: var(--macos-classic-bevel);
 	}
 
 	:root .rui-feed__article:hover {
 		background-color: var(--macos-classic-surface);
-		box-shadow: none;
-	}
-
-	:root .rui-checkbox__input:checked + .rui-checkbox__control,
-	:root .rui-radio__input:checked + .rui-radio__control,
-	:root .rui-switch__input:checked + .rui-switch__track {
-		@apply bg-primary border-primary;
 	}
 
 	:root .rui-dialog__title,
 	:root .rui-calendar__header,
 	:root .rui-sidebar__header,
 	:root .rui-table__header {
-		@apply bg-surface-container-low text-on-surface font-bold;
+		@apply font-bold text-on-surface;
+		background-color: var(--macos-classic-container);
 		background-image: repeating-linear-gradient(
 			to bottom,
 			var(--macos-classic-titlebar-stripe) 0 1px,
@@ -130,23 +217,24 @@
 	}
 
 	:root .rui-dialog__title {
-		min-height: 2rem;
+		min-height: 1.5rem;
 		margin: calc(0px - var(--rui-dialog-padding)) calc(0px - var(--rui-dialog-padding)) var(--space-3);
-		padding: 0.375rem 2.5rem 0.375rem 0.5rem;
+		padding: 0.25rem 2.5rem 0.25rem 0.5rem;
+		text-align: center;
 	}
 
 	:root .rui-dialog__close {
-		@apply rounded-none border border-surface-container-high bg-surface-container-low text-on-surface shadow-none;
+		@apply rounded-none;
 		z-index: 1;
-		background-color: var(--macos-classic-surface);
+		border: 1px solid var(--macos-classic-dark);
+		background-color: var(--macos-classic-face);
 		color: var(--macos-classic-text);
-		top: 0.25rem;
-		right: 0.25rem;
-		width: 1.5rem;
-		height: 1.5rem;
-		border-style: outset;
-		border-color: var(--macos-classic-light) var(--macos-classic-shadow) var(--macos-classic-shadow)
-			var(--macos-classic-light);
+		top: 0.375rem;
+		left: 0.5rem;
+		right: auto;
+		width: 0.875rem;
+		height: 0.875rem;
+		box-shadow: var(--macos-classic-bevel);
 	}
 
 	:root .rui-dialog__surface,
@@ -156,11 +244,13 @@
 	:root .rui-menubar__menu,
 	:root .rui-select__listbox,
 	:root .rui-combobox__listbox,
-	:root .rui-calendar,
-	:root rui-tabs[variant='boxed'] {
-		@apply rounded-sm border border-border bg-surface text-on-surface shadow-none;
-		border-style: outset;
-		box-shadow: 2px 2px 0 var(--macos-classic-shadow);
+	:root .rui-calendar {
+		@apply rounded-none text-on-surface;
+		border: 1px solid var(--macos-classic-dark);
+		background-color: var(--macos-classic-surface);
+		box-shadow:
+			var(--macos-classic-bevel),
+			1px 1px 0 var(--macos-classic-dark);
 	}
 
 	:root rui-tabs[variant='boxed'] {
@@ -168,34 +258,35 @@
 	}
 
 	:root rui-tabs[variant='boxed'] .rui-tabs__list {
-		@apply min-w-0 max-w-full items-end overflow-x-auto overflow-y-clip border-0 bg-transparent px-0 pt-0;
+		@apply min-w-0 max-w-full items-end overflow-x-auto overflow-y-clip border-0 bg-transparent px-2 pt-0;
 		gap: 0;
 	}
 
 	:root rui-tabs[variant='boxed'] .rui-tabs__tab {
-		@apply relative rounded-t-sm border border-border bg-surface-container-low text-on-surface font-normal;
+		@apply relative rounded-t-md text-on-surface font-normal;
 		z-index: 0;
 		margin-bottom: -1px;
-		border-bottom-color: var(--macos-classic-shadow);
+		border: 1px solid var(--macos-classic-dark);
 		background-color: var(--macos-classic-container);
+		box-shadow: inset 1px 1px 0 var(--macos-classic-light);
 		padding-inline: var(--rui-tabs-tab-padding-x);
 		padding-block: var(--rui-tabs-tab-padding-y);
 	}
 
 	:root rui-tabs[variant='boxed'] .rui-tabs__tab[aria-selected='true'] {
-		@apply font-normal;
+		@apply font-bold;
 		z-index: 1;
 		border-bottom-color: var(--macos-classic-surface);
 		background-color: var(--macos-classic-surface);
 	}
 
 	:root rui-tabs[variant='boxed'] .rui-tabs__panel {
-		@apply rounded-none border border-border bg-surface text-on-surface shadow-none;
+		@apply rounded-none text-on-surface;
 		position: relative;
 		z-index: 0;
-		border-color: var(--macos-classic-shadow);
-		box-shadow: inset 1px 1px 0 var(--macos-classic-light);
+		border: 1px solid var(--macos-classic-dark);
 		background-color: var(--macos-classic-surface);
+		box-shadow: var(--macos-classic-bevel);
 		padding: var(--rui-tabs-panel-padding);
 	}
 
@@ -203,35 +294,26 @@
 	:root .rui-menu-button__item[aria-checked='true'],
 	:root .rui-menubar__menu-item[aria-checked='true'],
 	:root .rui-tree__node[aria-selected='true'],
-	:root .rui-calendar__day[aria-selected='true'] {
-		@apply bg-primary text-on-primary;
-	}
-
-	:root .rui-tabs__tab[aria-selected='true'] {
-		@apply border border-border bg-surface font-bold;
-		border-bottom-color: var(--macos-classic-surface);
+	:root .rui-calendar__day[aria-selected='true'],
+	:root .rui-sidebar__menu-button--active,
+	:root .rui-navigation-menu__link-list a[aria-current='page'] {
+		background-color: var(--macos-classic-selection);
+		color: var(--macos-classic-selection-text);
 	}
 
 	:root .rui-table__row:nth-child(even),
 	:root .rui-grid__row:nth-child(even) {
-		@apply bg-surface-container-low;
-	}
-
-	:root .rui-sidebar__menu-button--active,
-	:root .rui-navigation-menu__link-list a[aria-current='page'] {
-		@apply bg-primary text-on-primary;
+		background-color: var(--macos-classic-container);
 	}
 
 	:root .rui-alert,
 	:root .rui-toast__content {
-		@apply rounded-sm border border-border bg-surface text-on-surface;
-		border-style: outset;
-	}
-
-	:root .rui-alert {
-		border-color: var(--macos-classic-muted);
+		@apply rounded-none text-on-surface;
+		border: 1px solid var(--macos-classic-dark);
 		background-color: var(--macos-classic-surface);
-		box-shadow: inset 1px 1px 0 var(--macos-classic-light);
+		box-shadow:
+			var(--macos-classic-bevel),
+			1px 1px 0 var(--macos-classic-dark);
 	}
 
 	:root .rui-alert--inline.rui-alert--dismissible {
@@ -239,20 +321,11 @@
 	}
 
 	:root .rui-alert--inline.rui-alert--dismissible .rui-alert__close {
-		@apply absolute -left-2 -top-2 size-7 rounded-full border-2 bg-surface text-on-surface shadow-none;
+		@apply absolute -left-2 -top-2 size-7 rounded-full border text-on-surface;
 		z-index: 1;
-		border-style: solid;
-		border-color: var(--macos-classic-muted);
-		background-color: var(--macos-classic-surface);
-		box-shadow: 0 1px 1px var(--macos-classic-shadow);
-	}
-
-	:root .rui-alert--inline > :not(.rui-alert__icon):not(.rui-alert__close),
-	:root .rui-alert--inline .rui-alert__description {
-		@apply border border-border bg-surface-container-low px-2 py-1;
-		flex: 1;
-		border-color: var(--macos-classic-muted);
-		box-shadow: inset 1px 1px 0 var(--macos-classic-container);
+		border-color: var(--macos-classic-dark);
+		background-color: var(--macos-classic-face);
+		box-shadow: var(--macos-classic-bevel);
 	}
 
 	:root .rui-alert__icon {
@@ -260,45 +333,53 @@
 	}
 
 	:root .rui-alert--warning .rui-alert__icon {
-		color: #8a5b00;
+		color: var(--macos-classic-amber);
 	}
 
 	:root .rui-alert--success .rui-alert__icon {
-		color: #176b3a;
+		color: var(--macos-classic-green);
 	}
 
 	:root .rui-alert--error .rui-alert__icon {
-		color: #8b1e1e;
+		color: var(--macos-classic-red);
 	}
 
 	:root .rui-badge,
 	:root .rui-chip,
 	:root .rui-pagination__link {
-		@apply rounded-sm border border-border bg-surface text-on-surface;
+		@apply rounded-sm text-on-surface;
+		border: 1px solid var(--macos-classic-dark);
+		background-color: var(--macos-classic-face);
+		box-shadow: var(--macos-classic-bevel);
 	}
 
 	:root .rui-separator,
 	:root .rui-sidebar__separator {
-		@apply bg-border;
+		background-color: var(--macos-classic-shadow);
 		box-shadow: 0 1px 0 var(--macos-classic-light);
 	}
 
 	:root .rui-slider__thumb,
 	:root .rui-number-field__stepper {
-		@apply rounded-sm border border-border bg-surface;
-		box-shadow:
-			inset 1px 1px 0 var(--macos-classic-light),
-			inset -1px -1px 0 var(--macos-classic-shadow);
+		@apply rounded-sm;
+		border: 1px solid var(--macos-classic-dark);
+		background-color: var(--macos-classic-face);
+		background-image: linear-gradient(135deg, var(--macos-classic-light) 0%, var(--macos-classic-face) 70%);
+		box-shadow: var(--macos-classic-bevel);
 	}
 
 	:root .rui-meter__track,
 	:root .rui-slider__range-track {
-		@apply rounded-sm border border-border bg-white;
+		@apply rounded-none;
+		border: 1px solid var(--macos-classic-dark);
+		background-color: var(--macos-classic-field);
+		box-shadow: var(--macos-classic-well);
 	}
 
 	:root .rui-meter__fill,
 	:root .rui-slider__range-fill {
-		@apply rounded-sm bg-primary;
+		@apply rounded-none;
+		background-color: var(--macos-classic-selection);
 	}
 }
 
@@ -307,19 +388,22 @@
 		:root .rui-input,
 		:root .rui-textarea,
 		:root .rui-autocomplete__input,
-		:root .rui-combobox__input,
-		:root .rui-date-field__input,
-		:root .rui-date-input__segment,
-		:root .rui-number-field__input,
+		:root .rui-combobox__control,
+		:root .rui-date-field__group,
+		:root .rui-date-range-picker__group,
+		:root .rui-input-group,
+		:root .rui-number-field__group,
 		:root .rui-select__control,
 		:root .rui-checkbox__control,
 		:root .rui-radio__control,
 		:root .rui-switch__track {
-			border-color: var(--macos-classic-dark);
+			border: 1px solid var(--macos-classic-field-text);
 			box-shadow: none;
 		}
 
-		:root .rui-button {
+		:root .rui-button,
+		:root .rui-button--outline,
+		:root .rui-button--destructive {
 			border-color: var(--on-background);
 			box-shadow: none;
 		}
