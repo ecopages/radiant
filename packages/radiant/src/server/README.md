@@ -226,9 +226,9 @@ The shim supports a focused query surface for component lifecycle code that runs
 - `:scope`, sibling combinators (`+`, `~`)
 - Shadow-root queries (SSR is light-DOM only)
 
-Fragment-backed nodes materialize children lazily when a query traverses descendants, so nested selectors such as `header > h2` work after `innerHTML` assignment without paying full tree materialization cost during plain serialization.
+Parsed elements keep their source HTML. Child nodes are built on first read (`childNodes`, `children`, or a query that traverses descendants), so nested selectors such as `header > h2` work after `innerHTML` assignment without paying full tree materialization cost during plain serialization. Reading never invalidates the source: a parsed subtree serializes exactly as written until something in it changes. A mutation (attribute, child list, or text) drops the cached source of that element and its ancestors, and only those are re-serialized.
 
-`innerHTML` and `insertAdjacentHTML` decode entities in parsed text, attribute values and `textContent`, so serializers escape exactly once. Only `&amp; &lt; &gt; &quot; &apos; &nbsp; &copy; &reg; &ndash; &mdash; &hellip;` and numeric references are decoded; other named entities such as `&euro;` stay literal and are escaped again when the tree is re-serialized, so prefer the real character in raw HTML strings. `script` and `style` content is raw text and is never decoded.
+Reads see decoded values: `textContent`, `getAttribute`, and `dataset` decode `&amp; &lt; &gt; &quot; &apos; &nbsp; &copy; &reg; &ndash; &mdash; &hellip;` and numeric references. Other named entities such as `&euro;` read back literally, but still serialize unchanged, because untouched text and open tags are emitted from source. `script` and `style` content is raw text: never decoded, and emitted unescaped with only `</script` / `</style` neutralized.
 
 SSR hosts created with `new Component()` also align `localName` / `tagName` to the `@customElement` metadata before host preparation and serialization, so in-memory queries like `closest('my-element')` match the tag names used in the rendered HTML.
 

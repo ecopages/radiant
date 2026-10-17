@@ -1,4 +1,10 @@
-import { collectTopLevelHtmlFragments, parseHtmlTagToken, type ParsedHtmlTag } from '../../html/html-parser';
+import {
+	collectTopLevelHtmlFragments,
+	parseHtmlTagToken,
+	rawTextElementNames,
+	voidElementNames,
+	type ParsedHtmlTag,
+} from '../../html/html-parser';
 import { decodeHtmlEntities } from '../../../utils/decode-html-entities';
 import { escapeHtmlText } from '../../../utils/escape-html-text';
 import {
@@ -19,13 +25,19 @@ export function createElementFromFragment(fragment: string, tag: ParsedHtmlTag, 
 			? (new MinimalHtmlScriptElement(ownerDocument) as MinimalElement)
 			: new MinimalHTMLElement(tag.tagName, ownerDocument);
 
-	const isRawText = tag.tagName === 'script' || tag.tagName === 'style';
+	const sourceOpenTag = fragment.slice(0, tag.end);
+	const openTag =
+		tag.selfClosing && !voidElementNames.has(tag.tagName)
+			? sourceOpenTag.replace(/\s*\/\s*>$/, '>')
+			: sourceOpenTag;
 	const attributes = Object.fromEntries(
 		Object.entries(tag.attributes).map(([name, value]) => [name, decodeHtmlEntities(value)]),
 	);
-	const text = extractTextContent(tag.innerHtml);
+	const text = rawTextElementNames.has(tag.tagName)
+		? tag.innerHtml
+		: decodeHtmlEntities(extractTextContent(tag.innerHtml));
 
-	element.setSerializedFragment(fragment, isRawText ? text : decodeHtmlEntities(text), attributes, tag.innerHtml);
+	element.setSerializedFragment(openTag, text, attributes, tag.innerHtml);
 	return element as unknown as Node;
 }
 
@@ -33,29 +45,45 @@ export function extractTextContent(html: string): string {
 	return html.replace(/<!--.*?-->/gs, '').replace(/<[^>]+>/g, '');
 }
 
+/**
+ * Parses top-level HTML into minimal-DOM nodes.
+ *
+ * @remarks Text keeps its source HTML next to the decoded value. Comments and declarations become empty
+ * text nodes that serialize their source unchanged. Stray close tags are dropped.
+ */
 export function parseHtmlToNodes(html: string, ownerDocument: Document | null = getInstalledDocumentLike()): Node[] {
 	return collectTopLevelHtmlFragments(html).flatMap((fragment) => {
-		if (!fragment.startsWith('<')) {
-			return [new MinimalTextNode(decodeHtmlEntities(fragment), ownerDocument) as unknown as Node];
-		}
-
-		const tag = parseHtmlTagToken(fragment, 0);
+		const tag = fragment.startsWith('<') ? parseHtmlTagToken(fragment, 0) : undefined;
 
 		if (tag?.type === 'close') {
 			return [];
 		}
 
-		if (!tag || tag.type !== 'open') {
-			return [new MinimalTextNode(decodeHtmlEntities(fragment), ownerDocument) as unknown as Node];
+		if (tag?.type === 'open') {
+			return [createElementFromFragment(fragment, tag, ownerDocument)];
 		}
 
-		return [createElementFromFragment(fragment, tag, ownerDocument)];
+		const text = tag ? '' : decodeHtmlEntities(fragment);
+		return [new MinimalTextNode(text, ownerDocument, fragment) as unknown as Node];
 	});
 }
 
+/**
+ * @remarks Text inside `script` / `style` is emitted unescaped, as browsers serialize it, with only
+ * `</script` / `</style` neutralized so the content cannot close its element early.
+ */
 export function serializeNodeHtml(node: Node): string {
 	if (node.nodeType === MinimalNode.TEXT_NODE) {
-		return escapeHtmlText(node.textContent ?? '');
+		if (node instanceof MinimalTextNode && node.sourceHtml !== undefined) {
+			return node.sourceHtml;
+		}
+
+		const text = node.textContent ?? '';
+		const parentName = (node.parentNode as Partial<Element> | null)?.localName;
+
+		return parentName && rawTextElementNames.has(parentName)
+			? text.replace(/<\/(script|style)/gi, '<\\/$1')
+			: escapeHtmlText(text);
 	}
 
 	return 'outerHTML' in node && typeof node.outerHTML === 'string'

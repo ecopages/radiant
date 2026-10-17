@@ -1,6 +1,6 @@
 import { serializeHtmlAttribute } from '../../../utils/serialize-html-attribute';
 import { MINIMAL_DOM_ELEMENT } from '../../../core/minimal-dom-identity';
-import { voidElementNames } from '../../html/html-parser';
+import { rawTextElementNames, voidElementNames } from '../../html/html-parser';
 import { toDataAttributeName, toDatasetPropertyName } from './dataset';
 import * as selectors from './selectors';
 
@@ -94,9 +94,13 @@ export class MinimalNode extends MinimalEventTarget {
 	static readonly ELEMENT_NODE = 1;
 	static readonly TEXT_NODE = 3;
 
-	public childNodes: Node[] = [];
 	public ownerDocument: Document | null;
 	public parentNode: MinimalParentNode | null = null;
+	/**
+	 * @remarks TS `private`, not `#private`: the DOM install probe reads `children` on
+	 * `Object.create(HTMLElement.prototype)`, which has no private brand and would throw.
+	 */
+	private childNodeList: Node[] = [];
 
 	constructor(
 		public readonly nodeType: number,
@@ -106,6 +110,14 @@ export class MinimalNode extends MinimalEventTarget {
 		this.ownerDocument = ownerDocument;
 	}
 
+	/**
+	 * @remarks Parsed elements build their children lazily, on first read of this list.
+	 */
+	get childNodes(): Node[] {
+		this.ensureChildNodes();
+		return this.childNodeList;
+	}
+
 	append(...nodes: Array<Node | string>): void {
 		for (const node of nodes) {
 			this.appendChild(typeof node === 'string' ? createTextNode(node) : node);
@@ -113,14 +125,14 @@ export class MinimalNode extends MinimalEventTarget {
 	}
 
 	appendChild<TNode extends Node>(node: TNode): TNode {
+		this.ensureChildNodes();
+
 		if ('parentNode' in node && node.parentNode && 'removeChild' in node.parentNode) {
 			(node.parentNode as Node & { removeChild(node: Node): Node }).removeChild(node);
 		}
 
-		this.childNodes.push(node);
-		(node as Node & { ownerDocument: Document | null }).ownerDocument =
-			this.nodeType === MinimalNode.DOCUMENT_NODE ? (this as unknown as Document) : this.ownerDocument;
-		(node as Node & { parentNode: MinimalParentNode | null }).parentNode = this as unknown as MinimalParentNode;
+		this.attachChild(node);
+		this.invalidateSerialization();
 		return node;
 	}
 
@@ -131,8 +143,9 @@ export class MinimalNode extends MinimalEventTarget {
 			return node;
 		}
 
-		this.childNodes.splice(nodeIndex, 1);
+		this.childNodeList.splice(nodeIndex, 1);
 		(node as Node & { parentNode: MinimalParentNode | null }).parentNode = null;
+		this.invalidateSerialization();
 		return node;
 	}
 
@@ -141,8 +154,32 @@ export class MinimalNode extends MinimalEventTarget {
 			(child as Node & { parentNode: MinimalParentNode | null }).parentNode = null;
 		}
 
-		this.childNodes = [];
+		this.childNodeList = [];
 		this.append(...nodes);
+		this.invalidateSerialization();
+	}
+
+	/**
+	 * Drops cached serialization on this node and every ancestor after a mutation.
+	 *
+	 * @remarks Parsed elements serialize from their source HTML until something under them changes.
+	 */
+	invalidateSerialization(): void {
+		const parent = this.parentNode;
+
+		if (parent instanceof MinimalNode) {
+			parent.invalidateSerialization();
+		}
+	}
+
+	protected ensureChildNodes(): void {}
+
+	/** Adds a child without invalidating serialization; used when materializing parsed children. */
+	protected attachChild(node: Node): void {
+		this.childNodeList.push(node);
+		(node as Node & { ownerDocument: Document | null }).ownerDocument =
+			this.nodeType === MinimalNode.DOCUMENT_NODE ? (this as unknown as Document) : this.ownerDocument;
+		(node as Node & { parentNode: MinimalParentNode | null }).parentNode = this as unknown as MinimalParentNode;
 	}
 
 	get textContent(): string | null {
@@ -165,9 +202,14 @@ export class MinimalNode extends MinimalEventTarget {
 }
 
 export class MinimalTextNode extends MinimalNode {
+	/**
+	 * @param sourceHtml The text as written in parsed HTML. It is serialized unchanged until the text is set,
+	 * so entities the decoder does not know survive a round trip.
+	 */
 	constructor(
 		private value: string,
 		ownerDocument: Document | null = getInstalledDocumentLike(),
+		public sourceHtml?: string,
 	) {
 		super(MinimalNode.TEXT_NODE, ownerDocument);
 	}
@@ -178,6 +220,8 @@ export class MinimalTextNode extends MinimalNode {
 
 	override set textContent(value: string | null) {
 		this.value = value ?? '';
+		this.sourceHtml = undefined;
+		this.invalidateSerialization();
 	}
 }
 
@@ -260,9 +304,13 @@ export class MinimalElement extends MinimalNode {
 	private classListValue?: MinimalClassList;
 	private datasetValue?: DOMStringMap;
 	private styleValue?: CSSStyleDeclaration;
-	private fragmentHtml?: string;
-	private fragmentInnerHtml?: string;
-	private fragmentText?: string;
+	/** Source open tag of a parsed element; valid until an attribute changes. */
+	private openTagHtml?: string;
+	/** Source inner HTML of a parsed element; valid until anything under the element changes. */
+	private innerHtmlSource?: string;
+	/** Parsed inner HTML not yet built into child nodes. */
+	private pendingChildHtml?: string;
+	private pendingText?: string;
 
 	public readonly localName: string;
 	public readonly tagName: string;
@@ -368,8 +416,8 @@ export class MinimalElement extends MinimalNode {
 	}
 
 	setAttribute(name: string, value: unknown): void {
-		this.clearFragmentCache();
 		this.#attributeStore.set(name, String(value));
+		this.invalidateOpenTag();
 	}
 
 	toggleAttribute(name: string, force?: boolean): boolean {
@@ -385,8 +433,8 @@ export class MinimalElement extends MinimalNode {
 	}
 
 	removeAttribute(name: string): void {
-		this.clearFragmentCache();
 		this.#attributeStore.delete(name);
+		this.invalidateOpenTag();
 	}
 
 	get parentElement(): MinimalElement | null {
@@ -403,17 +451,48 @@ export class MinimalElement extends MinimalNode {
 	}
 
 	/**
-	 * @remarks `script` and `style` keep their cached raw fragment: their content is raw text, so parsing it
-	 * into entity-decoded child nodes and re-escaping it would corrupt it.
+	 * Builds child nodes from the parsed inner HTML, if not done yet.
+	 *
+	 * @remarks Reading does not invalidate the source cache, so a parsed subtree that is only queried still
+	 * serializes byte for byte as written.
 	 */
 	materializeChildren(): void {
-		if (this.fragmentInnerHtml === undefined || this.localName === 'script' || this.localName === 'style') {
+		if (this.pendingChildHtml === undefined) {
 			return;
 		}
 
-		const innerHtml = this.fragmentInnerHtml;
-		this.clearFragmentCache();
-		this.replaceChildren(...ensureHtmlParsers().parseHtmlToNodes(innerHtml, this.ownerDocument));
+		const html = this.pendingChildHtml;
+		this.pendingChildHtml = undefined;
+		this.pendingText = undefined;
+
+		for (const node of this.parseChildHtml(html)) {
+			this.attachChild(node);
+		}
+	}
+
+	override invalidateSerialization(): void {
+		this.innerHtmlSource = undefined;
+		super.invalidateSerialization();
+	}
+
+	protected override ensureChildNodes(): void {
+		this.materializeChildren();
+	}
+
+	private invalidateOpenTag(): void {
+		this.openTagHtml = undefined;
+		super.invalidateSerialization();
+	}
+
+	/**
+	 * @remarks `script` and `style` content is raw text: one text node, never entity-decoded.
+	 */
+	private parseChildHtml(html: string): Node[] {
+		if (rawTextElementNames.has(this.localName)) {
+			return html === '' ? [] : [new MinimalTextNode(html, this.ownerDocument, html) as unknown as Node];
+		}
+
+		return ensureHtmlParsers().parseHtmlToNodes(html, this.ownerDocument);
 	}
 
 	querySelector(selector: string): MinimalHTMLElement | null {
@@ -466,63 +545,61 @@ export class MinimalElement extends MinimalNode {
 		}) as unknown as DOMRectList;
 	}
 
-	private clearFragmentCache(): void {
-		this.fragmentHtml = undefined;
-		this.fragmentInnerHtml = undefined;
-	}
-
 	/**
 	 * @remarks Void elements (`input`, `img`, …) must not emit a closing tag.
 	 * `</input>` in serialized SSR HTML makes the fragment splitter close ancestor
 	 * `<div>`s too early.
 	 */
 	get outerHTML(): string {
-		if (this.fragmentHtml !== undefined) {
-			return this.fragmentHtml;
-		}
-
-		const attributes = Array.from(this.#attributeStore.entries())
-			.map(([name, value]) => serializeHtmlAttribute(name, value))
-			.join('');
+		const openTag =
+			this.openTagHtml ??
+			`<${this.localName}${Array.from(this.#attributeStore.entries())
+				.map(([name, value]) => serializeHtmlAttribute(name, value))
+				.join('')}>`;
 
 		if (voidElementNames.has(this.localName)) {
-			return `<${this.localName}${attributes}>`;
+			return openTag;
 		}
 
-		return `<${this.localName}${attributes}>${this.innerHTML}</${this.localName}>`;
+		return `${openTag}${this.innerHTML}</${this.localName}>`;
 	}
 
 	get innerHTML(): string {
-		return this.childNodes.map((child) => ensureHtmlParsers().serializeNodeHtml(child)).join('');
+		return (
+			this.innerHtmlSource ??
+			this.childNodes.map((child) => ensureHtmlParsers().serializeNodeHtml(child)).join('')
+		);
 	}
 
 	set innerHTML(html: string) {
-		this.clearFragmentCache();
-		this.fragmentText = undefined;
-		this.replaceChildren(...ensureHtmlParsers().parseHtmlToNodes(html, this.ownerDocument));
+		this.pendingChildHtml = undefined;
+		this.pendingText = undefined;
+		this.replaceChildren(...this.parseChildHtml(html));
 	}
 
 	override get textContent(): string {
-		return this.fragmentText ?? super.textContent ?? '';
+		return this.pendingText ?? super.textContent ?? '';
 	}
 
 	override set textContent(value: string | null) {
-		this.clearFragmentCache();
-		this.fragmentText = value ?? '';
+		this.pendingChildHtml = undefined;
+		this.pendingText = undefined;
 		super.textContent = value;
 	}
 
-	setSerializedFragment(
-		fragmentHtml: string,
-		fragmentText: string,
-		attributes: Record<string, string>,
-		innerHtml = '',
-	): void {
-		this.fragmentHtml = fragmentHtml;
-		this.fragmentInnerHtml = innerHtml;
-		this.fragmentText = fragmentText;
-		this.#attributeStore = new Map(Object.entries(attributes));
+	/**
+	 * Backs a parsed element with its source HTML, building child nodes only when they are read.
+	 *
+	 * @param text Entity-decoded text content of `innerHtml`.
+	 * @param attributes Entity-decoded attribute values.
+	 */
+	setSerializedFragment(openTagHtml: string, text: string, attributes: Record<string, string>, innerHtml = ''): void {
 		this.replaceChildren();
+		this.#attributeStore = new Map(Object.entries(attributes));
+		this.openTagHtml = openTagHtml;
+		this.innerHtmlSource = innerHtml;
+		this.pendingChildHtml = innerHtml;
+		this.pendingText = text;
 	}
 }
 

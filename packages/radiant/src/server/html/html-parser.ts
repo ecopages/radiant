@@ -24,6 +24,9 @@ export type ParseHtmlTagTokenOptions = {
 	includeInnerHtml?: boolean;
 };
 
+/** Elements whose content is raw text: never entity-decoded or escaped. */
+export const rawTextElementNames = new Set(['script', 'style']);
+
 export const voidElementNames = new Set([
 	'area',
 	'base',
