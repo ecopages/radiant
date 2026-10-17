@@ -4,7 +4,8 @@
 	"commit": false,
 	"fixed": [
 		["@ecopages/jsx", "@ecopages/signals", "@ecopages/radiant"],
-		["@ecopages/storybook-radiant-vite", "@ecopages/vite-plugin-radiant"]
+		["@ecopages/storybook-radiant-vite", "@ecopages/vite-plugin-radiant"],
+		["@ecopages/radiant-ui", "@ecopages/radiant-themes"]
 	],
 	"linked": [],
 	"access": "public",
