@@ -9,37 +9,47 @@ export type RuiTreegridRow = {
 	expanded?: boolean;
 };
 
-const TreegridRows = ({ rows }: { rows: RuiTreegridRow[] }) => (
-	<>
-		{rows.map((row) => (
-			<>
-				<div
-					class="rui-treegrid__row"
-					role="row"
-					data-row-id={row.id}
-					aria-expanded={row.children?.length ? (row.expanded ?? false) : undefined}
-				>
-					{row.cells.map((cell, index) => (
-						<div
-							class="rui-treegrid__cell"
-							role="gridcell"
-							tabindex={-1}
-							data-col={index}
-							aria-selected="false"
-						>
-							{cell}
-						</div>
-					))}
-				</div>
-				{row.children?.length ? (
-					<div class="rui-treegrid__group" role="rowgroup" hidden={!(row.expanded ?? false)}>
-						<TreegridRows rows={row.children} />
+const TreegridRows = ({ rows, depth = 0 }: { rows: RuiTreegridRow[]; depth?: number }) =>
+	rows.flatMap((row): JsxRenderable[] => {
+		const nodes: JsxRenderable[] = [
+			<div
+				key={row.id}
+				class="rui-treegrid__row"
+				role="row"
+				data-row-id={row.id}
+				data-depth={depth}
+				style={{ '--rui-treegrid-depth': `${depth}` }}
+				aria-expanded={row.children?.length ? (row.expanded ?? false) : undefined}
+			>
+				{row.cells.map((cell, index) => (
+					<div
+						class="rui-treegrid__cell"
+						role="gridcell"
+						tabindex={-1}
+						data-col={index}
+						aria-selected="false"
+					>
+						{cell}
 					</div>
-				) : null}
-			</>
-		))}
-	</>
-);
+				))}
+			</div>,
+		];
+
+		if (row.children?.length) {
+			nodes.push(
+				<div
+					key={`${row.id}-group`}
+					class="rui-treegrid__group"
+					role="rowgroup"
+					hidden={!(row.expanded ?? false)}
+				>
+					<TreegridRows rows={row.children} depth={depth + 1} />
+				</div>,
+			);
+		}
+
+		return nodes;
+	});
 
 /**
  * Treegrid view. Pass `columns` and `rows` for a data-driven grid, or `children`

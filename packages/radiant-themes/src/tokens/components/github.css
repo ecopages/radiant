@@ -114,4 +114,28 @@
 	:root .rui-pagination__link {
 		@apply rounded-pill;
 	}
+
+	/**
+	 * @remarks Primer's file list uses one bordered surface with horizontal row separators and no vertical cell rules.
+	 */
+	:root .rui-treegrid {
+		@apply rounded-container border border-border bg-surface shadow-none;
+		--rui-treegrid-indent: 0.875rem;
+	}
+
+	:root .rui-treegrid__cell {
+		@apply border-0 bg-transparent px-control-x py-2 text-on-surface;
+	}
+
+	:root .rui-treegrid__row--header .rui-treegrid__cell {
+		@apply border-b border-border bg-surface-container-low font-semibold;
+	}
+
+	:root .rui-treegrid__row:not(.rui-treegrid__row--header):hover .rui-treegrid__cell:not([aria-selected='true']) {
+		@apply bg-surface-container-low;
+	}
+
+	:root .rui-treegrid__cell[aria-selected='true'] {
+		@apply bg-info-container text-on-info-container;
+	}
 }

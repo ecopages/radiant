@@ -99,6 +99,28 @@ test('High Contrast gives switch thumbs square corners', () => {
 	assert.equal(thumb.get('border-radius'), 'var(--radius-none)');
 });
 
+test('file-browser themes compile their treegrid treatments', () => {
+	const expectedSelectors = {
+		vscode: [':root .rui-treegrid', ":root .rui-treegrid__cell[aria-selected='true']"],
+		github: [':root .rui-treegrid', ':root .rui-treegrid__row:not(.rui-treegrid__row--header):hover'],
+		macos: [':root .rui-treegrid', ":root .rui-treegrid__cell[aria-selected='true']"],
+		'macos-classic': [':root .rui-treegrid', ":root .rui-treegrid__row[aria-expanded='true']"],
+		windows95: [':root .rui-treegrid', ":root .rui-treegrid__row[aria-expanded='true']"],
+	};
+
+	for (const [name, selectors] of Object.entries(expectedSelectors)) {
+		const css = readFileSync(path.join(packageRoot, `dist/compiled/themes/${name}.css`), 'utf8');
+		for (const selector of selectors) {
+			assert.match(css, new RegExp(selector.replaceAll(/[.*+?^${}()|[\]\\]/g, '\\$&')), `${name} ${selector}`);
+		}
+	}
+
+	const macosClassic = readFileSync(path.join(packageRoot, 'dist/compiled/themes/macos-classic.css'), 'utf8');
+	assert.match(macosClassic, /border-inline-start: 6px solid currentColor/);
+	const windows95 = readFileSync(path.join(packageRoot, 'dist/compiled/themes/windows95.css'), 'utf8');
+	assert.match(windows95, /content: ['"]-['"]/);
+});
+
 test('classic themes compile their scrollbar chrome', () => {
 	for (const suffix of ['', '/compact']) {
 		const windows95 = readFileSync(path.join(packageRoot, `dist/compiled/themes/windows95${suffix}.css`), 'utf8');

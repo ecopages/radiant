@@ -6,8 +6,10 @@ rui-treegrid {
 
 @layer components {
 	.rui-treegrid {
-		@apply w-full overflow-hidden rounded-container border border-border text-sm shadow-sm;
+		@apply w-full overflow-hidden rounded-container border border-border bg-background text-sm shadow-sm;
+		--rui-treegrid-indent: 1rem;
 		display: table;
+		table-layout: fixed;
 		border-collapse: separate;
 		border-spacing: 0;
 	}
@@ -20,25 +22,23 @@ rui-treegrid {
 		display: table-row-group;
 	}
 
-	.rui-treegrid__row:not(.rui-treegrid__row--header):hover .rui-treegrid__cell {
+	.rui-treegrid__row:not(.rui-treegrid__row--header):hover .rui-treegrid__cell:not([aria-selected='true']) {
 		@apply bg-surface/60;
 	}
 
 	.rui-treegrid__cell {
 		display: table-cell;
-		@apply border-b border-r border-border bg-background px-control-x py-2.5 align-middle text-on-background;
-	}
-
-	.rui-treegrid__row .rui-treegrid__cell:last-child {
-		@apply border-r-0;
-	}
-
-	.rui-treegrid__row:last-child .rui-treegrid__cell {
-		@apply border-b-0;
+		@apply bg-background px-control-x py-2.5 align-middle text-on-background;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		transition:
+			background-color var(--duration-fast) var(--ease-standard),
+			color var(--duration-fast) var(--ease-standard);
 	}
 
 	.rui-treegrid__cell--header {
-		@apply bg-surface font-semibold text-on-background;
+		@apply border-b border-border bg-surface font-semibold text-on-background;
 	}
 
 	.rui-treegrid__cell[aria-selected='true'] {
@@ -50,28 +50,34 @@ rui-treegrid {
 	}
 
 	.rui-treegrid__group .rui-treegrid__cell:first-child {
-		@apply pl-8;
+		padding-inline-start: calc(var(--space-control-x) + var(--rui-treegrid-indent));
 	}
 
 	.rui-treegrid__group .rui-treegrid__group .rui-treegrid__cell:first-child {
-		@apply pl-12;
+		padding-inline-start: calc(var(--space-control-x) + (2 * var(--rui-treegrid-indent)));
+	}
+
+	.rui-treegrid__row[data-depth] .rui-treegrid__cell:first-child {
+		padding-inline-start: calc(
+			var(--space-control-x) + (var(--rui-treegrid-depth, 0) * var(--rui-treegrid-indent))
+		);
 	}
 
 	.rui-treegrid__row[aria-expanded='false'] .rui-treegrid__cell:first-child::before,
 	.rui-treegrid__row[aria-expanded='true'] .rui-treegrid__cell:first-child::before {
 		content: '';
 		display: inline-block;
-		width: 0;
-		height: 0;
-		margin-right: 0.5rem;
-		border-top: 4px solid transparent;
-		border-bottom: 4px solid transparent;
-		border-left: 6px solid currentColor;
-		vertical-align: middle;
-		transition: transform 150ms ease;
+		width: 0.4rem;
+		height: 0.4rem;
+		margin-inline-end: 0.625rem;
+		border-inline-end: 1.5px solid currentColor;
+		border-block-end: 1.5px solid currentColor;
+		vertical-align: 0.1rem;
+		transform: rotate(-45deg);
+		transition: transform var(--duration-fast) var(--ease-standard);
 	}
 
 	.rui-treegrid__row[aria-expanded='true'] .rui-treegrid__cell:first-child::before {
-		transform: rotate(90deg);
+		transform: rotate(45deg);
 	}
 }

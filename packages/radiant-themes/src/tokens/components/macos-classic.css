@@ -488,6 +488,55 @@
 		background-blend-mode: soft-light;
 	}
 
+	/**
+	 * @remarks Classic list views use a sunken white well, a raised Platinum header, and a blue full-row selection.
+	 * The disclosure glyph stays a solid triangle, matching the original Finder tree affordance.
+	 */
+	:root .rui-treegrid {
+		@apply rounded-none border-0;
+		background-color: var(--macos-classic-field);
+		color: var(--macos-classic-field-text);
+		box-shadow: var(--macos-classic-well);
+		--rui-treegrid-indent: 0.875rem;
+	}
+
+	:root .rui-treegrid__cell {
+		@apply border-0 bg-transparent px-2 py-1.5;
+		color: var(--macos-classic-field-text);
+	}
+
+	:root .rui-treegrid__row--header .rui-treegrid__cell {
+		@apply font-normal;
+		background-color: var(--macos-classic-face);
+		color: var(--macos-classic-text);
+		box-shadow: var(--macos-classic-raised-thin);
+	}
+
+	:root .rui-treegrid__row:not(.rui-treegrid__row--header):hover .rui-treegrid__cell:not([aria-selected='true']) {
+		background-color: var(--macos-classic-container);
+	}
+
+	:root .rui-treegrid__cell[aria-selected='true'] {
+		background-color: var(--macos-classic-selection);
+		color: var(--macos-classic-selection-text);
+	}
+
+	:root .rui-treegrid__row[aria-expanded='false'] .rui-treegrid__cell:first-child::before,
+	:root .rui-treegrid__row[aria-expanded='true'] .rui-treegrid__cell:first-child::before {
+		width: 0;
+		height: 0;
+		margin-inline-end: 0.5rem;
+		border: 0;
+		border-block: 4px solid transparent;
+		border-inline-start: 6px solid currentColor;
+		transform: none;
+		transition: none;
+	}
+
+	:root .rui-treegrid__row[aria-expanded='true'] .rui-treegrid__cell:first-child::before {
+		transform: rotate(90deg);
+	}
+
 	:root .rui-alert,
 	:root .rui-toast__content {
 		@apply rounded-none text-on-surface;

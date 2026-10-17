@@ -10,6 +10,8 @@ Replace the `0.1.x` palette modules with a composable Radiant theme catalog, wit
 - Make composite fields draw one frame in every theme, including their classic-theme field treatments.
 - Align Cloudflare and GitHub semantic palettes with their product systems, including consistent Cloudflare orange and Primer action roles.
 - Add compact variants, component-specific styling, visible focus states, and the remaining theme control polish.
+- Refine treegrid surfaces for VS Code, GitHub, macOS, Mac OS Classic, and Windows 95, including per-level indentation and native disclosure affordances.
+- Draw treegrids as trees in every theme: no divider under each row, only the header rule, so rows read by indentation and selection instead of as spreadsheet lines.
 
 Breaking for `@ecopages/radiant-ui` consumers of `0.1.x`: the composable catalog replaces these exports, which `0.1.0` published.
 
