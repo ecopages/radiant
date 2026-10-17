@@ -85,6 +85,8 @@ Authors declare `control.type` and `options`. The shell picks widgets via heuris
 
 Do not branch on option counts in the shell or MDX.
 
+Segmented controls render as an inset rail: the pressed option derives its corner radius from `--radius-control` minus the rail padding, while unpressed options stay square so the nested shape remains coherent across themes.
+
 ### 3. Add the MDX page
 
 Create `src/content/components/<slug>.mdx` with frontmatter (`title`, `description`, `category`).
