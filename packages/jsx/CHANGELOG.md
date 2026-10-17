@@ -1,5 +1,31 @@
 # @ecopages/jsx
 
+## 0.4.0
+
+### Minor Changes
+
+- [#320](https://github.com/ecopages/radiant/pull/320) [`dad8379`](https://github.com/ecopages/radiant/commit/dad8379fae51087328da8946e6a0c53bdb55f724) Thanks [@andeeplus](https://github.com/andeeplus)! - Server-rendered Radiant hosts now receive their JSX children as light-DOM nodes rather than an HTML string that the minimal DOM parses back. Text and attribute values are never escaped and re-parsed, and `<style>` children keep their CSS (the string path escaped `>` and `&` inside it).
+
+    New in jsx:
+
+    - **`renderServerLightDom(value, ownerDocument)`** is exported from `@ecopages/jsx/server`.
+    - **Text-only element helpers** for `script`, `style`, `textarea` and `title` now live in a DOM-free module that the server and the client share.
+
+### Patch Changes
+
+- [#321](https://github.com/ecopages/radiant/pull/321) [`c9cc095`](https://github.com/ecopages/radiant/commit/c9cc095366e09d0251684a290d049f68f4c75369) Thanks [@andeeplus](https://github.com/andeeplus)! - Fix hydration of reactive bindings inside a custom element's JSX children when the render root is a fragment. A custom-element child of a fragment root was hydrated like an ordinary element, so the bindings in its children kept their server values. It is now reconciled the same way as under a non-fragment root.
+
+- [#320](https://github.com/ecopages/radiant/pull/320) [`4bf5a10`](https://github.com/ecopages/radiant/commit/4bf5a10a96e2c72ffb21714b5442516eb86baf7d) Thanks [@andeeplus](https://github.com/andeeplus)! - Context consumers passed as JSX children of a provider host now resolve that provider during SSR, where they used to render their fallback.
+
+    - **jsx:** `withServerCustomElementRenderHook` takes an `ownsChildren` option. With it, the hook context's `applyChildren()` lets the framework choose when the children serialize; `context.children` holds the raw JSX.
+    - **Radiant:** the bridge uses this to apply a host's children inside its context providers.
+
+    Hooks registered without the option behave as before.
+
+- [#320](https://github.com/ecopages/radiant/pull/320) [`6ff24ce`](https://github.com/ecopages/radiant/commit/6ff24cee309429cf2332d8be6e95c9a73ea194d1) Thanks [@andeeplus](https://github.com/andeeplus)! - Fix hydrate-mode SSR of JSX children passed to a nested custom element. The children no longer take hydration marker indexes from the enclosing render, which shifted every later sibling marker so hydration left stale markers or fell back to a full client render, and made Radiant hosts on a full DOM drop their slotted content.
+- Updated dependencies []:
+    - @ecopages/signals@0.4.0
+
 ## 0.3.0
 
 First stable. Server rendering is Node-only (`AsyncLocalStorage` on `@ecopages/jsx/server`), and host contracts type native plus custom-element JSX without shipping the server entry to the client.
