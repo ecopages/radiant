@@ -4,6 +4,11 @@ rui-date-input {
 	@apply inline-flex min-w-0 flex-1;
 }
 
+rui-date-input:not([data-date-field-input]):not([data-range-start]):not([data-range-end]) {
+	@apply items-center rounded-control border border-border bg-background;
+	min-height: var(--size-control-md);
+}
+
 @layer components {
 	/**
 	 * @remarks The standalone surface lives in the components layer, with the exclusions in `:where()`, so themes and
