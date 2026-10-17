@@ -113,10 +113,10 @@ async function measureContrast(page, css, mode, pairs) {
 }
 
 /**
- * Contrast of a control's strongest boundary edge against its own background.
+ * Contrast of a control's visible border and directional shadow edges against its own background.
  *
- * @remarks Classic themes draw bevels with inset shadows instead of borders, so every border side and every shadow
- * color counts as a boundary edge.
+ * @remarks Classic themes draw bevels with inset shadows instead of borders, so shadow offsets identify the boundary
+ * sides they reinforce.
  */
 async function measureBorderContrast(page, css, mode) {
 	const inputCss = await readFile(inputCssPath, 'utf8');
@@ -143,19 +143,84 @@ async function measureBorderContrast(page, css, mode) {
 				.reduce((sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722][index], 0);
 		};
 		const background = luminance(styles.backgroundColor, 'white');
-		const edges = [
-			styles.borderTopColor,
-			styles.borderRightColor,
-			styles.borderBottomColor,
-			styles.borderLeftColor,
-			...(styles.boxShadow.match(/(?:rgba?|oklch|oklab|color)\([^)]*\)/g) ?? []),
-		];
-		const ratios = edges.map((edge) => {
-			const border = luminance(edge, styles.backgroundColor);
+		const hasVisibleColor = (color) => {
+			context.clearRect(0, 0, 1, 1);
+			context.fillStyle = color;
+			context.fillRect(0, 0, 1, 1);
+			return context.getImageData(0, 0, 1, 1).data[3] > 0;
+		};
+		const visibleBorders = [
+			[styles.borderTopColor, styles.borderTopStyle, styles.borderTopWidth],
+			[styles.borderRightColor, styles.borderRightStyle, styles.borderRightWidth],
+			[styles.borderBottomColor, styles.borderBottomStyle, styles.borderBottomWidth],
+			[styles.borderLeftColor, styles.borderLeftStyle, styles.borderLeftWidth],
+		].filter(([color, style, width]) => style !== 'none' && Number.parseFloat(width) > 0 && hasVisibleColor(color));
+		const shadowLayers = [];
+		let parenthesisDepth = 0;
+		let layerStart = 0;
+		for (let index = 0; index < styles.boxShadow.length; index += 1) {
+			const character = styles.boxShadow[index];
+			if (character === '(') parenthesisDepth += 1;
+			if (character === ')') parenthesisDepth -= 1;
+			if (character === ',' && parenthesisDepth === 0) {
+				shadowLayers.push(styles.boxShadow.slice(layerStart, index).trim());
+				layerStart = index + 1;
+			}
+		}
+		if (layerStart < styles.boxShadow.length) shadowLayers.push(styles.boxShadow.slice(layerStart).trim());
+		const visibleShadows = shadowLayers
+			.map((shadow) => {
+				const offsets = shadow.match(/(-?(?:\d+\.?\d*|\.\d+))px\s+(-?(?:\d+\.?\d*|\.\d+))px/);
+				const color = shadow.match(/(?:rgba?|oklch|oklab|color)\([^)]*\)/)?.[0];
+				if (!offsets || !color || !hasVisibleColor(color)) return null;
+				return {
+					inset: /\binset\b/.test(shadow),
+					x: Number.parseFloat(offsets[1]),
+					y: Number.parseFloat(offsets[2]),
+					color,
+				};
+			})
+			.filter(Boolean);
+		const borderRatios = visibleBorders.map(([color]) => {
+			const border = luminance(color, styles.backgroundColor);
 			return (Math.max(background, border) + 0.05) / (Math.min(background, border) + 0.05);
 		});
-		return Number(Math.max(...ratios).toFixed(2));
+		const contrastingShadowSides = new Set();
+		const shadowRatios = visibleShadows.map((shadow) => {
+			const border = luminance(shadow.color, styles.backgroundColor);
+			const ratio = (Math.max(background, border) + 0.05) / (Math.min(background, border) + 0.05);
+			if (ratio >= 3) {
+				if (shadow.x === 0 && shadow.y === 0) {
+					for (const side of ['top', 'right', 'bottom', 'left']) contrastingShadowSides.add(side);
+				} else {
+					if (shadow.x !== 0) {
+						contrastingShadowSides.add(
+							shadow.inset ? (shadow.x > 0 ? 'left' : 'right') : shadow.x > 0 ? 'right' : 'left',
+						);
+					}
+					if (shadow.y !== 0) {
+						contrastingShadowSides.add(
+							shadow.inset ? (shadow.y > 0 ? 'top' : 'bottom') : shadow.y > 0 ? 'bottom' : 'top',
+						);
+					}
+				}
+			}
+			return ratio;
+		});
+		return {
+			visibleBorderSides: visibleBorders.length,
+			borderRatios: borderRatios.map((ratio) => Number(ratio.toFixed(2))),
+			contrastingShadowSides: [...contrastingShadowSides],
+			ratio: Number(Math.max(0, ...borderRatios, ...shadowRatios).toFixed(2)),
+		};
 	}, mode);
+}
+
+function hasVisibleContrastingBoundary(result) {
+	return (
+		(result.visibleBorderSides === 4 && result.borderRatios.every((ratio) => ratio >= 3)) ||
+		result.contrastingShadowSides.length >= 2
+	);
 }
 
 async function measureRenderedTextContrast(page, { css, mode, markup, selectors }) {
@@ -255,7 +320,10 @@ test('Radiant Default text and semantic pairs meet WCAG AA in light and dark mod
 			const focus = await measureContrast(page, css, mode, [['focus-ring', 'background']]);
 			assert.ok(focus[0].ratio >= 3, `${mode} focus ring has ${focus[0].ratio}:1 contrast`);
 			const border = await measureBorderContrast(page, css, mode);
-			assert.ok(border >= 3, `${mode} control border has ${border}:1 contrast`);
+			assert.ok(
+				hasVisibleContrastingBoundary(border),
+				`${mode} control has a visible boundary on all border sides or at least two contrasting shadow edges (${border.ratio}:1 strongest)`,
+			);
 		}
 	} finally {
 		await browser.close();
@@ -306,7 +374,10 @@ test('optional themes retain AA text and visible focus in both modes', async () 
 				const focus = await measureContrast(page, css, mode, [['focus-ring', 'background']]);
 				assert.ok(focus[0].ratio >= 3, `${theme} ${mode} focus ring has ${focus[0].ratio}:1 contrast`);
 				const border = await measureBorderContrast(page, css, mode);
-				assert.ok(border >= 3, `${theme} ${mode} control border has ${border}:1 contrast`);
+				assert.ok(
+					hasVisibleContrastingBoundary(border),
+					`${theme} ${mode} control has a visible boundary on all border sides or at least two contrasting shadow edges (${border.ratio}:1 strongest)`,
+				);
 			}
 		}
 	} finally {
@@ -556,11 +627,14 @@ test('increased contrast strengthens semantic borders across all themes', async 
 			for (const mode of ['light', 'dark']) {
 				const standard = await measureBorderContrast(standardContrast, css, mode);
 				const increased = await measureBorderContrast(increasedContrast, css, mode);
-				assert.ok(increased >= 3, `${theme} ${mode} increased-contrast border has ${increased}:1 contrast`);
+				assert.ok(
+					hasVisibleContrastingBoundary(increased),
+					`${theme} ${mode} increased-contrast control has a visible boundary on all border sides or at least two contrasting shadow edges (${increased.ratio}:1 strongest)`,
+				);
 				if (theme !== 'high-contrast') {
 					assert.ok(
-						increased > standard || (standard >= 7 && increased >= standard),
-						`${theme} ${mode} increased-contrast border improves on ${standard}:1 normal contrast`,
+						increased.ratio > standard.ratio || (standard.ratio >= 7 && increased.ratio >= standard.ratio),
+						`${theme} ${mode} increased-contrast border improves on ${standard.ratio}:1 normal contrast`,
 					);
 				}
 			}

@@ -1,8 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import {
-	DOCS_APPEARANCE_STORAGE_KEY,
-	DOCS_DEFAULT_THEME_TUNING,
-} from '@/lib/docs-theme-preview';
+import { DOCS_APPEARANCE_STORAGE_KEY } from '@/lib/docs-theme-preview';
 import { DefaultThemeTunerElement } from './default-theme-tuner.script';
 
 const waitForUpdate = () => new Promise((resolve) => setTimeout(resolve, 0));

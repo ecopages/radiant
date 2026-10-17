@@ -10,10 +10,9 @@ import {
 	DOCS_DEFAULT_THEME_TUNING,
 	DOCS_DEFAULT_TUNING_SCHEMA,
 	parseDocsDefaultThemeTuning,
-	readDocsDefaultThemeTuning,
-	writeDocsDefaultThemeTuning,
 	type DocsDefaultThemeTuning,
-} from '@/lib/docs-theme-preview';
+} from '@/lib/docs-default-theme-tuning';
+import { readDocsDefaultThemeTuning, writeDocsDefaultThemeTuning } from '@/lib/docs-theme-preview';
 
 const tuningControls = (Object.keys(DOCS_DEFAULT_TUNING_SCHEMA) as (keyof DocsDefaultThemeTuning)[]).map((key) => ({
 	key,
