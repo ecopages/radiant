@@ -473,7 +473,7 @@ export const DOCS_DEFAULT_TUNING_SCHEMA: Record<DocsDefaultThemeTuningKey, DocsD
 		max: 360,
 		step: 1,
 		unit: '°',
-		defaultValue: 195,
+		defaultValue: 300,
 		cssVariable: '--rui-secondary',
 		cssValueTemplate: 'oklch(63.5% 0.095 {{value}})',
 	},

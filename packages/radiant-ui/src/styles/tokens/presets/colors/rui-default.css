@@ -19,12 +19,12 @@
 	--primary-light: var(--color-carbon-blue-500);
 	--primary-dark: var(--color-carbon-blue-800);
 
-	--secondary: var(--color-carbon-teal-700);
+	--secondary: var(--color-carbon-violet-700);
 	--on-secondary: var(--color-white);
 	--secondary-container: var(--color-rui-default-200);
 	--on-secondary-container: var(--color-rui-default-900);
-	--secondary-light: var(--color-carbon-teal-500);
-	--secondary-dark: var(--color-carbon-teal-800);
+	--secondary-light: var(--color-carbon-violet-500);
+	--secondary-dark: var(--color-carbon-violet-800);
 
 	--tertiary: var(--color-rui-default-700);
 	--on-tertiary: var(--color-white);
@@ -38,12 +38,12 @@
 	--error-light: var(--color-carbon-red-500);
 	--error-dark: var(--color-carbon-red-800);
 
-	--success: var(--color-carbon-teal-700);
+	--success: var(--color-carbon-green-700);
 	--on-success: var(--color-white);
-	--success-container: var(--color-rui-default-200);
-	--on-success-container: var(--color-rui-default-900);
-	--success-light: var(--color-carbon-teal-500);
-	--success-dark: var(--color-carbon-teal-800);
+	--success-container: var(--color-carbon-green-100);
+	--on-success-container: var(--color-carbon-green-800);
+	--success-light: var(--color-carbon-green-500);
+	--success-dark: var(--color-carbon-green-800);
 
 	--info: var(--color-carbon-blue-600);
 	--on-info: var(--color-white);
@@ -86,7 +86,7 @@
 	--overlay: oklch(0% 0 0 / 0.5);
 
 	--background-code: var(--color-rui-default-900);
-	--on-background-code: var(--color-carbon-teal-400);
+	--on-background-code: var(--color-carbon-violet-400);
 }
 
 :where(.dark) {
@@ -97,7 +97,7 @@
 	--primary-light: var(--color-carbon-blue-200);
 	--primary-dark: var(--color-carbon-blue-700);
 
-	--secondary: var(--color-carbon-teal-300);
+	--secondary: var(--color-carbon-violet-300);
 	--on-secondary: var(--color-rui-default-975);
 	--secondary-container: var(--color-rui-default-800);
 	--on-secondary-container: var(--color-rui-default-100);
@@ -112,10 +112,10 @@
 	--error-container: var(--color-carbon-red-800);
 	--on-error-container: var(--color-carbon-red-100);
 
-	--success: var(--color-carbon-teal-300);
+	--success: var(--color-carbon-green-300);
 	--on-success: var(--color-rui-default-975);
-	--success-container: var(--color-rui-default-800);
-	--on-success-container: var(--color-rui-default-100);
+	--success-container: var(--color-carbon-green-900);
+	--on-success-container: var(--color-carbon-green-100);
 
 	--info: var(--color-carbon-blue-300);
 	--on-info: var(--color-rui-default-975);
@@ -156,5 +156,5 @@
 	--overlay: oklch(0% 0 0 / 0.7);
 
 	--background-code: var(--color-rui-default-975);
-	--on-background-code: var(--color-carbon-teal-400);
+	--on-background-code: var(--color-carbon-violet-400);
 }

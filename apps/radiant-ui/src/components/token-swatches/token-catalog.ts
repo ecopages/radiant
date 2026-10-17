@@ -140,8 +140,9 @@ export const palettePacks: readonly PalettePack[] = [
 		scales: [
 			colorScale('rui-default', STEPS_50_975),
 			colorScale('carbon-blue', STEPS_50_975),
-			colorScale('carbon-teal', STEPS_50_975),
+			colorScale('carbon-violet', STEPS_50_975),
 			colorScale('carbon-red', STEPS_50_975),
+			colorScale('carbon-green', STEPS_50_975),
 			colorScale('carbon-amber', STEPS_50_975),
 		],
 	},
