@@ -43,6 +43,14 @@ export const docsThemeColorOptions = [
 export const docsThemeTokenNames = ['colors'] as const;
 
 export type DocsThemeColor = (typeof docsThemeColorOptions)[number]['value'];
+
+/** Import specifier for Radiant Default, which is also the text docs samples show before a theme is chosen. */
+export const DOCS_DEFAULT_THEME_IMPORT = '@ecopages/radiant-ui/themes/default';
+
+/** The package import a visitor would write to use `theme`: Radiant Default, or a theme from Radiant Themes. */
+export function docsThemeImportSpecifier(theme: DocsThemeColor): string {
+	return theme === 'rui-default' ? DOCS_DEFAULT_THEME_IMPORT : `@ecopages/radiant-themes/${theme}`;
+}
 export type DocsThemeTokenName = (typeof docsThemeTokenNames)[number];
 
 export type DocsThemeSelection = {
