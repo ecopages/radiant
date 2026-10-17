@@ -27,7 +27,7 @@ Work one component at a time. Copy a neighbor of the same **tier** (Native / Com
 3. **Lay out files** — see [references/files.md](references/files.md).
 4. **Stamp, then query** — the view (or CE `render()` for Derived Tree) places `data-ref` / `data-*` / roles. The script queries those nodes. Never `querySelector('.rui-…')`. Prefer existing shared controllers (`MenuTreeController`, `ListboxHostController`, `ListboxPopoverBehavior`, `PopoverController`) over a one-off keyboard/popover stack.
 5. **Connect** — post-sync work in `onConnected()`, not `connectedCallback` + `queueMicrotask(sync)`. Tear down in `disconnectedCallback` what `onConnected` rebuilds.
-6. **Style** — one `<name>.css`; `@reference` the theme entry; semantic tokens only. Public `--rui-*` knobs: defaults on the host (or portaled surface root), never on a BEM grain ([`DESIGN.md`](../../../packages/radiant-ui/DESIGN.md)). Do not `import './<name>.css'` from the view. Storybook: `parameters.radiant.cssImports`.
+6. **Style** — one `<name>.css`; `@reference` the theme entry; semantic tokens only. Public `--rui-*` knobs: defaults on the host (or portaled surface root), never on a BEM grain ([`DESIGN.md`](../../../packages/radiant-ui/DESIGN.md)). Do not `import './<name>.css'` from the view. Storybook: `parameters.radiant.cssImports`. Themes in `@ecopages/radiant-themes` restyle `.rui-*` classes directly, so a change to a class, border or padding needs a per-theme check: [references/themes.md](references/themes.md).
 7. **Stories + tests** — `*.stories.tsx` with `parameters.radiant.element`. Tests cover behavior, not BEM as a query contract. Visual asserts on classes are fine.
 8. **Public surface** — `index.ts` + package export. Events `rui-*`. Collection item `id` is a semantic key, not a DOM `id`.
 9. **Docs** — follow radiant-ui-docs (TSDoc contract, MDX, Canvas for extra capabilities).
@@ -65,6 +65,7 @@ Update the README beside the code when behavior or ownership changes.
 - [ ] View stamps every required target; optional chrome is omitable.
 - [ ] `onConnected` / popup `hidden` / prop peel rules hold.
 - [ ] CSS is atomic and token-only for themed values.
+- [ ] Looked at the component in every `@ecopages/radiant-themes` theme, light and dark, if its CSS changed.
 - [ ] Stories, tests, `index.ts`, package export.
 - [ ] radiant-ui-docs applied if the public contract changed.
 - [ ] Changeset if the published package changed.
