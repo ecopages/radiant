@@ -10,8 +10,11 @@ export {
 
 export { getActiveSsrScopeValue, withActiveSsrScopeValue } from './ssr/ssr-render-scope.ts';
 
+export { renderServerLightDom } from './ssr/server-light-dom.ts';
+
 export {
 	type ServerCustomElementRenderHook,
 	type ServerCustomElementRenderHookContext,
+	type ServerCustomElementRenderHookOptions,
 	type ServerRenderableCustomElement,
 } from './types/index.ts';

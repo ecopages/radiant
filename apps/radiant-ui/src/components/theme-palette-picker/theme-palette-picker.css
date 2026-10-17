@@ -48,6 +48,11 @@ radiant-theme-palette-picker {
 	padding: var(--space-3);
 }
 
+:root [data-select-listbox].theme-picker__menu {
+	background-color: var(--surface);
+	color: var(--on-surface);
+}
+
 .theme-picker__menu-heading {
 	margin: 0 0 var(--space-2);
 	padding-inline: var(--space-1);
@@ -82,35 +87,67 @@ radiant-theme-palette-picker {
 	background: var(--theme-picker-swatch, var(--primary));
 }
 
+/* Keep each preview dot aligned with that theme's semantic primary role. */
 .theme-picker__swatch[data-theme-swatch='rui-default'] {
-	--theme-picker-swatch: oklch(52% 0.19 264);
+	--theme-picker-swatch: oklch(from var(--rui-primary, oklch(52% 0.19 264)) 45% calc(c * 0.9) h);
 }
 .theme-picker__swatch[data-theme-swatch='github'] {
-	--theme-picker-swatch: #0969da;
+	--theme-picker-swatch: #1a7f37;
 }
 .theme-picker__swatch[data-theme-swatch='cloudflare'] {
-	--theme-picker-swatch: #075fc7;
+	--theme-picker-swatch: #cc3a00;
 }
 .theme-picker__swatch[data-theme-swatch='vscode'] {
-	--theme-picker-swatch: #007acc;
+	--theme-picker-swatch: #006bb3;
 }
 .theme-picker__swatch[data-theme-swatch='vercel'] {
 	--theme-picker-swatch: #000000;
 }
 .theme-picker__swatch[data-theme-swatch='material'] {
-	--theme-picker-swatch: #6750a4;
+	--theme-picker-swatch: oklch(46% 0.17 293);
 }
 .theme-picker__swatch[data-theme-swatch='high-contrast'] {
-	--theme-picker-swatch: #0000a8;
+	--theme-picker-swatch: #0033cc;
 }
 .theme-picker__swatch[data-theme-swatch='windows95'] {
 	--theme-picker-swatch: #000080;
 }
 .theme-picker__swatch[data-theme-swatch='macos-classic'] {
-	--theme-picker-swatch: #244a9b;
+	--theme-picker-swatch: #333399;
 }
 .theme-picker__swatch[data-theme-swatch='macos'] {
-	--theme-picker-swatch: #007aff;
+	--theme-picker-swatch: #005fcc;
+}
+
+:root.dark .theme-picker__swatch[data-theme-swatch='rui-default'] {
+	--theme-picker-swatch: oklch(from var(--rui-primary, oklch(52% 0.19 264)) 76% calc(c * 0.63) h);
+}
+.dark .theme-picker__swatch[data-theme-swatch='github'] {
+	--theme-picker-swatch: #238636;
+}
+.dark .theme-picker__swatch[data-theme-swatch='cloudflare'] {
+	--theme-picker-swatch: #cc3a00;
+}
+.dark .theme-picker__swatch[data-theme-swatch='vscode'] {
+	--theme-picker-swatch: #0078d4;
+}
+.dark .theme-picker__swatch[data-theme-swatch='vercel'] {
+	--theme-picker-swatch: #ffffff;
+}
+.dark .theme-picker__swatch[data-theme-swatch='material'] {
+	--theme-picker-swatch: oklch(82% 0.11 293);
+}
+.dark .theme-picker__swatch[data-theme-swatch='high-contrast'] {
+	--theme-picker-swatch: #ffff00;
+}
+.dark .theme-picker__swatch[data-theme-swatch='windows95'] {
+	--theme-picker-swatch: #7aa7ff;
+}
+.dark .theme-picker__swatch[data-theme-swatch='macos-classic'] {
+	--theme-picker-swatch: #a9a9ff;
+}
+.dark .theme-picker__swatch[data-theme-swatch='macos'] {
+	--theme-picker-swatch: #55a6ff;
 }
 
 .theme-picker__option-copy {

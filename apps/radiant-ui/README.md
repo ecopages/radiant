@@ -85,6 +85,8 @@ Authors declare `control.type` and `options`. The shell picks widgets via heuris
 
 Do not branch on option counts in the shell or MDX.
 
+Segmented controls render as an inset rail: the pressed option derives its corner radius from `--radius-control` minus the rail padding, while unpressed options stay square so the nested shape remains coherent across themes.
+
 ### 3. Add the MDX page
 
 Create `src/content/components/<slug>.mdx` with frontmatter (`title`, `description`, `category`).
@@ -124,11 +126,12 @@ Reuse fixtures such as option lists from `src/content/stories/demo-data.ts` when
 
 ### 6. Tests
 
-- `test/story-previews.test.ts` — complex `render` output smoke tests
-- `test/canvas.test.ts` — client repaint when story context args change
-- `test/docs-demo.test.ts` — shell wiring guards (no example-code panel in `Demo`)
+- `test/story-previews.test.browser.ts` — complex `render` output smoke tests
+- `test/canvas.test.browser.ts` — client repaint when story context args change
 
 Add a render test when a story layout is easy to regress (trees, sidebars, overlays).
+
+`*.test.ts` files run on Node and own server rendering. `*.test.browser.ts` files run in Chromium through Vitest browser mode. A component that is server-rendered and then hydrated is split in two: a `*.ssr.test.ts` writes its markup to `__snapshots__/`, and the browser test hydrates that snapshot.
 
 ## LLM docs export
 

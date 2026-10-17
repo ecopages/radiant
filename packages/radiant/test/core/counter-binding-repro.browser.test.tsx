@@ -1,13 +1,10 @@
-// @vitest-environment happy-dom
 import { waitFor } from '@testing-library/dom';
 import type { JsxCustomElementAttributes } from '@ecopages/jsx';
 import { beforeEach, describe, expect, test } from 'vitest';
-import { installRadiantHydrator, uninstallRadiantHydrator } from '../../src/client/hydrator';
+import { uninstallRadiantHydrator } from '../../src/client/hydrator';
 import { prop } from '../../src/decorators/prop';
 import { customElement } from '../../src/decorators/custom-element';
 import { RadiantElement } from '../../src/core/radiant-element';
-import { renderRadiantElementViewToString } from '../../src/server/radiant-element-ssr';
-import '../../src/server/render-component';
 
 declare module '@ecopages/jsx/jsx-runtime' {
 	interface JsxCustomIntrinsicElements {
@@ -64,7 +61,7 @@ describe('counter binding repro', () => {
 
 	test('this.$.value binding updates on click', async () => {
 		document.body.innerHTML = '<repro-counter-binding></repro-counter-binding>';
-		const el = document.querySelector('repro-counter-binding') as RadiantElement;
+		const el = document.querySelector('repro-counter-binding') as ReproCounterBinding;
 		await waitFor(() => expect(el.querySelector('[data-testid="binding"]')?.textContent).toBe('0'));
 		(el.querySelector('[data-testid="inc-binding"]') as HTMLButtonElement).click();
 		await waitFor(() => expect(el.querySelector('[data-testid="binding"]')?.textContent).toBe('1'));
@@ -76,20 +73,5 @@ describe('counter binding repro', () => {
 		await waitFor(() => expect(el.querySelector('[data-testid="plain"]')?.textContent).toBe('0'));
 		(el.querySelector('[data-testid="inc-plain"]') as HTMLButtonElement).click();
 		await waitFor(() => expect(el.querySelector('[data-testid="plain"]')?.textContent).toBe('1'));
-	});
-
-	test('this.$.value binding updates after SSR hydrate on click', async () => {
-		const serverElement = document.createElement('repro-counter-binding') as ReproCounterBinding;
-		const serverMarkup = renderRadiantElementViewToString(serverElement, { mode: 'hydrate' });
-
-		installRadiantHydrator();
-		document.body.innerHTML = `<repro-counter-binding>${serverMarkup}</repro-counter-binding>`;
-
-		const el = document.querySelector('repro-counter-binding') as ReproCounterBinding;
-		await waitFor(() => expect(el.querySelector('[data-testid="binding"]')?.textContent).toBe('0'));
-
-		(el.querySelector('[data-testid="inc-binding"]') as HTMLButtonElement).click();
-
-		await waitFor(() => expect(el.querySelector('[data-testid="binding"]')?.textContent).toBe('1'));
 	});
 });

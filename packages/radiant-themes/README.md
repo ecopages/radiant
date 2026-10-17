@@ -42,8 +42,9 @@ border opacity inputs. The docs tuner shows the six values and produces copyable
 Radiant Default; branded themes keep their own values.
 
 High Contrast targets at least 7:1 contrast for published semantic text pairs in both modes and uses prominent focus
-indicators. Radiant UI's shared foundation supports reduced motion, increased contrast, visible keyboard focus, and
-Windows forced colors. Verify non-text boundaries and application content after custom overrides.
+indicators. Its control surfaces, including switch tracks and thumbs, use square corners. Radiant UI's shared foundation
+supports reduced motion, increased contrast, visible keyboard focus, and Windows forced colors. Verify non-text
+boundaries and application content after custom overrides.
 
 Windows 95 draws every control with the two-tone 2px bevel: gray push buttons with a black frame on the default
 action, sunken white fields, check boxes, and radio wells, raised property tabs joined to their page, navy title bars,
@@ -54,14 +55,18 @@ fields, trapezoid tabs that merge into a black-framed page, and 1px striped titl
 default `#6666cc` accent. Both
 dark modes keep the same bevel structure on darker faces and fields, since neither system shipped one. macOS uses
 moderate control corners, grouped tab segments, softer layered surfaces, and accent-blue push buttons with white text
-in dark mode. Material Design uses tonal surfaces, a purple accent family, and rounded action
+in dark mode. Windows 95 also provides a full-size dithered scrollbar with raised arrow buttons and a bevelled thumb;
+Mac OS Classic provides Platinum's grey bevelled track, end-positioned arrow buttons, and striped blue scroll box.
+Chrome and Safari receive the detailed WebKit scrollbar treatment; Firefox receives the standard `scrollbar-width` and
+`scrollbar-color` fallback, whose native API does not expose classic arrow buttons, bevels, or stripe images.
+Material Design uses tonal surfaces, a purple accent family, and rounded action
 controls. These are original implementations written with Radiant semantic roles, Tailwind `@apply`, and catalog
 selectors; they do not copy third-party CSS.
 
 The Cloudflare theme leads with Cloudflare orange on restrained neutral layers inspired by Cloudflare Kumo. Its
-semantic primary role uses deeper orange `#cc3a00` in light mode and brighter orange `#ff5e1e` in dark mode. Filled
-primary buttons use the contrast-safe `#cc3a00` with white text in both modes. Links and focus stay blue, and warnings
-use a yellow amber that stays distinct from the primary.
+semantic primary role uses the same contrast-safe orange `#cc3a00` in both modes. Filled primary buttons use that
+orange with white text in both modes. Links and focus stay blue, and warnings use a yellow amber that stays distinct
+from the primary.
 GitHub maps Primer's functional roles: green marks the primary action, blue is for links and focus, the selected tab
 uses Primer's coral underline, and neutral surfaces are used for secondary actions.
 

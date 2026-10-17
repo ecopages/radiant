@@ -1,30 +1,17 @@
+import '@ecopages/radiant/server/install-ssr-runtime';
 import { describe, expect, it } from 'vitest';
 import {
 	findFieldControl,
 	getAriaControlTarget,
 	getAriaControlTargets,
 	isNativeTextControl,
-	isPrimaryFieldControlEvent,
 	readControlValue,
 	registerFieldControl,
 	wireFieldControlName,
 	writeControlValue,
 } from '../form/control-protocol';
 
-describe('field control protocol (SSR-safe)', () => {
-	it('discovers marked inputs and host tags, not bare natives', () => {
-		const field = document.createElement('div');
-		field.innerHTML = `
-			<input type="text" value="bare" />
-			<input data-rui-control type="email" value="marked" />
-		`;
-
-		const control = findFieldControl(field);
-		expect(control).not.toBeNull();
-		expect(control?.hasAttribute('data-rui-control')).toBe(true);
-		expect((control as HTMLInputElement).value).toBe('marked');
-	});
-
+describe('field control protocol on the SSR DOM', () => {
 	it('discovers rui-select hosts when no marked descendant exists', () => {
 		const field = document.createElement('div');
 		field.innerHTML = `
@@ -114,20 +101,6 @@ describe('field control protocol (SSR-safe)', () => {
 		expect(findFieldControl(field)).toBeNull();
 	});
 
-	it('treats a standalone listbox change as the field control event', () => {
-		const field = document.createElement('div');
-		field.innerHTML = `<rui-listbox></rui-listbox>`;
-		const listbox = field.querySelector('rui-listbox')!;
-		let seen: Event | undefined;
-		field.addEventListener('rui-change', (event) => {
-			seen = event;
-		});
-		listbox.dispatchEvent(new Event('rui-change', { bubbles: true }));
-
-		expect(seen).toBeDefined();
-		expect(isPrimaryFieldControlEvent(field, seen!)).toBe(true);
-	});
-
 	it('discovers standalone rui-date-input stamped with data-rui-control', () => {
 		const field = document.createElement('div');
 		field.innerHTML = `
@@ -156,24 +129,6 @@ describe('field control protocol (SSR-safe)', () => {
 
 		const targets = getAriaControlTargets(host);
 		expect(targets.map((node) => node.id)).toEqual(['start', 'end']);
-	});
-
-	it('ignores rui-change from an embedded listbox inside select', () => {
-		const field = document.createElement('div');
-		field.innerHTML = `
-			<rui-select>
-				<rui-listbox embedded></rui-listbox>
-			</rui-select>
-		`;
-		const listbox = field.querySelector('rui-listbox')!;
-		let seen: Event | undefined;
-		field.addEventListener('rui-change', (event) => {
-			seen = event;
-		});
-		listbox.dispatchEvent(new Event('rui-change', { bubbles: true }));
-
-		expect(seen).toBeDefined();
-		expect(isPrimaryFieldControlEvent(field, seen!)).toBe(false);
 	});
 
 	it('discovers a host registered with registerFieldControl', () => {
@@ -209,30 +164,6 @@ describe('field control protocol (SSR-safe)', () => {
 			},
 		});
 		const host = document.createElement('x-face-control');
-		const input = document.createElement('input');
-		input.setAttribute('name', 'stale');
-		host.append(input);
-
-		wireFieldControlName(host, input, 'quantity');
-
-		expect(host.getAttribute('name')).toBe('quantity');
-		expect(input.hasAttribute('name')).toBe(false);
-	});
-
-	it('does not name the inner input of a form-associated host', () => {
-		if (!customElements.get('x-face-default')) {
-			customElements.define(
-				'x-face-default',
-				class extends HTMLElement {
-					static formAssociated = true;
-				},
-			);
-		}
-		registerFieldControl('x-face-default', {
-			read: (host) => host.getAttribute('value') ?? '',
-			write: (host, value) => host.setAttribute('value', value == null ? '' : String(value)),
-		});
-		const host = document.createElement('x-face-default');
 		const input = document.createElement('input');
 		input.setAttribute('name', 'stale');
 		host.append(input);

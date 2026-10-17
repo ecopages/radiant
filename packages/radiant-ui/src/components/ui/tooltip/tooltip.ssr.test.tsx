@@ -1,3 +1,4 @@
+import '@ecopages/radiant/server/install-ssr-runtime';
 import { renderToString } from '@ecopages/jsx/server';
 import { describe, expect, it } from 'vitest';
 import { RuiTooltip } from './tooltip';

@@ -1,13 +1,19 @@
-import '@ecopages/radiant/server/install-ssr-runtime';
-import { renderToString } from '@ecopages/jsx/server';
-import { withRadiantServerCustomElementRenderBridge } from '@ecopages/radiant/server/radiant-element-ssr';
+import '@ecopages/radiant/client/install-hydrator';
 import { afterEach, describe, expect, it } from 'vitest';
 import { DOCS_APPEARANCE_STORAGE_KEY, DOCS_APPEARANCE_VERSION, DOCS_THEME_QUERY_KEY } from '@/lib/docs-theme-preview';
-import { DesignTokenPanel } from './design-token-panel';
+import './design-token-panel.script';
 import type { DesignTokenPanelElement } from './design-token-panel.script';
 
+/** Real SSR output written by `design-token-panel.ssr.test.ts`. */
+const fixtures = import.meta.glob<string>('./__snapshots__/design-token-panel.html', {
+	query: '?raw',
+	import: 'default',
+	eager: true,
+});
+
 async function createPanel(): Promise<DesignTokenPanelElement> {
-	const markup = withRadiantServerCustomElementRenderBridge(() => renderToString(DesignTokenPanel({})));
+	const markup = fixtures['./__snapshots__/design-token-panel.html'];
+	if (!markup) throw new Error('Missing SSR fixture. Run the node project to write it.');
 	const container = document.createElement('div');
 	container.innerHTML = markup;
 	const element = container.querySelector('radiant-design-token-panel') as DesignTokenPanelElement | null;

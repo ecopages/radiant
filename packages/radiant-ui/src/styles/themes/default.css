@@ -33,6 +33,7 @@
 		.rui-date-range-picker__group,
 		.rui-input-group,
 		.rui-number-field__group,
+		rui-date-input:where(:not([data-date-field-input], [data-range-start], [data-range-end])),
 		.rui-select__control,
 		.rui-select__search,
 		.rui-checkbox__control,

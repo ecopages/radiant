@@ -1,7 +1,7 @@
 import '../install/install-ssr-runtime';
 import { createMarkupNodeLike, type JsxRenderable } from '@ecopages/jsx';
 import type { RenderToStringOptions } from '@ecopages/jsx/server';
-import { renderToString as renderJsxToString } from '@ecopages/jsx/server';
+import { renderServerLightDom, renderToString as renderJsxToString } from '@ecopages/jsx/server';
 import {
 	createServerHydrationBindingState,
 	isServerRenderHydrationActive,
@@ -90,28 +90,45 @@ export function resolveRadiantElementRenderBridge(component: object): RadiantEle
 /**
  * Installs the JSX custom-element render hook so nested CEs serialize through
  * {@link renderRadiantElementHostToString} (same path as `renderComponent`).
+ *
+ * @remarks The hook owns JSX children: a host builds them as light-DOM nodes (`renderServerLightDom`, so no
+ * value is escaped and parsed back) inside its own context providers, where a consumer passed as a child of a
+ * provider host resolves that provider.
  */
 export function withRadiantServerCustomElementRenderBridge<T>(render: () => T): T {
-	return withServerCustomElementRenderHook(({ instance }) => {
-		if (!isRadiantElementSsrHost(instance)) {
-			return undefined;
-		}
+	return withServerCustomElementRenderHook(
+		({ children, instance }) => {
+			if (!isRadiantElementSsrHost(instance)) {
+				return undefined;
+			}
 
-		return createMarkupNodeLike(serializeNestedCustomElementHost(instance));
-	}, render);
+			const applyChildren = () => {
+				if (children === undefined) return;
+				const ownerDocument = (instance.ownerDocument ?? globalThis.document) as Document;
+				instance.replaceChildren(...renderServerLightDom(children, ownerDocument));
+			};
+
+			return createMarkupNodeLike(serializeNestedCustomElementHost(instance, applyChildren));
+		},
+		render,
+		{ ownsChildren: true },
+	);
 }
 
-function serializeNestedCustomElementHost(instance: RadiantElementServerRenderSsrCapable): string {
+function serializeNestedCustomElementHost(
+	instance: RadiantElementServerRenderSsrCapable,
+	applyChildren: () => void,
+): string {
 	const hydrate = isServerRenderHydrationActive();
 	const options: RenderToStringOptions = { hydrate, mode: hydrate ? 'hydrate' : 'plain' };
+	const render = () =>
+		withServerRadiantElementSsrRuntime(() => {
+			const service = createRadiantElementSsrService(instance);
+			service.applyLightDom(applyChildren);
+			return service.renderHostToString(options, service.getHostAttributes());
+		});
 
-	if (!hydrate) {
-		return renderRadiantElementHostToString(instance, options);
-	}
-
-	return withServerHydrationBindingState(createServerHydrationBindingState(), () =>
-		renderRadiantElementHostToString(instance, options),
-	);
+	return hydrate ? withServerHydrationBindingState(createServerHydrationBindingState(), render) : render();
 }
 
 export function getOrCreateRadiantElementSsrRuntime(): RadiantElementSsrRuntime {

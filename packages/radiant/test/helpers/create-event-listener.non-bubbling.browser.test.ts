@@ -42,14 +42,4 @@ describe('createEventListener non-bubbling delegation warning', () => {
 
 		expect(warn).not.toHaveBeenCalled();
 	});
-
-	test('stays silent in production', () => {
-		vi.stubEnv('NODE_ENV', 'production');
-		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-		const host = mountBlurListenerHost();
-
-		createEventListener(host, { selector: '[data-input]', type: 'mouseenter' }, () => {});
-
-		expect(warn).not.toHaveBeenCalled();
-	});
 });

@@ -1,4 +1,3 @@
-// @vitest-environment happy-dom
 import { waitFor } from '@testing-library/dom';
 import { jsx, jsxs, render as renderJsx } from '@ecopages/jsx';
 import { createStore, state as createSignalState } from '@ecopages/signals';

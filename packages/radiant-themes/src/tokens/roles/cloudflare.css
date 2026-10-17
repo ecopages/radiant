@@ -92,7 +92,7 @@
 	--gray-900: color-mix(in oklab, var(--color-cloudflare-canvas), white 6%);
 	--gray-950: var(--color-cloudflare-canvas);
 	--primary: var(--color-cloudflare-orange);
-	--on-primary: #1a1a1a;
+	--on-primary: white;
 	--primary-light: var(--color-cloudflare-orange-bright);
 	--primary-dark: var(--color-cloudflare-orange-deep);
 	--primary-container: oklch(30% 0.07 55);
