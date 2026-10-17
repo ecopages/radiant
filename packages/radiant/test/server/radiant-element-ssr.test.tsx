@@ -298,10 +298,38 @@ describe('RadiantElement SSR', () => {
 		expect(SlottedSsrConsumerCard).toBeDefined();
 		expect(SlottedSsrProviderCard).toBeDefined();
 
-		const html = renderRadiantElementHostToString(new SlottedSsrPage(), { mode: 'hydrate' });
+		@customElement('slotted-ssr-frame-test')
+		class SlottedSsrFrame extends RadiantElement {
+			override render() {
+				return (
+					<div>
+						<slot />
+					</div>
+				);
+			}
+		}
 
-		expect(html).toMatch(/<p[^>]*class="slotted-owner"[^>]*>Provider owner<\/p>/);
-		expect(html).not.toContain('Awaiting provider');
+		@customElement('slotted-ssr-framed-page-test')
+		class SlottedSsrFramedPage extends RadiantElement {
+			override render() {
+				return (
+					<slotted-ssr-frame-test>
+						<slotted-ssr-provider-card-test>
+							<slotted-ssr-consumer-card-test />
+						</slotted-ssr-provider-card-test>
+					</slotted-ssr-frame-test>
+				);
+			}
+		}
+
+		expect(SlottedSsrFrame).toBeDefined();
+
+		for (const page of [new SlottedSsrPage(), new SlottedSsrFramedPage()]) {
+			const html = renderRadiantElementHostToString(page, { mode: 'hydrate' });
+
+			expect(html).toMatch(/<p[^>]*class="slotted-owner"[^>]*>Provider owner<\/p>/);
+			expect(html).not.toContain('Awaiting provider');
+		}
 	});
 
 	test('renderComponentToString() applies array @prop values before the first server render', async () => {
