@@ -59,7 +59,7 @@ do not alter a branded theme's shape.
 The theme picker beside the light/dark control previews every full theme across the index and component docs. Theme,
 mode, and Radiant Default tuner values are saved in the browser and can be shared with `rui-theme`, `rui-mode`, and
 `rui-*` tuning query parameters. URL parameters override saved values, so reloading a shared link keeps the same
-appearance. The six tuner parameters are `rui-primary-hue`, `rui-secondary-hue`, `rui-neutral-hue`, `rui-density`,
+appearance. The six tuner parameters are `rui-primary-hue`, `rui-secondary-offset`, `rui-neutral-hue`, `rui-density`,
 `rui-radius`, and `rui-border-alpha`. Each theme import sets its own `--font-sans`, `--font-heading`, and `--font-mono`
 stacks. Radiant does not bundle font files;
 to use a custom licensed font, load it in your app and override those three variables:
@@ -84,9 +84,10 @@ after custom role overrides, especially non-text boundaries and content supplied
 
 ## Tune Radiant Default
 
-The default derives matching OKLCH color scales from three seed colors. Adjust primary, secondary, and neutral hues,
-density, corner radius, and border opacity (32–100%) below. The page preview updates live, and the generated CSS copies
-the six small inputs needed to create a different palette and geometry.
+The default derives matching OKLCH color scales from three seed colors. Secondary follows primary at a 40° analogous
+hue offset, which keeps it clear of the red, amber, and green status hues. Adjust the primary and neutral hues, the
+secondary offset, density, corner radius, and border opacity (32–100%) below. The page preview updates live, and the
+generated CSS copies the six small inputs needed to create a different palette and geometry.
 
 <DefaultThemeTuner />
 

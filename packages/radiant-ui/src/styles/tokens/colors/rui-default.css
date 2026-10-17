@@ -28,7 +28,12 @@
 	--color-carbon-blue-950: oklch(from var(--rui-primary) 16.5% calc(c * 0.32) h);
 	--color-carbon-blue-975: oklch(from var(--rui-primary) 13.5% calc(c * 0.26) h);
 
-	--rui-secondary: oklch(63.5% 0.095 300);
+	/**
+	 * Derived from `--rui-primary`: same lightness and chroma pattern, hue rotated 40 degrees (analogous).
+	 * @remarks Triadic and complementary offsets land on the fixed red, amber, and green status hues and read as
+	 * error, warning, or success. Set `--rui-secondary` to any color after this import to override the derivation.
+	 */
+	--rui-secondary: oklch(from var(--rui-primary) 63.5% 0.095 calc(h + 40));
 	--color-carbon-violet-50: oklch(from var(--rui-secondary) 97.6% calc(c * 0.16) h);
 	--color-carbon-violet-100: oklch(from var(--rui-secondary) 94.5% calc(c * 0.32) h);
 	--color-carbon-violet-200: oklch(from var(--rui-secondary) 88% calc(c * 0.58) h);

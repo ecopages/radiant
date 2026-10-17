@@ -114,8 +114,8 @@ export class DefaultThemeTunerElement extends RadiantElement {
 						<p class="default-theme-tuner__eyebrow">Radiant Default</p>
 						<h2 id="default-theme-tuner-title">Tune six inputs, reshape the whole palette</h2>
 						<p>
-							OKLCH derives each color scale from three seed hues; three geometry values adjust density,
-							corners, and borders.
+							OKLCH derives each color scale from the primary and neutral hues, with secondary offset from
+							primary; three geometry values adjust density, corners, and borders.
 						</p>
 					</div>
 					<RuiButton variant="outline" size="sm" data-reset-default-tuning>

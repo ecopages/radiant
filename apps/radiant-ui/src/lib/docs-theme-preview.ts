@@ -58,7 +58,7 @@ export const defaultDocsThemeSelection: DocsThemeSelection = {
 
 const TUNING_QUERY_KEYS: Record<keyof DocsDefaultThemeTuning, string> = {
 	primaryHue: 'rui-primary-hue',
-	secondaryHue: 'rui-secondary-hue',
+	secondaryOffset: 'rui-secondary-offset',
 	neutralHue: 'rui-neutral-hue',
 	density: 'rui-density',
 	radiusScale: 'rui-radius',
@@ -422,7 +422,7 @@ export function createDocsThemeBootScript(stylesheets: DocsThemeStylesheets): st
 
 export type DocsDefaultThemeTuning = {
 	primaryHue: number;
-	secondaryHue: number;
+	secondaryOffset: number;
 	neutralHue: number;
 	density: number;
 	radiusScale: number;
@@ -455,15 +455,15 @@ export const DOCS_DEFAULT_TUNING_SCHEMA: Record<DocsDefaultThemeTuningKey, DocsD
 		cssVariable: '--rui-primary',
 		cssValueTemplate: 'oklch(52% 0.19 {{value}})',
 	},
-	secondaryHue: {
-		label: 'Secondary hue',
-		min: 0,
-		max: 360,
+	secondaryOffset: {
+		label: 'Secondary offset',
+		min: -180,
+		max: 180,
 		step: 1,
 		unit: '°',
-		defaultValue: 300,
+		defaultValue: 40,
 		cssVariable: '--rui-secondary',
-		cssValueTemplate: 'oklch(63.5% 0.095 {{value}})',
+		cssValueTemplate: 'oklch(from var(--rui-primary) 63.5% 0.095 calc(h + {{value}}))',
 	},
 	neutralHue: {
 		label: 'Neutral hue',
@@ -509,7 +509,7 @@ export const DOCS_DEFAULT_TUNING_SCHEMA: Record<DocsDefaultThemeTuningKey, DocsD
 
 export const DOCS_DEFAULT_THEME_TUNING: DocsDefaultThemeTuning = {
 	primaryHue: DOCS_DEFAULT_TUNING_SCHEMA.primaryHue.defaultValue,
-	secondaryHue: DOCS_DEFAULT_TUNING_SCHEMA.secondaryHue.defaultValue,
+	secondaryOffset: DOCS_DEFAULT_TUNING_SCHEMA.secondaryOffset.defaultValue,
 	neutralHue: DOCS_DEFAULT_TUNING_SCHEMA.neutralHue.defaultValue,
 	density: DOCS_DEFAULT_TUNING_SCHEMA.density.defaultValue,
 	radiusScale: DOCS_DEFAULT_TUNING_SCHEMA.radiusScale.defaultValue,
@@ -535,7 +535,7 @@ export function parseDocsDefaultThemeTuning(value: unknown): DocsDefaultThemeTun
 	};
 	return {
 		primaryHue: valueFor('primaryHue'),
-		secondaryHue: valueFor('secondaryHue'),
+		secondaryOffset: valueFor('secondaryOffset'),
 		neutralHue: valueFor('neutralHue'),
 		density: valueFor('density'),
 		radiusScale: valueFor('radiusScale'),
