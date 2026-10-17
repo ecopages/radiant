@@ -1,5 +1,6 @@
 import '@ecopages/radiant/server/install-ssr-runtime';
 import { renderToString } from '@ecopages/jsx/server';
+import type { RuiSelectElement } from '@ecopages/radiant-ui/select';
 import { withRadiantServerCustomElementRenderBridge } from '@ecopages/radiant/server/radiant-element-ssr';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { docsThemeStylesheets } from '@/lib/docs-theme-stylesheets';
@@ -48,10 +49,12 @@ async function createPicker(): Promise<ThemePalettePickerElement> {
 }
 
 function chooseTheme(element: ThemePalettePickerElement, value: string): void {
-	const input = element.querySelector<HTMLInputElement>(`input[data-token="colors"][value="${value}"]`);
-	if (!input) throw new Error(`Theme option ${value} was not rendered`);
-	input.checked = true;
-	input.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
+	const select = element.querySelector('rui-select[data-theme-picker]');
+	const trigger = select?.querySelector<HTMLElement>('[data-select-trigger]');
+	const option = select?.querySelector<HTMLElement>(`[role="option"][data-value="${value}"]`);
+	if (!select || !trigger || !option) throw new Error(`Theme option ${value} was not rendered`);
+	trigger.click();
+	option.click();
 }
 
 function resetPreview(): void {
@@ -90,30 +93,35 @@ describe('ThemePalettePickerElement', () => {
 		vi.restoreAllMocks();
 	});
 
-	it('renders Radiant Default and every optional Radiant Theme from the production component', async () => {
+	it('renders every theme as a Radiant UI select option', async () => {
 		const element = await createPicker();
-		expect(element.querySelector('summary')?.getAttribute('aria-label')).toBe('Choose a color theme');
-		expect(element.querySelector('legend')?.textContent).toBe('Documentation theme');
-		expect(element.querySelectorAll('input[type="radio"][data-token="colors"]')).toHaveLength(
-			docsThemeColorOptions.length,
-		);
+		const select = element.querySelector<RuiSelectElement>('rui-select[data-theme-picker]');
+		const trigger = select?.querySelector('[data-select-trigger]');
+		expect(trigger?.getAttribute('role')).toBe('combobox');
+		expect(trigger?.getAttribute('aria-label')).toBe('Choose a color theme');
+		expect(trigger?.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
+		expect(select?.querySelector('[role="listbox"]')?.getAttribute('aria-label')).toBe('Choose a color theme');
+		expect(select?.querySelectorAll('[role="option"]')).toHaveLength(docsThemeColorOptions.length);
 		expect(
-			Array.from(element.querySelectorAll<HTMLInputElement>('input[data-token="colors"]')).map(
-				({ value }) => value,
-			),
+			Array.from(element.querySelectorAll<HTMLElement>('[role="option"]')).map((option) => option.dataset.value),
 		).toEqual(expectedThemeValues);
+		expect(element.querySelectorAll('input[type="radio"], select')).toHaveLength(0);
 	});
 
-	it('applies the selected stylesheet, closes the menu, and returns to Radiant Default', async () => {
+	it('applies the selected stylesheet through RuiSelect and returns to Radiant Default', async () => {
 		const element = await createPicker();
-		const details = element.querySelector('details');
-		if (!details) throw new Error('The rendered theme menu is missing');
-		details.open = true;
+		const select = element.querySelector<RuiSelectElement>('rui-select[data-theme-picker]');
+		const popup = select?.querySelector<HTMLElement>('[data-select-listbox]');
+		if (!select || !popup) throw new Error('The rendered theme menu is missing');
 		chooseTheme(element, 'github');
 
 		expect(document.documentElement.dataset.ruiTheme).toBe('github');
-		expect(element.querySelector<HTMLInputElement>('input[value="github"]')?.checked).toBe(true);
-		expect(details.open).toBe(false);
+		expect(select.value).toEqual(['github']);
+		expect(select.querySelector('[role="option"][data-value="github"]')?.getAttribute('aria-selected')).toBe(
+			'true',
+		);
+		expect(select.querySelector('[data-select-value]')?.textContent?.trim()).toBe('GitHub');
+		expect(popup.hidden).toBe(true);
 		expect(
 			appendedThemeLinks
 				.find((link) => link.getAttribute(DOCS_THEME_STYLESHEET_ATTR) === 'github')

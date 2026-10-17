@@ -1,10 +1,11 @@
 import type { JsxCustomElementAttributes } from '@ecopages/jsx';
 import { RadiantElement, customElement, onEvent } from '@ecopages/radiant';
+import type { RuiSelectElement } from '@ecopages/radiant-ui/select';
 import {
 	applyDocumentTokens,
 	defaultDocsThemeSelection,
-	docsThemeTokenNames,
-	isDocsThemeTokenName,
+	docsThemeColorOptions,
+	isDocsThemeColor,
 	readDocsThemeSelection,
 	updateDocsThemeSelection,
 	type DocsThemeSelection,
@@ -40,30 +41,23 @@ export class ThemePalettePickerElement extends RadiantElement {
 		super.disconnectedCallback();
 	}
 
-	@onEvent({ selector: 'input[type="radio"][data-token]', type: 'change' })
+	@onEvent({ selector: 'rui-select[data-theme-picker]', type: 'rui-change' })
 	onThemeChange(event: Event): void {
-		const input = event.target;
-		const token = input instanceof HTMLInputElement ? input.dataset.token : undefined;
-		const value = input instanceof HTMLInputElement ? input.value : undefined;
-		if (!isDocsThemeTokenName(token) || typeof value !== 'string') return;
+		const value = (event as CustomEvent<{ value?: unknown }>).detail?.value;
+		if (!Array.isArray(value) || !isDocsThemeColor(value[0])) return;
 
-		this.selection = updateDocsThemeSelection(this.selection, token, value);
+		this.selection = updateDocsThemeSelection(this.selection, 'colors', value[0]);
 		applyDocumentTokens(this.selection);
 		this.syncThemeChoices();
-		const details = this.querySelector('details');
-		if (details) {
-			details.open = false;
-			this.querySelector<HTMLElement>('summary')?.focus();
-		}
 	}
 
 	private syncThemeChoices(): void {
-		for (const token of docsThemeTokenNames) {
-			const value = this.selection[token];
-			for (const input of this.querySelectorAll<HTMLInputElement>(`input[data-token="${token}"]`)) {
-				input.checked = input.value === value;
-			}
-		}
+		const select = this.querySelector<RuiSelectElement>('rui-select[data-theme-picker]');
+		if (!select) return;
+		select.value = [this.selection.colors];
+		const selectedLabel = docsThemeColorOptions.find(({ value }) => value === this.selection.colors)?.label;
+		const selectionText = this.querySelector<HTMLElement>('[data-select-value]');
+		if (selectionText && selectedLabel) selectionText.textContent = selectedLabel;
 	}
 }
 
