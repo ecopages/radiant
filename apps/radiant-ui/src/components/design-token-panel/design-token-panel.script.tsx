@@ -47,7 +47,7 @@ export class DesignTokenPanelElement extends RadiantElement {
 	override connectedCallback(): void {
 		super.connectedCallback();
 		this.selection = readDocsThemeSelection();
-		applyDocumentTokens(this.selection);
+		applyDocumentTokens(this.selection, { persist: false });
 		const root = typeof document === 'undefined' ? null : document.documentElement;
 		if (root && typeof MutationObserver !== 'undefined') {
 			this.rootObserver = new MutationObserver(() => {

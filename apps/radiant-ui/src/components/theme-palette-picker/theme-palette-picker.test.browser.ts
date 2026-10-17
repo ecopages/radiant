@@ -5,6 +5,7 @@ import { withRadiantServerCustomElementRenderBridge } from '@ecopages/radiant/se
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { docsThemeStylesheets } from '@/lib/docs-theme-stylesheets';
 import {
+	DOCS_APPEARANCE_STORAGE_KEY,
 	DOCS_DEFAULT_TUNING_STORAGE_KEY,
 	DOCS_THEME_STORAGE_KEY,
 	DOCS_THEME_STYLESHEETS_GLOBAL,
@@ -19,6 +20,7 @@ let appendedThemeLinks: HTMLLinkElement[] = [];
 const expectedThemeValues = [
 	'rui-default',
 	'github',
+	'cloudflare',
 	'vscode',
 	'vercel',
 	'material',
@@ -61,6 +63,7 @@ function resetPreview(): void {
 	document.body.innerHTML = '';
 	localStorage.removeItem(DOCS_THEME_STORAGE_KEY);
 	localStorage.removeItem(DOCS_DEFAULT_TUNING_STORAGE_KEY);
+	localStorage.removeItem(DOCS_APPEARANCE_STORAGE_KEY);
 	const root = document.documentElement;
 	root.classList.remove('dark');
 	delete root.dataset.ruiTheme;
@@ -140,6 +143,8 @@ describe('ThemePalettePickerElement', () => {
 		expect(document.documentElement.dataset.ruiTheme).toBe('rui-default');
 		expect(document.head.querySelector(`link[${DOCS_THEME_STYLESHEET_ATTR}]`)).toBeNull();
 		expect(document.documentElement.style.getPropertyValue('--rui-primary')).toContain('264');
-		expect(JSON.parse(localStorage.getItem(DOCS_THEME_STORAGE_KEY) ?? '')).toEqual({ colors: 'rui-default' });
+		expect(JSON.parse(localStorage.getItem(DOCS_APPEARANCE_STORAGE_KEY) ?? '')).toMatchObject({
+			colors: 'rui-default',
+		});
 	});
 });

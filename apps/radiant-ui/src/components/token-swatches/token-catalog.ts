@@ -109,6 +109,31 @@ export const absoluteColorTokens: readonly string[] = ['--color-black', '--color
 
 export const palettePacks: readonly PalettePack[] = [
 	{
+		id: 'cloudflare',
+		label: 'Cloudflare',
+		packFile: '@ecopages/radiant-themes/cloudflare',
+		scales: [
+			{
+				name: 'Cloudflare colors',
+				tokens: [
+					'--color-cloudflare-canvas',
+					'--color-cloudflare-elevated',
+					'--color-cloudflare-recessed',
+					'--color-cloudflare-base',
+					'--color-cloudflare-tint',
+					'--color-cloudflare-border',
+					'--color-cloudflare-fg',
+					'--color-cloudflare-muted-fg',
+					'--color-cloudflare-blue',
+					'--color-cloudflare-amber',
+					'--color-cloudflare-green',
+					'--color-cloudflare-red',
+					'--color-cloudflare-purple',
+				],
+			},
+		],
+	},
+	{
 		id: 'rui-default',
 		label: 'Radiant Default',
 		packFile: '@ecopages/radiant-ui/tokens/colors/rui-default',

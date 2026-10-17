@@ -1,6 +1,7 @@
 import { GLOBALS_UPDATED } from 'storybook/internal/core-events';
 import { addons } from 'storybook/preview-api';
 import githubThemeCss from '@ecopages/radiant-themes/compiled/github.css?inline';
+import cloudflareThemeCss from '@ecopages/radiant-themes/compiled/cloudflare.css?inline';
 import vscodeThemeCss from '@ecopages/radiant-themes/compiled/vscode.css?inline';
 import materialThemeCss from '@ecopages/radiant-themes/compiled/material.css?inline';
 import vercelThemeCss from '@ecopages/radiant-themes/compiled/vercel.css?inline';
@@ -12,6 +13,7 @@ import macOsThemeCss from '@ecopages/radiant-themes/compiled/macos.css?inline';
 const THEME_PACKS = [
 	'rui-default',
 	'github',
+	'cloudflare',
 	'vscode',
 	'material',
 	'vercel',
@@ -27,6 +29,7 @@ const TOKEN_SHEET_ATTR = 'data-rui-storybook-theme';
 const THEME_SHEETS = {
 	'rui-default': null,
 	github: githubThemeCss,
+	cloudflare: cloudflareThemeCss,
 	vscode: vscodeThemeCss,
 	material: materialThemeCss,
 	vercel: vercelThemeCss,

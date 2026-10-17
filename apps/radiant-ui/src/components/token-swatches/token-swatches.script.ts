@@ -1,5 +1,6 @@
 import type { JsxCustomElementAttributes } from '@ecopages/jsx';
 import { RadiantElement, customElement, onEvent } from '@ecopages/radiant';
+import { DOCS_THEME_STYLESHEET_LOAD_EVENT } from '@/lib/docs-theme-preview';
 
 const COPY_FEEDBACK_MS = 1200;
 const ROOT_TOKEN_ATTRIBUTES = ['class', 'style', 'data-rui-theme'] as const;
@@ -48,6 +49,11 @@ export class TokenSwatchesElement extends RadiantElement {
 			this.resetTimeoutId = null;
 		}
 		super.disconnectedCallback();
+	}
+
+	@onEvent({ window: true, type: DOCS_THEME_STYLESHEET_LOAD_EVENT })
+	onThemeStylesheetLoad(): void {
+		this.refreshComputedValues();
 	}
 
 	@onEvent({ selector: '[data-token-copy]', type: 'click' })

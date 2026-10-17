@@ -8,7 +8,7 @@ Radiant UI ships one accessible default theme, Radiant Default. Components consu
 @import '@ecopages/radiant-ui/styles.css';
 ```
 
-Optional complete themes are published from `@ecopages/radiant-themes`: GitHub, VS Code, Vercel, Material Design, High
+Optional complete themes are published from `@ecopages/radiant-themes`: GitHub, Cloudflare, VS Code, Vercel, Material Design, High
 Contrast, Windows 95, Mac OS Classic, and macOS. Each owns its shape, spacing, typography, and component styling.
 
 ```css

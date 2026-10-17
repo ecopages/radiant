@@ -4,6 +4,7 @@ import type { DocsThemeStylesheets } from './docs-theme-preview';
 export const docsThemeStylesheets: DocsThemeStylesheets = {
 	themes: {
 		github: '/assets/themes/github.css',
+		cloudflare: '/assets/themes/cloudflare.css',
 		vscode: '/assets/themes/vscode.css',
 		vercel: '/assets/themes/vercel.css',
 		material: '/assets/themes/material.css',

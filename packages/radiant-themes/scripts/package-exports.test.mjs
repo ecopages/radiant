@@ -10,7 +10,7 @@ const packageJson = JSON.parse(readFileSync(path.join(packageRoot, 'package.json
 function declarationsForSelector(css, selector) {
 	const declarations = new Map();
 	postcss.parse(css).walkRules((rule) => {
-		if (rule.selector !== selector) return;
+		if (rule.selector.replaceAll(/\s+/g, ' ') !== selector) return;
 		rule.walkDecls((declaration) => declarations.set(declaration.prop, declaration.value));
 	});
 	return declarations;
@@ -60,6 +60,26 @@ test('GitHub and VS Code palettes apply dark colors and light gray ramps', () =>
 	}
 });
 
+test('GitHub follows Primer action roles and Cloudflare keeps its Kumo-inspired layer mapping', () => {
+	const github = readFileSync(path.join(packageRoot, 'dist/compiled/themes/github.css'), 'utf8');
+	const githubRoles = declarationsForSelector(github, ":where(:root), :root[data-rui-theme='github']");
+	assert.equal(githubRoles.get('--primary'), 'var(--color-github-green)');
+	assert.equal(githubRoles.get('--success'), 'var(--color-github-green)');
+	assert.equal(githubRoles.get('--secondary'), 'var(--color-github-subtle)');
+	assert.equal(githubRoles.get('--info'), 'var(--color-github-blue)');
+
+	const cloudflare = readFileSync(path.join(packageRoot, 'dist/compiled/themes/cloudflare.css'), 'utf8');
+	const cloudflareColors = declarationsForSelector(cloudflare, ":where(:root), :root[data-rui-theme='cloudflare']");
+	const cloudflareRoles = declarationsForSelector(cloudflare, ":where(:root), :root[data-rui-theme='cloudflare']");
+	assert.equal(cloudflareColors.get('--color-cloudflare-canvas'), 'oklch(98.75% 0 0)');
+	assert.equal(cloudflareColors.get('--color-cloudflare-blue'), 'oklch(47% 0.19 257)');
+	assert.equal(cloudflareColors.get('--color-cloudflare-amber'), '#f6821f');
+	assert.equal(cloudflareRoles.get('--primary'), 'var(--color-cloudflare-blue)');
+	assert.equal(cloudflareRoles.get('--secondary'), 'var(--color-cloudflare-recessed)');
+	assert.equal(cloudflareRoles.get('--success'), 'var(--color-cloudflare-green)');
+	assert.equal(cloudflareRoles.get('--warning'), 'var(--color-cloudflare-amber-text)');
+});
+
 test('Radiant UI exposes one complete theme entry', () => {
 	const uiPackage = JSON.parse(readFileSync(path.resolve(packageRoot, '../radiant-ui/package.json'), 'utf8'));
 	const themeExports = Object.keys(uiPackage.exports).filter((name) => /^\.\/themes\/[^/]+$/.test(name));
@@ -68,11 +88,15 @@ test('Radiant UI exposes one complete theme entry', () => {
 
 test('optional themes export the curated product and accessibility catalog', () => {
 	const themeExports = Object.keys(packageJson.exports).filter((name) =>
-		/^\.\/(github|vscode|vercel|material|high-contrast|windows95|macos-classic|macos)(?:\/compact)?$/.test(name),
+		/^\.\/(github|cloudflare|vscode|vercel|material|high-contrast|windows95|macos-classic|macos)(?:\/compact)?$/.test(
+			name,
+		),
 	);
 	assert.deepEqual(themeExports, [
 		'./github',
 		'./github/compact',
+		'./cloudflare',
+		'./cloudflare/compact',
 		'./vscode',
 		'./vscode/compact',
 		'./material',
@@ -93,6 +117,7 @@ test('optional themes export the curated product and accessibility catalog', () 
 test('themes compile their component-specific shape values and optional component styles', () => {
 	for (const name of [
 		'github',
+		'cloudflare',
 		'vscode',
 		'vercel',
 		'material',
@@ -114,7 +139,16 @@ test('themes compile their component-specific shape values and optional componen
 			[compactTheme, 'compact'],
 		]) {
 			if (
-				['github', 'vscode', 'material', 'high-contrast', 'windows95', 'macos-classic', 'macos'].includes(name)
+				[
+					'github',
+					'cloudflare',
+					'vscode',
+					'material',
+					'high-contrast',
+					'windows95',
+					'macos-classic',
+					'macos',
+				].includes(name)
 			) {
 				assert.match(theme, /\.rui-button/);
 				assert.match(theme, /\.rui-input/);

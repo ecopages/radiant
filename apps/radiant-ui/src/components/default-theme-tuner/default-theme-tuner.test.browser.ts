@@ -1,5 +1,9 @@
-import { afterEach, describe, expect, it } from 'vitest';
-import { DOCS_DEFAULT_TUNING_STORAGE_KEY, DOCS_DEFAULT_THEME_TUNING } from '@/lib/docs-theme-preview';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import {
+	DOCS_APPEARANCE_STORAGE_KEY,
+	DOCS_DEFAULT_TUNING_STORAGE_KEY,
+	DOCS_DEFAULT_THEME_TUNING,
+} from '@/lib/docs-theme-preview';
 import { DefaultThemeTunerElement } from './default-theme-tuner.script';
 
 const waitForUpdate = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -13,8 +17,10 @@ async function createTuner(): Promise<DefaultThemeTunerElement> {
 
 describe('DefaultThemeTunerElement', () => {
 	afterEach(() => {
+		vi.useRealTimers();
 		document.body.innerHTML = '';
 		localStorage.removeItem(DOCS_DEFAULT_TUNING_STORAGE_KEY);
+		localStorage.removeItem(DOCS_APPEARANCE_STORAGE_KEY);
 		delete document.documentElement.dataset.ruiTheme;
 		for (const property of [
 			'--rui-primary',
@@ -29,8 +35,11 @@ describe('DefaultThemeTunerElement', () => {
 	});
 
 	it('updates the default seed, resets its values, and disables controls for optional themes', async () => {
+		vi.useFakeTimers();
 		document.documentElement.dataset.ruiTheme = 'rui-default';
-		const tuner = await createTuner();
+		const tunerPromise = createTuner();
+		await vi.advanceTimersByTimeAsync(0);
+		const tuner = await tunerPromise;
 		const sliders = tuner.querySelectorAll('rui-slider[data-default-tuning]');
 		expect(sliders).toHaveLength(6);
 		const primaryHue = tuner.querySelector('rui-slider[data-default-tuning="primaryHue"]');
@@ -44,10 +53,14 @@ describe('DefaultThemeTunerElement', () => {
 		for (let step = 0; step < 3; step += 1) {
 			primaryThumb.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
 		}
-		await waitForUpdate();
+		await vi.advanceTimersByTimeAsync(0);
 		expect(document.documentElement.style.getPropertyValue('--rui-primary')).toBe('oklch(52% 0.19 267)');
-		expect(JSON.parse(localStorage.getItem(DOCS_DEFAULT_TUNING_STORAGE_KEY) ?? '')).toMatchObject({
-			primaryHue: 267,
+		expect(localStorage.getItem(DOCS_APPEARANCE_STORAGE_KEY)).toBeNull();
+		await vi.advanceTimersByTimeAsync(150);
+		expect(JSON.parse(localStorage.getItem(DOCS_APPEARANCE_STORAGE_KEY) ?? '')).toMatchObject({
+			tuning: {
+				primaryHue: 267,
+			},
 		});
 		expect(tuner.querySelector('rui-slider[data-default-tuning="primaryHue"]')).toBe(primaryHue);
 		expect(primaryThumb.getAttribute('aria-valuenow')).toBe('267');
@@ -57,16 +70,18 @@ describe('DefaultThemeTunerElement', () => {
 		);
 
 		tuner.querySelector<HTMLButtonElement>('button[data-reset-default-tuning]')?.click();
-		await waitForUpdate();
+		await vi.advanceTimersByTimeAsync(0);
 		expect(document.documentElement.style.getPropertyValue('--rui-primary')).toBe('oklch(52% 0.19 264)');
-		expect(JSON.parse(localStorage.getItem(DOCS_DEFAULT_TUNING_STORAGE_KEY) ?? '')).toEqual(
-			DOCS_DEFAULT_THEME_TUNING,
-		);
+		expect(JSON.parse(localStorage.getItem(DOCS_APPEARANCE_STORAGE_KEY) ?? '')).toMatchObject({
+			tuning: DOCS_DEFAULT_THEME_TUNING,
+		});
 		expect(primaryThumb.getAttribute('aria-valuenow')).toBe('264');
 		expect(tuner.querySelector('output[data-default-tuning-value="primaryHue"]')?.textContent).toBe('264°');
+		expect(tuner.querySelector('rui-slider[data-default-tuning="borderAlpha"]')?.getAttribute('value')).toBe('48');
+		expect(document.documentElement.style.getPropertyValue('--rui-border-alpha')).toBe('48%');
 
 		document.documentElement.dataset.ruiTheme = 'github';
-		await waitForUpdate();
+		await vi.advanceTimersByTimeAsync(0);
 		expect(tuner.querySelector('rui-slider[data-default-tuning="primaryHue"]')?.hasAttribute('disabled')).toBe(
 			true,
 		);

@@ -35,6 +35,12 @@
 	},
 	"exports": {
 		"./package.json": "./package.json",
+		"./compiled/cloudflare.css": {
+			"default": "./dist/compiled/themes/cloudflare.css"
+		},
+		"./compiled/cloudflare/compact.css": {
+			"default": "./dist/compiled/themes/cloudflare/compact.css"
+		},
 		"./compiled/github.css": {
 			"default": "./dist/compiled/themes/github.css"
 		},
@@ -88,6 +94,12 @@
 		},
 		"./github/compact": {
 			"default": "./dist/themes/github/compact.css"
+		},
+		"./cloudflare": {
+			"default": "./dist/themes/cloudflare.css"
+		},
+		"./cloudflare/compact": {
+			"default": "./dist/themes/cloudflare/compact.css"
 		},
 		"./vscode": {
 			"default": "./dist/themes/vscode.css"

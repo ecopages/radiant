@@ -19,7 +19,7 @@ Import a complete theme and the component stylesheet:
 @import '@ecopages/radiant-ui/styles.css';
 ```
 
-Themes include GitHub, VS Code, Vercel, Material Design, High Contrast, Windows 95, Mac OS Classic, and macOS. Each
+Themes include GitHub, Cloudflare, VS Code, Vercel, Material Design, High Contrast, Windows 95, Mac OS Classic, and macOS. Each
 owns its shape, typography, spacing, semantic colors, and any component-specific styling. Theme source remains
 composable internally, while the public API stays at one import per complete theme.
 
@@ -52,6 +52,10 @@ segments, and softer layered surfaces. Material Design uses tonal surfaces, a pu
 controls. These are original implementations written with Radiant semantic roles, Tailwind `@apply`, and catalog
 selectors; they do not copy third-party CSS.
 
+The Cloudflare theme uses restrained neutral layers and blue actions inspired by Cloudflare Kumo. Cloudflare orange is
+an accent rather than a small text color, preserving readable contrast. GitHub maps Primer's functional roles: green
+marks the primary action, blue is for links, focus, and selection, and neutral surfaces are used for secondary actions.
+
 The Vercel theme uses Background 2 for the light canvas and Background 1 for primary surfaces. Its component colors
 drive hover and active fills, Colors 4–6 drive default, hover, and active borders, and blue stays focused on links and
 keyboard focus. Control boundaries are strengthened for visibility. GitHub maps Primer-style functional roles, while
@@ -61,7 +65,7 @@ reproducing the products pixel for pixel.
 ## Design references
 
 The themes draw on public guidance for role mapping and component behavior: [Material Design 3 color
-roles](https://m3.material.io/styles/color/the-color-system), [Primer's color token layers](https://primer.style/product/getting-started/foundations/color-usage/), [Vercel Geist colors](https://vercel.com/geist/colors), [VS Code theme color roles](https://code.visualstudio.com/api/references/theme-color), [Apple's Human Interface Guidelines](https://developer.apple.com/design/human-interface-guidelines/), [the Mac OS 8 Platinum guidelines](https://dev.os9.ca/techpubs/mac/pdf/HIGOS8Guidelines.pdf), and [Microsoft property sheet guidance](https://learn.microsoft.com/en-us/windows/win32/controls/property-sheets). These sources informed the design decisions; all theme CSS is authored for Radiant's tokens and components.
+roles](https://m3.material.io/styles/color/the-color-system), [Primer's color token layers](https://primer.style/product/getting-started/foundations/color-usage/), [Vercel Geist colors](https://vercel.com/geist/colors), [VS Code theme color roles](https://code.visualstudio.com/api/references/theme-color), [Cloudflare Kumo](https://github.com/cloudflare/kumo), [Apple's Human Interface Guidelines](https://developer.apple.com/design/human-interface-guidelines/), [the Mac OS 8 Platinum guidelines](https://dev.os9.ca/techpubs/mac/pdf/HIGOS8Guidelines.pdf), and [Microsoft property sheet guidance](https://learn.microsoft.com/en-us/windows/win32/controls/property-sheets). These sources informed the design decisions; all theme CSS is authored for Radiant's tokens and components.
 
 ## Browser-ready CSS
 

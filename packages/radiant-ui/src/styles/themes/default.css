@@ -11,7 +11,7 @@
 		sans-serif;
 	--font-heading: var(--font-sans);
 	--font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-	--rui-border-alpha: 40%;
+	--rui-border-alpha: 48%;
 	color-scheme: light;
 }
 

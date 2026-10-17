@@ -9,9 +9,9 @@ import {
 	createDocsDefaultThemeTuningCss,
 	DOCS_DEFAULT_THEME_TUNING,
 	DOCS_DEFAULT_TUNING_SCHEMA,
-	DOCS_DEFAULT_TUNING_STORAGE_KEY,
 	parseDocsDefaultThemeTuning,
 	readDocsDefaultThemeTuning,
+	writeDocsDefaultThemeTuning,
 	type DocsDefaultThemeTuning,
 } from '@/lib/docs-theme-preview';
 
@@ -20,17 +20,12 @@ const tuningControls = (Object.keys(DOCS_DEFAULT_TUNING_SCHEMA) as (keyof DocsDe
 	...DOCS_DEFAULT_TUNING_SCHEMA[key],
 }));
 
-function persistTuning(tuning: DocsDefaultThemeTuning): void {
-	try {
-		localStorage.setItem(DOCS_DEFAULT_TUNING_STORAGE_KEY, JSON.stringify(tuning));
-	} catch {}
-}
-
 /** Docs-only controls for exploring the Radiant Default seed and geometry inputs. */
 @customElement('radiant-default-theme-tuner')
 export class DefaultThemeTunerElement extends RadiantElement {
 	@state private tuning = readDocsDefaultThemeTuning();
 	private rootObserver: MutationObserver | null = null;
+	private persistenceTimeout: ReturnType<typeof setTimeout> | null = null;
 	@state private copyStatus = '';
 
 	override connectedCallback(): void {
@@ -52,7 +47,20 @@ export class DefaultThemeTunerElement extends RadiantElement {
 	override disconnectedCallback(): void {
 		this.rootObserver?.disconnect();
 		this.rootObserver = null;
+		if (this.persistenceTimeout !== null) {
+			clearTimeout(this.persistenceTimeout);
+			this.persistenceTimeout = null;
+			writeDocsDefaultThemeTuning(this.tuning);
+		}
 		super.disconnectedCallback();
+	}
+
+	private schedulePersistence(): void {
+		if (this.persistenceTimeout !== null) clearTimeout(this.persistenceTimeout);
+		this.persistenceTimeout = setTimeout(() => {
+			this.persistenceTimeout = null;
+			writeDocsDefaultThemeTuning(this.tuning);
+		}, 150);
 	}
 
 	@onEvent({ selector: 'rui-slider[data-default-tuning]', type: 'rui-change' })
@@ -64,7 +72,7 @@ export class DefaultThemeTunerElement extends RadiantElement {
 		if (!key || !tuningControls.some((control) => control.key === key) || !Number.isFinite(value)) return;
 
 		this.tuning = parseDocsDefaultThemeTuning({ ...this.tuning, [key]: value });
-		persistTuning(this.tuning);
+		this.schedulePersistence();
 		const root = typeof document === 'undefined' ? null : document.documentElement;
 		if (root?.dataset.ruiTheme === 'rui-default') {
 			applyDefaultThemeTuning(root, this.tuning);
@@ -73,8 +81,12 @@ export class DefaultThemeTunerElement extends RadiantElement {
 
 	@onEvent({ selector: 'button[data-reset-default-tuning]', type: 'click' })
 	onResetTuning(): void {
+		if (this.persistenceTimeout !== null) {
+			clearTimeout(this.persistenceTimeout);
+			this.persistenceTimeout = null;
+		}
 		this.tuning = DOCS_DEFAULT_THEME_TUNING;
-		persistTuning(this.tuning);
+		writeDocsDefaultThemeTuning(this.tuning);
 		const root = typeof document === 'undefined' ? null : document.documentElement;
 		if (root?.dataset.ruiTheme === 'rui-default') {
 			applyDefaultThemeTuning(root, this.tuning);

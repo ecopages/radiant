@@ -1,0 +1,39 @@
+:where(:root),
+:root[data-rui-theme='cloudflare'] {
+	--color-cloudflare-canvas: oklch(98.75% 0 0);
+	--color-cloudflare-elevated: oklch(98% 0 0);
+	--color-cloudflare-recessed: oklch(96% 0 0);
+	--color-cloudflare-base: oklch(100% 0 0);
+	--color-cloudflare-tint: oklch(97% 0 0);
+	--color-cloudflare-border: oklch(14.5% 0 0 / 14%);
+	--color-cloudflare-border-strong: oklch(14.5% 0 0 / 50%);
+	--color-cloudflare-fg: oklch(14.5% 0 0);
+	--color-cloudflare-muted-fg: oklch(47% 0 0);
+	--color-cloudflare-blue: oklch(47% 0.19 257);
+	--color-cloudflare-blue-bright: oklch(55% 0.2 257);
+	--color-cloudflare-amber: #f6821f;
+	--color-cloudflare-amber-text: #974700;
+	--color-cloudflare-green: #1a7f37;
+	--color-cloudflare-red: #cf222e;
+	--color-cloudflare-purple: #8250df;
+}
+
+:where(.dark),
+:root.dark[data-rui-theme='cloudflare'] {
+	--color-cloudflare-canvas: oklch(10% 0 0);
+	--color-cloudflare-elevated: oklch(12% 0 0);
+	--color-cloudflare-recessed: oklch(15% 0 0);
+	--color-cloudflare-base: oklch(17% 0 0);
+	--color-cloudflare-tint: oklch(26.9% 0 0);
+	--color-cloudflare-border: oklch(100% 0 0 / 18%);
+	--color-cloudflare-border-strong: oklch(100% 0 0 / 50%);
+	--color-cloudflare-fg: oklch(96% 0 0);
+	--color-cloudflare-muted-fg: oklch(72% 0 0);
+	--color-cloudflare-blue: oklch(72% 0.15 255);
+	--color-cloudflare-blue-bright: oklch(80% 0.13 255);
+	--color-cloudflare-amber: #ff9c45;
+	--color-cloudflare-amber-text: #ffb36d;
+	--color-cloudflare-green: #3fb950;
+	--color-cloudflare-red: #ff7b72;
+	--color-cloudflare-purple: #b392f0;
+}

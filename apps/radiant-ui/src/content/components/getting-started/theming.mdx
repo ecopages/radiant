@@ -36,7 +36,7 @@ soft neutral palette, comfortable spacing, soft-square checkboxes, and visible t
 
 ## Install a complete theme
 
-Install `@ecopages/radiant-themes` to use GitHub, VS Code, Vercel, Material Design, High Contrast, Windows 95, Mac OS
+Install `@ecopages/radiant-themes` to use GitHub, Cloudflare, VS Code, Vercel, Material Design, High Contrast, Windows 95, Mac OS
 Classic, or macOS. Each theme owns its component shape, typography, spacing, colors, and any component-specific details.
 
 ```css
@@ -56,8 +56,12 @@ do not alter a branded theme's shape.
 @import '@ecopages/radiant-ui/styles.css';
 ```
 
-The theme picker beside the light/dark control previews every full theme across the index and component docs. Each
-theme import sets its own `--font-sans`, `--font-heading`, and `--font-mono` stacks. Radiant does not bundle font files;
+The theme picker beside the light/dark control previews every full theme across the index and component docs. Theme,
+mode, and Radiant Default tuner values are saved in the browser and can be shared with `rui-theme`, `rui-mode`, and
+`rui-*` tuning query parameters. URL parameters override saved values, so reloading a shared link keeps the same
+appearance. The six tuner parameters are `rui-primary-hue`, `rui-secondary-hue`, `rui-neutral-hue`, `rui-density`,
+`rui-radius`, and `rui-border-alpha`. Each theme import sets its own `--font-sans`, `--font-heading`, and `--font-mono`
+stacks. Radiant does not bundle font files;
 to use a custom licensed font, load it in your app and override those three variables:
 
 ```css
@@ -106,7 +110,7 @@ Define semantic color roles in a stylesheet loaded after the base theme. Compone
 	--on-background: oklch(22% 0.008 265);
 	--surface: oklch(96% 0.006 265);
 	--on-surface: var(--on-background);
-	--border: oklch(74% 0.012 265 / 40%);
+	--border: oklch(74% 0.012 265 / 48%);
 	--focus-ring: var(--primary);
 }
 ```

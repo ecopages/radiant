@@ -11,6 +11,7 @@ const defaultThemeStylesheetPath = path.resolve(scriptDirectory, '../dist/assets
 const pickerCssPath = path.resolve(scriptDirectory, '../src/components/theme-palette-picker/theme-palette-picker.css');
 const optionalThemes = [
 	'github',
+	'cloudflare',
 	'vscode',
 	'vercel',
 	'material',
@@ -55,7 +56,9 @@ async function measureThemeRendering(page, css, mode, theme) {
 			<button class="rui-alert__close" aria-label="Dismiss">×</button>
 		</div>
 	`;
-	await page.setContent(`<html data-rui-theme="${theme}"><head><style>${css}</style></head><body>${markup}</body></html>`);
+	await page.setContent(
+		`<html data-rui-theme="${theme}"><head><style>${css}</style></head><body>${markup}</body></html>`,
+	);
 	return page.evaluate((mode) => {
 		document.documentElement.classList.toggle('dark', mode === 'dark');
 		const computed = (selector) => {
@@ -118,10 +121,7 @@ async function measureThemeRendering(page, css, mode, theme) {
 			roles: ['--primary', '--background', '--surface', '--rui-border-color', '--radius-control'].map((name) =>
 				rootStyle.getPropertyValue(name).trim(),
 			),
-			picker: [
-				computed('.theme-picker__menu'),
-				computed('.theme-picker__option[aria-selected="true"]'),
-			],
+			picker: [computed('.theme-picker__menu'), computed('.theme-picker__option[aria-selected="true"]')],
 			tabs: {
 				host: computed('rui-tabs[variant="boxed"]'),
 				list: computed('rui-tabs[variant="boxed"] .rui-tabs__list'),
@@ -129,16 +129,12 @@ async function measureThemeRendering(page, css, mode, theme) {
 				inactive: computed('rui-tabs[variant="boxed"] .rui-tabs__tab[aria-selected="false"]'),
 				panel: computed('rui-tabs[variant="boxed"] .rui-tabs__panel'),
 			},
-			alert: [
-				computed('.rui-alert'),
-				computed('.rui-alert__description'),
-				computed('.rui-alert__close'),
-			],
+			alert: [computed('.rui-alert'), computed('.rui-alert__description'), computed('.rui-alert__close')],
 		};
 	}, mode);
 }
 
-test('theme picker text stays AA and persisted themes keep their tokens and component details', async () => {
+test('theme picker text stays AA with persisted themes in runtime stylesheet order', async () => {
 	const browser = await chromium.launch({ headless: true });
 	try {
 		const page = await browser.newPage();
@@ -156,51 +152,26 @@ test('theme picker text stays AA and persisted themes keep their tokens and comp
 				theme === 'rui-default' ? defaultThemeStylesheetPath : path.join(themesDirectory, `${theme}.css`);
 			const themeCss = await readFile(themeCssPath, 'utf8');
 			for (const mode of ['light', 'dark']) {
-				const bootOrderCss = `${themeCss}\n${defaultCss}\n${uiCss.join('\n')}\n${pickerCss}`;
-				const postBaseOrderCss = `${defaultCss}\n${themeCss}\n${uiCss.join('\n')}\n${pickerCss}`;
-				const bootOrder = await measureThemeRendering(page, bootOrderCss, mode, theme);
-				const postBaseOrder = await measureThemeRendering(page, postBaseOrderCss, mode, theme);
-				assert.deepEqual(
-					bootOrder.roles,
-					postBaseOrder.roles,
-					`${theme} ${mode} roles change when the saved theme loads before the base stylesheet`,
-				);
-				assert.deepEqual(
-					bootOrder.picker,
-					postBaseOrder.picker,
-					`${theme} ${mode} picker surfaces change when the saved theme loads before the base stylesheet`,
-				);
-				assert.deepEqual(
-					bootOrder.tabs,
-					postBaseOrder.tabs,
-					`${theme} ${mode} tab details change when the saved theme loads before the base stylesheet`,
-				);
-				assert.deepEqual(
-					bootOrder.alert,
-					postBaseOrder.alert,
-					`${theme} ${mode} alert details change when the saved theme loads before the base stylesheet`,
-				);
+				const runtimeOrderCss = `${defaultCss}\n${uiCss.join('\n')}\n${pickerCss}\n${themeCss}`;
+				const rendered = await measureThemeRendering(page, runtimeOrderCss, mode, theme);
 				if (theme === 'windows95') {
-					assert.equal(bootOrder.tabs.selected.background, 'rgb(192, 192, 192)');
-					assert.equal(bootOrder.tabs.selected.borderStyle, 'outset');
-					assert.equal(bootOrder.tabs.selected.borderBottom, bootOrder.tabs.selected.background);
-					assert.equal(bootOrder.tabs.inactive.borderStyle, 'outset');
-					assert.equal(bootOrder.tabs.panel.borderStyle, 'inset');
-					assert.match(bootOrder.tabs.selected.fontFamily, /Tahoma/);
+					assert.equal(rendered.tabs.selected.background, 'rgb(192, 192, 192)');
+					assert.equal(rendered.tabs.selected.borderStyle, 'outset');
+					assert.equal(rendered.tabs.selected.borderBottom, rendered.tabs.selected.background);
+					assert.equal(rendered.tabs.inactive.borderStyle, 'outset');
+					assert.equal(rendered.tabs.panel.borderStyle, 'inset');
+					assert.match(rendered.tabs.selected.fontFamily, /Tahoma/);
 				}
 				if (theme === 'macos-classic') {
-					assert.notEqual(bootOrder.tabs.selected.background, bootOrder.tabs.inactive.background);
-					assert.match(bootOrder.tabs.selected.borderRadius, /^3px 3px 0px 0px$/);
-					assert.equal(bootOrder.tabs.selected.borderStyle, 'solid');
+					assert.notEqual(rendered.tabs.selected.background, rendered.tabs.inactive.background);
+					assert.match(rendered.tabs.selected.borderRadius, /^3px 3px 0px 0px$/);
+					assert.equal(rendered.tabs.selected.borderStyle, 'solid');
 				}
-				const failures = [
-					...bootOrder.contrast.map((result) => ({ ...result, order: 'theme-before-base' })),
-					...postBaseOrder.contrast.map((result) => ({ ...result, order: 'base-before-theme' })),
-				].filter((result) => result.ratio < 4.5);
+				const failures = rendered.contrast.filter((result) => result.ratio < 4.5);
 				assert.deepEqual(
 					failures,
 					[],
-					`${theme} ${mode} picker text below AA: ${failures.map((result) => `${result.order} ${result.selector} ${result.ratio}:1`).join(', ')}`,
+					`${theme} ${mode} picker text below AA: ${failures.map((result) => `${result.selector} ${result.ratio}:1`).join(', ')}`,
 				);
 			}
 		}

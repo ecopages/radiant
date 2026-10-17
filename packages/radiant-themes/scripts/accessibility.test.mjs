@@ -13,6 +13,7 @@ const inputCssPath = path.join(uiRoot, 'dist/components/ui/input/input.css');
 const tailwindCssPath = path.join(uiRoot, 'dist/styles/tailwind.css');
 const optionalThemes = [
 	'github',
+	'cloudflare',
 	'vscode',
 	'vercel',
 	'material',
@@ -136,7 +137,10 @@ async function measureBorderContrast(page, css, mode) {
 		context.fillRect(0, 0, 1, 1);
 		context.fillStyle = styles.borderTopColor;
 		context.fillRect(0, 0, 1, 1);
-		const [red, green, blue] = Array.from(context.getImageData(0, 0, 1, 1).data.slice(0, 3), (value) => value / 255);
+		const [red, green, blue] = Array.from(
+			context.getImageData(0, 0, 1, 1).data.slice(0, 3),
+			(value) => value / 255,
+		);
 		const linear = (value) => (value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4);
 		const border = [red, green, blue]
 			.map(linear)
@@ -507,8 +511,14 @@ test('classic boxed tabs scroll horizontally without widening the page', async (
 				};
 			});
 			assert.equal(layout.overflowX, 'auto', `${theme} keeps the tab row horizontally scrollable`);
-			assert.ok(layout.listScrollWidth > layout.listClientWidth, `${theme} tab labels exceed the narrow viewport`);
-			assert.ok(layout.pageScrollWidth <= 375, `${theme} tab overflow stays inside the page: ${JSON.stringify(layout)}`);
+			assert.ok(
+				layout.listScrollWidth > layout.listClientWidth,
+				`${theme} tab labels exceed the narrow viewport`,
+			);
+			assert.ok(
+				layout.pageScrollWidth <= 375,
+				`${theme} tab overflow stays inside the page: ${JSON.stringify(layout)}`,
+			);
 		}
 	} finally {
 		await browser.close();
@@ -546,8 +556,7 @@ test('Vercel keeps selected listbox contrast when its theme CSS loads last', asy
 						context.getImageData(0, 0, 1, 1).data.slice(0, 3),
 						(value) => value / 255,
 					);
-					const linear = (value) =>
-						value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+					const linear = (value) => (value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4);
 					const [r, g, b] = [red, green, blue].map(linear);
 					return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 				};

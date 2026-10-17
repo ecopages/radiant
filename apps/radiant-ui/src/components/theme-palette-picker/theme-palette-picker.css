@@ -99,6 +99,9 @@ radiant-theme-palette-picker {
 .theme-picker__swatch[data-theme-swatch='github'] {
 	--theme-picker-swatch: #0969da;
 }
+.theme-picker__swatch[data-theme-swatch='cloudflare'] {
+	--theme-picker-swatch: #075fc7;
+}
 .theme-picker__swatch[data-theme-swatch='vscode'] {
 	--theme-picker-swatch: #007acc;
 }

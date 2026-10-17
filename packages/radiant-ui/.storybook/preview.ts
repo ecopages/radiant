@@ -46,6 +46,7 @@ const preview: Preview = {
 				items: [
 					{ value: 'rui-default', title: 'Radiant Default' },
 					{ value: 'github', title: 'GitHub' },
+					{ value: 'cloudflare', title: 'Cloudflare' },
 					{ value: 'vscode', title: 'VS Code' },
 					{ value: 'material', title: 'Material Design' },
 					{ value: 'vercel', title: 'Vercel' },
