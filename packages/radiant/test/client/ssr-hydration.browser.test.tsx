@@ -10,6 +10,7 @@ import {
 	type HydratedCounterBinding,
 	type HydratedFragmentSlotParent,
 	type HydratedMarkerSlotParent,
+	type HydratedStaticView,
 	type HydratedSlotCard,
 	type NonHydratedCounter,
 } from '../fixtures/ssr-hydration/components';
@@ -96,18 +97,18 @@ describe('hydrating server-rendered markup', () => {
 		});
 	});
 
-	test('reports server-rendered hosts through isServerRendered', async () => {
+	test('reports server-rendered hosts through isServerRendered even when the view has no markers', async () => {
 		installRadiantHydrator();
-		const rendered = mount<HydratedSlotCard>('slot-card', 'hydrated-slot-card-test');
-		const created = document.createElement('hydrated-slot-card-test') as HydratedSlotCard;
+		const rendered = mount<HydratedStaticView>('static-view', 'hydrated-static-view-test');
+		const created = document.createElement('hydrated-static-view-test') as HydratedStaticView;
 
+		expect(hasHydrationMarkers(rendered)).toBe(false);
+		expect(rendered.isServerRendered).toBe(true);
 		expect(created.isServerRendered).toBe(false);
 
 		document.body.append(created);
-		await waitFor(() => expect(created.hasAttribute('data-radiant-ssr')).toBe(false));
-		expect(rendered.isServerRendered).toBe(true);
+		await waitFor(() => expect(created.querySelector('p')).not.toBeNull());
 		expect(created.isServerRendered).toBe(false);
-		expect(rendered.hasAttribute('data-radiant-ssr')).toBe(true);
 	});
 
 	test('hydrates reactive JSX children of a nested host under a fragment root', async () => {

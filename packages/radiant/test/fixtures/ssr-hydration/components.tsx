@@ -96,6 +96,13 @@ export class HydratedFragmentSlotParent extends RadiantElement<{ inside: string;
 	}
 }
 
+@customElement('hydrated-static-view-test')
+export class HydratedStaticView extends RadiantElement {
+	override render() {
+		return <p>Static server view</p>;
+	}
+}
+
 @customElement('hydrated-complex-slot-card-test')
 export class HydratedComplexSlotCard extends RadiantElement {
 	count = 0;

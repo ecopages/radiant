@@ -14,6 +14,10 @@ import type { InternalRadiantSsrHost } from '../../core/radiant-element-ssr-host
 
 export type RadiantElementViewRenderer = (host: InternalRadiantSsrHost, options?: RenderToStringOptions) => string;
 
+function isHydrateMode(options: RenderToStringOptions): boolean {
+	return options.mode === 'hydrate' || (options.mode === undefined && options.hydrate === true);
+}
+
 export class RadiantElementSsrService {
 	private readonly component: object;
 	private readonly host: InternalRadiantSsrHost;
@@ -56,14 +60,13 @@ export class RadiantElementSsrService {
 	public renderHostToString(options: RenderToStringOptions = {}, attributes = this.getHostAttributes()): string {
 		this.ensureReady();
 		const tagName = this.getTagName();
-		const hydrate = options.mode === 'hydrate' || (options.mode === undefined && options.hydrate === true);
-
+		const hydrate = isHydrateMode(options);
 		const hostAttributes = hydrate ? { ...attributes, [SERVER_RENDERED_HOST_ATTRIBUTE]: '' } : attributes;
 
 		return withSsrContextProviders(
 			this.host.getContextProviders(),
 			() =>
-				`<${tagName}${stringifyHostAttributes(hostAttributes)}>${this.renderHostContent(options)}</${tagName}>`,
+				`<${tagName}${stringifyHostAttributes(hostAttributes)}>${this.renderHostContent(options, hydrate)}</${tagName}>`,
 		);
 	}
 
@@ -72,9 +75,7 @@ export class RadiantElementSsrService {
 		return resolveHostAttributes(this.host);
 	}
 
-	private renderHostContent(options: RenderToStringOptions): string {
-		const hydrate = options.mode === 'hydrate' || (options.mode === undefined && options.hydrate === true);
-
+	private renderHostContent(options: RenderToStringOptions, hydrate: boolean): string {
 		const hydrationScripts = hydrate
 			? this.host
 					.getHydrationBindings()

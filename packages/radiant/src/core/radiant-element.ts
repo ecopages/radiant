@@ -257,7 +257,9 @@ export class RadiantElement<Bindings extends object = {}>
 	 * @remarks Fixed at first connect and `false` before it. Unlike `hasHydrationMarkers`, it does not depend on
 	 * the view having bindings or on how the host's children were rendered, so a host that adopts server-rendered
 	 * content (for example light-DOM children its parent view authored) can rely on it. It says nothing about
-	 * whether the hydrator is installed; combine it with `hasRadiantHydrator()` when that matters.
+	 * whether the hydrator is installed; combine it with `hasRadiantHydrator()` when that matters. Plain-mode SSR
+	 * does not stamp hosts, so those report `false`. The stamp is an attribute, so markup copied from a stamped
+	 * host (`cloneNode`, `outerHTML`) carries it too.
 	 */
 	public get isServerRendered(): boolean {
 		return this.serverRendered;
@@ -467,7 +469,9 @@ export class RadiantElement<Bindings extends object = {}>
 	/**
 	 * Serializes the JSX view through the installed server runtime.
 	 *
-	 * @remarks Flushes `@bindTo` after `render()` so targets created by a Derived
+	 * @remarks Returns the view only, so it never stamps a host. A caller that writes the host tag itself must add
+	 * `SERVER_RENDERED_HOST_ATTRIBUTE` (`data-radiant-ssr`) to it for `isServerRendered` to be `true` on the client;
+	 * `renderRadiantElementHostToString` does that. Flushes `@bindTo` after `render()` so targets created by a Derived
 	 * Tree exist before serialization. `prepareForSsr` still flushes authored
 	 * light-DOM children that exist before render.
 	 */
