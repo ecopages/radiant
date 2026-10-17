@@ -295,15 +295,15 @@ _Avoid_: provider, selector field, local state copy
 > **Domain expert:** "In Node `*.test.*` files. Browser `*.browser.test.*` and Playwright `*.e2e.test.*` files hydrate from fixtures or client-only trees; they do not import the JSX server entry to perform SSR."
 
 > **Dev:** "What do the test file suffixes mean?"
-> **Domain expert:** "`*.test.*` runs on Node and owns **SSR**. `*.browser.test.*` runs in happy-dom for DOM behavior without Playwright. `*.e2e.test.*` runs in Playwright Chromium when real-browser behavior is required."
+> **Domain expert:** "`*.test.*` runs on Node and owns **SSR**. `*.browser.test.*` runs in Chromium through Vitest browser mode for DOM behavior. `*.e2e.test.*` runs in Playwright Chromium for full-page flows."
 
 ## Flagged ambiguities
 
 - "context" is overloaded in this repository: the product already uses **Context** for runtime state-sharing APIs inside Radiant, while this file uses context in the domain-modeling sense for the whole **Radiant Platform**
 - "standalone" does not mean "separate product context" here: **Ecopages JSX** and **Ecopages Signals** are standalone-capable packages inside the same **Radiant Platform**
 - docs apps and playgrounds are support surfaces for the **Radiant Platform**, not glossary concepts in this context file
-- test file suffixes are contributor conventions, not product glossary terms, but they encode the **SSR** / **Hydration** boundary: `*.test.*` = Node (**SSR**), `*.browser.test.*` = happy-dom, `*.e2e.test.*` = Playwright
-- mixed Node files that need a DOM may use `// @vitest-environment happy-dom`; that still counts as a Node **SSR**-capable process, not a browser fallback for ambient state
+- test file suffixes are contributor conventions, not product glossary terms, but they encode the **SSR** / **Hydration** boundary: `*.test.*` = Node (**SSR**), `*.browser.test.*` = Chromium (Vitest browser mode), `*.e2e.test.*` = Playwright
+- Node files that need a DOM use the minimal light-DOM shim from `@ecopages/radiant/server/install-ssr-runtime`; there is no third-party DOM emulation
 - browser and Playwright suites must not import `@ecopages/jsx/server` as an **SSR** writer; hydrate tests use fixtures or client-only trees
 - Node is the source of truth for server runtime; do not document or branch on Bun as a separate SSR ambient model
 - glossary terms use human-facing product names, not npm package identifiers

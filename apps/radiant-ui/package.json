@@ -27,13 +27,15 @@
 		"@types/hast": "^3.0.4",
 		"@types/node": "^24.13.2",
 		"ecopages": "0.2.0",
-		"happy-dom": "^20.0.0",
+		"@vitest/browser": "^4.1.10",
+		"@vitest/browser-playwright": "^4.1.10",
 		"playwright": "^1.62.1",
 		"rehype-pretty-code": "^0.14.1",
 		"remark-gfm": "^4.0.1",
 		"shiki": "^3.20.0",
 		"tailwindcss": "^4.3.0",
 		"tsx": "^4.20.6",
+		"vite": "^8.1.1",
 		"vitest": "^4.1.10",
 		"zod": "^4.4.3"
 	}

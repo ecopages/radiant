@@ -1,7 +1,6 @@
-import '@ecopages/radiant/server/install-ssr-runtime';
-import { renderToString } from '@ecopages/jsx/server';
+import '@ecopages/radiant/client/install-hydrator';
+import '@ecopages/radiant-ui/select';
 import type { RuiSelectElement } from '@ecopages/radiant-ui/select';
-import { withRadiantServerCustomElementRenderBridge } from '@ecopages/radiant/server/radiant-element-ssr';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { docsThemeStylesheets } from '@/lib/docs-theme-stylesheets';
 import {
@@ -12,7 +11,7 @@ import {
 	docsThemeColorOptions,
 	installDocsThemeStylesheets,
 } from '@/lib/docs-theme-preview';
-import { ThemePalettePicker } from './theme-palette-picker';
+import './theme-palette-picker.script';
 import type { ThemePalettePickerElement } from './theme-palette-picker.script';
 
 let appendedThemeLinks: HTMLLinkElement[] = [];
@@ -38,14 +37,23 @@ function captureThemeStylesheets(): void {
 	});
 }
 
+/** Real SSR output written by `theme-palette-picker.ssr.test.ts`. */
+const fixtures = import.meta.glob<string>('./__snapshots__/theme-palette-picker.html', {
+	query: '?raw',
+	import: 'default',
+	eager: true,
+});
+
 async function createPicker(): Promise<ThemePalettePickerElement> {
-	const markup = withRadiantServerCustomElementRenderBridge(() => renderToString(ThemePalettePicker({})));
+	const markup = fixtures['./__snapshots__/theme-palette-picker.html'];
+	if (!markup) throw new Error('Missing SSR fixture. Run the node project to write it.');
 	const container = document.createElement('div');
 	container.innerHTML = markup;
 	const element = container.querySelector('radiant-theme-palette-picker') as ThemePalettePickerElement | null;
 	if (!element) throw new Error('The rendered theme picker custom element is missing');
 	document.body.append(element);
-	await Promise.resolve();
+	await customElements.whenDefined('rui-select');
+	await new Promise<void>((resolve) => setTimeout(resolve, 0));
 	return element;
 }
 
