@@ -13,6 +13,8 @@ import {
 	applyDocumentTokens,
 	createDocsThemeBootScript,
 	defaultDocsThemeSelection,
+	DOCS_DEFAULT_THEME_IMPORT,
+	docsThemeImportSpecifier,
 	DOCS_THEME_STORAGE_KEY,
 	DOCS_THEME_QUERY_KEY,
 	DOCS_MODE_QUERY_KEY,
@@ -155,6 +157,12 @@ describe('docs-theme-preview', () => {
 		expect(activeThemeLinks.size).toBe(0);
 		expect(document.documentElement.dataset.ruiTheme).toBe('rui-default');
 		expect(document.documentElement.style.getPropertyValue('--rui-primary')).toBe('oklch(52% 0.19 264)');
+	});
+
+	it('names the package import each theme needs', () => {
+		expect(docsThemeImportSpecifier('rui-default')).toBe(DOCS_DEFAULT_THEME_IMPORT);
+		expect(docsThemeImportSpecifier('github')).toBe('@ecopages/radiant-themes/github');
+		expect(docsThemeImportSpecifier('macos-classic')).toBe('@ecopages/radiant-themes/macos-classic');
 	});
 
 	it('loads the selected theme stylesheet when tokens are applied', () => {
