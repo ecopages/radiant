@@ -69,21 +69,8 @@ radiant-default-theme-tuner {
 	font-variant-numeric: tabular-nums;
 }
 
-.default-theme-tuner__control input[type='range'] {
-	width: 100%;
-	min-height: 1.5rem;
-	accent-color: var(--primary);
-	cursor: pointer;
-}
-
-.default-theme-tuner__control input[type='range']:focus-visible {
-	border-radius: var(--radius-control);
-	outline: 2px solid var(--focus-ring);
-	outline-offset: 3px;
-}
-
-.default-theme-tuner__control input[type='range']:disabled {
-	cursor: not-allowed;
+.default-theme-tuner__control .rui-field {
+	gap: var(--space-2);
 }
 
 .default-theme-tuner__css {

@@ -136,8 +136,8 @@ jobs:
             - name: Run theme picker accessibility tests
               run: pnpm --filter @ecopages/radiant-ui-docs test:a11y
 
-            - name: Run Storybook tests
-              run: pnpm --filter @ecopages/radiant-ui test:storybook && pnpm --filter @ecopages/radiant-ui test
+            - name: Run Radiant UI tests
+              run: pnpm --filter @ecopages/radiant-ui test:all
 
     radiant-ui-ssr-smoke:
         name: radiant-ui Storybook SSR smoke

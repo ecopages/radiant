@@ -31,18 +31,30 @@ describe('DefaultThemeTunerElement', () => {
 	it('updates the default seed, resets its values, and disables controls for optional themes', async () => {
 		document.documentElement.dataset.ruiTheme = 'rui-default';
 		const tuner = await createTuner();
-		const inputs = tuner.querySelectorAll<HTMLInputElement>('input[data-default-tuning]');
-		expect(inputs).toHaveLength(6);
-		const primaryHue = tuner.querySelector<HTMLInputElement>('input[data-default-tuning="primaryHue"]');
-		if (!primaryHue) throw new Error('The primary hue control is missing');
+		const sliders = tuner.querySelectorAll('rui-slider[data-default-tuning]');
+		expect(sliders).toHaveLength(6);
+		const primaryHue = tuner.querySelector('rui-slider[data-default-tuning="primaryHue"]');
+		const primaryThumb = primaryHue?.querySelector<HTMLButtonElement>('[data-thumb="value"]');
+		if (!primaryHue || !primaryThumb) throw new Error('The primary hue slider is missing');
+		const primaryLabel = tuner.querySelector('[data-rui-field-label]');
+		const primaryDescription = tuner.querySelector<HTMLElement>('[data-rui-field-description]');
+		expect(primaryThumb.getAttribute('aria-labelledby')).toBe(primaryLabel?.id);
+		expect(primaryThumb.getAttribute('aria-describedby')).toBe(primaryDescription?.id);
 
-		primaryHue.value = '280';
-		primaryHue.dispatchEvent(new Event('input', { bubbles: true }));
+		for (let step = 0; step < 3; step += 1) {
+			primaryThumb.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+		}
 		await waitForUpdate();
-		expect(document.documentElement.style.getPropertyValue('--rui-primary')).toBe('oklch(52% 0.19 280)');
+		expect(document.documentElement.style.getPropertyValue('--rui-primary')).toBe('oklch(52% 0.19 267)');
 		expect(JSON.parse(localStorage.getItem(DOCS_DEFAULT_TUNING_STORAGE_KEY) ?? '')).toMatchObject({
-			primaryHue: 280,
+			primaryHue: 267,
 		});
+		expect(tuner.querySelector('rui-slider[data-default-tuning="primaryHue"]')).toBe(primaryHue);
+		expect(primaryThumb.getAttribute('aria-valuenow')).toBe('267');
+		expect(tuner.querySelector('output[data-default-tuning-value="primaryHue"]')?.textContent).toBe('267°');
+		expect(tuner.querySelector('.default-theme-tuner__css code')?.textContent).toContain(
+			'--rui-primary: oklch(52% 0.19 267);',
+		);
 
 		tuner.querySelector<HTMLButtonElement>('button[data-reset-default-tuning]')?.click();
 		await waitForUpdate();
@@ -50,9 +62,14 @@ describe('DefaultThemeTunerElement', () => {
 		expect(JSON.parse(localStorage.getItem(DOCS_DEFAULT_TUNING_STORAGE_KEY) ?? '')).toEqual(
 			DOCS_DEFAULT_THEME_TUNING,
 		);
+		expect(primaryThumb.getAttribute('aria-valuenow')).toBe('264');
+		expect(tuner.querySelector('output[data-default-tuning-value="primaryHue"]')?.textContent).toBe('264°');
 
 		document.documentElement.dataset.ruiTheme = 'github';
 		await waitForUpdate();
-		expect(tuner.querySelector<HTMLInputElement>('input[data-default-tuning="primaryHue"]')?.disabled).toBe(true);
+		expect(tuner.querySelector('rui-slider[data-default-tuning="primaryHue"]')?.hasAttribute('disabled')).toBe(
+			true,
+		);
+		expect(primaryThumb.disabled).toBe(true);
 	});
 });

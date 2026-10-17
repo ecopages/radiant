@@ -1,6 +1,9 @@
 import type { JsxCustomElementAttributes } from '@ecopages/jsx';
-import { RadiantElement, customElement, onEvent } from '@ecopages/radiant';
+import { RadiantElement, customElement, onEvent, state } from '@ecopages/radiant';
 import { RuiButton } from '@ecopages/radiant-ui/button';
+import { RuiField, RuiFieldDescription } from '@ecopages/radiant-ui/field';
+import { RuiLabel } from '@ecopages/radiant-ui/label';
+import { RuiSlider, type RuiSliderChangeDetail } from '@ecopages/radiant-ui/slider';
 import {
 	applyDefaultThemeTuning,
 	createDocsDefaultThemeTuningCss,
@@ -26,9 +29,9 @@ function persistTuning(tuning: DocsDefaultThemeTuning): void {
 /** Docs-only controls for exploring the Radiant Default seed and geometry inputs. */
 @customElement('radiant-default-theme-tuner')
 export class DefaultThemeTunerElement extends RadiantElement {
-	private tuning = readDocsDefaultThemeTuning();
+	@state private tuning = readDocsDefaultThemeTuning();
 	private rootObserver: MutationObserver | null = null;
-	private copyStatus = '';
+	@state private copyStatus = '';
 
 	override connectedCallback(): void {
 		super.connectedCallback();
@@ -44,7 +47,6 @@ export class DefaultThemeTunerElement extends RadiantElement {
 				attributeFilter: ['data-rui-theme'],
 			});
 		}
-		this.requestUpdate();
 	}
 
 	override disconnectedCallback(): void {
@@ -53,20 +55,20 @@ export class DefaultThemeTunerElement extends RadiantElement {
 		super.disconnectedCallback();
 	}
 
-	@onEvent({ selector: 'input[data-default-tuning]', type: 'input' })
-	onTuningInput(event: Event): void {
-		const input = event.target;
-		if (!(input instanceof HTMLInputElement)) return;
-		const key = input.dataset.defaultTuning as keyof DocsDefaultThemeTuning | undefined;
-		if (!key || !tuningControls.some((control) => control.key === key)) return;
+	@onEvent({ selector: 'rui-slider[data-default-tuning]', type: 'rui-change' })
+	onTuningChange(event: CustomEvent<RuiSliderChangeDetail>): void {
+		const slider = event.target;
+		if (!(slider instanceof HTMLElement)) return;
+		const key = slider.dataset.defaultTuning as keyof DocsDefaultThemeTuning | undefined;
+		const [value] = event.detail.value;
+		if (!key || !tuningControls.some((control) => control.key === key) || !Number.isFinite(value)) return;
 
-		this.tuning = parseDocsDefaultThemeTuning({ ...this.tuning, [key]: Number(input.value) });
+		this.tuning = parseDocsDefaultThemeTuning({ ...this.tuning, [key]: value });
 		persistTuning(this.tuning);
 		const root = typeof document === 'undefined' ? null : document.documentElement;
 		if (root?.dataset.ruiTheme === 'rui-default') {
 			applyDefaultThemeTuning(root, this.tuning);
 		}
-		this.requestUpdate();
 	}
 
 	@onEvent({ selector: 'button[data-reset-default-tuning]', type: 'click' })
@@ -78,7 +80,6 @@ export class DefaultThemeTunerElement extends RadiantElement {
 			applyDefaultThemeTuning(root, this.tuning);
 		}
 		this.copyStatus = 'Radiant Default values restored.';
-		this.requestUpdate();
 	}
 
 	@onEvent({ selector: 'button[data-copy-default-tuning]', type: 'click' })
@@ -89,7 +90,6 @@ export class DefaultThemeTunerElement extends RadiantElement {
 		} catch {
 			this.copyStatus = 'Copy unavailable. Select the CSS below to copy it manually.';
 		}
-		this.requestUpdate();
 	}
 
 	override render() {
@@ -117,26 +117,30 @@ export class DefaultThemeTunerElement extends RadiantElement {
 				</p>
 				<div class="default-theme-tuner__controls">
 					{tuningControls.map((control) => (
-						<label class="default-theme-tuner__control" for={`default-tune-${control.key}`}>
-							<span class="default-theme-tuner__control-heading">
-								<span>{control.label}</span>
-								<output for={`default-tune-${control.key}`}>
-									{this.tuning[control.key]}
-									{control.unit}
-								</output>
-							</span>
-							<input
-								id={`default-tune-${control.key}`}
-								type="range"
-								data-default-tuning={control.key}
-								min={control.min}
-								max={control.max}
-								step={control.step}
-								value={this.tuning[control.key]}
-								aria-describedby="default-theme-tuner-note"
-								disabled={!isDefaultTheme}
-							/>
-						</label>
+						<div class="default-theme-tuner__control">
+							<RuiField name={control.key}>
+								<span class="default-theme-tuner__control-heading">
+									<RuiLabel>{control.label}</RuiLabel>
+									<output data-default-tuning-value={control.key}>
+										{this.tuning[control.key]}
+										{control.unit}
+									</output>
+								</span>
+								<RuiSlider
+									data-default-tuning={control.key}
+									min={control.min}
+									max={control.max}
+									step={control.step}
+									value={this.tuning[control.key]}
+									disabled={!isDefaultTheme}
+								/>
+								<RuiFieldDescription class="sr-only">
+									{isDefaultTheme
+										? 'Changes Radiant Default in the preview and updates the generated CSS.'
+										: 'Select Radiant Default to adjust this value.'}
+								</RuiFieldDescription>
+							</RuiField>
+						</div>
 					))}
 				</div>
 				<pre class="default-theme-tuner__css">
