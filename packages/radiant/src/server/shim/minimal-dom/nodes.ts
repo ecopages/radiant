@@ -1,13 +1,18 @@
 import { serializeHtmlAttribute } from '../../../utils/serialize-html-attribute';
 import { MINIMAL_DOM_ELEMENT } from '../../../core/minimal-dom-identity';
-import { rawTextElementNames, voidElementNames } from '../../html/html-parser';
+import { leadingNewlineElementNames, voidElementNames } from '../../html/html-parser';
 import { toDataAttributeName, toDatasetPropertyName } from './dataset';
 import * as selectors from './selectors';
 
 type MinimalParentNode = Node & ParentNode;
 
 type HtmlParsers = {
-	parseHtmlToNodes: (html: string, ownerDocument: Document | null) => Node[];
+	parseHtmlToNodes: (
+		html: string,
+		ownerDocument: Document | null,
+		contextTagName?: string,
+		followsStartTag?: boolean,
+	) => Node[];
 	serializeNodeHtml: (node: Node) => string;
 };
 
@@ -93,6 +98,7 @@ export class MinimalNode extends MinimalEventTarget {
 	static readonly DOCUMENT_NODE = 9;
 	static readonly ELEMENT_NODE = 1;
 	static readonly TEXT_NODE = 3;
+	static readonly COMMENT_NODE = 8;
 
 	public ownerDocument: Document | null;
 	public parentNode: MinimalParentNode | null = null;
@@ -125,13 +131,23 @@ export class MinimalNode extends MinimalEventTarget {
 	}
 
 	appendChild<TNode extends Node>(node: TNode): TNode {
+		return this.insertBefore(node, null);
+	}
+
+	insertBefore<TNode extends Node>(node: TNode, reference: Node | null): TNode {
 		this.ensureChildNodes();
 
 		if ('parentNode' in node && node.parentNode && 'removeChild' in node.parentNode) {
 			(node.parentNode as Node & { removeChild(node: Node): Node }).removeChild(node);
 		}
 
-		this.attachChild(node);
+		const index = reference ? this.childNodeList.indexOf(reference) : this.childNodeList.length;
+
+		if (index === -1) {
+			throw new Error('insertBefore: the reference node is not a child of this node.');
+		}
+
+		this.attachChild(node, index);
 		this.invalidateSerialization();
 		return node;
 	}
@@ -175,15 +191,20 @@ export class MinimalNode extends MinimalEventTarget {
 	protected ensureChildNodes(): void {}
 
 	/** Adds a child without invalidating serialization; used when materializing parsed children. */
-	protected attachChild(node: Node): void {
-		this.childNodeList.push(node);
+	protected attachChild(node: Node, index = this.childNodeList.length): void {
+		this.childNodeList.splice(index, 0, node);
 		(node as Node & { ownerDocument: Document | null }).ownerDocument =
 			this.nodeType === MinimalNode.DOCUMENT_NODE ? (this as unknown as Document) : this.ownerDocument;
 		(node as Node & { parentNode: MinimalParentNode | null }).parentNode = this as unknown as MinimalParentNode;
 	}
 
+	/**
+	 * @remarks Comments are skipped, as in the DOM.
+	 */
 	get textContent(): string | null {
-		return this.childNodes.map((child) => child.textContent ?? '').join('');
+		return this.childNodes
+			.map((child) => (child.nodeType === MinimalNode.COMMENT_NODE ? '' : (child.textContent ?? '')))
+			.join('');
 	}
 
 	set textContent(value: string | null) {
@@ -222,6 +243,32 @@ export class MinimalTextNode extends MinimalNode {
 		this.value = value ?? '';
 		this.sourceHtml = undefined;
 		this.invalidateSerialization();
+	}
+}
+
+export class MinimalCommentNode extends MinimalNode {
+	constructor(
+		private value: string,
+		ownerDocument: Document | null = getInstalledDocumentLike(),
+	) {
+		super(MinimalNode.COMMENT_NODE, ownerDocument);
+	}
+
+	get data(): string {
+		return this.value;
+	}
+
+	set data(value: string) {
+		this.value = value;
+		this.invalidateSerialization();
+	}
+
+	override get textContent(): string {
+		return this.value;
+	}
+
+	override set textContent(value: string | null) {
+		this.data = value ?? '';
 	}
 }
 
@@ -463,7 +510,7 @@ export class MinimalElement extends MinimalNode {
 		const html = this.pendingChildHtml;
 		this.pendingChildHtml = undefined;
 
-		for (const node of this.parseChildHtml(html)) {
+		for (const node of ensureHtmlParsers().parseHtmlToNodes(html, this.ownerDocument, this.localName, true)) {
 			this.attachChild(node);
 		}
 	}
@@ -482,15 +529,8 @@ export class MinimalElement extends MinimalNode {
 		super.invalidateSerialization();
 	}
 
-	/**
-	 * @remarks `script` and `style` content is raw text: one text node, never entity-decoded.
-	 */
 	private parseChildHtml(html: string): Node[] {
-		if (rawTextElementNames.has(this.localName)) {
-			return html === '' ? [] : [new MinimalTextNode(html, this.ownerDocument, html) as unknown as Node];
-		}
-
-		return ensureHtmlParsers().parseHtmlToNodes(html, this.ownerDocument);
+		return ensureHtmlParsers().parseHtmlToNodes(html, this.ownerDocument, this.localName);
 	}
 
 	querySelector(selector: string): MinimalHTMLElement | null {
@@ -559,14 +599,20 @@ export class MinimalElement extends MinimalNode {
 			return openTag;
 		}
 
-		return `${openTag}${this.innerHTML}</${this.localName}>`;
+		return `${openTag}${this.innerHtmlSource ?? this.serializeChildNodes()}</${this.localName}>`;
 	}
 
+	/**
+	 * @remarks `pre`, `listing` and `textarea` serialize from child nodes: their source can hold a newline the
+	 * parser dropped, which a fragment parse of `innerHTML` would keep.
+	 */
 	get innerHTML(): string {
-		return (
-			this.innerHtmlSource ??
-			this.childNodes.map((child) => ensureHtmlParsers().serializeNodeHtml(child)).join('')
-		);
+		const source = leadingNewlineElementNames.has(this.localName) ? undefined : this.innerHtmlSource;
+		return source ?? this.serializeChildNodes();
+	}
+
+	private serializeChildNodes(): string {
+		return this.childNodes.map((child) => ensureHtmlParsers().serializeNodeHtml(child)).join('');
 	}
 
 	set innerHTML(html: string) {
@@ -632,8 +678,33 @@ export class MinimalHTMLElement extends MinimalElement {
 		super(tagName, ownerDocument);
 	}
 
-	insertAdjacentHTML(_position: InsertPosition, html: string): void {
-		this.append(...ensureHtmlParsers().parseHtmlToNodes(html, this.ownerDocument));
+	/**
+	 * @remarks `beforebegin` / `afterend` need a parent, as in the DOM. HTML is parsed in the context of the
+	 * element it lands in.
+	 */
+	insertAdjacentHTML(position: InsertPosition, html: string): void {
+		const parent = this.parentNode instanceof MinimalElement ? this.parentNode : null;
+		const outside = position === 'beforebegin' || position === 'afterend';
+
+		if (outside && !parent) {
+			throw new Error(`insertAdjacentHTML('${position}') requires the element to have a parent element.`);
+		}
+
+		const target: MinimalElement = outside ? (parent as MinimalElement) : this;
+		const self = this as unknown as Node;
+		const reference =
+			position === 'beforebegin'
+				? self
+				: position === 'afterbegin'
+					? (this.childNodes[0] ?? null)
+					: position === 'afterend'
+						? (target.childNodes[target.childNodes.indexOf(self) + 1] ?? null)
+						: null;
+		const nodes = ensureHtmlParsers().parseHtmlToNodes(html, this.ownerDocument, target.localName);
+
+		for (const node of nodes) {
+			target.insertBefore(node, reference);
+		}
 	}
 
 	/**

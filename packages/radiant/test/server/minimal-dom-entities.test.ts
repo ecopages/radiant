@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { MinimalHTMLElement, MinimalTextNode } from '../../src/server/shim/minimal-dom/nodes';
 import '../../src/server/shim/minimal-dom/html';
-import { decodeHtmlEntities } from '../../src/utils/decode-html-entities';
+import { decodeHtmlAttribute, decodeHtmlText } from '../../src/utils/decode-html-entities';
 
 function parse(html: string): MinimalHTMLElement {
 	const el = new MinimalHTMLElement('div', null);
@@ -86,10 +86,16 @@ describe('minimal DOM entity round-trip', () => {
 		expect(el.innerHTML).toBe('<p><!-- note -->a</p>');
 	});
 
-	test('decodes common named entities and replaces invalid numeric references', () => {
-		expect(decodeHtmlEntities('a&nbsp;b &copy; &#x41; &#0; &#xD800; &#1114112; &unknown;')).toBe(
-			'a b © A � � � &unknown;',
+	test('decodes every spec named reference and replaces invalid numeric references', () => {
+		expect(decodeHtmlText('a&nbsp;b &euro; &check; &CounterClockwiseContourIntegral; &#x41; &#65 &unknown;')).toBe(
+			'a\u00a0b \u20ac \u2713 \u2233 A A &unknown;',
 		);
-		expect(decodeHtmlEntities('&amp;lt;')).toBe('&lt;');
+		expect(decodeHtmlText('&#0; &#xD800; &#1114112; &#x80; &#x9F;')).toBe('\ufffd \ufffd \ufffd \u20ac \u0178');
+		expect(decodeHtmlText('&amp;lt;')).toBe('&lt;');
+	});
+
+	test('decodes legacy references without a semicolon, except before = or alphanumerics in attributes', () => {
+		expect(decodeHtmlText('&copy 2024 &notit; &amp1')).toBe('\u00a9 2024 \u00acit; &1');
+		expect(decodeHtmlAttribute('?a=1&copy=2&ampx&amp;&copy')).toBe('?a=1&copy=2&ampx&\u00a9');
 	});
 });

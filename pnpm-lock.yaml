@@ -298,6 +298,9 @@ importers:
             happy-dom:
                 specifier: ^20.0.0
                 version: 20.13.2
+            parse5:
+                specifier: ^7.3.0
+                version: 7.3.0
             playwright:
                 specifier: ^1.52.0
                 version: 1.62.1
