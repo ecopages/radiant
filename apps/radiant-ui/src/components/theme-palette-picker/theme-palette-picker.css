@@ -5,7 +5,7 @@ radiant-theme-palette-picker {
 .theme-picker {
 	position: relative;
 	display: block;
-	width: 2.5rem;
+	width: var(--size-control-sm);
 }
 
 .theme-picker .rui-select {
@@ -14,13 +14,14 @@ radiant-theme-palette-picker {
 
 .theme-picker .theme-picker__control {
 	box-sizing: border-box;
-	width: 2.5rem;
-	height: 2.5rem;
-	min-height: 2.5rem;
+	width: var(--size-control-sm);
+	height: var(--size-control-sm);
+	min-height: var(--size-control-sm);
 	justify-content: center;
 	padding: 0;
-	border-color: color-mix(in srgb, var(--border) 72%, transparent);
-	background: color-mix(in srgb, var(--surface-container-lowest) 55%, transparent);
+	border-color: transparent;
+	border-radius: var(--radius-button);
+	background: transparent;
 }
 
 .theme-picker .theme-picker__trigger {
@@ -38,14 +39,9 @@ radiant-theme-palette-picker {
 	outline: none;
 }
 
-.theme-picker .theme-picker__control:focus-within {
-	outline: 2px solid var(--focus-ring);
-	outline-offset: 2px;
-}
-
 @media (hover: hover) {
 	.theme-picker .theme-picker__control:hover {
-		background: color-mix(in srgb, var(--surface-container-lowest) 88%, transparent);
+		background: var(--surface-container-low);
 	}
 }
 
