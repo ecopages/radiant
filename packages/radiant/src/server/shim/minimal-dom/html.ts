@@ -33,16 +33,8 @@ export function createElementFromFragment(fragment: string, tag: ParsedHtmlTag, 
 	const attributes = Object.fromEntries(
 		Object.entries(tag.attributes).map(([name, value]) => [name, decodeHtmlEntities(value)]),
 	);
-	const text = rawTextElementNames.has(tag.tagName)
-		? tag.innerHtml
-		: decodeHtmlEntities(extractTextContent(tag.innerHtml));
-
-	element.setSerializedFragment(openTag, text, attributes, tag.innerHtml);
+	element.setSerializedFragment(openTag, attributes, tag.innerHtml);
 	return element as unknown as Node;
-}
-
-export function extractTextContent(html: string): string {
-	return html.replace(/<!--.*?-->/gs, '').replace(/<[^>]+>/g, '');
 }
 
 /**

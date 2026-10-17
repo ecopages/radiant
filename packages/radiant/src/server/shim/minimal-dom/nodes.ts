@@ -310,7 +310,6 @@ export class MinimalElement extends MinimalNode {
 	private innerHtmlSource?: string;
 	/** Parsed inner HTML not yet built into child nodes. */
 	private pendingChildHtml?: string;
-	private pendingText?: string;
 
 	public readonly localName: string;
 	public readonly tagName: string;
@@ -463,7 +462,6 @@ export class MinimalElement extends MinimalNode {
 
 		const html = this.pendingChildHtml;
 		this.pendingChildHtml = undefined;
-		this.pendingText = undefined;
 
 		for (const node of this.parseChildHtml(html)) {
 			this.attachChild(node);
@@ -573,33 +571,33 @@ export class MinimalElement extends MinimalNode {
 
 	set innerHTML(html: string) {
 		this.pendingChildHtml = undefined;
-		this.pendingText = undefined;
 		this.replaceChildren(...this.parseChildHtml(html));
 	}
 
+	/**
+	 * @remarks Built from child nodes, which materializes a parsed element. A shortcut over the source HTML
+	 * cannot tell `script` content or a `>` inside an attribute value from markup.
+	 */
 	override get textContent(): string {
-		return this.pendingText ?? super.textContent ?? '';
+		return super.textContent ?? '';
 	}
 
 	override set textContent(value: string | null) {
 		this.pendingChildHtml = undefined;
-		this.pendingText = undefined;
 		super.textContent = value;
 	}
 
 	/**
 	 * Backs a parsed element with its source HTML, building child nodes only when they are read.
 	 *
-	 * @param text Entity-decoded text content of `innerHtml`.
 	 * @param attributes Entity-decoded attribute values.
 	 */
-	setSerializedFragment(openTagHtml: string, text: string, attributes: Record<string, string>, innerHtml = ''): void {
+	setSerializedFragment(openTagHtml: string, attributes: Record<string, string>, innerHtml = ''): void {
 		this.replaceChildren();
 		this.#attributeStore = new Map(Object.entries(attributes));
 		this.openTagHtml = openTagHtml;
 		this.innerHtmlSource = innerHtml;
 		this.pendingChildHtml = innerHtml;
-		this.pendingText = text;
 	}
 }
 

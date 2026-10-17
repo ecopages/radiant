@@ -208,7 +208,33 @@ type ElementContentBounds = {
 	closeTagStart: number;
 };
 
+/**
+ * @remarks Raw-text content (`script`, `style`) ends at the first matching close tag, as in browsers;
+ * markup-like strings inside it are not tags.
+ */
+function findRawTextContentBounds(
+	html: string,
+	openTagEndIndex: number,
+	tagName: string,
+): ElementContentBounds | undefined {
+	const closeTag = new RegExp(`</${tagName}[\\s/>]`, 'gi');
+	closeTag.lastIndex = openTagEndIndex;
+	const match = closeTag.exec(html);
+
+	return match ? { closeTagStart: match.index, closeTagEnd: findHtmlTagEnd(html, match.index) } : undefined;
+}
+
 function findElementContentBounds(
+	html: string,
+	openTagEndIndex: number,
+	rootTagName: string,
+): ElementContentBounds | undefined {
+	return rawTextElementNames.has(rootTagName)
+		? findRawTextContentBounds(html, openTagEndIndex, rootTagName)
+		: findNestedContentBounds(html, openTagEndIndex, rootTagName);
+}
+
+function findNestedContentBounds(
 	html: string,
 	openTagEndIndex: number,
 	rootTagName: string,
@@ -239,6 +265,11 @@ function findElementContentBounds(
 			}
 
 			index = token.end;
+			continue;
+		}
+
+		if (token.type === 'open' && rawTextElementNames.has(token.tagName)) {
+			index = findRawTextContentBounds(html, token.end, token.tagName)?.closeTagEnd ?? html.length;
 			continue;
 		}
 

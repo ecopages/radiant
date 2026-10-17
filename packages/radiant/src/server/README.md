@@ -228,7 +228,9 @@ The shim supports a focused query surface for component lifecycle code that runs
 
 Parsed elements keep their source HTML. Child nodes are built on first read (`childNodes`, `children`, or a query that traverses descendants), so nested selectors such as `header > h2` work after `innerHTML` assignment without paying full tree materialization cost during plain serialization. Reading never invalidates the source: a parsed subtree serializes exactly as written until something in it changes. A mutation (attribute, child list, or text) drops the cached source of that element and its ancestors, and only those are re-serialized.
 
-Reads see decoded values: `textContent`, `getAttribute`, and `dataset` decode `&amp; &lt; &gt; &quot; &apos; &nbsp; &copy; &reg; &ndash; &mdash; &hellip;` and numeric references. Other named entities such as `&euro;` read back literally, but still serialize unchanged, because untouched text and open tags are emitted from source. `script` and `style` content is raw text: never decoded, and emitted unescaped with only `</script` / `</style` neutralized.
+Reads see decoded values: `textContent`, `getAttribute`, and `dataset` decode `&amp; &lt; &gt; &quot; &apos; &nbsp; &copy; &reg; &ndash; &mdash; &hellip;` and numeric references. Other named entities such as `&euro;` read back literally, but still serialize unchanged, because untouched text and open tags are emitted from source. `script` and `style` content is raw text: it ends at the first matching close tag (markup-like strings inside do not open tags), is never decoded, and is emitted unescaped with only `</script` / `</style` neutralized.
+
+`test/server/minimal-dom-differential.test.ts` checks parsing, queries, mutations, and serialization against happy-dom on generated HTML. When the minimal DOM gains a behavior, extend that generator so the reference DOM covers it.
 
 SSR hosts created with `new Component()` also align `localName` / `tagName` to the `@customElement` metadata before host preparation and serialization, so in-memory queries like `closest('my-element')` match the tag names used in the rendered HTML.
 
