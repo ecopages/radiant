@@ -1,13 +1,18 @@
 import { serializeHtmlAttribute } from '../../../utils/serialize-html-attribute';
 import { MINIMAL_DOM_ELEMENT } from '../../../core/minimal-dom-identity';
-import { voidElementNames } from '../../html/html-parser';
+import { leadingNewlineElementNames, voidElementNames } from '../../html/html-parser';
 import { toDataAttributeName, toDatasetPropertyName } from './dataset';
 import * as selectors from './selectors';
 
 type MinimalParentNode = Node & ParentNode;
 
 type HtmlParsers = {
-	parseHtmlToNodes: (html: string, ownerDocument: Document | null) => Node[];
+	parseHtmlToNodes: (
+		html: string,
+		ownerDocument: Document | null,
+		contextTagName?: string,
+		followsStartTag?: boolean,
+	) => Node[];
 	serializeNodeHtml: (node: Node) => string;
 };
 
@@ -93,10 +98,11 @@ export class MinimalNode extends MinimalEventTarget {
 	static readonly DOCUMENT_NODE = 9;
 	static readonly ELEMENT_NODE = 1;
 	static readonly TEXT_NODE = 3;
+	static readonly COMMENT_NODE = 8;
 
-	public childNodes: Node[] = [];
 	public ownerDocument: Document | null;
 	public parentNode: MinimalParentNode | null = null;
+	private childNodeList: Node[] = [];
 
 	constructor(
 		public readonly nodeType: number,
@@ -106,21 +112,86 @@ export class MinimalNode extends MinimalEventTarget {
 		this.ownerDocument = ownerDocument;
 	}
 
+	/**
+	 * @remarks Parsed elements build their children lazily, on first read of this list.
+	 */
+	get childNodes(): Node[] {
+		this.ensureChildNodes();
+		return this.childNodeList;
+	}
+
 	append(...nodes: Array<Node | string>): void {
 		for (const node of nodes) {
 			this.appendChild(typeof node === 'string' ? createTextNode(node) : node);
 		}
 	}
 
+	prepend(...nodes: Array<Node | string>): void {
+		const reference = this.firstChild;
+		for (const node of nodes) this.insertBefore(toNode(node), reference);
+	}
+
+	get firstChild(): Node | null {
+		return this.childNodes[0] ?? null;
+	}
+
+	get lastChild(): Node | null {
+		return this.childNodes[this.childNodes.length - 1] ?? null;
+	}
+
+	get nextSibling(): Node | null {
+		return this.siblingAt(1);
+	}
+
+	get previousSibling(): Node | null {
+		return this.siblingAt(-1);
+	}
+
+	before(...nodes: Array<Node | string>): void {
+		const parent = this.parentNode as unknown as MinimalNode | null;
+		for (const node of nodes) parent?.insertBefore(toNode(node), this as unknown as Node);
+	}
+
+	after(...nodes: Array<Node | string>): void {
+		const parent = this.parentNode as unknown as MinimalNode | null;
+		const reference = this.nextSibling;
+		for (const node of nodes) parent?.insertBefore(toNode(node), reference);
+	}
+
+	replaceWith(...nodes: Array<Node | string>): void {
+		this.before(...nodes);
+		this.remove();
+	}
+
+	remove(): void {
+		(this.parentNode as unknown as MinimalNode | null)?.removeChild(this as unknown as Node);
+	}
+
+	private siblingAt(offset: number): Node | null {
+		const siblings = (this.parentNode as unknown as MinimalNode | null)?.childNodes;
+		if (!siblings) return null;
+		return siblings[siblings.indexOf(this as unknown as Node) + offset] ?? null;
+	}
+
 	appendChild<TNode extends Node>(node: TNode): TNode {
+		return this.insertBefore(node, null);
+	}
+
+	insertBefore<TNode extends Node>(node: TNode, reference: Node | null): TNode {
+		this.ensureChildNodes();
+
 		if ('parentNode' in node && node.parentNode && 'removeChild' in node.parentNode) {
 			(node.parentNode as Node & { removeChild(node: Node): Node }).removeChild(node);
 		}
 
-		this.childNodes.push(node);
-		(node as Node & { ownerDocument: Document | null }).ownerDocument =
-			this.nodeType === MinimalNode.DOCUMENT_NODE ? (this as unknown as Document) : this.ownerDocument;
-		(node as Node & { parentNode: MinimalParentNode | null }).parentNode = this as unknown as MinimalParentNode;
+		const index = reference ? this.childNodeList.indexOf(reference) : this.childNodeList.length;
+
+		if (index === -1) {
+			throw new Error('insertBefore: the reference node is not a child of this node.');
+		}
+
+		this.attachChild(node, index);
+		this.invalidateSerialization();
 		return node;
 	}
 
@@ -131,8 +202,9 @@ export class MinimalNode extends MinimalEventTarget {
 			return node;
 		}
 
-		this.childNodes.splice(nodeIndex, 1);
+		this.childNodeList.splice(nodeIndex, 1);
 		(node as Node & { parentNode: MinimalParentNode | null }).parentNode = null;
+		this.invalidateSerialization();
 		return node;
 	}
 
@@ -141,12 +213,41 @@ export class MinimalNode extends MinimalEventTarget {
 			(child as Node & { parentNode: MinimalParentNode | null }).parentNode = null;
 		}
 
-		this.childNodes = [];
+		this.childNodeList = [];
 		this.append(...nodes);
+		this.invalidateSerialization();
 	}
 
+	/**
+	 * Drops cached serialization on this node and every ancestor after a mutation.
+	 *
+	 * @remarks Parsed elements serialize from their source HTML until something under them changes.
+	 */
+	invalidateSerialization(): void {
+		const parent = this.parentNode;
+
+		if (parent instanceof MinimalNode) {
+			parent.invalidateSerialization();
+		}
+	}
+
+	protected ensureChildNodes(): void {}
+
+	/** Adds a child without invalidating serialization; used when materializing parsed children. */
+	protected attachChild(node: Node, index = this.childNodeList.length): void {
+		this.childNodeList.splice(index, 0, node);
+		(node as Node & { ownerDocument: Document | null }).ownerDocument =
+			this.nodeType === MinimalNode.DOCUMENT_NODE ? (this as unknown as Document) : this.ownerDocument;
+		(node as Node & { parentNode: MinimalParentNode | null }).parentNode = this as unknown as MinimalParentNode;
+	}
+
+	/**
+	 * @remarks Comments are skipped, as in the DOM.
+	 */
 	get textContent(): string | null {
-		return this.childNodes.map((child) => child.textContent ?? '').join('');
+		return this.childNodes
+			.map((child) => (child.nodeType === MinimalNode.COMMENT_NODE ? '' : (child.textContent ?? '')))
+			.join('');
 	}
 
 	set textContent(value: string | null) {
@@ -165,9 +266,14 @@ export class MinimalNode extends MinimalEventTarget {
 }
 
 export class MinimalTextNode extends MinimalNode {
+	/**
+	 * @param sourceHtml The text as written in parsed HTML. It is serialized unchanged until the text is set,
+	 * so entities the decoder does not know survive a round trip.
+	 */
 	constructor(
 		private value: string,
 		ownerDocument: Document | null = getInstalledDocumentLike(),
+		public sourceHtml?: string,
 	) {
 		super(MinimalNode.TEXT_NODE, ownerDocument);
 	}
@@ -178,6 +284,34 @@ export class MinimalTextNode extends MinimalNode {
 
 	override set textContent(value: string | null) {
 		this.value = value ?? '';
+		this.sourceHtml = undefined;
+		this.invalidateSerialization();
+	}
+}
+
+export class MinimalCommentNode extends MinimalNode {
+	constructor(
+		private value: string,
+		ownerDocument: Document | null = getInstalledDocumentLike(),
+	) {
+		super(MinimalNode.COMMENT_NODE, ownerDocument);
+	}
+
+	get data(): string {
+		return this.value;
+	}
+
+	set data(value: string) {
+		this.value = value;
+		this.invalidateSerialization();
+	}
+
+	override get textContent(): string {
+		return this.value;
+	}
+
+	override set textContent(value: string | null) {
+		this.data = value ?? '';
 	}
 }
 
@@ -260,9 +394,12 @@ export class MinimalElement extends MinimalNode {
 	private classListValue?: MinimalClassList;
 	private datasetValue?: DOMStringMap;
 	private styleValue?: CSSStyleDeclaration;
-	private fragmentHtml?: string;
-	private fragmentInnerHtml?: string;
-	private fragmentText?: string;
+	/** Source open tag of a parsed element; valid until an attribute changes. */
+	private openTagHtml?: string;
+	/** Source inner HTML of a parsed element; valid until anything under the element changes. */
+	private innerHtmlSource?: string;
+	/** Parsed inner HTML not yet built into child nodes. */
+	private pendingChildHtml?: string;
 
 	public readonly localName: string;
 	public readonly tagName: string;
@@ -368,8 +505,8 @@ export class MinimalElement extends MinimalNode {
 	}
 
 	setAttribute(name: string, value: unknown): void {
-		this.clearFragmentCache();
 		this.#attributeStore.set(name, String(value));
+		this.invalidateOpenTag();
 	}
 
 	toggleAttribute(name: string, force?: boolean): boolean {
@@ -385,8 +522,8 @@ export class MinimalElement extends MinimalNode {
 	}
 
 	removeAttribute(name: string): void {
-		this.clearFragmentCache();
 		this.#attributeStore.delete(name);
+		this.invalidateOpenTag();
 	}
 
 	get parentElement(): MinimalElement | null {
@@ -402,14 +539,68 @@ export class MinimalElement extends MinimalNode {
 		return createMinimalHtmlCollection(elements);
 	}
 
+	get childElementCount(): number {
+		return this.children.length;
+	}
+
+	get firstElementChild(): Element | null {
+		return (this.children[0] as Element | undefined) ?? null;
+	}
+
+	get lastElementChild(): Element | null {
+		return (this.children[this.children.length - 1] as Element | undefined) ?? null;
+	}
+
+	get nextElementSibling(): Element | null {
+		return this.elementSiblingAt(1);
+	}
+
+	get previousElementSibling(): Element | null {
+		return this.elementSiblingAt(-1);
+	}
+
+	private elementSiblingAt(offset: number): Element | null {
+		const siblings = this.parentElement?.children;
+		if (!siblings) return null;
+		const elements = Array.from(siblings as ArrayLike<Element>);
+		return elements[elements.indexOf(this as unknown as Element) + offset] ?? null;
+	}
+
+	/**
+	 * Builds child nodes from the parsed inner HTML, if not done yet.
+	 *
+	 * @remarks Reading does not invalidate the source cache, so a parsed subtree that is only queried still
+	 * serializes byte for byte as written.
+	 */
 	materializeChildren(): void {
-		if (this.fragmentInnerHtml === undefined) {
+		if (this.pendingChildHtml === undefined) {
 			return;
 		}
 
-		const innerHtml = this.fragmentInnerHtml;
-		this.clearFragmentCache();
-		this.replaceChildren(...ensureHtmlParsers().parseHtmlToNodes(innerHtml, this.ownerDocument));
+		const html = this.pendingChildHtml;
+		this.pendingChildHtml = undefined;
+
+		for (const node of ensureHtmlParsers().parseHtmlToNodes(html, this.ownerDocument, this.localName, true)) {
+			this.attachChild(node);
+		}
+	}
+
+	override invalidateSerialization(): void {
+		this.innerHtmlSource = undefined;
+		super.invalidateSerialization();
+	}
+
+	protected override ensureChildNodes(): void {
+		this.materializeChildren();
+	}
+
+	private invalidateOpenTag(): void {
+		this.openTagHtml = undefined;
+		super.invalidateSerialization();
+	}
+
+	private parseChildHtml(html: string): Node[] {
+		return ensureHtmlParsers().parseHtmlToNodes(html, this.ownerDocument, this.localName);
 	}
 
 	querySelector(selector: string): MinimalHTMLElement | null {
@@ -462,63 +653,85 @@ export class MinimalElement extends MinimalNode {
 		}) as unknown as DOMRectList;
 	}
 
-	private clearFragmentCache(): void {
-		this.fragmentHtml = undefined;
-		this.fragmentInnerHtml = undefined;
-	}
-
 	/**
 	 * @remarks Void elements (`input`, `img`, …) must not emit a closing tag.
 	 * `</input>` in serialized SSR HTML makes the fragment splitter close ancestor
 	 * `<div>`s too early.
 	 */
 	get outerHTML(): string {
-		if (this.fragmentHtml !== undefined) {
-			return this.fragmentHtml;
-		}
-
-		const attributes = Array.from(this.#attributeStore.entries())
-			.map(([name, value]) => serializeHtmlAttribute(name, value))
-			.join('');
+		const openTag =
+			this.openTagHtml ??
+			`<${this.localName}${Array.from(this.#attributeStore.entries())
+				.map(([name, value]) => serializeHtmlAttribute(name, value))
+				.join('')}>`;
 
 		if (voidElementNames.has(this.localName)) {
-			return `<${this.localName}${attributes}>`;
+			return openTag;
 		}
 
-		return `<${this.localName}${attributes}>${this.innerHTML}</${this.localName}>`;
+		return `${openTag}${this.innerHtmlSource ?? `${this.leadingNewline()}${this.serializeChildNodes()}`}</${this.localName}>`;
 	}
 
+	/**
+	 * @remarks `pre`, `listing` and `textarea` serialize from child nodes: their source can hold a newline the
+	 * parser dropped, which a fragment parse of `innerHTML` would keep. Like browsers, `innerHTML` adds no
+	 * newline; `outerHTML` does, see {@link leadingNewline}.
+	 */
 	get innerHTML(): string {
+		const source = leadingNewlineElementNames.has(this.localName) ? undefined : this.innerHtmlSource;
+		return source ?? this.serializeChildNodes();
+	}
+
+	/**
+	 * @remarks The parser drops a newline right after a `pre`, `listing` or `textarea` start tag, so markup that
+	 * includes the start tag needs one more when the text itself starts with a newline.
+	 */
+	private leadingNewline(): string {
+		const first = this.childNodes[0];
+		const startsWithNewline = first?.nodeType === MinimalNode.TEXT_NODE && first.textContent?.startsWith('\n');
+		return leadingNewlineElementNames.has(this.localName) && startsWithNewline ? '\n' : '';
+	}
+
+	private serializeChildNodes(): string {
 		return this.childNodes.map((child) => ensureHtmlParsers().serializeNodeHtml(child)).join('');
 	}
 
 	set innerHTML(html: string) {
-		this.clearFragmentCache();
-		this.fragmentText = undefined;
-		this.replaceChildren(...ensureHtmlParsers().parseHtmlToNodes(html, this.ownerDocument));
+		this.pendingChildHtml = undefined;
+		this.replaceChildren(...this.parseChildHtml(html));
 	}
 
+	/**
+	 * @remarks Built from child nodes, which materializes a parsed element. A shortcut over the source HTML
+	 * cannot tell `script` content or a `>` inside an attribute value from markup.
+	 */
 	override get textContent(): string {
-		return this.fragmentText ?? super.textContent ?? '';
+		return super.textContent ?? '';
 	}
 
 	override set textContent(value: string | null) {
-		this.clearFragmentCache();
-		this.fragmentText = value ?? '';
+		this.pendingChildHtml = undefined;
 		super.textContent = value;
 	}
 
+	/**
+	 * Backs a parsed element with its source HTML, building child nodes only when they are read.
+	 *
+	 * @param attributes Entity-decoded attribute values.
+	 * @param keepInnerSource Whether `innerHtml` is also serialized verbatim. Pass `false` when it is not a
+	 * faithful spelling of the parsed children, so they are serialized from the nodes instead.
+	 */
 	setSerializedFragment(
-		fragmentHtml: string,
-		fragmentText: string,
+		openTagHtml: string,
 		attributes: Record<string, string>,
 		innerHtml = '',
+		keepInnerSource = true,
 	): void {
-		this.fragmentHtml = fragmentHtml;
-		this.fragmentInnerHtml = innerHtml;
-		this.fragmentText = fragmentText;
-		this.#attributeStore = new Map(Object.entries(attributes));
 		this.replaceChildren();
+		this.#attributeStore = new Map(Object.entries(attributes));
+		this.openTagHtml = openTagHtml;
+		this.innerHtmlSource = keepInnerSource ? innerHtml : undefined;
+		this.pendingChildHtml = innerHtml;
 	}
 }
 
@@ -553,8 +766,33 @@ export class MinimalHTMLElement extends MinimalElement {
 		super(tagName, ownerDocument);
 	}
 
-	insertAdjacentHTML(_position: InsertPosition, html: string): void {
-		this.append(...ensureHtmlParsers().parseHtmlToNodes(html, this.ownerDocument));
+	/**
+	 * @remarks `beforebegin` / `afterend` need a parent, as in the DOM. HTML is parsed in the context of the
+	 * element it lands in.
+	 */
+	insertAdjacentHTML(position: InsertPosition, html: string): void {
+		const parent = this.parentNode instanceof MinimalElement ? this.parentNode : null;
+		const outside = position === 'beforebegin' || position === 'afterend';
+
+		if (outside && !parent) {
+			throw new Error(`insertAdjacentHTML('${position}') requires the element to have a parent element.`);
+		}
+
+		const target: MinimalElement = outside ? (parent as MinimalElement) : this;
+		const self = this as unknown as Node;
+		const reference =
+			position === 'beforebegin'
+				? self
+				: position === 'afterbegin'
+					? (this.childNodes[0] ?? null)
+					: position === 'afterend'
+						? (target.childNodes[target.childNodes.indexOf(self) + 1] ?? null)
+						: null;
+		const nodes = ensureHtmlParsers().parseHtmlToNodes(html, this.ownerDocument, target.localName);
+
+		for (const node of nodes) {
+			target.insertBefore(node, reference);
+		}
 	}
 
 	/**
@@ -578,6 +816,10 @@ export class MinimalHtmlScriptElement extends MinimalHTMLElement {
 	constructor(ownerDocument: Document | null = getInstalledDocumentLike()) {
 		super('script', ownerDocument);
 	}
+}
+
+function toNode(node: Node | string): Node {
+	return typeof node === 'string' ? createTextNode(node) : node;
 }
 
 export function createTextNode(value: string): Node {

@@ -1,9 +1,10 @@
-// @vitest-environment happy-dom
-import type { WritableSignal } from '@ecopages/signals';
 import { describe, expect, test } from 'vitest';
-import { ContextProvider, createContext, provideContext } from '../../src/context';
+import { ContextProvider, provideContext } from '../../src/context';
+import {
+	LegacyPostConstructionController,
+	postConstructionContext,
+} from '../fixtures/legacy-post-construction-controller';
 import { setCustomElementTagName } from '../../src/core/custom-element-metadata';
-import { RadiantController } from '../../src/core/radiant-controller';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { customElement } from '../../src/decorators/custom-element';
 import {
@@ -14,12 +15,8 @@ import { ensureLegacyHostReady } from '../../src/decorators/legacy/host-readines
 import { reactiveProp as legacyReactiveProp } from '../../src/decorators/legacy/reactive-prop';
 import { prop } from '../../src/decorators/prop';
 import { state } from '../../src/decorators/state';
-import { signal } from '../../src/decorators/signal';
-import { renderController } from '../../src/server/render-controller';
 import { installLightDomShim } from '../../src/server/light-dom-shim';
 import { REACTIVE_HOST } from '../../src/core/reactive-host';
-
-const postConstructionContext = createContext<{ count: number }>(Symbol('post-construction-context'));
 
 @customElement('legacy-post-construction-element-test')
 class LegacyPostConstructionElement extends RadiantElement {
@@ -29,23 +26,6 @@ class LegacyPostConstructionElement extends RadiantElement {
 		hydrate: Object,
 	})
 	provider!: ContextProvider<typeof postConstructionContext>;
-}
-
-class LegacyPostConstructionController extends RadiantController {
-	@provideContext<typeof postConstructionContext>({
-		context: postConstructionContext,
-		initialValue: { count: 1 },
-	})
-	provider!: ContextProvider<typeof postConstructionContext>;
-
-	@signal({ initial: 'ready' })
-	status!: WritableSignal<string>;
-
-	override connect(): void {
-		super.connect();
-		this.host.setAttribute('data-context-count', String(this.provider.getContext().count));
-		this.host.setAttribute('data-status', this.status.get());
-	}
 }
 
 describe('legacy post-construction decorator setup', () => {
@@ -124,19 +104,6 @@ describe('legacy post-construction decorator setup', () => {
 
 		expect(host.getAttribute('data-context-count')).toBe('1');
 		expect(host.getAttribute('data-status')).toBe('ready');
-	});
-
-	test('makes post-construction decorated fields available during controller SSR initialize()', async () => {
-		const rendered = await renderController(LegacyPostConstructionController, {
-			tagName: 'section',
-			initialize: (controller) => {
-				controller.provider.setContext({ count: 9 });
-				controller.status.set('server-ready');
-			},
-		});
-
-		expect(rendered.markup).toContain('data-context-count="9"');
-		expect(rendered.markup).toContain('data-status="server-ready"');
 	});
 
 	test('registers legacy reactive members before SSR binding reads', () => {

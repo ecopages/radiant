@@ -86,3 +86,31 @@ describe('@bindTo SSR', () => {
 		expect(html).toMatch(/<span[^>]*data-bind-target[^>]*>Synced<\/span>/);
 	});
 });
+
+describe('SSR entity escaping', () => {
+	it('escapes child text inside a custom element once', () => {
+		const html = withRadiantServerCustomElementRenderBridge(() =>
+			renderToString(
+				<bind-to-ssr-attr-host value="x">
+					<span>Terms & Conditions</span>
+				</bind-to-ssr-attr-host>,
+			),
+		);
+
+		expect(html).toContain('Terms &amp; Conditions');
+		expect(html).not.toContain('&amp;amp;');
+	});
+
+	it('keeps quoted JSON in a nested attribute escaped once', () => {
+		const rules = JSON.stringify([{ type: 'required' }]);
+		const html = withRadiantServerCustomElementRenderBridge(() =>
+			renderToString(
+				<bind-to-ssr-attr-host value="x">
+					<input data-rules={rules} />
+				</bind-to-ssr-attr-host>,
+			),
+		);
+
+		expect(html).toContain('data-rules="[{&quot;type&quot;:&quot;required&quot;}]"');
+	});
+});

@@ -1,4 +1,4 @@
-import type { JsxNodeLike } from './renderable-types.ts';
+import type { JsxNodeLike, JsxRenderable } from './renderable-types.ts';
 import type { RenderToStringOptions } from '../ssr/server-render.ts';
 
 /**
@@ -21,6 +21,14 @@ export interface ServerRenderableCustomElement {
  * Context passed to server custom-element render hooks.
  */
 export type ServerCustomElementRenderHookContext = {
+	/**
+	 * Applies `children` as the element's light DOM, serialized as plain markup. Runs at most once.
+	 *
+	 * @remarks Already done before the hook runs, unless the hook was registered with `ownsChildren`.
+	 */
+	applyChildren: () => void;
+	/** JSX children passed to the element. */
+	children: JsxRenderable | undefined;
 	constructor: CustomElementConstructor;
 	hydrate: boolean;
 	instance: HTMLElement;
@@ -40,3 +48,11 @@ export type ServerCustomElementRenderHookContext = {
  * `{ nodeType, outerHTML }` objects are escaped as text.
  */
 export type ServerCustomElementRenderHook = (context: ServerCustomElementRenderHookContext) => JsxNodeLike | undefined;
+
+export type ServerCustomElementRenderHookOptions = {
+	/**
+	 * The hook applies the JSX children of elements it claims, through `context.applyChildren()`, instead of
+	 * the runtime applying them before the hook runs.
+	 */
+	ownsChildren?: boolean;
+};

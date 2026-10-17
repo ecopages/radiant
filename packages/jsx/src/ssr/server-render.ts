@@ -7,7 +7,12 @@ import {
 	withActiveSsrRenderContext,
 	withActiveSsrScopeValue,
 } from './ssr-render-scope.ts';
-import type { JsxRenderable, ServerCustomElementRenderHook, TemplateResultLike } from '../types/index.ts';
+import type {
+	JsxRenderable,
+	ServerCustomElementRenderHook,
+	ServerCustomElementRenderHookOptions,
+	TemplateResultLike,
+} from '../types/index.ts';
 
 /** Public vocabulary for the SSR output modes supported by `renderToString(...)`. */
 export type RenderToStringMode = 'hydrate' | 'plain';
@@ -71,7 +76,8 @@ export function renderToString(value: JsxRenderable, options: RenderToStringOpti
 	const ssr: SsrRenderContext = {
 		hydrate,
 		customElementRenderHook: activeSsrContext?.customElementRenderHook,
-		renderChild: (child) => renderChild(child, context),
+		customElementRenderHookOwnsChildren: activeSsrContext?.customElementRenderHookOwnsChildren,
+		renderChild: renderCustomElementLightDom,
 		scopeValues: hydrationBindingScope.scopeValues,
 	};
 	const context: RenderContext = {
@@ -93,9 +99,21 @@ export function isServerRenderHydrationActive(): boolean {
  * Frameworks use this to adapt richer host rendering models, such as
  * `RadiantElement`, without teaching the core JSX renderer about framework-
  * specific element classes.
+ *
+ * @remarks By default the element's JSX children are applied as light DOM before the hook runs. With
+ * `ownsChildren`, they are not: a hook that returns a render must call `context.applyChildren()` itself, at the
+ * point where the children should serialize (for example inside the host's context providers). Elements the
+ * hook does not claim get their children applied as usual.
  */
-export function withServerCustomElementRenderHook<T>(hook: ServerCustomElementRenderHook, render: () => T): T {
-	return withSsrRenderOverrides({ customElementRenderHook: hook }, render);
+export function withServerCustomElementRenderHook<T>(
+	hook: ServerCustomElementRenderHook,
+	render: () => T,
+	options: ServerCustomElementRenderHookOptions = {},
+): T {
+	return withSsrRenderOverrides(
+		{ customElementRenderHook: hook, customElementRenderHookOwnsChildren: options.ownsChildren === true },
+		render,
+	);
 }
 
 /** Creates a fresh hydrate binding namespace for one server-owned hydration root. */
@@ -117,10 +135,9 @@ export function withServerHydrationBindingState<T>(state: ServerHydrationBinding
 function withSsrRenderOverrides<T>(overrides: Partial<SsrRenderContext>, render: () => T): T {
 	const parentContext = getActiveSsrRenderContext();
 	const nextContext: SsrRenderContext = {
+		...parentContext,
+		...overrides,
 		hydrate: overrides.hydrate ?? parentContext?.hydrate ?? false,
-		customElementRenderHook: overrides.customElementRenderHook ?? parentContext?.customElementRenderHook,
-		renderChild: parentContext?.renderChild,
-		scopeValues: parentContext?.scopeValues,
 	};
 
 	return withActiveSsrRenderContext(nextContext, render);
@@ -170,7 +187,26 @@ function renderChild(value: JsxRenderable, context: RenderContext): string {
 	});
 }
 
-function renderIntrinsicCustomElementTemplate(template: TemplateResultLike): string | undefined {
+/**
+ * Serializes JSX children handed to a nested custom element as its light DOM.
+ *
+ * @remarks
+ * Always plain: client hydration skips custom-element subtrees
+ * (`countHydrationMarkers`), so markers here would take indexes from the
+ * enclosing render's namespace and shift every later sibling marker. They would
+ * also make the nested host mistake authored light DOM for its own SSR output.
+ * Nested hosts inside the children still render through the custom-element
+ * hook, which follows the active hydrate policy with a fresh namespace.
+ */
+function renderCustomElementLightDom(value: JsxRenderable): string {
+	return serializeRenderable(value, {
+		mode: 'plain',
+		renderCustomElementTemplate: (template) => renderIntrinsicCustomElementTemplate(template),
+	});
+}
+
+/** Renders a registered custom element template through the active hook or its own host renderer. */
+export function renderIntrinsicCustomElementTemplate(template: TemplateResultLike): string | undefined {
 	if (!template.rootLocalName?.includes('-') || !template.ssrIntrinsicProps) {
 		return undefined;
 	}

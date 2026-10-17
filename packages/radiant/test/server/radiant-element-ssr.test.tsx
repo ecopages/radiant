@@ -1,9 +1,6 @@
-// @vitest-environment happy-dom
 import '../../src/server/install-ssr-runtime';
-import { waitFor } from '@testing-library/dom';
-import { beforeEach, describe, expect, test } from 'vitest';
+import { describe, expect, test } from 'vitest';
 import { ContextProvider, createContext, onContextUpdate, provideContext } from '../../src/context';
-import { installRadiantHydrator, uninstallRadiantHydrator } from '../../src/client/hydrator';
 import { setCustomElementTagName } from '../../src/core/custom-element-metadata';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { customElement } from '../../src/decorators/custom-element';
@@ -12,7 +9,6 @@ import { querySlot } from '../../src/decorators/query-slot';
 import { signal } from '../../src/decorators/signal';
 import { state } from '../../src/decorators/state';
 import type { WritableSignal } from '@ecopages/signals';
-import { createCustomElement } from '../utils/create-custom-element';
 import { resolveSsrContextValue } from '../../src/server/context-ssr';
 import {
 	renderRadiantElementHostToString,
@@ -58,11 +54,6 @@ class ServerHostSlotQueryCard extends RadiantElement {
 }
 
 describe('RadiantElement SSR', () => {
-	beforeEach(() => {
-		uninstallRadiantHydrator();
-		document.body.innerHTML = '';
-	});
-
 	test('renderRadiantElementViewToString() serializes the current view without connecting', () => {
 		class ServerGreetingCard extends RadiantElement {
 			message = 'Hello SSR';
@@ -74,7 +65,7 @@ describe('RadiantElement SSR', () => {
 
 		customElements.define('server-greeting-card-test', ServerGreetingCard);
 
-		const element = createCustomElement<ServerGreetingCard>('server-greeting-card-test');
+		const element = new ServerGreetingCard();
 
 		expect(renderRadiantElementViewToString(element)).toBe('<p data-ref="message">Hello SSR</p>');
 	});
@@ -90,7 +81,7 @@ describe('RadiantElement SSR', () => {
 
 		customElement('server-host-greeting-card-test')(ServerHostGreetingCard);
 
-		const element = createCustomElement<ServerHostGreetingCard>('server-host-greeting-card-test');
+		const element = new ServerHostGreetingCard();
 
 		expect(renderRadiantElementHostToString(element)).toBe(
 			'<server-host-greeting-card-test><p data-ref="message">Hello host SSR</p></server-host-greeting-card-test>',
@@ -102,7 +93,7 @@ describe('RadiantElement SSR', () => {
 
 		customElements.define('server-passthrough-card-test', ServerPassthroughCard);
 
-		const element = createCustomElement<ServerPassthroughCard>('server-passthrough-card-test');
+		const element = new ServerPassthroughCard();
 		element.innerHTML = '<p>Projected body</p><button type="button">Open</button>';
 
 		expect(renderRadiantElementViewToString(element)).toBe(
@@ -253,6 +244,85 @@ describe('RadiantElement SSR', () => {
 		expect(html).not.toContain('Stage: Pending');
 	});
 
+	test('renderRadiantElementHostToString() resolves context for consumers passed as JSX children of a provider host', () => {
+		const slottedSsrContext = createContext<{ owner: string }>(Symbol('slotted-radiant-provider-context'));
+
+		@customElement('slotted-ssr-consumer-card-test')
+		class SlottedSsrConsumerCard extends RadiantElement<{ owner: string }> {
+			@state owner = 'Awaiting provider';
+
+			@onContextUpdate({ context: slottedSsrContext })
+			protected syncOwner(currentContext: { owner: string }): void {
+				this.owner = currentContext.owner;
+			}
+
+			override render() {
+				return <p class="slotted-owner">{this.$.owner}</p>;
+			}
+		}
+
+		@customElement('slotted-ssr-provider-card-test')
+		class SlottedSsrProviderCard extends RadiantElement {
+			@provideContext({ context: slottedSsrContext, initialValue: { owner: 'Provider owner' } })
+			context!: ContextProvider<typeof slottedSsrContext>;
+
+			override render() {
+				return (
+					<section>
+						<slot />
+					</section>
+				);
+			}
+		}
+
+		@customElement('slotted-ssr-page-test')
+		class SlottedSsrPage extends RadiantElement {
+			override render() {
+				return (
+					<slotted-ssr-provider-card-test>
+						<slotted-ssr-consumer-card-test />
+					</slotted-ssr-provider-card-test>
+				);
+			}
+		}
+
+		expect(SlottedSsrConsumerCard).toBeDefined();
+		expect(SlottedSsrProviderCard).toBeDefined();
+
+		@customElement('slotted-ssr-frame-test')
+		class SlottedSsrFrame extends RadiantElement {
+			override render() {
+				return (
+					<div>
+						<slot />
+					</div>
+				);
+			}
+		}
+
+		@customElement('slotted-ssr-framed-page-test')
+		class SlottedSsrFramedPage extends RadiantElement {
+			override render() {
+				return (
+					<slotted-ssr-frame-test>
+						<slotted-ssr-provider-card-test>
+							<slotted-ssr-consumer-card-test />
+						</slotted-ssr-provider-card-test>
+					</slotted-ssr-frame-test>
+				);
+			}
+		}
+
+		expect(SlottedSsrFrame).toBeDefined();
+
+		for (const page of [new SlottedSsrPage(), new SlottedSsrFramedPage()]) {
+			const html = renderRadiantElementHostToString(page, { mode: 'hydrate' });
+
+			expect(html).toMatch(/<p[^>]*class="slotted-owner"[^>]*>Provider owner<\/p>/);
+			expect(html).not.toContain('Awaiting provider');
+		}
+	});
+
 	test('renderComponentToString() applies array @prop values before the first server render', async () => {
 		const html = await renderComponentToString<SsrArrayPropCard>(SsrArrayPropCard, {
 			initialize: (component) => {
@@ -266,21 +336,6 @@ describe('RadiantElement SSR', () => {
 		);
 		expect(html).toContain('<p>first, second</p>');
 		expect(html).not.toContain('[object Object]');
-	});
-
-	test('explicit SSR setup remains a safe no-op when a DOM is already available', () => {
-		const initialRegistry = globalThis.customElements;
-		const initialHTMLElement = globalThis.HTMLElement;
-		const initialWindow = globalThis.window;
-		const initialBody = document.body;
-		document.body.innerHTML = '<p data-preserved="true">kept</p>';
-		const runtime = installLightDomShim();
-
-		expect(runtime.customElements).toBe(initialRegistry);
-		expect(runtime.HTMLElement).toBe(initialHTMLElement);
-		expect(globalThis.window).toBe(initialWindow);
-		expect(document.body).toBe(initialBody);
-		expect(document.body.innerHTML).toBe('<p data-preserved="true">kept</p>');
 	});
 
 	test("renderRadiantElementHostToString({ mode: 'hydrate' }) keeps hydration output free of internal child markers", () => {
@@ -452,6 +507,28 @@ describe('RadiantElement SSR', () => {
 		expect(html).toContain('<header><h2 slot="header">Server heading</h2></header>');
 		expect(html).toContain('<div><p>Server body</p></div>');
 		expect(html).toContain('data-radiant-slot-projection');
+	});
+
+	test('slot projection payload keeps escaped text escaped', () => {
+		@customElement('server-host-slot-escape-test')
+		class ServerHostSlotEscape extends RadiantElement {
+			override render() {
+				return (
+					<section>
+						<slot />
+					</section>
+				);
+			}
+		}
+
+		const element = new ServerHostSlotEscape();
+		element.innerHTML = 'Tom &amp; Jerry &lt;img src=x onerror=alert(1)&gt;';
+
+		const html = renderRadiantElementHostToString(element, { mode: 'hydrate' });
+
+		expect(html).toContain('<section>Tom &amp; Jerry &lt;img src=x onerror=alert(1)&gt;</section>');
+		expect(html).not.toContain('<img');
+		expect(html).not.toContain('"Tom & Jerry');
 	});
 
 	describeWhenStandard('SSR ordering with generated hydration scripts', () => {
@@ -697,21 +774,6 @@ describe('RadiantElement SSR', () => {
 			expect(element.defaultSlot?.textContent).toBe('Prepared body');
 		});
 
-		test.skip('hydrates array @prop values from SSR host attributes before the first client render (happy-dom; covered by ssr-hydrate.e2e)', async () => {
-			const serverElement = new SsrArrayPropCard();
-			serverElement.items = [{ label: 'first' }, { label: 'second' }];
-			const serverMarkup = renderRadiantElementHostToString(serverElement, { mode: 'hydrate' });
-
-			document.body.innerHTML = serverMarkup;
-
-			const element = document.querySelector('ssr-array-prop-card-test') as SsrArrayPropCard;
-
-			await waitFor(() => {
-				expect(element.items).toEqual([{ label: 'first' }, { label: 'second' }]);
-				expect(element.querySelector('p')?.textContent).toBe('first, second');
-			});
-		});
-
 		test("renderRadiantElementHostToString({ mode: 'hydrate' }) appends signal hydration scripts automatically", () => {
 			class ServerHostSignalCard extends RadiantElement {
 				@signal({ hydrate: String, initial: 'idle' }) status!: WritableSignal<string>;
@@ -733,236 +795,6 @@ describe('RadiantElement SSR', () => {
 			expect(html).toContain(
 				'<script type="application/json" data-hydration data-hydration-type="signal" data-hydration-key="status">"ready"</script>',
 			);
-		});
-	});
-
-	test('hydrates SSR markup in place on connect', async () => {
-		class HydratedCounter extends RadiantElement {
-			count = 0;
-
-			private readonly increment = () => {
-				this.count += 1;
-				this.update();
-			};
-
-			override render() {
-				return (
-					<button type="button" on:click={this.increment}>
-						Count {this.count}
-					</button>
-				);
-			}
-		}
-
-		customElements.define('hydrated-counter-test', HydratedCounter);
-
-		const serverElement = createCustomElement<HydratedCounter>('hydrated-counter-test');
-		const serverMarkup = renderRadiantElementViewToString(serverElement, { mode: 'hydrate' });
-		installRadiantHydrator();
-
-		document.body.innerHTML = `<hydrated-counter-test>${serverMarkup}</hydrated-counter-test>`;
-
-		const element = document.querySelector('hydrated-counter-test') as HydratedCounter;
-		const button = element.querySelector('button');
-
-		expect(button).not.toBeNull();
-
-		await waitFor(() => {
-			expect(button?.getAttributeNames().some((name) => name.startsWith('data-radiant-jsx-bind-'))).toBe(false);
-		});
-
-		button?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-
-		await waitFor(() => {
-			expect(element.querySelector('button')?.textContent).toBe('Count 1');
-		});
-	});
-
-	test('hydrates SSR markup that uses slot projection payloads', async () => {
-		@customElement('hydrated-slot-card-test')
-		class HydratedSlotCard extends RadiantElement {
-			count = 0;
-
-			private readonly increment = () => {
-				this.count += 1;
-				this.update();
-			};
-
-			override render() {
-				return (
-					<section>
-						<header>
-							<slot name="header" />
-						</header>
-						<div>
-							<slot />
-						</div>
-						<button type="button" on:click={this.increment}>
-							Count {this.count}
-						</button>
-					</section>
-				);
-			}
-		}
-
-		const serverElement = new HydratedSlotCard();
-		serverElement.innerHTML = '<h2 slot="header">SSR header</h2><p>SSR body</p>';
-		const serverMarkup = renderRadiantElementHostToString(serverElement, { mode: 'hydrate' });
-		installRadiantHydrator();
-
-		document.body.innerHTML = serverMarkup;
-
-		const element = document.querySelector('hydrated-slot-card-test') as HydratedSlotCard;
-
-		await waitFor(() => {
-			expect(element.querySelector('header > h2')?.textContent).toBe('SSR header');
-			expect(element.querySelector('div > p')?.textContent).toBe('SSR body');
-			expect(element.innerHTML).not.toContain('data-radiant-jsx-bind-');
-			expect(element.querySelector('script[data-radiant-slot-projection]')).toBeNull();
-		});
-
-		element.querySelector('button')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-
-		await waitFor(() => {
-			expect(element.querySelector('button')?.textContent).toBe('Count 1');
-		});
-	});
-
-	test('hydrates slot projection payloads with multiple projected roots and quoted attributes', async () => {
-		@customElement('hydrated-complex-slot-card-test')
-		class HydratedComplexSlotCard extends RadiantElement {
-			count = 0;
-
-			private readonly increment = () => {
-				this.count += 1;
-				this.update();
-			};
-
-			override render() {
-				return (
-					<section>
-						<header>
-							<slot name="header" />
-						</header>
-						<div data-ref="body">
-							<slot />
-						</div>
-						<footer>
-							<slot name="footer" />
-						</footer>
-						<button type="button" on:click={this.increment}>
-							Count {this.count}
-						</button>
-					</section>
-				);
-			}
-		}
-
-		const serverElement = new HydratedComplexSlotCard();
-		serverElement.innerHTML =
-			'<h2 slot="header" data-note="1 > 0">SSR header</h2><article data-kind="primary"><p>SSR body</p></article><radiant-component-counter count="4" label="Projected SSR counter"></radiant-component-counter><p slot="footer">SSR footer</p>';
-		const serverMarkup = renderRadiantElementHostToString(serverElement, { mode: 'hydrate' });
-		installRadiantHydrator();
-
-		document.body.innerHTML = serverMarkup;
-
-		const element = document.querySelector('hydrated-complex-slot-card-test') as HydratedComplexSlotCard;
-
-		await waitFor(() => {
-			expect(element.querySelector('header > h2')?.getAttribute('data-note')).toBe('1 > 0');
-			expect(element.querySelector('[data-ref="body"] > article > p')?.textContent).toBe('SSR body');
-			expect(element.querySelector('[data-ref="body"] > radiant-component-counter')?.getAttribute('count')).toBe(
-				'4',
-			);
-			expect(element.querySelector('footer > p')?.textContent).toBe('SSR footer');
-			expect(element.innerHTML).not.toContain('data-radiant-jsx-bind-');
-			expect(element.querySelector('script[data-radiant-slot-projection]')).toBeNull();
-		});
-
-		element.querySelector('button')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-
-		await waitFor(() => {
-			expect(element.querySelector('button')?.textContent).toBe('Count 1');
-		});
-	});
-
-	test('SSR hosts fall back to a fresh client render when the explicit hydrator is not installed', async () => {
-		class NonHydratedCounter extends RadiantElement {
-			count = 0;
-
-			override render() {
-				return <button type="button">Count {this.count}</button>;
-			}
-		}
-
-		customElements.define('non-hydrated-counter-test', NonHydratedCounter);
-
-		const serverElement = createCustomElement<NonHydratedCounter>('non-hydrated-counter-test');
-		const serverMarkup = renderRadiantElementViewToString(serverElement, { mode: 'hydrate' });
-
-		document.body.innerHTML = `<non-hydrated-counter-test>${serverMarkup}</non-hydrated-counter-test>`;
-
-		const element = document.querySelector('non-hydrated-counter-test') as NonHydratedCounter;
-		const initialButton = element.querySelector('button');
-
-		expect(initialButton).not.toBeNull();
-
-		await waitFor(() => {
-			expect(element.querySelector('button')).not.toBe(initialButton);
-			expect(element.innerHTML).not.toContain('data-radiant-jsx-bind-');
-		});
-	});
-
-	test('first-connect hydration ignores stale pre-connect update requests', async () => {
-		class DeferredHydratedCard extends RadiantElement {
-			count = 0;
-
-			constructor() {
-				super();
-				this.count = 2;
-				this.update();
-			}
-
-			private readonly increment = () => {
-				this.count += 1;
-				this.update();
-			};
-
-			override render() {
-				return (
-					<section>
-						<h3>Hydrated card</h3>
-						<p data-ref="count">Count: {this.count}</p>
-						<div>
-							<button type="button" on:click={this.increment}>
-								Increment
-							</button>
-						</div>
-					</section>
-				);
-			}
-		}
-
-		customElements.define('deferred-hydrated-card-test', DeferredHydratedCard);
-
-		const serverElement = createCustomElement<DeferredHydratedCard>('deferred-hydrated-card-test');
-		const serverMarkup = renderRadiantElementViewToString(serverElement, { mode: 'hydrate' });
-		installRadiantHydrator();
-
-		document.body.innerHTML = `<deferred-hydrated-card-test>${serverMarkup}</deferred-hydrated-card-test>`;
-
-		const element = document.querySelector('deferred-hydrated-card-test') as DeferredHydratedCard;
-
-		await waitFor(() => {
-			expect(element.querySelectorAll('button')).toHaveLength(1);
-			expect(element.querySelector('[data-ref="count"]')?.textContent).toBe('Count: 2');
-			expect(element.innerHTML).not.toContain('data-radiant-jsx-bind-');
-		});
-
-		element.querySelector('button')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-
-		await waitFor(() => {
-			expect(element.querySelector('[data-ref="count"]')?.textContent).toBe('Count: 3');
 		});
 	});
 });

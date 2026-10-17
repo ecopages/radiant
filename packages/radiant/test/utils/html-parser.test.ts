@@ -29,6 +29,14 @@ describe('collectTopLevelHtmlFragments', () => {
 
 		expect(collectTopLevelHtmlFragments(html)).toEqual([html]);
 	});
+
+	test('treats markup inside script and style as raw text', () => {
+		const html =
+			'<section><script>const a = "<div>";</script><style>a::after{content:"</p>"}</style></section>tail';
+
+		expect(collectTopLevelHtmlFragments(html)).toEqual([html.slice(0, -'tail'.length), 'tail']);
+		expect(collectTopLevelHtmlFragments('<script>"<div>"</SCRIPT >x')).toEqual(['<script>"<div>"</SCRIPT >', 'x']);
+	});
 });
 
 describe('parseAttributes', () => {

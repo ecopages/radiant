@@ -34,6 +34,15 @@ describe('slot projection helpers', () => {
 		expect(serializeProjectedSlotRenderables(deserializeProjectedSlotRenderables(serialized!))).toBe(serialized);
 	});
 
+	test('serializes comment nodes as nothing so their data cannot become payload markup', () => {
+		const host = document.createElement('div');
+		host.append(document.createComment('<img src=x onerror=alert(1)>'), document.createTextNode('kept'));
+
+		const serialized = serializeProjectedSlotRenderables(captureProjectedSlotRenderables(host));
+
+		expect(JSON.parse(serialized!)).toEqual({ '': ['kept'] });
+	});
+
 	test('collects only authored hydration scripts from the host light DOM', () => {
 		const hydrationMarkup =
 			'<script type="application/json" data-hydration data-hydration-type="context" data-hydration-key="provider">{"count":3}</script>';

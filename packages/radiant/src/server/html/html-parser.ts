@@ -24,6 +24,19 @@ export type ParseHtmlTagTokenOptions = {
 	includeInnerHtml?: boolean;
 };
 
+/** Raw text elements: content is text up to the matching close tag, never decoded or escaped. */
+export const rawTextElementNames = new Set(['script', 'style', 'xmp', 'iframe', 'noembed', 'noframes']);
+
+/** Escapable raw text elements: content is text up to the matching close tag, with character references decoded. */
+export const escapableRawTextElementNames = new Set(['textarea', 'title']);
+
+/** Elements whose first newline after the start tag is dropped by the parser and restored by the serializer. */
+export const leadingNewlineElementNames = new Set(['pre', 'listing', 'textarea']);
+
+function isTextOnlyElement(tagName: string): boolean {
+	return rawTextElementNames.has(tagName) || escapableRawTextElementNames.has(tagName);
+}
+
 export const voidElementNames = new Set([
 	'area',
 	'base',
@@ -63,7 +76,7 @@ export function collectTopLevelHtmlFragments(html: string): string[] {
  */
 function findTopLevelFragmentEnd(html: string, startIndex: number): number {
 	if (html.startsWith('<!--', startIndex)) return findCommentEnd(html, startIndex);
-	if (html[startIndex] !== '<') return findTextEnd(html, startIndex);
+	if (!isMarkupStart(html, startIndex)) return findTextEnd(html, startIndex + 1);
 	const token = parseHtmlTagToken(html, startIndex, { includeInnerHtml: false });
 	if (!token || token.type !== 'open' || token.selfClosing || voidElementNames.has(token.tagName)) {
 		return token?.end ?? html.length;
@@ -72,14 +85,46 @@ function findTopLevelFragmentEnd(html: string, startIndex: number): number {
 	return findElementCloseEnd(html, token.end, token.tagName);
 }
 
+/**
+ * @remarks Searching from after `<!` lets `<!-->` and `<!--->` close as empty comments, as in browsers.
+ */
 function findCommentEnd(html: string, startIndex: number): number {
-	const commentEnd = html.indexOf('-->', startIndex + 4);
+	const commentEnd = html.indexOf('-->', startIndex + 2);
 	return commentEnd === -1 ? html.length : commentEnd + 3;
 }
 
+/**
+ * @remarks As in the HTML tokenizer, `<` starts markup only before a letter, `/`, `!` or `?`;
+ * otherwise (`a < b`) it is text.
+ */
+function isMarkupStart(html: string, index: number): boolean {
+	return html.charAt(index) === '<' && /[A-Za-z/!?]/.test(html.charAt(index + 1));
+}
+
 function findTextEnd(html: string, startIndex: number): number {
-	const nextTagIndex = html.indexOf('<', startIndex);
-	return nextTagIndex === -1 ? html.length : nextTagIndex;
+	let index = html.indexOf('<', startIndex);
+
+	while (index !== -1 && !isMarkupStart(html, index)) {
+		index = html.indexOf('<', index + 1);
+	}
+
+	return index === -1 ? html.length : index;
+}
+
+/**
+ * @remarks `<!…>`, `<?…>` and `</` followed by a non-letter are bogus comments ending at the first `>`;
+ * `</>` is dropped, as in browsers.
+ */
+function parseBogusMarkup(html: string, startIndex: number): ParsedHtmlToken | undefined {
+	const next = html.charAt(startIndex + 1);
+	const afterSlash = html.charAt(startIndex + 2);
+
+	if (next === '/' && /[A-Za-z]/.test(afterSlash)) return undefined;
+	if (next !== '!' && next !== '?' && next !== '/') return undefined;
+	if (next === '/' && afterSlash === '>') return { end: startIndex + 3, tagName: '', type: 'close' };
+
+	const end = html.indexOf('>', startIndex);
+	return { end: end === -1 ? html.length : end + 1, type: 'declaration' };
 }
 
 export function findHtmlTagEnd(html: string, startIndex: number): number {
@@ -109,13 +154,13 @@ export function findHtmlTagEnd(html: string, startIndex: number): number {
 }
 
 export function parseAttributes(rawAttributes: string): Record<string, string> {
-	const attributes: Record<string, string> = {};
+	const attributes: Record<string, string> = Object.create(null);
 	const attributePattern = /([:^@A-Za-z0-9_.-]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>/]+)))?/g;
 
 	for (const match of rawAttributes.matchAll(attributePattern)) {
 		const [, name, doubleQuoted, singleQuoted, bareValue] = match;
 
-		if (!name) {
+		if (!name || Object.hasOwn(attributes, name)) {
 			continue;
 		}
 
@@ -152,26 +197,21 @@ export function parseHtmlTagToken(
 	options: ParseHtmlTagTokenOptions = {},
 ): ParsedHtmlToken | undefined {
 	if (html.startsWith('<!--', startIndex)) {
-		const endIndex = html.indexOf('-->', startIndex + 4);
-		return {
-			end: endIndex === -1 ? html.length : endIndex + 3,
-			type: 'comment',
-		};
+		return { end: findCommentEnd(html, startIndex), type: 'comment' };
+	}
+
+	if (!isMarkupStart(html, startIndex)) {
+		return undefined;
+	}
+
+	const bogus = parseBogusMarkup(html, startIndex);
+
+	if (bogus) {
+		return bogus;
 	}
 
 	const endIndex = findHtmlTagEnd(html, startIndex);
 	const rawToken = html.slice(startIndex + 1, endIndex - 1).trim();
-
-	if (rawToken === '') {
-		return undefined;
-	}
-
-	if (rawToken.startsWith('!') || rawToken.startsWith('?')) {
-		return {
-			end: endIndex,
-			type: 'declaration',
-		};
-	}
 
 	if (rawToken.startsWith('/')) {
 		const tagName = rawToken.slice(1).trim().split(/[\s>]/, 1)[0]?.toLowerCase() ?? '';
@@ -205,7 +245,33 @@ type ElementContentBounds = {
 	closeTagStart: number;
 };
 
+/**
+ * @remarks Raw text and escapable raw text (`script`, `textarea`, …) end at the first matching close tag,
+ * as in browsers; markup-like strings inside are not tags.
+ */
+function findRawTextContentBounds(
+	html: string,
+	openTagEndIndex: number,
+	tagName: string,
+): ElementContentBounds | undefined {
+	const closeTag = new RegExp(`</${tagName}[\\s/>]`, 'gi');
+	closeTag.lastIndex = openTagEndIndex;
+	const match = closeTag.exec(html);
+
+	return match ? { closeTagStart: match.index, closeTagEnd: findHtmlTagEnd(html, match.index) } : undefined;
+}
+
 function findElementContentBounds(
+	html: string,
+	openTagEndIndex: number,
+	rootTagName: string,
+): ElementContentBounds | undefined {
+	return isTextOnlyElement(rootTagName)
+		? findRawTextContentBounds(html, openTagEndIndex, rootTagName)
+		: findNestedContentBounds(html, openTagEndIndex, rootTagName);
+}
+
+function findNestedContentBounds(
 	html: string,
 	openTagEndIndex: number,
 	rootTagName: string,
@@ -223,7 +289,8 @@ function findElementContentBounds(
 		const token = parseHtmlTagToken(html, nextTagIndex, { includeInnerHtml: false });
 
 		if (!token) {
-			return undefined;
+			index = nextTagIndex + 1;
+			continue;
 		}
 
 		if (token.type === 'close') {
@@ -236,6 +303,11 @@ function findElementContentBounds(
 			}
 
 			index = token.end;
+			continue;
+		}
+
+		if (token.type === 'open' && isTextOnlyElement(token.tagName)) {
+			index = findRawTextContentBounds(html, token.end, token.tagName)?.closeTagEnd ?? html.length;
 			continue;
 		}
 
