@@ -50,6 +50,7 @@ describe('minimal DOM parsing follows the HTML spec', () => {
 
 		pre.innerHTML = '\ny';
 		expect(pre.textContent).toBe('\ny');
+		expect(pre.innerHTML).toBe('\ny');
 		expect(pre.outerHTML).toBe('<pre>\n\ny</pre>');
 	});
 

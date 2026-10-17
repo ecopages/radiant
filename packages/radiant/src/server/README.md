@@ -188,7 +188,11 @@ Note: the server helpers are transport-neutral. The package no longer ships the 
 
 ## Supported SSR DOM APIs
 
-Production SSR uses the minimal light-DOM shim from `@ecopages/radiant/server/install-ssr-runtime`, not happy-dom. Vitest files that opt into `happy-dom` exercise browser-like behavior; they do not represent the Node SSR runtime.
+Production SSR uses the minimal light-DOM shim from `@ecopages/radiant/server/install-ssr-runtime`. The tests follow that split:
+
+- **Node project:** SSR tests run on the shim.
+- **`*.browser.test.*` files:** client tests run in Chromium through vitest browser mode.
+- **Hydration tests:** they start from real server output. `test/server/ssr-hydration-fixtures.test.tsx` renders `test/fixtures/ssr-hydration/cases.tsx` on the shim into file snapshots, and `test/client/ssr-hydration.browser.test.tsx` hydrates those files in Chromium. After a change to server output, update the snapshots with `vitest run -u`.
 
 The shim supports a focused query surface for component lifecycle code that runs during SSR:
 
@@ -198,6 +202,9 @@ The shim supports a focused query surface for component lifecycle code that runs
 - `element.matches(selector)`
 - `element.contains(otherNode)`
 - `element.parentElement`
+- Node traversal: `childNodes`, `firstChild`, `lastChild`, `nextSibling`, `previousSibling`, `firstElementChild`, `lastElementChild`, `nextElementSibling`, `previousElementSibling`, `childElementCount`
+- Node edits: `append`, `prepend`, `before`, `after`, `replaceWith`, `remove`, `insertBefore`, `replaceChildren`, `insertAdjacentHTML`
+- `document.createElement` / `createElementNS` (no namespaces), `createTextNode`, `createComment`
 - `document.querySelector(selector)` / `document.querySelectorAll(selector)`
 - `document.getElementById(id)`
 - `element.style` (`setProperty`, property assignment, serializes to the `style` attribute)
@@ -236,7 +243,7 @@ Parsed elements keep their source HTML. Child nodes are built on first read (`ch
 - Raw text elements (`script`, `style`, `xmp`, `iframe`, `noembed`, `noframes`) and escapable raw text elements (`textarea`, `title`) hold one text node up to the matching close tag. Markup-like strings inside them are not tags. Raw text is never decoded. When code sets it, the serializer emits it unescaped, with only that element's close tag neutralized.
 - Comments are comment nodes. `<!-->` and `<!--->` are empty comments. `<?…>`, `<!…>` and `</` followed by a non-letter are bogus comments, while `<!doctype>` and `</>` are dropped. A `<` that cannot start markup (`a < b`) is text.
 - CR and CRLF become LF, and for duplicate attributes the first one wins. Adjacent text left after dropped markup is merged.
-- A newline directly after a `pre`, `listing` or `textarea` start tag is dropped, and the serializer restores it. `innerHTML` assignment is fragment parsing, so it keeps a leading newline, as in browsers.
+- A newline directly after a `pre`, `listing` or `textarea` start tag is dropped on parse. `innerHTML` assignment is fragment parsing, so it keeps a leading newline, and the `innerHTML` getter adds none, as in browsers. When the element is serialized with its start tag (`outerHTML`, or inside a parent) and its text starts with a newline, one extra newline is written, so the browser's parse yields the same text. Chromium does not write it, so its own round trip loses that newline.
 
 **Not supported (non-conforming input).** The tree-construction repairs browsers apply to malformed markup are out of scope: implied end tags (`<p>a<div>`), foster parenting of misplaced table content, implied `tbody`, and the adoption agency for misnested formatting. Three related deviations:
 
@@ -244,7 +251,18 @@ Parsed elements keep their source HTML. Child nodes are built on first read (`ch
 - Attribute names are stored as written and are case-sensitive.
 - Elements carry no namespace, so SVG and MathML parse as plain elements.
 
-`test/server/minimal-dom-differential.test.ts` checks parsing, queries, mutations, `insertAdjacentHTML`, and serialization on generated conforming HTML. The reference parses with parse5, the spec-conformant parser behind jsdom, and builds the tree in happy-dom. When the minimal DOM gains a behavior, extend that generator.
+`test/server/minimal-dom-differential.browser.test.ts` runs in Chromium on generated conforming HTML. It applies the same parsing, queries, mutations and `insertAdjacentHTML` calls to the shim and to Chromium, then checks two things:
+
+- **Same tree:** both DOMs hold the same tree.
+- **Same reading:** Chromium parses the shim's serialization back into the shim's tree.
+
+It knowingly leaves out three cases:
+
+- **Processing instructions:** the spec parses `<?…?>` as a bogus comment, while current Chromium creates a processing instruction.
+- **Legacy references in attribute values:** Chromium's `innerHTML` fast path decodes some that the spec keeps literal.
+- **Leading newline in `pre`:** set text starting with a newline (see above).
+
+Unit tests pin the spec behaviour for all three. When the shim gains a behavior, extend that generator.
 
 SSR hosts created with `new Component()` also align `localName` / `tagName` to the `@customElement` metadata before host preparation and serialization, so in-memory queries like `closest('my-element')` match the tag names used in the rendered HTML.
 

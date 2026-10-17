@@ -159,24 +159,19 @@ export function parseHtmlToNodes(
 }
 
 /**
- * @remarks A text node from parsed HTML is emitted from its source. A `pre`, `listing` or `textarea` whose
- * text starts with a newline gets one more, because the parser drops a newline right after the start tag.
+ * @remarks A text node from parsed HTML is emitted from its source.
  */
 function serializeTextNode(node: Node): string {
+	if (node instanceof MinimalTextNode && node.sourceHtml !== undefined) {
+		return node.sourceHtml;
+	}
+
 	const text = node.textContent ?? '';
-	const parent = node.parentNode as (Partial<Element> & { childNodes?: ArrayLike<Node> }) | null;
-	const parentName = parent?.localName ?? '';
-	const restoresNewline =
-		leadingNewlineElementNames.has(parentName) && parent?.childNodes?.[0] === node && text.startsWith('\n');
+	const parentName = (node.parentNode as Partial<Element> | null)?.localName ?? '';
 
-	const body =
-		node instanceof MinimalTextNode && node.sourceHtml !== undefined
-			? node.sourceHtml
-			: rawTextElementNames.has(parentName)
-				? text.replace(new RegExp(`</(${parentName})`, 'gi'), '<\\/$1')
-				: escapeHtmlText(text);
-
-	return `${restoresNewline ? '\n' : ''}${body}`;
+	return rawTextElementNames.has(parentName)
+		? text.replace(new RegExp(`</(${parentName})`, 'gi'), '<\\/$1')
+		: escapeHtmlText(text);
 }
 
 /**

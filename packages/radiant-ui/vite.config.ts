@@ -62,7 +62,7 @@ export default defineConfig({
 				test: {
 					name: 'ssr',
 					include: ['src/**/*.ssr.test.{ts,tsx}'],
-					environment: 'happy-dom',
+					environment: 'node',
 				},
 			},
 		],

@@ -102,10 +102,6 @@ export class MinimalNode extends MinimalEventTarget {
 
 	public ownerDocument: Document | null;
 	public parentNode: MinimalParentNode | null = null;
-	/**
-	 * @remarks TS `private`, not `#private`: the DOM install probe reads `children` on
-	 * `Object.create(HTMLElement.prototype)`, which has no private brand and would throw.
-	 */
 	private childNodeList: Node[] = [];
 
 	constructor(
@@ -128,6 +124,53 @@ export class MinimalNode extends MinimalEventTarget {
 		for (const node of nodes) {
 			this.appendChild(typeof node === 'string' ? createTextNode(node) : node);
 		}
+	}
+
+	prepend(...nodes: Array<Node | string>): void {
+		const reference = this.firstChild;
+		for (const node of nodes) this.insertBefore(toNode(node), reference);
+	}
+
+	get firstChild(): Node | null {
+		return this.childNodes[0] ?? null;
+	}
+
+	get lastChild(): Node | null {
+		return this.childNodes[this.childNodes.length - 1] ?? null;
+	}
+
+	get nextSibling(): Node | null {
+		return this.siblingAt(1);
+	}
+
+	get previousSibling(): Node | null {
+		return this.siblingAt(-1);
+	}
+
+	before(...nodes: Array<Node | string>): void {
+		const parent = this.parentNode as unknown as MinimalNode | null;
+		for (const node of nodes) parent?.insertBefore(toNode(node), this as unknown as Node);
+	}
+
+	after(...nodes: Array<Node | string>): void {
+		const parent = this.parentNode as unknown as MinimalNode | null;
+		const reference = this.nextSibling;
+		for (const node of nodes) parent?.insertBefore(toNode(node), reference);
+	}
+
+	replaceWith(...nodes: Array<Node | string>): void {
+		this.before(...nodes);
+		this.remove();
+	}
+
+	remove(): void {
+		(this.parentNode as unknown as MinimalNode | null)?.removeChild(this as unknown as Node);
+	}
+
+	private siblingAt(offset: number): Node | null {
+		const siblings = (this.parentNode as unknown as MinimalNode | null)?.childNodes;
+		if (!siblings) return null;
+		return siblings[siblings.indexOf(this as unknown as Node) + offset] ?? null;
 	}
 
 	appendChild<TNode extends Node>(node: TNode): TNode {
@@ -496,6 +539,33 @@ export class MinimalElement extends MinimalNode {
 		return createMinimalHtmlCollection(elements);
 	}
 
+	get childElementCount(): number {
+		return this.children.length;
+	}
+
+	get firstElementChild(): Element | null {
+		return (this.children[0] as Element | undefined) ?? null;
+	}
+
+	get lastElementChild(): Element | null {
+		return (this.children[this.children.length - 1] as Element | undefined) ?? null;
+	}
+
+	get nextElementSibling(): Element | null {
+		return this.elementSiblingAt(1);
+	}
+
+	get previousElementSibling(): Element | null {
+		return this.elementSiblingAt(-1);
+	}
+
+	private elementSiblingAt(offset: number): Element | null {
+		const siblings = this.parentElement?.children;
+		if (!siblings) return null;
+		const elements = Array.from(siblings as ArrayLike<Element>);
+		return elements[elements.indexOf(this as unknown as Element) + offset] ?? null;
+	}
+
 	/**
 	 * Builds child nodes from the parsed inner HTML, if not done yet.
 	 *
@@ -599,16 +669,27 @@ export class MinimalElement extends MinimalNode {
 			return openTag;
 		}
 
-		return `${openTag}${this.innerHtmlSource ?? this.serializeChildNodes()}</${this.localName}>`;
+		return `${openTag}${this.innerHtmlSource ?? `${this.leadingNewline()}${this.serializeChildNodes()}`}</${this.localName}>`;
 	}
 
 	/**
 	 * @remarks `pre`, `listing` and `textarea` serialize from child nodes: their source can hold a newline the
-	 * parser dropped, which a fragment parse of `innerHTML` would keep.
+	 * parser dropped, which a fragment parse of `innerHTML` would keep. Like browsers, `innerHTML` adds no
+	 * newline; `outerHTML` does, see {@link leadingNewline}.
 	 */
 	get innerHTML(): string {
 		const source = leadingNewlineElementNames.has(this.localName) ? undefined : this.innerHtmlSource;
 		return source ?? this.serializeChildNodes();
+	}
+
+	/**
+	 * @remarks The parser drops a newline right after a `pre`, `listing` or `textarea` start tag, so markup that
+	 * includes the start tag needs one more when the text itself starts with a newline.
+	 */
+	private leadingNewline(): string {
+		const first = this.childNodes[0];
+		const startsWithNewline = first?.nodeType === MinimalNode.TEXT_NODE && first.textContent?.startsWith('\n');
+		return leadingNewlineElementNames.has(this.localName) && startsWithNewline ? '\n' : '';
 	}
 
 	private serializeChildNodes(): string {
@@ -728,6 +809,10 @@ export class MinimalHtmlScriptElement extends MinimalHTMLElement {
 	constructor(ownerDocument: Document | null = getInstalledDocumentLike()) {
 		super('script', ownerDocument);
 	}
+}
+
+function toNode(node: Node | string): Node {
+	return typeof node === 'string' ? createTextNode(node) : node;
 }
 
 export function createTextNode(value: string): Node {

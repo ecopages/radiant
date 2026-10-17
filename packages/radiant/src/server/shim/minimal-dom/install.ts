@@ -208,18 +208,32 @@ function hasDomCapabilities(candidates: DomSurfaceCandidates): boolean {
 	);
 }
 
+/** Reads `name` as the first definition on `prototype`'s chain would, with `receiver` as `this`. */
+function readAccessor(prototype: object, receiver: object, name: string): unknown {
+	for (let current: object | null = prototype; current; current = Object.getPrototypeOf(current)) {
+		const descriptor = Object.getOwnPropertyDescriptor(current, name);
+		if (descriptor) return descriptor.get ? descriptor.get.call(receiver) : descriptor.value;
+	}
+
+	return undefined;
+}
+
 function hasUsableDomElements(candidates: DomSurfaceCandidates): boolean {
 	try {
 		if (typeof candidates.HTMLElement !== 'function' || !candidates.document) return false;
 		const elementProbe = candidates.document.createElement('div');
 		/**
 		 * @remarks Browser-like runtimes can reject direct construction of an unregistered
-		 * custom element, so the probe uses the subclass prototype without mutating the registry.
+		 * custom element, so the probe runs the subclass prototype's accessors on the probe element
+		 * without mutating the registry. Real engines reject those accessors ("Illegal invocation")
+		 * on an object that is not an element, such as `Object.create(prototype)`.
 		 */
 		class ProbeHost extends candidates.HTMLElement {}
-		return (
-			hasUsableElementSurface(elementProbe, true) && hasUsableElementSurface(Object.create(ProbeHost.prototype))
-		);
+		const subclassSurface = {
+			children: readAccessor(ProbeHost.prototype, elementProbe, 'children'),
+			style: readAccessor(ProbeHost.prototype, elementProbe, 'style'),
+		};
+		return hasUsableElementSurface(elementProbe, true) && hasUsableElementSurface(subclassSurface);
 	} catch {
 		return false;
 	}

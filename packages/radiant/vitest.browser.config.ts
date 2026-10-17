@@ -1,5 +1,6 @@
 /// <reference types="vitest" />
 import { fileURLToPath } from 'node:url';
+import { playwright } from '@vitest/browser-playwright';
 import { defineConfig, mergeConfig } from 'vitest/config';
 import legacyConfig from './tsconfig.legacy.json' with { type: 'json' };
 import { createRadiantVitestBase } from './vitest.shared.js';
@@ -20,8 +21,13 @@ export default mergeConfig(
 		},
 		test: {
 			name: 'browser',
-			environment: 'happy-dom',
 			include: ['test/**/*.browser.test.{ts,tsx}'],
+			browser: {
+				enabled: true,
+				headless: true,
+				provider: playwright({}),
+				instances: [{ browser: 'chromium' }],
+			},
 		},
 	}),
 );

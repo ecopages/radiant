@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, test } from 'vitest';
 import { customElement } from '../../src/decorators/custom-element';
 import { prop } from '../../src/decorators/prop';
 import { FormAssociatedElement, type FormValue } from '../../src/form-associated-element';
@@ -20,11 +20,25 @@ class PlainDomControl extends FormAssociatedElement {
 	}
 }
 
+const attachInternalsDescriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'attachInternals');
+
+/**
+ * @remarks Removes `attachInternals` for this file, so Chromium behaves like a DOM without `ElementInternals`
+ * (the SSR DOM shim, older engines). The path with internals is covered by `form-associated-element.e2e.test.ts`.
+ */
+beforeAll(() => {
+	Object.defineProperty(HTMLElement.prototype, 'attachInternals', { configurable: true, value: undefined });
+});
+
+afterAll(() => {
+	if (attachInternalsDescriptor)
+		Object.defineProperty(HTMLElement.prototype, 'attachInternals', attachInternalsDescriptor);
+});
+
 afterEach(() => {
 	document.body.innerHTML = '';
 });
 
-/** happy-dom has no `attachInternals`, like the SSR DOM shim. */
 describe('FormAssociatedElement without ElementInternals', () => {
 	test('constructs without internals and still runs its update cycle', async () => {
 		const host = document.createElement('fae-plain-dom') as PlainDomControl;

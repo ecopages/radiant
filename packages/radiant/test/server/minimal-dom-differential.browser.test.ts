@@ -1,20 +1,15 @@
-// @vitest-environment node
-import { Window } from 'happy-dom';
-import { defaultTreeAdapter, html as parse5Html, parseFragment, type DefaultTreeAdapterMap } from 'parse5';
 import { describe, expect, test } from 'vitest';
 import { MinimalHTMLElement } from '../../src/server/shim/minimal-dom/nodes';
 import '../../src/server/shim/minimal-dom/html';
 
 /**
- * Differential test: the minimal DOM against a reference DOM.
+ * Differential test: the SSR minimal DOM against Chromium.
  *
- * @remarks The reference parses with parse5 (the spec-conformant parser behind jsdom) and builds the tree in
- * happy-dom through DOM APIs only, because happy-dom's own parser deviates from the spec (for example on `>`
- * inside quoted attribute values, `<title>` content, and the newline after `<pre>`). Each case generates
- * conforming HTML from a seed (content models respected, so the spec applies no implied end tags or foster
- * parenting), applies the same mutations to both DOMs, and compares node structure, `textContent`, attribute
- * values, and the serialized output as re-parsed by parse5. A failure message carries the seed and the source
- * HTML to reproduce it.
+ * @remarks Each case generates conforming HTML from a seed (content models respected, so the spec applies no
+ * implied end tags or foster parenting) and applies the same DOM calls to a minimal-DOM element and a Chromium
+ * element. It then checks that both trees match (node types, names, text, attribute values, `textContent` read
+ * before anything walks the tree), and that Chromium parses the minimal DOM's serialization back into exactly
+ * the minimal tree, which is the SSR contract. A failure message carries the seed and the source HTML.
  */
 
 const CASES = 1000;
@@ -37,6 +32,12 @@ const ENTITIES = [
 	'&copy 2024',
 	'&unknown;',
 ];
+/**
+ * @remarks Legacy references without a semicolon (`&copy 2024`, `&notit;`, `?a=1&copy=2`) stay out of attribute
+ * values: Chromium's `innerHTML` fast path decodes some that the spec's attribute rule keeps literal. The spec
+ * behaviour is pinned in `minimal-dom-entities.test.ts`.
+ */
+const ATTRIBUTE_ENTITIES = ENTITIES.filter((entity) => !['&notit;', '&copy 2024'].includes(entity));
 const ATTRIBUTE_NAMES = ['title', 'data-rules', 'aria-label', 'class'];
 const VOIDS = ['br', 'input', 'img'];
 const PHRASING_CONTAINERS = ['span', 'b', 'em', 'x-card'];
@@ -48,17 +49,11 @@ const TEXT_ONLY = [
 	'<textarea>\n<b>bold</b> &amp; &copy</textarea>',
 	'<title>A &lt;title&gt; with <b>tags</b></title>',
 ];
-const MARKUP_ODDITIES = [
-	'<!---->',
-	'<!-->',
-	'<!--->',
-	'<?pi x?>',
-	'<!doctype html>',
-	'</ odd>',
-	'</>',
-	'a < b',
-	'x\r\ny',
-];
+/**
+ * @remarks No `<?…?>`: the spec parses it as a bogus comment, while current Chromium creates a processing
+ * instruction (a WHATWG proposal). `minimal-dom-parsing.test.ts` pins the spec behaviour.
+ */
+const MARKUP_ODDITIES = ['<!---->', '<!-->', '<!--->', '<!doctype html>', '</ odd>', '</>', 'a < b', 'x\r\ny'];
 
 type Random = () => number;
 
@@ -92,7 +87,7 @@ class HtmlGenerator {
 
 	attributeValue(): string {
 		return repeat(this.random, 3, () =>
-			pick(this.random, ['x', ' ', "'", '<', '>', '\r\n', '?a=1&copy=2', '[{&quot;type&quot;:1}]', ...ENTITIES]),
+			pick(this.random, ['x', ' ', "'", '<', '>', '\r\n', '[{&quot;type&quot;:1}]', ...ATTRIBUTE_ENTITIES]),
 		);
 	}
 
@@ -171,6 +166,7 @@ type DomElement = DomNode & {
 	setAttribute(name: string, value: string): void;
 	removeAttribute(name: string): void;
 	append(...nodes: string[]): void;
+	insertAdjacentHTML(position: InsertPosition, html: string): void;
 };
 
 function parentOf(element: DomElement): DomElement | null {
@@ -189,11 +185,16 @@ function describeTree(node: DomNode): unknown[] {
 	);
 }
 
-type Mutation = { applies: (element: DomElement) => boolean; run: (element: DomElement, isReference: boolean) => void };
+/**
+ * @remarks Set text never starts with a newline. The minimal DOM restores the newline the parser drops after a
+ * `pre`, `listing` or `textarea` start tag when it serializes the element; Chromium does not, so its own round
+ * trip loses that newline. `minimal-dom-parsing.test.ts` pins the minimal-DOM behaviour.
+ */
+type Mutation = { applies: (element: DomElement) => boolean; run: (element: DomElement) => void };
 
 function createMutation(random: Random, generator: HtmlGenerator): Mutation {
 	const roll = random();
-	const rawText = repeat(random, 3, () => pick(random, ['x', ' & ', '<b>', '"q"', "'", '>', '&amp;', '\n']));
+	const rawText = `x${repeat(random, 3, () => pick(random, ['x', ' & ', '<b>', '"q"', "'", '>', '&amp;', '\n']))}`;
 	const isMutable = (element: DomElement) => MUTABLE_CONTAINERS.has(element.localName);
 
 	if (roll < 0.3) {
@@ -213,13 +214,9 @@ function createMutation(random: Random, generator: HtmlGenerator): Mutation {
 	if (roll < 0.7) {
 		return {
 			applies: isMutable,
-			run: (element, isReference) => {
-				if (isReference) {
-					setReferenceHtml(element as unknown as Element, serializeReference(element as unknown as Node));
-				} else {
-					const serialized = element.innerHTML;
-					element.innerHTML = serialized;
-				}
+			run: (element) => {
+				const serialized = element.innerHTML;
+				element.innerHTML = serialized;
 			},
 		};
 	}
@@ -232,130 +229,17 @@ function createMutation(random: Random, generator: HtmlGenerator): Mutation {
 		return {
 			applies: (element) =>
 				isMutable(element) && (!outside || MUTABLE_CONTAINERS.has(parentOf(element)?.localName ?? '')),
-			run: (element, isReference) => {
-				if (!isReference) {
-					(element as unknown as MinimalHTMLElement).insertAdjacentHTML(position, html);
-					return;
-				}
-
-				const target = element as unknown as Element;
-				const holder = referenceDocument.createElement('div');
-				buildReferenceNodes(
-					holder,
-					parseInContext(html, outside ? (target.parentElement as Element).localName : target.localName),
-				);
-				const nodes = Array.from(holder.childNodes);
-				if (position === 'beforebegin') target.before(...nodes);
-				if (position === 'afterbegin') target.prepend(...nodes);
-				if (position === 'beforeend') target.append(...nodes);
-				if (position === 'afterend') target.after(...nodes);
-			},
+			run: (element) => element.insertAdjacentHTML(position, html),
 		};
 	}
 
 	return {
 		applies: isMutable,
-		run: (element, isReference) => {
+		run: (element) => {
 			element.append(rawText);
-			if (isReference) {
-				setReferenceHtml(
-					element as unknown as Element,
-					`${serializeReference(element as unknown as Node)}${html}`,
-				);
-			} else {
-				element.innerHTML = `${element.innerHTML}${html}`;
-			}
+			element.innerHTML = `${element.innerHTML}${html}`;
 		},
 	};
-}
-
-const reference = new Window();
-const referenceDocument = reference.document as unknown as Document;
-
-type ParsedNode = DefaultTreeAdapterMap['childNode'];
-
-const VOID_ELEMENTS = new Set([
-	'area',
-	'base',
-	'br',
-	'col',
-	'embed',
-	'hr',
-	'img',
-	'input',
-	'link',
-	'meta',
-	'source',
-	'track',
-	'wbr',
-]);
-const RAW_TEXT_ELEMENTS = new Set(['script', 'style', 'xmp', 'iframe', 'noembed', 'noframes', 'plaintext']);
-const LEADING_NEWLINE_ELEMENTS = new Set(['pre', 'listing', 'textarea']);
-
-function parseInContext(markup: string, contextTagName: string): ParsedNode[] {
-	const context = defaultTreeAdapter.createElement(contextTagName, parse5Html.NS.HTML, []);
-	return parseFragment(context, markup, {}).childNodes;
-}
-
-function buildReferenceNodes(parent: Element, nodes: ParsedNode[]): void {
-	for (const node of nodes) {
-		if (defaultTreeAdapter.isTextNode(node)) {
-			parent.append(referenceDocument.createTextNode(node.value));
-		} else if (defaultTreeAdapter.isCommentNode(node)) {
-			parent.append(referenceDocument.createComment(node.data));
-		} else if (defaultTreeAdapter.isElementNode(node)) {
-			const element = referenceDocument.createElementNS(node.namespaceURI, node.tagName);
-			for (const attribute of node.attrs) element.setAttribute(attribute.name, attribute.value);
-			buildReferenceNodes(element, node.childNodes);
-			parent.append(element);
-		}
-	}
-}
-
-function setReferenceHtml(element: Element, markup: string): void {
-	element.replaceChildren();
-	buildReferenceNodes(element, parseInContext(markup, element.localName));
-}
-
-/** The HTML fragment serialization algorithm, so the reference never uses happy-dom's serializer. */
-function serializeReference(node: Node): string {
-	return Array.from(node.childNodes, (child, index) => {
-		if (child.nodeType === 8) return `<!--${child.textContent}-->`;
-
-		if (child.nodeType === 3) {
-			const text = child.textContent ?? '';
-			const parentName = (node as Element).localName ?? '';
-			if (RAW_TEXT_ELEMENTS.has(parentName)) return text;
-			const newline =
-				index === 0 && LEADING_NEWLINE_ELEMENTS.has(parentName) && text.startsWith('\n') ? '\n' : '';
-			return `${newline}${text
-				.replace(/&/g, '&amp;')
-				.replace(/\u00a0/g, '&nbsp;')
-				.replace(/</g, '&lt;')
-				.replace(/>/g, '&gt;')}`;
-		}
-
-		const element = child as Element;
-		const name = element.localName;
-		const attributes = Array.from(
-			element.attributes,
-			(attribute) =>
-				` ${attribute.name}="${attribute.value
-					.replace(/&/g, '&amp;')
-					.replace(/\u00a0/g, '&nbsp;')
-					.replace(/"/g, '&quot;')}"`,
-		).join('');
-		return VOID_ELEMENTS.has(name)
-			? `<${name}${attributes}>`
-			: `<${name}${attributes}>${serializeReference(element)}</${name}>`;
-	}).join('');
-}
-
-/** Canonical form of a `div`'s inner HTML: parsed by parse5, then serialized. */
-function normalize(markup: string): string {
-	const container = referenceDocument.createElement('div');
-	buildReferenceNodes(container, parseInContext(markup, 'div'));
-	return serializeReference(container);
 }
 
 type Case = { seed: number; html: string; minimal: DomElement; expected: DomElement };
@@ -366,9 +250,9 @@ function runCase(seed: number, options: { mutate: boolean; query: boolean }): Ca
 	const html = generator.flowChildren(0);
 
 	const minimal = new MinimalHTMLElement('div', null) as unknown as DomElement;
-	const expected = referenceDocument.createElement('div') as unknown as DomElement;
+	const expected = document.createElement('div') as unknown as DomElement;
 	minimal.innerHTML = html;
-	setReferenceHtml(expected as unknown as Element, html);
+	expected.innerHTML = html;
 
 	if (options.query) {
 		(minimal as unknown as MinimalHTMLElement).querySelectorAll('*');
@@ -382,12 +266,39 @@ function runCase(seed: number, options: { mutate: boolean; query: boolean }): Ca
 			const index = Math.floor(random() * minimalTargets.length);
 
 			if (minimalTargets.length === 0 || minimalTargets.length !== expectedTargets.length) break;
-			mutation.run(minimalTargets[index] as DomElement, false);
-			mutation.run(expectedTargets[index] as DomElement, true);
+			mutation.run(minimalTargets[index] as DomElement);
+			mutation.run(expectedTargets[index] as DomElement);
 		}
 	}
 
 	return { seed, html, minimal, expected };
+}
+
+/**
+ * @remarks Merges adjacent text: HTML cannot encode a boundary between two text nodes, so a parse always yields one.
+ */
+function describeSerializableTree(node: DomNode): unknown[] {
+	const described: unknown[] = [];
+
+	for (const child of Array.from(node.childNodes)) {
+		const previous = described[described.length - 1] as [number, string] | undefined;
+
+		if (child.nodeType === 3 && previous?.[0] === 3) {
+			described[described.length - 1] = [3, `${previous[1]}${child.textContent}`];
+		} else {
+			described.push(
+				child.nodeType === 1
+					? [(child as DomElement).localName, describeSerializableTree(child)]
+					: [child.nodeType, child.textContent],
+			);
+		}
+	}
+
+	return described;
+}
+
+function attributesOf(element: DomElement): unknown[] {
+	return element.getAttributeNames().map((name) => [name, element.getAttribute(name)]);
 }
 
 /**
@@ -396,21 +307,26 @@ function runCase(seed: number, options: { mutate: boolean; query: boolean }): Ca
  */
 function assertEquivalent({ seed, html, minimal, expected }: Case): void {
 	const minimalText = minimal.textContent;
-	const context = `seed ${seed}\nsource: ${JSON.stringify(html)}\nminimal: ${JSON.stringify(minimal.innerHTML)}`;
+	const output = minimal.innerHTML;
+	const context = `seed ${seed}\nsource: ${JSON.stringify(html)}\nminimal: ${JSON.stringify(output)}`;
 
 	expect(minimalText, context).toBe(expected.textContent);
 	expect(describeTree(minimal), context).toEqual(describeTree(expected));
-	expect(normalize(minimal.innerHTML), context).toBe(normalize(serializeReference(expected as unknown as Node)));
 
 	const expectedElements = collectElements(expected);
 	collectElements(minimal).forEach((element, index) => {
-		const read = (target: DomElement) =>
-			target.getAttributeNames().map((name) => [name, target.getAttribute(name)]);
-		expect(read(element), context).toEqual(read(expectedElements[index] as DomElement));
+		expect(attributesOf(element), context).toEqual(attributesOf(expectedElements[index] as DomElement));
 	});
+
+	const reparsed = document.createElement('div');
+	reparsed.innerHTML = output;
+	expect(
+		describeSerializableTree(reparsed as unknown as DomNode),
+		`${context}\nChromium re-parses the output differently`,
+	).toEqual(describeSerializableTree(minimal));
 }
 
-describe('minimal DOM matches a reference DOM', () => {
+describe('minimal DOM matches Chromium', () => {
 	const variants = [
 		{ name: 'parse and serialize', mutate: false, query: false },
 		{ name: 'parse, query and serialize', mutate: false, query: true },

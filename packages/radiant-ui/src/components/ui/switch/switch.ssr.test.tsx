@@ -1,3 +1,4 @@
+import '@ecopages/radiant/server/install-ssr-runtime';
 import { describe, expect, it } from 'vitest';
 import { renderToString } from '@ecopages/jsx/server';
 import { RuiSwitch } from './switch';

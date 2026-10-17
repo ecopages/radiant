@@ -1,9 +1,12 @@
-import '@ecopages/radiant/server/install-ssr-runtime';
 import '@ecopages/radiant/client/install-hydrator';
 import { createRoot } from '@ecopages/jsx';
 import { afterEach, describe, expect, it } from 'vitest';
 import { RuiSidebar, RuiSidebarContent } from './sidebar';
 
+/**
+ * @remarks Browsers reset `scrollTop` whenever an element is moved, so keeping scroll position across a persisted
+ * move needs code that restores it. This test covers node identity only.
+ */
 function replaceBody(newDocument: Document, persistAttribute = 'data-eco-persist'): void {
 	const persistedElements = document.body.querySelectorAll(`[${persistAttribute}]`);
 	const persistedMap = new Map<string, Element>();
@@ -39,7 +42,7 @@ describe('RuiSidebar eco persist', () => {
 		document.body.innerHTML = '';
 	});
 
-	it('keeps scroll position across replaceBody when the host is persisted', async () => {
+	it('keeps the persisted host and its content nodes across replaceBody', async () => {
 		const host = document.createElement('div');
 		document.body.appendChild(host);
 
@@ -58,11 +61,10 @@ describe('RuiSidebar eco persist', () => {
 
 		const sidebar = host.querySelector('rui-sidebar') as HTMLElement & { update: () => void };
 		const content = host.querySelector('.rui-sidebar__content') as HTMLElement;
-		content.scrollTop = 240;
 
 		sidebar.update();
 		await settled();
-		expect(content.scrollTop).toBe(240);
+		expect(host.querySelector('.rui-sidebar__content')).toBe(content);
 
 		const nextPage = new DOMParser().parseFromString(
 			`<!DOCTYPE html><html><body>
@@ -84,7 +86,6 @@ describe('RuiSidebar eco persist', () => {
 
 		const liveSidebar = document.querySelector('rui-sidebar') as HTMLElement;
 		const liveContent = document.querySelector('.rui-sidebar__content') as HTMLElement;
-		liveContent.scrollTop = 240;
 
 		replaceBody(nextPage);
 
@@ -92,7 +93,6 @@ describe('RuiSidebar eco persist', () => {
 		await tick();
 
 		const persistedContent = document.querySelector('.rui-sidebar__content') as HTMLElement;
-		expect(persistedContent.scrollTop).toBe(240);
 		expect(persistedContent).toBe(liveContent);
 		expect(document.querySelector('rui-sidebar')).toBe(liveSidebar);
 		expect(document.body.textContent).toContain('New page content');
