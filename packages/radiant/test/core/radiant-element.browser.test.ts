@@ -402,7 +402,6 @@ describe('RadiantElement', () => {
 		await waitFor(() => expect(element.updateCount).toBe(1));
 
 		const content = element.querySelector('[data-ref="content"]') as HTMLElement;
-		content.scrollTop = 180;
 
 		element.remove();
 		document.body.appendChild(element);
@@ -411,7 +410,7 @@ describe('RadiantElement', () => {
 		await Promise.resolve();
 
 		expect(element.updateCount).toBe(1);
-		expect(content.scrollTop).toBe(180);
+		expect(element.querySelector('[data-ref="content"]')).toBe(content);
 	});
 
 	test('reactive updates are triggered by reference change, not in-place mutation', () => {

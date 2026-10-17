@@ -20,8 +20,8 @@
 @layer components {
 	/**
 	 * @remarks Kumo draws the primary action with white text in both modes, a ring one tenth darker than the fill, and
-	 * `shadow-xs`. `#cc3a00` keeps cloudflare.com's orange hue at 5:1 against white, where the marketing orange
-	 * `#ff5e1e` reaches only 3:1. `--primary` stays the lighter orange in dark mode for text and icons.
+	 * `shadow-xs`. `#cc3a00` keeps cloudflare.com's orange hue at 5:1 against white and keeps the primary orange stable
+	 * across light and dark mode. The brighter orange remains available for supporting text and container roles.
 	 */
 	:root .rui-button--filled {
 		background-color: var(--color-cloudflare-orange-fill);
@@ -80,6 +80,12 @@
 	:root .rui-button--outline,
 	:root .rui-input,
 	:root .rui-textarea,
+	:root .rui-combobox__control,
+	:root .rui-date-field__group,
+	:root .rui-date-range-picker__group,
+	:root .rui-input-group,
+	:root .rui-number-field__group,
+	:root rui-date-input:where(:not([data-date-field-input], [data-range-start], [data-range-end])),
 	:root .rui-select__control {
 		@apply border-border bg-surface text-on-surface shadow-none;
 		border-color: var(--rui-control-border-color);

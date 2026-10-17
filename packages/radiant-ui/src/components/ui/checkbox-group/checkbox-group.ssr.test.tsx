@@ -46,6 +46,6 @@ describe('RuiCheckboxGroup SSR', () => {
 			),
 		);
 
-		expect(html).toMatch(/<rui-checkbox[^>]*value="travel"[^>]*data-disabled=""/);
+		expect(html).toMatch(/<rui-checkbox[^>]*value="travel"[^>]*\sdata-disabled(="")?[\s>]/);
 	});
 });

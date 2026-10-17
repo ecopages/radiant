@@ -18,7 +18,7 @@
 		},
 		"resolveJsonModule": true,
 		"target": "ES2022",
-		"types": ["node"],
+		"types": ["node", "vite/client"],
 		"useDefineForClassFields": true,
 		"verbatimModuleSyntax": true
 	},

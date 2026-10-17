@@ -16,6 +16,14 @@ function declarationsForSelector(css, selector) {
 	return declarations;
 }
 
+function rulesContainingSelector(css, selector) {
+	const rules = [];
+	postcss.parse(css).walkRules((rule) => {
+		if (rule.selector.includes(selector)) rules.push(rule.toString());
+	});
+	return rules.join('\n');
+}
+
 test('every public theme export points to a built file', () => {
 	for (const [name, entry] of Object.entries(packageJson.exports)) {
 		if (name === './package.json') continue;
@@ -70,14 +78,76 @@ test('GitHub follows Primer action roles and Cloudflare leads with its orange', 
 
 	const cloudflare = readFileSync(path.join(packageRoot, 'dist/compiled/themes/cloudflare.css'), 'utf8');
 	const cloudflareRoot = declarationsForSelector(cloudflare, ":where(:root), :root[data-rui-theme='cloudflare']");
-	const cloudflareDark = declarationsForSelector(cloudflare, ":where(.dark), :root.dark[data-rui-theme='cloudflare']");
+	const cloudflareDark = declarationsForSelector(
+		cloudflare,
+		":where(.dark), :root.dark[data-rui-theme='cloudflare']",
+	);
 	assert.equal(cloudflareRoot.get('--color-cloudflare-orange-bright'), '#ff5e1e');
-	assert.equal(cloudflareDark.get('--color-cloudflare-orange'), '#ff5e1e');
+	assert.equal(cloudflareRoot.get('--color-cloudflare-orange'), '#cc3a00');
+	assert.equal(cloudflareDark.get('--color-cloudflare-orange'), '#cc3a00');
+	assert.equal(cloudflareDark.get('--on-primary'), 'white');
 	assert.equal(cloudflareRoot.get('--primary'), 'var(--color-cloudflare-orange)');
 	assert.equal(cloudflareRoot.get('--link'), 'var(--color-cloudflare-blue)');
 	assert.equal(cloudflareRoot.get('--secondary'), 'var(--color-cloudflare-recessed)');
 	assert.equal(cloudflareRoot.get('--success'), 'var(--color-cloudflare-green)');
 	assert.equal(cloudflareRoot.get('--warning'), 'var(--color-cloudflare-amber-text)');
+});
+
+test('High Contrast gives switch thumbs square corners', () => {
+	const highContrast = readFileSync(path.join(packageRoot, 'dist/compiled/themes/high-contrast.css'), 'utf8');
+	const thumb = declarationsForSelector(highContrast, ':root .rui-switch__thumb');
+	assert.equal(thumb.get('border-radius'), 'var(--radius-none)');
+});
+
+test('file-browser themes compile their treegrid treatments', () => {
+	const expectedSelectors = {
+		vscode: [':root .rui-treegrid', ":root .rui-treegrid__cell[aria-selected='true']"],
+		github: [':root .rui-treegrid', ':root .rui-treegrid__row:not(.rui-treegrid__row--header):hover'],
+		macos: [':root .rui-treegrid', ":root .rui-treegrid__cell[aria-selected='true']"],
+		'macos-classic': [':root .rui-treegrid', ":root .rui-treegrid__row[aria-expanded='true']"],
+		windows95: [':root .rui-treegrid', ":root .rui-treegrid__row[aria-expanded='true']"],
+	};
+
+	for (const [name, selectors] of Object.entries(expectedSelectors)) {
+		const css = readFileSync(path.join(packageRoot, `dist/compiled/themes/${name}.css`), 'utf8');
+		for (const selector of selectors) {
+			assert.match(css, new RegExp(selector.replaceAll(/[.*+?^${}()|[\]\\]/g, '\\$&')), `${name} ${selector}`);
+		}
+	}
+
+	const macosClassic = readFileSync(path.join(packageRoot, 'dist/compiled/themes/macos-classic.css'), 'utf8');
+	assert.match(macosClassic, /border-inline-start: 6px solid currentColor/);
+	const windows95 = readFileSync(path.join(packageRoot, 'dist/compiled/themes/windows95.css'), 'utf8');
+	assert.match(windows95, /content: ['"]-['"]/);
+});
+
+test('classic themes compile their scrollbar chrome', () => {
+	for (const suffix of ['', '/compact']) {
+		const windows95 = readFileSync(path.join(packageRoot, `dist/compiled/themes/windows95${suffix}.css`), 'utf8');
+		assert.match(windows95, /::-webkit-scrollbar-track/);
+		assert.match(windows95, /::-webkit-scrollbar-button/);
+		assert.match(windows95, /::-webkit-scrollbar-button:single-button/);
+		assert.match(rulesContainingSelector(windows95, '::-webkit-scrollbar-thumb'), /border-radius: 0/);
+		assert.match(windows95, /scrollbar-color: var\(--windows95-field-text\) var\(--windows95-face\)/);
+		assert.doesNotMatch(windows95, /@supports selector\(::-webkit-scrollbar\)/);
+
+		const macosClassic = readFileSync(
+			path.join(packageRoot, `dist/compiled/themes/macos-classic${suffix}.css`),
+			'utf8',
+		);
+		assert.match(macosClassic, /::-webkit-scrollbar-track/);
+		assert.match(macosClassic, /::-webkit-scrollbar-button:end/);
+		assert.match(rulesContainingSelector(macosClassic, '::-webkit-scrollbar-thumb'), /border-radius: 0/);
+		assert.match(macosClassic, /radial-gradient\(circle at 0\.5px 0\.5px/);
+		assert.match(macosClassic, /::-webkit-scrollbar-thumb:vertical/);
+		assert.doesNotMatch(macosClassic, /@supports selector\(::-webkit-scrollbar\)/);
+
+		const macosClassicDark = declarationsForSelector(
+			macosClassic,
+			":where(.dark), :root.dark[data-rui-theme='macos-classic']",
+		);
+		assert.equal(macosClassicDark.get('--macos-classic-scrollbar-thumb'), 'var(--macos-classic-selection)');
+	}
 });
 
 test('Radiant UI exposes one complete theme entry', () => {

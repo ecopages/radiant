@@ -1,4 +1,3 @@
-// @vitest-environment happy-dom
 import '../../src/server/install-ssr-runtime';
 import { describe, expect, test } from 'vitest';
 import { RadiantElement } from '../../src/core/radiant-element';

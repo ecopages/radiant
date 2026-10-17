@@ -1,6 +1,7 @@
 @reference 'tailwindcss';
 
-:root, :root[data-rui-theme='vscode'] {
+:root,
+:root[data-rui-theme='vscode'] {
 	--font-sans: 'Segoe UI', system-ui, sans-serif;
 	--font-heading: 'Segoe UI', system-ui, sans-serif;
 	--font-mono: 'Cascadia Code', Consolas, Menlo, Monaco, 'Courier New', monospace;
@@ -42,6 +43,12 @@
 	:root .rui-button--outline,
 	:root .rui-input,
 	:root .rui-textarea,
+	:root .rui-combobox__control,
+	:root .rui-date-field__group,
+	:root .rui-date-range-picker__group,
+	:root .rui-input-group,
+	:root .rui-number-field__group,
+	:root rui-date-input:where(:not([data-date-field-input], [data-range-start], [data-range-end])),
 	:root .rui-select__control {
 		@apply border-border bg-surface text-on-surface shadow-none;
 		border-color: var(--rui-control-border-color);
@@ -68,5 +75,30 @@
 	:root .rui-select__listbox,
 	:root .rui-calendar {
 		@apply rounded-container border border-border bg-surface shadow-lg;
+	}
+
+	/**
+	 * @remarks VS Code's explorer is a flat, compact list: hierarchy comes from indentation and chevrons rather than
+	 * table rules or a surrounding card.
+	 */
+	:root .rui-treegrid {
+		@apply rounded-none border-0 bg-transparent shadow-none;
+		--rui-treegrid-indent: 0.75rem;
+	}
+
+	:root .rui-treegrid__cell {
+		@apply border-0 bg-transparent px-2 py-1;
+	}
+
+	:root .rui-treegrid__row--header .rui-treegrid__cell {
+		@apply border-b border-border bg-transparent px-2 py-1 text-xs font-medium text-on-surface-container-low;
+	}
+
+	:root .rui-treegrid__row:not(.rui-treegrid__row--header):hover .rui-treegrid__cell:not([aria-selected='true']) {
+		@apply bg-surface-container-low;
+	}
+
+	:root .rui-treegrid__cell[aria-selected='true'] {
+		@apply bg-primary-container text-on-primary-container;
 	}
 }

@@ -1,6 +1,7 @@
 @reference 'tailwindcss';
 
-:root, :root[data-rui-theme='macos'] {
+:root,
+:root[data-rui-theme='macos'] {
 	--font-sans: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
 	--font-heading: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
 	--font-mono: 'SFMono-Regular', Menlo, Monaco, monospace;
@@ -77,10 +78,12 @@
 	:root .rui-input,
 	:root .rui-textarea,
 	:root .rui-autocomplete__input,
-	:root .rui-combobox__input,
-	:root .rui-date-field__input,
-	:root .rui-date-input__segment,
-	:root .rui-number-field__input,
+	:root .rui-combobox__control,
+	:root .rui-date-field__group,
+	:root .rui-date-range-picker__group,
+	:root .rui-input-group,
+	:root .rui-number-field__group,
+	:root rui-date-input:where(:not([data-date-field-input], [data-range-start], [data-range-end])),
 	:root .rui-select__control {
 		@apply rounded-control border-border bg-surface text-on-surface shadow-none;
 		border-color: var(--rui-control-border-color);
@@ -175,6 +178,31 @@
 	:root .rui-alert,
 	:root .rui-toast__content {
 		@apply rounded-container border border-border bg-surface text-on-surface shadow-md;
+	}
+
+	/**
+	 * @remarks Finder-style lists keep the hierarchy quiet: rounded surfaces, subtle row dividers, and a full-width
+	 * accent selection make the tree feel like a native macOS source list rather than a spreadsheet.
+	 */
+	:root .rui-treegrid {
+		@apply rounded-container border border-border bg-surface shadow-md;
+		--rui-treegrid-indent: 0.875rem;
+	}
+
+	:root .rui-treegrid__cell {
+		@apply border-0 bg-transparent px-control-x py-2 text-on-surface;
+	}
+
+	:root .rui-treegrid__row--header .rui-treegrid__cell {
+		@apply border-b border-border bg-surface-container-low font-semibold;
+	}
+
+	:root .rui-treegrid__row:not(.rui-treegrid__row--header):hover .rui-treegrid__cell:not([aria-selected='true']) {
+		@apply bg-surface-container-low;
+	}
+
+	:root .rui-treegrid__cell[aria-selected='true'] {
+		@apply bg-primary-container text-on-primary-container;
 	}
 
 	:root .rui-alert--info .rui-alert__icon {

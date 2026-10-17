@@ -78,6 +78,8 @@ import '@ecopages/radiant-ui/treegrid';
 
 Treegrid maps to **semantic surface and status roles**, never Tailwind palette steps:
 
+The shared layout uses one outer frame, compact non-wrapping cells, and no vertical rules between cells. The complete themes add their file-browser character on top of that contract: VS Code is flat and compact, GitHub uses a bordered list with horizontal separators, macOS uses a rounded source-list surface, Mac OS Classic uses a sunken field with a Platinum header and triangle disclosure, and Windows 95 uses a recessed field with raised headers and square plus/minus affordances.
+
 | Part | CSS roles |
 | --- | --- |
 | Surface (`rui-treegrid`) | `border`, `background`, `on-background`, `radius-container`, `shadow-sm` |
@@ -86,6 +88,7 @@ Treegrid maps to **semantic surface and status roles**, never Tailwind palette s
 | Selected row | `primary-container`, `on-primary-container` |
 | Cell focus | `focus-ring`, `z-dropdown` |
 | Geometry | `--space-control-x` (cell padding) |
+| Nested rows | `--rui-treegrid-indent` (per-level inline indentation) |
 
 Override at the theme layer, not in component CSS.
 
@@ -105,7 +108,7 @@ Override at the theme layer, not in component CSS.
 | Target | Required | Host writes | Author owns |
 | --- | --- | --- | --- |
 | `[role="treegrid"]` | yes | — | root surface; view sets `aria-label` |
-| `[role="row"][data-row-id]` | yes | `aria-expanded` sync | `data-row-id`, initial `aria-expanded` |
+| `[role="row"][data-row-id]` | yes | `aria-expanded`, `data-depth`, `--rui-treegrid-depth` | `data-row-id`, initial `aria-expanded` |
 | `[role="gridcell"]` | yes | `aria-selected`, roving `tabIndex` | cell content |
 | `[role="rowgroup"]` | for branches | `hidden` | sibling after expandable row |
 

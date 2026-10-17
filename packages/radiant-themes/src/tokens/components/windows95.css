@@ -4,7 +4,8 @@
  * @remarks Bevels follow the Windows 95 two-tone edges: an outer light and dark pair plus an inner highlight and shadow
  * pair, drawn with inset shadows so they never change a control's box size.
  */
-:root, :root[data-rui-theme='windows95'] {
+:root,
+:root[data-rui-theme='windows95'] {
 	--font-sans: Tahoma, 'MS Sans Serif', Arial, sans-serif;
 	--font-heading: Tahoma, 'MS Sans Serif', Arial, sans-serif;
 	--font-mono: 'Lucida Console', Consolas, Menlo, Monaco, 'Courier New', monospace;
@@ -139,6 +140,7 @@
 	:root .rui-date-range-picker__group,
 	:root .rui-input-group,
 	:root .rui-number-field__group,
+	:root rui-date-input:where(:not([data-date-field-input], [data-range-start], [data-range-end])),
 	:root .rui-select__control {
 		@apply rounded-none;
 		border-color: transparent;
@@ -365,6 +367,68 @@
 		color: var(--windows95-field-text);
 	}
 
+	/**
+	 * @remarks Windows 95 tree views are recessed white work areas with raised column headers, compact rows, and
+	 * square plus/minus disclosure boxes instead of modern chevrons.
+	 */
+	:root .rui-treegrid {
+		@apply rounded-none border-0;
+		background-color: var(--windows95-field);
+		color: var(--windows95-field-text);
+		box-shadow: var(--windows95-sunken);
+		--rui-treegrid-indent: 0.875rem;
+	}
+
+	:root .rui-treegrid__cell {
+		@apply border-0 bg-transparent px-1.5 py-1;
+		color: var(--windows95-field-text);
+	}
+
+	:root .rui-treegrid__row--header .rui-treegrid__cell {
+		@apply font-normal;
+		background-color: var(--windows95-face);
+		color: var(--windows95-text);
+		box-shadow: var(--windows95-raised-thin);
+	}
+
+	:root .rui-treegrid__row:not(.rui-treegrid__row--header):hover .rui-treegrid__cell:not([aria-selected='true']) {
+		background-color: var(--windows95-highlight);
+	}
+
+	:root .rui-treegrid__cell[aria-selected='true'] {
+		background-color: var(--windows95-selection);
+		color: var(--windows95-selection-text);
+	}
+
+	:root .rui-treegrid__cell:focus-visible {
+		outline: 1px dotted var(--windows95-field-text);
+		outline-offset: -2px;
+		--tw-ring-shadow: 0 0 #0000;
+		box-shadow: none;
+	}
+
+	:root .rui-treegrid__row[aria-expanded='false'] .rui-treegrid__cell:first-child::before,
+	:root .rui-treegrid__row[aria-expanded='true'] .rui-treegrid__cell:first-child::before {
+		content: '+';
+		width: 0.75rem;
+		height: 0.75rem;
+		margin-inline-end: 0.25rem;
+		border: 1px solid var(--windows95-shadow);
+		background-color: var(--windows95-field);
+		color: var(--windows95-field-text);
+		font:
+			0.625rem/0.625rem 'MS Sans Serif',
+			Tahoma,
+			sans-serif;
+		text-align: center;
+		transform: none;
+		vertical-align: -0.05rem;
+	}
+
+	:root .rui-treegrid__row[aria-expanded='true'] .rui-treegrid__cell:first-child::before {
+		content: '-';
+	}
+
 	:root .rui-badge,
 	:root .rui-chip,
 	:root .rui-pagination__link {
@@ -414,6 +478,7 @@
 		:root .rui-date-range-picker__group,
 		:root .rui-input-group,
 		:root .rui-number-field__group,
+		:root rui-date-input:where(:not([data-date-field-input], [data-range-start], [data-range-end])),
 		:root .rui-select__control,
 		:root .rui-checkbox__control,
 		:root .rui-radio__control,
@@ -430,4 +495,106 @@
 			box-shadow: none;
 		}
 	}
+}
+
+/**
+ * WebKit classic Windows scrollbars use a full-size gutter, a dithered track, and four-tone raised controls instead of
+ * a thin rounded thumb. Firefox receives the native fallback declared above.
+ */
+@supports (-moz-appearance: none) {
+	:root,
+	:root * {
+		scrollbar-width: auto;
+		scrollbar-color: var(--windows95-field-text) var(--windows95-face);
+	}
+}
+
+:root::-webkit-scrollbar,
+:root *::-webkit-scrollbar {
+	width: 16px;
+	height: 16px;
+}
+
+:root::-webkit-scrollbar-track,
+:root *::-webkit-scrollbar-track {
+	background-color: var(--windows95-face);
+	background-image:
+		radial-gradient(circle at 0.5px 0.5px, var(--windows95-shadow) 0.5px, transparent 0.6px),
+		radial-gradient(circle at 1.5px 1.5px, var(--windows95-shadow) 0.5px, transparent 0.6px);
+	background-size: 2px 2px;
+}
+
+:root::-webkit-scrollbar-thumb,
+:root *::-webkit-scrollbar-thumb,
+:root::-webkit-scrollbar-button,
+:root *::-webkit-scrollbar-button {
+	box-sizing: border-box;
+	border-radius: 0;
+	background-color: var(--windows95-face);
+	border: 1px solid;
+	border-color: var(--windows95-face) var(--windows95-dark) var(--windows95-dark) var(--windows95-face);
+	box-shadow:
+		inset 1px 1px var(--windows95-light),
+		inset -1px -1px var(--windows95-shadow);
+}
+
+:root::-webkit-scrollbar-button,
+:root *::-webkit-scrollbar-button {
+	display: none;
+}
+
+:root::-webkit-scrollbar-button:single-button,
+:root *::-webkit-scrollbar-button:single-button {
+	display: block;
+	width: 16px;
+	height: 16px;
+}
+
+:root::-webkit-scrollbar-button:single-button:vertical:decrement,
+:root *::-webkit-scrollbar-button:single-button:vertical:decrement {
+	background-image:
+		linear-gradient(var(--windows95-text), var(--windows95-text)) center 3px / 2px 2px no-repeat,
+		linear-gradient(var(--windows95-text), var(--windows95-text)) center 5px / 4px 2px no-repeat,
+		linear-gradient(var(--windows95-text), var(--windows95-text)) center 7px / 6px 2px no-repeat,
+		linear-gradient(var(--windows95-text), var(--windows95-text)) center 9px / 8px 2px no-repeat;
+}
+
+:root::-webkit-scrollbar-button:single-button:vertical:increment,
+:root *::-webkit-scrollbar-button:single-button:vertical:increment {
+	background-image:
+		linear-gradient(var(--windows95-text), var(--windows95-text)) center 9px / 2px 2px no-repeat,
+		linear-gradient(var(--windows95-text), var(--windows95-text)) center 7px / 4px 2px no-repeat,
+		linear-gradient(var(--windows95-text), var(--windows95-text)) center 5px / 6px 2px no-repeat,
+		linear-gradient(var(--windows95-text), var(--windows95-text)) center 3px / 8px 2px no-repeat;
+}
+
+:root::-webkit-scrollbar-button:single-button:horizontal:decrement,
+:root *::-webkit-scrollbar-button:single-button:horizontal:decrement {
+	background-image:
+		linear-gradient(var(--windows95-text), var(--windows95-text)) 3px center / 2px 2px no-repeat,
+		linear-gradient(var(--windows95-text), var(--windows95-text)) 5px center / 2px 4px no-repeat,
+		linear-gradient(var(--windows95-text), var(--windows95-text)) 7px center / 2px 6px no-repeat,
+		linear-gradient(var(--windows95-text), var(--windows95-text)) 9px center / 2px 8px no-repeat;
+}
+
+:root::-webkit-scrollbar-button:single-button:horizontal:increment,
+:root *::-webkit-scrollbar-button:single-button:horizontal:increment {
+	background-image:
+		linear-gradient(var(--windows95-text), var(--windows95-text)) 9px center / 2px 2px no-repeat,
+		linear-gradient(var(--windows95-text), var(--windows95-text)) 7px center / 2px 4px no-repeat,
+		linear-gradient(var(--windows95-text), var(--windows95-text)) 5px center / 2px 6px no-repeat,
+		linear-gradient(var(--windows95-text), var(--windows95-text)) 3px center / 2px 8px no-repeat;
+}
+
+:root::-webkit-scrollbar-button:active,
+:root *::-webkit-scrollbar-button:active {
+	box-shadow: var(--windows95-pressed);
+}
+
+:root::-webkit-scrollbar-corner,
+:root *::-webkit-scrollbar-corner,
+:root::-webkit-resizer,
+:root *::-webkit-resizer {
+	background-color: var(--windows95-face);
+	background-image: linear-gradient(135deg, transparent 50%, var(--windows95-shadow) 50% 60%, transparent 60%);
 }

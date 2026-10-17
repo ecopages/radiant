@@ -58,11 +58,14 @@ For adapters, fragment responses, and framework integrations, prefer the explici
 Lower-level host serialization lives on `@ecopages/radiant/server/radiant-element-ssr`, not as Element Host instance methods:
 
 - **Adapter default:** `renderRadiantElementHostToString`
-- **View-only:** `renderRadiantElementViewToString`
+- **View-only:** `renderRadiantElementViewToString`. It returns the view without a host tag, so it never stamps; a caller that writes the host tag itself adds `SERVER_RENDERED_HOST_ATTRIBUTE`.
 - **JSX / custom-element SSR integration:** `withRadiantServerCustomElementRenderBridge`, `renderRegisteredRadiantElementHost`, `renderRegisteredRadiantElementHostToString`
+- **Host stamp:** `SERVER_RENDERED_HOST_ATTRIBUTE` (`data-radiant-ssr`). Hydrate-mode host serialization writes it on every host, and the client host reads and removes it at first connect into `isServerRendered`. Plain mode does not write it.
 - **Advanced / runtime:** `getOrCreateRadiantElementSsrRuntime`, `withServerRadiantElementSsrRuntime`, `createRadiantElementSsrService`, `getRadiantElementHostSsrAttributes`, `resolveRadiantElementRenderBridge`
 
 When a component renders literal `<slot>` tags, host serialization also emits the slot-projection payload needed to reconstruct default and named light-DOM assignments on the client.
+
+Under `withRadiantServerCustomElementRenderBridge`, a nested host receives its JSX children as light-DOM nodes (`renderServerLightDom` from `@ecopages/jsx/server`), not as an HTML string to parse. Text and attribute values go straight into the DOM, so they are escaped exactly once, when the host serializes. The children are built inside the host's own context providers, after construction and legacy decorator setup but before `prepareForSsr`. A context consumer passed as a child of a provider host therefore resolves that provider during SSR. It sees values set by construction or decorators (`initialValue`), but not values the provider only sets during preparation.
 
 `RadiantElement.renderViewToString()` remains the narrow host hook that asks the installed server runtime to serialize the JSX view only.
 
@@ -186,7 +189,11 @@ Note: the server helpers are transport-neutral. The package no longer ships the 
 
 ## Supported SSR DOM APIs
 
-Production SSR uses the minimal light-DOM shim from `@ecopages/radiant/server/install-ssr-runtime`, not happy-dom. Vitest files that opt into `happy-dom` exercise browser-like behavior; they do not represent the Node SSR runtime.
+Production SSR uses the minimal light-DOM shim from `@ecopages/radiant/server/install-ssr-runtime`. The tests follow that split:
+
+- **Node project:** SSR tests run on the shim.
+- **`*.browser.test.*` files:** client tests run in Chromium through vitest browser mode.
+- **Hydration tests:** they start from real server output. `test/server/ssr-hydration-fixtures.test.tsx` renders `test/fixtures/ssr-hydration/cases.tsx` on the shim into file snapshots, and `test/client/ssr-hydration.browser.test.tsx` hydrates those files in Chromium. After a change to server output, update the snapshots with `vitest run -u`.
 
 The shim supports a focused query surface for component lifecycle code that runs during SSR:
 
@@ -196,6 +203,9 @@ The shim supports a focused query surface for component lifecycle code that runs
 - `element.matches(selector)`
 - `element.contains(otherNode)`
 - `element.parentElement`
+- Node traversal: `childNodes`, `firstChild`, `lastChild`, `nextSibling`, `previousSibling`, `firstElementChild`, `lastElementChild`, `nextElementSibling`, `previousElementSibling`, `childElementCount`
+- Node edits: `append`, `prepend`, `before`, `after`, `replaceWith`, `remove`, `insertBefore`, `replaceChildren`, `insertAdjacentHTML`
+- `document.createElement` / `createElementNS` (no namespaces), `createTextNode`, `createComment`
 - `document.querySelector(selector)` / `document.querySelectorAll(selector)`
 - `document.getElementById(id)`
 - `element.style` (`setProperty`, property assignment, serializes to the `style` attribute)
@@ -226,7 +236,38 @@ The shim supports a focused query surface for component lifecycle code that runs
 - `:scope`, sibling combinators (`+`, `~`)
 - Shadow-root queries (SSR is light-DOM only)
 
-Fragment-backed nodes materialize children lazily when a query traverses descendants, so nested selectors such as `header > h2` work after `innerHTML` assignment without paying full tree materialization cost during plain serialization.
+Parsed elements keep their source HTML. Child nodes are built on first read (`childNodes`, `children`, or a query that traverses descendants), so nested selectors such as `header > h2` work after `innerHTML` assignment without paying full tree materialization cost during plain serialization. Reading never invalidates the source: a parsed subtree serializes exactly as written until something in it changes. A mutation (attribute, child list, or text) drops the cached source of that element and its ancestors, and only those are re-serialized.
+
+**Parsing contract.** The parser follows the HTML tokenizer for conforming HTML, which is what JSX and well-formed authored markup produce:
+
+- Character references decode as the spec says, in text and attribute values, from the full WHATWG table (`src/utils/html-entity-table.generated.ts`, regenerated by `scripts/generate-html-entity-table.ts`). That covers legacy references without a semicolon, with the attribute exception (`?a=1&copy=2` stays literal), the Windows-1252 remap for `&#x80;`–`&#x9F;`, and U+FFFD for invalid code points.
+- Parsed text is written back from its source only while that source still means the same thing: it decodes to the node's value, holds no `<`, and does not end in a partial character reference. Otherwise it is escaped from the value, so text moved between parents or merged with appended text cannot turn into markup or new entities.
+- Raw text elements (`script`, `style`, `xmp`, `iframe`, `noembed`, `noframes`) and escapable raw text elements (`textarea`, `title`) hold one text node up to the matching close tag. Markup-like strings inside them are not tags. Raw text is never decoded. When code sets it, the serializer emits it unescaped, with only that element's close tag neutralized.
+- Comments are comment nodes. `<!-->` and `<!--->` are empty comments. `<?…>`, `<!…>` and `</` followed by a non-letter are bogus comments, while `<!doctype>` and `</>` are dropped. A `<` that cannot start markup (`a < b`) is text.
+- CR and CRLF become LF, and for duplicate attributes the first one wins. Adjacent text left after dropped markup is merged.
+- A newline directly after a `pre`, `listing` or `textarea` start tag is dropped on parse. `innerHTML` assignment is fragment parsing, so it keeps a leading newline, and the `innerHTML` getter adds none, as in browsers. When the element is serialized with its start tag (`outerHTML`, or inside a parent) and its text starts with a newline, one extra newline is written, so the browser's parse yields the same text. Chromium does not write it, so its own round trip loses that newline.
+
+**Not supported (non-conforming input).** The tree-construction repairs browsers apply to malformed markup are out of scope: implied end tags (`<p>a<div>`), foster parenting of misplaced table content, implied `tbody`, and the adoption agency for misnested formatting. Related deviations:
+
+- Self-closing syntax on non-void HTML elements (`<x-card />`) is honored in the tree. Browsers ignore the slash and leave the element open, so the serializer always writes such elements with an explicit close tag.
+- Attribute names are stored as written and are case-sensitive.
+- Elements carry no namespace, so SVG and MathML parse as plain elements.
+- Truncated and malformed markup is not repaired: input that ends inside a tag (`a <b`), a comment closed by `--!>`, and an unterminated `<!--a>` differ from the spec.
+- `<svg><style>` and `<svg><title>` parse as HTML raw text, `noscript` is not raw text, and the script comment-escape states (`<script><!--<script>`) are not followed.
+- Unquoted attribute values that contain `/` (`<a href=/path/to>`) are split into several attributes. Serialization is unaffected because the source is kept.
+
+`test/server/minimal-dom-differential.browser.test.ts` runs in Chromium on generated conforming HTML. It applies the same parsing, queries, mutations and `insertAdjacentHTML` calls to the shim and to Chromium, then checks two things:
+
+- **Same tree:** both DOMs hold the same tree.
+- **Same reading:** Chromium parses the shim's serialization back into the shim's tree.
+
+It knowingly leaves out three cases:
+
+- **Processing instructions:** the spec parses `<?…?>` as a bogus comment, while current Chromium creates a processing instruction.
+- **Legacy references in attribute values:** Chromium's `innerHTML` fast path decodes some that the spec keeps literal.
+- **Leading newline in `pre`:** set text starting with a newline (see above).
+
+Unit tests pin the spec behaviour for all three. When the shim gains a behavior, extend that generator.
 
 SSR hosts created with `new Component()` also align `localName` / `tagName` to the `@customElement` metadata before host preparation and serialization, so in-memory queries like `closest('my-element')` match the tag names used in the rendered HTML.
 

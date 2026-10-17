@@ -1,8 +1,7 @@
 // @vitest-environment node
 /**
- * Runs in plain Node so `install-ssr-runtime` installs Radiant's minimal DOM rather than
- * detecting an existing happy-dom. happy-dom implements `:checked`; the minimal DOM
- * rejects every pseudo-class, so only this environment reproduces the SSR failure.
+ * Runs in plain Node on Radiant's minimal DOM, which rejects every pseudo-class (a real DOM implements
+ * `:checked`), so only this environment reproduces the SSR failure.
  */
 import { describe, expect, it } from 'vitest';
 import '@ecopages/radiant/server/install-ssr-runtime';

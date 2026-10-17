@@ -41,6 +41,8 @@ type TreegridCellContext = {
  *
  * Per row:
  * - `data-row-id` — row identity for `value` and `rui-change`.
+ * - `data-depth` — host-derived rowgroup depth for presentation. The host also writes
+ *   `--rui-treegrid-depth` on the row for the default stylesheet.
  *
  * Optional (expandable rows):
  * - `aria-expanded` on a data row — when present, the host toggles the adjacent
@@ -60,6 +62,7 @@ type TreegridCellContext = {
  * @element rui-treegrid
  * @attr {string} label - Accessible name for the treegrid (applied on `[role="treegrid"]` by the view).
  * @attr {string} value - Selected row `data-row-id`. Default: `''`.
+ * @cssprop --rui-treegrid-indent - Inline indentation added for each nested row level. Override on `.rui-treegrid`. Default: `1rem`.
  * @fires rui-change - Emitted with `{ rowId, columnIndex }` when a cell activates.
  *
  * @remarks
@@ -125,6 +128,23 @@ export class RuiTreegrid extends RadiantElement {
 		}
 	}
 
+	private syncDepth(): void {
+		for (const row of this.getDataRows()) {
+			let depth = 0;
+			let parent = row.parentElement;
+
+			while (parent && parent !== this) {
+				if (parent.getAttribute('role') === 'rowgroup') {
+					depth += 1;
+				}
+				parent = parent.parentElement;
+			}
+
+			row.setAttribute('data-depth', String(depth));
+			row.style.setProperty('--rui-treegrid-depth', String(depth));
+		}
+	}
+
 	private syncSelection(): void {
 		const cells = this.getVisibleCells();
 		let activeIndex = 0;
@@ -149,6 +169,7 @@ export class RuiTreegrid extends RadiantElement {
 	}
 
 	protected override onConnected(): void {
+		this.syncDepth();
 		this.syncExpanded();
 		this.syncSelection();
 	}

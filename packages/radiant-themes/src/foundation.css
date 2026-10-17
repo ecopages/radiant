@@ -2,6 +2,19 @@
 @import '@ecopages/radiant-ui/tokens/spacing/default';
 @import '@ecopages/radiant-ui/tokens/radius/default';
 
+/**
+ * @remarks The input inside an input group sits on the group's fill and frame, so no theme's field styling may give it
+ * a second one.
+ */
+@layer components {
+	:root .rui-input-group .rui-input {
+		border-width: 0;
+		border-radius: 0;
+		background-color: transparent;
+		box-shadow: none;
+	}
+}
+
 :where(:root) {
 	color-scheme: light;
 }

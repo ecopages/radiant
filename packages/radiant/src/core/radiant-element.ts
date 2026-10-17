@@ -18,6 +18,7 @@ import { REACTIVE_HOST, ReactiveHost, type ReactiveHostInternals } from './react
 import type { ReactiveState } from './reactivity-contract';
 import { runSsrPreparationCallbacks } from './ssr-preparation';
 import { isRadiantHydratorInstalled } from './radiant-hydrator-state';
+import { SERVER_RENDERED_HOST_ATTRIBUTE } from './server-rendered-host';
 import { getRadiantElementSsrRuntime, type RadiantElementRenderToStringOptions } from './radiant-element-ssr-registry';
 import { RADIANT_ELEMENT_BRAND } from './radiant-element-brand';
 
@@ -219,6 +220,7 @@ export class RadiantElement<Bindings extends object = {}>
 	 */
 	private elementReady = false;
 	private isFirstConnectPending = false;
+	private serverRendered = false;
 	private readonly updateCycle: UpdateCycle;
 	private renderRuntime?: RenderRuntime;
 
@@ -249,6 +251,22 @@ export class RadiantElement<Bindings extends object = {}>
 		ensureLegacyHostReady(this, 'construct');
 	}
 
+	/**
+	 * Whether this instance was first connected from markup that hydrate-mode SSR produced.
+	 *
+	 * @remarks Fixed at first connect and `false` before it. Unlike `hasHydrationMarkers`, it does not depend on
+	 * the view having bindings or on how the host's children were rendered, so a host that adopts server-rendered
+	 * content (for example light-DOM children its parent view authored) can rely on it. It says nothing about
+	 * whether the hydrator is installed; combine it with `hasRadiantHydrator()` when that matters. Plain-mode SSR
+	 * does not stamp hosts, so those report `false`. The attribute is removed once read, so markup copied from a
+	 * connected host does not carry it. Slot-projection payloads embed host markup as written, stamps included, so
+	 * a host the client rebuilds from a payload also reports `true`; a host replaced by a client-made instance
+	 * (for example a server host passed as a child of another custom element in a view) reports `false`.
+	 */
+	public get isServerRendered(): boolean {
+		return this.serverRendered;
+	}
+
 	public get slotProjectionVersion(): number {
 		return this.renderRuntime?.slotProjectionVersion ?? 0;
 	}
@@ -271,6 +289,11 @@ export class RadiantElement<Bindings extends object = {}>
 
 		const isFirstConnect = !this.elementReady;
 		this.elementReady = true;
+
+		if (isFirstConnect) {
+			this.serverRendered = this.hasAttribute(SERVER_RENDERED_HOST_ATTRIBUTE);
+			this.removeAttribute(SERVER_RENDERED_HOST_ATTRIBUTE);
+		}
 
 		this.reactiveHost.connectHost();
 
@@ -449,7 +472,9 @@ export class RadiantElement<Bindings extends object = {}>
 	/**
 	 * Serializes the JSX view through the installed server runtime.
 	 *
-	 * @remarks Flushes `@bindTo` after `render()` so targets created by a Derived
+	 * @remarks Returns the view only, so it never stamps a host. A caller that writes the host tag itself must add
+	 * `SERVER_RENDERED_HOST_ATTRIBUTE` (`data-radiant-ssr`) to it for `isServerRendered` to be `true` on the client;
+	 * `renderRadiantElementHostToString` does that. Flushes `@bindTo` after `render()` so targets created by a Derived
 	 * Tree exist before serialization. `prepareForSsr` still flushes authored
 	 * light-DOM children that exist before render.
 	 */

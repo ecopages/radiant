@@ -5,18 +5,17 @@ import { RuiToc } from './toc.script';
 
 describe('RuiToc SSR navigation listeners', () => {
 	let documentAddSpy: ReturnType<typeof vi.spyOn>;
-	let windowAddSpy: ReturnType<typeof vi.spyOn>;
+	/** The SSR window has no `addEventListener`, so a call would throw; spy only where it exists. */
+	let windowAddSpy: ReturnType<typeof vi.spyOn> | undefined;
 
 	beforeEach(() => {
-		document.body.innerHTML = '<main id="ssr-toc-content"><h2>Heading</h2></main>';
 		documentAddSpy = vi.spyOn(document, 'addEventListener');
-		windowAddSpy = vi.spyOn(window, 'addEventListener');
+		windowAddSpy = typeof window.addEventListener === 'function' ? vi.spyOn(window, 'addEventListener') : undefined;
 	});
 
 	afterEach(() => {
 		documentAddSpy.mockRestore();
-		windowAddSpy.mockRestore();
-		document.body.innerHTML = '';
+		windowAddSpy?.mockRestore();
 	});
 
 	it('does not register navigation or scroll listeners during SSR prop assignment', () => {
@@ -38,7 +37,8 @@ describe('RuiToc SSR navigation listeners', () => {
 			),
 		).toHaveLength(0);
 		expect(
-			windowAddSpy.mock.calls.filter((call: Parameters<Window['addEventListener']>) => call[0] === 'scroll'),
+			windowAddSpy?.mock.calls.filter((call: Parameters<Window['addEventListener']>) => call[0] === 'scroll') ??
+				[],
 		).toHaveLength(0);
 	});
 });
