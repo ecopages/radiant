@@ -17,7 +17,13 @@ export type ContextSelectorOptions<T extends UnknownContext, Selected = ContextT
 	subscribe?: boolean;
 };
 
-type ContextSelectorDecorator<Selected> = BoundedFieldDecorator<ContextHostLike, Selected | undefined> & {
+/**
+ * @remarks
+ * The method overloads come first. When no overload matches, TypeScript reports the last one, so a field
+ * of the wrong type gets the field decorator's error, which names the field and selected types, instead of
+ * `undefined` not matching a method.
+ */
+type ContextSelectorDecorator<Selected> = {
 	<Host extends ContextHostLike, TMethod extends ContextUpdateMethod<Selected>>(
 		protoOrTarget: TMethod,
 		nameOrContext: ClassMethodDecoratorContext<Host, TMethod>,
@@ -27,7 +33,7 @@ type ContextSelectorDecorator<Selected> = BoundedFieldDecorator<ContextHostLike,
 		nameOrContext: string,
 		descriptor: TypedPropertyDescriptor<ContextUpdateMethod<Selected>>,
 	): TypedPropertyDescriptor<ContextUpdateMethod<Selected>> | void;
-};
+} & BoundedFieldDecorator<ContextHostLike, Selected | undefined>;
 
 /**
  * Subscribes a field or method to the current value, or a selected slice, of a context.
