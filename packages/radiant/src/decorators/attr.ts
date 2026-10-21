@@ -1,26 +1,24 @@
-import { fieldDecoratorBridge } from './bridge';
+import { fieldDecorator, type ValueFieldDecorator } from './bridge';
 import { reactiveAttr as legacyReactiveAttr } from './legacy/attr';
 import { reactiveAttr as standardReactiveAttr } from './standard/attr';
-import type { ReactiveAttributeHostLike } from './shared/reactive-attr';
+import type { AttrOptions, ReactiveAttributeHostLike } from './shared/reactive-attr';
 export type { AttrConverter, AttrOptions } from './shared/reactive-attr';
 
-export function attr<TValue = string | undefined>(options: import('./shared/reactive-attr').AttrOptions<TValue> = {}) {
-	function decorator<THost extends ReactiveAttributeHostLike>(
-		protoOrTarget: undefined,
-		nameOrContext: ClassFieldDecoratorContext<THost, TValue>,
-	): (this: THost, value: TValue) => TValue;
-	function decorator(protoOrTarget: ReactiveAttributeHostLike, nameOrContext: string): void;
-	function decorator(
-		protoOrTarget: ReactiveAttributeHostLike | undefined,
-		nameOrContext: string | ClassFieldDecoratorContext<ReactiveAttributeHostLike, TValue>,
-	): ((this: ReactiveAttributeHostLike, value: TValue) => TValue) | void {
-		return fieldDecoratorBridge(
-			standardReactiveAttr(options),
-			legacyReactiveAttr(options),
-			protoOrTarget,
-			nameOrContext,
-		);
-	}
-
-	return decorator;
+/**
+ * Declares a reactive field backed by an attribute on the host element.
+ *
+ * The declared field type is the value type: `defaultValue` and `converter`
+ * must agree with it, and are checked against it under standard decorators.
+ *
+ * @remarks
+ * `T` defaults to `unknown` because legacy decorators have no field type to
+ * infer from, and a narrower default would reject valid options such as
+ * `defaultValue: 0`. Under legacy decorators `converter.toAttribute` therefore
+ * receives `unknown`; pass the whole field type explicitly, as in
+ * `@attr<number>(...)` on `count: number`, when it needs the value type.
+ */
+export function attr<T = unknown>(
+	options: AttrOptions<NoInfer<T>> = {},
+): ValueFieldDecorator<ReactiveAttributeHostLike, T> {
+	return fieldDecorator(standardReactiveAttr(options), legacyReactiveAttr(options));
 }
