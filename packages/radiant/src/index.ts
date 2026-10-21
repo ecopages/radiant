@@ -31,3 +31,4 @@ export type { BindToHost } from './decorators/shared/bind-to';
 export type { ReactiveAttributeHostLike } from './decorators/shared/reactive-attr';
 export type { ReactivePropHost } from './decorators/standard/reactive-prop';
 export type { ReactiveHostLike } from './core/reactive-host';
+export type { Method } from './types';
