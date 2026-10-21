@@ -33,4 +33,21 @@ export class StandardTypeConstantFields extends RadiantElement {
 	@attr({ type: Array }) a3: string;
 	// @ts-expect-error a converter without fromAttribute leaves the constant checked
 	@attr({ type: Number, converter: { toAttribute: (v) => v } }) a4: string;
+	// @ts-expect-error without a type constant the attribute stays a string, not a number
+	@attr({ source: 'data-count' }) a5: number;
+	// @ts-expect-error without a type constant the attribute stays a string, not a number
+	@attr() a6?: number;
+	// @ts-expect-error a defaultValue does not parse the attribute, so the field cannot be a number
+	@attr({ defaultValue: 0 }) a7: number;
+	// @ts-expect-error without a type constant the attribute stays a string, not a boolean
+	@attr() a8?: boolean;
+	// @ts-expect-error a field of two parsed types fits no constant, so it needs a parser
+	@attr() a9: string | number;
+	// @ts-expect-error a field of a string literal and a number fits no constant, so it needs a parser
+	@attr({ defaultValue: 'a' }) a10: 'a' | 1;
+}
+
+export class StandardGenericHostFields<V extends string> extends RadiantElement {
+	@attr() v1?: V;
+	@attr({ source: 'data-value' }) v2: V | null;
 }

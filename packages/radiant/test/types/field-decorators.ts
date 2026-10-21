@@ -42,7 +42,7 @@ export class ValidElementFields extends RadiantElement {
 	@attr({ defaultValue: 'a' }) a8: Mode;
 	@attr({ converter: { fromAttribute: (v) => (v ? Number(v) : 0) } }) a9: number;
 	@attr({ converter: { fromAttribute: (v) => (v === 'b' ? 'b' : 'a') } }) a10: Mode;
-	@attr<number>({ defaultValue: 0 }) a11: number;
+	@attr<number>({ type: Number, defaultValue: 0 }) a11: number;
 
 	@state s1 = 0;
 	@state s2: string[] = [];
@@ -84,7 +84,7 @@ export class ValidControllerFields extends RadiantController {
 	@attr({ defaultValue: 'a' }) a8: Mode;
 	@attr({ converter: { fromAttribute: (v) => (v ? Number(v) : 0) } }) a9: number;
 	@attr({ converter: { fromAttribute: (v) => (v === 'b' ? 'b' : 'a') } }) a10: Mode;
-	@attr<number>({ defaultValue: 0 }) a11: number;
+	@attr<number>({ type: Number, defaultValue: 0 }) a11: number;
 
 	@state s1 = 0;
 	@state s2: string[] = [];
