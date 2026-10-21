@@ -3,6 +3,7 @@ import { reactiveField as legacyReactiveField } from './legacy/reactive-field';
 import { reactiveField as standardReactiveField } from './standard/reactive-field';
 import { fieldDecoratorBridge } from './bridge';
 
+export function state(protoOrTarget: ReactiveHostLike, nameOrContext: string): void;
 /**
  * Declares internal mutable component state.
  *
@@ -12,12 +13,17 @@ import { fieldDecoratorBridge } from './bridge';
  * is supplied, `RadiantElement` hosts expose a JSX companion binding
  * accessor automatically while plain imperative hosts keep binding
  * opt-in.
+ *
+ * @remarks
+ * `@state` is applied directly rather than returned by a factory, so it
+ * declares its own overloads and infers the value type per field. The legacy
+ * overload comes first so that a failed standard check reports the standard
+ * overload.
  */
 export function state<THost extends ReactiveHostLike, TValue>(
 	protoOrTarget: undefined,
 	nameOrContext: ClassFieldDecoratorContext<THost, TValue>,
 ): (this: THost, value: TValue) => TValue;
-export function state(protoOrTarget: ReactiveHostLike, nameOrContext: string): void;
 export function state(
 	protoOrTarget: ReactiveHostLike | undefined,
 	nameOrContext: string | ClassFieldDecoratorContext<ReactiveHostLike, unknown>,

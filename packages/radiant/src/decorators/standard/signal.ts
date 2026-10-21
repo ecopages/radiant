@@ -39,10 +39,13 @@ export type SignalDecoratorOptions<Value = unknown> = {
 };
 
 export function signal<Value = unknown>(options: SignalDecoratorOptions<Value> = {}) {
-	return function <T extends ReactiveHostLike, Value>(_: undefined, context: ClassFieldDecoratorContext<T, unknown>) {
+	return function <T extends ReactiveHostLike>(
+		_: undefined,
+		context: ClassFieldDecoratorContext<T, WritableSignal<Value>>,
+	) {
 		const propertyName = String(context.name);
 
-		return function (this: T, initialValue: Value | WritableSignal<Value>) {
+		return function (this: T, initialValue: Value | WritableSignal<Value>): WritableSignal<Value> {
 			const resolvedSource =
 				typeof options.source === 'function'
 					? options.source(this)
@@ -76,7 +79,7 @@ export function signal<Value = unknown>(options: SignalDecoratorOptions<Value> =
 				this[REACTIVE_HOST].ssrRegistry.registerHydrationBinding(propertyName, hostSignal);
 			}
 
-			return hostSignal as unknown as WritableSignal<Value>;
+			return hostSignal;
 		};
 	};
 }

@@ -1,13 +1,7 @@
 import type { ReactivePropertyOptions } from '../core/reactive-prop-core';
 import { reactiveProp as legacyReactiveProp } from './legacy/reactive-prop';
-import { reactiveProp as standardReactiveProp } from './standard/reactive-prop';
-import { fieldDecoratorBridge } from './bridge';
-
-type StandardReactivePropHost<T> = {
-	createReactiveProp(propertyName: string, options: ReactivePropertyOptions<T>): void;
-};
-
-type LegacyReactivePropHost<T> = StandardReactivePropHost<T>;
+import { reactiveProp as standardReactiveProp, type ReactivePropHost } from './standard/reactive-prop';
+import { fieldDecorator, type ValueFieldDecorator } from './bridge';
 
 /**
  * Declares a reactive property on a Radiant host.
@@ -26,25 +20,17 @@ type LegacyReactivePropHost<T> = StandardReactivePropHost<T>;
  * JS property writes (`fromProperty`). On `RadiantController`, only `fromProperty`
  * applies — attribute conversion is an Element Host concern.
  *
+ * The declared field type is the property type: `defaultValue` and `transform`
+ * must agree with it, and are checked against it under standard decorators.
+ * `type` is not checked against it. Legacy decorators never see the field, so
+ * there `transform.toAttribute` receives `unknown` unless the type is passed
+ * explicitly. An explicit type must be the whole field type, `undefined`
+ * included: `@prop<number | undefined>(...)` on `count?: number`.
+ *
  * @param options {@link ReactivePropertyOptions} The options for the reactive property.
  */
-export function prop<T = unknown>(options: ReactivePropertyOptions<T>) {
-	function decorator<THost extends StandardReactivePropHost<T>, TValue>(
-		protoOrTarget: undefined,
-		nameOrContext: ClassFieldDecoratorContext<THost, TValue>,
-	): ((this: THost, value: TValue) => TValue) | void;
-	function decorator(protoOrTarget: LegacyReactivePropHost<T>, nameOrContext: string): void;
-	function decorator(
-		protoOrTarget: LegacyReactivePropHost<T> | undefined,
-		nameOrContext: string | ClassFieldDecoratorContext<StandardReactivePropHost<T>, unknown>,
-	): ((this: StandardReactivePropHost<T>, value: unknown) => unknown) | void {
-		return fieldDecoratorBridge(
-			standardReactiveProp(options),
-			legacyReactiveProp(options),
-			protoOrTarget,
-			nameOrContext,
-		);
-	}
-
-	return decorator;
+export function prop<T = unknown>(
+	options: ReactivePropertyOptions<NoInfer<T>>,
+): ValueFieldDecorator<ReactivePropHost<T>, T> {
+	return fieldDecorator(standardReactiveProp(options), legacyReactiveProp(options));
 }

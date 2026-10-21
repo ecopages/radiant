@@ -18,6 +18,36 @@ function isMethod(value: unknown): value is Method {
 	return typeof value === 'function';
 }
 
+type FieldInitializer<Host, Value> = ((this: Host, value: Value) => Value) | void;
+
+/**
+ * A field decorator whose declared field owns the value type, so the options it was built from must agree with the field.
+ *
+ * @remarks
+ * The legacy overload comes first. When no overload matches, TypeScript reports the last one, so a failed
+ * standard-decorator check names the option and field types instead of `undefined` not matching the host.
+ * Legacy mode never sees the field type, so it cannot reject a mismatch.
+ */
+export type ValueFieldDecorator<Host, Value> = {
+	(protoOrTarget: Host, name: string): void;
+	<THost extends Host>(
+		target: undefined,
+		context: ClassFieldDecoratorContext<THost, Value>,
+	): FieldInitializer<THost, Value>;
+};
+
+/** Builds a {@link ValueFieldDecorator} that dispatches on the shape of its second argument. */
+export function fieldDecorator<Host extends object, Value>(
+	standard: <THost extends Host>(
+		target: undefined,
+		context: ClassFieldDecoratorContext<THost, Value>,
+	) => FieldInitializer<THost, Value>,
+	legacy: LegacyFieldFn<Host, void>,
+): ValueFieldDecorator<Host, Value> {
+	return (protoOrTarget: Host | undefined, nameOrContext: string | ClassFieldDecoratorContext<Host, Value>) =>
+		fieldDecoratorBridge(standard, legacy, protoOrTarget, nameOrContext);
+}
+
 export function fieldDecoratorBridge<Host extends object, Value, Result, Proto>(
 	standard: StandardFieldFn<Host, Value, Result>,
 	legacy: LegacyFieldFn<Proto, void>,
