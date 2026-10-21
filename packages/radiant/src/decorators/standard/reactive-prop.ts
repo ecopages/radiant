@@ -26,7 +26,7 @@ export type ReactivePropHost<P> = {
 export function reactiveProp<P = unknown>(propOptions: ReactivePropertyOptions<P>) {
 	const { type, attribute, reflect, defaultValue, bind, transform } = propOptions;
 	const hasDefaultValue = 'defaultValue' in propOptions;
-	validateReactivePropertyDefault(type, defaultValue);
+	validateReactivePropertyDefault(type, defaultValue, !!transform?.fromAttribute);
 	return function <T extends ReactivePropHost<P>>(_: undefined, context: ClassFieldDecoratorContext<T, P>) {
 		const propertyName = String(context.name);
 		const attributeKey = attribute ?? propertyName;

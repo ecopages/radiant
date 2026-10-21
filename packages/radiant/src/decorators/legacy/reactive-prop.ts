@@ -22,7 +22,7 @@ type ReactivePropHost<T> = {
 export function reactiveProp<T = unknown>(propOptions: ReactivePropertyOptions<T>) {
 	const { type, attribute, reflect, defaultValue, bind, transform } = propOptions;
 	const hasDefaultValue = 'defaultValue' in propOptions;
-	validateReactivePropertyDefault(type, defaultValue);
+	validateReactivePropertyDefault(type, defaultValue, !!transform?.fromAttribute);
 
 	return (target: ReactivePropHost<T>, propertyName: string) => {
 		const attributeKey = attribute ?? propertyName;

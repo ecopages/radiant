@@ -49,7 +49,7 @@ export type ReactivePropertyOptions<T, C extends AttributeTypeConstant = Attribu
 	 * parser owns the value type instead, and then `type` is not checked. The
 	 * parser must be part of the option's type, so pass it inline or with
 	 * `satisfies`: a value annotated as `PropTransform<T>` has it optional. The runtime
-	 * still checks `defaultValue` against `type`.
+	 * checks `defaultValue` against `type` only without a parser, and accepts `null`.
 	 */
 	type: C;
 	reflect?: boolean;
@@ -107,8 +107,22 @@ export function resolveReactiveDefault<T>(options: ReactivePropertyOptions<T>): 
 	return defaultValueForType(options.type) as T;
 }
 
-export function validateReactivePropertyDefault(type: AttributeTypeConstant, defaultValue: unknown): void {
-	if (defaultValue !== undefined && !isValueOfType(type, defaultValue)) {
+/**
+ * Throws when `defaultValue` does not fit `type`.
+ *
+ * @remarks
+ * `undefined` and `null` always pass: `null` is the type default of `Array` and
+ * `Object`, and a `T | null` field may start empty. With a parser
+ * (`hasParser`, from `transform.fromAttribute` or `converter.fromAttribute`) the
+ * parser owns the value type and `type` only selects the attribute channel, so
+ * the check is skipped.
+ */
+export function validateReactivePropertyDefault(
+	type: AttributeTypeConstant,
+	defaultValue: unknown,
+	hasParser: boolean,
+): void {
+	if (!hasParser && defaultValue != null && !isValueOfType(type, defaultValue)) {
 		throw new Error(`defaultValue does not match the expected type for ${type.name}`);
 	}
 }

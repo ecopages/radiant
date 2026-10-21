@@ -56,7 +56,7 @@ When `type` is provided, `@attr(...)` uses the same built-in attribute codec fam
 | --- | --- | --- |
 | `source` | `string` | Attribute name to read and write. Defaults to the kebab-cased field name. |
 | `type` | `String \| Number \| Boolean \| Object \| Array` | Built-in attribute codec to use when no custom converter is provided. |
-| `defaultValue` | `T` | Value used before the attribute is present. |
+| `defaultValue` | `T` | Value used before the attribute is present. `null` is accepted. Without `converter.fromAttribute`, a default that does not match `type` throws when the attribute is installed. |
 | `bind` | `boolean \| string` | Companion JSX binding accessor to expose. |
 | `converter` | `{ fromAttribute, toAttribute }` | Custom conversion hooks for parsing and serializing attribute values. Overrides `type` when provided. |
 
