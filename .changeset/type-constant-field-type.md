@@ -2,7 +2,7 @@
 '@ecopages/radiant': minor
 ---
 
-The `type` constant on `@prop` and `@attr` now constrains the field and `defaultValue` under standard decorators, and supersedes "The `type` constant is not checked" in the note on value decorators. `String` needs a `string` field, `Number` a `number`, `Boolean` a `boolean`, `Array` an array (readonly or not) and `Object` an object that is not an array, `null` and `undefined` allowed. The runtime already parses the attribute with `type` and throws at class evaluation when `defaultValue` does not match it; the types now say so first.
+The `type` constant on `@prop` and `@attr` now constrains the field and `defaultValue` under standard decorators. `String` needs a `string` field, `Number` a `number`, `Boolean` a `boolean`, `Array` an array (readonly or not) and `Object` an object that is not an array, `null` and `undefined` allowed. The runtime already parses the attribute with `type` and throws at class evaluation when `defaultValue` does not match it; the types now say so first.
 
 Fields whose type disagrees with `type`, which compiled before and held a value of another type at runtime, now fail to compile:
 

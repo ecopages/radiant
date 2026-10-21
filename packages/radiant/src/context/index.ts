@@ -6,3 +6,5 @@ export * from './decorators/consume-context';
 export * from './decorators/context-selector';
 export * from './decorators/on-context-update';
 export * from './decorators/provide-context';
+export type { ContextHostLike } from './context-host';
+export type { ContextUpdateMethod } from './decorators/standard-legacy-dispatch';

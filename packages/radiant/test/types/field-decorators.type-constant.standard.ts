@@ -24,6 +24,8 @@ export class StandardTypeConstantFields extends RadiantElement {
 	@prop({ type: Object, defaultValue: [] }) p5: string[];
 	// @ts-expect-error a transform without fromAttribute leaves the constant checked
 	@prop({ type: Number, transform: { fromProperty: (v) => String(v) } }) p6: string;
+	// @ts-expect-error a union with an array member fits Object no more than the array does
+	@prop({ type: Object }) p7?: Record<string, unknown> | string[];
 
 	// @ts-expect-error a Number attribute parses to a number, not a string
 	@attr({ type: Number }) a1?: string;
