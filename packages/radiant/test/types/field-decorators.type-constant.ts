@@ -29,6 +29,10 @@ export class ValidTypeConstantFields extends RadiantElement {
 	@attr({ type: String, converter: { fromAttribute: (v) => Number(v) } }) a2: number;
 	@attr({ type: Array, defaultValue: [] }) a3: string[];
 	@attr({ type: Array, defaultValue: [] }) a4: readonly string[];
+	@attr({ source: 'data-state' }) a5: string | null;
+	@attr() a6 = '';
+	@attr({ converter: { fromAttribute: (v) => Number(v) } }) a7: number;
+	@attr({ type: Number }) a8 = 0;
 }
 
 export class ExplicitTypeConstantFields extends RadiantElement {
@@ -37,4 +41,10 @@ export class ExplicitTypeConstantFields extends RadiantElement {
 
 	// @ts-expect-error an explicit field type is checked against the constant
 	@attr<string>({ type: Number }) a1: string;
+
+	// @ts-expect-error an explicit field type that is not a string needs a type constant
+	@attr<number>({ defaultValue: 0 }) a2: number;
+
+	// @ts-expect-error an explicit field type that is not a string needs a type constant
+	@attr<number | undefined>() a3?: number;
 }

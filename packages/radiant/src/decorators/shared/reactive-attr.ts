@@ -20,7 +20,11 @@ export type AttrOptions<T = string | undefined, C extends AttributeTypeConstant 
 	 * Parses the attribute and serializes written values. Omit it to keep the raw string.
 	 *
 	 * @remarks
-	 * `@attr` checks the field against it: `type: Number` needs a `number` field,
+	 * Without `type` or a `converter.fromAttribute` parser the field is the raw
+	 * string, so `@attr` accepts only a `string | null | undefined` field, a string
+	 * literal union included. A `number` or `boolean` field needs `type: Number` or
+	 * `type: Boolean`, or a parser. With `type`, `@attr` checks the field against it:
+	 * `type: Number` needs a `number` field,
 	 * `null` and `undefined` allowed, and a field of several parsed types, such as
 	 * `string | number`, fits no constant, and neither does a field typed by a
 	 * type parameter of a generic host. Standard decorators check the declared
