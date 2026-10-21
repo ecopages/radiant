@@ -19,9 +19,8 @@ export type SignalDecoratorOptions<Value = unknown> = {
 	/**
 	 * Optional initial value used when the field does not provide one directly.
 	 *
-	 * This is primarily useful with `declare field: WritableSignal<T>` syntax,
-	 * which keeps the component surface clean while still letting the decorator
-	 * own signal construction.
+	 * @remarks Lets the decorator own signal construction while the field stays
+	 * a bare declaration: `@signal({ initial: 'idle' }) status!: WritableSignal<string>`.
 	 */
 	initial?: Value;
 
