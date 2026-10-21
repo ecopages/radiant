@@ -15,6 +15,10 @@ import { prop } from '../../src/decorators/prop';
 
 type Mode = 'a' | 'b';
 
+interface Shape {
+	w: number;
+}
+
 export class ValidTypeConstantFields extends RadiantElement {
 	@prop({ type: Boolean }) p1?: boolean;
 	@prop({ type: Boolean, defaultValue: false }) p2: boolean;
@@ -24,6 +28,8 @@ export class ValidTypeConstantFields extends RadiantElement {
 	@prop({ type: Array }) p6?: readonly string[];
 	@prop({ type: Array, defaultValue: [] }) p7: readonly string[];
 	@prop({ type: String, transform: { fromAttribute: (v) => (v === null ? 0 : v) } }) p8: string | number;
+	@prop({ type: Object }) p9?: Shape;
+	@prop({ type: Object }) p10?: Record<string, unknown> | Shape | null;
 
 	@attr({ type: String }) a1?: string;
 	@attr({ type: String, converter: { fromAttribute: (v) => Number(v) } }) a2: number;

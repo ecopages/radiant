@@ -8,7 +8,11 @@ export type AttributeTypeConstant = typeof Array | typeof Boolean | typeof Numbe
  * @remarks
  * `T` of `unknown` means the field type is not known, as under legacy decorators, so every constant fits.
  * `T` is compared whole, not per union member: a `string | number` field fits no single constant.
- * `Array` fits readonly arrays too. An array field does not fit `Object`, because the runtime rejects arrays for it.
+ * `Array` fits readonly arrays too. An array field, or a union with an array member, does not fit `Object`,
+ * because the runtime rejects arrays for it.
+ *
+ * A union is not split into members, because `NoInfer` keeps conditional types from distributing over it, so
+ * `NonArrayObject` tells arrays apart by their `concat` method.
  */
 export type AttributeTypeConstantFor<T> = unknown extends T
 	? AttributeTypeConstant
@@ -18,7 +22,9 @@ type AttributeTypeConstantFitting<Value> =
 	| ([Value] extends [string] ? typeof String : never)
 	| ([Value] extends [number] ? typeof Number : never)
 	| ([Value] extends [boolean] ? typeof Boolean : never)
-	| ([Value] extends [readonly unknown[]] ? typeof Array : [Value] extends [object] ? typeof Object : never);
+	| ([Value] extends [readonly unknown[]] ? typeof Array : [Value] extends [NonArrayObject] ? typeof Object : never);
+
+type NonArrayObject = object & { concat?: never };
 
 export type AttributeTypeDefault = Array<unknown> | boolean | number | Record<string, unknown> | string;
 
