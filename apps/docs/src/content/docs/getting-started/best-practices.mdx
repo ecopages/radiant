@@ -86,9 +86,9 @@ export type UserCardProps = {
 
 @customElement('user-card')
 export class UserCard extends RadiantElement {
-  @prop({ type: String }) declare name: string;
-  @prop({ type: String }) declare avatarUrl: string;
-  @prop({ type: Boolean }) declare isAdmin: boolean;
+  @prop({ type: String }) name!: string;
+  @prop({ type: String }) avatarUrl!: string;
+  @prop({ type: Boolean }) isAdmin?: boolean;
 }
 ```
 
@@ -136,8 +136,8 @@ type UserCardBindings = UserCardProps & {
 
 @customElement('user-card')
 export class UserCard extends RadiantElement<UserCardBindings> {
-  @prop({ type: String, defaultValue: 'Anonymous' }) declare name: string;
-  @prop({ type: String, defaultValue: '' }) declare avatarUrl: string;
+  @prop({ type: String, defaultValue: 'Anonymous' }) name!: string;
+  @prop({ type: String, defaultValue: '' }) avatarUrl!: string;
   @state isExpanded = false;
 
   toggleExpanded = () => {

@@ -20,9 +20,9 @@ import { RadiantElement, customElement, prop } from '@ecopages/radiant';
 
 @customElement('user-card')
 export class UserCard extends RadiantElement {
-	@prop({ type: String }) declare name: string;
-	@prop({ type: Number, defaultValue: 0 }) declare visits: number;
-	@prop({ type: Boolean, reflect: true, defaultValue: false }) declare active: boolean;
+	@prop({ type: String }) name!: string;
+	@prop({ type: Number, defaultValue: 0 }) visits!: number;
+	@prop({ type: Boolean, reflect: true, defaultValue: false }) active!: boolean;
 }
 ```
 
@@ -56,7 +56,7 @@ type ResultsListProps = {
 
 @controller('results-list')
 export class ResultsListController extends RadiantController {
-	@prop({ type: Array, defaultValue: [] }) declare items: ResultsListProps;
+	@prop({ type: Array, defaultValue: [] }) items!: ResultsListProps;
 
 	override render() {
 		return <ul>{this.items.map((item) => <li key={item.id}>{item.label}</li>)}</ul>;
@@ -108,7 +108,7 @@ const csvStrings: PropTransform<string[]> = {
 @customElement('token-select')
 export class TokenSelect extends RadiantElement {
 	@prop({ type: Array, reflect: true, transform: csvStrings, defaultValue: [] })
-	value: string[];
+	value!: string[];
 }
 ```
 

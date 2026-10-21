@@ -22,7 +22,7 @@ import { RadiantElement, customElement, onUpdated, prop, query } from '@ecopages
 
 @customElement('search-field')
 export class SearchField extends RadiantElement {
-	@prop({ type: Boolean, defaultValue: false }) declare open: boolean;
+	@prop({ type: Boolean, defaultValue: false }) open!: boolean;
 	@query({ ref: 'input' }) input?: HTMLInputElement;
 
 	@onUpdated('open')
@@ -58,7 +58,7 @@ updateFullName() {
 Calculate and update internal state derived from public properties.
 
 ```typescript
-@prop({ type: Array }) declare items: CartItem[];
+@prop({ type: Array, defaultValue: [] }) items!: CartItem[];
 @state total = 0;
 
 @onUpdated('items')
