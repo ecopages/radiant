@@ -28,7 +28,7 @@ export type AttrOptions<T = string | undefined, C extends AttributeTypeConstant 
 	 * parser owns the value type instead, and then `type` is not checked. The
 	 * parser must be part of the option's type, so pass it inline or with
 	 * `satisfies`: a value annotated as `AttrConverter<T>` has it optional. The runtime
-	 * still checks `defaultValue` against `type`.
+	 * checks `defaultValue` against `type` only without a parser, and accepts `null`.
 	 */
 	type?: C;
 	bind?: ReactiveBindingOption;
@@ -70,7 +70,7 @@ function resolveAttributeValue<T>(rawValue: string | null, options: AttrOptions<
 
 	if (options.type) {
 		if (rawValue === null) {
-			return (options.defaultValue ?? defaultValueForType(options.type)) as T;
+			return (options.defaultValue === undefined ? defaultValueForType(options.type) : options.defaultValue) as T;
 		}
 
 		if (options.type === Boolean && rawValue === '') {
@@ -123,7 +123,7 @@ export function installReactiveAttribute<TBindings extends object, TValue>(
 	options: AttrOptions<TValue> = {},
 ): void {
 	if (options.type) {
-		validateReactivePropertyDefault(options.type, options.defaultValue);
+		validateReactivePropertyDefault(options.type, options.defaultValue, !!options.converter?.fromAttribute);
 	}
 
 	const hostRecord = host as unknown as Record<PropertyKey, unknown>;
