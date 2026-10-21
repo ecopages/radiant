@@ -6,8 +6,8 @@
  * `node_modules` layout like an installed one. Every helper type a decorator's inferred type
  * names has to be reachable from a package `exports` entry, or the emit fails with TS2883.
  */
-import { attr, bindTo, event, prop, query, querySlot, signal } from '@ecopages/radiant';
-import { consumeContext, contextSelector, createContext, provideContext } from '@ecopages/radiant/context';
+import { attr, bindTo, debounce, event, onEvent, onUpdated, prop, query, querySlot, signal } from '@ecopages/radiant';
+import { consumeContext, contextSelector, createContext, onContextUpdate, provideContext } from '@ecopages/radiant/context';
 
 const ctx = createContext<{ n: number }>(Symbol('ctx'));
 
@@ -23,3 +23,7 @@ export const myBind = bindTo<number>({ attr: 'data-n' });
 export const myConsume = consumeContext(ctx);
 export const myProvide = provideContext({ context: ctx, initialValue: { n: 0 } });
 export const mySelector = contextSelector({ context: ctx, select: (c) => c.n });
+export const myOnEvent = onEvent({ type: 'click', mediaQuery: '(min-width: 1px)' });
+export const myDebounce = debounce(300);
+export const myOnUpdated = onUpdated('count');
+export const myOnContextUpdate = onContextUpdate({ context: ctx });
