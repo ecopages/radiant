@@ -27,6 +27,10 @@ type FieldInitializer<Host, Value> = ((this: Host, value: Value) => Value) | voi
  * The legacy overload comes first. When no overload matches, TypeScript reports the last one, so a failed
  * standard-decorator check names the option and field types instead of `undefined` not matching the host.
  * Legacy mode never sees the field type, so it cannot reject a mismatch.
+ *
+ * This type and the host types it is built from are exported from the package entry points, because a
+ * consumer's `declaration: true` emit names them in the type of every exported decorator result.
+ * `test/types/declaration-emit` fails when one of them is not reachable.
  */
 export type ValueFieldDecorator<Host, Value> = {
 	(protoOrTarget: Host, name: string): void;
@@ -73,18 +77,6 @@ export function boundedFieldDecorator<Host extends object, Bound>(
 		fieldDecoratorBridge(standard, legacy, protoOrTarget, nameOrContext);
 }
 
-export function fieldDecoratorBridge<Host extends object, Value, Result, Proto>(
-	standard: StandardFieldFn<Host, Value, Result>,
-	legacy: LegacyFieldFn<Proto, void>,
-	protoOrTarget: undefined,
-	nameOrContext: ClassFieldDecoratorContext<Host, Value>,
-): Result;
-export function fieldDecoratorBridge<Host extends object, Value, Proto, Result>(
-	standard: StandardFieldFn<Host, Value, void>,
-	legacy: LegacyFieldFn<Proto, Result>,
-	protoOrTarget: Proto,
-	nameOrContext: string,
-): Result;
 export function fieldDecoratorBridge<Host extends object, Value, StandardResult, Proto, LegacyResult>(
 	standard: StandardFieldFn<Host, Value, StandardResult>,
 	legacy: LegacyFieldFn<Proto, LegacyResult>,

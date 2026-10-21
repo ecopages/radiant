@@ -7,10 +7,7 @@ import type { ReactiveHostLike } from '../../core/reactive-host';
 import { registerReactivePropDefinition } from '../../core/reactive-prop-metadata';
 import { registerLegacyInstanceInitializer, registerLegacyPostConstructionInitializer } from './instance-initializers';
 import { bootstrapReactiveMemberBinding } from './member-bootstrap';
-
-type ReactivePropHost<T> = {
-	createReactiveProp(propertyName: string, options: ReactivePropertyOptions<T>): void;
-};
+import type { ReactivePropHost } from '../standard/reactive-prop';
 
 /**
  * Legacy-decorator implementation for `@prop(...)`.
