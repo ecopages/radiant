@@ -1,0 +1,36 @@
+name: Bug
+description: Something does not work as it should.
+type: Bug
+body:
+    - type: textarea
+      attributes:
+          label: Problem
+          description: What is wrong, in one or two sentences.
+      validations:
+          required: true
+    - type: textarea
+      attributes:
+          label: Failure scenario
+          description: The input or state, what happens, and what should happen instead.
+      validations:
+          required: true
+    - type: textarea
+      attributes:
+          label: Expected
+          description: The correct behaviour, as a Gherkin scenario that fails today when you can write one.
+    - type: textarea
+      attributes:
+          label: Evidence
+          description: Code linked at a commit, a log or stack trace, or the command that shows the problem.
+    - type: textarea
+      attributes:
+          label: Fix
+          description: Where the fix belongs, if you know.
+    - type: textarea
+      attributes:
+          label: Acceptance
+          description: The regression test that implements the scenario.
+    - type: input
+      attributes:
+          label: Version
+          description: The version or commit where it happens.

@@ -1,0 +1,27 @@
+name: Decision
+description: A question a maintainer must answer before work continues.
+type: Task
+labels: [needs-decision]
+body:
+    - type: textarea
+      attributes:
+          label: Question
+          description: The question, in one sentence.
+      validations:
+          required: true
+    - type: textarea
+      attributes:
+          label: Context
+          description: Why it must be answered now, and the work it blocks.
+      validations:
+          required: true
+    - type: textarea
+      attributes:
+          label: Options
+          description: Each option with its trade-offs.
+      validations:
+          required: true
+    - type: textarea
+      attributes:
+          label: Recommendation
+          description: The option you would pick, and why.

@@ -1,0 +1,26 @@
+name: Task
+description: A change to make.
+type: Task
+body:
+    - type: textarea
+      attributes:
+          label: Why
+          description: The problem the change solves, with its evidence.
+      validations:
+          required: true
+    - type: textarea
+      attributes:
+          label: Change
+          description: What changes, and where.
+      validations:
+          required: true
+    - type: textarea
+      attributes:
+          label: Deletes
+          description: Code, files or options the change removes.
+    - type: textarea
+      attributes:
+          label: Acceptance
+          description: How to tell the change is done, such as the test that proves it.
+      validations:
+          required: true
