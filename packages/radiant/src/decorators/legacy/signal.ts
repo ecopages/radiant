@@ -1,17 +1,8 @@
-import type { ReactiveBindingOption } from '../../core/reactive-prop-core';
 import { createHostSignal, HostSignal, isWritableSignalLike } from '../../signals/host-signal';
 import { REACTIVE_HOST, type ReactiveHostLike } from '../../core/reactive-host';
 import { resolveHostAutoBind } from '../shared/auto-bind';
 import { registerLegacyPostConstructionInitializer } from './instance-initializers';
-import type { AttributeTypeConstant } from '../../utils/attribute-utils';
-import type { WritableSignal } from '@ecopages/signals';
-
-export type SignalDecoratorOptions<Value = unknown> = {
-	bind?: ReactiveBindingOption;
-	initial?: Value;
-	source?: WritableSignal<Value> | ((host: ReactiveHostLike) => WritableSignal<Value>);
-	hydrate?: AttributeTypeConstant;
-};
+import type { SignalDecoratorOptions } from '../shared/signal-options';
 
 export function signal<Value = unknown>(options: SignalDecoratorOptions<Value> = {}) {
 	return (target: ReactiveHostLike, propertyName: string) => {
