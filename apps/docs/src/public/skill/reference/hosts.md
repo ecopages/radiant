@@ -35,8 +35,8 @@ type UserCardBindings = UserCardProps & {
 };
 
 export class UserCard extends RadiantElement<UserCardBindings> {
-	@prop({ type: String, defaultValue: 'Anonymous' }) declare name: string;
-	@prop({ type: String, defaultValue: '' }) declare avatarUrl: string;
+	@prop({ type: String, defaultValue: 'Anonymous' }) name!: string;
+	@prop({ type: String, defaultValue: '' }) avatarUrl!: string;
 	@state isExpanded = false;
 }
 ```

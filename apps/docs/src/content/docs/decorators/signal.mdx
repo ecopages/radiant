@@ -73,7 +73,7 @@ If the signal changes through `this.count.set(...)`, the rendered output updates
 You can connect an existing signal instead of creating a host-owned one.
 
 ```ts
-import { State } from '@ecopages/signals';
+import { State, type WritableSignal } from '@ecopages/signals';
 import { RadiantElement, customElement } from '@ecopages/radiant';
 import { signal } from '@ecopages/radiant/decorators/signal';
 
@@ -81,7 +81,7 @@ const sharedCount = new State(0);
 
 @customElement('shared-counter')
 export class SharedCounter extends RadiantElement {
-	@signal({ source: sharedCount }) declare count: State<number>;
+	@signal({ source: sharedCount }) count!: WritableSignal<number>;
 }
 ```
 

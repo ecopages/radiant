@@ -172,8 +172,8 @@ type RadiantTodoBindings = {
 
 @customElement('radiant-todo-item')
 export class RadiantTodoItem extends RadiantElement<RadiantTodoBindings> {
-	@prop({ type: Boolean, reflect: true, defaultValue: false }) declare complete: boolean;
-	@prop({ type: String, defaultValue: '' }) declare text: string;
+	@prop({ type: Boolean, reflect: true, defaultValue: false }) complete!: boolean;
+	@prop({ type: String, defaultValue: '' }) text!: string;
 	@consumeContext(todoContext) context!: ContextProvider<typeof todoContext>;
 
 	@onEvent({ selector: 'input[type="checkbox"]', type: 'change' })

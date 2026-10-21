@@ -29,8 +29,8 @@ import { RadiantElement, attr, customElement } from '@ecopages/radiant';
 
 @customElement('status-pill')
 export class StatusPill extends RadiantElement {
-	@attr({ source: 'data-status' }) declare status: string | undefined;
-	@attr({ source: 'aria-label' }) declare label: string | undefined;
+	@attr({ source: 'data-status' }) status?: string;
+	@attr({ source: 'aria-label' }) label?: string;
 
 	override render() {
 		return <span>{this.status ?? 'unknown'}</span>;
