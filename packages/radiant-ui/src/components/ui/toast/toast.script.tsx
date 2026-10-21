@@ -137,7 +137,7 @@ export class RuiToast extends RadiantElement<RuiToastBindings> {
 	position: ToastPosition;
 	@prop({ type: Boolean, defaultValue: false }) markedDelete: boolean;
 
-	@query({ ref: 'toast' }) toastTarget: HTMLElement;
+	@query({ ref: 'toast' }) toastTarget: HTMLElement | null;
 
 	private mounted = false;
 	private removed = false;

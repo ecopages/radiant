@@ -132,13 +132,13 @@ export class RuiKnob extends FormAssociatedElement {
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiKnobChangeDetail>;
 
-	@query({ ref: 'root' }) rootTarget: HTMLElement;
-	@query({ ref: 'label' }) labelTarget: HTMLElement;
-	@query({ ref: 'control' }) controlTarget: HTMLButtonElement;
-	@query({ ref: 'track' }) trackTarget: SVGCircleElement;
-	@query({ ref: 'progress' }) progressTarget: SVGCircleElement;
-	@query({ ref: 'centerValue' }) centerValueTarget: HTMLElement;
-	@query({ ref: 'belowValue' }) belowValueTarget: HTMLElement;
+	@query({ ref: 'root' }) rootTarget: HTMLElement | null;
+	@query({ ref: 'label' }) labelTarget: HTMLElement | null;
+	@query({ ref: 'control' }) controlTarget: HTMLButtonElement | null;
+	@query({ ref: 'track' }) trackTarget: SVGCircleElement | null;
+	@query({ ref: 'progress' }) progressTarget: SVGCircleElement | null;
+	@query({ ref: 'centerValue' }) centerValueTarget: HTMLElement | null;
+	@query({ ref: 'belowValue' }) belowValueTarget: HTMLElement | null;
 
 	private activePointerId: number | null = null;
 	private lastEmitted: number | null = null;
@@ -295,14 +295,15 @@ export class RuiKnob extends FormAssociatedElement {
 
 	@onEvent({ ref: 'control', type: 'pointerdown' })
 	onPointerDown(event: PointerEvent): void {
-		if (event.button !== 0 || this.effectiveDisabled || this.readOnly) {
+		const control = this.controlTarget;
+		if (event.button !== 0 || this.effectiveDisabled || this.readOnly || !control) {
 			return;
 		}
 
 		this.activePointerId = event.pointerId;
 		this.lastEmitted = this.value;
-		this.controlTarget.setPointerCapture(event.pointerId);
-		const rect = this.controlTarget.getBoundingClientRect();
+		control.setPointerCapture(event.pointerId);
+		const rect = control.getBoundingClientRect();
 		const value = knobValueFromPointer(event.clientX, event.clientY, rect, this.numericRange);
 		if (value != null) {
 			this.commitValue(value);
@@ -312,11 +313,12 @@ export class RuiKnob extends FormAssociatedElement {
 
 	@onEvent({ ref: 'control', type: 'pointermove' })
 	onPointerMove(event: PointerEvent): void {
-		if (event.pointerId !== this.activePointerId) {
+		const control = this.controlTarget;
+		if (event.pointerId !== this.activePointerId || !control) {
 			return;
 		}
 
-		const rect = this.controlTarget.getBoundingClientRect();
+		const rect = control.getBoundingClientRect();
 		const value = knobValueFromPointer(event.clientX, event.clientY, rect, this.numericRange);
 		if (value != null) {
 			this.commitValue(value);
@@ -329,7 +331,7 @@ export class RuiKnob extends FormAssociatedElement {
 			return;
 		}
 
-		this.controlTarget.releasePointerCapture(event.pointerId);
+		this.controlTarget?.releasePointerCapture(event.pointerId);
 		this.activePointerId = null;
 	}
 
@@ -339,8 +341,9 @@ export class RuiKnob extends FormAssociatedElement {
 			return;
 		}
 
-		if (this.controlTarget.hasPointerCapture(event.pointerId)) {
-			this.controlTarget.releasePointerCapture(event.pointerId);
+		const control = this.controlTarget;
+		if (control?.hasPointerCapture(event.pointerId)) {
+			control.releasePointerCapture(event.pointerId);
 		}
 		this.activePointerId = null;
 	}

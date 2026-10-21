@@ -213,11 +213,11 @@ In that example, the `class` expression still belongs to the host render pass, w
 
 ```tsx
 // Avoid
-@query({ ref: 'count' }) countEl!: HTMLElement;
+@query({ ref: 'count' }) countEl!: HTMLElement | null;
 
 @onUpdated('count')
 syncCount() {
-  this.countEl.textContent = String(this.count);
+  if (this.countEl) this.countEl.textContent = String(this.count);
 }
 
 // Prefer — host-owned JSX

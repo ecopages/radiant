@@ -17,7 +17,7 @@ import { createQuery } from '@ecopages/radiant/helpers/create-query';
 
 class UserProfile extends RadiantElement {
 	#avatar = createQuery<HTMLImageElement>(this, { ref: 'avatar' });
-	#items = createQuery<HTMLElement[]>(this, { selector: '.item', all: true });
+	#items = createQuery<HTMLElement>(this, { selector: '.item', all: true });
 
 	get avatar() {
 		return this.#avatar.value;
@@ -53,17 +53,18 @@ The accessor returns an object with a `.value` getter. Each read of `.value` run
 
 ## Return Value
 
-Returns a `QueryResult<T>` object with a single `.value` getter:
+Returns an object with a single `.value` getter:
 
-- When `all` is `false`: returns `T | null`.
-- When `all` is `true`: returns `T` (an array), or an empty array if nothing matches.
+- When `all` is omitted or `false`: returns `T | null`.
+- When `all` is `true`: returns `T[]`, empty if nothing matches.
+- When `all` is a `boolean` variable: returns `Element[] | Element | null`, and `createQuery` then takes no type argument.
 
 ## Caching
 
 By default, every `.value` read re-runs the query. Set `cache: true` to store the result and return it on subsequent reads.
 
 ```typescript
-const items = createQuery<HTMLElement[]>(host, {
+const items = createQuery<HTMLElement>(host, {
 	selector: '.item',
 	all: true,
 	cache: true,

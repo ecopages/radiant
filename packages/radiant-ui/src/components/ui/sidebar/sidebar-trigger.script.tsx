@@ -85,7 +85,7 @@ export class RuiSidebarTrigger extends RadiantElement {
 	@prop({ type: String, defaultValue: 'ghost' }) variant: NonNullable<RuiSidebarTriggerProps['variant']>;
 	@prop({ type: String, defaultValue: 'md' }) size: NonNullable<RuiSidebarTriggerProps['size']>;
 
-	@query({ ref: 'button' }) buttonTarget: HTMLButtonElement;
+	@query({ ref: 'button' }) buttonTarget: HTMLButtonElement | null;
 
 	@state
 	@bindTo([

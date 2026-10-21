@@ -4,5 +4,6 @@
 		"experimentalDecorators": true,
 		"rootDir": "../.."
 	},
-	"include": ["./field-decorators.ts"]
+	"include": ["./field-decorators*.ts"],
+	"exclude": ["./*.standard.ts"]
 }

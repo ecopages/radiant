@@ -18,8 +18,8 @@ type RadiantCounterBindings = RadiantCounterProps & {
 export class RadiantCounter extends RadiantElement<RadiantCounterBindings> {
 	@prop({ type: Number, reflect: true, defaultValue: 0 }) value!: number;
 	@state lastAction = 'Waiting for input';
-	@query({ ref: 'count' }) countText!: HTMLElement;
-	@query({ ref: 'status' }) statusText!: HTMLElement;
+	@query({ ref: 'count' }) countText!: HTMLElement | null;
+	@query({ ref: 'status' }) statusText!: HTMLElement | null;
 
 	@onEvent({ ref: 'decrement', type: 'click' })
 	decrement() {
@@ -37,11 +37,11 @@ export class RadiantCounter extends RadiantElement<RadiantCounterBindings> {
 
 	@onUpdated('value')
 	updateCount() {
-		this.countText.textContent = this.value.toString();
+		if (this.countText) this.countText.textContent = this.value.toString();
 	}
 
 	@onUpdated('lastAction')
 	updateStatus() {
-		this.statusText.textContent = this.lastAction;
+		if (this.statusText) this.statusText.textContent = this.lastAction;
 	}
 }

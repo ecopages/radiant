@@ -2,7 +2,7 @@ import { createQuery } from '../../helpers/create-query';
 import type { QueryConfig } from '../query';
 import { registerLegacyInstanceInitializer } from './instance-initializers';
 
-type QueryDecoratorInstance = (Element | { host: Element }) & {
+export type QueryDecoratorHost = (Element | { host: Element }) & {
 	registerConnectedCallback(callback: () => void): void;
 };
 
@@ -26,14 +26,14 @@ type QueryDecoratorInstance = (Element | { host: Element }) & {
  *
  * // Now, `myElement` will return the first element in the light DOM of `MyElement` that matches the selector '.my-class'.
  */
-export function query<T extends Element | Element[]>({
+export function query({
 	cache: shouldBeCached = true,
 	...options
-}: QueryConfig): (proto: QueryDecoratorInstance, propertyName: string | symbol) => void {
-	return (proto: QueryDecoratorInstance, propertyKey: string | symbol) => {
+}: QueryConfig): (proto: QueryDecoratorHost, propertyName: string | symbol) => void {
+	return (proto: QueryDecoratorHost, propertyKey: string | symbol) => {
 		registerLegacyInstanceInitializer(proto, (element) => {
 			element.registerConnectedCallback(() => {
-				const accessor = createQuery<T>(element, {
+				const accessor = createQuery(element, {
 					cache: shouldBeCached,
 					...options,
 				});

@@ -159,10 +159,10 @@ export class RuiCarousel extends RadiantElement {
 	slidesPerGroup: number;
 	@prop({ type: Number, defaultValue: 0 }) slideCount: number;
 
-	@query({ ref: 'root' }) rootTarget: HTMLElement;
-	@query({ ref: 'track' }) trackTarget: HTMLElement;
-	@query({ ref: 'indicators' }) indicatorsTarget: HTMLElement;
-	@query({ ref: 'viewport' }) viewportTarget: HTMLElement;
+	@query({ ref: 'root' }) rootTarget: HTMLElement | null;
+	@query({ ref: 'track' }) trackTarget: HTMLElement | null;
+	@query({ ref: 'indicators' }) indicatorsTarget: HTMLElement | null;
+	@query({ ref: 'viewport' }) viewportTarget: HTMLElement | null;
 
 	private paused = false;
 	private readonly uid = uniqueId('rui-carousel');

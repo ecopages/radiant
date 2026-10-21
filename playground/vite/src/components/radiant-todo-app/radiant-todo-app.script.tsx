@@ -39,13 +39,13 @@ class Logger {
 
 @customElement('radiant-todo-item')
 export class RadiantTodoItem extends RadiantElement {
-	@query({ selector: 'input[type="checkbox"]' }) checkbox!: HTMLInputElement;
+	@query({ selector: 'input[type="checkbox"]' }) checkbox!: HTMLInputElement | null;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) complete!: boolean;
 	@consumeContext(todoContext) context!: ContextProvider<typeof todoContext>;
 
 	override connectedCallback(): void {
 		super.connectedCallback();
-		this.complete = this.checkbox.checked;
+		this.complete = this.checkbox?.checked ?? false;
 	}
 
 	@onEvent({ selector: 'input[type="checkbox"]', type: 'change' })

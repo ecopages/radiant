@@ -142,7 +142,7 @@ export class RuiDateField extends RadiantElement {
 	});
 	private disposeMobileLayoutListener: (() => void) | null = null;
 
-	@query({ ref: 'popover' }) popoverTarget: HTMLElement;
+	@query({ ref: 'popover' }) popoverTarget: HTMLElement | null;
 
 	private readonly onMediaChange = (): void => {
 		this.syncCalendar();

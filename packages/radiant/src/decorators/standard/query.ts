@@ -2,7 +2,7 @@ import { createQuery, type QueryHostTarget } from '../../helpers/create-query';
 import type { QueryConfig } from '../query';
 
 export function query(options: QueryConfig) {
-	return function <T extends QueryHostTarget, V extends Element | Element[]>(
+	return function <T extends QueryHostTarget, V extends Element | Element[] | null>(
 		target: undefined,
 		context: ClassFieldDecoratorContext<T, V>,
 	) {
@@ -10,7 +10,7 @@ export function query(options: QueryConfig) {
 		const propertyName = String(context.name);
 
 		context.addInitializer(function (this: T) {
-			const accessor = createQuery<V>(this, options);
+			const accessor = createQuery(this, options);
 
 			Object.defineProperty(this, propertyName, {
 				get() {

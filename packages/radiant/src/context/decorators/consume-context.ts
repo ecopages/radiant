@@ -1,8 +1,9 @@
 import type { ContextHostLike } from '../context-host';
+import type { ContextProvider } from '../context-provider';
 import type { UnknownContext } from '../types';
 import { consumeContext as legacyConsumeContext } from './legacy/consume-context';
 import { consumeContext as standardConsumeContext } from './standard/consume-context';
-import { fieldDecoratorBridge } from '../../decorators/bridge';
+import { boundedFieldDecorator, type BoundedFieldDecorator } from '../../decorators/bridge';
 
 /**
  * Injects the nearest matching context provider onto a decorated field.
@@ -13,23 +14,8 @@ import { fieldDecoratorBridge } from '../../decorators/bridge';
  * @param context Context token to consume from ancestor providers.
  * @returns A standard-or-legacy decorator implementation for the target field.
  */
-export function consumeContext(context: UnknownContext) {
-	function decorator<Host extends ContextHostLike, V>(
-		protoOrTarget: undefined,
-		nameOrContext: ClassFieldDecoratorContext<Host, V>,
-	): void;
-	function decorator(protoOrTarget: ContextHostLike, nameOrContext: string): void;
-	function decorator(
-		protoOrTarget: ContextHostLike | undefined,
-		nameOrContext: string | ClassFieldDecoratorContext<ContextHostLike, unknown>,
-	): void {
-		return fieldDecoratorBridge(
-			standardConsumeContext(context),
-			legacyConsumeContext(context),
-			protoOrTarget,
-			nameOrContext,
-		);
-	}
-
-	return decorator;
+export function consumeContext<C extends UnknownContext>(
+	context: C,
+): BoundedFieldDecorator<ContextHostLike, ContextProvider<C> | undefined> {
+	return boundedFieldDecorator(standardConsumeContext(context), legacyConsumeContext(context));
 }

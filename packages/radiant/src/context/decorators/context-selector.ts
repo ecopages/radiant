@@ -5,7 +5,8 @@ import { contextSelector as legacyContextSelectorMethod } from './legacy/context
 import { contextSelector as standardContextSelectorMethod } from './standard/context-selector';
 import { contextSelectorField as legacyContextSelectorField } from './legacy/context-selector-field';
 import { contextSelectorField as standardContextSelectorField } from './standard/context-selector-field';
-import { dispatchContextSelectorDecorator } from './standard-legacy-dispatch';
+import { dispatchContextSelectorDecorator, type ContextUpdateMethod } from './standard-legacy-dispatch';
+import type { BoundedFieldDecorator } from '../../decorators/bridge';
 
 export type ContextSelectorOptions<T extends UnknownContext, Selected = ContextType<T>> = {
 	/** Context token to resolve from ancestor providers. */
@@ -16,18 +17,11 @@ export type ContextSelectorOptions<T extends UnknownContext, Selected = ContextT
 	subscribe?: boolean;
 };
 
-type ContextUpdateMethod<Selected> = (value: Selected) => unknown;
-
-type ContextSelectorDecorator<Selected> = {
-	<Host extends ContextHostLike>(
-		protoOrTarget: undefined,
-		nameOrContext: ClassFieldDecoratorContext<Host, Selected>,
-	): (this: Host, initialValue: Selected) => Selected;
+type ContextSelectorDecorator<Selected> = BoundedFieldDecorator<ContextHostLike, Selected | undefined> & {
 	<Host extends ContextHostLike, TMethod extends ContextUpdateMethod<Selected>>(
 		protoOrTarget: TMethod,
 		nameOrContext: ClassMethodDecoratorContext<Host, TMethod>,
 	): void;
-	(protoOrTarget: ContextHostLike, nameOrContext: string): void;
 	(
 		protoOrTarget: ContextHostLike,
 		nameOrContext: string,
@@ -50,32 +44,15 @@ type ContextSelectorDecorator<Selected> = {
 export function contextSelector<T extends Context<unknown, unknown>, Selected = ContextType<T>>(
 	options: ContextSelectorOptions<T, Selected>,
 ): ContextSelectorDecorator<Selected> {
-	function decorator<Host extends ContextHostLike>(
-		protoOrTarget: undefined,
-		nameOrContext: ClassFieldDecoratorContext<Host, Selected>,
-	): (this: Host, initialValue: Selected) => Selected;
-	function decorator<Host extends ContextHostLike, TMethod extends ContextUpdateMethod<Selected>>(
-		protoOrTarget: TMethod,
-		nameOrContext: ClassMethodDecoratorContext<Host, TMethod>,
-	): void;
-	function decorator(protoOrTarget: ContextHostLike, nameOrContext: string): void;
-	function decorator(
-		protoOrTarget: ContextHostLike,
-		nameOrContext: string,
-		descriptor: TypedPropertyDescriptor<ContextUpdateMethod<Selected>>,
-	): TypedPropertyDescriptor<ContextUpdateMethod<Selected>> | void;
-	function decorator(
+	return (
 		protoOrTarget: ContextHostLike | Method | undefined,
 		nameOrContext:
 			| string
-			| ClassFieldDecoratorContext<ContextHostLike, Selected>
+			| ClassFieldDecoratorContext<ContextHostLike, Selected | undefined>
 			| ClassMethodDecoratorContext<ContextHostLike, ContextUpdateMethod<Selected>>,
 		descriptor?: TypedPropertyDescriptor<ContextUpdateMethod<Selected>>,
-	):
-		| ((this: ContextHostLike, initialValue: Selected) => Selected)
-		| TypedPropertyDescriptor<ContextUpdateMethod<Selected>>
-		| void {
-		return dispatchContextSelectorDecorator(
+	) =>
+		dispatchContextSelectorDecorator(
 			standardContextSelectorField(options),
 			standardContextSelectorMethod(options),
 			legacyContextSelectorField(options),
@@ -84,7 +61,4 @@ export function contextSelector<T extends Context<unknown, unknown>, Selected = 
 			nameOrContext,
 			descriptor,
 		);
-	}
-
-	return decorator;
 }

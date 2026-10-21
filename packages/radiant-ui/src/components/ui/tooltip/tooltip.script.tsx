@@ -75,7 +75,7 @@ export class RuiTooltip extends RadiantElement<RuiTooltipBindings> {
 	@prop({ type: String, defaultValue: 'top' }) placement: RuiPlacement;
 	@prop({ type: Number, defaultValue: 200 }) delay: number;
 
-	@query({ ref: 'tooltip' }) tooltipTarget: HTMLElement;
+	@query({ ref: 'tooltip' }) tooltipTarget: HTMLElement | null;
 
 	/**
 	 * Plain (non-reactive) field, not a JSX binding target: `hidden` is toggled

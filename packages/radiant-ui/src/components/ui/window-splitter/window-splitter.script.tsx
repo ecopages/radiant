@@ -88,8 +88,8 @@ export class RuiWindowSplitter extends RadiantElement {
 	@bindTo({ ref: 'separator', attr: 'aria-label' })
 	label: string;
 
-	@query({ ref: 'primary' }) primaryTarget: HTMLElement;
-	@query({ ref: 'separator' }) separatorTarget: HTMLElement;
+	@query({ ref: 'primary' }) primaryTarget: HTMLElement | null;
+	@query({ ref: 'separator' }) separatorTarget: HTMLElement | null;
 
 	@event({ name: 'rui-splitter-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiWindowSplitterChangeDetail>;
@@ -164,7 +164,7 @@ export class RuiWindowSplitter extends RadiantElement {
 	@onEvent({ ref: 'separator', type: 'pointerdown' })
 	onPointerDown(event: PointerEvent): void {
 		this.dragging = true;
-		this.separatorTarget.setPointerCapture(event.pointerId);
+		this.separatorTarget?.setPointerCapture(event.pointerId);
 		document.addEventListener('pointermove', this.onPointerMove);
 		document.addEventListener('pointerup', this.onPointerUp);
 	}
