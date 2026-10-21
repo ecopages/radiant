@@ -50,12 +50,14 @@ In this example:
 
 When `type` is provided, `@attr(...)` uses the same built-in attribute codec family as `@prop(...)` for `String`, `Number`, `Boolean`, `Object`, and `Array`.
 
+Without `type` or a `converter.fromAttribute` parser, the field holds the raw attribute string, so its type must be `string | null | undefined`. A string literal union such as `'a' | 'b'` fits. A `number` or `boolean` field needs `type: Number` or `type: Boolean`, or a parser, and does not compile without one.
+
 ## Options
 
 | Option | Type | Meaning |
 | --- | --- | --- |
 | `source` | `string` | Attribute name to read and write. Defaults to the kebab-cased field name. |
-| `type` | `String \| Number \| Boolean \| Object \| Array` | Built-in attribute codec to use when no custom converter is provided. |
+| `type` | `String \| Number \| Boolean \| Object \| Array` | Built-in attribute codec to use when no custom converter is provided. Required for a field that is not a string. |
 | `defaultValue` | `T` | Value used before the attribute is present. `null` is accepted. Without `converter.fromAttribute`, a default that does not match `type` throws when the attribute is installed. |
 | `bind` | `boolean \| string` | Companion JSX binding accessor to expose. |
 | `converter` | `{ fromAttribute, toAttribute }` | Custom conversion hooks for parsing and serializing attribute values. Overrides `type` when provided. |
@@ -72,6 +74,13 @@ class SearchController extends RadiantController {
 	@attr({ source: 'data-enabled', type: Boolean }) enabled = false;
 	@attr({ source: 'title' }) title?: string;
 }
+```
+
+```ts
+// does not compile: without `type`, `count` would hold the string "5"
+@attr({ source: 'data-count' }) count = 0;
+// compiles: `type: Number` parses the attribute
+@attr({ source: 'data-count', type: Number }) count = 0;
 ```
 
 Use `converter` only when the built-in codecs are not enough.
