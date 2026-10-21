@@ -2,7 +2,7 @@
 '@ecopages/radiant': minor
 ---
 
-`@prop`, `@attr` and `@signal` now take their value type from the declared field. Under standard decorators, the options that carry a value (`defaultValue`, `transform`, `converter`, `initial`, `source`) are checked against it, as `@bindTo`'s `map` already was. The `type` constant is not checked.
+`@prop`, `@attr` and `@signal` now take their value type from the declared field. Under standard decorators, the options that carry a value (`defaultValue`, `transform`, `converter`, `initial`, `source`) are checked against it, as `@bindTo`'s `map` already was. The `type` constant is checked as well, as the note on it describes.
 
 Fields that need no explicit generic any more, which failed to compile before:
 
