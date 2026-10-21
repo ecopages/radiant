@@ -293,14 +293,14 @@ export class RuiSlider extends FormAssociatedElement {
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiSliderChangeDetail>;
 
-	@query({ ref: 'root' }) rootTarget: HTMLElement;
-	@query({ ref: 'header' }) headerTarget: HTMLElement;
-	@query({ ref: 'label' }) labelTarget: HTMLElement;
-	@query({ ref: 'rangeTrack' }) rangeTrack: HTMLElement;
-	@query({ ref: 'value' }) valueTarget: HTMLElement;
-	@query({ ref: 'singleThumb' }) singleThumb: HTMLButtonElement;
-	@query({ ref: 'rangeMinThumb' }) rangeMinThumb: HTMLButtonElement;
-	@query({ ref: 'rangeMaxThumb' }) rangeMaxThumb: HTMLButtonElement;
+	@query({ ref: 'root' }) rootTarget: HTMLElement | null;
+	@query({ ref: 'header' }) headerTarget: HTMLElement | null;
+	@query({ ref: 'label' }) labelTarget: HTMLElement | null;
+	@query({ ref: 'rangeTrack' }) rangeTrack: HTMLElement | null;
+	@query({ ref: 'value' }) valueTarget: HTMLElement | null;
+	@query({ ref: 'singleThumb' }) singleThumb: HTMLButtonElement | null;
+	@query({ ref: 'rangeMinThumb' }) rangeMinThumb: HTMLButtonElement | null;
+	@query({ ref: 'rangeMaxThumb' }) rangeMaxThumb: HTMLButtonElement | null;
 
 	private activeThumb: RuiSliderThumb | null = null;
 	private activePointerId: number | null = null;
@@ -410,7 +410,7 @@ export class RuiSlider extends FormAssociatedElement {
 		return this.querySelector<HTMLElement>('[data-default-value]');
 	}
 
-	private thumbFor(id: RuiSliderThumb): HTMLButtonElement | undefined {
+	private thumbFor(id: RuiSliderThumb): HTMLButtonElement | null {
 		if (id === 'value') {
 			return this.singleThumb;
 		}

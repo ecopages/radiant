@@ -2,14 +2,9 @@ import type { QuerySlotConfig } from '../helpers/create-query-slot';
 import type { RadiantElement } from '../core/radiant-element';
 import { querySlot as legacyQuerySlot } from './legacy/query-slot';
 import { querySlot as standardQuerySlot } from './standard/query-slot';
-import { fieldDecoratorBridge } from './bridge';
+import { boundedFieldDecorator, type BoundedFieldDecorator } from './bridge';
 
 export type { QuerySlotConfig };
-
-type QuerySlotDecorator<T extends Element | Element[] | null> = {
-	(protoOrTarget: undefined, nameOrContext: ClassFieldDecoratorContext<any, T>): void;
-	(protoOrTarget: RadiantElement, nameOrContext: string): void;
-};
 
 /**
  * Queries projected light-DOM content assigned to a RadiantElement slot.
@@ -20,20 +15,8 @@ type QuerySlotDecorator<T extends Element | Element[] | null> = {
  *
  * @param options Slot query options.
  */
-export function querySlot<T extends Element | Element[] | null>(options: QuerySlotConfig = {}): QuerySlotDecorator<T> {
-	function decorator(protoOrTarget: undefined, nameOrContext: ClassFieldDecoratorContext<any, T>): void;
-	function decorator(protoOrTarget: RadiantElement, nameOrContext: string): void;
-	function decorator(
-		protoOrTarget: RadiantElement | undefined,
-		nameOrContext: string | ClassFieldDecoratorContext<any, T>,
-	): void {
-		return fieldDecoratorBridge(
-			standardQuerySlot(options) as (target: undefined, context: ClassFieldDecoratorContext<any, T>) => void,
-			legacyQuerySlot<T>(options),
-			protoOrTarget,
-			nameOrContext,
-		);
-	}
-
-	return decorator;
+export function querySlot(
+	options: QuerySlotConfig = {},
+): BoundedFieldDecorator<RadiantElement, Element | Element[] | null> {
+	return boundedFieldDecorator(standardQuerySlot(options), legacyQuerySlot(options));
 }

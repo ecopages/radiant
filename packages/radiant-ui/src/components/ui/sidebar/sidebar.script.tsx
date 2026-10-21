@@ -166,10 +166,10 @@ export class RuiSidebar extends RadiantElement {
 	@prop({ type: Boolean, attribute: 'scroll-active-on-mount' }) scrollActiveOnMount = false;
 	@prop({ type: String, attribute: 'navigation-events', defaultValue: '' }) navigationEvents = '';
 
-	@query({ ref: 'root' }) rootTarget: HTMLElement;
-	@query({ ref: 'pane' }) paneTarget: HTMLElement;
-	@query({ ref: 'handle' }) handleTarget: HTMLElement;
-	@query({ ref: 'scrim' }) scrimTarget: HTMLButtonElement;
+	@query({ ref: 'root' }) rootTarget: HTMLElement | null;
+	@query({ ref: 'pane' }) paneTarget: HTMLElement | null;
+	@query({ ref: 'handle' }) handleTarget: HTMLElement | null;
+	@query({ ref: 'scrim' }) scrimTarget: HTMLButtonElement | null;
 
 	@event({ name: 'rui-sidebar-toggle', bubbles: true, composed: true })
 	toggleEvent: EventEmitter<RuiSidebarToggleDetail>;

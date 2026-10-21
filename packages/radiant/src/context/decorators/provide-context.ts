@@ -1,9 +1,10 @@
 import type { AttributeTypeConstant } from '../../utils';
 import type { ContextHostLike } from '../context-host';
+import type { ContextProvider } from '../context-provider';
 import type { UnknownContext } from '../types';
 import { provideContext as legacyProvideContext } from './legacy/provide-context';
 import { provideContext as standardProvideContext } from './standard/provide-context';
-import { fieldDecoratorBridge } from '../../decorators/bridge';
+import { boundedFieldDecorator, type BoundedFieldDecorator } from '../../decorators/bridge';
 
 export type ProvideContextOptions<T extends UnknownContext> = {
 	/** Context token made available to descendant consumers. */
@@ -28,23 +29,8 @@ export type ProvideContextOptions<T extends UnknownContext> = {
  * @param options {@link ProvideContextOptions}
  * @returns
  */
-export function provideContext<T extends UnknownContext>(options: ProvideContextOptions<T>) {
-	function decorator<Host extends ContextHostLike, V>(
-		protoOrTarget: undefined,
-		nameOrContext: ClassFieldDecoratorContext<Host, V>,
-	): void;
-	function decorator(protoOrTarget: ContextHostLike, nameOrContext: string): void;
-	function decorator(
-		protoOrTarget: ContextHostLike | undefined,
-		nameOrContext: string | ClassFieldDecoratorContext<ContextHostLike, unknown>,
-	): void {
-		return fieldDecoratorBridge(
-			standardProvideContext(options),
-			legacyProvideContext(options),
-			protoOrTarget,
-			nameOrContext,
-		);
-	}
-
-	return decorator;
+export function provideContext<T extends UnknownContext>(
+	options: ProvideContextOptions<T>,
+): BoundedFieldDecorator<ContextHostLike, ContextProvider<T>> {
+	return boundedFieldDecorator(standardProvideContext(options), legacyProvideContext(options));
 }

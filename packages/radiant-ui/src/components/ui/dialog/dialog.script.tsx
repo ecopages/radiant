@@ -87,9 +87,9 @@ export class RuiDialog extends RadiantElement {
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) alert: boolean;
 	@prop({ type: String, defaultValue: '' }) label: string;
 
-	@query({ ref: 'dialog' }) dialogTarget: HTMLElement;
-	@query({ selector: '[data-dialog-title]' }) titleTarget: HTMLElement;
-	@query({ selector: '[data-dialog-body]' }) descriptionTarget: HTMLElement;
+	@query({ ref: 'dialog' }) dialogTarget: HTMLElement | null;
+	@query({ selector: '[data-dialog-title]' }) titleTarget: HTMLElement | null;
+	@query({ selector: '[data-dialog-body]' }) descriptionTarget: HTMLElement | null;
 
 	@event({ name: 'rui-close', bubbles: true, composed: true })
 	closeEvent: EventEmitter<RuiDialogCloseDetail>;
@@ -178,7 +178,7 @@ export class RuiDialog extends RadiantElement {
 		const focusable = this.getFocusable();
 		if (!focusable.length) {
 			event.preventDefault();
-			this.dialogTarget.focus();
+			this.dialogTarget?.focus();
 			return;
 		}
 

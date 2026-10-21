@@ -2,12 +2,12 @@ import { RadiantElement, customElement, onEvent, query } from '@ecopages/radiant
 
 @customElement('radiant-refs')
 export class RadiantRefs extends RadiantElement {
-	@query({ ref: 'container' }) refContainer!: HTMLDivElement;
-	@query({ ref: 'count' }) countTarget!: HTMLDivElement;
+	@query({ ref: 'container' }) refContainer!: HTMLDivElement | null;
+	@query({ ref: 'count' }) countTarget!: HTMLDivElement | null;
 	@query({ ref: 'item', all: true, cache: false }) itemTargets!: HTMLDivElement[];
 
 	renderCount() {
-		this.countTarget.textContent = `${this.itemTargets.length}`;
+		if (this.countTarget) this.countTarget.textContent = `${this.itemTargets.length}`;
 	}
 
 	override connectedCallback() {
@@ -17,6 +17,7 @@ export class RadiantRefs extends RadiantElement {
 
 	@onEvent({ ref: 'create', type: 'click' })
 	createRef() {
+		if (!this.refContainer) return;
 		this.renderTemplate({
 			target: this.refContainer,
 			template: `
@@ -42,11 +43,13 @@ export class RadiantRefs extends RadiantElement {
 			refItem.remove();
 		}
 
-		this.renderTemplate({
-			target: this.refContainer,
-			template: '<div class="text-center">No Refs</div>',
-			insert: 'replace',
-		});
+		if (this.refContainer) {
+			this.renderTemplate({
+				target: this.refContainer,
+				template: '<div class="text-center">No Refs</div>',
+				insert: 'replace',
+			});
+		}
 
 		this.renderCount();
 	}

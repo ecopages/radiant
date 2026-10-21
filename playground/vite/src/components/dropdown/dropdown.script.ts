@@ -34,9 +34,9 @@ export type RadiantDropdownProps = {
  */
 @customElement('radiant-dropdown')
 export class RadiantDropdown extends RadiantElement {
-	@query({ ref: 'trigger' }) triggerTarget!: HTMLButtonElement;
-	@query({ ref: 'content' }) contentTarget!: HTMLElement;
-	@query({ ref: 'arrow' }) arrowTarget!: HTMLElement;
+	@query({ ref: 'trigger' }) triggerTarget!: HTMLButtonElement | null;
+	@query({ ref: 'content' }) contentTarget!: HTMLElement | null;
+	@query({ ref: 'arrow' }) arrowTarget!: HTMLElement | null;
 
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) defaultOpen!: boolean;
 	@prop({ type: String, defaultValue: 'bottom-start', reflect: true }) placement!: RadiantDropdownPlacement;
@@ -65,10 +65,13 @@ export class RadiantDropdown extends RadiantElement {
 
 	@onEvent({ ref: 'trigger', type: 'click' })
 	toggleContent(): void {
-		if (typeof this.triggerTarget.ariaExpanded === 'undefined') this.triggerTarget.ariaExpanded = 'false';
-		this.triggerTarget.setAttribute('aria-expanded', String(this.triggerTarget.ariaExpanded !== 'true'));
-		const isOpen = this.triggerTarget.ariaExpanded === 'true';
-		this.contentTarget.hidden = !isOpen;
+		const trigger = this.triggerTarget;
+		const content = this.contentTarget;
+		if (!trigger || !content) return;
+		if (typeof trigger.ariaExpanded === 'undefined') trigger.ariaExpanded = 'false';
+		trigger.setAttribute('aria-expanded', String(trigger.ariaExpanded !== 'true'));
+		const isOpen = trigger.ariaExpanded === 'true';
+		content.hidden = !isOpen;
 		this.syncPlacement();
 
 		if (isOpen) {
@@ -81,8 +84,8 @@ export class RadiantDropdown extends RadiantElement {
 
 	@bound
 	focusOnOpenChanged(): void {
-		if (this.triggerTarget.ariaExpanded === 'true' && this.focusOnOpen) {
-			const firstFocusableElement = this.contentTarget.querySelector(
+		if (this.triggerTarget?.ariaExpanded === 'true' && this.focusOnOpen) {
+			const firstFocusableElement = this.contentTarget?.querySelector(
 				'a, button, input, [tabindex]:not([tabindex="-1"])',
 			);
 			if (firstFocusableElement) {
@@ -93,9 +96,12 @@ export class RadiantDropdown extends RadiantElement {
 
 	@bound
 	closeContent(event: MouseEvent) {
-		if (!this.triggerTarget.contains(event.target as Node) && !this.contentTarget.contains(event.target as Node)) {
-			this.triggerTarget.setAttribute('aria-expanded', 'false');
-			this.contentTarget.hidden = true;
+		const trigger = this.triggerTarget;
+		const content = this.contentTarget;
+		if (!trigger || !content) return;
+		if (!trigger.contains(event.target as Node) && !content.contains(event.target as Node)) {
+			trigger.setAttribute('aria-expanded', 'false');
+			content.hidden = true;
 			document.removeEventListener('click', this.closeContent);
 		}
 	}

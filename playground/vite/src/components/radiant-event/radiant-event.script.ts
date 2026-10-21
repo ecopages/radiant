@@ -23,28 +23,28 @@ export class RadiantEventEmitter extends RadiantElement {
 
 @customElement('radiant-event-listener')
 export class RadiantEventListener extends RadiantElement {
-	@query({ ref: 'event-detail' }) eventDetail!: HTMLDivElement;
+	@query({ ref: 'event-detail' }) eventDetail!: HTMLDivElement | null;
 
 	@onEvent({ selector: 'radiant-event-emitter', type: RadiantEventEvents.CustomEvent })
 	onCustomEvent(event: CustomEvent<RadiantEventDetail>) {
-		this.eventDetail.textContent = event.detail.value;
+		if (this.eventDetail) this.eventDetail.textContent = event.detail.value;
 	}
 }
 
 @customElement('radiant-keyboard-keys')
 export class RadiantKeyboardKeys extends RadiantElement {
-	@query({ selector: 'span' }) key!: HTMLElement;
+	@query({ selector: 'span' }) key!: HTMLElement | null;
 
 	@onEvent({ document: true, type: 'keydown' })
 	logKeydown(event: KeyboardEvent) {
-		this.key.textContent = event.key;
+		if (this.key) this.key.textContent = event.key;
 	}
 }
 
 @customElement('radiant-sizer')
 export class RadiantWindowSizer extends RadiantElement {
-	@query({ ref: 'window' }) windowSize!: HTMLElement;
-	@query({ ref: 'element' }) elementSize!: HTMLElement;
+	@query({ ref: 'window' }) windowSize!: HTMLElement | null;
+	@query({ ref: 'element' }) elementSize!: HTMLElement | null;
 
 	connectedCallback(): void {
 		super.connectedCallback();
@@ -54,8 +54,8 @@ export class RadiantWindowSizer extends RadiantElement {
 	@onEvent({ window: true, type: 'resize' })
 	@debounce(200)
 	onResize() {
-		this.windowSize.textContent = `${window.innerWidth} x ${window.innerHeight}`;
-		this.elementSize.textContent = `${this.offsetWidth} x ${this.offsetHeight}`;
+		if (this.windowSize) this.windowSize.textContent = `${window.innerWidth} x ${window.innerHeight}`;
+		if (this.elementSize) this.elementSize.textContent = `${this.offsetWidth} x ${this.offsetHeight}`;
 	}
 }
 

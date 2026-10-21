@@ -48,6 +48,31 @@ export function fieldDecorator<Host extends object, Value>(
 		fieldDecoratorBridge(standard, legacy, protoOrTarget, nameOrContext);
 }
 
+/**
+ * A field decorator that installs its own value, so the field may declare any subtype of `Bound`.
+ *
+ * @remarks
+ * Kept apart from {@link ValueFieldDecorator}: a bound (`V extends Bound`) stops TypeScript from
+ * inferring a factory's own type parameter from the field, so value decorators need the exact shape.
+ * The legacy overload comes first for the same reason as in {@link ValueFieldDecorator}.
+ */
+export type BoundedFieldDecorator<Host, Bound> = {
+	(protoOrTarget: Host, name: string): void;
+	<THost extends Host, V extends Bound>(target: undefined, context: ClassFieldDecoratorContext<THost, V>): void;
+};
+
+/** Builds a {@link BoundedFieldDecorator} that dispatches on the shape of its second argument. */
+export function boundedFieldDecorator<Host extends object, Bound>(
+	standard: <THost extends Host, V extends Bound>(
+		target: undefined,
+		context: ClassFieldDecoratorContext<THost, V>,
+	) => void,
+	legacy: LegacyFieldFn<Host, void>,
+): BoundedFieldDecorator<Host, Bound> {
+	return (protoOrTarget: Host | undefined, nameOrContext: string | ClassFieldDecoratorContext<Host, Bound>) =>
+		fieldDecoratorBridge(standard, legacy, protoOrTarget, nameOrContext);
+}
+
 export function fieldDecoratorBridge<Host extends object, Value, Result, Proto>(
 	standard: StandardFieldFn<Host, Value, Result>,
 	legacy: LegacyFieldFn<Proto, void>,

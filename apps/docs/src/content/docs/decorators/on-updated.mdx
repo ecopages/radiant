@@ -23,7 +23,7 @@ import { RadiantElement, customElement, onUpdated, prop, query } from '@ecopages
 @customElement('search-field')
 export class SearchField extends RadiantElement {
 	@prop({ type: Boolean, defaultValue: false }) open!: boolean;
-	@query({ ref: 'input' }) input?: HTMLInputElement;
+	@query({ ref: 'input' }) input!: HTMLInputElement | null;
 
 	@onUpdated('open')
 	focusInput() {

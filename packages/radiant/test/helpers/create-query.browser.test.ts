@@ -45,7 +45,7 @@ describe('createQuery', () => {
 
 	test('queries all elements by ref', () => {
 		const host = createHost();
-		const accessor = createQuery<HTMLDivElement[]>(host, { ref: 'my-ref', all: true });
+		const accessor = createQuery<HTMLDivElement>(host, { ref: 'my-ref', all: true });
 		expect(accessor.value).toHaveLength(2);
 		expect(accessor.value![0].textContent).toBe('Ref 1');
 		expect(accessor.value![1].textContent).toBe('Ref 2');
@@ -59,7 +59,7 @@ describe('createQuery', () => {
 
 	test('queries all elements by selector', () => {
 		const host = createHost();
-		const accessor = createQuery<HTMLDivElement[]>(host, { selector: '.my-class', all: true });
+		const accessor = createQuery<HTMLDivElement>(host, { selector: '.my-class', all: true });
 		expect(accessor.value).toHaveLength(3);
 	});
 
@@ -71,13 +71,13 @@ describe('createQuery', () => {
 
 	test('returns empty array when no elements match with all: true', () => {
 		const host = createHost();
-		const accessor = createQuery<HTMLDivElement[]>(host, { selector: '.non-existent', all: true });
+		const accessor = createQuery<HTMLDivElement>(host, { selector: '.non-existent', all: true });
 		expect(accessor.value).toEqual([]);
 	});
 
 	test('caches result when cache is true', () => {
 		const host = createHost();
-		const accessor = createQuery<HTMLDivElement[]>(host, { ref: 'my-ref', all: true, cache: true });
+		const accessor = createQuery<HTMLDivElement>(host, { ref: 'my-ref', all: true, cache: true });
 		expect(accessor.value).toHaveLength(2);
 
 		host.appendChild(createElementWithRef('Ref 3', 'my-ref'));
@@ -86,7 +86,7 @@ describe('createQuery', () => {
 
 	test('does not cache when cache is not set', () => {
 		const host = createHost();
-		const accessor = createQuery<HTMLDivElement[]>(host, { ref: 'my-ref', all: true });
+		const accessor = createQuery<HTMLDivElement>(host, { ref: 'my-ref', all: true });
 		expect(accessor.value).toHaveLength(2);
 
 		host.appendChild(createElementWithRef('Ref 3', 'my-ref'));

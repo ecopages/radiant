@@ -21,11 +21,11 @@ export class RadiantValueTester extends RadiantElement {
 	@prop({ type: Object, reflect: true, defaultValue: { key: 'value' } }) object!: Record<string, unknown>;
 	@prop({ type: Array, reflect: true, defaultValue: ['value'] }) array!: unknown[];
 
-	@query({ ref: 'number' }) numberText!: HTMLElement;
-	@query({ ref: 'string' }) stringText!: HTMLElement;
-	@query({ ref: 'boolean' }) booleanText!: HTMLElement;
-	@query({ ref: 'object' }) objectText!: HTMLElement;
-	@query({ ref: 'array' }) arrayText!: HTMLElement;
+	@query({ ref: 'number' }) numberText!: HTMLElement | null;
+	@query({ ref: 'string' }) stringText!: HTMLElement | null;
+	@query({ ref: 'boolean' }) booleanText!: HTMLElement | null;
+	@query({ ref: 'object' }) objectText!: HTMLElement | null;
+	@query({ ref: 'array' }) arrayText!: HTMLElement | null;
 
 	@onEvent({ ref: 'increment-number', type: 'click' })
 	incrementNumber() {
@@ -54,27 +54,27 @@ export class RadiantValueTester extends RadiantElement {
 
 	@onUpdated('number')
 	updateNumber() {
-		this.numberText.textContent = this.number.toString();
+		if (this.numberText) this.numberText.textContent = this.number.toString();
 	}
 
 	@onUpdated('string')
 	updateString() {
-		this.stringText.textContent = this.string;
+		if (this.stringText) this.stringText.textContent = this.string;
 	}
 
 	@onUpdated('boolean')
 	updateBoolean() {
-		this.booleanText.textContent = this.boolean.toString();
+		if (this.booleanText) this.booleanText.textContent = this.boolean.toString();
 	}
 
 	@onUpdated('object')
 	updateObjectText() {
-		this.objectText.textContent = JSON.stringify(this.object, null, 2);
+		if (this.objectText) this.objectText.textContent = JSON.stringify(this.object, null, 2);
 	}
 
 	@onUpdated('array')
 	updateArrayText() {
-		this.arrayText.textContent = JSON.stringify(this.array, null, 2);
+		if (this.arrayText) this.arrayText.textContent = JSON.stringify(this.array, null, 2);
 	}
 }
 

@@ -125,7 +125,7 @@ export class RuiToaster extends RadiantElement {
 	@prop({ type: Number, defaultValue: TOAST_VIEWPORT_OFFSET }) offset: number;
 	@prop({ type: String, reflect: true, defaultValue: '' }) container: string;
 
-	@query({ ref: 'list' }) listTarget: HTMLOListElement;
+	@query({ ref: 'list' }) listTarget: HTMLOListElement | null;
 
 	@state toasts: ToastRecord[] = [];
 
