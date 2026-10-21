@@ -28,6 +28,92 @@ For the controller capability matrix, see [RadiantController](/docs/components/r
 - use [@state](/docs/decorators/state) for plain internal host state
 - use [@signal](/docs/decorators/signal) when the field itself should be a writable signal
 
+## Typing Decorated Fields
+
+Under standard decorators, TypeScript passes each field decorator the declared field type, and the decorator checks its options, or the value it installs, against it. The field type is the source of truth: `defaultValue`, `initial`, `source`, `transform`, `converter` and `type` must agree with it, and a mismatch is a compile error on the decorator. Legacy decorators, covered at the end of this section, cannot run these checks.
+
+### Declare The Type
+
+Prefer an initializer, so TypeScript infers the field type and there is no annotation to keep in sync:
+
+```ts
+import { RadiantElement, customElement, prop, query, signal } from '@ecopages/radiant';
+import type { WritableSignal } from '@ecopages/signals';
+
+type Size = 'sm' | 'md' | 'lg';
+
+@customElement('size-picker')
+export class SizePicker extends RadiantElement {
+	@prop({ type: Number, defaultValue: 0 }) count = 0;
+	@prop({ type: String, defaultValue: 'md' }) size: Size = 'md';
+	@prop({ type: Boolean }) open?: boolean;
+	@signal({ initial: 0 }) clicks!: WritableSignal<number>;
+	@query({ ref: 'input' }) input!: HTMLInputElement | null;
+}
+```
+
+Write the type yourself for:
+
+- a string literal union, such as `size: Size = 'md'`
+- a field with no initializer: `?` when the value can be absent, which adds `undefined`, and `!` when the decorator or a default supplies it, which only silences the missing-initializer error
+- `@signal`, `@query` and the other fields a decorator installs, which have no initializer to infer from
+
+A field that disagrees with an option is rejected:
+
+```ts
+@prop({ type: Number, defaultValue: 0 }) count: string = ''; // defaultValue is a number
+@prop({ type: Number }) step?: string; // Number parses to a number
+@attr({ source: 'data-total' }) total = 0; // the raw attribute is a string
+@signal({ initial: 'x' }) label!: WritableSignal<number>; // initial is a string
+@query({ ref: 'input' }) input!: HTMLInputElement; // null when nothing matches
+```
+
+### What Each Decorator Expects
+
+- [@signal](/docs/decorators/signal): `WritableSignal<T>`, with `initial` a `T` and `source` a `WritableSignal<T>`, or a function returning one.
+- [@bindTo](/docs/decorators/bind-to): `map` receives the field type, so `@bindTo({ attr: 'data-n', map: (v) => v.toFixed() }) @state n = 0` types `v` as `number`.
+- [@query](/docs/decorators/query) and [@querySlot](/docs/decorators/query-slot): `T | null` for a single element, `T[]` with `all: true`. `all` must be a literal `true` or `false`.
+- [@consumeContext](/docs/context/consume-context): `ContextProvider<typeof context>`, which may be optional.
+- [@provideContext](/docs/context/provide-context): `ContextProvider<typeof context>`. The provider is always installed, so the field cannot be optional.
+- [@event](/docs/decorators/event): `EventEmitter<Detail>`. The emitter is always installed, so the field cannot be optional.
+- [@contextSelector](/docs/context/context-selector): the value `select` returns, or the whole context without `select`. The field may be optional, and a subtype of that value also compiles.
+
+### @prop And @attr
+
+- The `type` constant must fit the field: `String` needs a `string`, `Number` a `number`, `Boolean` a `boolean`, `Array` an array (readonly included) and `Object` an object that is not an array. `null` and `undefined` are always allowed. A field of several parsed types, such as `string | number`, fits no constant.
+- A parser owns the value type: `transform.fromAttribute` on `@prop`, `converter.fromAttribute` on `@attr`. `type` then selects the attribute channel, and the default when neither `defaultValue` nor an initializer is given. `defaultValue` is checked against the field, not against `type`. Pass the parser inline or declare it with `satisfies PropTransform<T>` (`AttrConverter<T>` on `@attr`): an annotated declaration makes `fromAttribute` optional in its type, so `type` is checked again.
+- `@attr` without `type` or a parser holds the raw attribute string, so its field must be `string | null | undefined`. A string literal union fits. Any other field needs `type` or a parser.
+- `defaultValue: null` is accepted when the field allows `null`.
+
+```ts
+@prop({ type: String, transform: { fromAttribute: (v) => Number(v) } }) rank = 0;
+@attr({ converter: { fromAttribute: (v) => (v ? v.split(',') : []) } }) labels: string[] = [];
+@attr({ source: 'data-count', type: Number }) count = 0;
+@prop({ type: Number, defaultValue: null }) limit: number | null = null;
+```
+
+A field typed by the host's own type parameter does not compile with a `type` constant. On `@prop`, pass a parser that keeps the raw value. On `@attr`, drop `type`:
+
+```ts
+export class Select<V extends string> extends RadiantElement {
+	@prop({ type: String, transform: { fromAttribute: (v) => (v ?? '') as V } }) selected!: V;
+	@attr({ source: 'data-mode' }) mode?: V;
+}
+```
+
+### Legacy Decorators
+
+With `experimentalDecorators: true`, TypeScript calls a field decorator as `(prototype, key)` and never passes the field type. Radiant supports this mode, but none of the field checks above run in it. Every field in the rejected list above compiles there. The decorators also take no value type from the field, so a callback that uses the value, such as `@bindTo`'s `map` or a `transform`, sees `unknown` unless you pass the type argument. The type argument must be the whole field type, `undefined` included (`@bindTo<number | undefined>` on `n?: number`). Under legacy decorators it is still checked against the options, but not compared with the field.
+
+```ts
+// legacy: error, 'v' is of type 'unknown'
+@bindTo({ attr: 'data-n', map: (v) => v.toFixed() }) @state n = 0;
+// legacy and standard
+@bindTo<number>({ attr: 'data-n', map: (v) => v.toFixed() }) @state n = 0;
+```
+
+To get the field checks and drop the type arguments, compile with standard decorators and leave `experimentalDecorators` off.
+
 ## Recommended Reading Order
 
 1. Start with [@attr](/docs/decorators/attr), [@state](/docs/decorators/state), and [@signal](/docs/decorators/signal).
