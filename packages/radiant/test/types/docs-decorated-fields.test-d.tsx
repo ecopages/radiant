@@ -10,8 +10,10 @@
  * bare field with TS2564.
  */
 import { State, type WritableSignal } from '@ecopages/signals';
+import { RadiantController } from '../../src/core/radiant-controller';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { attr } from '../../src/decorators/attr';
+import { controller } from '../../src/decorators/controller';
 import { customElement } from '../../src/decorators/custom-element';
 import { prop } from '../../src/decorators/prop';
 import { signal } from '../../src/decorators/signal';
@@ -39,4 +41,17 @@ const sharedCount = new State(0);
 export class SharedCounter extends RadiantElement {
 	@signal({ source: sharedCount }) count!: WritableSignal<number>;
 	@signal({ initial: 'idle' }) status!: WritableSignal<string>;
+}
+
+type ResultsListProps = {
+	items: Array<{ id: string; label: string }>;
+};
+
+@controller('results-list')
+export class ResultsListController extends RadiantController {
+	@prop({ type: Array, defaultValue: [] }) items!: ResultsListProps['items'];
+
+	override render() {
+		return <ul>{this.items.map((item) => <li key={item.id}>{item.label}</li>)}</ul>;
+	}
 }
