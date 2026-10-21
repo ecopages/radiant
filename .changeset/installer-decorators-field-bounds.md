@@ -36,6 +36,6 @@ These fields compiled before and now fail, because the decorator installs a diff
 
 `@event` and `@provideContext` always install a value, so their bounds leave `undefined` out and the field can no longer be optional. Write `change!: EventEmitter<string>` where `change?: EventEmitter<string>` compiled before.
 
-`@querySlot` now requires a `RadiantElement` host instead of accepting any class, and takes no type argument: write `@querySlot()` where `@querySlot<HTMLElement | null>()` compiled before. `@contextSelector` now accepts an optional field, which holds `undefined` until the first delivery: `@contextSelector({ context, select: (c) => c.count }) count?: number;`. `@contextSelector` fields no longer throw a `TypeError` on a target that does not match their context, such as a legacy static field; the types already reject such a field. The method form still checks its target.
+`@querySlot` now requires a `RadiantElement` host instead of accepting any class. `@contextSelector` now accepts an optional field, which holds `undefined` until the first delivery: `@contextSelector({ context, select: (c) => c.count }) count?: number;`. `@contextSelector` fields no longer throw a `TypeError` on a target that does not match their context, such as a legacy static field; the types already reject such a field. The method form still checks its target.
 
 Radiant UI components declare their `@query` fields with `| null` and handle a missing element. Runtime behaviour is otherwise unchanged.

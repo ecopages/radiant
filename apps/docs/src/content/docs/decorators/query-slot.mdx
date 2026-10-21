@@ -31,6 +31,9 @@ export class ShellCard extends RadiantElement {
 				<div>
 					<slot />
 				</div>
+				<footer>
+					<slot name="action" />
+				</footer>
 			</article>
 		);
 	}
