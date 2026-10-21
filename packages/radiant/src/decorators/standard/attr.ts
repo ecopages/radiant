@@ -11,8 +11,7 @@ export function reactiveAttr<TValue = string | undefined>(options: AttrOptions<T
 
 		context.addInitializer(function (this: THost) {
 			const initializerValue = (this as Record<PropertyKey, TValue | undefined>)[initializerValueKey];
-			const defaultValue = (options.defaultValue === undefined ? initializerValue : options.defaultValue) as
-				TValue | undefined;
+			const defaultValue = options.defaultValue === undefined ? initializerValue : options.defaultValue;
 
 			installReactiveAttribute(this, propertyName, {
 				...options,

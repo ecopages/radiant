@@ -1,10 +1,11 @@
 import type { ReactiveHostLike } from '../core/reactive-host';
 import { fieldDecorator, fieldDecoratorBridge, type ValueFieldDecorator } from './bridge';
 import { signal as legacySignal } from './legacy/signal';
-import { signal as standardSignal, type SignalDecoratorOptions } from './standard/signal';
+import type { SignalDecoratorOptions } from './shared/signal-options';
+import { signal as standardSignal } from './standard/signal';
 import type { WritableSignal } from '@ecopages/signals';
 
-export type { SignalDecoratorOptions } from './standard/signal';
+export type { SignalDecoratorOptions } from './shared/signal-options';
 
 export function signal(protoOrTarget: ReactiveHostLike, nameOrContext: string): void;
 /** Bare `@signal`: a host-owned writable signal field, as `@signal()` declares. */
