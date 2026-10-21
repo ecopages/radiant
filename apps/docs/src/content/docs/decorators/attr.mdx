@@ -48,6 +48,8 @@ In this example:
 - `label` reads from the host `aria-label` attribute
 - assigning either field writes back through that same host attribute channel
 
+The field type must agree with the options: see [Typing Decorated Fields](/docs/decorators).
+
 When `type` is provided, `@attr(...)` uses the same built-in attribute codec family as `@prop(...)` for `String`, `Number`, `Boolean`, `Object`, and `Array`.
 
 Without `type` or a `converter.fromAttribute` parser, the field holds the raw attribute string, so its type must be `string | null | undefined`. A string literal union such as `'a' | 'b'` fits. A `number` or `boolean` field needs `type: Number` or `type: Boolean`, or a parser, and does not compile without one.

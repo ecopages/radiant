@@ -26,6 +26,8 @@ export class RuiDialog extends RadiantElement {
 
 Omit `ref` / `selector` to patch the host element itself (`this` on `RadiantElement`, `this.element` on `RadiantController`).
 
+`map` receives the declared field type under standard decorators. Under legacy decorators it receives `unknown` unless you pass the whole field type, `undefined` included, as a type argument, as in `@bindTo<boolean>(...)`: see [Typing Decorated Fields](/docs/decorators).
+
 ## One value, several writes
 
 Pass an array to fan one field out to several DOM facts:
@@ -52,7 +54,7 @@ Each target sets exactly one of `attr`, `bool`, `prop`, or `text`. `ref` and `se
 | `prop` | `string` | One write kind | DOM property write (`input.value`, `meter.value`). |
 | `text` | `true` | One write kind | `textContent`. |
 | `invert` | `true` | No | Negate the value before writing (`open` → `hidden`). |
-| `map` | `(value: T) => unknown` | No | Transform the value before writing. `T` is the decorated field; do not annotate the parameter. |
+| `map` | `(value: T) => unknown` | No | Transform the value before writing. `T` is the decorated field. Under standard decorators leave the parameter unannotated; under legacy decorators pass the whole field type as a type argument, `undefined` included. |
 
 Missing descendants are skipped. A field that is not `@prop`, `@state`, or `@signal` is skipped too. The first paint runs after attribute catch-up (and the initial `render()` / `hydrate()` when the host owns a view), so parent-authored `data-ref` nodes are visible.
 

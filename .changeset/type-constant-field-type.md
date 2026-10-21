@@ -23,7 +23,7 @@ A field whose type is a union of several parsed types, such as `string | number`
 @prop({ type: String, transform: { fromAttribute: (v) => (v === null ? 0 : v) } }) size: string | number;
 ```
 
-The parser must be part of the option's type. A transform declared as `const csv: PropTransform<string[]> = { fromAttribute }` has `fromAttribute` optional in its type, so `type` is checked against the field; declare it with `satisfies PropTransform<string[]>` instead. Under legacy decorators, a transform whose callbacks take the value type still needs the explicit generic, as in `@prop<string[]>(...)`. With a parser, the runtime still checks `defaultValue` against `type`.
+The parser must be part of the option's type. A transform declared as `const csv: PropTransform<string[]> = { fromAttribute }` has `fromAttribute` optional in its type, so `type` is checked against the field; declare it with `satisfies PropTransform<string[]>` instead. Under legacy decorators, a transform whose callbacks take the value type still needs the explicit generic, as in `@prop<string[]>(...)`.
 
 A field typed by a type parameter of a generic host, such as `value: V` on `class Select<V extends string>`, now fails to compile with a `type` constant, because the field type cannot be resolved there. On `@attr`, omit `type: String`, which reads the attribute the same way. On `@prop`, pass a parser that keeps the raw value:
 

@@ -4,6 +4,7 @@
 
 - Host definition
 - Reactive data
+- Field types
 - Paint and side effects
 - DOM queries
 - Events
@@ -28,6 +29,17 @@
 - `hydrate` — attribute type constant for SSR hydration via keyed JSON script
 
 Bare `@signal` (no parentheses) creates a host-owned signal with defaults.
+
+## Field types
+
+Under standard decorators the declared field type is the source of truth, and options (`defaultValue`, `initial`, `transform`, `converter`, `type`, and `source` on `@signal`) must agree with it. Prefer an initializer (`@prop({ type: Number }) count = 0`); write the type for a string literal union, a field with no initializer (`?` or `!`), and `@signal`, `@query` and other installed fields.
+
+- `@query` and `@querySlot` fields are `T | null`, or `T[]` with `all: true`.
+- `@attr` without `type` or a parser holds a string, so the field is `string | null | undefined`; a number or boolean field needs `type`.
+- `@prop` and `@attr` `type` must fit the field. A `transform.fromAttribute` or `converter.fromAttribute` parser owns the value type instead.
+- Legacy decorators (`experimentalDecorators`) never see the field type, so none of this is checked there, and `@bindTo`'s `map` sees `unknown` unless you write `@bindTo<number>(...)`, with the whole field type, `undefined` included.
+
+Full rules: `/docs/decorators`.
 
 ## Paint and side effects
 

@@ -26,6 +26,8 @@ export class UserCard extends RadiantElement {
 }
 ```
 
+The declared field type must agree with `type`, `defaultValue` and `transform`: see [Typing Decorated Fields](/docs/decorators).
+
 ## SSR Property Staging
 
 Before the first server render, assign properties through `renderComponent` (or on a disconnected host before calling `renderRadiantElementHostToString`):

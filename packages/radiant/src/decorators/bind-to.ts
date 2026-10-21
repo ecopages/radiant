@@ -18,8 +18,11 @@ type BindToInput<T> = BindToTarget<T> | readonly BindToTarget<T>[];
  * Use `@onEvent` for DOM events and `@onUpdated` for procedures (focus, timers,
  * joined `aria-describedby`). `@bindTo` only copies field values onto nodes.
  *
- * `map` is typed from the decorated field. Leave the callback parameter
- * unannotated.
+ * Under standard decorators `map` is typed from the decorated field: leave the
+ * callback parameter unannotated. Legacy decorators (`experimentalDecorators`)
+ * never see the field type, so `map` receives `unknown` and nothing is checked
+ * against the field: pass the whole field type, `undefined` included, as a type
+ * argument, as in `@bindTo<number>({ attr: 'data-n', map: (v) => v.toFixed() })`.
  *
  * @param target One write, or a list of writes, driven by the decorated field.
  *

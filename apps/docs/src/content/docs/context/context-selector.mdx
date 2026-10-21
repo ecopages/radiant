@@ -46,6 +46,8 @@ export class TodoBoard extends RadiantElement {
 
 `render()` reads `this.todos` directly. When the todo list changes in context, the field is updated and the host rerenders automatically.
 
+The field holds the value `select` returns, or a subtype of it, and may be optional. See [Typing Decorated Fields](/docs/decorators).
+
 ## RadiantController Example
 
 ```typescript
