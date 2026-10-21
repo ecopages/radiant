@@ -36,8 +36,22 @@ export function reflectsBooleanAsValue(property: Pick<ReactiveProperty, 'type' |
 	return property.type === Boolean && property.defaultValue === true;
 }
 
-export type ReactivePropertyOptions<T> = {
-	type: AttributeTypeConstant;
+export type ReactivePropertyOptions<T, C extends AttributeTypeConstant = AttributeTypeConstant> = {
+	/**
+	 * Parses the attribute and serializes reflected values.
+	 *
+	 * @remarks
+	 * `@prop` checks the field against it: `type: Number` needs a `number` field,
+	 * `null` and `undefined` allowed, and a field of several parsed types, such as
+	 * `string | number`, fits no constant, and neither does a field typed by a
+	 * type parameter of a generic host. Standard decorators check the declared
+	 * field; legacy decorators check only an explicit generic. A `transform.fromAttribute`
+	 * parser owns the value type instead, and then `type` is not checked. The
+	 * parser must be part of the option's type, so pass it inline or with
+	 * `satisfies`: a value annotated as `PropTransform<T>` has it optional. The runtime
+	 * still checks `defaultValue` against `type`.
+	 */
+	type: C;
 	reflect?: boolean;
 	attribute?: string;
 	/**
