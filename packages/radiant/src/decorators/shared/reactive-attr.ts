@@ -14,9 +14,23 @@ export type AttrConverter<T> = {
 	toAttribute?: (value: T) => string | null;
 };
 
-export type AttrOptions<T = string | undefined> = {
+export type AttrOptions<T = string | undefined, C extends AttributeTypeConstant = AttributeTypeConstant> = {
 	source?: string;
-	type?: AttributeTypeConstant;
+	/**
+	 * Parses the attribute and serializes written values. Omit it to keep the raw string.
+	 *
+	 * @remarks
+	 * `@attr` checks the field against it: `type: Number` needs a `number` field,
+	 * `null` and `undefined` allowed, and a field of several parsed types, such as
+	 * `string | number`, fits no constant, and neither does a field typed by a
+	 * type parameter of a generic host. Standard decorators check the declared
+	 * field; legacy decorators check only an explicit generic. A `converter.fromAttribute`
+	 * parser owns the value type instead, and then `type` is not checked. The
+	 * parser must be part of the option's type, so pass it inline or with
+	 * `satisfies`: a value annotated as `AttrConverter<T>` has it optional. The runtime
+	 * still checks `defaultValue` against `type`.
+	 */
+	type?: C;
 	bind?: ReactiveBindingOption;
 	defaultValue?: T;
 	converter?: AttrConverter<T>;

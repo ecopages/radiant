@@ -2,6 +2,24 @@ import type { RadiantElement } from '../core/radiant-element';
 
 export type AttributeTypeConstant = typeof Array | typeof Boolean | typeof Number | typeof Object | typeof String;
 
+/**
+ * The `type` constants whose parsed value fits a field of type `T`, `null` and `undefined` aside.
+ *
+ * @remarks
+ * `T` of `unknown` means the field type is not known, as under legacy decorators, so every constant fits.
+ * `T` is compared whole, not per union member: a `string | number` field fits no single constant.
+ * `Array` fits readonly arrays too. An array field does not fit `Object`, because the runtime rejects arrays for it.
+ */
+export type AttributeTypeConstantFor<T> = unknown extends T
+	? AttributeTypeConstant
+	: AttributeTypeConstantFitting<NonNullable<T>>;
+
+type AttributeTypeConstantFitting<Value> =
+	| ([Value] extends [string] ? typeof String : never)
+	| ([Value] extends [number] ? typeof Number : never)
+	| ([Value] extends [boolean] ? typeof Boolean : never)
+	| ([Value] extends [readonly unknown[]] ? typeof Array : [Value] extends [object] ? typeof Object : never);
+
 export type AttributeTypeDefault = Array<unknown> | boolean | number | Record<string, unknown> | string;
 
 /**

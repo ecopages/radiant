@@ -1,4 +1,5 @@
-import type { ReactivePropertyOptions } from '../core/reactive-prop-core';
+import type { PropTransform, ReactivePropertyOptions } from '../core/reactive-prop-core';
+import type { AttributeTypeConstantFor } from '../utils/attribute-utils';
 import { reactiveProp as legacyReactiveProp } from './legacy/reactive-prop';
 import { reactiveProp as standardReactiveProp, type ReactivePropHost } from './standard/reactive-prop';
 import { fieldDecorator, type ValueFieldDecorator } from './bridge';
@@ -20,17 +21,24 @@ import { fieldDecorator, type ValueFieldDecorator } from './bridge';
  * JS property writes (`fromProperty`). On `RadiantController`, only `fromProperty`
  * applies — attribute conversion is an Element Host concern.
  *
- * The declared field type is the property type: `defaultValue` and `transform`
- * must agree with it, and are checked against it under standard decorators.
- * `type` is not checked against it. Legacy decorators never see the field, so
- * there `transform.toAttribute` receives `unknown` unless the type is passed
- * explicitly. An explicit type must be the whole field type, `undefined`
- * included: `@prop<number | undefined>(...)` on `count?: number`.
+ * The declared field type is the property type: `type`, `defaultValue` and
+ * `transform` must agree with it, and are checked against it under standard
+ * decorators. {@link ReactivePropertyOptions.type} says when `type` is checked. Legacy
+ * decorators never see the field, so there `transform.toAttribute` receives
+ * `unknown` unless the type is passed explicitly. An explicit type must be the
+ * whole field type, `undefined` included: `@prop<number | undefined>(...)` on
+ * `count?: number`.
  *
  * @param options {@link ReactivePropertyOptions} The options for the reactive property.
  */
 export function prop<T = unknown>(
-	options: ReactivePropertyOptions<NoInfer<T>>,
-): ValueFieldDecorator<ReactivePropHost<T>, T> {
+	options: ReactivePropertyOptions<NoInfer<T>> & {
+		transform: Required<Pick<PropTransform<NoInfer<T>>, 'fromAttribute'>>;
+	},
+): ValueFieldDecorator<ReactivePropHost<T>, T>;
+export function prop<T = unknown>(
+	options: ReactivePropertyOptions<NoInfer<T>, AttributeTypeConstantFor<NoInfer<T>>>,
+): ValueFieldDecorator<ReactivePropHost<T>, T>;
+export function prop<T>(options: ReactivePropertyOptions<T>): ValueFieldDecorator<ReactivePropHost<T>, T> {
 	return fieldDecorator(standardReactiveProp(options), legacyReactiveProp(options));
 }
