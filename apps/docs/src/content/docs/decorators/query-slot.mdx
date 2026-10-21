@@ -20,6 +20,7 @@ import { RadiantElement, customElement, querySlot } from '@ecopages/radiant';
 export class ShellCard extends RadiantElement {
 	@querySlot({ name: 'heading' }) heading!: HTMLHeadingElement | null;
 	@querySlot() body!: HTMLParagraphElement | null;
+	@querySlot({ name: 'action', all: true }) actions!: HTMLButtonElement[];
 
 	override render() {
 		return (
@@ -41,8 +42,21 @@ export class ShellCard extends RadiantElement {
 | Parameter | Type | Required | Description |
 | :-------- | :--- | :------- | :---------- |
 | `name` | `string` | No | Named slot to query. Omit it for the default slot. |
-| `all` | `boolean` | No | Return every assigned element instead of only the first one. |
+| `all` | `true` or `false` | No | Return every assigned element instead of only the first one (default: `false`). Must be a literal, because it picks the field type. |
 | `cache` | `boolean` | No | Cache the query result until slot projection changes. Defaults to `true`. |
+
+## Type Safety
+
+A single-element slot query returns `null` while nothing is assigned, so its field type includes `null`. With `all: true` the field is an array, empty while nothing is assigned. Under standard decorators, a field that leaves `null` out, or an array field without `all: true`, does not compile. The type argument, when given, is the element type.
+
+```typescript
+@querySlot({ name: 'heading' }) heading!: HTMLHeadingElement | null;
+@querySlot({ all: true }) items!: HTMLLIElement[];
+
+focusHeading() {
+	this.heading?.focus();
+}
+```
 
 ## Notes
 

@@ -15,7 +15,7 @@ export function querySlot(options: QuerySlotConfig = {}) {
 		const propertyName = String(context.name);
 
 		context.addInitializer(function (this: T) {
-			const accessor = createQuerySlot<V>(this, options);
+			const accessor = createQuerySlot(this, options);
 
 			Object.defineProperty(this, propertyName, {
 				get() {

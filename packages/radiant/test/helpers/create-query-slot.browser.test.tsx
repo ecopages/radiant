@@ -7,7 +7,7 @@ import { createQuerySlot } from '../../src/helpers/create-query-slot';
 class QuerySlotHelperCard extends RadiantElement {
 	#defaultSlot = createQuerySlot<HTMLParagraphElement>(this, {});
 	#headerSlot = createQuerySlot<HTMLHeadingElement>(this, { name: 'header' });
-	#allHeaderSlots = createQuerySlot<HTMLHeadingElement[]>(this, { name: 'header', all: true });
+	#allHeaderSlots = createQuerySlot<HTMLHeadingElement>(this, { name: 'header', all: true });
 
 	get defaultSlot() {
 		return this.#defaultSlot.value;
