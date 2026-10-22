@@ -19,7 +19,7 @@ export type { AttrConverter, AttrOptions } from './shared/reactive-attr';
  * default would reject valid options such as `defaultValue: 0`, so
  * `converter.toAttribute` receives `unknown`; pass the whole field type, as in
  * `@attr<number>(...)` on `count: number`, when it needs the value type.
- * Without both, `T` defaults to `string | null | undefined`, and legacy
+ * Without either, `T` defaults to `string | null | undefined`, and legacy
  * decorators reject only an option that is not a string, such as
  * `defaultValue: 0`.
  *

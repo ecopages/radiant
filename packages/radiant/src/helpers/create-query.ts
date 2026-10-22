@@ -6,8 +6,8 @@ type BaseQueryConfig = {
 	 * Keeps the first result instead of querying on every read. Off by default, in both decorator modes.
 	 *
 	 * @remarks
-	 * The result is never refreshed: the lookup repeats only while it finds nothing, so a re-render that
-	 * replaces the node leaves the cached one stale.
+	 * The result is not refreshed while the host stays connected: the lookup repeats only while it finds
+	 * nothing, so a re-render that replaces the node leaves the cached one stale.
 	 */
 	cache?: boolean;
 };

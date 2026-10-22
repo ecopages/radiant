@@ -18,7 +18,7 @@ An `@attr` with neither `type` nor `converter.fromAttribute` returns the attribu
 @attr({ converter: { fromAttribute: (v) => Number(v) } }) count!: number;
 ```
 
-`@attr() title = ''`, `@attr({ defaultValue: 'a' }) mode!: 'a' | 'b'` and a field typed by a type parameter of a generic host still compile as they did.
+`@attr() title = ''` and a field typed by a type parameter of a generic host still compile as they did.
 
 The error for a `number` field without `type` reads `Type 'number' is not assignable to type 'string'` under `Unable to resolve signature of property decorator`, or `Property 'type' is missing` when an option such as `defaultValue` is given.
 
