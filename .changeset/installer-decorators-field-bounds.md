@@ -3,19 +3,22 @@
 '@ecopages/radiant-ui': patch
 ---
 
-`@query`, `@querySlot`, `@event`, `@consumeContext`, `@provideContext` and the field form of `@contextSelector` now check the declared field against the value they install, under standard decorators.
+**@ecopages/radiant**
 
-**Breaking:** a single-element `@query` field must include `null`, because the query returns `null` when nothing matches. With `all: true` the field is an array. A field that leaves `null` out, or an array field without `all: true`, no longer compiles:
+`@query` and `@event` check the declared field against the value they install, under standard decorators, and the type argument of `@query` and `createQuery` is now the element type. The context decorators have their own note, and so do `@querySlot` and `createQuerySlot`, which follow `@query`.
+
+**Breaking:** a single-element `@query` field must include `null`, because the query returns `null` when nothing matches. With `all: true` the field is an array. A field that leaves `null` out, or an array field without `all: true`, compiled before and no longer does:
 
 ```ts
 // before: compiled, and `this.input.focus()` threw when the ref was missing
 @query({ ref: 'input' }) input!: HTMLInputElement;
+@query({ ref: 'item' }) items!: HTMLLIElement[];
 // after
 @query({ ref: 'input' }) input!: HTMLInputElement | null;
 @query({ ref: 'item', all: true }) items!: HTMLLIElement[];
 ```
 
-On `@query`, `all` must be a literal `true` or `false`, or left out, because it picks the field type. The type argument of `@query` and `createQuery` is now the element type. `createQuery`'s `.value` is `T[]` with `all: true` and `T | null` otherwise; with a `boolean` variable for `all`, it is `Element[] | Element | null`, and `createQuery` then takes no type argument:
+`all` has to be a literal `true` or `false`, or left out, because it picks the field type. `createQuery`'s `.value` is `T[]` with `all: true` and `T | null` otherwise. With a `boolean` variable for `all` it is `Element[] | Element | null`, and `createQuery` then takes no type argument. The type argument used to be the whole result:
 
 ```ts
 // before
@@ -26,16 +29,19 @@ createQuery<HTMLElement[]>(this, { selector: '.item', all: true });
 createQuery<HTMLElement>(this, { selector: '.item', all: true });
 ```
 
-These fields compiled before and now fail, because the decorator installs a different value:
+**Breaking:** `@event` installs an `EventEmitter`, so its field has to be one, and cannot be optional:
 
 ```ts
-@event({ name: 'change' }) change: string;
-@consumeContext(ctxA) ctx!: ContextProvider<typeof ctxB>;
-@provideContext({ context: ctxA }) provider!: ContextProvider<typeof ctxB>;
+// before: compiled
+@event({ name: 'change' }) change!: string;
+@event({ name: 'select' }) select?: EventEmitter<string>;
+// after
+@event({ name: 'change' }) change!: EventEmitter<string>;
+@event({ name: 'select' }) select!: EventEmitter<string>;
 ```
 
-`@event` and `@provideContext` always install a value, so their bounds leave `undefined` out and the field can no longer be optional. Write `change!: EventEmitter<string>` where `change?: EventEmitter<string>` compiled before.
+Legacy decorators never see the field type and compile as before.
 
-`@querySlot` now requires a `RadiantElement` host instead of accepting any class. `@contextSelector` now accepts an optional field, which holds `undefined` until the first delivery: `@contextSelector({ context, select: (c) => c.count }) count?: number;`. `@contextSelector` fields no longer throw a `TypeError` on a target that does not match their context, such as a legacy static field; the types already reject such a field. The method form still checks its target.
+**@ecopages/radiant-ui**
 
-Radiant UI components declare their `@query` fields with `| null` and handle a missing element. Runtime behaviour is otherwise unchanged.
+Components declare their `@query` fields with `| null` and guard the places that used them. Behaviour with complete markup is unchanged.

@@ -2,6 +2,13 @@
 '@ecopages/radiant': patch
 ---
 
-Legacy `@query` (`experimentalDecorators: true`) no longer caches its result by default, matching standard decorators, `createQuery` and the docs: a field without `cache` re-runs the lookup on every read and returns the live node. Before, a legacy field kept returning the first element it found, even after a re-render replaced it.
+Legacy `@query` (`experimentalDecorators: true`) no longer caches its result by default, matching standard decorators, `createQuery` and the docs: a field without `cache` runs the lookup on every read and returns the live node. A legacy field used to keep returning the first element it found, even after a re-render replaced it.
 
-If a legacy-mode component relied on that accidental caching, pass `cache: true` to keep it: `@query({ ref: 'status', cache: true }) status`.
+A legacy-mode component that relied on the cached node passes `cache: true`, which keeps the first element found and never refreshes it:
+
+```ts
+// before: cached without asking
+@query({ ref: 'status' }) status!: HTMLElement | null;
+// after
+@query({ ref: 'status', cache: true }) status!: HTMLElement | null;
+```
