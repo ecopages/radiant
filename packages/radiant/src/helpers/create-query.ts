@@ -2,6 +2,13 @@ import { resolveHostElement } from './resolve-host-element';
 
 type BaseQueryConfig = {
 	all?: boolean;
+	/**
+	 * Keeps the first result instead of querying on every read. Off by default, in both decorator modes.
+	 *
+	 * @remarks
+	 * The result is never refreshed: the lookup repeats only while it finds nothing, so a re-render that
+	 * replaces the node leaves the cached one stale.
+	 */
 	cache?: boolean;
 };
 
@@ -34,6 +41,10 @@ export function resolveQueryHost(target: QueryHostTarget): Element {
  * With `all: true` the value is an array; otherwise it is the first match or `null`.
  * @param target The element host or controller to query within.
  * @param options {@link QueryConfig} The query configuration.
+ *
+ * @remarks
+ * The type argument is the element type, and `all` picks the value type, so it must be a literal: with a
+ * `boolean` variable the value is `Element[] | Element | null` and there is no type argument.
  */
 export function createQuery<T extends Element = Element>(
 	target: QueryHostTarget,

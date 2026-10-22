@@ -49,8 +49,9 @@ type ContextSelectorDecorator<Selected> = {
  *
  * @remarks
  * `Selected` comes from `select`, or is the context's value without it. The returned decorator takes it
- * through `NoInfer`, so a field without `select` cannot choose `Selected` for itself: the field has to be
- * able to hold the selected value, or it is rejected.
+ * through `NoInfer`, so a field without `select` cannot choose `Selected` for itself: under standard
+ * decorators the field has to be able to hold the selected value, or it is rejected. It can be optional,
+ * which holds `undefined` until the first delivery, or wider than the selection.
  */
 export function contextSelector<T extends Context<unknown, unknown>, Selected = ContextType<T>>(
 	options: ContextSelectorOptions<T, Selected>,

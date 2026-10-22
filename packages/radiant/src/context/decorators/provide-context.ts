@@ -25,9 +25,12 @@ export type ProvideContextOptions<T extends UnknownContext> = {
 };
 
 /**
- * A decorator to provide a context to the target element.
+ * Creates a `ContextProvider` for the decorated field and makes it available to descendant consumers.
  * @param options {@link ProvideContextOptions}
- * @returns
+ *
+ * @remarks
+ * The decorator always installs a provider, so under standard decorators the field has to be
+ * `ContextProvider<T>` of the same context and cannot be optional.
  */
 export function provideContext<T extends UnknownContext>(
 	options: ProvideContextOptions<T>,

@@ -13,7 +13,9 @@ export type { QuerySlotConfig };
  * omitted, or from the named slot when `name` is provided. Results are cached
  * by default and automatically invalidated when slot projection changes.
  *
- * @param options Slot query options.
+ * The type argument is the element type. Under standard decorators the field
+ * is `T | null`, or `T[]` with `all: true`, and a field of another type is
+ * rejected.
  *
  * @remarks
  * A value decorator, not a bounded one, like `@query`: a single-element query returns `null` when

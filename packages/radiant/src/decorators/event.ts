@@ -11,8 +11,9 @@ import { boundedFieldDecorator, type BoundedFieldDecorator } from './bridge';
  * @see {@link EventEmitter} for more details about how the EventEmitter works.
  *
  * @remarks
- * The bound is `EventEmitter<never>`: `never` is assignable to every detail type, so a field of any
- * `EventEmitter<T>` satisfies it.
+ * Under standard decorators the field has to be an `EventEmitter<T>` and cannot be optional, because
+ * the decorator always installs one. The bound is `EventEmitter<never>`: `never` is assignable to every
+ * detail type, so a field of any `EventEmitter<T>` satisfies it.
  */
 export function event(eventConfig: EventEmitterConfig): BoundedFieldDecorator<RadiantElement, EventEmitter<never>> {
 	return boundedFieldDecorator(standardEvent(eventConfig), legacyEvent(eventConfig));

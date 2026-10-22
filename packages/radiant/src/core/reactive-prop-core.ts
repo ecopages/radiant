@@ -41,15 +41,17 @@ export type ReactivePropertyOptions<T, C extends AttributeTypeConstant = Attribu
 	 * Parses the attribute and serializes reflected values.
 	 *
 	 * @remarks
-	 * `@prop` checks the field against it: `type: Number` needs a `number` field,
-	 * `null` and `undefined` allowed, and a field of several parsed types, such as
-	 * `string | number`, fits no constant, and neither does a field typed by a
-	 * type parameter of a generic host. Standard decorators check the declared
-	 * field; legacy decorators check only an explicit generic. A `transform.fromAttribute`
-	 * parser owns the value type instead, and then `type` is not checked. The
-	 * parser must be part of the option's type, so pass it inline or with
-	 * `satisfies`: a value annotated as `PropTransform<T>` has it optional. The runtime
-	 * checks `defaultValue` against `type` only without a parser, and accepts `null`.
+	 * Under standard decorators the constant has to fit the declared field: `String` a `string` field,
+	 * `Number` a `number`, `Boolean` a `boolean`, `Array` an array (readonly too) and `Object` an object
+	 * that is not an array, with `null` and `undefined` allowed. A field of several parsed types, such as
+	 * `string | number`, fits no constant, and neither does a field typed by a type parameter of the host
+	 * class, whose type cannot be resolved. Legacy decorators never see the field, so they check `type`
+	 * only against an explicit generic.
+	 *
+	 * A `transform.fromAttribute` parser owns the value type instead, and `type` is then not checked. The
+	 * parser has to be part of the option's type, so pass it inline or with `satisfies`: a value annotated
+	 * as `PropTransform<T>` has it optional. The runtime checks `defaultValue` against `type` only without
+	 * a parser, and always accepts `null`.
 	 */
 	type: C;
 	reflect?: boolean;
