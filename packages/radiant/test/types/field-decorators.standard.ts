@@ -47,6 +47,26 @@ export class StandardElementFields extends RadiantElement {
 	@bindTo([{ attr: 'data-mode' }, { attr: 'title', map: (v) => v.toUpperCase() }]) @state b2: Mode = 'a';
 	// @ts-expect-error map receives the field type, a string
 	@bindTo({ attr: 'data-n', map: (v) => v.toFixed() }) @state b3 = '';
+	@bindTo({ attr: 'data-n', map: (v) => v.toFixed() }) @signal({ initial: 0 }) b4!: WritableSignal<number>;
+	@bindTo([{ attr: 'data-mode' }, { attr: 'title', map: (v) => v.toUpperCase() }])
+	@signal<Mode>({ initial: 'a' })
+	b5!: WritableSignal<Mode>;
+	// @ts-expect-error map receives the signal's value, a string
+	@bindTo({ attr: 'data-n', map: (v) => v.toFixed() }) @signal({ initial: '' }) b6!: WritableSignal<string>;
+	// @ts-expect-error map receives the field type, a number
+	@bindTo({ attr: 'data-n', map: (v: string) => v }) @state b7 = 0;
+	// @ts-expect-error map receives the signal's value, not a string
+	@bindTo({ attr: 'data-n', map: (v: string) => v }) @signal({ initial: 0 }) b8!: WritableSignal<number>;
+	// @ts-expect-error map receives the signal's value, not the signal
+	@bindTo({ attr: 'data-n', map: (v: WritableSignal<number>) => v.get() })
+	@signal({ initial: 0 })
+	b9!: WritableSignal<number>;
+	@bindTo({ attr: 'data-n', map: (v) => v.toFixed() }) @prop({ type: Number, defaultValue: 0 }) b10: number;
+	@bindTo({ attr: 'data-n', map: (v) => v.toFixed() }) @attr({ type: Number, defaultValue: 0 }) b11: number;
+	@bindTo({ attr: 'data-n', map: (v) => v?.toFixed() }) @state b12?: number;
+	@bindTo({ attr: 'data-n', map: (v) => v?.toFixed() })
+	@signal<number | undefined>({ initial: 0 })
+	b13!: WritableSignal<number | undefined>;
 }
 
 export class StandardControllerFields extends RadiantController {
@@ -75,4 +95,23 @@ export class StandardControllerFields extends RadiantController {
 	@bindTo([{ attr: 'data-mode' }, { attr: 'title', map: (v) => v.toUpperCase() }]) @state b2: Mode = 'a';
 	// @ts-expect-error map receives the field type, a string
 	@bindTo({ attr: 'data-n', map: (v) => v.toFixed() }) @state b3 = '';
+	@bindTo({ attr: 'data-n', map: (v) => v.toFixed() }) @signal({ initial: 0 }) b4!: WritableSignal<number>;
+	@bindTo([{ attr: 'data-mode' }, { attr: 'title', map: (v) => v.toUpperCase() }])
+	@signal<Mode>({ initial: 'a' })
+	b5!: WritableSignal<Mode>;
+	// @ts-expect-error map receives the signal's value, a string
+	@bindTo({ attr: 'data-n', map: (v) => v.toFixed() }) @signal({ initial: '' }) b6!: WritableSignal<string>;
+	// @ts-expect-error map receives the field type, a number
+	@bindTo({ attr: 'data-n', map: (v: string) => v }) @state b7 = 0;
+	// @ts-expect-error map receives the signal's value, not a string
+	@bindTo({ attr: 'data-n', map: (v: string) => v }) @signal({ initial: 0 }) b8!: WritableSignal<number>;
+	// @ts-expect-error map receives the signal's value, not the signal
+	@bindTo({ attr: 'data-n', map: (v: WritableSignal<number>) => v.get() })
+	@signal({ initial: 0 })
+	b9!: WritableSignal<number>;
+}
+
+export class StandardBindToGenericHost<V extends number> extends RadiantElement {
+	@bindTo({ attr: 'data-n', map: (v) => v.toFixed() }) @state g1!: V;
+	@bindTo({ attr: 'data-n', map: (v) => v.toFixed() }) @signal<V>({ source: undefined }) g2!: WritableSignal<V>;
 }

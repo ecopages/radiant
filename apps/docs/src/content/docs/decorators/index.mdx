@@ -74,7 +74,7 @@ A field that disagrees with an option is rejected on the decorator. TypeScript m
 
 - [@state](/docs/decorators/state): any type. It is the type [@bindTo](/docs/decorators/bind-to) passes to `map`.
 - [@signal](/docs/decorators/signal): `WritableSignal<T>`, with `initial` a `T` and `source` a `WritableSignal<T>`, or a function returning one.
-- [@bindTo](/docs/decorators/bind-to): `map` receives the field type, so `@bindTo({ attr: 'data-n', map: (v) => v.toFixed() }) @state n = 0` types `v` as `number`. On a `@signal` field the types give `map` the `WritableSignal<T>` while the runtime passes the value: annotate the parameter `unknown` there.
+- [@bindTo](/docs/decorators/bind-to): `map` receives the field type, so `@bindTo({ attr: 'data-n', map: (v) => v.toFixed() }) @state n = 0` types `v` as `number`. On a `@signal` field declared `WritableSignal<number>` it also types `v` as `number`, the value the runtime passes.
 - [@query](/docs/decorators/query) and [@querySlot](/docs/decorators/query-slot): `T | null` for a single element, `T[]` with `all: true`. `all` must be a literal `true` or `false`.
 - [@consumeContext](/docs/context/consume-context): `ContextProvider<typeof context>`, which may be optional but not wider.
 - [@provideContext](/docs/context/provide-context): `ContextProvider<typeof context>`. The provider is always installed, so the field cannot be optional or wider.

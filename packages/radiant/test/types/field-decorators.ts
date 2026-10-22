@@ -61,6 +61,9 @@ export class ValidElementFields extends RadiantElement {
 	@bindTo({ attr: 'aria-label' }) @state b1 = '';
 	@bindTo({ attr: 'data-n', map: (v) => String(v) }) @state b2 = 0;
 	@bindTo([{ attr: 'data-mode' }, { attr: 'title', map: (v) => String(v) }]) @state b3: Mode = 'a';
+	@bindTo<WritableSignal<number>>({ attr: 'data-n', map: (v) => v.toFixed() })
+	@signal<number>({ initial: 0 })
+	b4!: WritableSignal<number>;
 }
 
 export class ValidControllerFields extends RadiantController {
@@ -103,4 +106,7 @@ export class ValidControllerFields extends RadiantController {
 	@bindTo({ attr: 'aria-label' }) @state b1 = '';
 	@bindTo({ attr: 'data-n', map: (v) => String(v) }) @state b2 = 0;
 	@bindTo([{ attr: 'data-mode' }, { attr: 'title', map: (v) => String(v) }]) @state b3: Mode = 'a';
+	@bindTo<WritableSignal<number>>({ attr: 'data-n', map: (v) => v.toFixed() })
+	@signal<number>({ initial: 0 })
+	b4!: WritableSignal<number>;
 }
