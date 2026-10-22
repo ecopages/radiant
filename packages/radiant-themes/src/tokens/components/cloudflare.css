@@ -15,6 +15,9 @@
 	--border-radius-3xl: 1.25rem;
 	--radius-control: var(--border-radius-lg);
 	--radius-container: var(--border-radius-xl);
+	--size-control-sm: 1.625rem;
+	--size-control-md: 2.25rem;
+	--size-control-lg: 2.5rem;
 }
 
 @layer components {
@@ -101,14 +104,27 @@
 	 * @remarks Kumo does not combine a border with a drop shadow. Floating surfaces use a 1px edge ring plus a soft drop.
 	 */
 	:root .rui-dialog__surface,
-	:root .rui-popover-host,
+	:root .rui-popover:where(:not(.rui-popover--listbox)),
 	:root .rui-hover-card__content,
 	:root .rui-select__listbox,
+	:root .rui-combobox__listbox,
+	:root .rui-menu-button__menu,
+	:root .rui-menubar__menu,
 	:root .rui-calendar {
 		@apply rounded-container border-0 bg-surface;
 		box-shadow:
 			0 0 0 1px var(--color-cloudflare-shadow-edge),
 			0 4px 12px var(--color-cloudflare-shadow-drop);
+	}
+
+	:root .rui-menu-button__menu,
+	:root .rui-menubar__menu {
+		--rui-menu-item-hover: var(--color-cloudflare-tint);
+	}
+
+	:root .rui-select__listbox .rui-listbox,
+	:root .rui-combobox__listbox .rui-listbox {
+		background-color: transparent;
 	}
 
 	:root rui-tabs[variant='boxed'] {
@@ -132,18 +148,52 @@
 		border-bottom-color: var(--primary);
 	}
 
+	/**
+	 * @remarks Kumo highlights chosen options and active navigation with the neutral tint layer and full-strength text;
+	 * orange stays reserved for the primary action.
+	 */
 	:root .rui-listbox__option[aria-selected='true'],
+	:root .rui-listbox__option[aria-selected='true']:focus-visible,
 	:root .rui-menu-button__item[aria-checked='true'],
-	:root .rui-sidebar__menu-button--active {
-		@apply bg-primary-container text-on-primary-container;
+	:root .rui-sidebar__menu-button[aria-current='page'],
+	:root .rui-sidebar__menu-button--active,
+	:root .rui-tree__node[aria-selected='true'],
+	:root .rui-treegrid__cell[aria-selected='true'] {
+		background-color: var(--color-cloudflare-tint);
+		background-image: none;
+		color: var(--color-cloudflare-fg);
+	}
+
+	:root .rui-listbox__option[aria-selected='true'][data-active]:not([aria-disabled='true']) {
+		--tw-ring-color: var(--rui-control-border-color);
+	}
+
+	:root .rui-listbox__option[aria-selected='true'] .rui-listbox__option-indicator {
+		color: var(--color-cloudflare-fg);
+	}
+
+	:root .rui-breadcrumb__link {
+		color: var(--link);
+	}
+
+	/**
+	 * @remarks The `#cc3a00` primary reads below 4.5:1 as text on the dark canvas, so orange text in dark mode uses the
+	 * brighter orange.
+	 */
+	:root.dark .rui-heading__eyebrow,
+	:root.dark .rui-toc__link--active,
+	:root.dark .rui-calendar__today,
+	:root.dark .rui-feed__rating-stars {
+		color: var(--color-cloudflare-orange-bright);
 	}
 
 	:root .rui-alert {
 		@apply rounded-control shadow-none;
 	}
 
-	:root .rui-toast__content {
-		@apply rounded-control border border-border bg-surface text-on-surface shadow-none;
+	:root .rui-toast {
+		@apply rounded-control shadow-none;
+		background-image: none;
 	}
 
 	:root .rui-separator,
