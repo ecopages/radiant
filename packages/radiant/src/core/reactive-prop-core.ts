@@ -43,7 +43,7 @@ export type ReactivePropertyOptions<T, C extends AttributeTypeConstant = Attribu
 	 * @remarks
 	 * Under standard decorators the constant has to fit the declared field: `String` a `string` field,
 	 * `Number` a `number`, `Boolean` a `boolean`, `Array` an array (readonly too) and `Object` an object
-	 * that is not an array, with `null` and `undefined` allowed. A field of several parsed types, such as
+	 * that is not an array, which the runtime rejects for it, with `null` and `undefined` allowed. A field of several parsed types, such as
 	 * `string | number`, fits no constant, and neither does a field typed by a type parameter of the host
 	 * class, whose type cannot be resolved. Legacy decorators never see the field, so they check `type`
 	 * only against an explicit generic.

@@ -35,7 +35,7 @@ const csv = { fromAttribute: (v: string | null) => (v ? v.split(',') : []) } sat
 @prop({ type: String, transform: csv }) tags!: string[];
 ```
 
-**Breaking:** a field typed by a type parameter of the host class, such as `value: V` on `class Select<V extends string>`, fits no constant because TypeScript cannot resolve its type there. On `@attr`, drop `type: String`, which reads the attribute the same way. On `@prop`, pass a parser that keeps the raw value:
+**Breaking:** a field typed by a type parameter of the host class, such as `value: V` on `class Select<V extends string>`, fits no constant because TypeScript cannot resolve its type there. On `@attr`, drop `type: String`, which reads a present attribute the same way; an absent one reads `undefined`, or the `defaultValue`, instead of `''`. On `@prop`, pass a parser that keeps the raw value:
 
 ```ts
 // before: compiled

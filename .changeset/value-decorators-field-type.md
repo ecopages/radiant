@@ -10,7 +10,7 @@
 @signal({ initial: [] }) items!: WritableSignal<string[]>;
 ```
 
-The `type` constant is checked against the field as well, as the note on the `type` constant describes.
+The `type` constant is checked against the field as well, as described for the `type` constant on `@prop` and `@attr`.
 
 **Breaking:** a field whose type disagrees with a value-carrying option compiled before and held a value of another type at runtime. Make the field type match the value the decorator writes:
 
@@ -21,7 +21,7 @@ The `type` constant is checked against the field as well, as the note on the `ty
 @prop({ type: Number, defaultValue: 0 }) count!: number;
 ```
 
-**Breaking, legacy decorators (`experimentalDecorators`):** legacy decorators never receive the field type, so nothing is checked against the field, and the value type is no longer inferred from the options: it is `unknown` unless passed explicitly. A callback that uses the value needs the type:
+**Breaking, legacy decorators (`experimentalDecorators`):** legacy decorators never receive the field type, so nothing is checked against the field, and the value type of `@prop`, `@signal` and `@attr` with `type` or a parser is no longer inferred from the options: it is `unknown` unless passed explicitly. A callback that uses the value needs the type:
 
 ```ts
 // before: compiled, `v` was inferred as number from defaultValue

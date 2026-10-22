@@ -15,15 +15,13 @@
 @querySlot({ all: true }) items!: HTMLElement[];
 ```
 
-`all` has to be a literal `true` or `false`, or left out. `createQuerySlot`'s `.value` is `T[]` with `all: true` and `T | null` otherwise. With a `boolean` variable for `all` it is `Element[] | Element | null`, and `createQuerySlot` then takes no type argument. The type argument used to be the whole result:
+`all` has to be a literal `true` or `false`, or left out. `createQuerySlot`'s `.value` is `T[]` with `all: true` and `T | null` otherwise. With a `boolean` variable for `all` it is `Element[] | Element | null`, and `createQuerySlot` then takes no type argument. The type argument used to be the whole result, and the value was typed `| null` even with `all: true`:
 
 ```ts
-// before
+// before: value is HTMLLIElement[] | null
 createQuerySlot<HTMLLIElement[]>(this, { all: true });
-createQuerySlot<HTMLParagraphElement>(this, {}); // typed as the element, held null while empty
-// after
+// after: value is HTMLLIElement[]
 createQuerySlot<HTMLLIElement>(this, { all: true });
-createQuerySlot<HTMLParagraphElement>(this, {}); // value: HTMLParagraphElement | null
 ```
 
 Under standard decorators, `@querySlot` also requires a `RadiantElement` host instead of accepting any class. Runtime behaviour is unchanged.

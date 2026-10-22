@@ -45,8 +45,6 @@ type ContextSelectorDecorator<Selected> = {
  * **Method form (deprecated — use `@onContextUpdate`):** The method is called
  * with the new value on each change.
  *
- * @param options Context subscription configuration.
- *
  * @remarks
  * `Selected` comes from `select`, or is the context's value without it. The returned decorator takes it
  * through `NoInfer`, so a field without `select` cannot choose `Selected` for itself: under standard

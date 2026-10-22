@@ -8,7 +8,7 @@ export type { QueryConfig };
 /**
  * A decorator to query by CSS selector or data-ref attribute.
  * By default it queries for the first element that matches the selector, but it can be configured to query for all elements.
- * It caches the result only when `cache` is enabled, in both decorator modes.
+ * It caches the result only when `cache` is enabled.
  *
  * The type argument is the element type. Under standard decorators the field is `T | null`, or `T[]` with
  * `all: true`, and a field of another type is rejected.

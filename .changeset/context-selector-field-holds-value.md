@@ -11,7 +11,7 @@ const ctx = createContext<{ count: number }>('counter');
 
 // before: compiled
 @contextSelector({ context: ctx }) whole!: { count: 1 };
-@consumeContext(ctx) provider!: SubclassOfContextProvider;
+@consumeContext(ctx) provider!: ProviderSubclassWithMembers;
 @consumeContext(ctxA) other!: ContextProvider<typeof ctxB>;
 @provideContext({ context: ctxA }) provided!: ContextProvider<typeof ctxB>;
 @provideContext({ context: ctx }) maybe?: ContextProvider<typeof ctx>;
@@ -31,4 +31,4 @@ With `select`, `@contextSelector` also accepts an optional field, which holds `u
 @contextSelector({ context: ctx, select: (c) => c.count }) count?: number;
 ```
 
-`@contextSelector` on a field no longer throws a `TypeError` for a target that does not match its context, a call the types reject; the method form still checks its target. Legacy decorators never see the field type and compile as before.
+`@contextSelector` on a field no longer throws a `TypeError` for a target that does not match its context, a call that bypasses the types; the method form still checks its target. Legacy decorators never see the field type and compile as before.

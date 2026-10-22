@@ -18,7 +18,6 @@ type QuerySlotResult<T> = {
  * Functional equivalent of the `@querySlot` decorator for vanilla JS usage.
  * With `all: true` the value is an array; otherwise it is the first assigned element or `null`.
  * @param host The host element to query slots within.
- * @param options {@link QuerySlotConfig} The slot query configuration.
  *
  * @remarks
  * The type argument and `all` work as on `createQuery`.

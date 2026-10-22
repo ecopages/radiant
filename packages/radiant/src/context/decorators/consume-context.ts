@@ -11,8 +11,6 @@ import { boundedFieldDecorator, type BoundedFieldDecorator } from '../../decorat
  * During SSR the field can be resolved from the active SSR context stack; on
  * the client it falls back to the DOM event-based context channel.
  *
- * @param context Context token to consume from ancestor providers.
- *
  * @remarks
  * Under standard decorators the field has to be `ContextProvider<C>`, with or without `undefined`, which it
  * holds until a provider connects. A narrower type, such as a provider subclass, cannot hold the provider and

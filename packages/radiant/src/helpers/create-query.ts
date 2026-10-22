@@ -40,7 +40,6 @@ export function resolveQueryHost(target: QueryHostTarget): Element {
  * Functional equivalent of the `@query` decorator for vanilla JS usage.
  * With `all: true` the value is an array; otherwise it is the first match or `null`.
  * @param target The element host or controller to query within.
- * @param options {@link QueryConfig} The query configuration.
  *
  * @remarks
  * The type argument is the element type, and `all` picks the value type, so it must be a literal: with a

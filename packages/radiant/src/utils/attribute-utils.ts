@@ -9,7 +9,7 @@ export type AttributeTypeConstant = typeof Array | typeof Boolean | typeof Numbe
  * `ReactivePropertyOptions.type` states the rule as users meet it. A `T` of `unknown` means the field type is
  * not known, as under legacy decorators, so every constant fits.
  *
- * `T` is compared whole, because `NoInfer` keeps conditional types from distributing over a union. A union
+ * `T` is compared whole, wrapped in a tuple so the conditional types do not distribute over a union. A union
  * therefore fits no single constant, and `NonArrayObject` tells arrays apart by their `concat` method instead
  * of by splitting a union with an array member.
  */
