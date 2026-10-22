@@ -15,10 +15,12 @@ concurrency:
 permissions:
     contents: read
 
+# Pin 24.04 while ubuntu-latest rolls to 26.04 (Oct–Nov 2026). Playwright
+# `install --with-deps` hung on apt on a 26.04 runner.
 jobs:
     typecheck:
         name: Typecheck
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-24.04
         steps:
             - name: Checkout
               uses: actions/checkout@v5
@@ -43,7 +45,7 @@ jobs:
 
     radiant-server:
         name: Radiant server tests
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-24.04
         steps:
             - name: Checkout
               uses: actions/checkout@v5
@@ -71,7 +73,7 @@ jobs:
 
     docs-e2e:
         name: Docs e2e
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-24.04
         steps:
             - name: Checkout
               uses: actions/checkout@v5
@@ -101,7 +103,7 @@ jobs:
 
     radiant-ui-storybook:
         name: radiant-ui Storybook tests
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-24.04
         steps:
             - name: Checkout
               uses: actions/checkout@v5
@@ -141,7 +143,7 @@ jobs:
 
     radiant-ui-ssr-smoke:
         name: radiant-ui Storybook SSR smoke
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-24.04
         steps:
             - name: Checkout
               uses: actions/checkout@v5

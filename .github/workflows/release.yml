@@ -19,7 +19,8 @@ jobs:
             id-token: write
             pull-requests: write
 
-        runs-on: ubuntu-latest
+        # Pin 24.04 while ubuntu-latest rolls to 26.04 (Oct–Nov 2026).
+        runs-on: ubuntu-24.04
         steps:
             - name: Checkout Repo
               uses: actions/checkout@v5
