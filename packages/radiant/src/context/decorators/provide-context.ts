@@ -31,6 +31,6 @@ export type ProvideContextOptions<T extends UnknownContext> = {
  */
 export function provideContext<T extends UnknownContext>(
 	options: ProvideContextOptions<T>,
-): BoundedFieldDecorator<ContextHostLike, ContextProvider<T>> {
+): BoundedFieldDecorator<ContextHostLike, ContextProvider<T>, ContextProvider<T>> {
 	return boundedFieldDecorator(standardProvideContext(options), legacyProvideContext(options));
 }

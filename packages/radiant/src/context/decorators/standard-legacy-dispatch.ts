@@ -13,7 +13,7 @@ export type ContextUpdateMethod<Selected> = (value: Selected) => unknown;
 export function dispatchContextSelectorDecorator<Selected>(
 	standardField: (
 		protoOrTarget: undefined,
-		nameOrContext: ClassFieldDecoratorContext<ContextHostLike, Selected | undefined>,
+		nameOrContext: ClassFieldDecoratorContext<ContextHostLike, unknown>,
 	) => void,
 	standardMethod: (
 		protoOrTarget: Method,
@@ -28,7 +28,7 @@ export function dispatchContextSelectorDecorator<Selected>(
 	protoOrTarget: ContextHostLike | Method | undefined,
 	nameOrContext:
 		| string
-		| ClassFieldDecoratorContext<ContextHostLike, Selected | undefined>
+		| ClassFieldDecoratorContext<ContextHostLike, unknown>
 		| ClassMethodDecoratorContext<ContextHostLike, ContextUpdateMethod<Selected>>,
 	descriptor?: TypedPropertyDescriptor<ContextUpdateMethod<Selected>>,
 ): TypedPropertyDescriptor<ContextUpdateMethod<Selected>> | void {

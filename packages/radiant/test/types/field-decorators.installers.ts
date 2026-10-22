@@ -51,6 +51,15 @@ export class ValidElementInstallers extends RadiantElement {
 	@contextSelector({ context: ctxA, select: (c) => c.count }) x1?: number;
 	@contextSelector({ context: ctxA, select: (c) => c.count }) x2 = 0;
 	@contextSelector({ context: ctxA }) x3!: { count: number };
+	@contextSelector({ context: ctxA, select: (c) => c.count }) x4!: number;
+	@contextSelector({ context: ctxA, select: (c) => c.count }) x5?: number | string;
+	@contextSelector({ context: ctxA, select: (c) => c.count }) x6?: unknown;
+	@contextSelector({ context: ctxA }) x7?: unknown;
+}
+
+export class ValidGenericSelector<T extends number> extends RadiantElement {
+	@contextSelector({ context: ctxA, select: (c) => c.count as T }) g1?: T;
+	@contextSelector({ context: ctxA, select: (c) => c.count as T }) g2!: T | string;
 }
 
 export class ValidControllerInstallers extends RadiantController {

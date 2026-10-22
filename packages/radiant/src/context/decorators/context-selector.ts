@@ -33,7 +33,7 @@ type ContextSelectorDecorator<Selected> = {
 		nameOrContext: string,
 		descriptor: TypedPropertyDescriptor<ContextUpdateMethod<Selected>>,
 	): TypedPropertyDescriptor<ContextUpdateMethod<Selected>> | void;
-} & BoundedFieldDecorator<ContextHostLike, Selected | undefined>;
+} & BoundedFieldDecorator<ContextHostLike, unknown, Selected>;
 
 /**
  * Subscribes a field or method to the current value, or a selected slice, of a context.
@@ -46,15 +46,20 @@ type ContextSelectorDecorator<Selected> = {
  * with the new value on each change.
  *
  * @param options Context subscription configuration.
+ *
+ * @remarks
+ * `Selected` comes from `select`, or is the context's value without it. The returned decorator takes it
+ * through `NoInfer`, so a field without `select` cannot choose `Selected` for itself: the field has to be
+ * able to hold the selected value, or it is rejected.
  */
 export function contextSelector<T extends Context<unknown, unknown>, Selected = ContextType<T>>(
 	options: ContextSelectorOptions<T, Selected>,
-): ContextSelectorDecorator<Selected> {
+): ContextSelectorDecorator<NoInfer<Selected>> {
 	return (
 		protoOrTarget: ContextHostLike | Method | undefined,
 		nameOrContext:
 			| string
-			| ClassFieldDecoratorContext<ContextHostLike, Selected | undefined>
+			| ClassFieldDecoratorContext<ContextHostLike, unknown>
 			| ClassMethodDecoratorContext<ContextHostLike, ContextUpdateMethod<Selected>>,
 		descriptor?: TypedPropertyDescriptor<ContextUpdateMethod<Selected>>,
 	) =>

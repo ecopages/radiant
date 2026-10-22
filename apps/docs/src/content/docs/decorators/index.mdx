@@ -76,7 +76,7 @@ A field that disagrees with an option is rejected:
 - [@consumeContext](/docs/context/consume-context): `ContextProvider<typeof context>`, which may be optional.
 - [@provideContext](/docs/context/provide-context): `ContextProvider<typeof context>`. The provider is always installed, so the field cannot be optional.
 - [@event](/docs/decorators/event): `EventEmitter<Detail>`. The emitter is always installed, so the field cannot be optional.
-- [@contextSelector](/docs/context/context-selector): the value `select` returns, or the whole context without `select`. The field may be optional, and a subtype of that value also compiles.
+- [@contextSelector](/docs/context/context-selector): the value `select` returns, or the whole context without `select`. The field may be optional or wider, such as `unknown`, but not narrower: it has to hold what the decorator writes.
 
 ### @prop And @attr
 

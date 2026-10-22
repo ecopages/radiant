@@ -14,7 +14,7 @@ export function contextSelectorField<T extends Context<unknown, unknown>, Select
 ) {
 	const { context, select, subscribe = true } = options;
 
-	return function <Host extends ContextHostLike, V extends Selected | undefined>(
+	return function <Host extends ContextHostLike, V>(
 		_: undefined,
 		fieldContext: ClassFieldDecoratorContext<Host, V>,
 	): void {

@@ -9,7 +9,7 @@
  */
 import { RadiantController } from '../../src/core/radiant-controller';
 import { RadiantElement } from '../../src/core/radiant-element';
-import type { ContextProvider } from '../../src/context/context-provider';
+import { ContextProvider } from '../../src/context/context-provider';
 import { createContext } from '../../src/context/create-context';
 import { consumeContext } from '../../src/context/decorators/consume-context';
 import { contextSelector } from '../../src/context/decorators/context-selector';
@@ -56,6 +56,31 @@ export class StandardElementInstallers extends RadiantElement {
 
 	// @ts-expect-error select returns a number
 	@contextSelector({ context: ctxA, select: (c) => c.count }) x1!: string;
+
+	// @ts-expect-error the field must hold any number, not only 1
+	@contextSelector({ context: ctxA, select: (c) => c.count }) x2?: 1;
+	// @ts-expect-error the field must hold any number
+	@contextSelector({ context: ctxA, select: (c) => c.count }) x3?: never;
+	// @ts-expect-error the field must hold the whole context value, not only { count: 1 }
+	@contextSelector({ context: ctxA }) x4!: { count: 1 };
+	// @ts-expect-error a field of another type cannot hold the whole context value
+	@contextSelector({ context: ctxA }) x5!: string;
+	// @ts-expect-error a subclass of the provider is not what the decorator installs
+	@consumeContext(ctxA) c2!: SubProvider;
+	// @ts-expect-error a subclass of the provider is not what the decorator installs
+	@provideContext({ context: ctxA }) p2!: SubProvider;
+}
+
+class SubProvider extends ContextProvider<typeof ctxA> {
+	extra = 1;
+}
+
+/** A field typed by the host's own type parameter holds what the selection returns. */
+export class StandardGenericSelector<T extends number> extends RadiantElement {
+	@contextSelector({ context: ctxA, select: (c) => c.count as T }) g1?: T;
+	@contextSelector({ context: ctxA, select: (c) => c.count as T }) g2!: T | string;
+	// @ts-expect-error T may be narrower than number, so the field cannot hold the selected number
+	@contextSelector({ context: ctxA, select: (c) => c.count }) g3?: T;
 }
 
 export class StandardControllerInstallers extends RadiantController {

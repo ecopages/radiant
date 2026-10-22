@@ -53,26 +53,37 @@ export function fieldDecorator<Host extends object, Value>(
 }
 
 /**
- * A field decorator that installs its own value, so the field may declare any subtype of `Bound`.
+ * A field decorator that installs its own value, so the field may declare any subtype of `Bound`
+ * and must be able to hold `Written`.
  *
  * @remarks
  * Kept apart from {@link ValueFieldDecorator}: a bound (`V extends Bound`) stops TypeScript from
  * inferring a factory's own type parameter from the field, so value decorators need the exact shape.
  * The legacy overload comes first for the same reason as in {@link ValueFieldDecorator}.
+ *
+ * `V extends X` cannot say "V is a supertype of X", and `ClassFieldDecoratorContext` reads `V` through
+ * methods, which TypeScript compares in both directions. The `Written` check is a function-typed
+ * `access.set`, which is compared strictly: the field's setter has to accept a `Written`. The default,
+ * `never`, accepts any field, which is the bound alone.
  */
-export type BoundedFieldDecorator<Host, Bound> = {
+export type BoundedFieldDecorator<Host, Bound, Written = never> = {
 	(protoOrTarget: Host, name: string): void;
-	<THost extends Host, V extends Bound>(target: undefined, context: ClassFieldDecoratorContext<THost, V>): void;
+	<THost extends Host, V extends Bound>(
+		target: undefined,
+		context: ClassFieldDecoratorContext<THost, V> & {
+			readonly access: { readonly set: (object: never, value: Written) => void };
+		},
+	): void;
 };
 
 /** Builds a {@link BoundedFieldDecorator} that dispatches on the shape of its second argument. */
-export function boundedFieldDecorator<Host extends object, Bound>(
+export function boundedFieldDecorator<Host extends object, Bound, Written = never>(
 	standard: <THost extends Host, V extends Bound>(
 		target: undefined,
 		context: ClassFieldDecoratorContext<THost, V>,
 	) => void,
 	legacy: LegacyFieldFn<Host, void>,
-): BoundedFieldDecorator<Host, Bound> {
+): BoundedFieldDecorator<Host, Bound, Written> {
 	return (protoOrTarget: Host | undefined, nameOrContext: string | ClassFieldDecoratorContext<Host, Bound>) =>
 		fieldDecoratorBridge(standard, legacy, protoOrTarget, nameOrContext);
 }
