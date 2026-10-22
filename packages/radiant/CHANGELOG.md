@@ -1,5 +1,54 @@
 # @ecopages/radiant
 
+## 0.4.0
+
+### Minor Changes
+
+- [#326](https://github.com/ecopages/radiant/pull/326) [`375b200`](https://github.com/ecopages/radiant/commit/375b20007b1a93778e1f907838e6365881420260) Thanks [@andeeplus](https://github.com/andeeplus)! - Add `RadiantElement#isServerRendered`, a supported signal that a host was first connected from markup that hydrate-mode SSR produced. Hydrate-mode SSR now stamps every host it serializes with a `data-radiant-ssr` attribute, which the host reads once at first connect and then removes, as hydration markers are.
+
+    `hasHydrationMarkers` cannot answer this: it only finds markers where a view has bindings, and the JSX children of a custom element carry none. A host that adopts server-rendered content, such as light-DOM children its parent view authored, should check `isServerRendered` instead. The stamp name is exported as `SERVER_RENDERED_HOST_ATTRIBUTE` for integrators that write the host tag around `renderViewToString`. Plain-mode hosts are not stamped. Exact-match assertions on hydrate-mode host tags need `data-radiant-ssr` added.
+
+### Patch Changes
+
+- [#320](https://github.com/ecopages/radiant/pull/320) [`33f9c54`](https://github.com/ecopages/radiant/commit/33f9c549f4bb23c5c6dcd8efc98d4f070a8ce88d) Thanks [@andeeplus](https://github.com/andeeplus)! - Fix two SSR minimal-DOM parsing bugs. Markup-like strings inside `script` and `style` (such as `"<div>"`) no longer open tags and swallow the rest of the parent element, and `textContent` of parsed HTML no longer leaks attribute text after a `>` in an attribute value.
+
+- [#320](https://github.com/ecopages/radiant/pull/320) [`3f137ca`](https://github.com/ecopages/radiant/commit/3f137caf6c7418c4b105c45a23422c5a44f70fcb) Thanks [@andeeplus](https://github.com/andeeplus)! - Harden the SSR minimal DOM serializer. Serializing a tree after a mutation no longer takes time exponential in its depth, parsed text is only written back from its source while that source still means the same thing, and self-closing custom elements nested in parsed markup serialize with an explicit close tag so browsers re-parse the same tree.
+
+- [#320](https://github.com/ecopages/radiant/pull/320) [`dc5b87f`](https://github.com/ecopages/radiant/commit/dc5b87f6f5d4b2275cff0eb2dd9b4904f0321107) Thanks [@andeeplus](https://github.com/andeeplus)! - The SSR minimal DOM now parses conforming HTML the way browsers do:
+
+    - **Character references:** decoded from the full WHATWG table, including legacy references without a semicolon, the attribute exception, and the C1 remap.
+    - **Comments:** they are real comment nodes, and bogus comments and `<!doctype>` follow the spec.
+    - **`textarea` and `title`:** their content is text.
+    - **Newlines:** CRLF becomes LF, and the newline after `<pre>` is dropped on parse and restored on serialize.
+    - **Plain `<`:** a `<` that cannot start a tag is text.
+    - **Duplicate attributes:** the first one wins.
+    - **`insertAdjacentHTML`:** it honors its position argument. `insertBefore` is added.
+
+- [#320](https://github.com/ecopages/radiant/pull/320) [`e5b9ff6`](https://github.com/ecopages/radiant/commit/e5b9ff62ac3ed1eba201d08e8054a12142d045c2) Thanks [@andeeplus](https://github.com/andeeplus)! - The SSR minimal DOM gains the node-traversal and node-editing APIs that component code reads: `prepend`, `before`, `after`, `replaceWith`, `remove`, `firstChild`, `lastChild`, `nextSibling`, `previousSibling`, the `*ElementChild` / `*ElementSibling` accessors, `childElementCount`, `document.createComment` and `document.createElementNS`.
+
+    The DOM-detection probe no longer reads accessors on an object that is not an element. Real engines reject that read with "Illegal invocation", so SSR setup now works when it runs inside a browser.
+
+- [#320](https://github.com/ecopages/radiant/pull/320) [`0121714`](https://github.com/ecopages/radiant/commit/0121714d5e3358e65256c5231cd614bd8ab81c60) Thanks [@andeeplus](https://github.com/andeeplus)! - Slot projection payloads no longer include the data of comment nodes. The payload is turned into markup on the client, and comment data was written into it unescaped.
+
+- [#320](https://github.com/ecopages/radiant/pull/320) [`dad8379`](https://github.com/ecopages/radiant/commit/dad8379fae51087328da8946e6a0c53bdb55f724) Thanks [@andeeplus](https://github.com/andeeplus)! - Server-rendered Radiant hosts now receive their JSX children as light-DOM nodes rather than an HTML string that the minimal DOM parses back. Text and attribute values are never escaped and re-parsed, and `<style>` children keep their CSS (the string path escaped `>` and `&` inside it).
+
+    New in jsx:
+
+    - **`renderServerLightDom(value, ownerDocument)`** is exported from `@ecopages/jsx/server`.
+    - **Text-only element helpers** for `script`, `style`, `textarea` and `title` now live in a DOM-free module that the server and the client share.
+
+- [#320](https://github.com/ecopages/radiant/pull/320) [`4bf5a10`](https://github.com/ecopages/radiant/commit/4bf5a10a96e2c72ffb21714b5442516eb86baf7d) Thanks [@andeeplus](https://github.com/andeeplus)! - Context consumers passed as JSX children of a provider host now resolve that provider during SSR, where they used to render their fallback.
+
+    - **jsx:** `withServerCustomElementRenderHook` takes an `ownsChildren` option. With it, the hook context's `applyChildren()` lets the framework choose when the children serialize; `context.children` holds the raw JSX.
+    - **Radiant:** the bridge uses this to apply a host's children inside its context providers.
+
+    Hooks registered without the option behave as before.
+
+- [#320](https://github.com/ecopages/radiant/pull/320) [`2f53f5b`](https://github.com/ecopages/radiant/commit/2f53f5b1c67ae9ae52092b75fb30bb84acdb0234) Thanks [@andeeplus](https://github.com/andeeplus)! - Fix SSR double-escaping of HTML entities. The minimal DOM now decodes entities in parsed text and attribute values, so `&amp;` inside a custom element no longer renders as `&amp;amp;` and JSON in `data-*` attributes and slot projection payloads survives hydration. Parsed HTML now serializes exactly as written until it is mutated, so entities the decoder does not know (such as `&euro;`) are kept too. `setAttribute` and child insertion on a parsed element no longer drop its children, and `script` / `style` content is never escaped.
+- Updated dependencies [[`c9cc095`](https://github.com/ecopages/radiant/commit/c9cc095366e09d0251684a290d049f68f4c75369), [`dad8379`](https://github.com/ecopages/radiant/commit/dad8379fae51087328da8946e6a0c53bdb55f724), [`4bf5a10`](https://github.com/ecopages/radiant/commit/4bf5a10a96e2c72ffb21714b5442516eb86baf7d), [`6ff24ce`](https://github.com/ecopages/radiant/commit/6ff24cee309429cf2332d8be6e95c9a73ea194d1)]:
+    - @ecopages/jsx@0.4.0
+    - @ecopages/signals@0.4.0
+
 ## 0.3.0
 
 First stable of the light-DOM platform. Custom elements render into authored light DOM, host state is signals-backed, and SSR keeps the JSX server entry off the client.
