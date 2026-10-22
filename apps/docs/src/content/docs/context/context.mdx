@@ -41,7 +41,7 @@ On the client, context flows through the DOM tree using custom events with `bubb
 1. A **provider** listens on its host element for incoming context request events.
 2. A **consumer** dispatches a `ContextRequestEvent` (or `ContextSubscriptionRequestEvent` for reactive bindings) that bubbles up through the DOM.
 3. The nearest ancestor provider whose token matches calls the event callback with itself (or the selected value), then stops propagation.
-4. After a provider mounts, it dispatches a `ContextOnMountEvent` downward so that consumers connected before their provider can re-resolve.
+4. A consumer that finds no provider asks once more in a microtask, so a provider that upgrades right after it still answers.
 
 Because resolution relies on event bubbling, the provider must be a DOM ancestor of the consumer. Sibling or detached elements cannot resolve each other's context.
 

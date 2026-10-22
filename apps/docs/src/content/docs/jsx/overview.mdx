@@ -100,7 +100,7 @@ Most code should use plain JavaScript values for empty output and removal semant
 - `null` and `undefined` remove event handlers by leaving no next listener to attach
 - `undefined` clears property bindings by writing `undefined`
 
-At runtime `null` and `undefined` behave the same here. In TSX the types are stricter: event handlers and the shared global attributes (`class`, `id`, `title`, `lang` and the like) accept `undefined` but not `null`, so write `undefined` for those.
+For attributes and event handlers `null` and `undefined` behave the same at runtime. In TSX the types are stricter: event handlers and the shared global attributes (`class`, `id`, `title`, `lang` and the like) accept `undefined` but not `null`, so write `undefined` for those.
 
 ```tsx
 /** @jsxImportSource @ecopages/jsx */

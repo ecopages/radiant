@@ -60,7 +60,7 @@ Write the type yourself for:
 
 Declare a decorated field as a plain field. TypeScript rejects `declare` on it under standard decorators (TS1206), and an `accessor` field is not a target of these decorators.
 
-A field that disagrees with an option is rejected:
+A field that disagrees with an option is rejected on the decorator. TypeScript may report it only as "Unable to resolve signature of property decorator", or alongside an error that names the option:
 
 ```ts
 @prop({ type: Number, defaultValue: 0 }) count: string = ''; // defaultValue is a number
@@ -74,11 +74,12 @@ A field that disagrees with an option is rejected:
 
 - [@state](/docs/decorators/state): any type. It is the type [@bindTo](/docs/decorators/bind-to) passes to `map`.
 - [@signal](/docs/decorators/signal): `WritableSignal<T>`, with `initial` a `T` and `source` a `WritableSignal<T>`, or a function returning one.
-- [@bindTo](/docs/decorators/bind-to): `map` receives the field type, so `@bindTo({ attr: 'data-n', map: (v) => v.toFixed() }) @state n = 0` types `v` as `number`.
+- [@bindTo](/docs/decorators/bind-to): `map` receives the field type, so `@bindTo({ attr: 'data-n', map: (v) => v.toFixed() }) @state n = 0` types `v` as `number`. On a `@signal` field the types give `map` the `WritableSignal<T>` while the runtime passes the value: annotate the parameter `unknown` there.
 - [@query](/docs/decorators/query) and [@querySlot](/docs/decorators/query-slot): `T | null` for a single element, `T[]` with `all: true`. `all` must be a literal `true` or `false`.
-- [@consumeContext](/docs/context/consume-context): `ContextProvider<typeof context>`, which may be optional.
-- [@provideContext](/docs/context/provide-context): `ContextProvider<typeof context>`. The provider is always installed, so the field cannot be optional.
+- [@consumeContext](/docs/context/consume-context): `ContextProvider<typeof context>`, which may be optional but not wider.
+- [@provideContext](/docs/context/provide-context): `ContextProvider<typeof context>`. The provider is always installed, so the field cannot be optional or wider.
 - [@event](/docs/decorators/event): `EventEmitter<Detail>`. The emitter is always installed, so the field cannot be optional.
+- [@onContextUpdate](/docs/context/on-context-update): a method whose parameter accepts the value `select` returns, or the whole context without `select`.
 - [@contextSelector](/docs/context/context-selector): the value `select` returns, or the whole context without `select`. The field may be optional or wider, such as `unknown`, but not narrower: it has to hold what the decorator writes.
 
 ### @prop And @attr

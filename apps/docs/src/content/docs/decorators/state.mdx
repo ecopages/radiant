@@ -57,7 +57,7 @@ Unlike [@signal](/docs/decorators/signal), the field stays a plain host property
 
 Just like `@prop(...)`, `@state` exposes companion bindings by default when `bind` is omitted.
 
-So `@state count = 0` gives you `this.$.count` automatically on `RadiantElement` hosts. The binding shape is the host's type argument, as in `RadiantElement<{ count: number }>`: without it, `this.$.count` is a type error.
+So `@state count = 0` gives you `this.$.count` automatically on `RadiantElement` hosts. To type `this.$.count`, pass the binding shape as the host's type argument: see [RadiantElement](/docs/components/radiant-element).
 
 ```tsx
 override render() {

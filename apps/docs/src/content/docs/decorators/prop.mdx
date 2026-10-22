@@ -149,7 +149,7 @@ class CounterCard extends RadiantElement {
 }
 ```
 
-automatically gives you `this.$.count` and `this.bindings.count` at runtime. To type them, pass the binding shape to the host: `RadiantElement<{ count: number }>`. Without it, `this.$.count` is a type error.
+automatically gives you `this.$.count` and `this.bindings.count` at runtime. To type them, pass the binding shape as the host's type argument: see [RadiantElement](/docs/components/radiant-element).
 
 ## When To Use It
 

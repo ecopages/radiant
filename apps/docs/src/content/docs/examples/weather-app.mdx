@@ -46,7 +46,7 @@ import { RadiantElement, customElement } from '@ecopages/radiant';
 import { contextSelector } from '@ecopages/radiant/context';
 import type { WeatherReport } from './weather-app.types';
 
-// weatherContext is the token exported by the host module below
+import { weatherContext } from './weather-app-host';
 
 @customElement('radiant-weather-summary')
 export class RadiantWeatherSummary extends RadiantElement {
@@ -87,6 +87,8 @@ export class RadiantWeatherSummary extends RadiantElement {
 `@contextSelector` on the field keeps the value in sync and schedules `requestUpdate()` automatically when the selected slice changes on a render-owning host.
 
 ## Host
+
+The snippets call this module `weather-app-host`; the summary card imports the context token it exports.
 
 ```tsx
 import { RadiantElement, createResource, customElement, state } from '@ecopages/radiant';

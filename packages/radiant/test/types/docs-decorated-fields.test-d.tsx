@@ -5,9 +5,10 @@
  * @remarks
  * Checked by `tsc --noEmit -p test/types/tsconfig.json`, which turns
  * `strictPropertyInitialization` back on, not by the vitest run. The classes are
- * the `@prop`, `@attr` and `@signal` examples from `apps/docs`, with package
- * imports replaced by source paths. A `declare` field fails here with TS1206, a
- * bare field with TS2564. The "Typing Decorated Fields" section of
+ * the examples from `apps/docs`, with package imports replaced by source paths.
+ * The first group are the `@prop`, `@attr` and `@signal` examples; each later
+ * section comment names the page it mirrors. A `declare` field fails here with
+ * TS1206, a bare field with TS2564. The "Typing Decorated Fields" section of
  * `decorators/index.mdx` follows its own marker, each `@ts-expect-error` row being
  * a field the page says does not compile. Legacy decorators are not
  * checked here: they never see the field type, so those rows would not fail.
@@ -356,6 +357,12 @@ export class RadiantCounter extends RadiantElement {
 	@prop({ type: Number, reflect: true, defaultValue: 0 })
 	@bindTo({ ref: 'count', text: true })
 	value!: number;
+}
+
+export class SignalBindFields extends RadiantElement {
+	@bindTo({ attr: 'data-n', map: (v: unknown) => String(v) }) @signal({ initial: 3 }) count!: WritableSignal<number>;
+	// @ts-expect-error on a @signal field the types give map the signal, not its value
+	@bindTo({ attr: 'data-n', map: (v) => v.toFixed() }) @signal({ initial: 3 }) bad!: WritableSignal<number>;
 }
 
 export class PaintedCount extends RadiantElement {
@@ -707,8 +714,13 @@ export const removalValues = (
 );
 
 export const rejectedRemovalValues = (
-	// @ts-expect-error the shared attributes and event handlers type undefined, not null
-	<button class={shouldResetClass ? null : 'toolbar-action'} on:click={isInteractive ? handleClick : null} />
+	// @ts-expect-error the shared attributes type undefined, not null
+	<button class={shouldResetClass ? null : 'toolbar-action'} />
+);
+
+export const rejectedNullHandler = (
+	// @ts-expect-error event handlers type undefined, not null
+	<button on:click={isInteractive ? handleClick : null} />
 );
 
 type SignInState = { username: string; busy: boolean };
