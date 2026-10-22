@@ -7,6 +7,7 @@ class MyQueryElement extends RadiantElement {
 	@query({ ref: 'my-ref' }) myRef: HTMLDivElement | null;
 	@query({ ref: 'my-ref', all: true, cache: false }) myRefs: HTMLDivElement[];
 	@query({ ref: 'my-ref', all: true, cache: true }) myRefsCache: HTMLDivElement[];
+	@query({ ref: 'my-ref', cache: true }) myRefCached: HTMLDivElement | null;
 	@query({ selector: '.my-class' }) myClass: HTMLElement | null;
 	@query({ selector: '.my-class', all: true }) myClasses: HTMLElement[];
 	@query({ ref: 'missing' }) missing: HTMLElement | null;
@@ -150,6 +151,29 @@ describe('@query', () => {
 		expect(customElement.myRefsCache.length).toEqual(2);
 		customElement.addElement();
 		expect(customElement.myRefsCache.length).toEqual(2);
+	});
+
+	test('decorator without cache returns the new node after the first one is replaced', () => {
+		const customElement = createTemplate();
+		document.body.appendChild(customElement);
+		const first = customElement.myRef;
+		expect(first?.textContent).toEqual('My Ref 1');
+
+		const replacement = createElementWithRef('Replacement', 'my-ref');
+		first?.replaceWith(replacement);
+
+		expect(customElement.myRef).toBe(replacement);
+	});
+
+	test('decorator with cache true keeps returning the first node after it is replaced', () => {
+		const customElement = createTemplate();
+		document.body.appendChild(customElement);
+		const first = customElement.myRefCached;
+		expect(first?.textContent).toEqual('My Ref 1');
+
+		first?.replaceWith(createElementWithRef('Replacement', 'my-ref'));
+
+		expect(customElement.myRefCached).toBe(first);
 	});
 });
 
