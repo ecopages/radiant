@@ -1,8 +1,8 @@
 # Component authoring
 
-Architecture for `src/components/ui`. Agent rules: [`AGENTS.md`](../../AGENTS.md). Tokens and CSS: [`DESIGN.md`](../../DESIGN.md). Tiers and file layout: [`Introduction.mdx`](../../Introduction.mdx).
+Architecture for `src/components/ui`. Agent rules: [`AGENTS.md`](../../../AGENTS.md). Tokens and CSS: [`DESIGN.md`](../../../DESIGN.md). Tiers and file layout: [`Introduction.mdx`](../../Introduction.mdx).
 
-Platform vocabulary (Radiant, JSX, SSR) lives in root [`CONTEXT.md`](../../../../CONTEXT.md). Use the catalog terms below for this package; do not load CONTEXT.md for catalog-only edits.
+Platform vocabulary (Radiant, JSX, SSR) lives in root [`CONTEXT.md`](../../../../../CONTEXT.md). Use the catalog terms below for this package; do not load CONTEXT.md for catalog-only edits.
 
 ## Catalog terms
 
@@ -92,6 +92,21 @@ Slider and knob normalize off-step values. Only floating-point noise is ignored 
 
 Omit the `Bindings` generic unless the script actually uses `this.$`, `this.bindings`, or `this.bind(...)`.
 
+## Query fields
+
+A `@query` field is `T | null`: a single-element query returns `null` until the view stamps the node, and under standard decorators a field typed without `| null` does not compile. An `all: true` field is `T[]`. Declare the field with the element type, bind it to a local and return early when it is missing; do not assert non-null at the use site. The package compiles with `strictPropertyInitialization` off (`tsconfig.app.json`), so the field needs no `!`. A query is uncached unless `cache: true`.
+
+```ts
+@query({ ref: 'panel' }) panelTarget: HTMLElement | null;
+@query({ selector: 'input[type="radio"]', all: true }) radioTargets: HTMLInputElement[];
+
+private setOpen(next: boolean): void {
+	const panel = this.panelTarget;
+	if (!panel) return;
+	panel.hidden = !next;
+}
+```
+
 ## Connect-time sync
 
 Do not write `connectedCallback` + `queueMicrotask(sync)` boilerplate. Override `protected onConnected()` from `RadiantElement` instead: the core invokes it after attribute catch-up, initial property sync, and (when applicable) the initial hydrate/update — on every connection, not once per instance. Rebuild in `onConnected()` whatever `disconnectedCallback` tears down (controllers, observers, listeners); guard once-only bootstrapping explicitly.
@@ -158,8 +173,8 @@ Mirror [CEM](https://custom-elements-manifest.open-wc.org/analyzer/getting-start
 - Do not add `@csspart`. This catalog is light DOM; there are no shadow parts.
 - `@cssclass` is a catalog extension, not a standard CEM tag like `@csspart` / `@cssprop`.
 
-A View-owned Shell is a **behavior host**: it queries Authored Children through `data-ref` / `data-*` / roles — never BEM class names. That query contract is public. The CE class TSDoc must describe the full child tree (required targets, per-item attrs, optional controls, attributes the host writes vs the author owns). Composition Helpers stamp the same targets; they are not a substitute for documenting them. Do not use `@slot` for this tree. Selector dialect: [`.agents/skills/radiant-ui-docs/references/query-targets.md`](../../../../.agents/skills/radiant-ui-docs/references/query-targets.md).
+A View-owned Shell is a **behavior host**: it queries Authored Children through `data-ref` / `data-*` / roles — never BEM class names. That query contract is public. The CE class TSDoc must describe the full child tree (required targets, per-item attrs, optional controls, attributes the host writes vs the author owns). Composition Helpers stamp the same targets; they are not a substitute for documenting them. Do not use `@slot` for this tree. Selector dialect: [`.agents/skills/radiant-ui-docs/references/query-targets.md`](../../../../../.agents/skills/radiant-ui-docs/references/query-targets.md).
 
-Templates and a filled Tag Group example: [`.agents/skills/radiant-ui-docs/`](../../../../.agents/skills/radiant-ui-docs/SKILL.md). Implementation playbook: [`.agents/skills/radiant-ui-authoring/`](../../../../.agents/skills/radiant-ui-authoring/SKILL.md).
+Templates and a filled Tag Group example: [`.agents/skills/radiant-ui-docs/`](../../../../../.agents/skills/radiant-ui-docs/SKILL.md). Implementation playbook: [`.agents/skills/radiant-ui-authoring/`](../../../../../.agents/skills/radiant-ui-authoring/SKILL.md).
 
 Consumer docs live in `apps/radiant-ui` (`src/content/components/`). Surface the same contract (attributes, light-DOM targets, Composition Helpers, events, CSS classes) and mark APG links with `data-wai-aria`. Tag Group is the composition-contract POC; Alert remains the page-structure POC.
