@@ -371,8 +371,18 @@
 		box-shadow: var(--macos-classic-bevel);
 	}
 
+	/**
+	 * @remarks Every floating panel shares the `.rui-popover` surface, so its custom properties give popovers, date
+	 * pickers, and navigation panels the window frame; menus and listboxes override the frame below.
+	 */
+	:root .rui-popover {
+		--rui-popover-radius: 0;
+		--rui-popover-surface: var(--macos-classic-surface);
+		--rui-popover-border-color: var(--macos-classic-dark);
+		--rui-popover-shadow: var(--macos-classic-bevel), 1px 1px 0 var(--macos-classic-dark), 3px 3px 0 rgb(0 0 0 / 0.25);
+	}
+
 	:root .rui-dialog__surface,
-	:root .rui-popover-host,
 	:root .rui-hover-card__content,
 	:root .rui-calendar {
 		@apply rounded-none text-on-surface;
@@ -425,7 +435,7 @@
 		padding-inline: 1.125rem;
 		clip-path: var(--macos-classic-tab-shape);
 		border-radius: 0;
-		background-color: var(--macos-classic-mid);
+		background-color: var(--macos-classic-container);
 		background-image: var(--macos-classic-tab-outline);
 		background-position: 0 0;
 		background-size: 100% 100%;
@@ -456,36 +466,214 @@
 		padding: var(--rui-tabs-panel-padding);
 	}
 
+	/**
+	 * Menus inherit the menu frame's grey face, so the inner listbox drops its own fill. Standalone list boxes are
+	 * black-framed white wells. Items are square and full width.
+	 */
+	:root .rui-select__listbox .rui-listbox,
+	:root .rui-combobox__listbox .rui-listbox {
+		background-color: transparent;
+	}
+
+	:root .rui-listbox {
+		gap: 0;
+		padding: 1px;
+	}
+
+	:root .rui-listbox--bordered {
+		@apply rounded-none;
+		border-color: var(--macos-classic-dark);
+		background-color: var(--macos-classic-field);
+		color: var(--macos-classic-field-text);
+		box-shadow: none;
+	}
+
+	:root .rui-listbox__option,
+	:root .rui-menu-button__item,
+	:root .rui-menubar__item,
+	:root .rui-menubar__menu-item,
+	:root .rui-tree__node,
+	:root .rui-calendar__day {
+		border-radius: 0;
+		background-image: none;
+		transition: none;
+	}
+
+	:root .rui-listbox__option[aria-selected='true'][data-active]:not([aria-disabled='true']) {
+		--tw-ring-shadow: 0 0 #0000;
+	}
+
+	/**
+	 * Platinum highlights the item under the pointer, and an open menu title, in the selection color with white text.
+	 */
+	:root .rui-menu-button__item:is(:hover, :focus-visible):not([aria-disabled='true']),
+	:root .rui-menubar__menu-item:is(:hover, :focus-visible):not(:disabled):not([aria-disabled='true']),
+	:root .rui-menubar__menu-item[aria-expanded='true'],
+	:root .rui-menubar__item:is([aria-expanded='true'], :active):not(:disabled):not([aria-disabled='true']),
+	:root .rui-listbox__option[data-active]:not([aria-selected='true']):not([aria-disabled='true']) {
+		background-color: var(--macos-classic-selection);
+		color: var(--macos-classic-selection-text);
+		box-shadow: none;
+		outline: none;
+		--tw-ring-shadow: 0 0 #0000;
+	}
+
+	/**
+	 * The menu bar is a face-colored strip with a black rule underneath.
+	 */
+	:root .rui-menubar {
+		@apply rounded-none;
+		gap: 0;
+		padding: 0 0.25rem;
+		border: 0;
+		border-bottom: 1px solid var(--macos-classic-dark);
+		background-color: var(--macos-classic-face);
+		box-shadow: inset 0 1px 0 var(--macos-classic-light);
+	}
+
+	:root .rui-menubar__item {
+		@apply font-normal;
+	}
+
+	:root .rui-menubar__item:hover:not(:disabled):not([aria-disabled='true']):not([aria-expanded='true']) {
+		background-color: transparent;
+	}
+
+	/**
+	 * @remarks Help balloons are black-outlined white panels with a drop edge, unlike the inverted modern tooltip.
+	 */
+	:root .rui-tooltip__content {
+		--rui-tooltip-radius: 0;
+		--rui-tooltip-surface: var(--macos-classic-field);
+		--rui-tooltip-color: var(--macos-classic-field-text);
+		--rui-tooltip-shadow: 0 0 0 1px var(--macos-classic-dark), 2px 2px 0 rgb(0 0 0 / 0.3);
+	}
+
+	/**
+	 * Tags are small bevelled faces in a black frame; a selected tag takes the selection color.
+	 */
+	:root .rui-tag {
+		@apply rounded-sm;
+		border-color: var(--macos-classic-dark);
+		background-color: var(--macos-classic-face);
+		background-image: none;
+		color: var(--macos-classic-text);
+		box-shadow: var(--macos-classic-bevel);
+	}
+
+	:root .rui-tag[aria-selected='true'] {
+		border-color: var(--macos-classic-dark);
+		background-color: var(--macos-classic-selection);
+		color: var(--macos-classic-selection-text);
+		box-shadow: none;
+	}
+
+	:root .rui-tag__remove {
+		@apply rounded-none;
+	}
+
+	/**
+	 * Finder-style trees: a black-framed white well, no guide lines, and solid disclosure triangles.
+	 */
+	:root .rui-tree {
+		@apply rounded-none;
+		border-color: var(--macos-classic-dark);
+		background-color: var(--macos-classic-field);
+		color: var(--macos-classic-field-text);
+		box-shadow: none;
+	}
+
+	:root .rui-tree ul {
+		border-left: 0;
+	}
+
+	:root .rui-tree__node {
+		color: var(--macos-classic-field-text);
+	}
+
+	:root .rui-tree__node:hover:not([aria-selected='true']) {
+		background-color: transparent;
+	}
+
+	/**
+	 * @remarks Disclosure buttons use the Platinum triangle: pointing right when closed and down when open.
+	 */
+	:root .rui-disclosure__icon--chevron > * {
+		display: none;
+	}
+
+	:root .rui-disclosure__icon--chevron::before {
+		content: '';
+		border-block: 4px solid transparent;
+		border-inline-start: 6px solid var(--macos-classic-text);
+	}
+
+	:root .rui-disclosure__icon--chevron,
+	:root .rui-disclosure__trigger[aria-expanded='true'] .rui-disclosure__icon--chevron {
+		transition: none;
+		transform: none;
+	}
+
+	:root .rui-disclosure__trigger[aria-expanded='true'] .rui-disclosure__icon--chevron {
+		transform: rotate(90deg);
+	}
+
+	:root .rui-disclosure__trigger:hover {
+		background-color: transparent;
+	}
+
 	:root .rui-listbox__option[aria-selected='true'],
 	:root .rui-menu-button__item[aria-checked='true'],
 	:root .rui-menubar__menu-item[aria-checked='true'],
 	:root .rui-tree__node[aria-selected='true'],
 	:root .rui-calendar__day[aria-selected='true'],
 	:root .rui-sidebar__menu-button--active,
+	:root .rui-sidebar__menu-button[aria-current='page'],
 	:root .rui-navigation-menu__link-list a[aria-current='page'] {
 		background-color: var(--macos-classic-selection);
 		color: var(--macos-classic-selection-text);
 	}
 
-	:root .rui-table,
+	/**
+	 * List views: a black-framed white well with Platinum column headers, bevelled face cells over a black rule.
+	 */
+	:root rui-table,
 	:root .rui-grid {
+		border-radius: 0;
+		border-color: var(--macos-classic-dark);
+		box-shadow: none;
+	}
+
+	:root .rui-table__cell,
+	:root .rui-table__selection-cell,
+	:root .rui-table__empty-state,
+	:root .rui-table__empty-state-spacer,
+	:root .rui-grid__cell {
+		border-color: var(--macos-classic-mid);
 		background-color: var(--macos-classic-field);
 		color: var(--macos-classic-field-text);
 	}
 
-	:root .rui-table__header,
-	:root .rui-treegrid__row--header,
+	:root .rui-table__column,
+	:root .rui-grid__row:first-child .rui-grid__cell,
+	:root .rui-treegrid__row--header .rui-treegrid__cell {
+		@apply font-normal;
+		border-right: 1px solid var(--macos-classic-shadow);
+		border-bottom: 1px solid var(--macos-classic-dark);
+		background-color: var(--macos-classic-face);
+		color: var(--macos-classic-text);
+		box-shadow: var(--macos-classic-bevel);
+	}
+
+	:root .rui-table__column .rui-table__sort {
+		@apply font-normal;
+		color: var(--macos-classic-text);
+	}
+
 	:root .rui-calendar__weekdays {
 		@apply font-normal;
 		background-color: var(--macos-classic-face);
 		box-shadow: var(--macos-classic-raised);
-	}
-
-	:root .rui-table__row:nth-child(even),
-	:root .rui-grid__row:nth-child(even) {
-		background-color: var(--macos-classic-light);
-		background-image: linear-gradient(var(--macos-classic-container) 0 0);
-		background-blend-mode: soft-light;
 	}
 
 	/**
@@ -493,23 +681,17 @@
 	 * The disclosure glyph stays a solid triangle, matching the original Finder tree affordance.
 	 */
 	:root .rui-treegrid {
-		@apply rounded-none border-0;
+		@apply rounded-none;
+		border: 1px solid var(--macos-classic-dark);
 		background-color: var(--macos-classic-field);
 		color: var(--macos-classic-field-text);
-		box-shadow: var(--macos-classic-well);
+		box-shadow: none;
 		--rui-treegrid-indent: 0.875rem;
 	}
 
 	:root .rui-treegrid__cell {
 		@apply border-0 bg-transparent px-2 py-1.5;
 		color: var(--macos-classic-field-text);
-	}
-
-	:root .rui-treegrid__row--header .rui-treegrid__cell {
-		@apply font-normal;
-		background-color: var(--macos-classic-face);
-		color: var(--macos-classic-text);
-		box-shadow: var(--macos-classic-raised-thin);
 	}
 
 	:root .rui-treegrid__row:not(.rui-treegrid__row--header):hover .rui-treegrid__cell:not([aria-selected='true']) {
@@ -538,13 +720,40 @@
 	}
 
 	:root .rui-alert,
-	:root .rui-toast__content {
+	:root .rui-toast {
 		@apply rounded-none text-on-surface;
 		border: 1px solid var(--macos-classic-dark);
 		background-color: var(--macos-classic-surface);
 		box-shadow:
 			var(--macos-classic-bevel),
 			1px 1px 0 var(--macos-classic-dark);
+	}
+
+	:root .rui-toast {
+		background-image: none;
+	}
+
+	:root .rui-toast--info .rui-toast__icon {
+		color: var(--macos-classic-blue);
+	}
+
+	:root .rui-toast--success .rui-toast__icon {
+		color: var(--macos-classic-green);
+	}
+
+	:root .rui-toast--warning .rui-toast__icon {
+		color: var(--macos-classic-amber);
+	}
+
+	:root .rui-toast--error .rui-toast__icon {
+		color: var(--macos-classic-red);
+	}
+
+	:root .rui-toast__close {
+		border-color: var(--macos-classic-dark);
+		background-color: var(--macos-classic-face);
+		color: var(--macos-classic-text);
+		box-shadow: var(--macos-classic-bevel);
 	}
 
 	:root .rui-alert--inline.rui-alert--dismissible {
@@ -576,18 +785,39 @@
 	}
 
 	:root .rui-badge,
-	:root .rui-chip,
-	:root .rui-pagination__link {
+	:root .rui-chip {
 		@apply rounded-sm text-on-surface;
 		border: 1px solid var(--macos-classic-dark);
 		background-color: var(--macos-classic-face);
 		box-shadow: var(--macos-classic-raised);
 	}
 
+	:root .rui-pagination__link {
+		min-width: 0;
+	}
+
+	:root .rui-calendar {
+		--radius-control: 0;
+	}
+
 	:root .rui-separator,
 	:root .rui-sidebar__separator {
 		background-color: var(--macos-classic-shadow);
 		box-shadow: 0 1px 0 var(--macos-classic-light);
+	}
+
+	:root .rui-slider {
+		--rui-slider-track-size: 0.3125rem;
+	}
+
+	:root .rui-slider__thumb {
+		inline-size: 0.6875rem;
+		block-size: 1.125rem;
+	}
+
+	:root .rui-slider--vertical .rui-slider__thumb {
+		inline-size: 1.125rem;
+		block-size: 0.6875rem;
 	}
 
 	:root .rui-slider__thumb,
@@ -607,9 +837,17 @@
 		box-shadow: var(--macos-classic-well);
 	}
 
+	:root .rui-meter__track {
+		background-color: var(--macos-classic-container);
+	}
+
 	:root .rui-meter__fill {
 		@apply rounded-none;
 		background-color: var(--macos-classic-selection);
+		box-shadow:
+			inset 0 1px 0 rgb(255 255 255 / 0.45),
+			inset 0 -1px 0 rgb(0 0 0 / 0.3),
+			1px 0 0 var(--macos-classic-dark);
 	}
 
 	:root .rui-slider__range-fill {
