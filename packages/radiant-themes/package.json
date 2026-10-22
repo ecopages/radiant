@@ -1,6 +1,6 @@
 {
 	"name": "@ecopages/radiant-themes",
-	"version": "0.2.1",
+	"version": "0.2.2",
 	"description": "Composable color themes and variants for @ecopages/radiant-ui",
 	"repository": {
 		"type": "git",
@@ -24,7 +24,7 @@
 		"test:all": "pnpm --filter @ecopages/jsx build:lib && pnpm --filter @ecopages/radiant build:lib && pnpm --filter @ecopages/radiant-ui build:lib && pnpm run build:lib && pnpm run test"
 	},
 	"peerDependencies": {
-		"@ecopages/radiant-ui": ">=0.2.1"
+		"@ecopages/radiant-ui": ">=0.2.2"
 	},
 	"devDependencies": {
 		"@tailwindcss/postcss": "^4.3.3",

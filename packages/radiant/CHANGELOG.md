@@ -1,5 +1,260 @@
 # @ecopages/radiant
 
+## 0.5.0
+
+### Minor Changes
+
+- [#361](https://github.com/ecopages/radiant/pull/361) [`9627747`](https://github.com/ecopages/radiant/commit/9627747aa6d583dcb256d1e46190cfe58802f02e) Thanks [@andeeplus](https://github.com/andeeplus)! - An `@attr` with neither `type` nor `converter.fromAttribute` returns the attribute as a string, so under standard decorators it now needs a `string | null | undefined` field, a string literal union included. A `number` or `boolean` field used to compile and held a string once the attribute was set (`"5" + 1` is `"51"`).
+
+    **Breaking:** add the `type` that parses the attribute, keep the field a string, or pass a parser that owns the value type:
+
+    ```ts
+    // before: compiled, but `count` holds the string "5"
+    @attr({ source: 'data-count' }) count!: number;
+    @attr({ defaultValue: 0 }) total!: number;
+    @attr() enabled?: boolean;
+    // after
+    @attr({ source: 'data-count', type: Number }) count!: number;
+    @attr({ type: Number, defaultValue: 0 }) total!: number;
+    @attr({ type: Boolean }) enabled?: boolean;
+    @attr({ converter: { fromAttribute: (v) => Number(v) } }) count!: number;
+    ```
+
+    `@attr() title = ''` and a field typed by a type parameter of a generic host still compile as they did.
+
+    The error for a `number` field without `type` reads `Type 'number' is not assignable to type 'string'` under `Unable to resolve signature of property decorator`, or `Property 'type' is missing` when an option such as `defaultValue` is given.
+
+    An explicit generic is checked in both decorator modes: write `@attr<number>({ type: Number, defaultValue: 0 })`, because `@attr<number>({ defaultValue: 0 })` no longer compiles. An options object annotated as `AttrOptions<number, NumberConstructor>` has `type` optional in its type, so it is checked as an `@attr` without `type` and fails too; declare it with `satisfies AttrOptions<number, NumberConstructor>` or pass it inline.
+
+    Under legacy decorators (`experimentalDecorators`) the field is never seen, so only an option that is not a string without `type` is rejected, such as `@attr({ defaultValue: 0 })`. `converter.toAttribute` receives `string | null | undefined` there without `type` or `converter.fromAttribute`, and `unknown` with either; pass the field type, as in `@attr<number>(...)`, when it needs the value.
+
+- [#380](https://github.com/ecopages/radiant/pull/380) [`6ccd110`](https://github.com/ecopages/radiant/commit/6ccd110e62a2b562a5d1e5e2e9f62ea29eb6c340) Thanks [@andeeplus](https://github.com/andeeplus)! - Under standard decorators, `@bindTo` on a `@signal` field types `map` with the signal's value, the value it already received at runtime. Before, the types gave `map` the `WritableSignal<number>`, so `(v) => v.toFixed()` did not compile and `(v) => v.get().toFixed()` compiled but threw on the first paint.
+
+    **Breaking:** a `map` whose parameter is annotated with the signal type no longer compiles. Drop the annotation, or annotate it with the value:
+
+    ```ts
+    // before: compiled, threw at runtime ("v.get is not a function")
+    @bindTo({ attr: 'data-n', map: (v: WritableSignal<number>) => v.get().toFixed() }) @signal({ initial: 0 }) n!: WritableSignal<number>;
+    // after
+    @bindTo({ attr: 'data-n', map: (v) => v.toFixed() }) @signal({ initial: 0 }) n!: WritableSignal<number>;
+    ```
+
+    A parameter annotated `unknown`, the old workaround, still compiles. A field whose type is not a signal is typed as before, except that a callback parameter annotated with a generic host's own type parameter (`map: (v: V) => v` on `h!: V`) no longer compiles: leave it unannotated. Under legacy decorators (`experimentalDecorators`) the field is never seen: pass the whole field type as the type argument, `@bindTo<WritableSignal<number>>(...)`.
+
+- [#367](https://github.com/ecopages/radiant/pull/367) [`c5a80bc`](https://github.com/ecopages/radiant/commit/c5a80bc279ec0a99c067eef356b88662da2be929) Thanks [@andeeplus](https://github.com/andeeplus)! - `@contextSelector`, `@consumeContext` and `@provideContext` check the declared field under standard decorators: the field has to be able to hold the value the decorator writes. That is the provider of the decorator's own context for `@consumeContext` and `@provideContext`, and the context value, or what `select` returns, for `@contextSelector`.
+
+    **Breaking:** a field that cannot hold the written value compiled before and held a value outside its type at runtime. Declare the type the decorator writes:
+
+    ```ts
+    const ctx = createContext<{ count: number }>('counter');
+
+    // before: compiled
+    @contextSelector({ context: ctx }) whole!: { count: 1 };
+    @consumeContext(ctx) provider!: ProviderSubclassWithMembers;
+    @consumeContext(ctxA) other!: ContextProvider<typeof ctxB>;
+    @provideContext({ context: ctxA }) provided!: ContextProvider<typeof ctxB>;
+    @provideContext({ context: ctx }) maybe?: ContextProvider<typeof ctx>;
+    // after
+    @contextSelector({ context: ctx }) whole!: { count: number };
+    @consumeContext(ctx) provider!: ContextProvider<typeof ctx>;
+    @consumeContext(ctxA) other!: ContextProvider<typeof ctxA>;
+    @provideContext({ context: ctxA }) provided!: ContextProvider<typeof ctxA>;
+    @provideContext({ context: ctx }) always!: ContextProvider<typeof ctx>;
+    ```
+
+    `@provideContext` always installs a provider, so its field cannot be optional. `@consumeContext` can be: `provider?: ContextProvider<typeof ctx>` holds `undefined` until a provider connects.
+
+    With `select`, `@contextSelector` also accepts an optional field, which holds `undefined` until the first delivery, and a field wider than the selection, such as `number | string`. Both used to fail:
+
+    ```ts
+    @contextSelector({ context: ctx, select: (c) => c.count }) count?: number;
+    ```
+
+    `@contextSelector` on a field no longer throws a `TypeError` for a target that does not match its context, a call that bypasses the types; the method form still checks its target. Legacy decorators never see the field type and compile as before.
+
+- [#353](https://github.com/ecopages/radiant/pull/353) [`c7b9520`](https://github.com/ecopages/radiant/commit/c7b9520b8c3e81383432f31eac3f5b08e6a66cd5) Thanks [@andeeplus](https://github.com/andeeplus)! - **@ecopages/radiant**
+
+    `@query` and `@event` check the declared field against the value they install, under standard decorators, and the type argument of `@query` and `createQuery` is now the element type. The context decorators, `@querySlot` and `createQuerySlot` are covered in their own entries.
+
+    **Breaking:** a single-element `@query` field must include `null`, because the query returns `null` when nothing matches. With `all: true` the field is an array. A field that leaves `null` out, or an array field without `all: true`, compiled before and no longer does:
+
+    ```ts
+    // before: compiled, and `this.input.focus()` threw when the ref was missing
+    @query({ ref: 'input' }) input!: HTMLInputElement;
+    @query({ ref: 'item' }) items!: HTMLLIElement[];
+    // after
+    @query({ ref: 'input' }) input!: HTMLInputElement | null;
+    @query({ ref: 'item', all: true }) items!: HTMLLIElement[];
+    ```
+
+    `all` has to be a literal `true` or `false`, or left out, because it picks the field type. `createQuery`'s `.value` is `T[]` with `all: true` and `T | null` otherwise. With a `boolean` variable for `all` it is `Element[] | Element | null`, and `createQuery` then takes no type argument. The type argument used to be the whole result:
+
+    ```ts
+    // before
+    @query<HTMLElement[]>({ selector: '.item', all: true }) items!: HTMLElement[];
+    createQuery<HTMLElement[]>(this, { selector: '.item', all: true });
+    // after
+    @query<HTMLElement>({ selector: '.item', all: true }) items!: HTMLElement[];
+    createQuery<HTMLElement>(this, { selector: '.item', all: true });
+    ```
+
+    **Breaking:** `@event` installs an `EventEmitter`, so its field has to be one, and cannot be optional:
+
+    ```ts
+    // before: compiled
+    @event({ name: 'change' }) change!: string;
+    @event({ name: 'select' }) select?: EventEmitter<string>;
+    // after
+    @event({ name: 'change' }) change!: EventEmitter<string>;
+    @event({ name: 'select' }) select!: EventEmitter<string>;
+    ```
+
+    Legacy decorators never see the field type and compile as before.
+
+    **@ecopages/radiant-ui**
+
+    Components declare their `@query` fields with `| null` and guard the places that used them. Behaviour with complete markup is unchanged.
+
+- [#368](https://github.com/ecopages/radiant/pull/368) [`54fe77a`](https://github.com/ecopages/radiant/commit/54fe77a6e688b65cd0481ff273387b5782fedcc6) Thanks [@andeeplus](https://github.com/andeeplus)! - Legacy `@query` (`experimentalDecorators: true`) no longer caches its result by default, matching standard decorators, `createQuery` and the docs: a field without `cache` runs the lookup on every read and returns the live node. A legacy field used to keep returning the first element it found, even after a re-render replaced it.
+
+    A legacy-mode component that relied on the cached node passes `cache: true`, which keeps the first element found and does not refresh it while the host stays connected:
+
+    ```ts
+    // before: cached without asking
+    @query({ ref: 'status' }) status!: HTMLElement | null;
+    // after
+    @query({ ref: 'status', cache: true }) status!: HTMLElement | null;
+    ```
+
+- [#357](https://github.com/ecopages/radiant/pull/357) [`9ffeb18`](https://github.com/ecopages/radiant/commit/9ffeb18017b38af04dbed5c56f689bf9ae5b4e04) Thanks [@andeeplus](https://github.com/andeeplus)! - `@querySlot` and `createQuerySlot` match `@query` and `createQuery`: the type argument is the element type, and `all` picks the value type.
+
+    **Breaking:** under standard decorators, a single-element `@querySlot` field must include `null`, because the query returns `null` while nothing is assigned to the slot. With `all: true` the field is an array, empty while nothing is assigned. A field that leaves `null` out, or an array field without `all: true`, compiled before and no longer does:
+
+    ```ts
+    // before: compiled, and `this.label.textContent` threw while the slot was empty
+    @querySlot({ name: 'label' }) label!: HTMLParagraphElement;
+    @querySlot() items!: HTMLElement[];
+    // after
+    @querySlot({ name: 'label' }) label!: HTMLParagraphElement | null;
+    @querySlot({ all: true }) items!: HTMLElement[];
+    ```
+
+    `all` has to be a literal `true` or `false`, or left out. `createQuerySlot`'s `.value` is `T[]` with `all: true` and `T | null` otherwise. With a `boolean` variable for `all` it is `Element[] | Element | null`, and `createQuerySlot` then takes no type argument. The type argument used to be the whole result, and the value was typed `| null` even with `all: true`:
+
+    ```ts
+    // before: value is HTMLLIElement[] | null
+    createQuerySlot<HTMLLIElement[]>(this, { all: true });
+    // after: value is HTMLLIElement[]
+    createQuerySlot<HTMLLIElement>(this, { all: true });
+    ```
+
+    Under standard decorators, `@querySlot` also requires a `RadiantElement` host instead of accepting any class. Runtime behaviour is unchanged.
+
+- [#347](https://github.com/ecopages/radiant/pull/347) [`ce702f5`](https://github.com/ecopages/radiant/commit/ce702f503fc6b231f1a7910b62a5b0e37d7fd258) Thanks [@andeeplus](https://github.com/andeeplus)! - The `type` constant on `@prop` and `@attr` has to fit the field under standard decorators: `String` needs a `string` field, `Number` a `number`, `Boolean` a `boolean`, `Array` an array (readonly or not) and `Object` an object that is not an array, with `null` and `undefined` allowed. The runtime already parses the attribute with `type`, so a field of another type held a value outside its type.
+
+    **Breaking:** a field whose type disagrees with `type` compiled before and now fails. An array field needs `Array`, because an `Object` attribute rejects arrays at runtime:
+
+    ```ts
+    // before: compiled, but `size` holds a number
+    @prop({ type: Number }) size?: string;
+    @prop({ type: Object }) tags!: string[];
+    // after
+    @prop({ type: Number }) size?: number;
+    @prop({ type: Array }) tags!: string[];
+    ```
+
+    **Breaking:** a field typed as a union of several parsed types, such as `number | 'auto'`, fits no single constant. Narrow the field to what `type` parses, or pass `transform.fromAttribute` (`@prop`) or `converter.fromAttribute` (`@attr`). A parser owns the value type, and `type` is not checked then:
+
+    ```ts
+    // before: compiled
+    @prop({ type: Number }) size!: number | 'auto';
+    // after
+    @prop({ type: Number, transform: { fromAttribute: (v) => (v === 'auto' ? v : Number(v)) } }) size!: number | 'auto';
+    ```
+
+    The parser has to be part of the option's type, so pass it inline or declare it with `satisfies`. A transform annotated as `const csv: PropTransform<string[]> = { fromAttribute }` has `fromAttribute` optional in its type, so `type` is still checked against the field:
+
+    ```ts
+    // before: compiled
+    const csv: PropTransform<string[]> = { fromAttribute: (v) => (v ? v.split(',') : []) };
+    @prop({ type: String, transform: csv }) tags!: string[];
+    // after
+    const csv = { fromAttribute: (v: string | null) => (v ? v.split(',') : []) } satisfies PropTransform<string[]>;
+    @prop({ type: String, transform: csv }) tags!: string[];
+    ```
+
+    **Breaking:** a field typed by a type parameter of the host class, such as `value: V` on `class Select<V extends string>`, fits no constant because TypeScript cannot resolve its type there. On `@attr`, drop `type: String`, which reads a present attribute the same way; an absent one reads `undefined`, or the `defaultValue`, instead of `''`. On `@prop`, pass a parser that keeps the raw value:
+
+    ```ts
+    // before: compiled
+    @prop({ type: String }) value!: V;
+    @attr({ type: String }) label!: V;
+    // after
+    @prop({ type: String, transform: { fromAttribute: (v) => v as V } }) value!: V;
+    @attr() label!: V;
+    ```
+
+    An explicit generic is checked against `type` in both decorator modes: `@prop<string>({ type: Number })` no longer compiles. Under legacy decorators without an explicit generic, `type` is not checked.
+
+    A failed check reports `No overload matches this call`. A `type` mismatch names the two constructors, such as `Type 'NumberConstructor' is missing the following properties from type 'StringConstructor'`; on a union field the expected type is `never`.
+
+- [#341](https://github.com/ecopages/radiant/pull/341) [`e2fbfed`](https://github.com/ecopages/radiant/commit/e2fbfedd7b3e9847228ed699061e7c27da8b92d3) Thanks [@andeeplus](https://github.com/andeeplus)! - `@prop`, `@attr` and `@signal` take their value type from the declared field. Under standard decorators, the options that carry a value (`defaultValue`, `transform`, `converter`, `initial`, `source`) are checked against the field, as `@bindTo`'s `map` already was, so these need no explicit generic any more:
+
+    ```ts
+    @attr({ defaultValue: 'a' }) mode!: 'a' | 'b';
+    @signal({ initial: 'a' }) mode!: WritableSignal<'a' | 'b'>;
+    @signal({ initial: [] }) items!: WritableSignal<string[]>;
+    ```
+
+    The `type` constant is checked against the field as well, as described for the `type` constant on `@prop` and `@attr`.
+
+    **Breaking:** a field whose type disagrees with a value-carrying option compiled before and held a value of another type at runtime. Make the field type match the value the decorator writes:
+
+    ```ts
+    // before: compiled, but `count` holds a number
+    @prop({ type: Number, defaultValue: 0 }) count!: string;
+    // after
+    @prop({ type: Number, defaultValue: 0 }) count!: number;
+    ```
+
+    **Breaking, legacy decorators (`experimentalDecorators`):** legacy decorators never receive the field type, so nothing is checked against the field, and the value type of `@prop`, `@signal` and `@attr` with `type` or a parser is no longer inferred from the options: it is `unknown` unless passed explicitly. A callback that uses the value needs the type:
+
+    ```ts
+    // before: compiled, `v` was inferred as number from defaultValue
+    @prop({ type: Number, defaultValue: 0, transform: { toAttribute: (v) => v.toFixed() } }) count = 0;
+    // after
+    @prop<number>({ type: Number, defaultValue: 0, transform: { toAttribute: (v) => v.toFixed() } }) count = 0;
+    ```
+
+    An explicit generic on `@prop` or `@attr` has to name the whole field type, `undefined` included. On `count?: number`, `@prop<number>(...)` compiled before and now fails; write `@prop<number | undefined>(...)`.
+
+    A failed `@attr` check names the option and field types, such as `Type 'number' is not assignable to type 'string'`. `@signal(options)` reports the option error plus `Unable to resolve signature of property decorator`. `@signal` no longer throws a `TypeError` when called with a target that does not match, which only a call that bypasses the types can do.
+
+### Patch Changes
+
+- [#362](https://github.com/ecopages/radiant/pull/362) [`965f3ff`](https://github.com/ecopages/radiant/commit/965f3ff94e73e437f09082bd6bcaa69457e30127) Thanks [@andeeplus](https://github.com/andeeplus)! - Export the helper types that decorator results are made of. A library that exports a shared decorator needs them to compile with `declaration: true`; without them TypeScript reports `TS2883` or `TS4023`:
+
+    ```ts
+    export const count = prop({ type: Number, defaultValue: 0 });
+    export const onClick = onEvent({ type: 'click' });
+    export const debounced = debounce(300);
+    export const watch = onUpdated('count');
+    ```
+
+    From `@ecopages/radiant`: `ValueFieldDecorator`, `BoundedFieldDecorator`, `ReactivePropHost`, `QueryDecoratorHost`, `ReactiveAttributeHostLike`, `ReactiveHostLike` and `BindToHost` for field decorators, and `Method` and `UpdatedHost` for method decorators. From `@ecopages/radiant/context`: `ContextHostLike` and `ContextUpdateMethod`.
+
+- [#358](https://github.com/ecopages/radiant/pull/358) [`2d5caa5`](https://github.com/ecopages/radiant/commit/2d5caa52eded75d05b4b34e66f20b86137a8ec97) Thanks [@andeeplus](https://github.com/andeeplus)! - `@prop` and `@attr` accept `defaultValue: null`, and skip the check of `defaultValue` against `type` when a parser is given, `transform.fromAttribute` on `@prop` or `converter.fromAttribute` on `@attr`, because the parser owns the value type. Both used to throw, `@prop` when the class loaded and `@attr` when the attribute was installed. A default that does not fit `type` without a parser still throws.
+
+    ```ts
+    @prop({ type: Number, defaultValue: null }) count!: number | null;
+    ```
+
+    An absent attribute reads `null` on an `@attr` with `type` and `defaultValue: null`.
+
+- Updated dependencies []:
+    - @ecopages/jsx@0.5.0
+    - @ecopages/signals@0.5.0
+
 ## 0.4.0
 
 ### Minor Changes

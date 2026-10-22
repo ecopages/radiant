@@ -1,5 +1,67 @@
 # @ecopages/radiant-ui
 
+## 0.2.2
+
+### Patch Changes
+
+- [#353](https://github.com/ecopages/radiant/pull/353) [`c7b9520`](https://github.com/ecopages/radiant/commit/c7b9520b8c3e81383432f31eac3f5b08e6a66cd5) Thanks [@andeeplus](https://github.com/andeeplus)! - **@ecopages/radiant**
+
+    `@query` and `@event` check the declared field against the value they install, under standard decorators, and the type argument of `@query` and `createQuery` is now the element type. The context decorators, `@querySlot` and `createQuerySlot` are covered in their own entries.
+
+    **Breaking:** a single-element `@query` field must include `null`, because the query returns `null` when nothing matches. With `all: true` the field is an array. A field that leaves `null` out, or an array field without `all: true`, compiled before and no longer does:
+
+    ```ts
+    // before: compiled, and `this.input.focus()` threw when the ref was missing
+    @query({ ref: 'input' }) input!: HTMLInputElement;
+    @query({ ref: 'item' }) items!: HTMLLIElement[];
+    // after
+    @query({ ref: 'input' }) input!: HTMLInputElement | null;
+    @query({ ref: 'item', all: true }) items!: HTMLLIElement[];
+    ```
+
+    `all` has to be a literal `true` or `false`, or left out, because it picks the field type. `createQuery`'s `.value` is `T[]` with `all: true` and `T | null` otherwise. With a `boolean` variable for `all` it is `Element[] | Element | null`, and `createQuery` then takes no type argument. The type argument used to be the whole result:
+
+    ```ts
+    // before
+    @query<HTMLElement[]>({ selector: '.item', all: true }) items!: HTMLElement[];
+    createQuery<HTMLElement[]>(this, { selector: '.item', all: true });
+    // after
+    @query<HTMLElement>({ selector: '.item', all: true }) items!: HTMLElement[];
+    createQuery<HTMLElement>(this, { selector: '.item', all: true });
+    ```
+
+    **Breaking:** `@event` installs an `EventEmitter`, so its field has to be one, and cannot be optional:
+
+    ```ts
+    // before: compiled
+    @event({ name: 'change' }) change!: string;
+    @event({ name: 'select' }) select?: EventEmitter<string>;
+    // after
+    @event({ name: 'change' }) change!: EventEmitter<string>;
+    @event({ name: 'select' }) select!: EventEmitter<string>;
+    ```
+
+    Legacy decorators never see the field type and compile as before.
+
+    **@ecopages/radiant-ui**
+
+    Components declare their `@query` fields with `| null` and guard the places that used them. Behaviour with complete markup is unchanged.
+
+- [#381](https://github.com/ecopages/radiant/pull/381) [`a33c600`](https://github.com/ecopages/radiant/commit/a33c60099eb614df9880d1b0a105f13f85143609) Thanks [@andeeplus](https://github.com/andeeplus)! - Make the optional themes match the systems they reference.
+
+    - Windows 95 gains a flat menu bar with navy menu highlights, a trackbar slider, raised arrow buttons on drop-downs and combo boxes, sunken list boxes and tree views with plus/minus boxes, pale yellow tooltips, and a dark mode whose bevels read as relief. The calendar title text is no longer navy on navy.
+    - Mac OS Classic styles table and tree headers, menus, tooltips, tags, sliders and progress bars as Platinum, and unselected tabs in dark mode meet 4.5:1.
+    - macOS follows Sonoma AppKit: SF Pro at 13px, hairline-outlined push buttons, accent-filled default buttons, pop-up buttons, segmented tabs above their panel, and translucent menus and popovers.
+    - GitHub uses Primer's roles: blue for links, focus and selected states, green limited to the primary button, the meter and success states, and Primer's grey and danger buttons.
+    - Vercel uses current Geist colors and menus, VS Code follows Light Modern and Dark Modern (26px controls at 13px, secondary buttons, editor-style tabs), Cloudflare no longer uses orange for selected items and has Kumo's 26, 36 and 40px controls, Material uses the Material 3 baseline scheme, and High Contrast keeps radios round and muted text above 7:1.
+    - Popovers, toasts and table headers are styled on the elements that draw them in the themes that style them: `.rui-popover`, `.rui-toast` and `.rui-table__column`.
+    - The sidebar stylesheet is layered in `@layer components`, so themes can style the active item.
+
+- Updated dependencies [[`9627747`](https://github.com/ecopages/radiant/commit/9627747aa6d583dcb256d1e46190cfe58802f02e), [`6ccd110`](https://github.com/ecopages/radiant/commit/6ccd110e62a2b562a5d1e5e2e9f62ea29eb6c340), [`c5a80bc`](https://github.com/ecopages/radiant/commit/c5a80bc279ec0a99c067eef356b88662da2be929), [`965f3ff`](https://github.com/ecopages/radiant/commit/965f3ff94e73e437f09082bd6bcaa69457e30127), [`2d5caa5`](https://github.com/ecopages/radiant/commit/2d5caa52eded75d05b4b34e66f20b86137a8ec97), [`c7b9520`](https://github.com/ecopages/radiant/commit/c7b9520b8c3e81383432f31eac3f5b08e6a66cd5), [`54fe77a`](https://github.com/ecopages/radiant/commit/54fe77a6e688b65cd0481ff273387b5782fedcc6), [`9ffeb18`](https://github.com/ecopages/radiant/commit/9ffeb18017b38af04dbed5c56f689bf9ae5b4e04), [`ce702f5`](https://github.com/ecopages/radiant/commit/ce702f503fc6b231f1a7910b62a5b0e37d7fd258), [`e2fbfed`](https://github.com/ecopages/radiant/commit/e2fbfedd7b3e9847228ed699061e7c27da8b92d3)]:
+    - @ecopages/radiant@0.5.0
+    - @ecopages/jsx@0.5.0
+    - @ecopages/signals@0.5.0
+
 ## 0.2.1
 
 ### Patch Changes
