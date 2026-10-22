@@ -1,5 +1,5 @@
 ---
-'@ecopages/radiant': patch
+'@ecopages/radiant': minor
 ---
 
 Legacy `@query` (`experimentalDecorators: true`) no longer caches its result by default, matching standard decorators, `createQuery` and the docs: a field without `cache` runs the lookup on every read and returns the live node. A legacy field used to keep returning the first element it found, even after a re-render replaced it.
