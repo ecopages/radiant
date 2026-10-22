@@ -50,10 +50,10 @@ Because resolution relies on event bubbling, the provider must be a DOM ancestor
 During server-side rendering there is no DOM tree to bubble events through. Instead, Radiant stores an ambient provider stack as symbol-keyed state on the JSX SSR render scope (`AsyncLocalStorage` via `@ecopages/jsx/server`).
 
 1. `renderComponent(...)` pushes any `ssrContext` providers and the component's own providers onto the stack.
-2. Consumer decorators call `resolveAmbientSsrContextProvider(token)` which walks the stack innermost-to-outermost — mirroring the nearest-ancestor semantics of DOM bubbling.
+2. Consumer decorators resolve the token by walking the stack innermost-to-outermost — mirroring the nearest-ancestor semantics of DOM bubbling.
 3. After rendering, the stack frame is popped in a `finally` block.
 
-Providers that set the `hydrate` option emit a `<script type="application/json">` tag into the rendered markup. On the client, `ContextProvider.tryHydrateFromHost()` parses that tag and merges the payload into `initialValue`, restoring server state before the first render.
+Providers that set the `hydrate` option emit a `<script type="application/json">` tag into the rendered markup. On the client, the provider parses that tag and merges the payload into `initialValue`, restoring server state before the first render.
 
 ## Typical Shape
 

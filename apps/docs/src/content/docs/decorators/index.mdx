@@ -58,6 +58,8 @@ Write the type yourself for:
 - a field with no initializer: `?` when the value can be absent, which adds `undefined`, and `!` when the decorator or a default supplies it, which only silences the missing-initializer error
 - `@signal`, `@query` and the other fields a decorator installs, which have no initializer to infer from
 
+Declare a decorated field as a plain field. TypeScript rejects `declare` on it under standard decorators (TS1206), and an `accessor` field is not a target of these decorators.
+
 A field that disagrees with an option is rejected:
 
 ```ts
@@ -70,6 +72,7 @@ A field that disagrees with an option is rejected:
 
 ### What Each Decorator Expects
 
+- [@state](/docs/decorators/state): any type. It is the type [@bindTo](/docs/decorators/bind-to) passes to `map`.
 - [@signal](/docs/decorators/signal): `WritableSignal<T>`, with `initial` a `T` and `source` a `WritableSignal<T>`, or a function returning one.
 - [@bindTo](/docs/decorators/bind-to): `map` receives the field type, so `@bindTo({ attr: 'data-n', map: (v) => v.toFixed() }) @state n = 0` types `v` as `number`.
 - [@query](/docs/decorators/query) and [@querySlot](/docs/decorators/query-slot): `T | null` for a single element, `T[]` with `all: true`. `all` must be a literal `true` or `false`.
@@ -81,9 +84,9 @@ A field that disagrees with an option is rejected:
 ### @prop And @attr
 
 - The `type` constant must fit the field: `String` needs a `string`, `Number` a `number`, `Boolean` a `boolean`, `Array` an array (readonly included) and `Object` an object that is not an array. `null` and `undefined` are always allowed. A field of several parsed types, such as `string | number`, fits no constant.
-- A parser owns the value type: `transform.fromAttribute` on `@prop`, `converter.fromAttribute` on `@attr`. `type` then selects the attribute channel, and the default when neither `defaultValue` nor an initializer is given. `defaultValue` is checked against the field, not against `type`. Pass the parser inline or declare it with `satisfies PropTransform<T>` (`AttrConverter<T>` on `@attr`): an annotated declaration makes `fromAttribute` optional in its type, so `type` is checked again.
+- A parser owns the value type: `transform.fromAttribute` on `@prop`, `converter.fromAttribute` on `@attr`. `type` is then not compared with the field, and `defaultValue` is checked against the field, not against `type`. On `@prop`, `type` still selects the value used when no attribute is set and neither `defaultValue` nor an initializer is given, such as `''` for `String`. Pass the parser inline or declare it with `satisfies PropTransform<T>` (`AttrConverter<T>` on `@attr`): an annotated declaration makes `fromAttribute` optional in its type, so `type` is checked again.
 - `@attr` without `type` or a parser holds the raw attribute string, so its field must be `string | null | undefined`. A string literal union fits. Any other field needs `type` or a parser.
-- `defaultValue: null` is accepted when the field allows `null`.
+- `defaultValue: null` is accepted when the field allows `null`. Without a parser, a `defaultValue` that does not match `type` throws: when `@prop` is applied to the class, and when a host installs an `@attr`.
 
 ```ts
 @prop({ type: String, transform: { fromAttribute: (v) => Number(v) } }) rank = 0;

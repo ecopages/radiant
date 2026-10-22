@@ -33,7 +33,7 @@ export class ThemeLabel extends RadiantElement {
 
 The injected field gives you access to the provider API, including `getContext()` and `setContext(...)`.
 
-The field may be optional. See [Typing Decorated Fields](/docs/decorators).
+The field is `undefined` until a matching provider answers. A provider that mounts after the consumer answers when it mounts, and a host with no provider above it keeps `undefined`. Declare the field optional (`provider?: ContextProvider<typeof themeContext>`) when a provider can be missing; the `!` form above fits a host that is always rendered inside one. See [Typing Decorated Fields](/docs/decorators).
 
 On controllers, this is often the simplest way to read and write shared state imperatively from event handlers or `render()`.
 

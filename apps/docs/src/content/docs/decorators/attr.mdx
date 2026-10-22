@@ -48,21 +48,19 @@ In this example:
 - `label` reads from the host `aria-label` attribute
 - assigning either field writes back through that same host attribute channel
 
-The field type must agree with the options: see [Typing Decorated Fields](/docs/decorators).
+The field type must agree with the options, and a field that is not a string needs `type` or a parser: see [Typing Decorated Fields](/docs/decorators).
 
-When `type` is provided, `@attr(...)` uses the same built-in attribute codec family as `@prop(...)` for `String`, `Number`, `Boolean`, `Object`, and `Array`.
-
-Without `type` or a `converter.fromAttribute` parser, the field holds the raw attribute string, so its type must be `string | null | undefined`. A string literal union such as `'a' | 'b'` fits. A `number` or `boolean` field needs `type: Number` or `type: Boolean`, or a parser, and does not compile without one.
+When `type` is provided, `@attr(...)` uses the same built-in attribute codec family as `@prop(...)` for `String`, `Number`, `Boolean`, `Object`, and `Array`. Without it the field holds the raw attribute string.
 
 ## Options
 
 | Option | Type | Meaning |
 | --- | --- | --- |
 | `source` | `string` | Attribute name to read and write. Defaults to the kebab-cased field name. |
-| `type` | `String \| Number \| Boolean \| Object \| Array` | Built-in attribute codec to use when no custom converter is provided. Required for a field that is not a string. |
-| `defaultValue` | `T` | Value used before the attribute is present. `null` is accepted. Without `converter.fromAttribute`, a default that does not match `type` throws when the attribute is installed. |
+| `type` | `String \| Number \| Boolean \| Object \| Array` | Built-in attribute codec. Required for a field that is not a string unless `converter.fromAttribute` is given, and checked against the field. |
+| `defaultValue` | `T` | Value used when the attribute is absent. With `converter.fromAttribute`, only when the converter returns `undefined` for `null`. `null` is accepted. Without `converter.fromAttribute`, a default that does not match `type` throws when the host installs the attribute. |
 | `bind` | `boolean \| string` | Companion JSX binding accessor to expose. |
-| `converter` | `{ fromAttribute, toAttribute }` | Custom conversion hooks for parsing and serializing attribute values. Overrides `type` when provided. |
+| `converter` | `{ fromAttribute, toAttribute }` | Custom conversion hooks. `fromAttribute` parses the attribute and owns the field type, so `type` is no longer checked against it. `toAttribute` serializes written values, replacing the `type` codec. |
 
 ## Default Conversion
 

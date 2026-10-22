@@ -19,7 +19,7 @@ import { RadiantElement, customElement, event, onEvent } from '@ecopages/radiant
 
 @customElement('counter-button')
 export class CounterButton extends RadiantElement {
-	@event({ name: 'count-changed' })
+	@event({ name: 'count-changed', bubbles: true })
 	countChanged!: EventEmitter<{ count: number }>;
 	
 	private count = 0;
@@ -32,7 +32,7 @@ export class CounterButton extends RadiantElement {
 }
 ```
 
-The field must be an `EventEmitter` and cannot be optional: see [Typing Decorated Fields](/docs/decorators).
+The field must be an `EventEmitter`, whatever its detail type, and cannot be optional: see [Typing Decorated Fields](/docs/decorators). `@event` works on `RadiantElement` only.
 
 ## Parameters
 
@@ -41,9 +41,11 @@ The decorator accepts a configuration object:
 | Parameter | Type | Required | Description |
 | :-------- | :--- | :------- | :---------- |
 | `name` | `string` | Yes | The event name (e.g., 'value-changed', 'item-selected'). |
-| `bubbles` | `boolean` | No | Whether the event bubbles up the DOM (default: `true`). |
-| `composed` | `boolean` | No | Whether the event crosses shadow DOM boundaries (default: `true`). |
-| `cancelable` | `boolean` | No | Whether the event can be cancelled (default: `false`). |
+| `bubbles` | `boolean` | No | Whether the event bubbles up the DOM. Omitted, it is `false`, the `CustomEvent` default. |
+| `composed` | `boolean` | No | Whether the event crosses shadow DOM boundaries. Omitted, it is `false`. |
+| `cancelable` | `boolean` | No | Whether the event can be cancelled. Omitted, it is `false`. |
+
+Set `bubbles: true` for a parent to hear the event through `@onEvent` or any delegated listener: both rely on bubbling.
 
 ## Type Safety
 
@@ -57,7 +59,7 @@ interface UserSelectedDetail {
 
 @customElement('user-list')
 export class UserList extends RadiantElement {
-	@event({ name: 'user-selected' })
+	@event({ name: 'user-selected', bubbles: true })
 	userSelected!: EventEmitter<UserSelectedDetail>;
 	
 	selectUser(user: User) {

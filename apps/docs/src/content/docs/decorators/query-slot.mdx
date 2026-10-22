@@ -40,8 +40,6 @@ export class ShellCard extends RadiantElement {
 }
 ```
 
-See [Typing Decorated Fields](/docs/decorators) for the field types a slot query accepts.
-
 ## Parameters
 
 | Parameter | Type | Required | Description |
@@ -52,7 +50,7 @@ See [Typing Decorated Fields](/docs/decorators) for the field types a slot query
 
 ## Type Safety
 
-A single-element slot query returns `null` while nothing is assigned, so its field type includes `null`. With `all: true` the field is an array, empty while nothing is assigned. Under standard decorators, a field that leaves `null` out, or an array field without `all: true`, does not compile. The type argument, when given, is the element type.
+A single-element slot query is `T | null` and an `all: true` query is `T[]`, empty while nothing is assigned. Under standard decorators, any other field type does not compile: see [Typing Decorated Fields](/docs/decorators).
 
 ```typescript
 @querySlot({ name: 'heading' }) heading!: HTMLHeadingElement | null;
