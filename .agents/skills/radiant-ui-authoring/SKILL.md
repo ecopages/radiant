@@ -43,6 +43,7 @@ Update the README beside the code when behavior or ownership changes.
 - Peel view-only props; spread the rest; lock invariants after the spread (`JsxCustomElementAttributes` / `JsxElementProps`). `cx` from `@/lib/cx`. Default accessible names via `withDefaultAriaLabel`.
 - Non-obvious view defaults come from a constant **exported by the script** (`CHECKBOX_DEFAULT_VALUE`, …). Do not re-declare the literal in the view.
 - Cross-cutting helpers: `@/lib/...`. Same-component and sibling UI: `./` and `../` only. Story-only helpers: `.storybook/` via `@sb/*`, never `src/`.
+- A `@query` field is `T | null` (`T[]` with `all: true`): bind it to a local and return early, with no non-null assertion ([Query fields](../../../packages/radiant-ui/src/components/ui/README.md#query-fields)).
 - Hosts query `data-ref` / `data-*` / roles. Never BEM. `data-ref` values are unique inside **this** host (do not stamp a parent column as `root` when a child already uses `root`).
 - `@cssclass` on the export that authors the class. `@slot` / `@csspart` off unless HTML slots / shadow parts are actually the API.
 
