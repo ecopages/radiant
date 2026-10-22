@@ -31,10 +31,10 @@
 
 	/**
 	 * @remarks The hero code joins the preview strip below it into one card. GitHub draws its tab panel as a separate
-	 * rounded box, so square that panel's bottom edge to meet the strip.
+	 * rounded box, so square that panel's bottom corners; its bottom border divides the code from the strip.
 	 */
 	:root[data-rui-theme='github'] & radiant-code-tabs .rui-tabs__panel {
-		@apply rounded-b-none border-b-0;
+		@apply rounded-b-none;
 	}
 }
 
