@@ -88,7 +88,13 @@ export class ResultsListController extends RadiantController {
 	@prop({ type: Array, defaultValue: [] }) items!: ResultsListProps['items'];
 
 	override render() {
-		return <ul>{this.items.map((item) => <li key={item.id}>{item.label}</li>)}</ul>;
+		return (
+			<ul>
+				{this.items.map((item) => (
+					<li key={item.id}>{item.label}</li>
+				))}
+			</ul>
+		);
 	}
 }
 
@@ -190,7 +196,8 @@ export class InstallerFields extends RadiantElement {
 	@event({ name: 'closed' }) bad5?: EventEmitter;
 	@contextSelector({ context: ctx, select: (c) => c.count }) total?: number;
 	@contextSelector({ context: ctx }) whole!: { count: number };
-	@contextSelector({ context: ctx, select: (c) => c.count }) narrowed?: 1;
+	// @ts-expect-error the field must be able to hold any number the selection returns
+	@contextSelector({ context: ctx, select: (c) => c.count }) bad6?: 1;
 }
 
 export class BindFields extends RadiantElement {

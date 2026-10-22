@@ -16,6 +16,6 @@ import { boundedFieldDecorator, type BoundedFieldDecorator } from '../../decorat
  */
 export function consumeContext<C extends UnknownContext>(
 	context: C,
-): BoundedFieldDecorator<ContextHostLike, ContextProvider<C> | undefined> {
+): BoundedFieldDecorator<ContextHostLike, ContextProvider<C> | undefined, ContextProvider<C>> {
 	return boundedFieldDecorator(standardConsumeContext(context), legacyConsumeContext(context));
 }
