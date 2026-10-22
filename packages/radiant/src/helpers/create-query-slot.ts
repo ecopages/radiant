@@ -1,5 +1,6 @@
 export type QuerySlotConfig = {
 	all?: boolean;
+	/** Set to `false` to query on every read. By default the result is cached until slot projection changes. */
 	cache?: boolean;
 	name?: string;
 };
@@ -17,11 +18,9 @@ type QuerySlotResult<T> = {
  * Functional equivalent of the `@querySlot` decorator for vanilla JS usage.
  * With `all: true` the value is an array; otherwise it is the first assigned element or `null`.
  * @param host The host element to query slots within.
- * @param options {@link QuerySlotConfig} The slot query configuration.
  *
  * @remarks
- * The type argument is the element type, as on `createQuery`. `all` picks the value type, so it must be
- * a literal; with a `boolean` variable the value is `Element[] | Element | null` and there is no type argument.
+ * The type argument and `all` work as on `createQuery`.
  */
 export function createQuerySlot<T extends Element = Element>(
 	host: SlotQueryHost,

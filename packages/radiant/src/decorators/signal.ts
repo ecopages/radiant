@@ -24,7 +24,7 @@ export function signal<THost extends ReactiveHostLike, T>(
  * Connected signals still flow through Radiant's update callback channel so
  * `@onUpdated(...)` and `this.$.name` bindings continue to work. On
  * `RadiantElement`, any signal or store reads performed during `render()`
- * now participate in rerender invalidation directly, which makes module-level
+ * participate in rerender invalidation directly, which makes module-level
  * shared stores a natural fit without prop-bridging them through a second
  * reactive layer.
  *
@@ -33,7 +33,8 @@ export function signal<THost extends ReactiveHostLike, T>(
  *
  * The declared `WritableSignal<T>` is the source of truth: `initial` and
  * `source` must agree with its `T`, and are checked against it under standard
- * decorators.
+ * decorators. Legacy decorators never see the field, so there `T` is `unknown`
+ * unless passed explicitly.
  *
  * @remarks
  * Besides the error on the mismatched option, TypeScript reports "Unable to

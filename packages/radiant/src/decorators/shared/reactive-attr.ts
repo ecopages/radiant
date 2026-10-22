@@ -20,19 +20,12 @@ export type AttrOptions<T = string | undefined, C extends AttributeTypeConstant 
 	 * Parses the attribute and serializes written values. Omit it to keep the raw string.
 	 *
 	 * @remarks
-	 * Without `type` or a `converter.fromAttribute` parser the field is the raw
-	 * string, so `@attr` accepts only a `string | null | undefined` field, a string
-	 * literal union included. A `number` or `boolean` field needs `type: Number` or
-	 * `type: Boolean`, or a parser. With `type`, `@attr` checks the field against it:
-	 * `type: Number` needs a `number` field,
-	 * `null` and `undefined` allowed, and a field of several parsed types, such as
-	 * `string | number`, fits no constant, and neither does a field typed by a
-	 * type parameter of a generic host. Standard decorators check the declared
-	 * field; legacy decorators check only an explicit generic. A `converter.fromAttribute`
-	 * parser owns the value type instead, and then `type` is not checked. The
-	 * parser must be part of the option's type, so pass it inline or with
-	 * `satisfies`: a value annotated as `AttrConverter<T>` has it optional. The runtime
-	 * checks `defaultValue` against `type` only without a parser, and accepts `null`.
+	 * With `type`, the field is checked as `ReactivePropertyOptions.type` describes, with
+	 * `converter.fromAttribute` as the parser and `AttrConverter<T>` in place of `PropTransform<T>`.
+	 *
+	 * Without `type` or a `converter.fromAttribute` parser the attribute stays a string, so `@attr`
+	 * accepts only a `string | null | undefined` field, a string literal union included. A `number` or
+	 * `boolean` field needs `type: Number` or `type: Boolean`, or a parser.
 	 */
 	type?: C;
 	bind?: ReactiveBindingOption;

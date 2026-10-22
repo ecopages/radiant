@@ -2,6 +2,13 @@
 '@ecopages/radiant': patch
 ---
 
-Export the helper types that decorator results are made of, so a library that exports a shared field decorator, such as `export const count = prop({ type: Number, defaultValue: 0 });`, compiles with `declaration: true` instead of failing with TS2883. From `@ecopages/radiant`: `ValueFieldDecorator`, `BoundedFieldDecorator`, `ReactivePropHost`, `QueryDecoratorHost`, `ReactiveAttributeHostLike`, `ReactiveHostLike` and `BindToHost`. From `@ecopages/radiant/context`: `ContextHostLike` and `ContextUpdateMethod`.
+Export the helper types that decorator results are made of. A library that exports a shared decorator needs them to compile with `declaration: true`; without them TypeScript reports `TS2883` or `TS4023`:
 
-`@prop({ type: Object })` is now rejected on a field typed as a union with an array member, such as `Record<string, unknown> | string[]`, as it already was on an array field. `@contextSelector` on a field of the wrong type reports the mismatch between the field and the selected type, instead of `undefined` not matching a method.
+```ts
+export const count = prop({ type: Number, defaultValue: 0 });
+export const onClick = onEvent({ type: 'click' });
+export const debounced = debounce(300);
+export const watch = onUpdated('count');
+```
+
+From `@ecopages/radiant`: `ValueFieldDecorator`, `BoundedFieldDecorator`, `ReactivePropHost`, `QueryDecoratorHost`, `ReactiveAttributeHostLike`, `ReactiveHostLike` and `BindToHost` for field decorators, and `Method` and `UpdatedHost` for method decorators. From `@ecopages/radiant/context`: `ContextHostLike` and `ContextUpdateMethod`.

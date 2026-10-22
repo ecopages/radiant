@@ -23,13 +23,11 @@ import { fieldDecorator, type ValueFieldDecorator } from './bridge';
  *
  * The declared field type is the property type: `type`, `defaultValue` and
  * `transform` must agree with it, and are checked against it under standard
- * decorators. {@link ReactivePropertyOptions.type} says when `type` is checked. Legacy
- * decorators never see the field, so there `transform.toAttribute` receives
- * `unknown` unless the type is passed explicitly. An explicit type must be the
- * whole field type, `undefined` included: `@prop<number | undefined>(...)` on
- * `count?: number`.
- *
- * @param options {@link ReactivePropertyOptions} The options for the reactive property.
+ * decorators. {@link ReactivePropertyOptions.type} says what the field must be
+ * for a given `type`. Legacy decorators never see the field, so there
+ * `transform.toAttribute` receives `unknown` unless the type is passed
+ * explicitly. An explicit type must be the whole field type, `undefined`
+ * included: `@prop<number | undefined>(...)` on `count?: number`.
  */
 export function prop<T = unknown>(
 	options: ReactivePropertyOptions<NoInfer<T>> & {

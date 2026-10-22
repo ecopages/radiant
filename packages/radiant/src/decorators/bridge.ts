@@ -40,7 +40,6 @@ export type ValueFieldDecorator<Host, Value> = {
 	): FieldInitializer<THost, Value>;
 };
 
-/** Builds a {@link ValueFieldDecorator} that dispatches on the shape of its second argument. */
 export function fieldDecorator<Host extends object, Value>(
 	standard: <THost extends Host>(
 		target: undefined,
@@ -76,7 +75,6 @@ export type BoundedFieldDecorator<Host, Bound, Written = never> = {
 	): void;
 };
 
-/** Builds a {@link BoundedFieldDecorator} that dispatches on the shape of its second argument. */
 export function boundedFieldDecorator<Host extends object, Bound, Written = never>(
 	standard: <THost extends Host, V extends Bound>(
 		target: undefined,
