@@ -36,8 +36,24 @@ export function reflectsBooleanAsValue(property: Pick<ReactiveProperty, 'type' |
 	return property.type === Boolean && property.defaultValue === true;
 }
 
-export type ReactivePropertyOptions<T> = {
-	type: AttributeTypeConstant;
+export type ReactivePropertyOptions<T, C extends AttributeTypeConstant = AttributeTypeConstant> = {
+	/**
+	 * Parses the attribute and serializes reflected values.
+	 *
+	 * @remarks
+	 * Under standard decorators the constant has to fit the declared field: `String` a `string` field,
+	 * `Number` a `number`, `Boolean` a `boolean`, `Array` an array (readonly too) and `Object` an object
+	 * that is not an array, which the runtime rejects for it, with `null` and `undefined` allowed. A field of several parsed types, such as
+	 * `string | number`, fits no constant, and neither does a field typed by a type parameter of the host
+	 * class, whose type cannot be resolved. Legacy decorators never see the field, so they check `type`
+	 * only against an explicit generic.
+	 *
+	 * A `transform.fromAttribute` parser owns the value type instead, and `type` is then not checked. The
+	 * parser has to be part of the option's type, so pass it inline or with `satisfies`: a value annotated
+	 * as `PropTransform<T>` has it optional. The runtime checks `defaultValue` against `type` only without
+	 * a parser, and always accepts `null`.
+	 */
+	type: C;
 	reflect?: boolean;
 	attribute?: string;
 	/**
@@ -93,8 +109,22 @@ export function resolveReactiveDefault<T>(options: ReactivePropertyOptions<T>): 
 	return defaultValueForType(options.type) as T;
 }
 
-export function validateReactivePropertyDefault(type: AttributeTypeConstant, defaultValue: unknown): void {
-	if (defaultValue !== undefined && !isValueOfType(type, defaultValue)) {
+/**
+ * Throws when `defaultValue` does not fit `type`.
+ *
+ * @remarks
+ * `undefined` and `null` always pass: `null` is the type default of `Array` and
+ * `Object`, and a `T | null` field may start empty. With a parser
+ * (`hasParser`, from `transform.fromAttribute` or `converter.fromAttribute`) the
+ * parser owns the value type and `type` only selects the attribute channel, so
+ * the check is skipped.
+ */
+export function validateReactivePropertyDefault(
+	type: AttributeTypeConstant,
+	defaultValue: unknown,
+	hasParser: boolean,
+): void {
+	if (!hasParser && defaultValue != null && !isValueOfType(type, defaultValue)) {
 		throw new Error(`defaultValue does not match the expected type for ${type.name}`);
 	}
 }

@@ -18,18 +18,74 @@ function isMethod(value: unknown): value is Method {
 	return typeof value === 'function';
 }
 
-export function fieldDecoratorBridge<Host extends object, Value, Result, Proto>(
-	standard: StandardFieldFn<Host, Value, Result>,
-	legacy: LegacyFieldFn<Proto, void>,
-	protoOrTarget: undefined,
-	nameOrContext: ClassFieldDecoratorContext<Host, Value>,
-): Result;
-export function fieldDecoratorBridge<Host extends object, Value, Proto, Result>(
-	standard: StandardFieldFn<Host, Value, void>,
-	legacy: LegacyFieldFn<Proto, Result>,
-	protoOrTarget: Proto,
-	nameOrContext: string,
-): Result;
+type FieldInitializer<Host, Value> = ((this: Host, value: Value) => Value) | void;
+
+/**
+ * A field decorator whose declared field owns the value type, so the options it was built from must agree with the field.
+ *
+ * @remarks
+ * The legacy overload comes first. When no overload matches, TypeScript reports the last one, so a failed
+ * standard-decorator check names the option and field types instead of `undefined` not matching the host.
+ * Legacy mode never sees the field type, so it cannot reject a mismatch.
+ *
+ * This type and the host types it is built from are exported from the package entry points, because a
+ * consumer's `declaration: true` emit names them in the type of every exported decorator result.
+ * `test/types/declaration-emit` fails when one of them is not reachable.
+ */
+export type ValueFieldDecorator<Host, Value> = {
+	(protoOrTarget: Host, name: string): void;
+	<THost extends Host>(
+		target: undefined,
+		context: ClassFieldDecoratorContext<THost, Value>,
+	): FieldInitializer<THost, Value>;
+};
+
+export function fieldDecorator<Host extends object, Value>(
+	standard: <THost extends Host>(
+		target: undefined,
+		context: ClassFieldDecoratorContext<THost, Value>,
+	) => FieldInitializer<THost, Value>,
+	legacy: LegacyFieldFn<Host, void>,
+): ValueFieldDecorator<Host, Value> {
+	return (protoOrTarget: Host | undefined, nameOrContext: string | ClassFieldDecoratorContext<Host, Value>) =>
+		fieldDecoratorBridge(standard, legacy, protoOrTarget, nameOrContext);
+}
+
+/**
+ * A field decorator that installs its own value, so the field may declare any subtype of `Bound`
+ * and must be able to hold `Written`.
+ *
+ * @remarks
+ * Kept apart from {@link ValueFieldDecorator}: a bound (`V extends Bound`) stops TypeScript from
+ * inferring a factory's own type parameter from the field, so value decorators need the exact shape.
+ * The legacy overload comes first for the same reason as in {@link ValueFieldDecorator}.
+ *
+ * `V extends X` cannot say "V is a supertype of X", and `ClassFieldDecoratorContext` reads `V` through
+ * methods, which TypeScript compares in both directions. The `Written` check is a function-typed
+ * `access.set`, which is compared strictly: the field's setter has to accept a `Written`. The default,
+ * `never`, accepts any field, which is the bound alone.
+ */
+export type BoundedFieldDecorator<Host, Bound, Written = never> = {
+	(protoOrTarget: Host, name: string): void;
+	<THost extends Host, V extends Bound>(
+		target: undefined,
+		context: ClassFieldDecoratorContext<THost, V> & {
+			readonly access: { readonly set: (object: never, value: Written) => void };
+		},
+	): void;
+};
+
+export function boundedFieldDecorator<Host extends object, Bound, Written = never>(
+	standard: <THost extends Host, V extends Bound>(
+		target: undefined,
+		context: ClassFieldDecoratorContext<THost, V>,
+	) => void,
+	legacy: LegacyFieldFn<Host, void>,
+): BoundedFieldDecorator<Host, Bound, Written> {
+	return (protoOrTarget: Host | undefined, nameOrContext: string | ClassFieldDecoratorContext<Host, Bound>) =>
+		fieldDecoratorBridge(standard, legacy, protoOrTarget, nameOrContext);
+}
+
 export function fieldDecoratorBridge<Host extends object, Value, StandardResult, Proto, LegacyResult>(
 	standard: StandardFieldFn<Host, Value, StandardResult>,
 	legacy: LegacyFieldFn<Proto, LegacyResult>,

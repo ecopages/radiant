@@ -33,6 +33,8 @@ export class ThemeProvider extends RadiantElement {
 }
 ```
 
+See [Typing Decorated Fields](/docs/decorators) for the field type.
+
 ## Options
 
 | Option | Type | Description |
@@ -64,13 +66,17 @@ class ThemeLogger {
 	}
 }
 
+type LoggedThemeContext = ThemeContext & { logger: ThemeLogger };
+
+export const loggedThemeContext = createContext<LoggedThemeContext>(Symbol('logged-theme-context'));
+
 @provideContext({
-	context: themeContext,
+	context: loggedThemeContext,
 	initialValue: { mode: 'light', logger: new ThemeLogger() },
 	hydrate: Object,
 	serialize: ({ mode }) => ({ mode }),
 })
-provider!: ContextProvider<typeof themeContext>;
+provider!: ContextProvider<typeof loggedThemeContext>;
 ```
 
 When `hydrate: Object` is active, the parsed payload merges back into `initialValue`, so omitted client-only members keep their defaults.
@@ -101,7 +107,7 @@ export class ThemeController extends RadiantController {
 		initialValue: { mode: 'light' },
 	})
 	provider!: ContextProvider<typeof themeContext>;
-	}
+}
 ```
 
 ## Manual Provider Construction

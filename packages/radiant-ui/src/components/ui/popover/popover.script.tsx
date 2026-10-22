@@ -87,8 +87,8 @@ export class RuiPopover extends RadiantElement {
 	@prop({ type: String, defaultValue: '' }) anchor: string;
 	@prop({ type: String, defaultValue: 'default' }) variant: 'default' | 'listbox';
 
-	@query({ ref: 'surface' }) surfaceTarget: HTMLElement;
-	@query({ ref: 'host' }) hostTarget: HTMLElement;
+	@query({ ref: 'surface' }) surfaceTarget: HTMLElement | null;
+	@query({ ref: 'host' }) hostTarget: HTMLElement | null;
 
 	@event({ name: 'rui-open-change', bubbles: true, composed: true })
 	openChangeEvent: EventEmitter<RuiPopoverOpenChangeDetail>;
@@ -302,7 +302,7 @@ export type RuiPopoverTriggerProps = {
 export class RuiPopoverTrigger extends RadiantElement {
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) open: boolean;
 
-	@query({ ref: 'root' }) rootTarget: HTMLElement;
+	@query({ ref: 'root' }) rootTarget: HTMLElement | null;
 
 	private getPopover(): RuiPopover | null {
 		return this.querySelector('rui-popover');

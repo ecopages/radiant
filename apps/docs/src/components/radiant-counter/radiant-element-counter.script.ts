@@ -9,7 +9,7 @@ export type RadiantElementCounterProps = {
 export class RadiantElementCounter extends RadiantElement {
 	@prop({ type: Number, reflect: true, defaultValue: 0 })
 	@bindTo({ ref: 'count', text: true })
-	declare value: number;
+	value!: number;
 
 	@onEvent({ ref: 'decrement', type: 'click' })
 	decrement() {

@@ -6,6 +6,8 @@ import { describe, expect, it } from 'vitest';
 import { bindTo } from '../../src/decorators/bind-to';
 import { customElement } from '../../src/decorators/custom-element';
 import { prop } from '../../src/decorators/prop';
+import { signal } from '../../src/decorators/signal';
+import type { WritableSignal } from '@ecopages/signals';
 import { RadiantElement } from '../../src/core/radiant-element';
 
 @customElement('bind-to-ssr-attr-host')
@@ -41,13 +43,25 @@ class BindToSsrTextHost extends RadiantElement {
 	}
 }
 
+@customElement('bind-to-ssr-signal-host')
+class BindToSsrSignalHost extends RadiantElement {
+	@bindTo({ selector: '[data-bind-target]', attr: 'data-n', map: (v) => v.toFixed() })
+	@signal({ initial: 3 })
+	n!: WritableSignal<number>;
+
+	override render() {
+		return <slot />;
+	}
+}
+
 describe('@bindTo SSR', () => {
 	it('registers each host under its tag', () => {
 		expect([
 			customElements.get('bind-to-ssr-attr-host'),
 			customElements.get('bind-to-ssr-bool-host'),
 			customElements.get('bind-to-ssr-text-host'),
-		]).toEqual([BindToSsrAttrHost, BindToSsrBoolHost, BindToSsrTextHost]);
+			customElements.get('bind-to-ssr-signal-host'),
+		]).toEqual([BindToSsrAttrHost, BindToSsrBoolHost, BindToSsrTextHost, BindToSsrSignalHost]);
 	});
 
 	it('copies a reactive field onto a light-DOM child attribute', () => {
@@ -84,6 +98,18 @@ describe('@bindTo SSR', () => {
 		);
 
 		expect(html).toMatch(/<span[^>]*data-bind-target[^>]*>Synced<\/span>/);
+	});
+
+	it('maps the value of a @signal field onto a light-DOM child attribute', () => {
+		const html = withRadiantServerCustomElementRenderBridge(() =>
+			renderToString(
+				<bind-to-ssr-signal-host>
+					<span data-bind-target />
+				</bind-to-ssr-signal-host>,
+			),
+		);
+
+		expect(html).toMatch(/<span[^>]*data-bind-target[^>]*data-n="3"/);
 	});
 });
 

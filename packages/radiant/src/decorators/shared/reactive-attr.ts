@@ -14,9 +14,20 @@ export type AttrConverter<T> = {
 	toAttribute?: (value: T) => string | null;
 };
 
-export type AttrOptions<T = string | undefined> = {
+export type AttrOptions<T = string | undefined, C extends AttributeTypeConstant = AttributeTypeConstant> = {
 	source?: string;
-	type?: AttributeTypeConstant;
+	/**
+	 * Parses the attribute and serializes written values. Omit it to keep the raw string.
+	 *
+	 * @remarks
+	 * With `type`, the field is checked as `ReactivePropertyOptions.type` describes, with
+	 * `converter.fromAttribute` as the parser and `AttrConverter<T>` in place of `PropTransform<T>`.
+	 *
+	 * Without `type` or a `converter.fromAttribute` parser the attribute stays a string, so `@attr`
+	 * accepts only a `string | null | undefined` field, a string literal union included. A `number` or
+	 * `boolean` field needs `type: Number` or `type: Boolean`, or a parser.
+	 */
+	type?: C;
 	bind?: ReactiveBindingOption;
 	defaultValue?: T;
 	converter?: AttrConverter<T>;
@@ -56,7 +67,7 @@ function resolveAttributeValue<T>(rawValue: string | null, options: AttrOptions<
 
 	if (options.type) {
 		if (rawValue === null) {
-			return (options.defaultValue ?? defaultValueForType(options.type)) as T;
+			return (options.defaultValue === undefined ? defaultValueForType(options.type) : options.defaultValue) as T;
 		}
 
 		if (options.type === Boolean && rawValue === '') {
@@ -109,7 +120,7 @@ export function installReactiveAttribute<TBindings extends object, TValue>(
 	options: AttrOptions<TValue> = {},
 ): void {
 	if (options.type) {
-		validateReactivePropertyDefault(options.type, options.defaultValue);
+		validateReactivePropertyDefault(options.type, options.defaultValue, !!options.converter?.fromAttribute);
 	}
 
 	const hostRecord = host as unknown as Record<PropertyKey, unknown>;

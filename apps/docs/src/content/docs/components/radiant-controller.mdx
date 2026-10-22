@@ -41,7 +41,7 @@ import { startControllers } from '@ecopages/radiant/controller-registry';
 
 @controller('search')
 class SearchController extends RadiantController {
-	connect() {
+	override connect() {
 		super.connect();
 	}
 }
@@ -122,33 +122,35 @@ import { RadiantController, attr, controller, onEvent, query, state } from '@eco
 export class NewsletterFormController extends RadiantController {
 	@attr({ source: 'data-success-message' }) successMessage = 'Thanks for subscribing.';
 	@state pending = false;
-	@query({ ref: 'form' }) form!: HTMLFormElement;
-	@query({ ref: 'email' }) emailInput!: HTMLInputElement;
-	@query({ ref: 'status' }) statusNode!: HTMLParagraphElement;
-	@query({ ref: 'submit' }) submitButton!: HTMLButtonElement;
+	@query({ ref: 'form' }) form!: HTMLFormElement | null;
+	@query({ ref: 'email' }) emailInput!: HTMLInputElement | null;
+	@query({ ref: 'status' }) statusNode!: HTMLParagraphElement | null;
+	@query({ ref: 'submit' }) submitButton!: HTMLButtonElement | null;
 
 	@onEvent({ ref: 'form', type: 'submit' })
 	async submit(event: Event) {
 		event.preventDefault();
-		const email = this.emailInput.value.trim();
+		const { emailInput, statusNode, submitButton } = this;
+		if (!emailInput || !statusNode || !submitButton) return;
+		const email = emailInput.value.trim();
 
 		if (!email) {
-			this.statusNode.textContent = 'Enter an email address.';
+			statusNode.textContent = 'Enter an email address.';
 			return;
 		}
 
 		this.pending = true;
-		this.submitButton.disabled = true;
+		submitButton.disabled = true;
 		this.host.setAttribute('aria-busy', 'true');
-		this.statusNode.textContent = 'Submitting...';
+		statusNode.textContent = 'Submitting...';
 
 		await Promise.resolve();
 
 		this.pending = false;
-		this.submitButton.disabled = false;
+		submitButton.disabled = false;
 		this.host.removeAttribute('aria-busy');
-		this.emailInput.value = '';
-		this.statusNode.textContent = `${this.successMessage} (${email})`;
+		emailInput.value = '';
+		statusNode.textContent = `${this.successMessage} (${email})`;
 	}
 }
 ```
@@ -293,7 +295,7 @@ These decorators are part of the `RadiantController` authoring model today:
 
 ## Element-Only Decorators
 
-These remain tied to `RadiantElement` because they depend on custom-element prop APIs or slot projection:
+These remain tied to `RadiantElement` because they depend on custom-element prop APIs or slot projection. On a `RadiantController` they are a type error:
 
 - `@querySlot(...)`
 - `@event(...)`

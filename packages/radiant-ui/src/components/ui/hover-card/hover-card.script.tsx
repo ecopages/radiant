@@ -111,7 +111,7 @@ export class RuiHoverCard extends RadiantElement {
 	@bindTo({ ref: 'content', attr: 'aria-label' })
 	contentLabel: string;
 
-	@query({ ref: 'content' }) contentTarget: HTMLElement;
+	@query({ ref: 'content' }) contentTarget: HTMLElement | null;
 
 	@event({ name: 'rui-open-change', bubbles: true, composed: true })
 	openChangeEvent: EventEmitter<RuiHoverCardOpenChangeDetail>;

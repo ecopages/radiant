@@ -9,7 +9,7 @@ import {
 	registerReactivePropDefinition,
 } from '../../core/reactive-prop-metadata';
 
-type ReactivePropHost<P> = {
+export type ReactivePropHost<P> = {
 	createReactiveProp(propertyName: string, options: ReactivePropertyOptions<P>): void;
 };
 
@@ -26,8 +26,8 @@ type ReactivePropHost<P> = {
 export function reactiveProp<P = unknown>(propOptions: ReactivePropertyOptions<P>) {
 	const { type, attribute, reflect, defaultValue, bind, transform } = propOptions;
 	const hasDefaultValue = 'defaultValue' in propOptions;
-	validateReactivePropertyDefault(type, defaultValue);
-	return function <T extends ReactivePropHost<P>, V>(_: undefined, context: ClassFieldDecoratorContext<T, V>) {
+	validateReactivePropertyDefault(type, defaultValue, !!transform?.fromAttribute);
+	return function <T extends ReactivePropHost<P>>(_: undefined, context: ClassFieldDecoratorContext<T, P>) {
 		const propertyName = String(context.name);
 		const attributeKey = attribute ?? propertyName;
 		const initializerValueKey = Symbol(`@ecopages/radiant/reactive-prop:${propertyName}:initializer`);
@@ -54,9 +54,8 @@ export function reactiveProp<P = unknown>(propOptions: ReactivePropertyOptions<P
 		}
 
 		context.addInitializer(function (this: T) {
-			const initializerValue = (this as T & Record<PropertyKey, V | undefined>)[initializerValueKey];
-			const resolvedDefaultValue = (defaultValue === undefined ? initializerValue : defaultValue) as
-				P | undefined;
+			const initializerValue = (this as T & Record<PropertyKey, P | undefined>)[initializerValueKey];
+			const resolvedDefaultValue = defaultValue === undefined ? initializerValue : defaultValue;
 
 			registerReactivePropDefinition(this, propertyName, options);
 			this.createReactiveProp(propertyName, {
@@ -69,8 +68,8 @@ export function reactiveProp<P = unknown>(propOptions: ReactivePropertyOptions<P
 			});
 		});
 
-		return function (this: T, value: V) {
-			(this as Record<PropertyKey, V | undefined>)[initializerValueKey] = value;
+		return function (this: T, value: P) {
+			(this as Record<PropertyKey, P | undefined>)[initializerValueKey] = value;
 			return value;
 		};
 	};

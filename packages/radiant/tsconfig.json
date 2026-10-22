@@ -19,5 +19,6 @@
 			"@/*": ["./src/*"]
 		}
 	},
-	"include": ["**/*"]
+	"include": ["**/*"],
+	"exclude": ["test/types/declaration-emit"]
 }

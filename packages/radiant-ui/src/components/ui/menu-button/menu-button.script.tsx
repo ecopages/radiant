@@ -85,8 +85,8 @@ export class RuiMenuButton extends RadiantElement {
 
 	@prop({ type: String, defaultValue: 'bottom-start' }) placement: RuiPlacement;
 
-	@query({ ref: 'trigger' }) triggerTarget: HTMLButtonElement;
-	@query({ ref: 'menu' }) menuTarget: HTMLElement;
+	@query({ ref: 'trigger' }) triggerTarget: HTMLButtonElement | null;
+	@query({ ref: 'menu' }) menuTarget: HTMLElement | null;
 
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiMenuButtonSelectDetail>;

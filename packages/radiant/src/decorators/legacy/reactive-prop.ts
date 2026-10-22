@@ -7,10 +7,7 @@ import type { ReactiveHostLike } from '../../core/reactive-host';
 import { registerReactivePropDefinition } from '../../core/reactive-prop-metadata';
 import { registerLegacyInstanceInitializer, registerLegacyPostConstructionInitializer } from './instance-initializers';
 import { bootstrapReactiveMemberBinding } from './member-bootstrap';
-
-type ReactivePropHost<T> = {
-	createReactiveProp(propertyName: string, options: ReactivePropertyOptions<T>): void;
-};
+import type { ReactivePropHost } from '../standard/reactive-prop';
 
 /**
  * Legacy-decorator implementation for `@prop(...)`.
@@ -22,7 +19,7 @@ type ReactivePropHost<T> = {
 export function reactiveProp<T = unknown>(propOptions: ReactivePropertyOptions<T>) {
 	const { type, attribute, reflect, defaultValue, bind, transform } = propOptions;
 	const hasDefaultValue = 'defaultValue' in propOptions;
-	validateReactivePropertyDefault(type, defaultValue);
+	validateReactivePropertyDefault(type, defaultValue, !!transform?.fromAttribute);
 
 	return (target: ReactivePropHost<T>, propertyName: string) => {
 		const attributeKey = attribute ?? propertyName;

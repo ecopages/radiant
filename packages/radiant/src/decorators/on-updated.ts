@@ -4,7 +4,14 @@ import { onUpdated as legacyOnUpdated } from './legacy/on-updated';
 import { onUpdated as standardOnUpdated } from './standard/on-updated';
 import { methodDecoratorBridge } from './bridge';
 
-type UpdatedHost = {
+/**
+ * Host shape `onUpdated` accepts.
+ *
+ * @remarks
+ * Exported so a consumer's declaration emit can name it: the `REACTIVE_HOST` key it is built on is
+ * not reachable from a package entry, and naming this alias keeps the emit from spelling it out.
+ */
+export type UpdatedHost = {
 	readonly [REACTIVE_HOST]: ReactiveHostInternals;
 };
 

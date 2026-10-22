@@ -1,0 +1,23 @@
+name: Tracking
+description: A change planned as ordered child issues.
+type: Task
+labels: [tracking]
+body:
+    - type: textarea
+      attributes:
+          label: Goal
+          description: The outcome the changes reach together.
+      validations:
+          required: true
+    - type: textarea
+      attributes:
+          label: Scope
+          description: What is in scope, and the non-goals.
+      validations:
+          required: true
+    - type: textarea
+      attributes:
+          label: Done when
+          description: The condition that closes this issue, such as every child issue closed.
+      validations:
+          required: true

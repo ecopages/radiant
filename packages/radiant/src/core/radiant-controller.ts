@@ -207,7 +207,7 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 	public createReactiveProp<T = unknown>(propertyName: string, options: ReactivePropertyOptions<T>): void {
 		const { type, defaultValue, bind, transform } = options;
 
-		validateReactivePropertyDefault(type, defaultValue);
+		validateReactivePropertyDefault(type, defaultValue, !!transform?.fromAttribute);
 
 		const hostPropertyBridge = new ControllerHostPropertyBridge<T>(this.host, this, propertyName);
 		const initialHostValue = hostPropertyBridge.getInitialValue();

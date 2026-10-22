@@ -1,25 +1,66 @@
+/**
+ * Material 3 baseline scheme (source color #6750a4), light and dark.
+ */
 :where(:root), :root[data-rui-theme='material'] {
-	--material-primary: oklch(46% 0.17 293);
-	--material-secondary: oklch(48% 0.045 286);
-	--material-tertiary: oklch(48% 0.11 340);
-	--material-error: oklch(48% 0.18 25);
-	--material-canvas: oklch(99% 0.006 285);
-	--material-surface: oklch(98% 0.009 285);
-	--material-surface-container: oklch(95% 0.015 285);
-	--material-outline: oklch(53% 0.018 285);
-	--material-outline-variant: oklch(86% 0.012 300);
-	--material-text: oklch(18% 0.018 285);
+	--material-primary: #6750a4;
+	--material-on-primary: #ffffff;
+	--material-primary-container: #eaddff;
+	--material-on-primary-container: #4f378b;
+	--material-secondary: #625b71;
+	--material-on-secondary: #ffffff;
+	--material-secondary-container: #e8def8;
+	--material-on-secondary-container: #4a4458;
+	--material-tertiary: #7d5260;
+	--material-on-tertiary: #ffffff;
+	--material-tertiary-container: #ffd8e4;
+	--material-on-tertiary-container: #633b48;
+	--material-error: #b3261e;
+	--material-on-error: #ffffff;
+	--material-error-container: #f9dedc;
+	--material-on-error-container: #8c1d18;
+	--material-surface: #fef7ff;
+	--material-on-surface: #1d1b20;
+	--material-on-surface-variant: #49454f;
+	--material-surface-container-lowest: #ffffff;
+	--material-surface-container-low: #f7f2fa;
+	--material-surface-container: #f3edf7;
+	--material-surface-container-high: #ece6f0;
+	--material-surface-container-highest: #e6e0e9;
+	--material-inverse-surface: #322f35;
+	--material-inverse-on-surface: #f5eff7;
+	--material-inverse-primary: #d0bcff;
+	--material-outline: #79747e;
+	--material-outline-variant: #cac4d0;
 }
 
 :where(.dark), :root.dark[data-rui-theme='material'] {
-	--material-primary: oklch(82% 0.11 293);
-	--material-secondary: oklch(80% 0.04 286);
-	--material-tertiary: oklch(82% 0.09 340);
-	--material-error: oklch(82% 0.12 25);
-	--material-canvas: oklch(17% 0.012 285);
-	--material-surface: oklch(20% 0.014 285);
-	--material-surface-container: oklch(25% 0.018 285);
-	--material-outline: oklch(70% 0.018 285);
-	--material-outline-variant: oklch(36% 0.012 300);
-	--material-text: oklch(91% 0.01 285);
+	--material-primary: #d0bcff;
+	--material-on-primary: #381e72;
+	--material-primary-container: #4f378b;
+	--material-on-primary-container: #eaddff;
+	--material-secondary: #ccc2dc;
+	--material-on-secondary: #332d41;
+	--material-secondary-container: #4a4458;
+	--material-on-secondary-container: #e8def8;
+	--material-tertiary: #efb8c8;
+	--material-on-tertiary: #492532;
+	--material-tertiary-container: #633b48;
+	--material-on-tertiary-container: #ffd8e4;
+	--material-error: #f2b8b5;
+	--material-on-error: #601410;
+	--material-error-container: #8c1d18;
+	--material-on-error-container: #f9dedc;
+	--material-surface: #141218;
+	--material-on-surface: #e6e0e9;
+	--material-on-surface-variant: #cac4d0;
+	--material-surface-container-lowest: #0f0d13;
+	--material-surface-container-low: #1d1b20;
+	--material-surface-container: #211f26;
+	--material-surface-container-high: #2b2930;
+	--material-surface-container-highest: #36343b;
+	--material-inverse-surface: #e6e0e9;
+	--material-inverse-on-surface: #322f35;
+	--material-inverse-primary: #6750a4;
+	--material-outline: #938f99;
+	--material-outline-variant: #49454f;
 }

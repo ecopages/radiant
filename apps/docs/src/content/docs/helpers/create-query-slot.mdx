@@ -42,7 +42,7 @@ customElements.define('info-card', InfoCard);
 
 ## Parameters
 
-`createQuerySlot<T>(host, options)` accepts:
+`createQuerySlot<T>(host, options)`, where `T` is the element type, accepts:
 
 | Parameter | Type | Required | Description |
 | :-------- | :--- | :------- | :---------- |
@@ -54,22 +54,23 @@ customElements.define('info-card', InfoCard);
 | Field | Type | Required | Description |
 | :---- | :--- | :------- | :---------- |
 | `name` | `string` | No | Named slot to query. Omit for the default slot. |
-| `all` | `boolean` | No | Return every assigned element instead of only the first (default: `false`). |
+| `all` | `true` or `false` | No | Return every assigned element instead of only the first (default: `false`). Must be a literal, because it picks the value type. |
 | `cache` | `boolean` | No | Cache the result until slot projection changes (default: `true`). |
 
 ## Return Value
 
 Returns a `QuerySlotResult<T>` object with a single `.value` getter:
 
-- When `all` is `false`: returns `T | null`.
-- When `all` is `true`: returns `T` (an array), or an empty array if nothing is projected.
+- When `all` is omitted or `false`: returns `T | null`.
+- When `all` is `true`: returns `T[]`, empty if nothing is projected.
+- When `all` is a `boolean` variable: returns `Element[] | Element | null`, and `createQuerySlot` then takes no type argument.
 
 ## Cache Invalidation
 
 Cached results are automatically invalidated when the host's `slotProjectionVersion` counter changes. This happens when slot content is added, removed, or re-projected. Set `cache: false` to re-query on every `.value` read.
 
 ```typescript
-const allHeaders = createQuerySlot<HTMLHeadingElement[]>(this, {
+const allHeaders = createQuerySlot<HTMLHeadingElement>(this, {
 	name: 'heading',
 	all: true,
 	cache: false,

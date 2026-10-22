@@ -32,27 +32,28 @@ export class ControllerContextProvider extends RadiantController {
 	})
 	provider!: ContextProvider<typeof controllerVisualizerContext>;
 
-	@query({ ref: 'provider-count' }) providerCount!: HTMLElement;
-	@query({ ref: 'provider-events' }) providerEvents!: HTMLElement;
-	@query({ ref: 'provider-last' }) providerLast!: HTMLElement;
-	@query({ ref: 'status' }) status!: HTMLElement;
+	@query({ ref: 'provider-count' }) providerCount!: HTMLElement | null;
+	@query({ ref: 'provider-events' }) providerEvents!: HTMLElement | null;
+	@query({ ref: 'provider-last' }) providerLast!: HTMLElement | null;
+	@query({ ref: 'status' }) status!: HTMLElement | null;
 
 	override connect(): void {
 		super.connect();
 		this.syncSnapshot(this.provider.getContext());
-		this.status.textContent = 'Provider seeded context. Both consumers resolved their first value.';
+		if (this.status)
+			this.status.textContent = 'Provider seeded context. Both consumers resolved their first value.';
 	}
 
 	@onEvent({ ref: 'increment', type: 'click' })
 	increment() {
 		this.updateCount(1, 'Incremented');
-		this.status.textContent = 'Increment updated the shared context. Both consumers reacted.';
+		if (this.status) this.status.textContent = 'Increment updated the shared context. Both consumers reacted.';
 	}
 
 	@onEvent({ ref: 'decrement', type: 'click' })
 	decrement() {
 		this.updateCount(-1, 'Decremented');
-		this.status.textContent = 'Decrement updated the shared context. Both consumers reacted.';
+		if (this.status) this.status.textContent = 'Decrement updated the shared context. Both consumers reacted.';
 	}
 
 	@onEvent({ ref: 'reset', type: 'click' })
@@ -64,7 +65,8 @@ export class ControllerContextProvider extends RadiantController {
 
 		this.provider.setContext(nextContext);
 		this.syncSnapshot(nextContext);
-		this.status.textContent = 'Reset restored the baseline count and replayed it to each consumer.';
+		if (this.status)
+			this.status.textContent = 'Reset restored the baseline count and replayed it to each consumer.';
 	}
 
 	private updateCount(delta: number, label: string) {
@@ -81,27 +83,27 @@ export class ControllerContextProvider extends RadiantController {
 
 	private syncSnapshot(context: ControllerVisualizerContext) {
 		const lastEntry = context.history[context.history.length - 1] ?? 'Waiting for updates';
-		this.providerCount.textContent = String(context.count);
-		this.providerEvents.textContent = String(context.history.length);
-		this.providerLast.textContent = lastEntry;
+		if (this.providerCount) this.providerCount.textContent = String(context.count);
+		if (this.providerEvents) this.providerEvents.textContent = String(context.history.length);
+		if (this.providerLast) this.providerLast.textContent = lastEntry;
 	}
 }
 
 @controller('controller-context-consumer')
 export class ControllerContextConsumer extends RadiantController {
-	@query({ ref: 'controller-count' }) controllerCount!: HTMLElement;
-	@query({ ref: 'controller-mode' }) controllerMode!: HTMLElement;
-	@query({ ref: 'controller-last' }) controllerLast!: HTMLElement;
+	@query({ ref: 'controller-count' }) controllerCount!: HTMLElement | null;
+	@query({ ref: 'controller-mode' }) controllerMode!: HTMLElement | null;
+	@query({ ref: 'controller-last' }) controllerLast!: HTMLElement | null;
 
 	@onContextUpdate({ context: controllerVisualizerContext, select: (context) => context.count })
 	onCountChange(count: number) {
-		this.controllerCount.textContent = String(count);
-		this.controllerMode.textContent = count % 2 === 0 ? 'even' : 'odd';
+		if (this.controllerCount) this.controllerCount.textContent = String(count);
+		if (this.controllerMode) this.controllerMode.textContent = count % 2 === 0 ? 'even' : 'odd';
 	}
 
 	@onContextUpdate({ context: controllerVisualizerContext, select: (context) => context.history })
 	onHistoryChange(history: string[]) {
-		this.controllerLast.textContent = history[history.length - 1] ?? 'Waiting for updates';
+		if (this.controllerLast) this.controllerLast.textContent = history[history.length - 1] ?? 'Waiting for updates';
 	}
 }
 

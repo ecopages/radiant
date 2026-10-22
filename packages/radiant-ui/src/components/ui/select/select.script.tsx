@@ -144,7 +144,7 @@ export class RuiSelect extends RadiantElement {
 		getOptionIdPrefix: () => `${this.uid}-option`,
 	});
 
-	@query({ ref: 'root' }) rootTarget: HTMLElement;
+	@query({ ref: 'root' }) rootTarget: HTMLElement | null;
 
 	private get listboxId(): string {
 		return `${this.uid}-list`;

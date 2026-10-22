@@ -1,15 +1,10 @@
-import type { BindToHost, BindToTarget } from './shared/bind-to';
+import type { BindToHost, BindToTarget, BindToValue } from './shared/bind-to';
 import { compileBindToTargets } from './shared/bind-to';
 import { bindTo as legacyBindTo } from './legacy/bind-to';
 import { bindTo as standardBindTo } from './standard/bind-to';
-import { fieldDecoratorBridge } from './bridge';
+import { fieldDecorator, type ValueFieldDecorator } from './bridge';
 
 export type { BindToTarget } from './shared/bind-to';
-
-type BindToDecorator<T> = {
-	<THost extends BindToHost>(protoOrTarget: undefined, nameOrContext: ClassFieldDecoratorContext<THost, T>): void;
-	(protoOrTarget: BindToHost, nameOrContext: string): void;
-};
 
 type BindToInput<T> = BindToTarget<T> | readonly BindToTarget<T>[];
 
@@ -23,8 +18,14 @@ type BindToInput<T> = BindToTarget<T> | readonly BindToTarget<T>[];
  * Use `@onEvent` for DOM events and `@onUpdated` for procedures (focus, timers,
  * joined `aria-describedby`). `@bindTo` only copies field values onto nodes.
  *
- * `map` is typed from the decorated field. Leave the callback parameter
- * unannotated.
+ * Under standard decorators `map` is typed from the decorated field: leave the
+ * callback parameter unannotated. It receives the field value, so on a
+ * `@signal` field declared `WritableSignal<number>` it receives the `number`.
+ * Legacy decorators (`experimentalDecorators`) never see the field type, so
+ * `map` receives `unknown` and nothing is checked against the field: pass the
+ * whole field type, `undefined` included, as a type argument, as in
+ * `@bindTo<number>({ attr: 'data-n', map: (v) => v.toFixed() })` or
+ * `@bindTo<WritableSignal<number>>(...)` on a `@signal` field.
  *
  * @param target One write, or a list of writes, driven by the decorated field.
  *
@@ -33,22 +34,12 @@ type BindToInput<T> = BindToTarget<T> | readonly BindToTarget<T>[];
  * Overloads (object vs array) restore contextual typing that a `T | T[]`
  * parameter would drop.
  */
-export function bindTo<T>(target: BindToTarget<NoInfer<T>>): BindToDecorator<T>;
-export function bindTo<T>(targets: readonly BindToTarget<NoInfer<T>>[]): BindToDecorator<T>;
-export function bindTo<T>(target: BindToInput<NoInfer<T>>): BindToDecorator<T> {
+export function bindTo<T>(target: BindToTarget<NoInfer<BindToValue<T>>>): ValueFieldDecorator<BindToHost, T>;
+export function bindTo<T>(
+	targets: readonly BindToTarget<NoInfer<BindToValue<T>>>[],
+): ValueFieldDecorator<BindToHost, T>;
+export function bindTo<T>(target: BindToInput<NoInfer<BindToValue<T>>>): ValueFieldDecorator<BindToHost, T> {
 	const compiled = compileBindToTargets(target as BindToInput<unknown>);
 
-	function decorator<THost extends BindToHost>(
-		protoOrTarget: undefined,
-		nameOrContext: ClassFieldDecoratorContext<THost, T>,
-	): void;
-	function decorator(protoOrTarget: BindToHost, nameOrContext: string): void;
-	function decorator(
-		protoOrTarget: BindToHost | undefined,
-		nameOrContext: string | ClassFieldDecoratorContext<BindToHost, T>,
-	): void {
-		return fieldDecoratorBridge(standardBindTo(compiled), legacyBindTo(compiled), protoOrTarget, nameOrContext);
-	}
-
-	return decorator;
+	return fieldDecorator<BindToHost, T>(standardBindTo(compiled), legacyBindTo(compiled));
 }

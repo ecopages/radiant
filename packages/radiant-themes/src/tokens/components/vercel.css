@@ -1,7 +1,9 @@
+@reference 'tailwindcss';
+
 :where(:root), :root[data-rui-theme='vercel'] {
-	--font-sans: 'Geist Sans', ui-sans-serif, system-ui, sans-serif;
-	--font-heading: 'Geist Sans', ui-sans-serif, system-ui, sans-serif;
-	--font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	--font-sans: Geist, 'Geist Sans', ui-sans-serif, system-ui, sans-serif;
+	--font-heading: Geist, 'Geist Sans', ui-sans-serif, system-ui, sans-serif;
+	--font-mono: 'Geist Mono', 'GeistMono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 	--rui-border-alpha: 100%;
 	--border-radius-xs: 0.125rem;
 	--border-radius-sm: 0.25rem;
@@ -34,6 +36,7 @@
 
 	:root .rui-button {
 		@apply rounded-control border border-transparent font-medium shadow-none;
+		background-image: none;
 	}
 
 	:root .rui-button--filled {
@@ -51,7 +54,12 @@
 
 	:root .rui-button--outline:hover:not(:disabled),
 	:root .rui-button--ghost:hover:not(:disabled) {
-		@apply bg-surface-container-low;
+		background-color: var(--color-vercel-component-2);
+	}
+
+	:root .rui-button--outline:active:not(:disabled),
+	:root .rui-button--ghost:active:not(:disabled) {
+		background-color: var(--color-vercel-component-3);
 	}
 
 	:root .rui-input,
@@ -95,15 +103,48 @@
 	}
 
 	:root .rui-dialog__surface,
-	:root .rui-popover-host,
 	:root .rui-hover-card__content,
-	:root .rui-menu-button__menu,
-	:root .rui-menubar__menu,
-	:root .rui-select__listbox,
-	:root .rui-combobox__listbox,
 	:root .rui-calendar,
 	:root rui-tabs[variant='boxed'] {
 		@apply rounded-container border border-border bg-surface shadow-sm;
+	}
+
+	:root .rui-popover {
+		--rui-popover-radius: var(--radius-container);
+		--rui-popover-surface: var(--color-vercel-background-1);
+		--rui-popover-border-color: var(--color-vercel-border-4);
+		--rui-popover-shadow: 0 4px 8px -4px rgb(0 0 0 / 0.04), 0 16px 24px -8px rgb(0 0 0 / 0.06);
+	}
+
+	:root .rui-tooltip__content {
+		--rui-tooltip-radius: var(--radius-control);
+		--rui-tooltip-padding-x: 0.75rem;
+		--rui-tooltip-padding-y: 0.375rem;
+	}
+
+	/**
+	 * Geist menus: a 12px floating panel with 8px padding and 6px rounded rows.
+	 */
+	:root .rui-menu-button__menu,
+	:root .rui-menubar__menu,
+	:root .rui-select__listbox,
+	:root .rui-combobox__listbox {
+		@apply rounded-container border border-border p-2;
+		background-color: var(--color-vercel-background-1);
+		box-shadow:
+			0 4px 8px -4px rgb(0 0 0 / 0.04),
+			0 16px 24px -8px rgb(0 0 0 / 0.06);
+	}
+
+	:root .rui-select__listbox .rui-listbox,
+	:root .rui-combobox__listbox .rui-listbox {
+		@apply bg-transparent p-0;
+	}
+
+	:root .rui-listbox__option,
+	:root .rui-menu-button__item,
+	:root .rui-menubar__menu-item {
+		@apply rounded-control;
 	}
 
 	:root rui-tabs[variant='boxed'] .rui-tabs__list {
@@ -117,7 +158,7 @@
 	}
 
 	:root rui-tabs[variant='boxed'] .rui-tabs__tab[aria-selected='true'] {
-		@apply bg-transparent text-on-surface font-semibold;
+		@apply bg-transparent text-on-surface font-medium;
 		border-bottom-color: var(--primary);
 	}
 
@@ -126,13 +167,33 @@
 		padding: var(--rui-tabs-panel-padding);
 	}
 
-	:root .rui-listbox__option:hover:not([aria-selected='true']):not([aria-disabled='true']):not([data-active]),
+	:root .rui-listbox__option:hover:not([aria-disabled='true']),
+	:root .rui-listbox__option[data-active]:not([aria-disabled='true']),
 	:root .rui-menu-button__item:hover:not([aria-checked='true']):not([aria-disabled='true']),
 	:root .rui-menubar__menu-item:hover:not([aria-expanded='true']):not([aria-disabled='true']) {
-		background-color: var(--color-vercel-component-2);
+		background-color: var(--color-vercel-component-1);
 	}
 
-	:root .rui-table__header,
+	/**
+	 * @remarks Geist marks the selected menu row with a check on a hover-strength fill, not an inverted fill, so the
+	 * indicator uses the text color instead of `on-primary`.
+	 */
+	:root .rui-listbox__option[aria-selected='true']:not([aria-disabled='true']),
+	:root .rui-listbox__option[aria-selected='true']:focus-visible {
+		background-color: var(--color-vercel-component-2);
+		background-image: none;
+		color: var(--color-vercel-text-primary);
+	}
+
+	:root .rui-listbox__option[aria-selected='true'] .rui-listbox__option-indicator {
+		color: var(--color-vercel-text-primary);
+	}
+
+	:root .rui-listbox__option[aria-selected='true'][data-active]:not([aria-disabled='true']) {
+		--tw-ring-color: transparent;
+	}
+
+	:root .rui-table__column,
 	:root .rui-treegrid__row--header {
 		@apply bg-surface-container-low text-on-surface font-medium;
 	}
@@ -141,8 +202,9 @@
 		@apply rounded-control shadow-none;
 	}
 
-	:root .rui-toast__content {
-		@apply rounded-control border border-border bg-surface text-on-surface shadow-none;
+	:root .rui-toast {
+		@apply rounded-control shadow-none;
+		background-image: none;
 	}
 
 	:root .rui-separator,

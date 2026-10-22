@@ -67,6 +67,23 @@ When a component renders literal `<slot>` tags, host serialization also emits th
 
 Under `withRadiantServerCustomElementRenderBridge`, a nested host receives its JSX children as light-DOM nodes (`renderServerLightDom` from `@ecopages/jsx/server`), not as an HTML string to parse. Text and attribute values go straight into the DOM, so they are escaped exactly once, when the host serializes. The children are built inside the host's own context providers, after construction and legacy decorator setup but before `prepareForSsr`. A context consumer passed as a child of a provider host therefore resolves that provider during SSR. It sees values set by construction or decorators (`initialValue`), but not values the provider only sets during preparation.
 
+An integration that registers its own hook with `withServerCustomElementRenderHook` instead of using the bridge decides where a host's children are built. By default they are built before the hook runs, outside the host's context providers, so a consumer passed as a child of a provider host renders its fallback state in the server HTML. Register the hook with `{ ownsChildren: true }`, take `applyChildren` from the hook context, and call it inside the host's providers:
+
+```ts
+withServerCustomElementRenderHook(
+	({ instance, applyChildren }) => {
+		if (!instance || !resolveRadiantElementRenderBridge(instance)) return undefined;
+		const service = createRadiantElementSsrService(instance);
+		service.applyLightDom(() => applyChildren?.());
+		return createMarkupNodeLike(service.renderHostToString({ mode: 'hydrate' }, service.getHostAttributes()));
+	},
+	render,
+	{ ownsChildren: true },
+);
+```
+
+Hosts the hook does not claim still get their children applied as usual. `test/server/custom-element-hook-children.test.tsx` covers both shapes. Without the change the page is still correct after hydration, because a consumer resolves its provider when it connects; the server HTML is what differs.
+
 `RadiantElement.renderViewToString()` remains the narrow host hook that asks the installed server runtime to serialize the JSX view only.
 
 ### Typed Boolean host attributes

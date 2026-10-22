@@ -49,9 +49,9 @@ function counterTemplate(count: number, draft: string): string {
 class DecoratorCounterParityElement extends RadiantElement {
 	@prop({ type: Number, reflect: true, defaultValue: 1 }) count!: number;
 	@state draft = 'ready';
-	@query({ ref: 'action' }) actionButton!: HTMLButtonElement;
-	@query({ ref: 'status' }) statusNode!: HTMLSpanElement;
-	@query({ ref: 'detail' }) detailNode!: HTMLParagraphElement;
+	@query({ ref: 'action' }) actionButton!: HTMLButtonElement | null;
+	@query({ ref: 'status' }) statusNode!: HTMLSpanElement | null;
+	@query({ ref: 'detail' }) detailNode!: HTMLParagraphElement | null;
 
 	override connectedCallback(): void {
 		super.connectedCallback();
@@ -155,7 +155,7 @@ customElements.define('parity-decorator-event-emitter', DecoratorEventEmitterPar
 
 class DecoratorEventListenerParityElement extends RadiantElement {
 	lastMessage = 'idle';
-	@query({ ref: 'output' }) outputNode!: HTMLDivElement;
+	@query({ ref: 'output' }) outputNode!: HTMLDivElement | null;
 
 	override connectedCallback(): void {
 		super.connectedCallback();
@@ -165,7 +165,7 @@ class DecoratorEventListenerParityElement extends RadiantElement {
 	@onEvent({ selector: 'parity-decorator-event-emitter', type: 'parity-message' })
 	handleMessage(event: CustomEvent<{ value: string }>): void {
 		this.lastMessage = event.detail.value;
-		this.renderTemplate({ target: this.outputNode, template: `Message: ${this.lastMessage}` });
+		this.renderTemplate({ target: this.outputNode!, template: `Message: ${this.lastMessage}` });
 	}
 
 	private outputTemplate(): string {

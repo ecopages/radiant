@@ -1,9 +1,13 @@
 import type { ContextHostLike } from '../../context-host';
 import { bootstrapSsrConsumedContext, connectConsumedContext } from '../../context-consumer-bootstrap';
+import type { ContextProvider } from '../../context-provider';
 import type { UnknownContext } from '../../types';
 
-export function consumeContext(consumedContext: UnknownContext) {
-	return <T extends ContextHostLike, V>(target: undefined, context: ClassFieldDecoratorContext<T, V>) => {
+export function consumeContext<C extends UnknownContext>(consumedContext: C) {
+	return <T extends ContextHostLike, V extends ContextProvider<C> | undefined>(
+		target: undefined,
+		context: ClassFieldDecoratorContext<T, V>,
+	) => {
 		void target;
 		const contextName = String(context.name);
 		const assignContextProvider = (host: T, provider: unknown) => {

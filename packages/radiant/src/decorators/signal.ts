@@ -1,19 +1,18 @@
-import type { LegacyFieldDecoratorArgs } from '../types';
 import type { ReactiveHostLike } from '../core/reactive-host';
-import { signal as legacySignal, type SignalDecoratorOptions } from './legacy/signal';
+import { fieldDecorator, fieldDecoratorBridge, type ValueFieldDecorator } from './bridge';
+import { signal as legacySignal } from './legacy/signal';
+import type { SignalDecoratorOptions } from './shared/signal-options';
 import { signal as standardSignal } from './standard/signal';
 import type { WritableSignal } from '@ecopages/signals';
 
-export type { SignalDecoratorOptions } from './standard/signal';
+export type { SignalDecoratorOptions } from './shared/signal-options';
 
-type SignalDecorator<Value = unknown> = {
-	<THost extends ReactiveHostLike>(
-		protoOrTarget: undefined,
-		nameOrContext: ClassFieldDecoratorContext<THost, WritableSignal<Value>>,
-	): (this: THost, initialValue: Value | WritableSignal<Value>) => WritableSignal<Value>;
-	(protoOrTarget: ReactiveHostLike, nameOrContext: string): void;
-};
-
+export function signal(protoOrTarget: ReactiveHostLike, nameOrContext: string): void;
+/** Bare `@signal`: a host-owned writable signal field, as `@signal()` declares. */
+export function signal<THost extends ReactiveHostLike, T>(
+	protoOrTarget: undefined,
+	nameOrContext: ClassFieldDecoratorContext<THost, WritableSignal<T>>,
+): (this: THost, initialValue: T | WritableSignal<T>) => WritableSignal<T>;
 /**
  * Declares a host-aware writable signal field.
  *
@@ -25,67 +24,49 @@ type SignalDecorator<Value = unknown> = {
  * Connected signals still flow through Radiant's update callback channel so
  * `@onUpdated(...)` and `this.$.name` bindings continue to work. On
  * `RadiantElement`, any signal or store reads performed during `render()`
- * now participate in rerender invalidation directly, which makes module-level
+ * participate in rerender invalidation directly, which makes module-level
  * shared stores a natural fit without prop-bridging them through a second
  * reactive layer.
  *
  * When `hydrate` is provided, SSR host output appends a keyed JSON script so
  * the client can restore the signal's initial value during hydration.
+ *
+ * The declared `WritableSignal<T>` is the source of truth: `initial` and
+ * `source` must agree with its `T`, and are checked against it under standard
+ * decorators. Legacy decorators never see the field, so there `T` is `unknown`
+ * unless passed explicitly.
+ *
+ * @remarks
+ * Besides the error on the mismatched option, TypeScript reports "Unable to
+ * resolve signature of property decorator" on the decorator: a failed
+ * `signal(options)` call takes its return type from the legacy overload.
  */
-export function signal<THost extends ReactiveHostLike, Value>(
-	protoOrTarget: undefined,
-	nameOrContext: ClassFieldDecoratorContext<THost, WritableSignal<Value>>,
-): (this: THost, initialValue: Value | WritableSignal<Value>) => WritableSignal<Value>;
-export function signal(protoOrTarget: ReactiveHostLike, nameOrContext: string): void;
-export function signal<Value = unknown>(options?: SignalDecoratorOptions<Value>): SignalDecorator<Value>;
-export function signal<Value = unknown>(
-	protoOrOptions?: ReactiveHostLike | SignalDecoratorOptions<Value>,
-	nameOrContext?: string | ClassFieldDecoratorContext<ReactiveHostLike, WritableSignal<Value>>,
+export function signal<T = unknown>(
+	options?: SignalDecoratorOptions<NoInfer<T>>,
+): ValueFieldDecorator<ReactiveHostLike, WritableSignal<T>>;
+/**
+ * @remarks
+ * The second argument tells the forms apart: `@signal(options)` passes none,
+ * so the first argument is the options; the bare `@signal` passes a name or a
+ * context, so the first argument is the legacy prototype or `undefined`.
+ */
+export function signal<T>(
+	optionsOrTarget?: SignalDecoratorOptions<T> | ReactiveHostLike,
+	nameOrContext?: string | ClassFieldDecoratorContext<ReactiveHostLike, WritableSignal<T>>,
 ):
-	| ((this: ReactiveHostLike, initialValue: Value | WritableSignal<Value>) => WritableSignal<Value>)
-	| SignalDecorator<Value>
+	| ValueFieldDecorator<ReactiveHostLike, WritableSignal<T>>
+	| ((this: ReactiveHostLike, initialValue: T | WritableSignal<T>) => WritableSignal<T>)
 	| void {
-	if (typeof nameOrContext !== 'undefined') {
-		if (typeof nameOrContext === 'object') {
-			if (protoOrOptions !== undefined) {
-				throw new TypeError('@signal standard decorators require an undefined target');
-			}
+	if (nameOrContext === undefined) {
+		const options = optionsOrTarget as SignalDecoratorOptions<T> | undefined;
 
-			return standardSignal<Value>()(undefined, nameOrContext);
-		}
-
-		if (protoOrOptions === undefined) {
-			throw new TypeError('@signal legacy decorators require a host target');
-		}
-
-		return legacySignal<Value>()(protoOrOptions as LegacyFieldDecoratorArgs['protoOrTarget'], nameOrContext);
+		return fieldDecorator(standardSignal(options), legacySignal(options));
 	}
 
-	const options = (protoOrOptions ?? {}) as SignalDecoratorOptions<Value>;
-
-	function decorator<THost extends ReactiveHostLike>(
-		protoOrTarget: undefined,
-		contextOrName: ClassFieldDecoratorContext<THost, WritableSignal<Value>>,
-	): (this: THost, initialValue: Value | WritableSignal<Value>) => WritableSignal<Value>;
-	function decorator(protoOrTarget: ReactiveHostLike, contextOrName: string): void;
-	function decorator(
-		protoOrTarget: ReactiveHostLike | undefined,
-		contextOrName: string | ClassFieldDecoratorContext<ReactiveHostLike, WritableSignal<Value>>,
-	): ((this: ReactiveHostLike, initialValue: Value | WritableSignal<Value>) => WritableSignal<Value>) | void {
-		if (typeof contextOrName === 'object') {
-			if (protoOrTarget !== undefined) {
-				throw new TypeError('@signal standard decorators require an undefined target');
-			}
-
-			return standardSignal<Value>(options)(undefined, contextOrName);
-		}
-
-		if (protoOrTarget === undefined) {
-			throw new TypeError('@signal legacy decorators require a host target');
-		}
-
-		return legacySignal<Value>(options)(protoOrTarget as LegacyFieldDecoratorArgs['protoOrTarget'], contextOrName);
-	}
-
-	return decorator;
+	return fieldDecoratorBridge(
+		standardSignal<T>(),
+		legacySignal<T>(),
+		optionsOrTarget as ReactiveHostLike | undefined,
+		nameOrContext,
+	);
 }

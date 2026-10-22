@@ -36,8 +36,9 @@ The decorator accepts a configuration object. You must provide a target and an e
 | :-------- | :--- | :---------- |
 | `selector` | `string` | CSS selector to match target elements (uses event delegation). |
 | `ref` | `string` | Value of `data-ref` attribute to match (uses event delegation). |
-| `window` | `boolean` | Listen on the global `window` object. |
-| `document` | `boolean` | Listen on the global `document` object. |
+| `window` | `true` | Listen on the global `window` object. |
+| `document` | `true` | Listen on the global `document` object. |
+| `mediaQuery` | `string` | Listen on the `MediaQueryList` of the query, with `type: 'change'`. |
 
 ### Event Configuration
 
@@ -112,7 +113,7 @@ HTML:
 
 ### Event Delegation for Non-Bubbling Events
 
-Since `selector` and `ref` use event delegation, they rely on event bubbling. For events that don't bubble (like `focus`), use their bubbling alternatives (like `focusin`).
+Since `selector` and `ref` use event delegation, they rely on event bubbling. For events that don't bubble (like `focus`), use their bubbling alternatives (like `focusin`), or pass `options: { capture: true }`. In development, Radiant warns once per event type when a delegated listener uses a known non-bubbling type.
 
 ```typescript
 // Works: focusin bubbles

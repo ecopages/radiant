@@ -86,7 +86,7 @@ export class ReactivePropertyState {
 		const attributeKey = attribute ?? propertyName;
 		const hasPreUpgradeValue = this.preUpgradePropertyValues.has(propertyName);
 
-		validateReactivePropertyDefault(type, defaultValue);
+		validateReactivePropertyDefault(type, defaultValue, !!transform?.fromAttribute);
 
 		const propertyMapping = createReactivePropertyMapping(
 			propertyName,

@@ -1,0 +1,15 @@
+- name: severity:high
+  color: b60205
+  description: Breaks a main use or loses data; fix first.
+- name: severity:medium
+  color: fbca04
+  description: Wrong behaviour with a workaround.
+- name: severity:low
+  color: c2e0c6
+  description: Minor or cosmetic.
+- name: tracking
+  color: 5319e7
+  description: Tracks a change made of ordered child issues.
+- name: needs-decision
+  color: d876e3
+  description: Waits for a maintainer's answer.

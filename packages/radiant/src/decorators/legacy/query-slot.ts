@@ -9,7 +9,7 @@ type SlotQueryHost = RadiantElement & {
 	slotProjectionVersion?: number;
 };
 
-export function querySlot<T extends Element | Element[] | null>(
+export function querySlot(
 	options: QuerySlotConfig = {},
 ): (proto: RadiantElement, propertyName: string | symbol) => void {
 	return (proto: RadiantElement, propertyKey: string | symbol) => {
@@ -23,7 +23,7 @@ export function querySlot<T extends Element | Element[] | null>(
 				return;
 			}
 
-			const accessor = createQuerySlot<T>(instance, options);
+			const accessor = createQuerySlot(instance, options);
 
 			Object.defineProperty(instance, propertyKey, {
 				get() {
@@ -34,13 +34,13 @@ export function querySlot<T extends Element | Element[] | null>(
 			});
 		};
 
-		const protoAccessorCache = new WeakMap<SlotQueryHost, ReturnType<typeof createQuerySlot<T>>>();
+		const protoAccessorCache = new WeakMap<SlotQueryHost, ReturnType<typeof createQuerySlot>>();
 
 		Object.defineProperty(proto, propertyKey, {
 			get(this: SlotQueryHost) {
 				let accessor = protoAccessorCache.get(this);
 				if (!accessor) {
-					accessor = createQuerySlot<T>(this, options);
+					accessor = createQuerySlot(this, options);
 					protoAccessorCache.set(this, accessor);
 				}
 				return accessor.value;

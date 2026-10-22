@@ -1,6 +1,18 @@
+import type { WritableSignal } from '@ecopages/signals';
 import type { REACTIVE_HOST, ReactiveHostLike } from '../../core/reactive-host';
 import { createQuery, type QueryHostTarget } from '../../helpers/create-query';
 import { resolveHostElementOrNull } from '../../helpers/resolve-host-element';
+
+/**
+ * The value `@bindTo` hands to `map` for a field declared as `T`.
+ *
+ * @remarks
+ * `@bindTo` reads the field's reactive member with `get()`, so a `@signal` field declared
+ * `WritableSignal<V>` yields `V`. Any other field type yields itself, so a `@state` field
+ * that holds a signal as its value is typed with that signal's value, not the signal
+ * the runtime passes.
+ */
+export type BindToValue<T> = T extends WritableSignal<infer V> ? V : T;
 
 type BindToTransform<T> = {
 	invert?: true;

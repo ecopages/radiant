@@ -7,7 +7,7 @@ order: 7
 
 # @query
 
-The `@query` decorator provides a convenient way to query (and optionally cache) references to elements within your host DOM. It creates a getter that performs the query on every access by default, or once and caches the result if you pass `cache: true`.
+The `@query` decorator provides a convenient way to query (and optionally cache) references to elements within your host DOM. It creates a getter that performs the query on every access by default, or once and caches the result if you pass `cache: true`. The default is uncached in both standard and legacy decorator mode.
 
 It works on both `RadiantElement` and `RadiantController`.
 
@@ -19,10 +19,10 @@ import { RadiantElement, customElement, query } from '@ecopages/radiant';
 @customElement('user-profile')
 export class UserProfile extends RadiantElement {
 	// Query by data-ref (recommended)
-	@query({ ref: 'avatar' }) avatar!: HTMLImageElement;
+	@query({ ref: 'avatar' }) avatar!: HTMLImageElement | null;
 	
 	// Query by CSS selector
-	@query({ selector: 'button.action' }) submitButton!: HTMLButtonElement;
+	@query({ selector: 'button.action' }) submitButton!: HTMLButtonElement | null;
 	
 	// Query all matching elements
 	@query({ ref: 'item', all: true }) items!: HTMLElement[];
@@ -35,27 +35,31 @@ export class UserProfile extends RadiantElement {
 | :-------- | :--- | :------- | :---------- |
 | `selector` | `string` | One of `selector`/`ref` | CSS selector to match elements. |
 | `ref` | `string` | One of `selector`/`ref` | Value of `data-ref` attribute to match. |
-| `all` | `boolean` | No | Query for all matching elements (default: `false`). |
-| `cache` | `boolean` | No | Cache the query result (default: `false`). |
+| `all` | `true` or `false` | No | Query for all matching elements (default: `false`). Must be a literal, because it picks the field type. |
+| `cache` | `boolean` | No | Cache the query result (default: `false`). A query that finds nothing is not cached: it runs again on the next read. |
 
 ## Feature Highlight
 
 ### Caching Behavior
 
-By default, queries are **not** cached — each access re-runs the lookup. For a stable reference that never needs to be re-resolved, pass `cache: true` so repeated access skips the query.
+By default, queries are **not** cached — each access re-runs the lookup. For a stable reference that never needs to be re-resolved, pass `cache: true` so repeated access skips the query. A result of `null`, or an empty array with `all: true`, is not kept, so the query runs again until it finds something.
 
 ```typescript
 @query({ ref: 'stable-el', cache: true })
-stableEl!: HTMLElement;
+stableEl!: HTMLElement | null;
 ```
 
 ### Type Safety
 
-Use TypeScript's non-null assertion operator (`!`) for required elements, or the optional chaining operator (`?`) if the element might not be present.
+A single-element query is `T | null` and an `all: true` query is `T[]`, empty when nothing matches. Under standard decorators, any other field type does not compile: see [Typing Decorated Fields](/docs/decorators).
 
 ```typescript
-@query({ ref: 'required-el' }) element!: HTMLElement;
-@query({ ref: 'optional-el' }) optional?: HTMLElement;
+@query({ ref: 'avatar' }) avatar!: HTMLImageElement | null;
+@query({ ref: 'item', all: true }) items!: HTMLElement[];
+
+focusAvatar() {
+	this.avatar?.focus();
+}
 ```
 
 ## `@query` vs JSX Bindings
@@ -68,11 +72,11 @@ If the element is one your own `render()` JSX produces, prefer a binding instead
 
 ```tsx
 // Avoid — re-fetching a host-rendered node just to write into it
-@query({ ref: 'count' }) countEl!: HTMLElement;
+@query({ ref: 'count' }) countEl!: HTMLElement | null;
 
 @onUpdated('count')
 syncCount() {
-  this.countEl.textContent = String(this.count);
+  if (this.countEl) this.countEl.textContent = String(this.count);
 }
 
 override render() {

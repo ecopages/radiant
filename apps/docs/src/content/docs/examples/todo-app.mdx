@@ -55,14 +55,8 @@ JSON child text inside `<script type="application/json">` is emitted as raw scri
 The host owns the provider and the rerender boundary. The provider reads its own hydration script directly from the authored host children.
 
 ```tsx
-import {
-	type ContextProvider,
-	RadiantElement,
-	contextSelector,
-	customElement,
-	onEvent,
-	provideContext,
-} from '@ecopages/radiant';
+import { RadiantElement, customElement, onEvent } from '@ecopages/radiant';
+import { type ContextProvider, contextSelector, provideContext } from '@ecopages/radiant/context';
 
 import { TodoLogger, todoContext, type Todo, type TodoContext } from './todo-context';
 
@@ -154,14 +148,8 @@ export class RadiantTodoAppElement extends RadiantElement {
 Each todo item is a `RadiantElement` that renders its own view and consumes context for shared state mutations.
 
 ```tsx
-import {
-	type ContextProvider,
-	RadiantElement,
-	consumeContext,
-	customElement,
-	onEvent,
-	prop,
-} from '@ecopages/radiant';
+import { RadiantElement, customElement, onEvent, prop } from '@ecopages/radiant';
+import { type ContextProvider, consumeContext } from '@ecopages/radiant/context';
 
 import { todoContext } from './todo-context';
 
@@ -172,8 +160,8 @@ type RadiantTodoBindings = {
 
 @customElement('radiant-todo-item')
 export class RadiantTodoItem extends RadiantElement<RadiantTodoBindings> {
-	@prop({ type: Boolean, reflect: true, defaultValue: false }) declare complete: boolean;
-	@prop({ type: String, defaultValue: '' }) declare text: string;
+	@prop({ type: Boolean, reflect: true, defaultValue: false }) complete!: boolean;
+	@prop({ type: String, defaultValue: '' }) text!: string;
 	@consumeContext(todoContext) context!: ContextProvider<typeof todoContext>;
 
 	@onEvent({ selector: 'input[type="checkbox"]', type: 'change' })

@@ -1,18 +1,36 @@
+/**
+ * Primer functional colors: `bgColor`, `fgColor`, `borderColor`, the accent family for selection and focus, and the
+ * primary and default button fills.
+ */
 :where(:root), :root[data-rui-theme='github'] {
 	--color-github-white: #ffffff;
 	--color-github-canvas: #ffffff;
 	--color-github-subtle: #f6f8fa;
 	--color-github-muted: #eaeef2;
+	--color-github-overlay: #ffffff;
 	--color-github-border: #d1d9e0;
 	--color-github-border-strong: #8c959f;
 	--color-github-fg: #1f2328;
 	--color-github-muted-fg: #59636e;
 	--color-github-blue: #0969da;
 	--color-github-blue-light: #54aeff;
+	--color-github-accent-subtle: #ddf4ff;
+	--color-github-accent-on-subtle: #0550ae;
 	--color-github-green: #1a7f37;
 	--color-github-red: #cf222e;
+	--color-github-danger-fg: #d1242f;
 	--color-github-orange: #bc4c00;
 	--color-github-purple: #8250df;
+	--color-github-button-bg: #f6f8fa;
+	--color-github-button-hover: #eff2f5;
+	--color-github-button-active: #e6eaef;
+	--color-github-button-primary: #1f883d;
+	--color-github-button-primary-hover: #1c8139;
+	--color-github-button-primary-active: #197935;
+	--color-github-transparent-hover: rgb(129 139 152 / 0.15);
+	--color-github-transparent-selected: rgb(129 139 152 / 0.2);
+	--color-github-track: #e6eaef;
+	--color-github-knob-border: #818b98;
 }
 
 :where(.dark), :root.dark[data-rui-theme='github'] {
@@ -20,14 +38,28 @@
 	--color-github-canvas: #0d1117;
 	--color-github-subtle: #151b23;
 	--color-github-muted: #212830;
+	--color-github-overlay: #151b23;
 	--color-github-border: #3d444d;
 	--color-github-border-strong: #6e7681;
 	--color-github-fg: #f0f6fc;
 	--color-github-muted-fg: #9198a1;
 	--color-github-blue: #1f6feb;
 	--color-github-blue-light: #4493f8;
+	--color-github-accent-subtle: #121d2f;
+	--color-github-accent-on-subtle: #4493f8;
 	--color-github-green: #238636;
 	--color-github-red: #da3633;
+	--color-github-danger-fg: #ff6a61;
 	--color-github-orange: #db6d28;
 	--color-github-purple: #a371f7;
+	--color-github-button-bg: #212830;
+	--color-github-button-hover: #262c36;
+	--color-github-button-active: #2a313c;
+	--color-github-button-primary: #238636;
+	--color-github-button-primary-hover: #1f7a31;
+	--color-github-button-primary-active: #1c6e2d;
+	--color-github-transparent-hover: rgb(101 108 118 / 0.2);
+	--color-github-transparent-selected: rgb(101 108 118 / 0.24);
+	--color-github-track: #2a313c;
+	--color-github-knob-border: #656c76;
 }

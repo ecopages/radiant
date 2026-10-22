@@ -71,7 +71,7 @@ Use the semantic names in application code:
 
 ## Typing Components
 
-Type safety is a core feature of Radiant. We recommend following these patterns to ensure your components are correctly typed for both TypeScript and JSX integration.
+Type safety is a core feature of Radiant. We recommend following these patterns to ensure your components are correctly typed for both TypeScript and JSX integration. For the type each decorated field takes, see [Typing Decorated Fields](/docs/decorators).
 
 ### Defining Props
 
@@ -86,9 +86,9 @@ export type UserCardProps = {
 
 @customElement('user-card')
 export class UserCard extends RadiantElement {
-  @prop({ type: String }) declare name: string;
-  @prop({ type: String }) declare avatarUrl: string;
-  @prop({ type: Boolean }) declare isAdmin: boolean;
+  @prop({ type: String }) name!: string;
+  @prop({ type: String }) avatarUrl!: string;
+  @prop({ type: Boolean }) isAdmin?: boolean;
 }
 ```
 
@@ -136,8 +136,8 @@ type UserCardBindings = UserCardProps & {
 
 @customElement('user-card')
 export class UserCard extends RadiantElement<UserCardBindings> {
-  @prop({ type: String, defaultValue: 'Anonymous' }) declare name: string;
-  @prop({ type: String, defaultValue: '' }) declare avatarUrl: string;
+  @prop({ type: String, defaultValue: 'Anonymous' }) name!: string;
+  @prop({ type: String, defaultValue: '' }) avatarUrl!: string;
   @state isExpanded = false;
 
   toggleExpanded = () => {
@@ -213,11 +213,11 @@ In that example, the `class` expression still belongs to the host render pass, w
 
 ```tsx
 // Avoid
-@query({ ref: 'count' }) countEl!: HTMLElement;
+@query({ ref: 'count' }) countEl!: HTMLElement | null;
 
 @onUpdated('count')
 syncCount() {
-  this.countEl.textContent = String(this.count);
+  if (this.countEl) this.countEl.textContent = String(this.count);
 }
 
 // Prefer — host-owned JSX
@@ -227,6 +227,7 @@ override render() {
 
 // Prefer — authored light DOM
 @bindTo({ ref: 'count', text: true })
+@state
 count = 0;
 ```
 

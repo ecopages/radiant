@@ -1,32 +1,30 @@
 import type { QueryConfig } from '../helpers/create-query';
-import { query as legacyQuery } from './legacy/query';
+import { query as legacyQuery, type QueryDecoratorHost } from './legacy/query';
 import { query as standardQuery } from './standard/query';
-import { fieldDecoratorBridge } from './bridge';
+import { fieldDecorator, type ValueFieldDecorator } from './bridge';
 
 export type { QueryConfig };
-
-type QueryDecoratorHost = (Element | { host: Element }) & {
-	registerConnectedCallback(callback: () => void): void;
-};
 
 /**
  * A decorator to query by CSS selector or data-ref attribute.
  * By default it queries for the first element that matches the selector, but it can be configured to query for all elements.
  * It caches the result only when `cache` is enabled.
- * @param options {@link QueryConfig} The options for the reactive property.
+ *
+ * The type argument is the element type. Under standard decorators the field is `T | null`, or `T[]` with
+ * `all: true`, and a field of another type is rejected.
+ *
+ * @remarks
+ * A value decorator, not a bounded one: a single-element query returns `null` when nothing matches,
+ * and a bound can allow `null` but cannot require it. `all` picks the overload, so it must be a literal.
  */
-export function query<T extends Element | Element[]>(options: QueryConfig) {
-	function decorator<Host extends QueryDecoratorHost>(
-		protoOrTarget: undefined,
-		nameOrContext: ClassFieldDecoratorContext<Host, T>,
-	): void;
-	function decorator(protoOrTarget: QueryDecoratorHost, nameOrContext: string): void;
-	function decorator(
-		protoOrTarget: QueryDecoratorHost | undefined,
-		nameOrContext: string | ClassFieldDecoratorContext<QueryDecoratorHost, T>,
-	): void {
-		return fieldDecoratorBridge(standardQuery(options), legacyQuery<T>(options), protoOrTarget, nameOrContext);
-	}
-
-	return decorator;
+export function query<T extends Element = Element>(
+	options: QueryConfig & { all: true },
+): ValueFieldDecorator<QueryDecoratorHost, T[]>;
+export function query<T extends Element = Element>(
+	options: QueryConfig & { all?: false },
+): ValueFieldDecorator<QueryDecoratorHost, T | null>;
+export function query<Value extends Element[] | Element | null>(
+	options: QueryConfig,
+): ValueFieldDecorator<QueryDecoratorHost, Value> {
+	return fieldDecorator<QueryDecoratorHost, Value>(standardQuery(options), legacyQuery(options));
 }

@@ -19,7 +19,7 @@ import { RadiantElement, customElement } from '@ecopages/radiant';
 
 @customElement('my-component')
 export class MyComponent extends RadiantElement {
-	connectedCallback() {
+	override connectedCallback() {
 		super.connectedCallback();
 		this.textContent = 'Hello from my-component!';
 	}

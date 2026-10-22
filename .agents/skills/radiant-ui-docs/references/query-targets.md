@@ -11,7 +11,7 @@ Hard rule for Radiant UI behavior hosts. Docs, TSDoc, and scripts share this dia
 | Role               | APG item identity when that is the real target (no extra data attr).         | `[role="option"]`, `[role="menuitem"]`, `[role="tab"]`             |
 | Child tag          | Nested host. Name extra selectors the **parent** reads on that child's tree. | `rui-listbox`, `[data-select-value] rui-tag-group`                 |
 
-`@query({ ref: 'root' })` is `[data-ref="root"]`. Prefer `data-ref` for any node that is only a structural hook.
+`@query({ ref: 'root' })` is `[data-ref="root"]`. Prefer `data-ref` for any node that is only a structural hook. The field is `T | null`: [Query fields](../../../../packages/radiant-ui/src/components/ui/README.md#query-fields).
 
 ## What a host must not query
 

@@ -121,6 +121,8 @@ Vite awaits promises in `plugins` — pass `radiant({ decorators: 'babel' })` as
 | `decorators: 'babel'` (+ optional peers above)       | TC39 stage-3 authoring on Vite 8 — temporary until [oxc#9170](https://github.com/oxc-project/oxc/issues/9170) |
 | Vite ≤7 + esbuild                                    | TC39 works via esbuild without this plugin option                                                             |
 
+Legacy decorators never pass the field type to a decorator, so none of Radiant's field type checks run in that mode, and a callback such as `@bindTo`'s `map` sees `unknown` unless you pass the field type as a type argument. TC39 decorators check them. See [Typing Decorated Fields](https://radiant.ecopages.app/docs/decorators).
+
 ## Dev server HMR
 
 Radiant uses Vite's normal module updates for component logic and styles. Changes that affect **element discovery** (adding/removing component scripts or co-located CSS, or changing `@customElement` / `@controller` metadata) invalidate virtual registries and trigger a **full page reload**.

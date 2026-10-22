@@ -56,6 +56,10 @@ Or enable it per file:
 /** @jsxImportSource @ecopages/jsx */
 ```
 
+## TypeScript Setup For Decorators
+
+Radiant decorators work with standard decorators, which TypeScript uses when `experimentalDecorators` is off, and with legacy decorators (`"experimentalDecorators": true`). The published types use `NoInfer`, so use TypeScript 5.4 or newer. Only standard decorators check field types against decorator options; see [Typing Decorated Fields](/docs/decorators).
+
 ## Signals Standalone
 
 If you only want the reactive core, install `@ecopages/signals` by itself:

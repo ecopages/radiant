@@ -45,40 +45,52 @@ border opacity inputs. The docs tuner shows the six values and produces copyable
 Radiant Default; branded themes keep their own values.
 
 High Contrast targets at least 7:1 contrast for published semantic text pairs in both modes and uses prominent focus
-indicators. Its control surfaces, including switch tracks and thumbs, use square corners. Radiant UI's shared foundation
+indicators. Its control surfaces, including switch tracks and thumbs, use square corners, radios stay round with a checked
+dot, and muted text stays above 7:1. Radiant UI's shared foundation
 supports reduced motion, increased contrast, visible keyboard focus, and Windows forced colors. Verify non-text
 boundaries and application content after custom overrides.
 
 Windows 95 draws every control with the two-tone 2px bevel: gray push buttons with a black frame on the default
 action, sunken white fields, check boxes, and radio wells, raised property tabs joined to their page, navy title bars,
-and navy selection. Mac OS Classic is Mac OS 9 Platinum, built from the Mac OS 8 Human Interface Guidelines and the Appearance Manager's
+navy selection, flat menu bars with navy menu highlights, trackbars with a sunken channel and raised pointer,
+drop-down lists and combo boxes with a raised arrow button, sunken list boxes and tree views with dotted lines and
+plus/minus boxes, and pale yellow tooltips. Mac OS Classic is Mac OS 9 Platinum, built from the Mac OS 8 Human Interface Guidelines and the Appearance Manager's
 default theme: the seven system greys `#eeeeee` to `#202020`, grey push buttons with a black outline and a two-pixel
 bevel, a three-layer ring around the default button, 12px bevelled check boxes, shaded radio spheres, sunken white
 fields, trapezoid tabs that merge into a black-framed page, and 1px striped title bars. Selection and focus use the
-default `#6666cc` accent. Both
-dark modes keep the same bevel structure on darker faces and fields, since neither system shipped one. macOS uses
-moderate control corners, grouped tab segments, softer layered surfaces, and accent-blue push buttons with white text
-in dark mode. Windows 95 also provides a full-size dithered scrollbar with raised arrow buttons and a bevelled thumb;
+default `#6666cc` accent. Menus and the menu bar highlight items in that accent, list views are black-framed white
+wells with bevelled column headers, tooltips are outlined help balloons, and disclosures use the Platinum triangle. Both
+dark modes keep the same bevel structure on darker faces and fields, since neither system shipped one. macOS follows Sonoma AppKit:
+the SF Pro system font at 13px, 6px push buttons outlined by a hairline shadow, accent-filled default buttons, check
+boxes, and radio buttons, pop-up buttons with an accent arrow well, segmented tabs centered above a group box, white
+slider knobs, translucent menus and popovers, and accent row selection with white text. Destructive buttons use red
+text, as AppKit alerts do. Windows 95 also provides a full-size dithered scrollbar with raised arrow buttons and a bevelled thumb;
 Mac OS Classic provides Platinum's grey bevelled track, end-positioned arrow buttons, and striped blue scroll box.
 Chrome and Safari receive the detailed WebKit scrollbar treatment; Firefox receives the standard `scrollbar-width` and
 `scrollbar-color` fallback, whose native API does not expose classic arrow buttons, bevels, or stripe images.
-Material Design uses tonal surfaces, a purple accent family, and rounded action
-controls. These are original implementations written with Radiant semantic roles, Tailwind `@apply`, and catalog
+Material Design uses the Material 3 baseline scheme: full-radius
+buttons, 4px outlined fields and menus, 8px chips, 28px dialogs, tonal surface-container overlays, inverse-surface
+tooltips and toasts, and a 3px secondary focus indicator. These are original implementations written with Radiant semantic roles, Tailwind `@apply`, and catalog
 selectors; they do not copy third-party CSS.
 
 The Cloudflare theme leads with Cloudflare orange on restrained neutral layers inspired by Cloudflare Kumo. Its
 semantic primary role uses the same contrast-safe orange `#cc3a00` in both modes. Filled primary buttons use that
 orange with white text in both modes. Links and focus stay blue, and warnings use a yellow amber that stays distinct
-from the primary.
-GitHub maps Primer's functional roles: green marks the primary action, blue is for links and focus, the selected tab
-uses Primer's coral underline, and neutral surfaces are used for secondary actions.
+from the primary. Chosen options, menu items, and active navigation use Kumo's neutral grey, so they no longer use orange;
+breadcrumb links are blue, dark mode uses a brighter orange for orange text, and controls are 26, 36, and 40px tall.
+GitHub maps Primer's functional roles: green is limited to the primary button, the meter, and success states, blue marks links, focus, and
+selected, checked, or current states, the selected tab uses Primer's coral underline, and secondary actions use
+Primer's grey default button.
 
 The Vercel theme uses Background 2 for the light canvas and Background 1 for primary surfaces. Its component colors
 drive hover and active fills, Colors 4–6 drive default, hover, and active borders, and blue stays focused on links and
-keyboard focus. Control boundaries are strengthened for visibility. VS Code maps editor surfaces and accent states,
-with Dark Modern's `#0078d4` fill for dark-mode filled buttons. Button treatments vary by theme: Cloudflare uses a
-contrast-safe orange primary fill, while Cloudflare, GitHub, and Vercel use saturated fills with white text for
-dark-mode destructive buttons. Other variants follow each theme's semantic roles. These palettes adapt product cues to
+keyboard focus. Control boundaries are strengthened for visibility. VS Code follows Light Modern and Dark Modern: 26px
+controls with 2px corners, filled buttons in `#005fb8` (light) or `#0078d4` (dark) with white text, grey secondary
+buttons for the outline variant, a 1px blue focus outline, blue menu highlights, editor-style boxed tabs with a blue top
+border, and see-through square scrollbars. Button treatments vary by theme: Cloudflare uses a
+contrast-safe orange primary fill, Cloudflare and Vercel use saturated fills with white text for dark-mode
+destructive buttons, and GitHub uses Primer's danger button: red text on the default button face, filling red on
+hover. Other variants follow each theme's semantic roles. These palettes adapt product cues to
 Radiant UI roles without reproducing the products pixel for pixel.
 
 ## Design references

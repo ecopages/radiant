@@ -4,11 +4,13 @@ import { RadiantElement } from '../../src/core/radiant-element';
 import { query } from '../../src/decorators/query';
 
 class MyQueryElement extends RadiantElement {
-	@query({ ref: 'my-ref' }) myRef: HTMLDivElement;
+	@query({ ref: 'my-ref' }) myRef: HTMLDivElement | null;
 	@query({ ref: 'my-ref', all: true, cache: false }) myRefs: HTMLDivElement[];
 	@query({ ref: 'my-ref', all: true, cache: true }) myRefsCache: HTMLDivElement[];
-	@query({ selector: '.my-class' }) myClass: HTMLElement;
+	@query({ ref: 'my-ref', cache: true }) myRefCached: HTMLDivElement | null;
+	@query({ selector: '.my-class' }) myClass: HTMLElement | null;
 	@query({ selector: '.my-class', all: true }) myClasses: HTMLElement[];
+	@query({ ref: 'missing' }) missing: HTMLElement | null;
 
 	addElement() {
 		const div = document.createElement('div');
@@ -21,9 +23,9 @@ class MyQueryElement extends RadiantElement {
 customElements.define('my-query-element', MyQueryElement);
 
 class QueryController extends RadiantController {
-	@query({ ref: 'form' }) form!: HTMLFormElement;
-	@query({ ref: 'email' }) emailInput!: HTMLInputElement;
-	@query({ ref: 'status' }) statusNode!: HTMLParagraphElement;
+	@query({ ref: 'form' }) form!: HTMLFormElement | null;
+	@query({ ref: 'email' }) emailInput!: HTMLInputElement | null;
+	@query({ ref: 'status' }) statusNode!: HTMLParagraphElement | null;
 }
 
 const createElementWithRef = (text: string, dataRef: string) => {
@@ -94,7 +96,7 @@ describe('@query', () => {
 	test('decorator queries ref correctly', async () => {
 		const customElement = createTemplate();
 		document.body.appendChild(customElement);
-		expect(customElement.myRef.textContent).toEqual('My Ref 1');
+		expect(customElement.myRef?.textContent).toEqual('My Ref 1');
 	});
 
 	test('decorator queries all refs correctly', () => {
@@ -105,10 +107,16 @@ describe('@query', () => {
 		expect(customElement.myRefs[1].textContent).toEqual('My Ref 2');
 	});
 
+	test('decorator reads null when nothing matches', () => {
+		const customElement = createTemplate();
+		document.body.appendChild(customElement);
+		expect(customElement.missing).toBeNull();
+	});
+
 	test('decorator queries selector correctly', () => {
 		const customElement = createTemplate();
 		document.body.appendChild(customElement);
-		expect(customElement.myClass.textContent).toEqual('My Class 1');
+		expect(customElement.myClass?.textContent).toEqual('My Class 1');
 	});
 
 	test('decorator queries all selectors correctly', () => {
@@ -144,6 +152,29 @@ describe('@query', () => {
 		customElement.addElement();
 		expect(customElement.myRefsCache.length).toEqual(2);
 	});
+
+	test('decorator without cache returns the new node after the first one is replaced', () => {
+		const customElement = createTemplate();
+		document.body.appendChild(customElement);
+		const first = customElement.myRef;
+		expect(first?.textContent).toEqual('My Ref 1');
+
+		const replacement = createElementWithRef('Replacement', 'my-ref');
+		first?.replaceWith(replacement);
+
+		expect(customElement.myRef).toBe(replacement);
+	});
+
+	test('decorator with cache true keeps returning the first node after it is replaced', () => {
+		const customElement = createTemplate();
+		document.body.appendChild(customElement);
+		const first = customElement.myRefCached;
+		expect(first?.textContent).toEqual('My Ref 1');
+
+		first?.replaceWith(createElementWithRef('Replacement', 'my-ref'));
+
+		expect(customElement.myRefCached).toBe(first);
+	});
 });
 
 describe('RadiantController @query', () => {
@@ -160,7 +191,7 @@ describe('RadiantController @query', () => {
 		controller.connect();
 
 		expect(controller.form).toBeInstanceOf(HTMLFormElement);
-		expect(controller.emailInput.value).toBe('ada@example.com');
-		expect(controller.statusNode.textContent).toBe('Ready');
+		expect(controller.emailInput?.value).toBe('ada@example.com');
+		expect(controller.statusNode?.textContent).toBe('Ready');
 	});
 });

@@ -1,8 +1,9 @@
 import type { ContextHostLike } from '../context-host';
+import type { ContextProvider } from '../context-provider';
 import type { UnknownContext } from '../types';
 import { consumeContext as legacyConsumeContext } from './legacy/consume-context';
 import { consumeContext as standardConsumeContext } from './standard/consume-context';
-import { fieldDecoratorBridge } from '../../decorators/bridge';
+import { boundedFieldDecorator, type BoundedFieldDecorator } from '../../decorators/bridge';
 
 /**
  * Injects the nearest matching context provider onto a decorated field.
@@ -10,26 +11,13 @@ import { fieldDecoratorBridge } from '../../decorators/bridge';
  * During SSR the field can be resolved from the active SSR context stack; on
  * the client it falls back to the DOM event-based context channel.
  *
- * @param context Context token to consume from ancestor providers.
- * @returns A standard-or-legacy decorator implementation for the target field.
+ * @remarks
+ * Under standard decorators the field has to be `ContextProvider<C>`, with or without `undefined`, which it
+ * holds until a provider connects. A narrower type, such as a provider subclass, cannot hold the provider and
+ * is rejected, and so is a wider one.
  */
-export function consumeContext(context: UnknownContext) {
-	function decorator<Host extends ContextHostLike, V>(
-		protoOrTarget: undefined,
-		nameOrContext: ClassFieldDecoratorContext<Host, V>,
-	): void;
-	function decorator(protoOrTarget: ContextHostLike, nameOrContext: string): void;
-	function decorator(
-		protoOrTarget: ContextHostLike | undefined,
-		nameOrContext: string | ClassFieldDecoratorContext<ContextHostLike, unknown>,
-	): void {
-		return fieldDecoratorBridge(
-			standardConsumeContext(context),
-			legacyConsumeContext(context),
-			protoOrTarget,
-			nameOrContext,
-		);
-	}
-
-	return decorator;
+export function consumeContext<C extends UnknownContext>(
+	context: C,
+): BoundedFieldDecorator<ContextHostLike, ContextProvider<C> | undefined, ContextProvider<C>> {
+	return boundedFieldDecorator(standardConsumeContext(context), legacyConsumeContext(context));
 }

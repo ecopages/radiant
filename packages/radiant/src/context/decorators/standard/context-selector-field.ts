@@ -14,10 +14,10 @@ export function contextSelectorField<T extends Context<unknown, unknown>, Select
 ) {
 	const { context, select, subscribe = true } = options;
 
-	return function <Host extends ContextHostLike>(
+	return function <Host extends ContextHostLike, V>(
 		_: undefined,
-		fieldContext: ClassFieldDecoratorContext<Host, Selected>,
-	) {
+		fieldContext: ClassFieldDecoratorContext<Host, V>,
+	): void {
 		const propertyName = String(fieldContext.name);
 
 		fieldContext.addInitializer(function (this: Host) {
@@ -60,9 +60,5 @@ export function contextSelectorField<T extends Context<unknown, unknown>, Select
 				});
 			});
 		});
-
-		return function (this: Host, initialValue: Selected) {
-			return initialValue;
-		};
 	};
 }

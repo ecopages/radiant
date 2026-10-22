@@ -97,17 +97,19 @@ Most code should use plain JavaScript values for empty output and removal semant
 - `null`, `undefined`, and `false` render no child content
 - `null` and `undefined` remove normal attributes
 - `false` removes boolean attributes such as `hidden` or `disabled`
-- `null` removes event handlers by leaving no next listener to attach
+- `null` and `undefined` remove event handlers by leaving no next listener to attach
 - `undefined` clears property bindings by writing `undefined`
+
+For attributes and event handlers `null` and `undefined` behave the same at runtime. In TSX the types are stricter: event handlers and the shared global attributes (`class`, `id`, `title`, `lang` and the like) accept `undefined` but not `null`, so write `undefined` for those.
 
 ```tsx
 /** @jsxImportSource @ecopages/jsx */
 
 return (
 	<button
-		class={shouldResetClass ? null : 'toolbar-action'}
+		class={shouldResetClass ? undefined : 'toolbar-action'}
 		hidden={isVisible ? false : true}
-		on:click={isInteractive ? handleClick : null}
+		on:click={isInteractive ? handleClick : undefined}
 		prop:payload={hasPayload ? payload : undefined}
 	>
 		{shouldShowLabel ? statusLabel : null}
