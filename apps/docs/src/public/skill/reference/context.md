@@ -48,7 +48,7 @@ Under standard decorators the decorator checks that the field can hold the value
 - `@consumeContext(...)`: `ContextProvider<typeof token>`, which may be optional.
 - `@contextSelector(...)`: the value `select` returns, or the whole context without `select`. The field may be optional or wider (`unknown`), not narrower.
 
-```ts
+```tsx
 import { RadiantElement, customElement } from '@ecopages/radiant';
 import { contextSelector, createContext, provideContext } from '@ecopages/radiant/context';
 import type { ContextProvider } from '@ecopages/radiant/context/context-provider';

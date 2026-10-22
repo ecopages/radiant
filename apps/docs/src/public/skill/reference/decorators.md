@@ -39,7 +39,7 @@ Under standard decorators the declared field type is the source of truth. Option
 - `@query` and `@querySlot`: `T | null`, or `T[]` with `all: true` (`all` must be a literal). A single-element query is `null` when nothing matches, so guard it with `?.` or an early return; use `!` only where the host's own markup always renders the node.
 - `@prop` and `@attr`: the `type` constant must fit the field (`String` a `string`, `Number` a `number`, `Boolean` a `boolean`, `Array` an array, `Object` a non-array object; `null` and `undefined` always fit; a union of parsed types fits none). A parser owns the value type instead, so `type` is not checked against the field: `transform.fromAttribute` on `@prop`, `converter.fromAttribute` on `@attr`. Pass the parser inline or with `satisfies`.
 - `@attr` without `type` or a parser holds the raw string, so the field is `string | null | undefined` (a string literal union fits). A number or boolean field needs `type` or a parser.
-- `defaultValue: null` and a `defaultValue` next to a parser do not throw. Without a parser, a `defaultValue` that does not match `type` throws at class definition.
+- `defaultValue: null` and a `defaultValue` next to a parser do not throw. Without a parser, a `defaultValue` that does not match `type` throws at class definition on `@prop` and when a host is constructed on `@attr`.
 - A field typed by the host class's own type parameter (`value: V` with `V extends string`) does not compile with a `type` constant. On `@prop` pass a parser that keeps the raw value; on `@attr` omit `type`.
 - `@signal`: `WritableSignal<T>`, with `initial` a `T` and `source` a `WritableSignal<T>` or a function returning one. `@event`: `EventEmitter<Detail>`, not optional. Context decorators: [context.md](context.md).
 - `@bindTo`: `map` receives the field type. On a `@signal` field the runtime passes the signal's value while the type is `WritableSignal<T>`, so annotate the parameter `unknown`.
@@ -77,7 +77,7 @@ Avoid updating the same watched property inside its own `@onUpdated(...)` unless
 - `@query(...)` — rendered descendants by `data-ref` or selector, on a `RadiantElement` or a `RadiantController`
 - `@querySlot(...)` — projected slot-assigned elements from an HTML-first `RadiantElement`; options `name` (default slot when omitted), `all`, and `cache` (cached by default, refreshed when the projection changes)
 
-`@query` options: `ref` or `selector`; `all` for `T[]`; `cache` (default `false` in standard and legacy mode, so each read queries the DOM). Prefer `ref` over broad selectors. Field types and null-safe use: see [Field types](#field-types).
+`@query` options: `ref` or `selector`; `all` for `T[]`; `cache` (default `false`: each read queries the DOM). Prefer `ref` over broad selectors. Field types and null-safe use: see [Field types](#field-types).
 
 Use `@query` for a live element handle (focus, observers, third-party APIs). If a `@query` exists only so you can copy a field into `.textContent` / `.setAttribute` / `toggleAttribute`, use `@bindTo` instead. If the host owns `render()` and the node is a leaf in that view, use `this.$`.
 
