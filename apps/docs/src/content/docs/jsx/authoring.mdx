@@ -76,12 +76,12 @@ The runtime normalizes the most common authoring patterns before anything reache
 
 ### `class` and `classes`
 
-`class` and `classes` merge into one token list. Each accepts a string, number, array (nested), or an object map where a truthy value includes the key. `null`, `undefined`, and booleans contribute nothing.
+`class` and `classes` merge into one token list. At runtime each accepts a string, number, array (nested), or an object map where a truthy value includes the key, and `null`, `undefined`, and booleans contribute nothing. The types are narrower: `class` is a `string`, and `classes` takes the other forms, so pass conditional, array and object values through `classes`.
 
 ```tsx
 <section
-	class={isActive && 'panel--active'}
-	classes={['surface', { interactive: isInteractive }]}
+	class="panel"
+	classes={[isActive && 'panel--active', 'surface', { interactive: isInteractive }]}
 />
 ```
 
@@ -105,7 +105,7 @@ That JSX emits `data-state="ready"`, `data-max-load="3"`, and `aria-live="polite
 
 ### Boolean attributes
 
-Names such as `disabled`, `hidden`, `checked`, `readonly`, `selected`, and the rest of the standard HTML boolean attribute set keep boolean-attribute binding semantics when written without a prefix. `false` removes them; see [JSX Overview](/docs/jsx/overview#empty-values-and-removal).
+Names such as `disabled`, `hidden`, `checked`, `readonly`, `selected`, and the rest of the standard HTML boolean attribute set keep boolean-attribute binding semantics when written without a prefix. `false` removes them; see the Empty Values And Removal section of [JSX Overview](/docs/jsx/overview).
 
 ## Child Values
 
@@ -114,7 +114,7 @@ A child position accepts any `JsxRenderable`: strings, numbers, booleans, templa
 Two behavior notes that are easy to get wrong:
 
 - Iterables render as a list of children, but a one-shot iterator (for example a generator) is consumed once. The runtime keeps that snapshot while the iterator object stays reachable. Pass a fresh iterator per render if children must be re-yielded.
-- Signal-like and subscribable values become live child bindings and update their DOM range without a parent rerender. See [JSX Client Rendering](/docs/jsx/rendering#fine-grained-child-updates).
+- Signal-like and subscribable values become live child bindings and update their DOM range without a parent rerender. See the Fine-Grained Child Updates section of [JSX Client Rendering](/docs/jsx/rendering).
 
 ## What The Runtime Escapes
 

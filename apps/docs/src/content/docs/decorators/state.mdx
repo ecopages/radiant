@@ -17,7 +17,7 @@ Use it for values that should trigger updates but are not part of the custom ele
 import { RadiantElement, customElement, onEvent, state } from '@ecopages/radiant';
 
 @customElement('counter-display')
-export class CounterDisplay extends RadiantElement {
+export class CounterDisplay extends RadiantElement<{ count: number }> {
 	@state count = 0;
 
 	@onEvent({ selector: 'button', type: 'click' })
@@ -57,7 +57,7 @@ Unlike [@signal](/docs/decorators/signal), the field stays a plain host property
 
 Just like `@prop(...)`, `@state` exposes companion bindings by default when `bind` is omitted.
 
-So `@state count = 0` gives you `this.$.count` automatically on `RadiantElement` hosts.
+So `@state count = 0` gives you `this.$.count` automatically on `RadiantElement` hosts. To type `this.$.count`, pass the binding shape as the host's type argument: see [RadiantElement](/docs/components/radiant-element).
 
 ```tsx
 override render() {

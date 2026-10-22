@@ -141,7 +141,7 @@ Pass signal-like children directly when they already expose `get()` and `subscri
 
 ## Empty Values During Updates
 
-See [JSX Overview — Empty Values And Removal](/docs/jsx/overview#empty-values-and-removal) for the full rules. The sign-in button below applies them across two client updates:
+See the Empty Values And Removal section of [JSX Overview](/docs/jsx/overview) for the full rules. The sign-in button below applies them across two client updates:
 
 ```tsx
 /** @jsxImportSource @ecopages/jsx */
@@ -161,8 +161,8 @@ const renderSignInButton = (state: SignInState) => (
 	<button
 		type="button"
 		disabled={state.busy || state.username === ''}
-		on:click={state.busy ? null : signIn}
-		title={state.username === '' ? 'Enter your username first' : null}
+		on:click={state.busy ? undefined : signIn}
+		title={state.username === '' ? 'Enter your username first' : undefined}
 	>
 		{state.busy ? 'Signing in...' : 'Sign in'}
 	</button>
@@ -175,8 +175,8 @@ root.render(renderSignInButton({ username: 'ada', busy: true }));
 How each removal rule applies between those two renders:
 
 - `disabled={...}` — evaluates to `true` while the username is empty or a request is in flight; when it evaluates to `false`, the boolean attribute is removed
-- `title={... ? '...' : null}` — `null` removes the attribute once a username exists
-- `on:click={... ? null : signIn}` — `null` detaches the handler while a sign-in request is in flight
+- `title={... ? '...' : undefined}` — `undefined` removes the attribute once a username exists
+- `on:click={... ? undefined : signIn}` — `undefined` detaches the handler while a sign-in request is in flight
 - child text swaps between the two states as normal content
 
 The template shape is the same in both renders, so the renderer preserves the committed button node and only patches bindings. That is the general rule: if a later render changes the template shape, the client renderer may replace the affected node instead of preserving the previous instance.

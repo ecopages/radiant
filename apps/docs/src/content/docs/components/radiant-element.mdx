@@ -42,10 +42,6 @@ This mode keeps the HTML in the document. Use `@bindTo` to copy reactive fields 
 ```typescript
 import { RadiantElement, bindTo, customElement, onEvent, prop } from '@ecopages/radiant';
 
-type CounterProps = {
-  value?: number;
-};
-
 @customElement('radiant-counter')
 class RadiantCounter extends RadiantElement {
   @prop({ type: Number, reflect: true, defaultValue: 0 })
@@ -160,6 +156,8 @@ Most elements do not need this hook. Do not use it to copy a reactive value into
 - `this.bind('value')` for an explicit JSX binding
 - `this.bindings.value` or `this.$.value` for property-style JSX bindings
 
+`this.$`, `this.bindings` and `this.bind(...)` are typed from the host's type argument, as in `RadiantElement<{ value: number }>`. A key the type argument does not list is a type error, even when a decorated field of that name exists.
+
 Use the raw value in imperative code and render logic. Use bindings in stable JSX leaf positions such as text, attributes, `aria`, `data`, and boolean props. On hosts that do not override `render()`, use [@bindTo](/docs/decorators/bind-to) for the same leaf writes against existing DOM.
 
 ## Derived Bindings
@@ -226,7 +224,7 @@ Use these when you build host adapters, tests, or custom decorators. Prefer `@st
 - Override `render()` when the host itself should own a JSX view.
 - Skip `render()` when the host should enhance authored light DOM instead.
 - Override `onConnected()` for post-catch-up connect work; keep listeners in `connectedCallback`.
-- In JSX-authored composite libraries, keep parent-owned children in the view shell; do not re-project them through `<slot>` (see [Slots — JSX-authored composites](/docs/components/slots#jsx-authored-composites)).
+- In JSX-authored composite libraries, keep parent-owned children in the view shell; do not re-project them through `<slot>` (see [Slots](/docs/components/slots)).
 - Use [RadiantController](/docs/components/radiant-controller) when the DOM is authored elsewhere and a custom element wrapper would be unnecessary.
 
 ## See Also

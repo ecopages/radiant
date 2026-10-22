@@ -71,7 +71,7 @@ Use the semantic names in application code:
 
 ## Typing Components
 
-Type safety is a core feature of Radiant. We recommend following these patterns to ensure your components are correctly typed for both TypeScript and JSX integration.
+Type safety is a core feature of Radiant. We recommend following these patterns to ensure your components are correctly typed for both TypeScript and JSX integration. For the type each decorated field takes, see [Typing Decorated Fields](/docs/decorators).
 
 ### Defining Props
 
@@ -227,6 +227,7 @@ override render() {
 
 // Prefer — authored light DOM
 @bindTo({ ref: 'count', text: true })
+@state
 count = 0;
 ```
 

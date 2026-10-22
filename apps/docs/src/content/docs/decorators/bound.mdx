@@ -28,7 +28,7 @@ export class TimerComponent extends RadiantElement {
 		console.log(this.count);
 	}
 
-	connectedCallback() {
+	override connectedCallback() {
 		super.connectedCallback();
 		setTimeout(this.increment, 1000);
 	}
@@ -47,12 +47,12 @@ export class ScrollTracker extends RadiantElement {
 		console.log(`Scrolled to: ${window.scrollY}px`);
 	}
 
-	connectedCallback() {
+	override connectedCallback() {
 		super.connectedCallback();
 		window.addEventListener('scroll', this.handleScroll);
 	}
 
-	disconnectedCallback() {
+	override disconnectedCallback() {
 		window.removeEventListener('scroll', this.handleScroll);
 	}
 }
@@ -80,7 +80,7 @@ export class DataLoader extends RadiantElement {
 
 ## @bound vs Arrow Functions
 
-While arrow functions also capture `this`, `@bound` methods stay on the prototype and are bound per instance on first access. This is generally more memory-efficient than creating a new arrow function for every class instance.
+Arrow functions also capture `this`. A `@bound` method stays on the prototype, so a subclass can override it, and each instance gets its own bound copy: when the instance is created under standard decorators, on first access under legacy decorators. Standard decorators throw when `@bound` decorates a `#private` method.
 
 ```typescript
 @customElement('my-component')

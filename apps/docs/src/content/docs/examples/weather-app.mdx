@@ -42,14 +42,11 @@ Utility code (city list, fetch helper, types) lives in `weather-app.utils.ts` an
 ## Summary Card
 
 ```tsx
-import {
-	RadiantElement,
-	contextSelector,
-	customElement,
-} from '@ecopages/radiant';
+import { RadiantElement, customElement } from '@ecopages/radiant';
+import { contextSelector } from '@ecopages/radiant/context';
 import type { WeatherReport } from './weather-app.types';
 
-// weatherContext created via createContext<WeatherContext>(Symbol('weather-context'))
+import { weatherContext } from './weather-app-host';
 
 @customElement('radiant-weather-summary')
 export class RadiantWeatherSummary extends RadiantElement {
@@ -91,17 +88,11 @@ export class RadiantWeatherSummary extends RadiantElement {
 
 ## Host
 
+The snippets call this module `weather-app-host`; the summary card imports the context token it exports.
+
 ```tsx
-import {
-	type ContextProvider,
-	RadiantElement,
-	contextSelector,
-	createContext,
-	createResource,
-	customElement,
-	provideContext,
-	state,
-} from '@ecopages/radiant';
+import { RadiantElement, createResource, customElement, state } from '@ecopages/radiant';
+import { type ContextProvider, contextSelector, createContext, provideContext } from '@ecopages/radiant/context';
 import type { WeatherCity, WeatherContext, WeatherReport } from './weather-app.types';
 import {
 	DEFAULT_CITY_ID,
@@ -111,7 +102,7 @@ import {
 	upsertWeatherReport,
 } from './weather-app.utils';
 
-const weatherContext = createContext<WeatherContext>(Symbol('weather-context'));
+export const weatherContext = createContext<WeatherContext>(Symbol('weather-context'));
 
 @customElement('radiant-weather-app')
 export class RadiantWeatherAppElement extends RadiantElement {

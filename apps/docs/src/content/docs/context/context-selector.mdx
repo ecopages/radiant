@@ -46,7 +46,7 @@ export class TodoBoard extends RadiantElement {
 
 `render()` reads `this.todos` directly. When the todo list changes in context, the field is updated and the host rerenders automatically.
 
-The field must be able to hold the value `select` returns: that type, optional, or a wider one such as `unknown`. A narrower field, such as `1` for a `number`, does not compile. See [Typing Decorated Fields](/docs/decorators).
+The field must be able to hold the value `select` returns: that type, optional, or a wider one such as `unknown`. A narrower field, such as `0 | 1` for a `number`, does not compile. See [Typing Decorated Fields](/docs/decorators).
 
 ## RadiantController Example
 
