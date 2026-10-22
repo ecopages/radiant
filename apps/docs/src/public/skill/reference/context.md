@@ -6,6 +6,7 @@ Import all context APIs from `@ecopages/radiant/context`, not `@ecopages/radiant
 
 - Core pieces
 - Provide vs consume
+- Field types
 - Performance
 
 ## Core pieces
@@ -38,6 +39,36 @@ Avoid `@consumeContext` + `@onContextUpdate` + `@state` when a single `@contextS
 Keep authoritative UI state in context and render from it. Do not split the same render decision across a local signal and `provider.getContext()` unless one is clearly an async-sourcing detail.
 
 When stale display should persist across refetches, store one explicit display value in context (for example `visibleReport`) rather than juggling local copies.
+
+## Field types
+
+Under standard decorators the decorator checks that the field can hold the value it writes. Legacy decorators check nothing here ([decorators.md](decorators.md#field-types)).
+
+- `@provideContext(...)`: `ContextProvider<typeof token>`. It is always installed, so the field cannot be optional.
+- `@consumeContext(...)`: `ContextProvider<typeof token>`, which may be optional.
+- `@contextSelector(...)`: the value `select` returns, or the whole context without `select`. The field may be optional or wider (`unknown`), not narrower.
+
+```ts
+import { RadiantElement, customElement } from '@ecopages/radiant';
+import { contextSelector, createContext, provideContext } from '@ecopages/radiant/context';
+import type { ContextProvider } from '@ecopages/radiant/context/context-provider';
+
+const counter = createContext<{ count: number }>(Symbol('counter'));
+
+@customElement('counter-root')
+export class CounterRoot extends RadiantElement {
+	@provideContext({ context: counter, initialValue: { count: 0 } }) provider!: ContextProvider<typeof counter>;
+}
+
+@customElement('counter-label')
+export class CounterLabel extends RadiantElement {
+	@contextSelector({ context: counter, select: (value) => value.count }) count = 0;
+
+	override render() {
+		return <p>{this.count}</p>;
+	}
+}
+```
 
 ## Performance
 
