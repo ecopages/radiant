@@ -92,7 +92,7 @@ Delegation requires bubbling. `focus` / `blur` will not work — use `focusin` /
 
 ## Callback utilities
 
-- `@bound` — bind a prototype method to the instance on access (timers, manual listeners, callback-style APIs)
+- `@bound` — bind a prototype method to each instance: standard decorators bind it when the instance is created, legacy decorators on first access (timers, manual listeners, callback-style APIs)
 - `@debounce(ms)` — delay bursty execution (search, resize, autosave)
 
 Arrow-function fields are fine when instance-local allocation is acceptable. `@bound` and `@debounce(...)` can combine on the same method.
