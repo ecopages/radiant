@@ -1,40 +1,30 @@
 @reference 'tailwindcss';
 
+/**
+ * @remarks Primer uses its accent blue for selection, checked, current, and focus states, so `--primary` is blue.
+ * Green belongs only to the primary button and progress, which these rules set directly.
+ */
 :root,
 :root[data-rui-theme='github'] {
-	--font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-	--font-heading: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-	--font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	--font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+	--font-heading: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+	--font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
 	--rui-border-alpha: 100%;
-	--border-radius-xs: 0.25rem;
+	--border-radius-xs: 0.1875rem;
 	--border-radius-sm: 0.375rem;
-	--border-radius-md: 0.5rem;
+	--border-radius-md: 0.375rem;
 	--border-radius-lg: 0.75rem;
-	--border-radius-xl: 1rem;
-	--border-radius-2xl: 1.25rem;
+	--border-radius-xl: 0.75rem;
+	--border-radius-2xl: 1rem;
 	--border-radius-3xl: 1.5rem;
 	--radius-control: var(--border-radius-sm);
 	--radius-container: var(--border-radius-md);
+	--size-control-sm: 1.75rem;
+	--size-control-md: 2rem;
+	--size-control-lg: 2.5rem;
 }
 
 @layer components {
-	/**
-	 * @remarks Primer fills dark destructive buttons with a saturated red and white text; `--error` stays the lighter
-	 * red used for error text on dark surfaces.
-	 */
-	:root.dark .rui-button--destructive {
-		background-color: #da3633;
-		color: #ffffff;
-	}
-
-	:root.dark .rui-button--destructive:hover:not(:disabled) {
-		background-color: #b62324;
-	}
-
-	:root.dark .rui-button--destructive:active:not(:disabled) {
-		background-color: #a40e26;
-	}
-
 	:root rui-tabs {
 		--rui-tabs-indicator-color: #fd8c73;
 	}
@@ -43,11 +33,124 @@
 		--rui-tabs-indicator-color: #f78166;
 	}
 
+	:root .rui-meter {
+		--rui-meter-fill-color: var(--color-github-green);
+	}
+
+	:root .rui-switch {
+		--rui-switch-width: 3rem;
+		--rui-switch-height: 1.5rem;
+		--rui-switch-thumb-size: 1.5rem;
+		--rui-switch-track: var(--color-github-track);
+		--rui-switch-track-hover: var(--color-github-button-active);
+		--rui-switch-track-on-hover: var(--primary-dark);
+		--rui-switch-thumb: var(--color-github-canvas);
+		--rui-switch-thumb-on: var(--color-github-canvas);
+	}
+
+	/**
+	 * @remarks Primer's toggle switch is a 6px rounded track with a full-height bordered knob, not a pill.
+	 */
+	:root .rui-switch__track {
+		@apply rounded-control p-0;
+	}
+
+	:root .rui-switch__thumb,
+	:root .rui-switch__input:checked + .rui-switch__track .rui-switch__thumb {
+		@apply rounded-control;
+		border: 1px solid var(--color-github-knob-border);
+	}
+
+	:root .rui-switch__thumb {
+		left: 0;
+	}
+
+	:root .rui-switch__input:checked + .rui-switch__track .rui-switch__thumb {
+		right: 0;
+		left: auto;
+		border-color: var(--primary);
+	}
+
+	/**
+	 * Buttons follow Primer's variants: a grey default button, a green primary button, and a danger button that keeps the
+	 * default face with red text until hovered.
+	 */
 	:root .rui-button {
 		@apply rounded-control border border-transparent font-medium shadow-none;
 	}
 
-	:root .rui-button--outline,
+	:root .rui-button--outline {
+		border-color: var(--color-github-border);
+		background-color: var(--color-github-button-bg);
+		color: var(--color-github-fg);
+		box-shadow: 0 1px 0 0 rgb(31 35 40 / 0.04);
+	}
+
+	:root .rui-button--outline:hover:not(:disabled) {
+		background-color: var(--color-github-button-hover);
+	}
+
+	:root .rui-button--outline:active:not(:disabled) {
+		background-color: var(--color-github-button-active);
+	}
+
+	:root .rui-button--filled,
+	:root .rui-button--primary {
+		border-color: rgb(31 35 40 / 0.15);
+		background-color: var(--color-github-button-primary);
+		background-image: none;
+		color: #ffffff;
+		box-shadow: 0 1px 0 0 rgb(31 35 40 / 0.1);
+	}
+
+	:root .rui-button--filled:hover:not(:disabled),
+	:root .rui-button--primary:hover:not(:disabled) {
+		background-color: var(--color-github-button-primary-hover);
+	}
+
+	:root .rui-button--filled:active:not(:disabled),
+	:root .rui-button--primary:active:not(:disabled) {
+		background-color: var(--color-github-button-primary-active);
+	}
+
+	:root .rui-button--destructive {
+		border-color: var(--color-github-border);
+		background-color: var(--color-github-button-bg);
+		background-image: none;
+		color: var(--color-github-danger-fg);
+	}
+
+	:root .rui-button--destructive:hover:not(:disabled) {
+		border-color: rgb(31 35 40 / 0.15);
+		background-color: #a40e26;
+		color: #ffffff;
+	}
+
+	:root .rui-button--destructive:active:not(:disabled) {
+		background-color: #8b0820;
+		color: #ffffff;
+	}
+
+	:root .rui-button--ghost {
+		color: var(--color-github-fg);
+	}
+
+	:root .rui-button--ghost:hover:not(:disabled) {
+		background-color: var(--color-github-transparent-hover);
+	}
+
+	:root .rui-button--ghost:active:not(:disabled) {
+		background-color: var(--color-github-transparent-selected);
+	}
+
+	:root .rui-pagination__link[aria-current='page'],
+	:root .rui-pagination__link[aria-current='page']:hover:not(:disabled) {
+		border-color: transparent;
+		background-color: var(--primary);
+		color: var(--on-primary);
+		box-shadow: none;
+	}
+
 	:root .rui-input,
 	:root .rui-textarea,
 	:root .rui-combobox__control,
@@ -57,25 +160,123 @@
 	:root .rui-number-field__group,
 	:root rui-date-input:where(:not([data-date-field-input], [data-range-start], [data-range-end])),
 	:root .rui-select__control {
-		@apply border-border bg-surface text-on-surface shadow-none;
+		@apply bg-surface text-on-surface shadow-none;
 		border-color: var(--rui-control-border-color);
 	}
 
-	:root .rui-button--outline:hover:not(:disabled),
-	:root .rui-button--ghost:hover:not(:disabled) {
-		@apply bg-surface-container-low;
+	/**
+	 * @remarks Primer's select is a default button with a caret, so it shares the button face instead of the field fill.
+	 */
+	:root .rui-select__control {
+		background-color: var(--color-github-button-bg);
+	}
+
+	:root .rui-select__control:hover:not(:disabled) {
+		background-color: var(--color-github-button-hover);
 	}
 
 	:root .rui-checkbox__control {
-		@apply rounded-xs border-border bg-surface;
+		@apply rounded-xs bg-surface;
 		border-color: var(--rui-control-border-color);
 	}
 
+	:root .rui-radio__control {
+		border-color: var(--rui-control-border-color);
+	}
+
+	/**
+	 * @remarks A checked Primer radio is a thick accent ring around a white center rather than a centered dot.
+	 */
+	:root .rui-radio__input:checked + .rui-radio__control {
+		border-width: 0.3125rem;
+		background-color: var(--on-primary);
+	}
+
+	:root .rui-radio__input:checked + .rui-radio__control::after {
+		display: none;
+	}
+
 	:root .rui-dialog__surface,
-	:root .rui-popover-host,
-	:root .rui-select__listbox,
+	:root .rui-hover-card__content,
 	:root .rui-calendar {
-		@apply rounded-container border border-border bg-surface shadow-lg;
+		@apply rounded-xl border border-border shadow-lg;
+		background-color: var(--color-github-overlay);
+	}
+
+	:root .rui-popover {
+		--rui-popover-radius: var(--border-radius-lg);
+		--rui-popover-surface: var(--color-github-overlay);
+		--rui-popover-border-color: var(--color-github-border);
+		--rui-popover-shadow: 0 6px 12px -3px rgb(37 41 46 / 0.04), 0 6px 18px 0 rgb(37 41 46 / 0.12);
+	}
+
+	:root .rui-tooltip__content {
+		--rui-tooltip-surface: #25292e;
+		--rui-tooltip-color: #ffffff;
+		--rui-tooltip-radius: var(--border-radius-sm);
+		--rui-tooltip-padding-x: 0.5rem;
+		--rui-tooltip-padding-y: 0.25rem;
+	}
+
+	:root.dark .rui-tooltip__content {
+		--rui-tooltip-surface: #3d444d;
+	}
+
+	:root .rui-select__listbox .rui-listbox,
+	:root .rui-combobox__listbox .rui-listbox {
+		@apply bg-transparent p-0;
+	}
+
+	/**
+	 * Action menus: a 12px floating overlay whose items are rounded rows with a neutral hover and selected fill.
+	 */
+	:root .rui-menu-button__menu,
+	:root .rui-menubar__menu,
+	:root .rui-select__listbox,
+	:root .rui-combobox__listbox {
+		@apply rounded-xl border-0 p-2;
+		background-color: var(--color-github-overlay);
+		box-shadow:
+			0 0 0 1px var(--color-github-border),
+			0 6px 12px -3px rgb(37 41 46 / 0.04),
+			0 6px 18px 0 rgb(37 41 46 / 0.12);
+	}
+
+	:root .rui-listbox__option,
+	:root .rui-menu-button__item,
+	:root .rui-menubar__menu-item {
+		@apply rounded-control;
+	}
+
+	:root .rui-listbox__option:hover:not([aria-disabled='true']),
+	:root .rui-listbox__option[data-active]:not([aria-disabled='true']),
+	:root .rui-menu-button__item:hover:not([aria-disabled='true']),
+	:root .rui-menubar__menu-item:hover:not([aria-disabled='true']) {
+		background-color: var(--color-github-transparent-hover);
+	}
+
+	/**
+	 * @remarks Primer marks a selected single-select item with a check on a neutral fill, so the indicator uses the
+	 * foreground color instead of the filled-primary `on-primary`.
+	 */
+	:root .rui-listbox__option[aria-selected='true']:not([aria-disabled='true']),
+	:root .rui-listbox__option[aria-selected='true']:focus-visible,
+	:root .rui-menu-button__item[aria-checked='true'],
+	:root .rui-sidebar__menu-button[aria-current='page'],
+	:root .rui-sidebar__menu-button--active,
+	:root .rui-tree__node[aria-selected='true'] {
+		@apply rounded-control font-semibold;
+		background-color: var(--color-github-transparent-selected);
+		background-image: none;
+		color: var(--color-github-fg);
+	}
+
+	:root .rui-listbox__option[aria-selected='true'] .rui-listbox__option-indicator {
+		color: var(--color-github-fg);
+	}
+
+	:root .rui-listbox__option[aria-selected='true'][data-active]:not([aria-disabled='true']) {
+		--tw-ring-color: transparent;
 	}
 
 	:root rui-tabs[variant='boxed'] {
@@ -87,7 +288,7 @@
 	}
 
 	:root rui-tabs[variant='boxed'] .rui-tabs__tab {
-		@apply rounded-none text-on-surface-container-low;
+		@apply rounded-none text-sm text-on-surface opacity-100;
 	}
 
 	:root rui-tabs[variant='boxed'] .rui-tabs__tab[aria-selected='true'] {
@@ -96,23 +297,40 @@
 	}
 
 	/**
-	 * @remarks Primer's underline nav has no panel, but Radiant tabs own one. A subtle surface with a divider border keeps
-	 * the panel distinct from the white page. It clips its content so square code blocks respect the rounded corners.
+	 * @remarks Primer's underline nav has no panel, but Radiant tabs own one. A bordered box keeps the panel distinct
+	 * from the page and clips its content so square code blocks respect the rounded corners.
 	 */
 	:root rui-tabs[variant='boxed'] .rui-tabs__panel {
 		@apply mt-3 overflow-hidden rounded-container border border-border bg-surface;
 	}
 
-	:root .rui-listbox__option[aria-selected='true'],
-	:root .rui-menu-button__item[aria-checked='true'],
-	:root .rui-sidebar__menu-button--active {
-		@apply rounded-control bg-info-container text-on-info-container;
+	/**
+	 * @remarks Primer labels are outlined pills on a transparent fill; the variant tints only the border and text.
+	 */
+	:root .rui-badge {
+		@apply rounded-pill border border-border font-medium;
 	}
 
-	:root .rui-badge,
-	:root .rui-chip,
-	:root .rui-pagination__link {
+	:root .rui-badge--filled {
+		@apply border-primary bg-transparent text-primary;
+	}
+
+	:root .rui-badge--destructive {
+		@apply border-error bg-transparent;
+		color: var(--color-github-danger-fg);
+	}
+
+	:root .rui-badge--muted {
+		@apply bg-transparent;
+		color: var(--color-github-muted-fg);
+	}
+
+	:root .rui-chip {
 		@apply rounded-pill;
+	}
+
+	:root .rui-feed__article {
+		@apply rounded-container border border-border bg-surface shadow-none;
 	}
 
 	/**
@@ -136,6 +354,6 @@
 	}
 
 	:root .rui-treegrid__cell[aria-selected='true'] {
-		@apply bg-info-container text-on-info-container;
+		@apply bg-primary-container text-on-primary-container;
 	}
 }

@@ -12,12 +12,12 @@
 	--gray-900: color-mix(in oklab, var(--color-github-canvas), var(--color-github-fg) 94%);
 	--gray-950: var(--color-github-fg);
 
-	--primary: var(--color-github-green);
+	--primary: var(--color-github-blue);
 	--on-primary: white;
-	--primary-light: color-mix(in oklab, var(--color-github-green), white 12%);
-	--primary-dark: color-mix(in oklab, var(--color-github-green), black 24%);
-	--primary-container: color-mix(in oklab, var(--color-github-green), white 90%);
-	--on-primary-container: color-mix(in oklab, var(--color-github-green), black 60%);
+	--primary-light: var(--color-github-blue-light);
+	--primary-dark: #0550ae;
+	--primary-container: var(--color-github-accent-subtle);
+	--on-primary-container: var(--color-github-accent-on-subtle);
 	--secondary: var(--color-github-subtle);
 	--on-secondary: var(--color-github-fg);
 	--secondary-light: var(--color-github-white);
@@ -53,7 +53,7 @@
 	--warning-container: color-mix(in oklab, var(--color-github-orange), white 88%);
 	--on-warning-container: color-mix(in oklab, var(--color-github-orange), black 60%);
 	--neutral: var(--color-github-muted-fg);
-	--surface: var(--color-github-subtle);
+	--surface: var(--color-github-canvas);
 	--on-surface: var(--color-github-fg);
 	--surface-container-lowest: var(--color-github-canvas);
 	--on-surface-container-lowest: var(--color-github-fg);
@@ -91,12 +91,12 @@
 	--gray-800: color-mix(in oklab, var(--color-github-canvas), white 12%);
 	--gray-900: color-mix(in oklab, var(--color-github-canvas), white 6%);
 	--gray-950: var(--color-github-canvas);
-	--primary: var(--color-github-green);
+	--primary: var(--color-github-blue);
 	--on-primary: white;
-	--primary-light: #238636;
-	--primary-dark: #116329;
-	--primary-container: #0f3d1e;
-	--on-primary-container: #aff5b4;
+	--primary-light: var(--color-github-blue-light);
+	--primary-dark: #1158c7;
+	--primary-container: var(--color-github-accent-subtle);
+	--on-primary-container: var(--color-github-accent-on-subtle);
 	--secondary: var(--color-github-muted);
 	--on-secondary: var(--color-github-fg);
 	--secondary-light: var(--color-github-border);
@@ -124,7 +124,7 @@
 	--warning-container: #4d2d00;
 	--on-warning-container: #ffdf8b;
 	--neutral: var(--color-github-muted-fg);
-	--surface: var(--color-github-subtle);
+	--surface: var(--color-github-canvas);
 	--on-surface: var(--color-github-fg);
 	--surface-container-lowest: var(--color-github-canvas);
 	--on-surface-container-lowest: var(--color-github-fg);
