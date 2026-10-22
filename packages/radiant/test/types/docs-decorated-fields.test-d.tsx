@@ -282,7 +282,13 @@ export class UserCardWithBindings extends RadiantElement<UserCardBindings> {
 /** decorators/prop.mdx */
 
 const csvStrings: PropTransform<string[]> = {
-	fromAttribute: (value) => (value ? value.split(',').map((token) => token.trim()).filter(Boolean) : []),
+	fromAttribute: (value) =>
+		value
+			? value
+					.split(',')
+					.map((token) => token.trim())
+					.filter(Boolean)
+			: [],
 	toAttribute: (values) => (values.length > 0 ? values.join(',') : null),
 	fromProperty: (value) => {
 		if (Array.isArray(value)) return value.map(String);
@@ -360,9 +366,18 @@ export class RadiantCounter extends RadiantElement {
 }
 
 export class SignalBindFields extends RadiantElement {
-	@bindTo({ attr: 'data-n', map: (v: unknown) => String(v) }) @signal({ initial: 3 }) count!: WritableSignal<number>;
-	// @ts-expect-error on a @signal field the types give map the signal, not its value
-	@bindTo({ attr: 'data-n', map: (v) => v.toFixed() }) @signal({ initial: 3 }) bad!: WritableSignal<number>;
+	@bindTo({ attr: 'data-n', map: (v) => v.toFixed() }) @signal({ initial: 3 }) count!: WritableSignal<number>;
+	@bindTo<WritableSignal<number>>({ attr: 'data-n', map: (v) => v.toFixed() })
+	@signal({ initial: 3 })
+	typed!: WritableSignal<number>;
+	// @ts-expect-error a type argument is the field type, the signal, not its value
+	@bindTo<number>({ attr: 'data-n', map: (v) => v.toFixed() }) @signal({ initial: 3 }) value!: WritableSignal<number>;
+	// @ts-expect-error map receives the signal's value, a number
+	@bindTo({ attr: 'data-n', map: (v: string) => v }) @signal({ initial: 3 }) wrong!: WritableSignal<number>;
+	// @ts-expect-error map receives the signal's value, not the signal
+	@bindTo({ attr: 'data-n', map: (v: WritableSignal<number>) => v.get() })
+	@signal({ initial: 3 })
+	sig!: WritableSignal<number>;
 }
 
 export class PaintedCount extends RadiantElement {

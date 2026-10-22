@@ -6,7 +6,9 @@ import { bindTo } from '../../src/decorators/bind-to';
 import { customElement } from '../../src/decorators/custom-element';
 import { onEvent } from '../../src/decorators/on-event';
 import { prop } from '../../src/decorators/prop';
+import { signal } from '../../src/decorators/signal';
 import { state } from '../../src/decorators/state';
+import type { WritableSignal } from '@ecopages/signals';
 
 afterEach(() => {
 	document.body.innerHTML = '';
@@ -90,6 +92,28 @@ describe('@bindTo', () => {
 
 		element.open = true;
 		expect(panel.getAttribute('data-state')).toBe('open');
+	});
+
+	test('maps the value of a @signal field, not the signal', async () => {
+		@customElement('bind-to-signal-map')
+		class BindToSignalMap extends RadiantElement {
+			@bindTo({
+				attr: 'data-n',
+				map: (v) => {
+					expectTypeOf(v).toEqualTypeOf<number>();
+					return v.toFixed();
+				},
+			})
+			@signal({ initial: 3 })
+			n!: WritableSignal<number>;
+		}
+
+		const element = await connected(document.createElement('bind-to-signal-map') as BindToSignalMap);
+
+		expect(element.getAttribute('data-n')).toBe('3');
+
+		element.n.set(4);
+		expect(element.getAttribute('data-n')).toBe('4');
 	});
 
 	test('skips a missing child and paints after reconnect once the node exists', async () => {

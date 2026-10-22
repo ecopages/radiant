@@ -42,8 +42,8 @@ Under standard decorators the declared field type is the source of truth. Option
 - `defaultValue: null` and a `defaultValue` next to a parser do not throw. Without a parser, a `defaultValue` that does not match `type` throws at class definition on `@prop` and when a host is constructed on `@attr`.
 - A field typed by the host class's own type parameter (`value: V` with `V extends string`) does not compile with a `type` constant. On `@prop` pass a parser that keeps the raw value; on `@attr` omit `type`.
 - `@signal`: `WritableSignal<T>`, with `initial` a `T` and `source` a `WritableSignal<T>` or a function returning one. `@event`: `EventEmitter<Detail>`, not optional. Context decorators: [context.md](context.md).
-- `@bindTo`: `map` receives the field type. On a `@signal` field the runtime passes the signal's value while the type is `WritableSignal<T>`, so annotate the parameter `unknown`.
-- Legacy decorators (`experimentalDecorators`) are supported but never see the field type, so none of this is checked there, and `@bindTo`'s `map` sees `unknown` unless you write `@bindTo<number>(...)`, with the whole field type, `undefined` included.
+- `@bindTo`: `map` receives the field type, and on a `@signal` field declared `WritableSignal<T>` the value `T`, so leave the parameter unannotated.
+- Legacy decorators (`experimentalDecorators`) are supported but never see the field type, so none of this is checked there, and `@bindTo`'s `map` sees `unknown` unless you write `@bindTo<number>(...)`, with the whole field type, `undefined` included (`@bindTo<WritableSignal<number>>(...)` on a `@signal` field).
 - A library that exports a shared decorator (`export const count = prop({ type: Number })`) can emit declarations: `ValueFieldDecorator`, `BoundedFieldDecorator` and the host types they name are exported from `@ecopages/radiant`, and `ContextHostLike` from `@ecopages/radiant/context`.
 
 ```ts
