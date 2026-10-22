@@ -317,10 +317,10 @@ export const DesignTokens: Story = {
 				await waitFor(() => expect(getComputedStyle(table).borderTopLeftRadius).toBe('0px'));
 			});
 
-			await step('Material Design applies its rounded table treatment as a complete theme', async () => {
+			await step('Material 3 applies its 12px card radius to the table as a complete theme', async () => {
 				applyDesignTokens({ ruiTheme: 'material' });
 				await waitFor(() => expect(document.documentElement.dataset.ruiTheme).toBe('material'));
-				await waitFor(() => expect(getComputedStyle(table).borderTopLeftRadius).toBe('16px'));
+				await waitFor(() => expect(getComputedStyle(table).borderTopLeftRadius).toBe('12px'));
 			});
 		} finally {
 			applyDesignTokens({});

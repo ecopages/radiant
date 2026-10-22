@@ -1,80 +1,133 @@
 @reference 'tailwindcss';
 
+/**
+ * macOS Sonoma and Sequoia AppKit controls: SF Pro at the 13px system size, 6px push buttons drawn with a hairline
+ * shadow instead of a border, accent-filled default buttons, check boxes, and radio buttons, pop-up buttons with an
+ * accent arrow well, segmented tab controls, white slider knobs, and translucent menus and popovers.
+ *
+ * @remarks Control heights map regular, large, and extra large AppKit sizes (22, 28, 36px) to `sm`, `md`, and `lg`.
+ * Text fields keep a 3:1 border instead of AppKit's lighter bezel so their boundary stays visible.
+ */
 :root,
 :root[data-rui-theme='macos'] {
-	--font-sans: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
-	--font-heading: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
-	--font-mono: 'SFMono-Regular', Menlo, Monaco, monospace;
-	--border-radius-xs: 0.375rem;
-	--border-radius-sm: 0.5rem;
-	--border-radius-md: 0.5rem;
+	--font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+	--font-heading: system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
+	--font-mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Monaco, monospace;
+	--text-control: 0.8125rem;
+	--border-radius-xs: 0.25rem;
+	--border-radius-sm: 0.3125rem;
+	--border-radius-md: 0.375rem;
 	--border-radius-lg: 0.625rem;
 	--border-radius-xl: 0.75rem;
 	--border-radius-2xl: 1rem;
 	--border-radius-3xl: 1.25rem;
 	--radius-control: var(--border-radius-md);
 	--radius-container: var(--border-radius-lg);
+	--size-control-sm: 1.375rem;
+	--size-control-md: 1.75rem;
+	--size-control-lg: 2.25rem;
 	--rui-border-alpha: 100%;
 	--focus-ring-width: 3px;
-	--focus-ring-offset: 3px;
+	--focus-ring-offset: 1px;
+	--macos-hover-fill: color-mix(in srgb, var(--macos-text) 7%, transparent);
+	--macos-press-fill: color-mix(in srgb, var(--macos-text) 14%, transparent);
+	--macos-default-button-sheen: linear-gradient(to bottom, rgb(255 255 255 / 0.14), rgb(255 255 255 / 0));
 }
 
 @layer components {
-	/**
-	 * @remarks macOS fills dark destructive buttons with a saturated red and white text; `--error` stays the lighter
-	 * red used for error text on dark surfaces.
-	 */
-	:root.dark .rui-button--destructive {
-		background-color: #d93036;
-		color: #ffffff;
-	}
-
-	:root.dark .rui-button--destructive:hover:not(:disabled) {
-		background-color: #c9302c;
-	}
-
-	:root.dark .rui-button--destructive:active:not(:disabled) {
-		background-color: #b62324;
-	}
-
-	/**
-	 * @remarks macOS dark push buttons use the accent blue with white text. `#0a6cd6` keeps the system blue's hue at
-	 * 5:1 contrast, and `--primary` stays the lighter accent for primary text.
-	 */
-	:root.dark .rui-button--filled {
-		background-color: #0a6cd6;
-		color: #ffffff;
-	}
-
-	:root.dark .rui-button--filled:hover:not(:disabled) {
-		background-color: #0a64c8;
-	}
-
-	:root.dark .rui-button--filled:active:not(:disabled),
-	:root.dark .rui-button--filled[aria-pressed='true'] {
-		background-color: #0a5bb5;
-	}
-
 	:root .rui-button {
-		@apply rounded-control border border-transparent font-medium shadow-none;
+		@apply rounded-control border border-transparent font-normal;
+		background-image: none;
+		box-shadow: none;
 		transition-duration: var(--duration-fast);
 	}
 
-	:root .rui-button--filled,
+	/**
+	 * @remarks Secondary push buttons have no border: a hairline shadow outlines the white (light) or grey (dark) face,
+	 * and they only darken while pressed.
+	 */
+	:root .rui-button--outline,
 	:root .rui-button--destructive {
-		@apply shadow-sm;
-	}
-
-	:root .rui-button--outline {
-		@apply border-border bg-surface text-on-surface;
-		border-color: var(--rui-control-border-color);
+		border-color: transparent;
+		background-color: var(--macos-control);
+		color: var(--macos-text);
+		box-shadow: var(--macos-control-shadow);
 	}
 
 	:root .rui-button--outline:hover:not(:disabled),
-	:root .rui-button--ghost:hover:not(:disabled) {
-		@apply bg-surface-container-low;
+	:root .rui-button--destructive:hover:not(:disabled) {
+		background-color: var(--macos-control);
 	}
 
+	:root .rui-button--outline:active:not(:disabled),
+	:root .rui-button--outline[aria-pressed='true'],
+	:root .rui-button--destructive:active:not(:disabled) {
+		background-color: var(--macos-control-pressed);
+		box-shadow: var(--macos-control-shadow);
+	}
+
+	/**
+	 * @remarks AppKit marks a destructive alert action with red text on an ordinary push button, not a red fill.
+	 */
+	:root .rui-button--destructive {
+		color: var(--macos-red);
+	}
+
+	:root.dark .rui-button--destructive {
+		color: #ffcdc9;
+	}
+
+	/**
+	 * @remarks The default button fills with `selectedContentBackgroundColor` rather than the brighter accent so its
+	 * white label keeps 4.5:1.
+	 */
+	:root .rui-button--filled {
+		border-color: transparent;
+		background-color: var(--macos-selection);
+		background-image: var(--macos-default-button-sheen);
+		color: var(--macos-selection-text);
+		box-shadow:
+			0 0 0 0.5px rgb(0 0 0 / 0.12),
+			0 0.5px 1px rgb(0 0 0 / 0.25);
+	}
+
+	:root .rui-button--filled:hover:not(:disabled) {
+		background-color: var(--macos-selection);
+	}
+
+	:root .rui-button--filled:active:not(:disabled),
+	:root .rui-button--filled[aria-pressed='true'] {
+		background-color: color-mix(in srgb, var(--macos-selection), black 18%);
+		box-shadow:
+			0 0 0 0.5px rgb(0 0 0 / 0.12),
+			0 0.5px 1px rgb(0 0 0 / 0.25);
+	}
+
+	:root .rui-button--ghost {
+		color: var(--macos-text);
+	}
+
+	:root .rui-button--ghost:hover:not(:disabled) {
+		background-color: var(--macos-hover-fill);
+	}
+
+	:root .rui-button--ghost:active:not(:disabled),
+	:root .rui-button--ghost[aria-pressed='true'] {
+		background-color: var(--macos-press-fill);
+		box-shadow: none;
+	}
+
+	:root .rui-button--link {
+		color: var(--link);
+	}
+
+	:root .rui-button:focus-visible {
+		@apply ring-[3px] ring-focus-ring/60;
+	}
+
+	/**
+	 * @remarks AppKit text fields are near-square white wells; the accent focus ring hugs the bezel.
+	 */
 	:root .rui-input,
 	:root .rui-textarea,
 	:root .rui-autocomplete__input,
@@ -83,130 +136,417 @@
 	:root .rui-date-range-picker__group,
 	:root .rui-input-group,
 	:root .rui-number-field__group,
-	:root rui-date-input:where(:not([data-date-field-input], [data-range-start], [data-range-end])),
-	:root .rui-select__control {
-		@apply rounded-control border-border bg-surface text-on-surface shadow-none;
+	:root rui-date-input:where(:not([data-date-field-input], [data-range-start], [data-range-end])) {
+		@apply rounded-sm bg-surface text-on-surface shadow-none;
 		border-color: var(--rui-control-border-color);
 	}
 
+	:root .rui-input:focus-visible,
+	:root .rui-textarea:focus-visible,
+	:root .rui-autocomplete__input:focus-visible,
+	:root .rui-combobox__control:focus-within,
+	:root .rui-date-field__group:focus-within,
+	:root .rui-date-range-picker__group:focus-within,
+	:root .rui-input-group:focus-within,
+	:root .rui-number-field__group:focus-within {
+		@apply outline-none ring-[3px] ring-focus-ring/60;
+	}
+
+	/**
+	 * Pop-up buttons are push buttons whose arrow sits in an accent-filled rounded well.
+	 */
+	:root .rui-select__control {
+		@apply rounded-control;
+		border-color: transparent;
+		background-color: var(--macos-control);
+		color: var(--macos-text);
+		box-shadow: var(--macos-control-shadow);
+	}
+
+	:root .rui-select__control:focus-within {
+		@apply ring-[3px] ring-focus-ring/60;
+	}
+
+	:root .rui-select__trigger {
+		color: var(--macos-text);
+	}
+
+	:root .rui-select__control .rui-control-toggle,
+	:root .rui-combobox__control .rui-control-toggle {
+		width: 1.0625rem;
+		height: 1.0625rem;
+		margin-inline-end: 0.125rem;
+		border-radius: var(--border-radius-xs);
+		background-color: var(--macos-accent);
+		background-image: var(--macos-default-button-sheen);
+		color: #ffffff;
+	}
+
+	:root .rui-select__control .rui-control-toggle:hover:not(:disabled),
+	:root .rui-combobox__control .rui-control-toggle:hover:not(:disabled) {
+		background-color: var(--macos-accent);
+	}
+
+	:root .rui-select__control .rui-control-toggle > svg,
+	:root .rui-combobox__control .rui-control-toggle > svg {
+		width: 0.75rem;
+		height: 0.75rem;
+		stroke-width: 2.5;
+	}
+
+	/**
+	 * Check boxes and radio buttons fill with the accent and draw a white mark; unchecked ones are white with a hairline.
+	 */
 	:root .rui-checkbox__control,
 	:root .rui-radio__control {
-		@apply border-border bg-surface;
+		width: 0.875rem;
+		height: 0.875rem;
 		border-color: var(--rui-control-border-color);
+		background-color: var(--macos-surface);
+		box-shadow: 0 0.5px 1px rgb(0 0 0 / 0.12);
 	}
 
-	:root .rui-switch {
-		--rui-switch-track: color-mix(in oklab, var(--on-background) 14%, transparent);
-		--rui-switch-track-hover: color-mix(in oklab, var(--on-background) 20%, transparent);
-		--rui-switch-thumb: #ffffff;
-		--rui-switch-thumb-on: #ffffff;
-	}
-
-	:root .rui-switch__track {
-		@apply rounded-pill;
-	}
-
-	:root .rui-switch__thumb {
-		box-shadow:
-			0 0 0 0.5px rgb(0 0 0 / 0.12),
-			0 1px 2px rgb(0 0 0 / 0.24);
+	:root.dark .rui-checkbox__control,
+	:root.dark .rui-radio__control {
+		background-color: var(--macos-control);
 	}
 
 	:root .rui-checkbox__control {
 		@apply rounded-xs;
 	}
 
-	:root .rui-listbox__option[aria-selected='true'],
+	:root .rui-checkbox__input:checked:not(:indeterminate):not([aria-checked='mixed']) + .rui-checkbox__control,
+	:root .rui-checkbox__input:indeterminate + .rui-checkbox__control,
+	:root .rui-checkbox__input[aria-checked='mixed'] + .rui-checkbox__control,
+	:root .rui-radio__input:checked + .rui-radio__control {
+		border-color: var(--primary);
+		background-color: var(--macos-accent);
+		background-image: var(--macos-default-button-sheen);
+	}
+
+	:root .rui-checkbox__input:checked:not(:indeterminate):not([aria-checked='mixed']) + .rui-checkbox__control::after {
+		width: 0.5625rem;
+		height: 0.5625rem;
+		color: #ffffff;
+	}
+
+	:root .rui-checkbox__input:indeterminate + .rui-checkbox__control::after,
+	:root .rui-checkbox__input[aria-checked='mixed'] + .rui-checkbox__control::after {
+		width: 0.5rem;
+		background-color: #ffffff;
+	}
+
+	:root .rui-radio__input:checked + .rui-radio__control::after {
+		width: 0.375rem;
+		height: 0.375rem;
+		background-color: #ffffff;
+	}
+
+	:root .rui-checkbox__input:focus-visible + .rui-checkbox__control,
+	:root .rui-radio__input:focus-visible + .rui-radio__control,
+	:root .rui-switch__input:focus-visible + .rui-switch__track {
+		@apply ring-[3px] ring-focus-ring/60 ring-offset-0;
+	}
+
+	:root .rui-switch {
+		--rui-switch-width: 2.375rem;
+		--rui-switch-height: 1.375rem;
+		--rui-switch-thumb-size: 1.25rem;
+		--rui-switch-track: color-mix(in srgb, var(--macos-text) 12%, transparent);
+		--rui-switch-track-hover: color-mix(in srgb, var(--macos-text) 12%, transparent);
+		--rui-switch-track-on: var(--macos-accent);
+		--rui-switch-track-on-hover: var(--macos-accent);
+		--rui-switch-thumb: #ffffff;
+		--rui-switch-thumb-on: #ffffff;
+	}
+
+	:root .rui-switch__track {
+		@apply rounded-pill;
+		box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.12);
+	}
+
+	:root .rui-switch__thumb {
+		left: 1px;
+		box-shadow:
+			0 0 0 0.5px rgb(0 0 0 / 0.1),
+			0 1px 2px rgb(0 0 0 / 0.25);
+	}
+
+	:root .rui-switch__input:checked + .rui-switch__track .rui-switch__thumb {
+		right: 1px;
+	}
+
+	/**
+	 * Selection uses `selectedContentBackgroundColor` with white text: list and menu rows, calendar days, and the
+	 * source-list sidebar.
+	 */
+	:root .rui-listbox__option[aria-selected='true']:not([aria-disabled='true']),
+	:root .rui-listbox__option[aria-selected='true']:focus-visible,
 	:root .rui-menu-button__item[aria-checked='true'],
 	:root .rui-menubar__menu-item[aria-checked='true'],
 	:root .rui-tree__node[aria-selected='true'],
-	:root .rui-calendar__day[aria-selected='true'],
-	:root .rui-sidebar__menu-button--active,
+	:root .rui-calendar__day[aria-selected='true']:not([data-range-middle='true']),
+	:root .rui-calendar__day[aria-selected='true']:not([data-range-middle='true']):hover:not(:disabled),
 	:root .rui-navigation-menu__link-list a[aria-current='page'] {
-		@apply rounded-control bg-primary-container text-on-primary-container;
+		@apply rounded-sm;
+		background-color: var(--macos-selection);
+		background-image: none;
+		color: var(--macos-selection-text);
 	}
 
-	:root .rui-dialog__surface,
-	:root .rui-popover-host,
-	:root .rui-hover-card__content,
+	:root .rui-listbox__option[aria-selected='true'] .rui-listbox__option-indicator {
+		color: var(--macos-selection-text);
+	}
+
+	:root .rui-listbox__option {
+		@apply rounded-sm;
+		padding-block: 0.1875rem;
+	}
+
+	:root .rui-calendar__day {
+		@apply h-7 rounded-full;
+	}
+
+	:root .rui-calendar__day[aria-selected='true']:not([data-range-middle='true']) {
+		@apply rounded-full;
+	}
+
+	:root .rui-calendar__day[aria-current='date']:not([aria-selected='true']) {
+		@apply no-underline;
+		color: var(--macos-red);
+	}
+
+	/**
+	 * @remarks Menu rows highlight with the accent and white text while the pointer or keyboard is on them, inset 5px
+	 * from the menu edge with 4px corners.
+	 */
+	:root .rui-menu-button__menu,
+	:root .rui-menubar__menu {
+		@apply p-[5px];
+		--rui-menu-item-hover: var(--macos-selection);
+	}
+
+	:root .rui-menu-button__item,
+	:root .rui-menubar__menu-item {
+		@apply rounded-xs;
+		padding-block: 0.1875rem;
+		padding-inline: 0.625rem;
+		font-size: var(--text-control);
+	}
+
+	:root .rui-menu-button__item:focus-visible:not([aria-disabled='true']),
+	:root .rui-menu-button__item[aria-expanded='true'],
+	:root .rui-menubar__menu-item:focus-visible:not([aria-disabled='true']),
+	:root .rui-menubar__menu-item[aria-expanded='true'] {
+		color: var(--macos-selection-text);
+		--tw-ring-shadow: 0 0 #0000;
+	}
+
+	@media (hover: hover) and (pointer: fine) {
+		:root .rui-menu-button__item:hover:not([aria-disabled='true']),
+		:root .rui-menubar__menu-item:hover:not([aria-disabled='true']) {
+			background-color: var(--macos-selection);
+			color: var(--macos-selection-text);
+		}
+
+		:root .rui-menu-button__item:hover:not([aria-disabled='true'])::after,
+		:root .rui-menubar__menu-item:hover:not([aria-disabled='true'])::after {
+			color: inherit;
+		}
+	}
+
+	:root .rui-sidebar__menu-button:hover {
+		background-color: var(--macos-hover-fill);
+	}
+
+	/**
+	 * @remarks Source lists mark the current row with the unemphasized grey selection, as Finder and System Settings do
+	 * while the sidebar is not the key view.
+	 */
+	:root .rui-sidebar__menu-button[aria-current='page'],
+	:root .rui-sidebar__menu-button--active {
+		background-color: var(--macos-unemphasized-selection);
+		color: var(--macos-text);
+	}
+
+	/**
+	 * Menus, pop-up lists, popovers, and hover cards are translucent, blurred materials with a hairline edge.
+	 */
+	:root .rui-popover,
 	:root .rui-menu-button__menu,
 	:root .rui-menubar__menu,
 	:root .rui-select__listbox,
 	:root .rui-combobox__listbox,
-	:root .rui-calendar,
-	:root rui-tabs[variant='boxed'] {
-		@apply rounded-container border border-border bg-surface shadow-lg;
+	:root .rui-hover-card__content {
+		--rui-popover-surface: var(--macos-elevated);
+		--rui-popover-border-color: transparent;
+		--rui-popover-shadow: var(--macos-menu-shadow);
+		--rui-popover-radius: var(--border-radius-lg);
+		@apply border-transparent text-on-surface;
+		background-color: var(--macos-elevated);
+		box-shadow: var(--macos-menu-shadow);
+		backdrop-filter: blur(24px) saturate(1.6);
 	}
 
-	:root .rui-dialog__title,
-	:root .rui-calendar__header,
-	:root .rui-sidebar__header,
-	:root .rui-table__header {
-		@apply bg-surface-container-low text-on-surface font-semibold;
+	:root .rui-menu-button__menu,
+	:root .rui-menubar__menu,
+	:root .rui-select__listbox,
+	:root .rui-combobox__listbox {
+		--rui-popover-radius: var(--border-radius-md);
+		border-radius: var(--border-radius-md);
+	}
+
+	:root .rui-hover-card__content {
+		border-radius: var(--border-radius-lg);
+	}
+
+	:root .rui-select__listbox .rui-listbox,
+	:root .rui-combobox__listbox .rui-listbox,
+	:root .rui-popover--listbox .rui-listbox {
+		@apply bg-transparent p-[5px];
+	}
+
+	:root .rui-tooltip {
+		--rui-tooltip-surface: var(--macos-elevated-solid);
+		--rui-tooltip-color: var(--macos-text);
+		--rui-tooltip-radius: var(--border-radius-xs);
+		--rui-tooltip-shadow: 0 0 0 0.5px var(--macos-elevated-edge), 0 2px 8px rgb(0 0 0 / 0.18);
+		--rui-tooltip-padding-x: 0.375rem;
+		--rui-tooltip-padding-y: 0.125rem;
+	}
+
+	/**
+	 * @remarks Alerts are window-background panels with 10px corners and a deep shadow; the title is bold text, not a
+	 * title-bar band.
+	 */
+	:root .rui-dialog {
+		--rui-dialog-surface: var(--macos-canvas);
+		--rui-dialog-radius: var(--border-radius-lg);
+		--rui-dialog-shadow: 0 0 0 0.5px var(--macos-elevated-edge), 0 20px 50px rgb(0 0 0 / 0.35);
+	}
+
+	:root .rui-dialog__surface {
+		@apply text-on-surface;
+		background-color: var(--macos-canvas);
+		box-shadow:
+			0 0 0 0.5px var(--macos-elevated-edge),
+			inset 0 0 0 0.5px var(--macos-elevated-highlight),
+			0 20px 50px rgb(0 0 0 / 0.35);
+	}
+
+	:root .rui-dialog__title {
+		@apply font-bold text-on-surface;
+	}
+
+	:root .rui-calendar {
+		@apply rounded-container border-0 text-on-surface;
+		background-color: var(--macos-surface);
+		box-shadow: var(--macos-control-shadow);
+	}
+
+	:root .rui-calendar__header {
+		@apply font-semibold text-on-surface;
+	}
+
+	:root .rui-sidebar__header {
+		@apply font-semibold text-on-surface;
+	}
+
+	/**
+	 * Tabs are a segmented control: a recessed track with the selected segment raised as a push-button face. Boxed tabs
+	 * center that control above the group box, as `NSTabView` does, but clear of its edge so it never clips content.
+	 */
+	:root .rui-tabs__list {
+		@apply w-fit max-w-full gap-0 border-0 p-0.5;
+		border-radius: calc(var(--radius-control) + 1px);
+		background-color: color-mix(in srgb, var(--macos-text) 7%, transparent);
+	}
+
+	:root .rui-tabs__tab {
+		@apply rounded-control border-0 font-normal;
+		color: var(--macos-text);
+		padding-block: 0.125rem;
+		padding-inline: 0.75rem;
+		font-size: var(--text-control);
+	}
+
+	:root .rui-tabs__tab[aria-selected='true'] {
+		@apply font-normal;
+		background-color: var(--macos-control);
+		color: var(--macos-text);
+		box-shadow: var(--macos-control-shadow);
+	}
+
+	:root .rui-tabs__tab:focus-visible {
+		@apply ring-[3px] ring-focus-ring/60 ring-offset-0;
 	}
 
 	:root rui-tabs[variant='boxed'] {
-		@apply rounded-container border border-border bg-surface shadow-sm;
+		@apply overflow-visible rounded-none border-0 bg-transparent shadow-none;
 	}
 
 	:root rui-tabs[variant='boxed'] .rui-tabs__list {
-		@apply gap-1 border-0 bg-surface-container-low px-1 py-1;
-		border-radius: var(--radius-control);
+		@apply relative z-10 mx-auto;
+		margin-bottom: 0.5rem;
+		padding-block: 0.125rem;
 	}
 
-	:root rui-tabs[variant='boxed'] .rui-tabs__tab {
-		@apply rounded-control border-0 bg-transparent text-on-surface-container-low;
-		padding-inline: var(--rui-tabs-tab-padding-x);
-		padding-block: var(--rui-tabs-tab-padding-y);
+	:root.dark rui-tabs[variant='boxed'] .rui-tabs__list {
+		background-color: #2a2a2a;
 	}
 
-	:root rui-tabs[variant='boxed'] .rui-tabs__tab[aria-selected='true'] {
-		@apply rounded-control bg-surface text-on-surface font-semibold shadow-sm;
+	:root:not(.dark) rui-tabs[variant='boxed'] .rui-tabs__list {
+		background-color: #e3e3e3;
+	}
+
+	:root rui-tabs[variant='boxed'] .rui-tabs__tab,
+	:root rui-tabs[variant='boxed'] .rui-tabs__tab:not([aria-selected='true']) {
+		@apply opacity-100;
+		color: var(--macos-text);
 		border-bottom-color: transparent;
 	}
 
 	:root rui-tabs[variant='boxed'] .rui-tabs__panel {
-		@apply rounded-none bg-surface;
+		@apply rounded-md text-on-surface;
+		border: 1px solid color-mix(in srgb, var(--macos-text) 12%, transparent);
+		background-color: color-mix(in srgb, var(--macos-text) 4%, transparent);
 		padding: var(--rui-tabs-panel-padding);
 	}
 
-	:root .rui-tabs__tab[aria-selected='true'] {
-		@apply rounded-pill bg-surface-container text-on-surface font-semibold;
-		border-bottom-color: transparent;
-	}
-
 	:root .rui-alert,
-	:root .rui-toast__content {
-		@apply rounded-container border border-border bg-surface text-on-surface shadow-md;
+	:root .rui-toast {
+		@apply rounded-container border-transparent text-on-surface;
+		background-color: var(--macos-elevated);
+		background-image: none;
+		box-shadow: var(--macos-menu-shadow);
+		backdrop-filter: blur(24px) saturate(1.6);
 	}
 
 	/**
-	 * @remarks Finder-style lists keep the hierarchy quiet: rounded surfaces, subtle row dividers, and a full-width
-	 * accent selection make the tree feel like a native macOS source list rather than a spreadsheet.
+	 * @remarks Notification banners use the 16px corner of macOS notifications; status shows in the icon, not the text.
 	 */
-	:root .rui-treegrid {
-		@apply rounded-container border border-border bg-surface shadow-md;
-		--rui-treegrid-indent: 0.875rem;
+	:root .rui-toast {
+		@apply rounded-2xl;
 	}
 
-	:root .rui-treegrid__cell {
-		@apply border-0 bg-transparent px-control-x py-2 text-on-surface;
+	:root .rui-toast--info .rui-toast__icon {
+		color: var(--macos-accent);
 	}
 
-	:root .rui-treegrid__row--header .rui-treegrid__cell {
-		@apply border-b border-border bg-surface-container-low font-semibold;
+	:root .rui-toast--success .rui-toast__icon {
+		color: var(--success);
 	}
 
-	:root .rui-treegrid__row:not(.rui-treegrid__row--header):hover .rui-treegrid__cell:not([aria-selected='true']) {
-		@apply bg-surface-container-low;
+	:root .rui-toast--warning .rui-toast__icon {
+		color: var(--warning);
 	}
 
-	:root .rui-treegrid__cell[aria-selected='true'] {
-		@apply bg-primary-container text-on-primary-container;
+	:root .rui-toast--error .rui-toast__icon {
+		color: var(--error);
 	}
 
 	:root .rui-alert--info .rui-alert__icon {
-		color: var(--info);
+		color: var(--macos-accent);
 	}
 
 	:root .rui-alert--success .rui-alert__icon {
@@ -221,15 +561,80 @@
 		color: var(--error);
 	}
 
-	:root .rui-badge,
-	:root .rui-chip,
-	:root .rui-pagination__link {
+	:root .rui-feed__article {
+		@apply rounded-container border-0 text-on-surface;
+		background-color: var(--macos-surface);
+		box-shadow: var(--macos-control-shadow);
+	}
+
+	:root .rui-badge {
 		@apply rounded-pill;
 	}
 
-	:root .rui-table__row:nth-child(even),
-	:root .rui-grid__row:nth-child(even) {
-		@apply bg-surface-container-low;
+	:root .rui-chip,
+	:root .rui-pagination__link {
+		@apply rounded-control;
+	}
+
+	/**
+	 * @remarks Table views are white content areas with `alternatingContentBackgroundColors` stripes, a plain header
+	 * divided by hairlines, and no grid lines between rows.
+	 */
+	:root .rui-table,
+	:root .rui-grid {
+		background-color: var(--macos-surface);
+	}
+
+	:root .rui-grid {
+		@apply border-0;
+		box-shadow: var(--macos-control-shadow);
+	}
+
+	:root .rui-table__column,
+	:root .rui-table__cell,
+	:root .rui-grid__cell {
+		@apply border-b-transparent text-on-surface;
+		border-right-color: transparent;
+		background-color: var(--macos-surface);
+	}
+
+	:root .rui-table__column,
+	:root .rui-grid__row:first-child .rui-grid__cell {
+		@apply font-semibold;
+		border-bottom-color: var(--macos-grid);
+		border-right-color: var(--macos-grid);
+	}
+
+	:root .rui-table__row:nth-child(even) > .rui-table__cell,
+	:root .rui-grid__row:nth-child(odd):not(:first-child) > .rui-grid__cell {
+		background-color: var(--macos-alternate-row);
+	}
+
+	:root .rui-treegrid {
+		@apply rounded-container border-0 text-on-surface;
+		background-color: var(--macos-surface);
+		box-shadow: var(--macos-control-shadow);
+		--rui-treegrid-indent: 0.875rem;
+	}
+
+	:root .rui-treegrid__cell {
+		@apply border-0 bg-transparent px-2 py-1 text-on-surface;
+		font-size: var(--text-control);
+	}
+
+	:root .rui-treegrid__row--header .rui-treegrid__cell {
+		@apply font-semibold;
+		border-bottom: 1px solid var(--macos-grid);
+		background-color: var(--macos-surface);
+	}
+
+	:root .rui-treegrid__row:not(.rui-treegrid__row--header):hover .rui-treegrid__cell:not([aria-selected='true']) {
+		background-color: var(--macos-hover-fill);
+	}
+
+	:root .rui-treegrid__cell[aria-selected='true'] {
+		background-color: var(--macos-selection);
+		color: var(--macos-selection-text);
 	}
 
 	:root .rui-separator,
@@ -237,17 +642,43 @@
 		@apply bg-border;
 	}
 
-	:root .rui-slider__thumb {
-		@apply rounded-pill border border-surface bg-primary shadow-sm;
+	/**
+	 * @remarks Sliders draw a thin grey track with an accent fill and a white knob with a soft shadow.
+	 */
+	:root .rui-slider {
+		--rui-slider-track-size: 0.25rem;
+		--rui-slider-track-radius: 9999px;
+		--rui-slider-track-color: color-mix(in srgb, var(--macos-text) 15%, transparent);
+		--rui-slider-fill-color: var(--macos-accent);
+		--rui-slider-thumb-size: 1.25rem;
+		--rui-slider-thumb-radius: 9999px;
+		--rui-slider-thumb-border-width: 0px;
+		--rui-slider-thumb-border-color: transparent;
+		--rui-slider-thumb-background: #ffffff;
+		--rui-slider-thumb-shadow: 0 0 0 0.5px rgb(0 0 0 / 0.18), 0 1px 3px rgb(0 0 0 / 0.3);
+		--rui-slider-focus-ring-width: 3px;
+		--rui-slider-focus-ring: color-mix(in srgb, var(--focus-ring) 60%, transparent);
 	}
 
-	:root .rui-meter__track,
-	:root .rui-slider__range-track {
-		@apply rounded-pill bg-surface-container;
+	:root .rui-meter__track {
+		@apply rounded-pill;
+		background-color: color-mix(in srgb, var(--macos-text) 12%, transparent);
+		box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.08);
 	}
 
-	:root .rui-meter__fill,
-	:root .rui-slider__range-fill {
-		@apply rounded-pill bg-primary;
+	:root .rui-meter__fill {
+		@apply rounded-pill;
+		background-color: var(--macos-accent);
+	}
+}
+
+@media (prefers-contrast: more) {
+	@layer components {
+		:root .rui-button--outline,
+		:root .rui-button--destructive,
+		:root .rui-select__control,
+		:root .rui-tabs__tab[aria-selected='true'] {
+			border-color: var(--rui-control-border-color);
+		}
 	}
 }

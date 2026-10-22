@@ -1,6 +1,11 @@
 @reference 'tailwindcss';
 
-:root, :root[data-rui-theme='material'] {
+/**
+ * Material 3 shapes and elevation: full-radius buttons, 4px fields and menus, 8px chips, 12px cards, 28px dialogs,
+ * tonal surfaces instead of borders on overlays, and a 3px secondary focus indicator.
+ */
+:root,
+:root[data-rui-theme='material'] {
 	--font-sans: Roboto, 'Noto Sans', ui-sans-serif, system-ui, sans-serif;
 	--font-heading: Roboto, 'Noto Sans', ui-sans-serif, system-ui, sans-serif;
 	--font-mono: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -12,30 +17,185 @@
 	--border-radius-xl: 1.75rem;
 	--border-radius-2xl: 2rem;
 	--border-radius-3xl: 2.5rem;
-	--radius-control: var(--border-radius-xl);
-	--radius-container: var(--border-radius-lg);
+	--radius-control: var(--border-radius-xs);
+	--radius-container: var(--border-radius-md);
+	--focus-ring-width: 3px;
+	--focus-ring-offset: 2px;
+	--shadow-control: none;
+	--shadow-overlay: 0 1px 2px rgb(0 0 0 / 0.3), 0 2px 6px 2px rgb(0 0 0 / 0.15);
+	--shadow-modal: 0 1px 3px rgb(0 0 0 / 0.3), 0 4px 8px 3px rgb(0 0 0 / 0.15);
+	--sheen-image: none;
+	--material-state-hover: 8%;
+	--material-state-press: 10%;
+}
+
+/**
+ * @remarks Component knobs are declared unlayered on the host elements, so these overrides stay unlayered too.
+ */
+:root rui-switch {
+	--rui-switch-width: 3.25rem;
+	--rui-switch-height: 2rem;
+	--rui-switch-thumb-size: 1rem;
+	--rui-switch-track: var(--surface-container-highest);
+	--rui-switch-track-hover: var(--surface-container-highest);
+	--rui-switch-track-on: var(--primary);
+	--rui-switch-track-on-hover: var(--primary);
+	--rui-switch-thumb: var(--material-outline);
+	--rui-switch-thumb-on: var(--on-primary);
+}
+
+:root rui-dialog {
+	--rui-dialog-radius: var(--border-radius-xl);
+	--rui-dialog-surface: var(--surface-container-high);
+	--rui-dialog-padding: 1.5rem;
+}
+
+:root rui-tooltip {
+	--rui-tooltip-radius: var(--border-radius-xs);
+	--rui-tooltip-surface: var(--material-inverse-surface);
+	--rui-tooltip-color: var(--material-inverse-on-surface);
+	--rui-tooltip-shadow: none;
+}
+
+:root rui-tabs {
+	--rui-tabs-indicator-width: 3px;
+}
+
+:root rui-meter {
+	--rui-meter-height: 0.25rem;
+	--rui-meter-radius: var(--border-radius-full, 9999px);
+	--rui-meter-track-color: var(--secondary-container);
+}
+
+:root rui-slider {
+	--rui-slider-track-size: 0.25rem;
+	--rui-slider-track-color: var(--secondary-container);
+	--rui-slider-thumb-background: var(--primary);
+	--rui-slider-thumb-border-color: var(--primary);
+	--rui-slider-thumb-radius: 9999px;
+	--rui-slider-thumb-shadow: var(--shadow-control);
 }
 
 @layer components {
-	:root .rui-button {
-		@apply rounded-control border border-transparent font-medium shadow-sm;
+	/**
+	 * @remarks The M3 handle grows from 16px off to 24px on (28px while pressed); the off track draws a 2px outline.
+	 */
+	:root .rui-switch__track {
+		border: 2px solid var(--rui-control-border-color);
 	}
 
-	:root .rui-button--filled,
-	:root .rui-button--destructive {
-		@apply shadow-md;
+	:root .rui-switch__input:checked + .rui-switch__track {
+		border-color: var(--primary);
+	}
+
+	:root .rui-switch__thumb {
+		left: 0.375rem;
+		transition-property: left, right, width, height, background-color;
+	}
+
+	:root .rui-switch__input:checked + .rui-switch__track .rui-switch__thumb {
+		right: 0.125rem;
+		width: 1.5rem;
+		height: 1.5rem;
+	}
+
+	:root .rui-switch__track:active .rui-switch__thumb {
+		width: 1.75rem;
+		height: 1.75rem;
+	}
+
+	:root .rui-button {
+		@apply rounded-pill border border-transparent font-medium;
+		letter-spacing: 0.00625rem;
+	}
+
+	:root .rui-button--sm {
+		padding-inline: 1rem;
+	}
+
+	:root .rui-button--md {
+		padding-inline: 1.5rem;
+	}
+
+	:root .rui-button--lg {
+		padding-inline: 2rem;
+	}
+
+	:root .rui-button--square,
+	:root .rui-button--link,
+	:root .rui-button--none {
+		padding-inline: 0;
+	}
+
+	:root .rui-button--filled:hover:not(:disabled) {
+		background-color: color-mix(in srgb, var(--on-primary) var(--material-state-hover), var(--primary));
+		box-shadow: var(--shadow-overlay);
+	}
+
+	:root .rui-button--filled:active:not(:disabled) {
+		background-color: color-mix(in srgb, var(--on-primary) var(--material-state-press), var(--primary));
+		box-shadow: none;
+	}
+
+	:root .rui-button--destructive:hover:not(:disabled) {
+		background-color: color-mix(in srgb, var(--on-error) var(--material-state-hover), var(--error));
+		box-shadow: var(--shadow-overlay);
+	}
+
+	:root .rui-button--destructive:active:not(:disabled) {
+		background-color: color-mix(in srgb, var(--on-error) var(--material-state-press), var(--error));
+		box-shadow: none;
 	}
 
 	:root .rui-button--outline {
-		@apply border-border bg-surface text-on-surface shadow-none;
+		@apply bg-transparent shadow-none;
 		border-color: var(--rui-control-border-color);
+		color: var(--primary);
 	}
 
-	:root .rui-button--ghost:hover:not(:disabled),
-	:root .rui-button--outline:hover:not(:disabled) {
-		@apply bg-surface-container-low;
+	:root .rui-button--ghost {
+		color: var(--primary);
 	}
 
+	:root .rui-button--outline:hover:not(:disabled),
+	:root .rui-button--ghost:hover:not(:disabled) {
+		background-color: color-mix(in srgb, var(--primary) var(--material-state-hover), transparent);
+	}
+
+	:root .rui-button--outline:active:not(:disabled),
+	:root .rui-button--ghost:active:not(:disabled) {
+		background-color: color-mix(in srgb, var(--primary) var(--material-state-press), transparent);
+	}
+
+	:root .rui-button--outline[aria-pressed='true'],
+	:root .rui-button--ghost[aria-pressed='true'] {
+		@apply shadow-none ring-0;
+		background-color: var(--secondary-container);
+		color: var(--on-secondary-container);
+	}
+
+	:root .rui-button:disabled {
+		opacity: 1;
+		background-color: color-mix(in srgb, var(--on-surface) 12%, transparent);
+		color: color-mix(in srgb, var(--on-surface) 38%, transparent);
+		box-shadow: none;
+	}
+
+	:root .rui-button--outline:disabled {
+		background-color: transparent;
+		border-color: color-mix(in srgb, var(--on-surface) 12%, transparent);
+	}
+
+	:root .rui-button--ghost:disabled,
+	:root .rui-button--link:disabled,
+	:root .rui-button--none:disabled {
+		background-color: transparent;
+	}
+
+	/**
+	 * @remarks Outlined text fields: a 1px outline that becomes a 2px primary outline while focused, drawn with an inset
+	 * shadow so the field keeps its size.
+	 */
 	:root .rui-input,
 	:root .rui-textarea,
 	:root .rui-autocomplete__input,
@@ -46,39 +206,208 @@
 	:root .rui-number-field__group,
 	:root rui-date-input:where(:not([data-date-field-input], [data-range-start], [data-range-end])),
 	:root .rui-select__control {
-		@apply rounded-control border-border bg-surface text-on-surface shadow-none;
+		@apply rounded-control bg-surface shadow-none;
 		border-color: var(--rui-control-border-color);
+		color: var(--on-surface);
 	}
 
-	:root .rui-checkbox__control,
-	:root .rui-radio__control {
-		@apply border-border bg-surface;
-		border-color: var(--rui-control-border-color);
+	:root .rui-input:hover:not(:disabled),
+	:root .rui-textarea:hover:not(:disabled),
+	:root .rui-select__control:hover {
+		border-color: var(--on-surface);
 	}
 
+	:root .rui-input:focus-visible,
+	:root .rui-textarea:focus-visible,
+	:root .rui-autocomplete__input:focus-visible,
+	:root .rui-combobox__control:focus-within,
+	:root .rui-date-field__group:focus-within,
+	:root .rui-date-range-picker__group:focus-within,
+	:root .rui-input-group:focus-within,
+	:root .rui-number-field__group:focus-within {
+		@apply ring-0 outline-none;
+		border-color: var(--primary);
+		box-shadow: inset 0 0 0 1px var(--primary);
+	}
+
+	:root .rui-input::placeholder,
+	:root .rui-textarea::placeholder {
+		color: var(--material-on-surface-variant);
+	}
+
+	/**
+	 * @remarks M3 check boxes are 18px with a 2px radius and a 2px on-surface-variant outline.
+	 */
 	:root .rui-checkbox__control {
-		@apply rounded-xs;
+		@apply rounded-[2px];
+		width: 1.125rem;
+		height: 1.125rem;
+		border-width: 2px;
+		border-color: var(--material-on-surface-variant);
+		background-color: transparent;
 	}
 
-	:root .rui-dialog__surface,
-	:root .rui-popover-host,
+	:root .rui-radio__control {
+		width: 1.25rem;
+		height: 1.25rem;
+		border-width: 2px;
+		border-color: var(--material-on-surface-variant);
+		background-color: transparent;
+	}
+
+	:root .rui-radio__input:checked + .rui-radio__control::after {
+		width: 0.625rem;
+		height: 0.625rem;
+	}
+
+	:root .rui-checkbox__input:checked:not(:indeterminate):not([aria-checked='mixed']) + .rui-checkbox__control::after {
+		width: 0.75rem;
+		height: 0.75rem;
+	}
+
+	:root .rui-checkbox__input:indeterminate + .rui-checkbox__control,
+	:root .rui-checkbox__input[aria-checked='mixed'] + .rui-checkbox__control {
+		background-color: var(--primary);
+	}
+
+	:root .rui-checkbox__input:indeterminate + .rui-checkbox__control::after,
+	:root .rui-checkbox__input[aria-checked='mixed'] + .rui-checkbox__control::after {
+		@apply rounded-none;
+		background-color: var(--on-primary);
+	}
+
+	:root .rui-dialog__surface {
+		@apply border-0;
+		background-color: var(--surface-container-high);
+		box-shadow: var(--shadow-modal);
+	}
+
+	:root .rui-dialog__title {
+		@apply font-normal;
+		font-size: 1.5rem;
+		line-height: 2rem;
+	}
+
+	:root .rui-popover {
+		--rui-popover-radius: var(--border-radius-xs);
+		--rui-popover-surface: var(--surface-container);
+		--rui-popover-border-color: transparent;
+		color: var(--on-surface);
+	}
+
+	:root .rui-popover .rui-listbox {
+		background-color: transparent;
+	}
+
 	:root .rui-hover-card__content,
+	:root .rui-menu-button__menu,
+	:root .rui-menubar__menu,
 	:root .rui-select__listbox,
-	:root .rui-combobox__listbox,
-	:root .rui-calendar {
-		@apply rounded-container border border-border bg-surface shadow-lg;
+	:root .rui-combobox__listbox {
+		@apply rounded-control border-0;
+		background-color: var(--surface-container);
+		color: var(--on-surface);
+		box-shadow: var(--shadow-overlay);
 	}
 
-	:root .rui-listbox__option[aria-selected='true'],
+	:root .rui-calendar {
+		@apply rounded-[1rem] border-0;
+		background-color: var(--surface-container-high);
+		box-shadow: var(--shadow-overlay);
+	}
+
+	:root .rui-calendar__day[aria-selected='true']:not([data-range-middle='true']) {
+		@apply rounded-pill;
+	}
+
+	/**
+	 * @remarks Toasts follow the M3 snackbar: inverse surface, 4px corners, and inverse-primary actions; the status
+	 * color moves to the icon so text keeps inverse contrast.
+	 */
+	:root .rui-toast {
+		@apply rounded-control border-0;
+		background-color: var(--material-inverse-surface);
+		color: var(--material-inverse-on-surface);
+		box-shadow: var(--shadow-modal);
+	}
+
+	:root .rui-toast__action .rui-button {
+		color: var(--material-inverse-primary);
+	}
+
+	:root .rui-listbox__option[aria-selected='true']:not([aria-disabled='true']),
 	:root .rui-menu-button__item[aria-checked='true'],
-	:root .rui-calendar__day[aria-selected='true'],
+	:root .rui-menubar__menu-item[aria-checked='true'],
+	:root .rui-tree__node[aria-selected='true'] {
+		@apply rounded-control;
+		background-color: var(--secondary-container);
+		background-image: none;
+		color: var(--on-secondary-container);
+	}
+
+	:root .rui-listbox__option[aria-selected='true'] .rui-listbox__option-indicator {
+		color: inherit;
+	}
+
+	/**
+	 * @remarks Navigation drawer items use the full-radius secondary-container active indicator.
+	 */
+	:root .rui-sidebar__menu-button {
+		@apply rounded-pill;
+	}
+
+	:root .rui-sidebar__menu-button[aria-current='page'],
 	:root .rui-sidebar__menu-button--active {
-		@apply rounded-control bg-primary-container text-on-primary-container;
+		background-color: var(--secondary-container);
+		color: var(--on-secondary-container);
+	}
+
+	:root .rui-tabs__tab {
+		@apply font-medium;
+		color: var(--material-on-surface-variant);
+	}
+
+	:root .rui-tabs__tab[aria-selected='true'],
+	:root rui-tabs[variant='boxed'] .rui-tabs__tab[aria-selected='true'] {
+		color: var(--primary);
+	}
+
+	:root rui-tabs[variant='boxed'] .rui-tabs__tab:not([aria-selected='true']) {
+		opacity: 1;
+		color: var(--material-on-surface-variant);
+	}
+
+	:root .rui-tabs__tab:hover {
+		background-color: color-mix(in srgb, var(--on-surface) var(--material-state-hover), transparent);
+	}
+
+	:root .rui-chip,
+	:root .rui-tag {
+		@apply rounded-[0.5rem];
+	}
+
+	:root .rui-chip--default,
+	:root .rui-tag {
+		border-color: var(--material-outline-variant);
+		background-color: transparent;
+		color: var(--material-on-surface-variant);
+	}
+
+	:root .rui-tag[aria-selected='true'] {
+		border-color: transparent;
+		background-color: var(--secondary-container);
+		background-image: none;
+		color: var(--on-secondary-container);
 	}
 
 	:root .rui-badge,
-	:root .rui-chip,
 	:root .rui-pagination__link {
 		@apply rounded-pill;
 	}
+
+	:root .rui-feed__article {
+		border-color: var(--material-outline-variant);
+		background-color: var(--surface);
+	}
+
 }

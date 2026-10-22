@@ -60,13 +60,13 @@
 	--on-surface: var(--color-vercel-text-primary);
 	--surface-container-lowest: var(--color-vercel-background-1);
 	--on-surface-container-lowest: var(--color-vercel-text-primary);
-	--surface-container-low: var(--color-vercel-component-2);
+	--surface-container-low: var(--color-vercel-background-2);
 	--on-surface-container-low: var(--color-vercel-text-primary);
 	--surface-container: var(--color-vercel-component-1);
 	--on-surface-container: var(--color-vercel-text-primary);
-	--surface-container-high: var(--color-vercel-component-3);
+	--surface-container-high: var(--color-vercel-component-2);
 	--on-surface-container-high: var(--color-vercel-text-primary);
-	--surface-container-highest: var(--color-vercel-border-4);
+	--surface-container-highest: var(--color-vercel-component-3);
 	--on-surface-container-highest: var(--color-vercel-text-primary);
 	--background: var(--color-vercel-background-2);
 	--on-background: var(--color-vercel-text-primary);

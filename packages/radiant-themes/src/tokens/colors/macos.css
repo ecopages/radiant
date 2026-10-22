@@ -1,33 +1,73 @@
+/**
+ * AppKit system colors from macOS Sonoma and Sequoia: `windowBackgroundColor` for the canvas, `controlBackgroundColor`
+ * for content and fields, `labelColor` and `secondaryLabelColor` for text, `separatorColor`, the default
+ * `controlAccentColor`, and `selectedContentBackgroundColor` for selected rows and filled buttons.
+ *
+ * @remarks AppKit's translucent label colors are flattened onto their usual backgrounds. Status hues use Apple's
+ * increased-contrast variants (`#d70015`, `#248a3d`, `#b25000`) where the standard hue cannot carry text at 4.5:1.
+ */
 :where(:root), :root[data-rui-theme='macos'] {
-	--macos-canvas: #f5f5f7;
+	--macos-canvas: #ececec;
 	--macos-surface: #ffffff;
-	--macos-subtle: #e9e9ed;
-	--macos-border: #7f7f84;
-	--macos-separator: #d1d1d6;
-	--macos-text: #1d1d1f;
-	--macos-muted: #55555b;
-	--macos-blue: #005fcc;
-	--macos-blue-light: #004da8;
-	--macos-green: #176b35;
-	--macos-red: #a51d2d;
-	--macos-amber: #704500;
-	--macos-purple: #6e3bb5;
+	--macos-subtle: #e3e3e3;
+	--macos-control: #ffffff;
+	--macos-control-pressed: #e5e5e5;
+	--macos-elevated: rgb(246 246 246 / 0.88);
+	--macos-elevated-solid: #f6f6f6;
+	--macos-elevated-edge: rgb(0 0 0 / 0.18);
+	--macos-elevated-highlight: rgb(255 255 255 / 0);
+	--macos-border: #8e8e93;
+	--macos-separator: #d9d9d9;
+	--macos-grid: #e6e6e6;
+	--macos-alternate-row: #f4f5f5;
+	--macos-text: #262626;
+	--macos-muted: #5e5e62;
+	--macos-accent: #007aff;
+	--macos-selection: #0063e1;
+	--macos-selection-text: #ffffff;
+	--macos-unemphasized-selection: #dcdcdc;
+	--macos-blue: #0063e1;
+	--macos-blue-light: #3b8cff;
+	--macos-green: #1e7b34;
+	--macos-red: #d70015;
+	--macos-amber: #9e4700;
+	--macos-purple: #8944ab;
+	--macos-control-shadow:
+		0 0 0 0.5px rgb(0 0 0 / 0.16), 0 0.5px 1px rgb(0 0 0 / 0.22), 0 1px 1.5px -0.5px rgb(0 0 0 / 0.1);
+	--macos-menu-shadow: 0 0 0 0.5px var(--macos-elevated-edge), 0 10px 30px rgb(0 0 0 / 0.2), 0 2px 6px rgb(0 0 0 / 0.1);
 }
 
 :where(.dark), :root.dark[data-rui-theme='macos'] {
-	--macos-canvas: #1c1c1e;
-	--macos-surface: #2c2c2e;
-	--macos-subtle: #3a3a3c;
-	--macos-border: #8e8e93;
-	--macos-separator: #3a3a3c;
-	--macos-text: #f5f5f7;
-	--macos-muted: #d1d1d6;
-	--macos-blue: #55a6ff;
-	--macos-blue-light: #8cc2ff;
-	--macos-green: #63d982;
-	--macos-red: #ff7a83;
-	--macos-amber: #ffd166;
-	--macos-purple: #c8a1ff;
+	--macos-canvas: #323232;
+	--macos-surface: #1e1e1e;
+	--macos-subtle: #3d3d3d;
+	--macos-control: #5c5c5e;
+	--macos-control-pressed: #747476;
+	--macos-elevated: rgb(44 44 46 / 0.9);
+	--macos-elevated-solid: #2c2c2e;
+	--macos-elevated-edge: rgb(0 0 0 / 0.6);
+	--macos-elevated-highlight: rgb(255 255 255 / 0.14);
+	--macos-border: #767676;
+	--macos-separator: #484848;
+	--macos-grid: #3a3a3a;
+	--macos-alternate-row: #262626;
+	--macos-text: #dfdfdf;
+	--macos-muted: #a1a1a6;
+	--macos-accent: #0a84ff;
+	--macos-selection: #0058d0;
+	--macos-selection-text: #ffffff;
+	--macos-unemphasized-selection: #464646;
+	--macos-blue: #409cff;
+	--macos-blue-light: #70b4ff;
+	--macos-green: #30d158;
+	--macos-red: #ff6961;
+	--macos-amber: #ffd60a;
+	--macos-purple: #da8fff;
+	--macos-control-shadow:
+		inset 0 0.5px 0 rgb(255 255 255 / 0.18), 0 0 0 0.5px rgb(0 0 0 / 0.5), 0 0.5px 1px rgb(0 0 0 / 0.4);
+	--macos-menu-shadow:
+		inset 0 0 0 0.5px var(--macos-elevated-highlight), 0 0 0 0.5px var(--macos-elevated-edge),
+		0 10px 30px rgb(0 0 0 / 0.45);
 }
 
 @theme inline {
