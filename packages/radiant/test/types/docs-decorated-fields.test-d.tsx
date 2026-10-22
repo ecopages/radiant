@@ -282,13 +282,7 @@ export class UserCardWithBindings extends RadiantElement<UserCardBindings> {
 /** decorators/prop.mdx */
 
 const csvStrings: PropTransform<string[]> = {
-	fromAttribute: (value) =>
-		value
-			? value
-					.split(',')
-					.map((token) => token.trim())
-					.filter(Boolean)
-			: [],
+	fromAttribute: (value) => (value ? value.split(',').map((token) => token.trim()).filter(Boolean) : []),
 	toAttribute: (values) => (values.length > 0 ? values.join(',') : null),
 	fromProperty: (value) => {
 		if (Array.isArray(value)) return value.map(String);
@@ -367,6 +361,7 @@ export class RadiantCounter extends RadiantElement {
 
 export class SignalBindFields extends RadiantElement {
 	@bindTo({ attr: 'data-n', map: (v) => v.toFixed() }) @signal({ initial: 3 }) count!: WritableSignal<number>;
+	@bindTo({ attr: 'data-n', map: (v: unknown) => String(v) }) @signal({ initial: 3 }) loose!: WritableSignal<number>;
 	@bindTo<WritableSignal<number>>({ attr: 'data-n', map: (v) => v.toFixed() })
 	@signal({ initial: 3 })
 	typed!: WritableSignal<number>;

@@ -26,7 +26,7 @@ export class RuiDialog extends RadiantElement {
 
 Omit `ref` / `selector` to patch the host element itself (`this` on `RadiantElement`, `this.element` on `RadiantController`).
 
-`map` receives the field's current value, typed under standard decorators as the declared field type. On a `@signal` field declared `WritableSignal<number>` it receives the `number`, not the signal. Under legacy decorators it receives `unknown` unless you pass the whole field type, `undefined` included, as a type argument, as in `@bindTo<boolean>(...)` or `@bindTo<WritableSignal<number>>(...)`. The signal's value type, `@bindTo<number>(...)`, also compiles there but not under standard decorators: see [Typing Decorated Fields](/docs/decorators).
+`map` receives the field's current value, typed under standard decorators as the declared field type. On a `@signal` field declared `WritableSignal<number>` it receives the `number`, not the signal. Under legacy decorators it receives `unknown` unless you pass the whole field type, `undefined` included, as a type argument, as in `@bindTo<boolean>(...)` or `@bindTo<WritableSignal<number>>(...)`. See [Typing Decorated Fields](/docs/decorators).
 
 ## One value, several writes
 

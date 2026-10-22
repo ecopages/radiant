@@ -53,7 +53,7 @@ export class StandardElementFields extends RadiantElement {
 	b5!: WritableSignal<Mode>;
 	// @ts-expect-error map receives the signal's value, a string
 	@bindTo({ attr: 'data-n', map: (v) => v.toFixed() }) @signal({ initial: '' }) b6!: WritableSignal<string>;
-	// @ts-expect-error map receives the signal's value, not a string
+	// @ts-expect-error map receives the field type, a number
 	@bindTo({ attr: 'data-n', map: (v: string) => v }) @state b7 = 0;
 	// @ts-expect-error map receives the signal's value, not a string
 	@bindTo({ attr: 'data-n', map: (v: string) => v }) @signal({ initial: 0 }) b8!: WritableSignal<number>;
@@ -101,7 +101,7 @@ export class StandardControllerFields extends RadiantController {
 	b5!: WritableSignal<Mode>;
 	// @ts-expect-error map receives the signal's value, a string
 	@bindTo({ attr: 'data-n', map: (v) => v.toFixed() }) @signal({ initial: '' }) b6!: WritableSignal<string>;
-	// @ts-expect-error map receives the signal's value, not a string
+	// @ts-expect-error map receives the field type, a number
 	@bindTo({ attr: 'data-n', map: (v: string) => v }) @state b7 = 0;
 	// @ts-expect-error map receives the signal's value, not a string
 	@bindTo({ attr: 'data-n', map: (v: string) => v }) @signal({ initial: 0 }) b8!: WritableSignal<number>;
