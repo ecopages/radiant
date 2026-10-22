@@ -9,8 +9,7 @@ import { resolveHostElement } from './resolve-host-element';
  * Delegated listeners attach with `addEventListener(type, fn)` on the host, so
  * non-bubbling types never reach them. Use the bubbling twins (`focusin`,
  * `focusout`, `pointerover`, `pointerout`) or pass `options: { capture: true }`.
- * The open `(string & {})` branch keeps custom event names valid — `@event()`
- * emits with `bubbles: true, composed: true`.
+ * The open `(string & {})` branch keeps custom event names valid.
  */
 export type DelegatedEventType =
 	| 'click'
