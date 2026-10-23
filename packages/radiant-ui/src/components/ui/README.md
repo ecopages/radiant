@@ -119,7 +119,7 @@ When a view peels a prop to seed pre-hydration output (inner control state, acce
 
 ## View host props
 
-Views should declare the public DOM surface they render. Custom-element views use `JsxCustomElementAttributes<ElementClass, ComponentProps>`; native helpers use `JsxElementProps<ExactElement>` plus the unprefixed native fields they render.
+Views should declare the public DOM surface they render. Custom-element views use `JsxCustomElementAttributes<ElementClass, ComponentProps>`; native helpers use `NativeInputProps` / `NativeTextareaProps` / `NativeButtonProps` (`@/lib/native-element-props`, aliases of `JSX.IntrinsicElements`) plus view-only fields, so unprefixed attributes such as `required` type-check the same way they do on the native element. `RuiButton`'s link branch still uses `JsxElementProps<HTMLAnchorElement>`.
 
 Default pattern — peel view-only fields, spread the rest, lock invariants after the spread:
 

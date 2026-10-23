@@ -2,6 +2,7 @@ import type { JsxCustomElementAttributes, JsxElementProps, JsxRenderable } from 
 import { withDefaultAriaLabel } from '@/aria';
 import { cx } from '@/lib/cx';
 import { RuiIconChevronDown, RuiIconX } from '@/lib/icons';
+import type { NativeButtonProps, NativeInputProps } from '@/lib/native-element-props';
 import { RuiAutocomplete, RuiAutocompleteCollection, RuiAutocompleteEmpty } from '../autocomplete';
 import { RuiListbox, type RuiListboxOptionData } from '../listbox';
 import { parseViewValue } from '../shared/multi-value';
@@ -23,7 +24,7 @@ export function RuiComboboxControl({ children, class: className, ...props }: Rui
 	);
 }
 
-export type RuiComboboxInputProps = JsxElementProps<HTMLInputElement> & {
+export type RuiComboboxInputProps = NativeInputProps & {
 	placeholder?: string;
 	disabled?: boolean;
 };
@@ -49,7 +50,7 @@ export function RuiComboboxInput({ placeholder, disabled, class: className, ...p
 	);
 }
 
-export type RuiComboboxTriggerProps = JsxElementProps<HTMLButtonElement> & {
+export type RuiComboboxTriggerProps = NativeButtonProps & {
 	disabled?: boolean;
 };
 
@@ -70,7 +71,7 @@ export function RuiComboboxTrigger({ children, class: className, aria, disabled,
 	);
 }
 
-export type RuiComboboxClearProps = JsxElementProps<HTMLButtonElement> & {
+export type RuiComboboxClearProps = NativeButtonProps & {
 	disabled?: boolean;
 };
 

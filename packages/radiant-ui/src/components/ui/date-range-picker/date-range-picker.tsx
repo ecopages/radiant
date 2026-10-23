@@ -3,6 +3,7 @@ import type { JsxCustomElementAttributes, JsxElementProps } from '@ecopages/jsx'
 import { withDefaultAriaLabel } from '@/aria';
 import { cx } from '@/lib/cx';
 import { RuiIconCalendar } from '@/lib/icons';
+import type { NativeButtonProps } from '@/lib/native-element-props';
 import { RuiCalendar, type RuiCalendarElement, type RuiCalendarProps } from '../calendar';
 import { RuiDateInput, type RuiDateInputElement, type RuiDateInputProps } from '../date-input';
 import type {
@@ -65,7 +66,7 @@ export function RuiDateRangePickerSeparator({
 	);
 }
 
-export type RuiDateRangePickerToggleProps = JsxElementProps<HTMLButtonElement>;
+export type RuiDateRangePickerToggleProps = NativeButtonProps;
 
 /** Calendar toggle. Stamps `[data-range-trigger]` and `data-ref="trigger"`. */
 export function RuiDateRangePickerToggle({

@@ -1,8 +1,8 @@
-import type { JsxElementProps } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
+import type { NativeTextareaProps } from '@/lib/native-element-props';
 import { RUI_CONTROL_ATTR } from '../form/control-protocol';
 
-export type RuiTextareaProps = JsxElementProps<HTMLTextAreaElement> & {
+export type RuiTextareaProps = NativeTextareaProps & {
 	value?: string;
 	placeholder?: string;
 	disabled?: boolean;
@@ -15,6 +15,7 @@ export type RuiTextareaProps = JsxElementProps<HTMLTextAreaElement> & {
  *
  * No custom element — Field owns labeling, `aria-*`, and validation wiring.
  * Marked with `data-rui-control` so `<rui-field>` can discover it.
+ * Native `<textarea>` attributes (`required`, `maxlength`, `autocomplete`, …) are part of the props type.
  *
  * @remarks
  * Padding and type use the same `--space-control-*` / `--text-control` tokens as

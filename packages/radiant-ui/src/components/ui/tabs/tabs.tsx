@@ -1,11 +1,12 @@
 import type { JsxCustomElementAttributes, JsxElementProps } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
+import type { NativeButtonProps } from '@/lib/native-element-props';
 import type { RuiTabs as RuiTabsElement, RuiTabsProps } from './tabs.script';
 import './tabs.script';
 
 export type RuiTabListProps = JsxElementProps<HTMLDivElement>;
 
-export type RuiTabProps = Omit<JsxElementProps<HTMLButtonElement>, 'id'> & {
+export type RuiTabProps = NativeButtonProps & {
 	id: string;
 	disabled?: boolean;
 	/** Whether this tab is selected in the initial document. */

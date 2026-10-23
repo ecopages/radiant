@@ -2,6 +2,7 @@ import { type JsxCustomElementAttributes, type JsxElementProps, type JsxRenderab
 import { withDefaultAriaLabel } from '@/aria';
 import { cx } from '@/lib/cx';
 import { RuiIconX } from '@/lib/icons';
+import type { NativeButtonProps } from '@/lib/native-element-props';
 import type { RuiTagGroup as RuiTagGroupElement, RuiTagGroupProps } from './tag-group.script';
 import './tag-group.script';
 
@@ -55,7 +56,7 @@ export function RuiTag({ value, label, children, class: className, disabled, ari
 	);
 }
 
-export type RuiTagRemoveProps = JsxElementProps<HTMLButtonElement>;
+export type RuiTagRemoveProps = NativeButtonProps;
 
 /**
  * Remove control inside a tag. Stamps `[data-tag-remove]`.

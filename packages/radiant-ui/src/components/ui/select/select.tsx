@@ -2,6 +2,7 @@ import type { JsxCustomElementAttributes, JsxElementProps, JsxRenderable } from 
 import { withDefaultAriaLabel } from '@/aria';
 import { cx } from '@/lib/cx';
 import { RuiIconChevronDown, RuiIconX } from '@/lib/icons';
+import type { NativeButtonProps, NativeInputProps } from '@/lib/native-element-props';
 import { RuiListbox, type RuiListboxOptionData } from '../listbox';
 import { parseViewValue, type ViewMultiValue } from '../shared/multi-value';
 import { RuiTagGroup } from '../tag-group';
@@ -52,7 +53,7 @@ export function RuiSelectTrigger({ children, class: className, disabled, ...prop
 	);
 }
 
-export type RuiSelectToggleProps = JsxElementProps<HTMLButtonElement> & {
+export type RuiSelectToggleProps = NativeButtonProps & {
 	disabled?: boolean;
 };
 
@@ -73,7 +74,7 @@ export function RuiSelectToggle({ children, class: className, aria, disabled, ..
 	);
 }
 
-export type RuiSelectClearProps = JsxElementProps<HTMLButtonElement> & {
+export type RuiSelectClearProps = NativeButtonProps & {
 	disabled?: boolean;
 };
 
@@ -132,7 +133,7 @@ export function RuiSelectListbox({ children, class: className, ...props }: RuiSe
 	);
 }
 
-export type RuiSelectSearchProps = JsxElementProps<HTMLInputElement> & {
+export type RuiSelectSearchProps = NativeInputProps & {
 	placeholder?: string;
 	disabled?: boolean;
 };
