@@ -38,6 +38,14 @@ radiant-code-tabs .rui-tabs__panel {
 	@apply min-w-0 p-0;
 }
 
+/**
+ * macOS centers the tab control on the panel's top edge, so the code starts below the half that overlaps it. The
+ * offset sits on the element that paints the code background, so highlighted blocks keep one fill up to the edge.
+ */
+:root[data-rui-theme='macos'] radiant-code-tabs :is(.code-tabs__body:not(:has([data-rehype-pretty-code-figure])), pre) {
+	padding-top: 1.5rem;
+}
+
 .code-tabs__body {
 	@apply relative w-full min-w-0 px-4 py-3 font-mono;
 
