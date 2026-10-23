@@ -3,6 +3,10 @@ import { cx } from '@/lib/cx';
 import { RUI_FIELD_LABEL_ATTR } from '../form/control-protocol';
 
 export type RuiLabelProps = JsxElementProps<HTMLLabelElement> & {
+	/**
+	 * Control id. Rendered as the HTML `for` attribute; this JSX runtime does not
+	 * alias `htmlFor`.
+	 */
 	htmlFor?: string;
 };
 
@@ -17,7 +21,7 @@ export type RuiLabelProps = JsxElementProps<HTMLLabelElement> & {
  */
 export function RuiLabel({ children, htmlFor, class: className, ...props }: RuiLabelProps) {
 	return (
-		<label {...props} {...{ [RUI_FIELD_LABEL_ATTR]: '' }} class={cx('rui-label', className)} htmlFor={htmlFor}>
+		<label {...props} {...{ [RUI_FIELD_LABEL_ATTR]: '' }} class={cx('rui-label', className)} for={htmlFor}>
 			{children}
 		</label>
 	);
