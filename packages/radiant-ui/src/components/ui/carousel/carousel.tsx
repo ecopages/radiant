@@ -1,6 +1,7 @@
 import { type JsxCustomElementAttributes, type JsxElementProps, type JsxRenderable } from '@ecopages/jsx';
 import { withDefaultAriaLabel } from '@/aria';
 import { cx } from '@/lib/cx';
+import type { NativeButtonProps } from '@/lib/native-element-props';
 import {
 	CAROUSEL_DEFAULTS,
 	type RuiCarousel as RuiCarouselElement,
@@ -33,7 +34,7 @@ export function RuiCarouselSlide({ id, children, class: className, ...props }: R
 	);
 }
 
-export type RuiCarouselControlProps = JsxElementProps<HTMLButtonElement> & {
+export type RuiCarouselControlProps = NativeButtonProps & {
 	disabled?: boolean;
 	/** Match `controls-variant="overlay"` on the carousel for circular on-slide chrome. */
 	overlay?: boolean;
@@ -137,7 +138,7 @@ export function RuiCarouselNext({
 	);
 }
 
-export type RuiCarouselRotationProps = JsxElementProps<HTMLButtonElement> & {
+export type RuiCarouselRotationProps = NativeButtonProps & {
 	overlay?: boolean;
 };
 

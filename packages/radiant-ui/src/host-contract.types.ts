@@ -1,8 +1,10 @@
 import type { RuiButtonControlProps, RuiButtonLinkProps } from './components/ui/button/button';
+import type { RuiDialogCloseProps } from './components/ui/dialog/dialog';
 import type { RuiHeadingProps } from './components/ui/heading/heading';
 import type { RuiHeadlineProps } from './components/ui/headline/headline';
 import type { RuiInputProps } from './components/ui/input/input';
-import type { RuiSelectViewProps } from './components/ui/select/select';
+import type { RuiNumberFieldInputProps } from './components/ui/number-field/number-field';
+import type { RuiSelectSearchProps, RuiSelectViewProps } from './components/ui/select/select';
 import type { RuiSidebarMenuButtonControlProps, RuiSidebarMenuButtonLinkProps } from './components/ui/sidebar/sidebar';
 import type { RuiTextareaProps } from './components/ui/textarea/textarea';
 import type { RuiIconProps } from './lib/icons/types';
@@ -82,6 +84,18 @@ const _buttonAcceptsIntrinsicAttributes: RuiButtonControlProps = {
 	name: 'intent',
 	value: 'draft',
 };
+const _numberFieldInputAcceptsIntrinsicAttributes: RuiNumberFieldInputProps = {
+	required: true,
+	name: 'qty',
+};
+const _selectSearchAcceptsIntrinsicAttributes: RuiSelectSearchProps = {
+	required: true,
+	name: 'filter',
+};
+const _dialogCloseAcceptsIntrinsicAttributes: RuiDialogCloseProps = {
+	name: 'intent',
+	value: 'close',
+};
 const _iconRejectsUndeclared: RuiIconProps = {
 	// @ts-expect-error undeclared fields are not part of the SVG host contract
 	notAField: true,
@@ -106,5 +120,8 @@ void [
 	_inputAcceptsIntrinsicAttributes,
 	_textareaAcceptsIntrinsicAttributes,
 	_buttonAcceptsIntrinsicAttributes,
+	_numberFieldInputAcceptsIntrinsicAttributes,
+	_selectSearchAcceptsIntrinsicAttributes,
+	_dialogCloseAcceptsIntrinsicAttributes,
 	_iconRejectsUndeclared,
 ];

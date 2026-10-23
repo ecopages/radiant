@@ -1,8 +1,8 @@
-import type { JSX } from '@ecopages/jsx/jsx-runtime';
 import { cx } from '@/lib/cx';
+import type { NativeTextareaProps } from '@/lib/native-element-props';
 import { RUI_CONTROL_ATTR } from '../form/control-protocol';
 
-export type RuiTextareaProps = JSX.IntrinsicElements['textarea'] & {
+export type RuiTextareaProps = NativeTextareaProps & {
 	value?: string;
 	placeholder?: string;
 	disabled?: boolean;

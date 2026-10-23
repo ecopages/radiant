@@ -2,6 +2,7 @@ import type { JsxCustomElementAttributes, JsxElementProps } from '@ecopages/jsx'
 import { withDefaultAriaLabel } from '@/aria';
 import { cx } from '@/lib/cx';
 import { RuiIconCalendar } from '@/lib/icons';
+import type { NativeButtonProps } from '@/lib/native-element-props';
 import { RuiCalendar, type RuiCalendarElement, type RuiCalendarProps } from '../calendar';
 import { RuiDateInput, type RuiDateInputElement, type RuiDateInputProps } from '../date-input';
 import type { RuiDateField as RuiDateFieldElement, RuiDateFieldProps } from './date-field.script';
@@ -28,7 +29,7 @@ export function RuiDateFieldInput({ class: className, ...props }: RuiDateFieldIn
 	return <RuiDateInput {...props} data-date-field-input class={cx('rui-date-field__input', className)} />;
 }
 
-export type RuiDateFieldToggleProps = JsxElementProps<HTMLButtonElement>;
+export type RuiDateFieldToggleProps = NativeButtonProps;
 
 /** Calendar toggle. Stamps `[data-date-field-trigger]` and `data-ref="trigger"`. */
 export function RuiDateFieldToggle({ children, class: className, aria, ...props }: RuiDateFieldToggleProps) {

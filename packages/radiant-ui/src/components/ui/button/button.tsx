@@ -1,6 +1,6 @@
 import type { JsxElementProps } from '@ecopages/jsx';
-import type { JSX } from '@ecopages/jsx/jsx-runtime';
 import { cx } from '@/lib/cx';
+import type { NativeButtonProps } from '@/lib/native-element-props';
 
 export type RuiButtonVariant = 'filled' | 'outline' | 'destructive' | 'ghost' | 'link';
 export type RuiButtonSize = 'none' | 'sm' | 'md' | 'lg';
@@ -14,7 +14,7 @@ type RuiButtonChrome = {
 	square?: boolean;
 };
 
-export type RuiButtonControlProps = JSX.IntrinsicElements['button'] &
+export type RuiButtonControlProps = NativeButtonProps &
 	RuiButtonChrome & {
 		/** Native button type. Default: `button`. */
 		type?: 'button' | 'submit' | 'reset';

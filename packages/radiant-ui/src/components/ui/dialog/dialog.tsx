@@ -2,6 +2,7 @@ import { type JsxCustomElementAttributes, type JsxElementProps, type JsxRenderab
 import { withDefaultAriaLabel } from '@/aria';
 import { cx } from '@/lib/cx';
 import { RuiIconX } from '@/lib/icons';
+import type { NativeButtonProps } from '@/lib/native-element-props';
 import type { RuiDialog as RuiDialogElement, RuiDialogProps } from './dialog.script';
 import './dialog.script';
 
@@ -54,7 +55,7 @@ export function RuiDialogActions({ children, class: className, ...props }: RuiDi
 	);
 }
 
-export type RuiDialogCloseProps = JsxElementProps<HTMLButtonElement>;
+export type RuiDialogCloseProps = NativeButtonProps;
 
 /**
  * Close control for the dialog surface.

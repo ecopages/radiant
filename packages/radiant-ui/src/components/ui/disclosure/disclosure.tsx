@@ -1,6 +1,7 @@
 import type { JsxCustomElementAttributes, JsxElementProps, JsxRenderable } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
 import { RuiIconChevronDown } from '@/lib/icons';
+import type { NativeButtonProps } from '@/lib/native-element-props';
 import type {
 	RuiDisclosureGroup as RuiDisclosureGroupElement,
 	RuiDisclosureGroupProps,
@@ -39,7 +40,7 @@ export function RuiDisclosureIcon({
 	);
 }
 
-export type RuiDisclosureTriggerProps = JsxElementProps<HTMLButtonElement> & {
+export type RuiDisclosureTriggerProps = NativeButtonProps & {
 	disabled?: boolean;
 	icon?: JsxRenderable | null;
 	iconPosition?: 'start' | 'end';

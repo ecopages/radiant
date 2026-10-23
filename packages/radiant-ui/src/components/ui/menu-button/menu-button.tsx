@@ -1,6 +1,7 @@
 import type { JsxCustomElementAttributes, JsxElementProps, JsxRenderable } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
 import { RuiIconChevronDown } from '@/lib/icons';
+import type { NativeButtonProps } from '@/lib/native-element-props';
 import { RuiButton, type RuiButtonControlProps } from '../button';
 import { RuiSeparator } from '../separator';
 import { renderMenuEntries, type RuiMenuEntry } from '../shared/menu-entry';
@@ -76,7 +77,7 @@ export function RuiMenuButtonSubmenuContent({
 	);
 }
 
-export type RuiMenuButtonItemProps = JsxElementProps<HTMLButtonElement> & {
+export type RuiMenuButtonItemProps = NativeButtonProps & {
 	value: string;
 	disabled?: boolean;
 	hasSubmenu?: boolean;

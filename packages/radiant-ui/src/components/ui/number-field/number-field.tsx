@@ -1,6 +1,7 @@
 import type { JsxCustomElementAttributes, JsxElementProps } from '@ecopages/jsx';
 import { withDefaultAriaLabel } from '@/aria';
 import { cx } from '@/lib/cx';
+import type { NativeButtonProps, NativeInputProps } from '@/lib/native-element-props';
 import type { RuiNumberField as RuiNumberFieldElement, RuiNumberFieldProps } from './number-field.script';
 import './number-field.script';
 
@@ -19,7 +20,7 @@ export function RuiNumberFieldGroup({ children, class: className, ...props }: Ru
 	);
 }
 
-export type RuiNumberFieldInputProps = JsxElementProps<HTMLInputElement> & {
+export type RuiNumberFieldInputProps = NativeInputProps & {
 	placeholder?: string;
 	disabled?: boolean;
 	readOnly?: boolean;
@@ -61,7 +62,7 @@ export function RuiNumberFieldSteppers({ children, class: className, ...props }:
 	);
 }
 
-export type RuiNumberFieldStepperButtonProps = JsxElementProps<HTMLButtonElement> & {
+export type RuiNumberFieldStepperButtonProps = NativeButtonProps & {
 	disabled?: boolean;
 };
 
