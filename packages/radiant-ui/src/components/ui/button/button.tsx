@@ -1,4 +1,5 @@
 import type { JsxElementProps } from '@ecopages/jsx';
+import type { JSX } from '@ecopages/jsx/jsx-runtime';
 import { cx } from '@/lib/cx';
 
 export type RuiButtonVariant = 'filled' | 'outline' | 'destructive' | 'ghost' | 'link';
@@ -13,7 +14,7 @@ type RuiButtonChrome = {
 	square?: boolean;
 };
 
-export type RuiButtonControlProps = JsxElementProps<HTMLButtonElement> &
+export type RuiButtonControlProps = JSX.IntrinsicElements['button'] &
 	RuiButtonChrome & {
 		/** Native button type. Default: `button`. */
 		type?: 'button' | 'submit' | 'reset';
@@ -70,7 +71,8 @@ function invokeClickListener(listener: unknown, event: Event) {
  * Presentational wrapper around a native `<button>` or button-styled `<a>`.
  *
  * No custom element and no controller — only CSS variants/sizes. The `href`
- * union branch preserves native link semantics for navigation.
+ * union branch preserves native link semantics for navigation. Native button
+ * attributes such as `name` and `value` type-check on the control branch.
  *
  * @remarks
  * Default/`md` height uses `--size-control-md`, the same token as `RuiInput`, so

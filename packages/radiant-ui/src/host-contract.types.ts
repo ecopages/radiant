@@ -4,6 +4,7 @@ import type { RuiHeadlineProps } from './components/ui/headline/headline';
 import type { RuiInputProps } from './components/ui/input/input';
 import type { RuiSelectViewProps } from './components/ui/select/select';
 import type { RuiSidebarMenuButtonControlProps, RuiSidebarMenuButtonLinkProps } from './components/ui/sidebar/sidebar';
+import type { RuiTextareaProps } from './components/ui/textarea/textarea';
 import type { RuiIconProps } from './lib/icons/types';
 
 type Assert<T extends true> = T;
@@ -66,9 +67,20 @@ const _selectRejectsUndeclared: RuiSelectViewProps = {
 	// @ts-expect-error undeclared fields are not part of the select host contract
 	notAField: true,
 };
-const _inputRejectsUndeclared: RuiInputProps = {
-	// @ts-expect-error undeclared fields are not part of the input host contract
-	notAField: true,
+const _inputAcceptsIntrinsicAttributes: RuiInputProps = {
+	required: true,
+	autocomplete: 'email',
+	pattern: '[a-z]+',
+};
+const _textareaAcceptsIntrinsicAttributes: RuiTextareaProps = {
+	required: true,
+	maxlength: 80,
+	autocomplete: 'off',
+};
+const _buttonAcceptsIntrinsicAttributes: RuiButtonControlProps = {
+	type: 'submit',
+	name: 'intent',
+	value: 'draft',
 };
 const _iconRejectsUndeclared: RuiIconProps = {
 	// @ts-expect-error undeclared fields are not part of the SVG host contract
@@ -91,6 +103,8 @@ void [
 	_headlineH1AsAccepted,
 	_headlineH1RejectsDiv,
 	_selectRejectsUndeclared,
-	_inputRejectsUndeclared,
+	_inputAcceptsIntrinsicAttributes,
+	_textareaAcceptsIntrinsicAttributes,
+	_buttonAcceptsIntrinsicAttributes,
 	_iconRejectsUndeclared,
 ];

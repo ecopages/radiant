@@ -1,9 +1,9 @@
-import type { JsxElementProps } from '@ecopages/jsx';
+import type { JSX } from '@ecopages/jsx/jsx-runtime';
 import { cx } from '@/lib/cx';
 import { applyInputMask, maskToPlaceholder } from '@/lib/mask';
 import { RUI_CONTROL_ATTR } from '../form/control-protocol';
 
-export type RuiInputProps = JsxElementProps<HTMLInputElement> & {
+export type RuiInputProps = JSX.IntrinsicElements['input'] & {
 	value?: string;
 	type?: string;
 	placeholder?: string;
@@ -23,6 +23,7 @@ export type RuiInputProps = JsxElementProps<HTMLInputElement> & {
  *
  * Pass `mask` to guide entry with an [IMask](https://imask.js.org/guide.html#masked-pattern) pattern.
  * No custom element — Field owns labeling, `aria-*`, and validation wiring.
+ * Native `<input>` attributes (`required`, `autocomplete`, `pattern`, …) are part of the props type.
  *
  * @remarks
  * Sets `data-rui-control` for `RuiField` discovery. Height uses `--size-control-md`

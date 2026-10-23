@@ -29,4 +29,13 @@ describe('RuiInput SSR', () => {
 
 		expect(html).not.toContain('mask');
 	});
+
+	it('forwards native input attributes', () => {
+		const html = renderToString(<RuiInput required autocomplete="email" pattern="[a-z]+" />);
+
+		expect(html).toContain('required');
+		expect(html).toContain('autocomplete="email"');
+		expect(html).toContain('pattern="[a-z]+"');
+	});
 });
+
