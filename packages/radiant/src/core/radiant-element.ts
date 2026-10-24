@@ -24,7 +24,7 @@ import { REACTIVE_HOST, ReactiveHost, type ReactiveHostInternals } from './react
 import type { ReactiveState } from './reactivity-contract';
 import { runSsrPreparationCallbacks } from './ssr-preparation';
 import { isRadiantHydratorInstalled } from './radiant-hydrator-state';
-import { SERVER_RENDERED_HOST_ATTRIBUTE } from './server-rendered-host';
+import { SERVER_RENDERED_CHILDREN_STAMP, SERVER_RENDERED_HOST_ATTRIBUTE } from './server-rendered-host';
 import { getRadiantElementSsrRuntime, type RadiantElementRenderToStringOptions } from './radiant-element-ssr-registry';
 import { RADIANT_ELEMENT_BRAND } from './radiant-element-brand';
 
@@ -227,6 +227,8 @@ export class RadiantElement<Bindings extends object = {}>
 	private elementReady = false;
 	private isFirstConnectPending = false;
 	private serverRendered = false;
+	/** Set at first connect for a host whose server-rendered children come from its parent's view; see the setter. */
+	private awaitsChildren = false;
 	private readonly updateCycle: UpdateCycle;
 	private renderRuntime?: RenderRuntime;
 
@@ -269,10 +271,25 @@ export class RadiantElement<Bindings extends object = {}>
 		return (this.prototype as RadiantElement).shouldRunRenderLifecycle();
 	}
 
-	/** Receives the JSX children a view passes; `<slot />` in `render()` resolves to them. Framework plumbing. */
+	/**
+	 * Receives the JSX children a view passes; `<slot />` in `render()` resolves to them. Framework plumbing.
+	 *
+	 * @remarks A server-rendered host whose children came from its parent's view skips hydration at first connect
+	 * until they arrive here, since its view cannot hydrate without them. Normally the parent hydrates first and
+	 * this runs before that first connect; when the host's tag was defined before its parent's, it runs later and
+	 * hydrates the host itself.
+	 */
 	set [CUSTOM_ELEMENT_CHILDREN_SYMBOL](value: JsxRenderable) {
+		const hydrateNow = this.awaitsChildren && !this.isFirstConnectPending;
+
+		this.awaitsChildren = false;
 		this.getOrCreateRenderRuntime().setChildrenValue(value);
-		this.requestUpdate();
+
+		if (hydrateNow) {
+			this.updateCycle.flush(() => this.hydrate());
+		} else {
+			this.requestUpdate();
+		}
 	}
 
 	/**
@@ -284,8 +301,10 @@ export class RadiantElement<Bindings extends object = {}>
 	 * whether the hydrator is installed; combine it with `hasRadiantHydrator()` when that matters. Plain-mode SSR
 	 * does not stamp hosts, so those report `false`. The attribute is removed once read, so markup copied from a
 	 * connected host does not carry it. Slot-projection payloads embed host markup as written, stamps included, so
-	 * a host the client rebuilds from a payload also reports `true`; a host replaced by a client-made instance
-	 * (for example a server host passed as a child of another custom element in a view) reports `false`.
+	 * a host the client rebuilds from a payload also reports `true`. A render-owning host in another host's view
+	 * keeps its server node when that parent hydrates, so it reports `true` too; one the parent's view rebuilds
+	 * instead (its tag was defined only after the parent hydrated, or the server markup does not match the view)
+	 * is a client-made instance and reports `false`.
 	 */
 	public get isServerRendered(): boolean {
 		return this.serverRendered;
@@ -315,7 +334,9 @@ export class RadiantElement<Bindings extends object = {}>
 		this.elementReady = true;
 
 		if (isFirstConnect) {
-			this.serverRendered = this.hasAttribute(SERVER_RENDERED_HOST_ATTRIBUTE);
+			const stamp = this.getAttribute(SERVER_RENDERED_HOST_ATTRIBUTE);
+			this.serverRendered = stamp !== null;
+			this.awaitsChildren = stamp === SERVER_RENDERED_CHILDREN_STAMP;
 			this.removeAttribute(SERVER_RENDERED_HOST_ATTRIBUTE);
 		}
 
@@ -348,10 +369,12 @@ export class RadiantElement<Bindings extends object = {}>
 				renderRuntime.observeSlotProjection();
 
 				if (this.needsInitialHydration(renderRuntime)) {
-					this.hydrate();
+					if (!this.awaitsChildren) {
+						this.hydrate();
 
-					if (this.updateCycle.renderPending) {
-						this.update();
+						if (this.updateCycle.renderPending) {
+							this.update();
+						}
 					}
 				} else if (!this.isReconnectWithLiveProjection(renderRuntime)) {
 					this.update();
@@ -756,6 +779,10 @@ function requireRadiantElementSsrRuntime() {
 	return runtime;
 }
 
-function shouldHydrateOnConnect(component: HTMLElement): boolean {
-	return isRadiantHydratorInstalled() && hasHydrationMarkers(component);
+/**
+ * @remarks A server-rendered host hydrates even when its view left no marker of its own, such as a view whose
+ * only bindings are on the hosts it renders: those hosts are adopted rather than rebuilt.
+ */
+function shouldHydrateOnConnect(component: RadiantElement): boolean {
+	return isRadiantHydratorInstalled() && (component.isServerRendered || hasHydrationMarkers(component));
 }

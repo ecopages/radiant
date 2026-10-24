@@ -54,7 +54,7 @@ Client rendering works like this:
 
 1. The browser upgrades the custom element and calls `connectedCallback()`.
 2. The first connect reads the `data-radiant-ssr` stamp into `isServerRendered` and removes the attribute. `RadiantElement` then waits one microtask, then `completeInitialSync()` adopts authored attributes and reflects the values the host actually holds. A property assigned before upgrade, or through its accessor before that sync, wins over the authored attribute.
-3. If the host already contains hydration markers and the explicit client hydrator is installed, `hydrate()` attaches behavior to that DOM in place.
+3. If the host is server-rendered or already contains hydration markers, and the explicit client hydrator is installed, `hydrate()` attaches behavior to that DOM in place. A render-owning host in that view is adopted, not rebuilt: the parent binds only that element's own attributes, properties and events, and assigns its children value, and the nested host then hydrates its own view with the parent's JSX in it. The server stamps such a host `data-radiant-ssr="children"`, and it hydrates only once that value arrives: usually the parent hydrates first, before the nested host's own first-connect microtask runs; when the nested host's tag was defined first, it skips hydration at first connect and hydrates when the parent assigns the value.
 4. Otherwise `update()` renders fresh light DOM into the host.
 5. Later reactive changes schedule matching `@onUpdated` callbacks. A render commits when code requests it or a tracked render dependency invalidates the view.
 

@@ -52,10 +52,12 @@ Use the explicit Radiant hydrator when the server rendered a custom-element host
 
 That flow has one extra rule: the component hydrates in place only when both of these are true on first connect:
 
-1. the host already contains hydration markers
+1. the host was server-rendered in hydrate mode, or already contains hydration markers
 2. the explicit Radiant hydrator has been installed on the client
 
 If either condition is missing, the host falls back to a fresh client render.
+
+A render-owning host inside another host's view hydrates with its parent: the parent keeps the nested host's server node, binds its attributes and properties, and hands it the JSX children from its view, and the nested host then hydrates its own view. Its state, focus and typed input survive, and `isServerRendered` is `true`. Define the parent host on the client too, since the nested host gets its children only from the parent's view, and waits for them to hydrate. The order in which the two tags are defined does not matter. A custom element that is not a render-owning `RadiantElement`, or whose tag is defined only after the parent hydrated, is rendered again by the parent instead.
 
 ## The Radiant Contract
 
@@ -112,7 +114,7 @@ This sets the global hydration gate that Radiant checks on first connect for ren
 When the browser upgrades a server-rendered render-owning `RadiantElement` host, the runtime does this:
 
 1. wait one microtask after `connectedCallback()`
-2. inspect the host for hydration markers
+2. check whether the host was server-rendered or contains hydration markers
 3. check whether the explicit hydrator is installed
 4. if both are true, call `hydrate()` and reconnect listeners and bindings in place
 5. otherwise call `update()` and mount a fresh client render

@@ -10,13 +10,19 @@ import {
 	HydratedCounter,
 	HydratedCounterBinding,
 	HydratedFragmentSlotParent,
+	HydratedKeyedHostsParent,
+	HydratedLateChildParent,
 	HydratedMarkerSlotParent,
+	HydratedNestedHostParent,
 	HydratedRegionParent,
 	HydratedRootSlotParent,
 	HydratedStaticView,
+	HydratedThirdPartyParent,
 	HydratedSlotCard,
 	NonHydratedCounter,
 } from './components';
+import { HydratedOrderParent } from './define-order';
+import './late-child';
 
 function withHost(tagName: string, viewMarkup: string): string {
 	return `<${tagName}>${viewMarkup}</${tagName}>`;
@@ -63,4 +69,9 @@ export const SSR_HYDRATION_CASES: Record<string, () => string> = {
 			renderRadiantElementViewToString(new DeferredHydratedCard(), { mode: 'hydrate' }),
 		),
 	'region-parent': () => renderRadiantElementHostToString(new HydratedRegionParent(), { mode: 'hydrate' }),
+	'nested-host-parent': () => renderRadiantElementHostToString(new HydratedNestedHostParent(), { mode: 'hydrate' }),
+	'keyed-hosts-parent': () => renderRadiantElementHostToString(new HydratedKeyedHostsParent(), { mode: 'hydrate' }),
+	'third-party-parent': () => renderRadiantElementHostToString(new HydratedThirdPartyParent(), { mode: 'hydrate' }),
+	'late-child-parent': () => renderRadiantElementHostToString(new HydratedLateChildParent(), { mode: 'hydrate' }),
+	'define-order-parent': () => renderRadiantElementHostToString(new HydratedOrderParent(), { mode: 'hydrate' }),
 };

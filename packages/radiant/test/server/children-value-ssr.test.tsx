@@ -142,7 +142,7 @@ describe('a render-owning host among the JSX children of a host without render()
 	test('takes its JSX children as a value, as the view creates it on the client', () => {
 		const html = renderParent('shell');
 
-		expect(html).toContain('<ssr-value-shell-test data-radiant-ssr><ssr-value-frame-test data-radiant-ssr>');
+		expect(html).toContain('<ssr-value-shell-test data-radiant-ssr><ssr-value-frame-test data-radiant-ssr="children">');
 		expect(html).toContain('<main><p>Body</p></main></div></ssr-value-frame-test>');
 	});
 });
