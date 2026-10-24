@@ -1,5 +1,6 @@
 import type { JsxCustomElementAttributes, JsxElementProps } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
+import type { NativeButtonProps } from '@/lib/native-element-props';
 import type { RuiCycleToggle as RuiCycleToggleElement, RuiCycleToggleProps } from './cycle-toggle.script';
 import './cycle-toggle.script';
 
@@ -10,7 +11,7 @@ export type RuiCycleToggleItemProps = Omit<JsxElementProps<HTMLSpanElement>, 'id
 	selected?: boolean;
 };
 
-export type RuiCycleToggleButtonProps = JsxElementProps<HTMLButtonElement> &
+export type RuiCycleToggleButtonProps = NativeButtonProps &
 	Pick<RuiCycleToggleProps, 'disabled' | 'label' | 'size' | 'variant'>;
 
 /**

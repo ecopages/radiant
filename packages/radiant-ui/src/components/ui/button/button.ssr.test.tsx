@@ -14,4 +14,17 @@ describe('RuiButton SSR', () => {
 		expect(html).toContain('rui-button--square');
 		expect(html).toContain('aria-label="Add item"');
 	});
+
+	it('forwards native submit name and value', () => {
+		const html = renderToString(
+			<RuiButton type="submit" name="intent" value="draft">
+				Save draft
+			</RuiButton>,
+		);
+
+		expect(html).toContain('type="submit"');
+		expect(html).toContain('name="intent"');
+		expect(html).toContain('value="draft"');
+	});
 });
+

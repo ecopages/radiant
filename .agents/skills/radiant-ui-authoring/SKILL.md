@@ -40,7 +40,7 @@ Update the README beside the code when behavior or ownership changes.
 - Authored Children stay in parent JSX. No HTML `<slot>` as the JSX API.
 - Bindings (`this.$`) never patch parent-authored light DOM.
 - Do not bind `hidden` in the view when the CE toggles it with `@bindTo` / `toggleAttribute`. Reflected `open`: seed SSR with `hidden={open ? undefined : true}` and still sync from the host. Internal open: omit `hidden` in the view.
-- Peel view-only props; spread the rest; lock invariants after the spread (`JsxCustomElementAttributes` / `JsxElementProps`). `cx` from `@/lib/cx`. Default accessible names via `withDefaultAriaLabel`.
+- Peel view-only props; spread the rest; lock invariants after the spread (`JsxCustomElementAttributes` / `NativeInputProps` · `NativeButtonProps` for native helpers). `cx` from `@/lib/cx`. Default accessible names via `withDefaultAriaLabel`.
 - Non-obvious view defaults come from a constant **exported by the script** (`CHECKBOX_DEFAULT_VALUE`, …). Do not re-declare the literal in the view.
 - Cross-cutting helpers: `@/lib/...`. Same-component and sibling UI: `./` and `../` only. Story-only helpers: `.storybook/` via `@sb/*`, never `src/`.
 - A `@query` field is `T | null` (`T[]` with `all: true`): bind it to a local and return early, with no non-null assertion ([Query fields](../../../packages/radiant-ui/src/components/ui/README.md#query-fields)).

@@ -20,10 +20,8 @@ radiant-theme-palette-picker {
 	padding: 0;
 	border: 0;
 	background: transparent;
-}
-
-.theme-picker .theme-picker__control:focus-within {
 	box-shadow: none;
+	outline: none;
 }
 
 .theme-picker .theme-picker__trigger {

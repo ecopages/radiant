@@ -1,5 +1,6 @@
 import type { JsxCustomElementAttributes, JsxElementProps, JsxRenderable } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
+import type { NativeButtonProps } from '@/lib/native-element-props';
 import { RuiSeparator } from '../separator';
 import { renderMenuEntries, type RuiMenuEntry } from '../shared/menu-entry';
 import type { RuiMenubar as RuiMenubarElement, RuiMenubarProps } from './menubar.script';
@@ -47,7 +48,7 @@ export function RuiMenubarMenu({ label, children, disabled }: RuiMenubarMenuProp
 	);
 }
 
-export type RuiMenubarMenuItemProps = Omit<JsxElementProps<HTMLButtonElement>, 'value'> & {
+export type RuiMenubarMenuItemProps = NativeButtonProps & {
 	value: string;
 	disabled?: boolean;
 	hasSubmenu?: boolean;

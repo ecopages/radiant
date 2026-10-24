@@ -62,7 +62,7 @@ default `#6666cc` accent. Menus and the menu bar highlight items in that accent,
 wells with bevelled column headers, tooltips are outlined help balloons, and disclosures use the Platinum triangle. Both
 dark modes keep the same bevel structure on darker faces and fields, since neither system shipped one. macOS follows Sonoma AppKit:
 the SF Pro system font at 13px, 6px push buttons outlined by a hairline shadow, accent-filled default buttons, check
-boxes, and radio buttons, pop-up buttons with an accent arrow well, segmented tabs centered above a group box, white
+boxes, and radio buttons, pop-up buttons with an accent arrow well, segmented tabs centered on a group box's top edge, white
 slider knobs, translucent menus and popovers, and accent row selection with white text. Destructive buttons use red
 text, as AppKit alerts do. Windows 95 also provides a full-size dithered scrollbar with raised arrow buttons and a bevelled thumb;
 Mac OS Classic provides Platinum's grey bevelled track, end-positioned arrow buttons, and striped blue scroll box.

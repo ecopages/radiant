@@ -2,6 +2,7 @@ import { type JsxCustomElementAttributes, type JsxElementProps, type JsxRenderab
 import { withDefaultAriaLabel } from '@/aria';
 import { coalesceDefined } from '@/lib/coalesce-defined';
 import { cx } from '@/lib/cx';
+import type { NativeButtonProps } from '@/lib/native-element-props';
 import { omitProps } from '@/lib/omit-props';
 import type { RuiSidebar as RuiSidebarElement, RuiSidebarProps } from './sidebar.script';
 import './sidebar.script';
@@ -150,7 +151,7 @@ export function RuiSidebarGroupLabel({ children, class: className, ...props }: R
 	);
 }
 
-export type RuiSidebarGroupActionProps = JsxElementProps<HTMLButtonElement>;
+export type RuiSidebarGroupActionProps = NativeButtonProps;
 
 /**
  * Top-right action button inside a group header.
@@ -221,7 +222,7 @@ type RuiSidebarMenuButtonChrome = {
 	tooltip?: string;
 };
 
-export type RuiSidebarMenuButtonControlProps = JsxElementProps<HTMLButtonElement> &
+export type RuiSidebarMenuButtonControlProps = NativeButtonProps &
 	RuiSidebarMenuButtonChrome & {
 		as?: 'button';
 		href?: never;

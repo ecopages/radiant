@@ -118,6 +118,7 @@ Geometry comes from control tokens: `--size-control-md` height, `--radius-contro
 | `aria-label` | `string` | | Accessible name when there is no visible label. |
 | `mask` | `string` | | [IMask](https://imask.js.org/guide.html#masked-pattern) pattern; `0` digit, `a` letter, `*` any char, `{text}` fixed. |
 | `on:input` / `on:change` / `on:blur` | `(e: Event) => void` | | Event handlers. |
+| Native `<input>` attributes | | | `required`, `autocomplete`, `pattern`, `min`, `max`, `readonly`, and other unprefixed native attributes type-check and render, except `mask` (peeled) and `inputmode` (the view sets `numeric` when `mask` is set, and omits it otherwise). |
 
 ### CSS classes
 
