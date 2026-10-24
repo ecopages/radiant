@@ -57,7 +57,7 @@ That flow has one extra rule: the component hydrates in place only when both of 
 
 If either condition is missing, the host falls back to a fresh client render.
 
-A render-owning host inside another host's view hydrates with its parent: the parent keeps the nested host's server node, binds its attributes and properties, and hands it the JSX children from its view, and the nested host then hydrates its own view. Its state, focus and typed input survive, and `isServerRendered` is `true`. Define the parent host on the client too, since the nested host gets its children only from the parent's view, and waits for them to hydrate. The order in which the two tags are defined does not matter. A custom element that is not a render-owning `RadiantElement`, or whose tag is defined only after the parent hydrated, is rendered again by the parent instead.
+A render-owning host inside another host's view hydrates with its parent: the parent keeps the nested host's server node, binds its attributes and properties, and hands it the JSX children from its view, and the nested host then hydrates its own view. Its state, focus and typed input survive, and `isServerRendered` is `true`. Define the parent host on the client too, since the nested host gets its children only from the parent's view and waits for them to hydrate. Until then it is inert server markup: it has no event bindings, and `onConnected()` and `updated()` run only once it hydrates, never if its parent does not render on the client. The order in which the two tags are defined does not matter. A custom element that is not a render-owning `RadiantElement`, or whose tag is defined only after the parent hydrated, is rendered again by the parent instead.
 
 ## The Radiant Contract
 

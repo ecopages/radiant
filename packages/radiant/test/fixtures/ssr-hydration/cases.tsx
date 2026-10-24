@@ -22,7 +22,11 @@ import {
 	NonHydratedCounter,
 } from './components';
 import { HydratedOrderParent } from './define-order';
+import { LIFECYCLE_PREFIX, defineLifecycleChild, defineLifecycleParent } from './lifecycle-pair';
 import './late-child';
+
+defineLifecycleChild(LIFECYCLE_PREFIX, []);
+const HydratedLifecycleParent = defineLifecycleParent(LIFECYCLE_PREFIX, []);
 
 function withHost(tagName: string, viewMarkup: string): string {
 	return `<${tagName}>${viewMarkup}</${tagName}>`;
@@ -74,4 +78,5 @@ export const SSR_HYDRATION_CASES: Record<string, () => string> = {
 	'third-party-parent': () => renderRadiantElementHostToString(new HydratedThirdPartyParent(), { mode: 'hydrate' }),
 	'late-child-parent': () => renderRadiantElementHostToString(new HydratedLateChildParent(), { mode: 'hydrate' }),
 	'define-order-parent': () => renderRadiantElementHostToString(new HydratedOrderParent(), { mode: 'hydrate' }),
+	'lifecycle-parent': () => renderRadiantElementHostToString(new HydratedLifecycleParent(), { mode: 'hydrate' }),
 };

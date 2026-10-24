@@ -1,5 +1,6 @@
 /// <reference types="vite/client" />
 import { waitFor } from '@testing-library/dom';
+import { CUSTOM_ELEMENT_CHILDREN_SYMBOL } from '@ecopages/jsx';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { installRadiantHydrator, uninstallRadiantHydrator } from '../../src/client/hydrator';
 import {
@@ -15,6 +16,7 @@ import {
 	type HydratedMarkerSlotParent,
 	type HydratedNestedCounter,
 	type HydratedNestedHostParent,
+	type HydratedRegionCard,
 	type HydratedRegionParent,
 	type HydratedRootSlotParent,
 	type HydratedStaticView,
@@ -23,6 +25,12 @@ import {
 	type NonHydratedCounter,
 } from '../fixtures/ssr-hydration/components';
 import '../fixtures/ssr-hydration/components';
+import {
+	LIFECYCLE_PREFIX,
+	defineLifecycleChild,
+	defineLifecycleParent,
+	type LifecycleChild,
+} from '../fixtures/ssr-hydration/lifecycle-pair';
 
 const fixtures = import.meta.glob<string>('../fixtures/ssr-hydration/__snapshots__/*.html', {
 	query: '?raw',
@@ -50,6 +58,23 @@ function mount<T extends Element>(name: string, selector: string): T {
 
 function hasHydrationMarkers(element: Element): boolean {
 	return element.innerHTML.includes('data-radiant-jsx-bind-');
+}
+
+/** Waits two macrotask turns, so first-connect work and the update cycles it schedules have run. */
+async function settle(): Promise<void> {
+	for (let turn = 0; turn < 2; turn += 1) {
+		await new Promise((resolve) => setTimeout(resolve));
+	}
+}
+
+let lifecycleRun = 0;
+
+/** Mounts the `lifecycle-parent` server markup under tags no other test has defined. */
+function mountLifecycle(): { prefix: string; log: string[] } {
+	lifecycleRun += 1;
+	const prefix = `lifecycle-run${lifecycleRun}`;
+	document.body.innerHTML = serverMarkup('lifecycle-parent').replaceAll(LIFECYCLE_PREFIX, prefix);
+	return { prefix, log: [] };
 }
 
 describe('hydrating server-rendered markup', () => {
@@ -271,6 +296,19 @@ describe('hydrating server-rendered markup', () => {
 		expect(element.querySelector('.label')).toBe(serverLabel);
 	});
 
+	test('hydrates a nested host that takes no children without waiting for a children value', async () => {
+		installRadiantHydrator();
+		expect(serverMarkup('region-parent')).toContain('<hydrated-region-card-test data-radiant-ssr>');
+		const element = mount<HydratedRegionParent>('region-parent', 'hydrated-region-parent-test');
+		const card = element.querySelector('hydrated-region-card-test') as HydratedRegionCard;
+
+		await waitFor(() => expect(hasHydrationMarkers(element)).toBe(false));
+
+		expect(element.querySelector('hydrated-region-card-test')).toBe(card);
+		expect(card.isServerRendered).toBe(true);
+		await card.updateComplete;
+	});
+
 	test('keeps focus and input typed into a nested host before its parent hydrates', async () => {
 		installRadiantHydrator();
 		const element = mount<HydratedNestedHostParent>('nested-host-parent', 'hydrated-nested-host-parent-test');
@@ -401,5 +439,152 @@ describe('hydrating server-rendered markup', () => {
 
 		await waitFor(() => expect(element.querySelector('.child > b')?.getAttribute('title')).toBe('inside-1'));
 		vi.restoreAllMocks();
+	});
+});
+
+describe('a nested host that waits for its children', () => {
+	beforeEach(() => {
+		uninstallRadiantHydrator();
+		document.body.innerHTML = '';
+	});
+
+	test('runs onConnected after it hydrates when its tag is defined before its parent', async () => {
+		installRadiantHydrator();
+		const { prefix, log } = mountLifecycle();
+		const serverChild = document.querySelector(`${prefix}-child`);
+		const serverProjected = document.querySelector('b');
+
+		defineLifecycleChild(prefix, log);
+		await settle();
+
+		expect(log).toEqual(['child:connected']);
+
+		defineLifecycleParent(prefix, log);
+		await waitFor(() => expect(hasHydrationMarkers(document.body)).toBe(false));
+		await settle();
+
+		expect(document.querySelector(`${prefix}-child`)).toBe(serverChild);
+		expect(document.querySelector('b')).toBe(serverProjected);
+		expect(log.filter((entry) => entry.startsWith('child:onConnected'))).not.toContain(
+			'child:onConnected hydrated=false',
+		);
+		expect(log.indexOf('child:onConnected hydrated=true')).toBeGreaterThan(log.indexOf('parent:render'));
+	});
+
+	/**
+	 * @remarks The second connect and render come from the parent's range moving the host while it reconciles
+	 * (`moveRangeBefore` in `@ecopages/jsx`), not from hydration; tracked separately.
+	 */
+	test('renders and connects twice when its tag is defined before its parent', async () => {
+		installRadiantHydrator();
+		const { prefix, log } = mountLifecycle();
+
+		defineLifecycleChild(prefix, log);
+		defineLifecycleParent(prefix, log);
+		await waitFor(() => expect(hasHydrationMarkers(document.body)).toBe(false));
+		await settle();
+
+		expect(log.filter((entry) => entry === 'child:render')).toHaveLength(2);
+		expect(log.filter((entry) => entry === 'child:connected')).toHaveLength(2);
+	});
+
+	test('renders once when its parent is defined first', async () => {
+		installRadiantHydrator();
+		const { prefix, log } = mountLifecycle();
+
+		defineLifecycleParent(prefix, log);
+		defineLifecycleChild(prefix, log);
+		await waitFor(() => expect(hasHydrationMarkers(document.body)).toBe(false));
+		await settle();
+
+		expect(log.filter((entry) => entry === 'child:render')).toHaveLength(1);
+		expect(log).toContain('child:onConnected hydrated=true');
+	});
+
+	test('keeps its server nodes when it requests a render while it waits', async () => {
+		installRadiantHydrator();
+		const { prefix, log } = mountLifecycle();
+		const serverProjected = document.querySelector('b');
+
+		defineLifecycleChild(prefix, log);
+		await settle();
+		const child = document.querySelector(`${prefix}-child`) as LifecycleChild;
+		child.flag = 'f1';
+		child.requestUpdate();
+		await settle();
+
+		expect(log).toEqual(['child:connected']);
+		expect(document.querySelector('b')).toBe(serverProjected);
+
+		defineLifecycleParent(prefix, log);
+		await waitFor(() => expect(child.querySelector('em')?.textContent).toBe('f1'));
+		expect(document.querySelector('b')).toBe(serverProjected);
+		expect(document.querySelectorAll('b')).toHaveLength(1);
+	});
+
+	test('stays inert server markup while its parent never renders on the client', async () => {
+		installRadiantHydrator();
+		const { prefix, log } = mountLifecycle();
+
+		defineLifecycleChild(prefix, log);
+		await settle();
+		const child = document.querySelector(`${prefix}-child`) as LifecycleChild;
+
+		expect(log).toEqual(['child:connected']);
+		expect(child.isServerRendered).toBe(true);
+		expect(hasHydrationMarkers(child)).toBe(true);
+	});
+
+	test('hydrates after a disconnect and reconnect while it waits', async () => {
+		installRadiantHydrator();
+		const { prefix, log } = mountLifecycle();
+		const serverChild = document.querySelector(`${prefix}-child`);
+		const serverProjected = document.querySelector('b');
+
+		defineLifecycleChild(prefix, log);
+		await settle();
+		const parent = document.querySelector(`${prefix}-parent`) as Element;
+		parent.remove();
+		document.body.append(parent);
+		await settle();
+
+		const Parent = defineLifecycleParent(prefix, log);
+		await waitFor(() => expect(hasHydrationMarkers(document.body)).toBe(false));
+
+		expect(document.querySelector(`${prefix}-child`)).toBe(serverChild);
+		expect(document.querySelector('b')).toBe(serverProjected);
+		expect(log).toContain('child:onConnected hydrated=true');
+
+		(document.querySelector(`${prefix}-parent`) as InstanceType<typeof Parent>).inside = 'inside-1';
+		await waitFor(() => expect(serverProjected?.getAttribute('title')).toBe('inside-1'));
+	});
+
+	test('does not render again when assigned the children value it already holds', async () => {
+		lifecycleRun += 1;
+		const prefix = `lifecycle-run${lifecycleRun}`;
+		const log: string[] = [];
+		defineLifecycleChild(prefix, log);
+		const child = document.body.appendChild(document.createElement(`${prefix}-child`));
+		const children = <b>B</b>;
+
+		Reflect.set(child, CUSTOM_ELEMENT_CHILDREN_SYMBOL, children);
+		await settle();
+		Reflect.set(child, CUSTOM_ELEMENT_CHILDREN_SYMBOL, children);
+		await settle();
+
+		expect(child.querySelectorAll('b')).toHaveLength(1);
+		expect(log.filter((entry) => entry === 'child:render')).toHaveLength(1);
+	});
+
+	test('renders fresh from hydrate-mode markup when the hydrator is not installed', async () => {
+		const { prefix, log } = mountLifecycle();
+
+		defineLifecycleChild(prefix, log);
+		defineLifecycleParent(prefix, log);
+		await settle();
+
+		expect(hasHydrationMarkers(document.body)).toBe(false);
+		expect(document.querySelectorAll(`${prefix}-child .child > b`)).toHaveLength(1);
+		expect((document.querySelector(`${prefix}-child`) as LifecycleChild).isServerRendered).toBe(false);
 	});
 });
