@@ -337,7 +337,7 @@ export class HydratedLateChildParent extends RadiantElement<{ inside: string; tr
 }
 
 /** Page-level JSX around a host, outside every host's view: the server gives the host Authored Children. */
-export function pageSlotCardView(body = 'SSR body') {
+export function pageSlotCardView(body: JsxRenderable = 'SSR body') {
 	return (
 		<main title="page">
 			<hydrated-slot-card-test>
@@ -361,4 +361,17 @@ export class HydratedOptionalChildrenParent extends RadiantElement<{ show: boole
 			</section>
 		);
 	}
+}
+
+/** Page-level JSX around a host whose only children go to its default slot, with a handler and a reactive text. */
+export function pageBuyCardView(count: JsxRenderable, onBuy: () => void) {
+	return (
+		<main title="page">
+			<hydrated-marker-slot-child-test>
+				<button type="button" on:click={onBuy}>
+					Buy {count}
+				</button>
+			</hydrated-marker-slot-child-test>
+		</main>
+	);
 }

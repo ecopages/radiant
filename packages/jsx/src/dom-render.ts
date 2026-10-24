@@ -3,7 +3,7 @@ import { createBoundaryMarker } from './dom-render/dom-operations.ts';
 import { captureFocusSnapshot, restoreFocusSnapshot } from './dom-render/focus-snapshot.ts';
 import { hydrateIterableRoot } from './dom-render/hydration-iterable.ts';
 import { hydrateTemplateInstance } from './dom-render/hydration.ts';
-import { fillsValueElement } from './dom-render/hydration-mounted-range.ts';
+import { fillsRenderedElement } from './dom-render/hydration-mounted-range.ts';
 import { disposeMountedRoot } from './dom-render/mounted-disposal.ts';
 import {
 	flushDeferredProperties,
@@ -108,8 +108,7 @@ export function hydrate(element: JsxRenderable, target: HTMLElement): void {
  *
  * Other shapes — including primitives and leftover marker trees — return
  * `undefined` so {@link hydrate} can fall back to a full client render, as does a
- * custom-element root whose template fills an element that takes its children as a value
- * ({@link fillsValueElement}). Reactive
+ * custom-element root it cannot hydrate ({@link fillsRenderedElement}). Reactive
  * wrappers are unwrapped by the caller before this runs.
  *
  * @returns The reconnected range content, or `undefined` when the DOM cannot be recovered.
@@ -122,7 +121,7 @@ function reconnectSsrRoot(
 	const nextValue = unwrapKeyedValue(element);
 
 	if (isTemplateResultLike(nextValue)) {
-		if (!containsHydrationMarkers(target) || fillsValueElement(nextValue)) {
+		if (!containsHydrationMarkers(target) || fillsRenderedElement(nextValue)) {
 			return undefined;
 		}
 

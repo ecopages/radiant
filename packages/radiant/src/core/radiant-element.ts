@@ -292,7 +292,8 @@ export class RadiantElement<Bindings extends object = {}>
 	 * hydration; otherwise the value arrives first and the sync runs at its usual time. Assigning the value the
 	 * host already holds does nothing, since hydration can assign it more than once.
 	 *
-	 * A host the server rendered with Authored Children (stamped {@link SERVER_RENDERED_AUTHORED_STAMP}) ignores
+	 * A host the server rendered with Authored Children that fill a named slot (stamped
+	 * {@link SERVER_RENDERED_AUTHORED_STAMP}) ignores
 	 * the value for its lifetime, so its named slots stay as the server rendered them: neither the value a page view
 	 * that hydrates over it passes, nor a later one, reaches it, and event bindings in those children never attach.
 	 */

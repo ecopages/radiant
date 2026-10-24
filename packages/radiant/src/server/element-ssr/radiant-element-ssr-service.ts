@@ -66,11 +66,14 @@ export class RadiantElementSsrService {
 			const slotProjectionScript = { markup: '' };
 			const content = this.renderHostContent(options, hydrate, slotProjectionScript);
 			const stamp =
-				slotProjectionScript.markup !== '' && takesChildrenValue(this.host.constructor)
+				takesChildrenValue(this.host.constructor) && hasNamedSlotContent(slotProjectionScript.markup)
 					? SERVER_RENDERED_AUTHORED_STAMP
 					: '';
 			const hostAttributes = hydrate
-				? { ...attributes, [SERVER_RENDERED_HOST_ATTRIBUTE]: attributes[SERVER_RENDERED_HOST_ATTRIBUTE] ?? stamp }
+				? {
+						...attributes,
+						[SERVER_RENDERED_HOST_ATTRIBUTE]: attributes[SERVER_RENDERED_HOST_ATTRIBUTE] ?? stamp,
+					}
 				: attributes;
 
 			return `<${tagName}${stringifyHostAttributes(hostAttributes)}>${content}</${tagName}>`;
@@ -125,4 +128,23 @@ export class RadiantElementSsrService {
 /** @remarks Only a class that takes a Children Value from a view tells Authored Children apart in its stamp. */
 function takesChildrenValue(constructor: object): boolean {
 	return (constructor as { [CUSTOM_ELEMENT_CHILDREN_SYMBOL]?: unknown })[CUSTOM_ELEMENT_CHILDREN_SYMBOL] === true;
+}
+
+/**
+ * Whether a slot-projection payload assigns children to a named slot.
+ *
+ * @remarks Only named-slot children need the Authored Children path on the client: a Children Value renders
+ * default-slot children in the same place and keeps their bindings live. The payload is the JSON this service just
+ * wrote, keyed by slot name, with `""` for the default slot.
+ */
+function hasNamedSlotContent(scriptMarkup: string): boolean {
+	if (scriptMarkup === '') {
+		return false;
+	}
+
+	const payload = JSON.parse(
+		scriptMarkup.slice(scriptMarkup.indexOf('>') + 1, scriptMarkup.lastIndexOf('</')),
+	) as Record<string, unknown>;
+
+	return Object.keys(payload).some((slotName) => slotName !== '');
 }

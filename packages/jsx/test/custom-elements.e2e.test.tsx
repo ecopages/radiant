@@ -216,6 +216,17 @@ describe('custom elements that take their JSX children as a value', () => {
 		expect(container.innerHTML).toBe('<jsx-late-root-value-element><b>one</b></jsx-late-root-value-element>');
 	});
 
+	test('render instead of hydrating a root with DOM children whose tag is not defined yet', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.body.appendChild(document.createElement('div'));
+		container.innerHTML =
+			'<jsx-undefined-root-element><p data-radiant-jsx-bind-0="attr:class" class="own"></p></jsx-undefined-root-element>';
+
+		createRoot(container).hydrate(jsx('jsx-undefined-root-element', { children: jsx('b', { children: 'one' }) }));
+
+		expect(container.innerHTML).toBe('<jsx-undefined-root-element><b>one</b></jsx-undefined-root-element>');
+	});
+
 	test('keep DOM children when the tag is defined after the view created the element', async () => {
 		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.body.appendChild(document.createElement('div'));

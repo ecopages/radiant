@@ -23,6 +23,7 @@ import {
 	HydratedSlotCard,
 	HydratedOptionalChildrenParent,
 	NonHydratedCounter,
+	pageBuyCardView,
 	pageSlotCardView,
 } from './components';
 import { HydratedOrderParent } from './define-order';
@@ -79,6 +80,13 @@ export const SSR_HYDRATION_CASES: Record<string, () => string> = {
 		),
 	'optional-children-parent': () =>
 		renderRadiantElementHostToString(new HydratedOptionalChildrenParent(), { mode: 'hydrate' }),
+	'page-buy-card': () =>
+		withRadiantServerCustomElementRenderBridge(() =>
+			renderToString(
+				pageBuyCardView(0, () => undefined),
+				{ mode: 'hydrate' },
+			),
+		),
 	'page-slot-card': () =>
 		withRadiantServerCustomElementRenderBridge(() => renderToString(pageSlotCardView(), { mode: 'hydrate' })),
 	'region-parent': () => renderRadiantElementHostToString(new HydratedRegionParent(), { mode: 'hydrate' }),

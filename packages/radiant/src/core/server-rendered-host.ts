@@ -18,11 +18,12 @@ export const SERVER_RENDERED_HOST_ATTRIBUTE = 'data-radiant-ssr';
 export const SERVER_RENDERED_CHILDREN_STAMP = 'children';
 
 /**
- * Value of {@link SERVER_RENDERED_HOST_ATTRIBUTE} on a host the server rendered with Authored Children, which it
- * ships in a slot-projection payload.
+ * Value of {@link SERVER_RENDERED_HOST_ATTRIBUTE} on a host the server rendered with Authored Children that fill a
+ * named slot, which it ships in a slot-projection payload.
  *
  * @remarks Such a host keeps those children on the client for its lifetime: a view that hydrates over it, such as
- * the page's JSX, hands it the same children as a value, which it ignores so its named slots stay as the server
- * rendered them.
+ * the page's JSX, hands it the same children as a value, which would put them all in the default slot, so it ignores
+ * it. A host whose children only fill the default slot is not stamped this way: the value renders them in the same
+ * place and keeps their bindings live.
  */
 export const SERVER_RENDERED_AUTHORED_STAMP = 'authored';

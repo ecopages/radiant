@@ -2,6 +2,7 @@
 /** @jsxImportSource @ecopages/jsx */
 import { waitFor } from '@testing-library/dom';
 import { CUSTOM_ELEMENT_CHILDREN_SYMBOL, createRoot, jsx, type JsxRenderable } from '@ecopages/jsx';
+import { state } from '@ecopages/signals';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { installRadiantHydrator, uninstallRadiantHydrator } from '../../src/client/hydrator';
 import { RadiantElement } from '../../src/core/radiant-element';
@@ -27,6 +28,7 @@ import {
 	type HydratedSlotCard,
 	type HydratedThirdPartyParent,
 	type NonHydratedCounter,
+	pageBuyCardView,
 	pageSlotCardView,
 } from '../fixtures/ssr-hydration/components';
 import '../fixtures/ssr-hydration/components';
@@ -723,7 +725,36 @@ describe('hydrating page-level JSX over a host the server rendered with Authored
 		expectServerSlots(serverHost);
 	});
 
-	test('renders the children once when the page JSX was created before the tag was defined', async () => {
+	test('leaves bindings in the children of a host with named slots unattached', async () => {
+		installRadiantHydrator();
+		container.innerHTML = serverMarkup('page-slot-card');
+		const body = state('SSR body');
+
+		createRoot(container).hydrate(pageSlotCardView(body));
+		await settle();
+		body.set('Changed');
+		await settle();
+
+		expect(container.querySelector('div > p')?.textContent).toBe('SSR body');
+	});
+
+	test('keeps the node and live children of a host whose children only go to its default slot', async () => {
+		installRadiantHydrator();
+		container.innerHTML = serverMarkup('page-buy-card');
+		const serverHost = container.querySelector('hydrated-marker-slot-child-test');
+		const count = state(0);
+
+		createRoot(container).hydrate(pageBuyCardView(count, () => count.set(count.get() + 1)));
+		await settle();
+		(container.querySelector('button') as HTMLButtonElement).click();
+
+		await waitFor(() => expect(container.querySelector('button')?.textContent).toBe('Buy 1'));
+		expect(container.querySelector('hydrated-marker-slot-child-test')).toBe(serverHost);
+		expect(container.querySelectorAll('button')).toHaveLength(1);
+		expect(warn).not.toHaveBeenCalled();
+	});
+
+	test('still rebuilds the host with its children once when the page JSX was created before the tag was defined', async () => {
 		installRadiantHydrator();
 		cardRun += 1;
 		const tagName = `page-slot-card-run${cardRun}`;
@@ -758,6 +789,31 @@ describe('hydrating page-level JSX over a host the server rendered with Authored
 		expect(container.querySelectorAll(tagName)).toHaveLength(1);
 		expectServerSlots(container.querySelector(tagName) as Element);
 	});
+});
+
+describe('hydrating page-level JSX while the tag of a server-rendered host is still undefined', () => {
+	beforeEach(setUpPageContainer);
+	afterEach(() => vi.restoreAllMocks());
+
+	for (const wrapped of [true, false]) {
+		test(`renders the host's children once after the tag is defined${wrapped ? ', under a page element' : ', as the page root'}`, async () => {
+			installRadiantHydrator();
+			cardRun += 1;
+			const tagName = `page-slot-card-run${cardRun}`;
+			const card = jsx(tagName, { children: [<h2 slot="header">SSR header</h2>, <p>SSR body</p>] });
+			container.innerHTML = serverMarkup(wrapped ? 'page-slot-card' : 'slot-card').replaceAll(
+				'hydrated-slot-card-test',
+				tagName,
+			);
+
+			createRoot(container).hydrate(wrapped ? <main title="page">{card}</main> : card);
+			defineSlotCard(tagName);
+			await settle();
+
+			expect(container.querySelectorAll(tagName)).toHaveLength(1);
+			expectServerSlots(container.querySelector(tagName) as Element);
+		});
+	}
 });
 
 describe('a host the client creates in page-level JSX', () => {
