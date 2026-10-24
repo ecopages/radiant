@@ -19,7 +19,7 @@ A render-owning `RadiantElement` now receives the JSX children a view passes it 
 <x-card header={<h2>Title</h2>}>
 	<p>Body</p>
 </x-card>
-// x-card: @state header: JsxRenderable = null;
+// x-card: @prop({ transform: { fromAttribute: (value) => value as JsxRenderable } }) header: JsxRenderable = null;
 // x-card render(): <header>{this.header}</header><main><slot /></main>
 ```
 

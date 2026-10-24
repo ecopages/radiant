@@ -18,11 +18,11 @@ order: 4
 /** @jsxImportSource @ecopages/jsx */
 
 import type { JsxRenderable } from '@ecopages/jsx';
-import { RadiantElement, customElement, state } from '@ecopages/radiant';
+import { RadiantElement, customElement, prop, state } from '@ecopages/radiant';
 
 @customElement('x-card')
 export class XCard extends RadiantElement {
-	@state header: JsxRenderable = null;
+	@prop({ transform: { fromAttribute: (value) => value as JsxRenderable } }) header: JsxRenderable = null;
 	@state open = true;
 
 	override render() {
