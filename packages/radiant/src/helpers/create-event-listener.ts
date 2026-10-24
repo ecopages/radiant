@@ -1,5 +1,6 @@
 import { eventMatchesDelegatedSelector } from '../core/delegated-event';
 import { isServer } from '@ecopages/radiant/is-server';
+import { areJsxDevWarningsEnabled } from './dev-warnings';
 import { resolveHostElement } from './resolve-host-element';
 
 /**
@@ -64,7 +65,7 @@ const warnedNonBubblingEvents = new Set<string>();
  */
 function warnNonBubblingDelegatedEvent(type: string, options?: AddEventListenerOptions): void {
 	try {
-		if (process.env.NODE_ENV !== 'production') {
+		if (process.env.NODE_ENV !== 'production' && areJsxDevWarningsEnabled()) {
 			const replacement = NON_BUBBLING_DELEGATED_EVENTS.get(type);
 			if (!replacement || options?.capture || warnedNonBubblingEvents.has(type)) {
 				return;
