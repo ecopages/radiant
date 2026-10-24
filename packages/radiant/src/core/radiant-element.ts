@@ -259,7 +259,7 @@ export class RadiantElement<Bindings extends object = {}>
 	}
 
 	/**
-	 * Whether a JSX view hands this element its children as a value: true when the class overrides `render()`.
+	 * Whether a JSX view hands this element a Children Value: true when the class overrides `render()`.
 	 *
 	 * @remarks Framework plumbing read by `@ecopages/jsx` when a view creates the element; not part of the
 	 * authoring API. Hosts without a `render()` keep their JSX children as DOM, which their view-owned markup
@@ -269,7 +269,7 @@ export class RadiantElement<Bindings extends object = {}>
 		return (this.prototype as RadiantElement).shouldRunRenderLifecycle();
 	}
 
-	/** Receives the JSX children a view passes; `<slot />` in `render()` resolves to them. Framework plumbing. */
+	/** Receives the Children Value a view passes; `<slot />` in `render()` resolves to it. Framework plumbing. */
 	set [CUSTOM_ELEMENT_CHILDREN_SYMBOL](value: JsxRenderable) {
 		this.getOrCreateRenderRuntime().setChildrenValue(value);
 		this.requestUpdate();
