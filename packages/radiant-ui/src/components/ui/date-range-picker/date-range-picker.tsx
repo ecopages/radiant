@@ -12,6 +12,7 @@ import type {
 } from './date-range-picker.script';
 import './date-range-picker.script';
 import '../date-input/date-input.script';
+import type { WithoutChildren } from '../../../lib/without-children';
 
 export type RuiDateRangePickerControlProps = JsxElementProps<HTMLDivElement>;
 
@@ -37,18 +38,18 @@ export function RuiDateRangePickerInputs({ children, class: className, ...props 
 	);
 }
 
-export type RuiDateRangePickerStartInputProps = JsxCustomElementAttributes<RuiDateInputElement, RuiDateInputProps> & {
-	children?: never;
-};
+export type RuiDateRangePickerStartInputProps = WithoutChildren<
+	JsxCustomElementAttributes<RuiDateInputElement, RuiDateInputProps>
+>;
 
 /** Start-date segments. Stamps `[data-range-start]`. */
 export function RuiDateRangePickerStartInput({ class: className, ...props }: RuiDateRangePickerStartInputProps) {
 	return <RuiDateInput {...props} data-range-start class={cx('rui-date-range-picker__input', className)} />;
 }
 
-export type RuiDateRangePickerEndInputProps = JsxCustomElementAttributes<RuiDateInputElement, RuiDateInputProps> & {
-	children?: never;
-};
+export type RuiDateRangePickerEndInputProps = WithoutChildren<
+	JsxCustomElementAttributes<RuiDateInputElement, RuiDateInputProps>
+>;
 
 /** End-date segments. Stamps `[data-range-end]`. */
 export function RuiDateRangePickerEndInput({ class: className, ...props }: RuiDateRangePickerEndInputProps) {
@@ -112,9 +113,9 @@ export function RuiDateRangePickerPopover({ children, class: className, ...props
 	);
 }
 
-export type RuiDateRangePickerCalendarProps = JsxCustomElementAttributes<RuiCalendarElement, RuiCalendarProps> & {
-	children?: never;
-};
+export type RuiDateRangePickerCalendarProps = WithoutChildren<
+	JsxCustomElementAttributes<RuiCalendarElement, RuiCalendarProps>
+>;
 
 /** Nested `rui-calendar` in range mode. Stamps `[data-range-calendar]`. */
 export function RuiDateRangePickerCalendar(props: RuiDateRangePickerCalendarProps) {
