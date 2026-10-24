@@ -229,6 +229,24 @@ function matchesAuthoredElementChildren(
 }
 
 /**
+ * Whether a template puts DOM children inside a custom-element root that is not defined yet, or whose class takes
+ * its children as a value (the template was created before the tag was defined).
+ *
+ * @remarks The element's server markup can hold its own rendered content where the template's children would go,
+ * so such a root is rendered rather than hydrated, as before hydration counted the markers inside custom elements.
+ * A defined element that takes DOM children keeps hydrating them.
+ */
+export function fillsRenderedElement(template: TemplateResultLike): boolean {
+	const localName = template.rootLocalName ?? '';
+
+	return (
+		localName.includes('-') &&
+		(!globalThis.customElements?.get(localName) || takesChildrenValue(localName)) &&
+		!!getCompiledTemplate(template).blueprint.content.firstChild?.hasChildNodes()
+	);
+}
+
+/**
  * Wraps each child of an iterable range in its own hydrated sub-range.
  *
  * Keyed and indexed lists walk the SSR nodes identically — only how a child's

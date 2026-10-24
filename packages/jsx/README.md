@@ -429,12 +429,13 @@ Adjacent text child bindings that SSR collapses into one text node are split int
 
 `hydrate(...)` reconnects a template or iterable root in place. A reactive wrapper hydrates its current snapshot, then subscribes. Any other shape falls back to a full client render.
 
-| Root shape                                 | Recovery path      | Notes                                               |
-| ------------------------------------------ | ------------------ | --------------------------------------------------- |
-| Single template (`<section>...</section>`) | Template hydration | Reconnects attribute and child parts in place       |
-| Iterable / fragment (`<>...</>`)           | Iterable hydration | Hydrates each child into the mounted ownership tree |
-| Reactive wrapper around either shape       | Inner snapshot     | Reconnects the current value, then subscribes       |
-| Anything else                              | Client render      | Full mount; leftover SSR markers are replaced       |
+| Root shape                                                                                            | Recovery path      | Notes                                                                                             |
+| ----------------------------------------------------------------------------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------- |
+| Single template (`<section>...</section>`)                                                            | Template hydration | Reconnects attribute and child parts in place                                                     |
+| Custom element not defined yet, or one that takes a Children Value, with DOM children in the template | Client render      | Its server content may be its own render; a defined element that takes DOM children hydrates them |
+| Iterable / fragment (`<>...</>`)                                                                      | Iterable hydration | Hydrates each child into the mounted ownership tree                                               |
+| Reactive wrapper around either shape                                                                  | Inner snapshot     | Reconnects the current value, then subscribes                                                     |
+| Anything else                                                                                         | Client render      | Full mount; leftover SSR markers are replaced                                                     |
 
 Iterable fragment hydration supports lists of intrinsic template children (for example `<> <button/> <span/> </>`), including subscribable child bindings inside those templates and nested lists such as `<>{items.map(renderItem)}<footer/></>`. Each recovered child template stays in the root's ownership tree, so `unmount()` and later replacement renders dispose subscriptions and native listeners.
 

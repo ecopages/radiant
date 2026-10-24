@@ -3,7 +3,7 @@
 		{
 			"label": "client",
 			"entrypoint": "./src/client.ts",
-			"maxBytes": 33152,
+			"maxBytes": 33216,
 			"maxGzipBytes": 10944
 		},
 		{

@@ -1,7 +1,9 @@
 import '../../../src/server/install-ssr-runtime';
+import { renderToString } from '@ecopages/jsx/server';
 import {
 	renderRadiantElementHostToString,
 	renderRadiantElementViewToString,
+	withRadiantServerCustomElementRenderBridge,
 } from '../../../src/server/radiant-element-ssr';
 import {
 	DeferredHydratedCard,
@@ -19,7 +21,10 @@ import {
 	HydratedStaticView,
 	HydratedThirdPartyParent,
 	HydratedSlotCard,
+	HydratedOptionalChildrenParent,
 	NonHydratedCounter,
+	pageBuyCardView,
+	pageSlotCardView,
 } from './components';
 import { HydratedOrderParent } from './define-order';
 import { LIFECYCLE_PREFIX, defineLifecycleChild, defineLifecycleParent } from './lifecycle-pair';
@@ -73,6 +78,17 @@ export const SSR_HYDRATION_CASES: Record<string, () => string> = {
 			'deferred-hydrated-card-test',
 			renderRadiantElementViewToString(new DeferredHydratedCard(), { mode: 'hydrate' }),
 		),
+	'optional-children-parent': () =>
+		renderRadiantElementHostToString(new HydratedOptionalChildrenParent(), { mode: 'hydrate' }),
+	'page-buy-card': () =>
+		withRadiantServerCustomElementRenderBridge(() =>
+			renderToString(
+				pageBuyCardView(0, () => undefined),
+				{ mode: 'hydrate' },
+			),
+		),
+	'page-slot-card': () =>
+		withRadiantServerCustomElementRenderBridge(() => renderToString(pageSlotCardView(), { mode: 'hydrate' })),
 	'region-parent': () => renderRadiantElementHostToString(new HydratedRegionParent(), { mode: 'hydrate' }),
 	'nested-host-parent': () => renderRadiantElementHostToString(new HydratedNestedHostParent(), { mode: 'hydrate' }),
 	'keyed-hosts-parent': () => renderRadiantElementHostToString(new HydratedKeyedHostsParent(), { mode: 'hydrate' }),
