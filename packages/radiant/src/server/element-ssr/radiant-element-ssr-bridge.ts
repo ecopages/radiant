@@ -103,8 +103,9 @@ export function resolveRadiantElementRenderBridge(component: object): RadiantEle
  * when the client renders that view, so its own render places them inside its context providers and serializes
  * them in its marker namespace. Anywhere else, such as a page around the hosts, the client sees the children
  * only as HTML: the host builds them as light-DOM nodes (`renderServerLightDom`, so no value is escaped and
- * parsed back) inside its own context providers, and captures them for its slots. A host that takes the value is
- * stamped with {@link SERVER_RENDERED_CHILDREN_STAMP}, so on the client it waits for them before it hydrates.
+ * parsed back) inside its own context providers, and captures them for its slots. In hydrate mode, a host that
+ * takes the value is stamped with {@link SERVER_RENDERED_CHILDREN_STAMP}, so on the client it waits for them before
+ * it hydrates.
  */
 export function withRadiantServerCustomElementRenderBridge<T>(render: () => T): T {
 	return withServerCustomElementRenderHook(
@@ -151,7 +152,9 @@ function serializeNestedCustomElementHost(
 			const attributes = service.getHostAttributes();
 			return service.renderHostToString(
 				options,
-				stamp === undefined ? attributes : { ...attributes, [SERVER_RENDERED_HOST_ATTRIBUTE]: stamp },
+				hydrate && stamp !== undefined
+					? { ...attributes, [SERVER_RENDERED_HOST_ATTRIBUTE]: stamp }
+					: attributes,
 			);
 		});
 
