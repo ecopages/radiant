@@ -272,6 +272,14 @@ The mental model stays simple:
 - component events go out through `@event(...)`
 - both are ordinary browser events at runtime
 
+## Development Warnings
+
+Radiant logs a development warning when a delegated `@onEvent(...)` listener uses a non-bubbling event type, such as `focus`. The published files keep the `process.env.NODE_ENV` check that gates it, so the app's build decides, not Radiant's: the warning shows when the bundler sets `process.env.NODE_ENV` to anything other than `"production"`, and a production build removes it along with its text. What counts as a production build depends on the bundler: esbuild sets `"production"` for a browser-platform build with minification on, Vite for `vite build` unless `NODE_ENV` says otherwise, webpack for `mode: "production"`, and Bun for `--production`. A page that loads the files without a bundler, where `process` does not exist, gets no warning and no error.
+
+The JSX hydration and DOM anchor warnings come from `@ecopages/jsx` and follow its own switch; see "Dev Warnings" in [the JSX README](../jsx/README.md#dev-warnings).
+
+Contributors: wrap a development warning in `try { if (process.env.NODE_ENV !== 'production') { ... } } catch {}`. The `try` keeps a page without `process` from throwing, and keeping the check inside it lets every bundler drop the block in production; see `warnNonBubblingDelegatedEvent` in `src/helpers/create-event-listener.ts`. `test/build/dist-dev-warnings.test.ts` fails when a built `dist` file reads `process.env.NODE_ENV` outside that shape, and bundles an app against the `dist` for development, for production, and with the check left unreplaced.
+
 ## Public Entry Points
 
 These are the documented public import paths exposed by the package.
