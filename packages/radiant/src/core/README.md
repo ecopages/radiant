@@ -66,6 +66,15 @@ Decorators and SSR adapters reach host plumbing (post-sync and batched callback 
 
 `render()` describes the view. `update()` runs the cycle that commits it into the host.
 
+## Children and Slots
+
+`<slot>` in `render()` resolves against one of two sources, held by the host's render runtime:
+
+- **A children value.** `RadiantElement` answers `@ecopages/jsx`'s `CUSTOM_ELEMENT_CHILDREN_SYMBOL` protocol with `true` when the class overrides `render()`, so a view that creates the element assigns it the JSX children as one value instead of mounting them inside it, and assigns it again on every view render. `<slot />` resolves to that value, or to its fallback when the value is empty; named slots resolve to their fallback. The host's renderer is the only one that touches the resulting nodes. A JSX child marked `slot="name"` stays in the default slot, and nodes appended to the host are not shown; both warn in development builds.
+- **HTML-authored children.** Any other render-owning host captures its direct children once, at first render, or reads them from the SSR slot-projection payload, and assigns them by `slot` attribute. A `childList` observer projects nodes appended later. Children that a view rendered before the tag was defined land here, with a development warning.
+
+`getSlotElements(...)` and `@querySlot(...)` read the default slot's top-level rendered elements for a children value, and the assigned nodes for HTML-authored children.
+
 ## SSR Flow
 
 SSR works like this:

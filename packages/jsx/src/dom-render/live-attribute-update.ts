@@ -33,7 +33,7 @@ export function updateLiveAttributePart(
 		releaseLiveAttributeSubscription(part);
 	}
 
-	if (!isReactiveAttributeSource(value)) {
+	if (!isReactiveAttributeSource(value) || part.binding.kind === 'children') {
 		applyToPart(part, value, deferredProperties);
 		return;
 	}

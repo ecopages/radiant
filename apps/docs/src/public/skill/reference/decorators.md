@@ -75,7 +75,7 @@ Avoid updating the same watched property inside its own `@onUpdated(...)` unless
 ## DOM queries
 
 - `@query(...)` — rendered descendants by `data-ref` or selector, on a `RadiantElement` or a `RadiantController`
-- `@querySlot(...)` — projected slot-assigned elements from an HTML-first `RadiantElement`; options `name` (default slot when omitted), `all`, and `cache` (cached by default, refreshed when the projection changes)
+- `@querySlot(...)` — slot-assigned elements of a render-owning `RadiantElement` (for children a JSX view passes, the default slot's rendered top-level elements); options `name` (default slot when omitted), `all`, and `cache` (cached by default, refreshed when the projection changes)
 
 `@query` options: `ref` or `selector`; `all` for `T[]`; `cache` (default `false`: each read queries the DOM). Prefer `ref` over broad selectors. Field types and null-safe use: see [Field types](#field-types).
 

@@ -15,10 +15,11 @@ describe('SSR hydration fixtures', () => {
 		});
 	}
 
-	test('children of a nested host carry no parent hydration markers', () => {
+	test('serializes the JSX children of a nested host in its marker namespace, without a slot payload', () => {
 		const markup = SSR_HYDRATION_CASES['marker-slot-parent']?.() ?? '';
 
-		expect(markup).toContain('<b title="inside-0">B</b>');
+		expect(markup).toContain('<b data-radiant-jsx-bind-1="attr:title" title="inside-0">B</b>');
 		expect(markup).toContain('<i data-radiant-jsx-bind-0="attr:title" title="after-0">I</i>');
+		expect(markup).not.toContain('data-radiant-slot-projection');
 	});
 });

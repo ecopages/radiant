@@ -34,7 +34,7 @@ type TemplateMount = (
  */
 export function flushDeferredProperties(bindings: DeferredPropertyBinding[]): void {
 	for (const binding of bindings) {
-		(binding.element as unknown as Record<string, unknown>)[binding.name] = binding.value;
+		Reflect.set(binding.element, binding.name, binding.value);
 	}
 }
 

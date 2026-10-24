@@ -63,6 +63,19 @@ export class HydratedMarkerSlotChild extends RadiantElement {
 	}
 }
 
+@customElement('hydrated-root-slot-parent-test')
+export class HydratedRootSlotParent extends RadiantElement<{ inside: string }> {
+	@state inside = 'inside-0';
+
+	override render() {
+		return (
+			<hydrated-marker-slot-child-test>
+				<b title={this.$.inside}>B</b>
+			</hydrated-marker-slot-child-test>
+		);
+	}
+}
+
 @customElement('hydrated-marker-slot-parent-test')
 export class HydratedMarkerSlotParent extends RadiantElement<{ inside: string; trailing: string }> {
 	@state inside = 'inside-0';

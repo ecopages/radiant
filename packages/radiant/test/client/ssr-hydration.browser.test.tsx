@@ -12,6 +12,7 @@ import {
 	type HydratedMarkerSlotChild,
 	type HydratedMarkerSlotParent,
 	type HydratedRegionParent,
+	type HydratedRootSlotParent,
 	type HydratedStaticView,
 	type HydratedSlotCard,
 	type NonHydratedCounter,
@@ -97,6 +98,19 @@ describe('hydrating server-rendered markup', () => {
 			expect(element.querySelector('i')?.getAttribute('title')).toBe('after-1');
 			expect(element.querySelector('b')?.getAttribute('title')).toBe('inside-1');
 		});
+	});
+
+	test('hydrates a parent whose view is a nested host with reactive JSX children', async () => {
+		installRadiantHydrator();
+		const element = mount<HydratedRootSlotParent>('root-slot-parent', 'hydrated-root-slot-parent-test');
+
+		await waitFor(() => expect(hasHydrationMarkers(element)).toBe(false));
+		expect(element.querySelectorAll('.child > b')).toHaveLength(1);
+
+		element.inside = 'inside-1';
+
+		await waitFor(() => expect(element.querySelector('.child > b')?.getAttribute('title')).toBe('inside-1'));
+		expect(element.querySelectorAll('hydrated-marker-slot-child-test')).toHaveLength(1);
 	});
 
 	test('reports server-rendered hosts through isServerRendered even when the view has no markers', async () => {

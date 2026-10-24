@@ -1,4 +1,10 @@
-import { hasHydrationMarkers, jsx, type JsxRenderable, type SubscribableJsxValueWithAccess } from '@ecopages/jsx';
+import {
+	CUSTOM_ELEMENT_CHILDREN_SYMBOL,
+	hasHydrationMarkers,
+	jsx,
+	type JsxRenderable,
+	type SubscribableJsxValueWithAccess,
+} from '@ecopages/jsx';
 import { getReactivePropDefinitions, type ReactivePropDefinition } from './reactive-prop-metadata';
 import { ensureLegacyHostReady } from '../decorators/legacy/host-readiness';
 import type { UnknownContext } from '../context/types';
@@ -249,6 +255,24 @@ export class RadiantElement<Bindings extends object = {}>
 		this.bindings = this.reactiveHost.bindings;
 		this.$ = this.reactiveHost.$;
 		ensureLegacyHostReady(this, 'construct');
+		adoptPreUpgradeChildrenValue(this);
+	}
+
+	/**
+	 * Whether a JSX view hands this element its children as a value: true when the class overrides `render()`.
+	 *
+	 * @remarks Framework plumbing read by `@ecopages/jsx` when a view creates the element; not part of the
+	 * authoring API. Hosts without a `render()` keep their JSX children as DOM, which their view-owned markup
+	 * relies on.
+	 */
+	static get [CUSTOM_ELEMENT_CHILDREN_SYMBOL](): boolean {
+		return (this.prototype as RadiantElement).shouldRunRenderLifecycle();
+	}
+
+	/** Receives the JSX children a view passes; `<slot />` in `render()` resolves to them. Framework plumbing. */
+	set [CUSTOM_ELEMENT_CHILDREN_SYMBOL](value: JsxRenderable) {
+		this.getOrCreateRenderRuntime().setChildrenValue(value);
+		this.requestUpdate();
 	}
 
 	/**
@@ -707,6 +731,20 @@ Object.defineProperty(RadiantElement.prototype, RADIANT_ELEMENT_BRAND, {
 	value: true,
 	configurable: true,
 });
+
+/**
+ * @remarks A view that renders into a detached tree sets the children on the element before it upgrades, as
+ * an own property that would hide the setter.
+ */
+function adoptPreUpgradeChildrenValue(element: RadiantElement): void {
+	if (!Object.prototype.hasOwnProperty.call(element, CUSTOM_ELEMENT_CHILDREN_SYMBOL)) {
+		return;
+	}
+
+	const value = Reflect.get(element, CUSTOM_ELEMENT_CHILDREN_SYMBOL) as JsxRenderable;
+	Reflect.deleteProperty(element, CUSTOM_ELEMENT_CHILDREN_SYMBOL);
+	element[CUSTOM_ELEMENT_CHILDREN_SYMBOL] = value;
+}
 
 function requireRadiantElementSsrRuntime() {
 	const runtime = getRadiantElementSsrRuntime();

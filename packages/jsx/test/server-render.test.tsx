@@ -712,6 +712,41 @@ describe('Radiant JSX server render', () => {
 		}
 	});
 
+	test('serializes the children of an element that takes them as a value when no hook claims it', async () => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+
+		const childrenValue: unique symbol = Symbol.for('@ecopages/jsx.custom-element-children');
+
+		class ChildrenValueElement {
+			static [childrenValue] = true;
+			setAttribute(_name: string, _value: unknown) {}
+			removeAttribute(_name: string) {}
+		}
+
+		const previousCustomElementsDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'customElements');
+		Object.defineProperty(globalThis, 'customElements', {
+			configurable: true,
+			value: {
+				get: (name: string) =>
+					name === 'children-value-element'
+						? (ChildrenValueElement as unknown as CustomElementConstructor)
+						: undefined,
+			},
+		});
+
+		try {
+			expect(renderToString(jsx('children-value-element', { children: jsx('p', { children: 'Body' }) }))).toBe(
+				'<children-value-element><p>Body</p></children-value-element>',
+			);
+		} finally {
+			if (previousCustomElementsDescriptor) {
+				Object.defineProperty(globalThis, 'customElements', previousCustomElementsDescriptor);
+			} else {
+				Reflect.deleteProperty(globalThis, 'customElements');
+			}
+		}
+	});
+
 	test('invokes the server custom-element render hook during SSR intrinsic renders', async () => {
 		const [{ jsx }, { renderToString, withServerCustomElementRenderHook }] = await Promise.all([
 			loadJsxRuntime(),

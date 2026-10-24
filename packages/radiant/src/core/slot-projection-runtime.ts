@@ -189,7 +189,7 @@ function isIgnoredProjectedNode(node: Node): boolean {
 	return isSlotProjectionScriptNode(node) || isHydrationScriptNode(node);
 }
 
-function isTemplateResultLike(value: JsxRenderable): value is TemplateResultLike {
+export function isTemplateResultLike(value: JsxRenderable): value is TemplateResultLike {
 	return (
 		typeof value === 'object' &&
 		value !== null &&
