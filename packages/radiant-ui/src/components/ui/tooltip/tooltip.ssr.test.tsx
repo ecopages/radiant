@@ -11,9 +11,10 @@ describe('RuiTooltip SSR', () => {
 			</RuiTooltip>,
 		);
 
-		expect(html).toContain('class="rui-tooltip"');
-		expect(html).toContain('role="tooltip"');
-		expect(html).toContain('Save your changes');
+		expect(html.match(/class="rui-tooltip"/g)).toHaveLength(1);
+		expect(html.match(/data-ref="trigger"/g)).toHaveLength(1);
+		expect(html.match(/role="tooltip"/g)).toHaveLength(1);
+		expect(html.match(/Save your changes/g)).toHaveLength(1);
 		expect(html).not.toContain('slot');
 	});
 });
