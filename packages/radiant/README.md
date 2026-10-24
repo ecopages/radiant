@@ -278,7 +278,7 @@ Radiant logs development warnings when a delegated `@onEvent(...)` listener uses
 
 The JSX hydration and DOM anchor warnings come from `@ecopages/jsx` and follow its own switch; see "Dev Warnings" in [the JSX README](../jsx/README.md#dev-warnings).
 
-Contributors: wrap a development warning in `try { if (process.env.NODE_ENV !== 'production') { ... } } catch {}`. The `try` keeps a page without `process` from throwing, and keeping the check inside it lets every bundler drop the block in production; see `warnNonBubblingDelegatedEvent` in `src/helpers/create-event-listener.ts` and `setChildrenValue` in `src/core/render-runtime.ts`. `test/build/dist-dev-warnings.test.ts` fails when a built `dist` file reads `process.env.NODE_ENV` outside that shape, and bundles an app against the `dist` for development, for production, and with the check left unreplaced.
+Contributors: wrap a development warning in `try { if (process.env.NODE_ENV !== 'production') { ... } } catch {}`. The `try` keeps a page without `process` from throwing, and keeping the check inside it lets every bundler drop the block in production; see `warnNonBubblingDelegatedEvent` in `src/helpers/create-event-listener.ts` and `setChildrenValue` in `src/core/render-runtime.ts`. `test/build/dist-dev-warnings.test.ts` fails when a built `dist` file reads `process.env.NODE_ENV` outside that shape, and bundles an app against the `dist` for development, for production, and with the check left unreplaced. `test/build/dist-dev-warnings.browser.test.ts` runs a development and a production bundle of an app in Chromium and checks which warnings reach `console.warn`. Both fail when `dist` is missing or older than `src`.
 
 ## Public Entry Points
 

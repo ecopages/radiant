@@ -1,10 +1,10 @@
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { runInNewContext } from 'node:vm';
 import * as esbuild from 'esbuild';
 import { beforeAll, describe, expect, test } from 'vitest';
+import { assertFreshDist, distRoot } from './dist-app';
 
-const distRoot = path.resolve(import.meta.dirname, '../../dist');
 const DELEGATED_FOCUS_WARNING = 'Delegated @onEvent listens on the host in the bubble phase, so "focus"';
 const PEER_PACKAGES = ['@ecopages/jsx', '@ecopages/jsx/*', '@ecopages/signals', '@ecopages/signals/*'];
 const DEVELOPMENT_WARNING_TEXTS = [
@@ -64,11 +64,7 @@ function runInBrowserContext(code: string): string[] {
 }
 
 describe('published dist development warnings', () => {
-	beforeAll(() => {
-		if (!existsSync(path.join(distRoot, 'package.json'))) {
-			throw new Error('packages/radiant/dist is missing: build it first (pnpm build:all)');
-		}
-	});
+	beforeAll(assertFreshDist);
 
 	test('A development build of an app shows Radiant development warnings', async () => {
 		const bundle = await bundleApp(consumerApp, { define: { 'process.env.NODE_ENV': '"development"' } });
