@@ -4,7 +4,7 @@
  *
  * @remarks Matches the template-root custom-element detection used when collecting
  * JSX hydration bindings with `skipNestedCustomElementRoots`. The custom element
- * reconnects its own host; walking it from the parent would consume markers that
+ * hydrates its own content; walking it from the parent would consume markers that
  * were never emitted in that namespace.
  *
  * @param localName Lowercase tag name of the candidate subtree root.

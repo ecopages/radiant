@@ -119,7 +119,7 @@ function reconnectSsrRoot(
 	const nextValue = unwrapKeyedValue(element);
 
 	if (isTemplateResultLike(nextValue)) {
-		if (!hasHydrationMarkers(target)) {
+		if (!containsHydrationMarkers(target)) {
 			return undefined;
 		}
 
@@ -128,7 +128,7 @@ function reconnectSsrRoot(
 	}
 
 	if (isIterableRenderable(nextValue)) {
-		if (!hasHydrationMarkers(target)) {
+		if (!containsHydrationMarkers(target)) {
 			return undefined;
 		}
 
@@ -136,6 +136,15 @@ function reconnectSsrRoot(
 	}
 
 	return undefined;
+}
+
+/**
+ * @remarks Unlike {@link hasHydrationMarkers}, counts the markers inside nested custom elements: a view whose
+ * only bindings are on the custom elements it renders leaves none of its own, and those elements are still
+ * adopted.
+ */
+function containsHydrationMarkers(target: HTMLElement): boolean {
+	return visitHydrationBindingMarkers(target, () => undefined, true);
 }
 
 function getOrCreateMountedRoot(target: HTMLElement): MountedRoot {

@@ -188,6 +188,21 @@ describe('custom elements that take their JSX children as a value', () => {
 		expect(element.received).toEqual([label]);
 	});
 
+	test('keep their server node on hydrate, even in a view whose only markers are inside them', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.body.appendChild(document.createElement('div'));
+		container.innerHTML =
+			'<section><jsx-children-value-element><p data-radiant-jsx-bind-0="attr:class" class="own"></p></jsx-children-value-element></section>';
+		const serverElement = container.querySelector('jsx-children-value-element') as ChildrenValueElement;
+		const children = jsx('b', { children: 'one' });
+
+		createRoot(container).hydrate(jsx('section', { children: jsx('jsx-children-value-element', { children }) }));
+
+		expect(container.querySelector('jsx-children-value-element')).toBe(serverElement);
+		expect(serverElement.innerHTML).toBe('<p data-radiant-jsx-bind-0="attr:class" class="own"></p>');
+		expect(serverElement.received.at(-1)).toBe(children);
+	});
+
 	test('keep DOM children when the tag is defined after the view created the element', async () => {
 		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.body.appendChild(document.createElement('div'));

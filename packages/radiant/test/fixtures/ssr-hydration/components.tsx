@@ -243,3 +243,95 @@ export class HydratedRegionParent extends RadiantElement<{ label: string }> {
 		);
 	}
 }
+
+@customElement('hydrated-nested-counter-test')
+export class HydratedNestedCounter extends RadiantElement<{ count: number }> {
+	@state count = 0;
+
+	private readonly increment = () => {
+		this.count += 1;
+	};
+
+	override render() {
+		return (
+			<div class="counter">
+				<button type="button" on:click={this.increment}>
+					{this.$.count}
+				</button>
+				<slot />
+			</div>
+		);
+	}
+}
+
+@customElement('hydrated-nested-host-parent-test')
+export class HydratedNestedHostParent extends RadiantElement<{ label: string }> {
+	@state label = 'one';
+
+	override render() {
+		return (
+			<section>
+				<hydrated-nested-counter-test data-label={this.label}>
+					<input class="field" name="field" />
+					<span class="label">{this.$.label}</span>
+				</hydrated-nested-counter-test>
+			</section>
+		);
+	}
+}
+
+@customElement('hydrated-keyed-hosts-parent-test')
+export class HydratedKeyedHostsParent extends RadiantElement {
+	@state items = ['a', 'b'];
+
+	override render() {
+		return (
+			<div>
+				{this.items.map((item) => (
+					<hydrated-marker-slot-child-test key={item}>
+						<b>{item}</b>
+					</hydrated-marker-slot-child-test>
+				))}
+			</div>
+		);
+	}
+}
+
+/** A custom element that is not a Radiant host: it keeps its JSX children as DOM. */
+class ThirdPartyBox extends HTMLElement {}
+customElements.define('hydrated-third-party-box-test', ThirdPartyBox);
+
+@customElement('hydrated-third-party-parent-test')
+export class HydratedThirdPartyParent extends RadiantElement<{ inside: string; trailing: string }> {
+	@state inside = 'inside-0';
+	@state trailing = 'after-0';
+
+	override render() {
+		return (
+			<div>
+				<hydrated-third-party-box-test>
+					<b title={this.$.inside}>B</b>
+				</hydrated-third-party-box-test>
+				<i title={this.$.trailing}>I</i>
+			</div>
+		);
+	}
+}
+
+/** Renders `hydrated-late-child-test`, which the browser test defines only after this host hydrated. */
+@customElement('hydrated-late-child-parent-test')
+export class HydratedLateChildParent extends RadiantElement<{ inside: string; trailing: string }> {
+	@state inside = 'inside-0';
+	@state trailing = 'after-0';
+
+	override render() {
+		return (
+			<div>
+				<hydrated-late-child-test>
+					<b title={this.$.inside}>B</b>
+				</hydrated-late-child-test>
+				<i title={this.$.trailing}>I</i>
+			</div>
+		);
+	}
+}

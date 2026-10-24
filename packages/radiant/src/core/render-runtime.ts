@@ -128,6 +128,10 @@ export class RenderRuntime {
 		this.commit(renderJsx, renderTarget);
 	}
 
+	holdsChildrenValue(value: JsxRenderable): boolean {
+		return this.#hasChildrenValue && this.#childrenValue === value;
+	}
+
 	/**
 	 * Makes `value` the host's children, as a JSX view passed them. From then on the host no longer captures
 	 * or projects its DOM children.

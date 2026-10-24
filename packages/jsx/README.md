@@ -446,6 +446,8 @@ List children inside a hydrated range reconnect through the same path as a root 
 
 When a parent rerenders, a nested custom element that is already in the correct position stays connected, so its lifecycle callbacks do not run again. The same guarantee applies to the parent rerender that follows hydration.
 
+A custom element whose class takes its children as a value ([Children as a value](#children-as-a-value)) keeps its server node too: the parent binds only the element's own attribute, property, event and children parts, and the element hydrates its own content, the parent's JSX in its children included, in its own marker namespace. `hydrate(...)` counts the markers inside nested custom elements when it checks the target for SSR output, so a view whose only bindings are on such elements still hydrates. Any other custom element, one whose tag is defined only after the view created it, and server markup that is not that element are rendered again. An empty text node in a child list serializes to nothing, so hydration inserts it.
+
 ### Benchmarks
 
 | Command                    | Measures                                                                |

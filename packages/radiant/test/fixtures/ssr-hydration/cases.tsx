@@ -10,13 +10,23 @@ import {
 	HydratedCounter,
 	HydratedCounterBinding,
 	HydratedFragmentSlotParent,
+	HydratedKeyedHostsParent,
+	HydratedLateChildParent,
 	HydratedMarkerSlotParent,
+	HydratedNestedHostParent,
 	HydratedRegionParent,
 	HydratedRootSlotParent,
 	HydratedStaticView,
+	HydratedThirdPartyParent,
 	HydratedSlotCard,
 	NonHydratedCounter,
 } from './components';
+import { HydratedOrderParent } from './define-order';
+import { LIFECYCLE_PREFIX, defineLifecycleChild, defineLifecycleParent } from './lifecycle-pair';
+import './late-child';
+
+defineLifecycleChild(LIFECYCLE_PREFIX, []);
+const HydratedLifecycleParent = defineLifecycleParent(LIFECYCLE_PREFIX, []);
 
 function withHost(tagName: string, viewMarkup: string): string {
 	return `<${tagName}>${viewMarkup}</${tagName}>`;
@@ -33,6 +43,7 @@ export const SSR_HYDRATION_CASES: Record<string, () => string> = {
 	},
 	'marker-slot-parent': () => renderRadiantElementHostToString(new HydratedMarkerSlotParent(), { mode: 'hydrate' }),
 	'root-slot-parent': () => renderRadiantElementHostToString(new HydratedRootSlotParent(), { mode: 'hydrate' }),
+	'root-slot-parent-plain': () => renderRadiantElementHostToString(new HydratedRootSlotParent(), { mode: 'plain' }),
 	'static-view': () => renderRadiantElementHostToString(new HydratedStaticView(), { mode: 'hydrate' }),
 	'fragment-slot-parent': () =>
 		renderRadiantElementHostToString(new HydratedFragmentSlotParent(), { mode: 'hydrate' }),
@@ -63,4 +74,10 @@ export const SSR_HYDRATION_CASES: Record<string, () => string> = {
 			renderRadiantElementViewToString(new DeferredHydratedCard(), { mode: 'hydrate' }),
 		),
 	'region-parent': () => renderRadiantElementHostToString(new HydratedRegionParent(), { mode: 'hydrate' }),
+	'nested-host-parent': () => renderRadiantElementHostToString(new HydratedNestedHostParent(), { mode: 'hydrate' }),
+	'keyed-hosts-parent': () => renderRadiantElementHostToString(new HydratedKeyedHostsParent(), { mode: 'hydrate' }),
+	'third-party-parent': () => renderRadiantElementHostToString(new HydratedThirdPartyParent(), { mode: 'hydrate' }),
+	'late-child-parent': () => renderRadiantElementHostToString(new HydratedLateChildParent(), { mode: 'hydrate' }),
+	'define-order-parent': () => renderRadiantElementHostToString(new HydratedOrderParent(), { mode: 'hydrate' }),
+	'lifecycle-parent': () => renderRadiantElementHostToString(new HydratedLifecycleParent(), { mode: 'hydrate' }),
 };

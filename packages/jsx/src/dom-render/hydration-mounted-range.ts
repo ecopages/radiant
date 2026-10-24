@@ -1,9 +1,11 @@
 import { countHydrationMarkers } from '../hydration/hydration-bindings.ts';
 import { shouldSkipHydrationSubtree } from '../hydration/hydration-subtree-policy.ts';
 import { hydrateTemplateInstance } from './hydration.ts';
+import { takesChildrenValue } from '../factory/jsx-factory.ts';
+import { getCompiledTemplate } from './template-compiler.ts';
 import type { JsxKey, JsxRenderable, TemplateResultLike } from '../types/index.ts';
 import { mountReactiveChildSource, updateRangeContent } from './child-range-update.ts';
-import { countHydratedRangeNodes } from './hydration-planning.ts';
+import { countHydratedRangeNodes, isEmptyTextNode } from './hydration-planning.ts';
 import { disposeMountedRangeContent } from './mounted-disposal.ts';
 import { createHydratedRangeRecord, mountedContentFromNodes } from './range-records.ts';
 import {
@@ -73,10 +75,10 @@ function hydrateMountedRangeContentSnapshot(
 ): MountedRangeContent {
 	const bootstrapMounted = mountedContentFromNodes(existingNodes);
 
-	// A custom-element child owns its own hydration: SSR produced its markup through
-	// the render hook, and the element reconnects its host itself. Reconnecting it
-	// from here would consume markers that were never emitted in this namespace.
-	if (isTemplateResultLike(nextValue) && !shouldSkipHydrationSubtree(nextValue.rootLocalName ?? '')) {
+	if (
+		isTemplateResultLike(nextValue) &&
+		(!shouldSkipHydrationSubtree(nextValue.rootLocalName ?? '') || canAdoptCustomElement(nextValue, existingNodes))
+	) {
 		const hydratedTemplateInstance = hydrateTemplateRange(nextValue, existingNodes, rootTarget, bindingBaseIndex);
 
 		if (hydratedTemplateInstance) {
@@ -121,7 +123,7 @@ function needsReconciliationAgainstSsrNodes(nextValue: unknown, bootstrapMounted
 		return true;
 	}
 
-	if (nextValue === undefined || nextValue === null || nextValue === false) {
+	if (nextValue === undefined || nextValue === null || nextValue === false || isEmptyTextNode(nextValue)) {
 		return true;
 	}
 
@@ -167,6 +169,31 @@ function hydrateTemplateRange(
 			hostRoots: existingNodes,
 			rootTarget,
 		}),
+	);
+}
+
+/**
+ * Whether the parent can keep the server node of a custom-element child and bind only the element's own
+ * attribute, property, event and children parts to it.
+ *
+ * @remarks A custom element's content belongs to the element: SSR serialized it through the render hook, in the
+ * element's own marker namespace, and the element hydrates it itself. The parent can adopt the node only when
+ * its template puts nothing inside the element, which holds when the class takes its children as a value
+ * ({@link takesChildrenValue}): the children then reach the element through its children part, and the parent's
+ * JSX in them hydrates inside the element's namespace. The host tag carries no marker of the parent's
+ * namespace, so binding its parts removes none. Any other custom element (one that takes DOM children, a
+ * third-party element, a tag defined only after the view created it) and server markup that is not this
+ * element are rebuilt.
+ */
+function canAdoptCustomElement(template: TemplateResultLike, existingNodes: readonly Node[]): boolean {
+	const [host] = existingNodes;
+	const localName = template.rootLocalName ?? '';
+
+	return (
+		host instanceof Element &&
+		host.localName === localName &&
+		takesChildrenValue(localName) &&
+		!getCompiledTemplate(template).blueprint.content.firstChild?.hasChildNodes()
 	);
 }
 

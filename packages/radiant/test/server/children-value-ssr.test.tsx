@@ -119,6 +119,17 @@ describe('a render-owning host in a view, on the server', () => {
 		expect(html).not.toContain('fallback');
 	});
 
+	test('takes the value and the stamp in hydrate mode only, and Authored Children with a payload in plain mode', () => {
+		const parent = new SsrValueParent();
+		parent.variant = 'children';
+		const plain = renderRadiantElementHostToString(parent, { mode: 'plain' });
+
+		expect(renderParent('children')).toContain('<ssr-value-frame-test data-radiant-ssr="children">');
+		expect(plain).toContain('<ssr-value-frame-test><div class="frame">');
+		expect(plain).toContain('data-radiant-slot-projection');
+		expect(plain).not.toContain('data-radiant-ssr');
+	});
+
 	test('renders the slot fallback for empty children', () => {
 		const html = renderParent('empty');
 
@@ -142,7 +153,9 @@ describe('a render-owning host among the JSX children of a host without render()
 	test('takes its JSX children as a value, as the view creates it on the client', () => {
 		const html = renderParent('shell');
 
-		expect(html).toContain('<ssr-value-shell-test data-radiant-ssr><ssr-value-frame-test data-radiant-ssr>');
+		expect(html).toContain(
+			'<ssr-value-shell-test data-radiant-ssr><ssr-value-frame-test data-radiant-ssr="children">',
+		);
 		expect(html).toContain('<main><p>Body</p></main></div></ssr-value-frame-test>');
 	});
 });
