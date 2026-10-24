@@ -19,6 +19,11 @@ import {
 	HYDRATE_STYLE_HTML,
 	HYDRATE_SCRIPT_HTML,
 	HYDRATE_KEYED_INPUTS_HTML,
+	HYDRATE_FRAGMENT_HOLE_HTML,
+	HYDRATE_EMPTY_LIST_HTML,
+	HYDRATE_ROOT_HOLES_HTML,
+	HYDRATE_ROOT_LIST_HTML,
+	HYDRATE_ROOT_EMPTY_ROWS_HTML,
 	PLAIN_BUTTON_ALPHA_HTML,
 	TRUE_CHILDREN_HTML,
 } from './fixtures/hydrate-html.ts';
@@ -250,5 +255,50 @@ describe('hydrate HTML fixtures', () => {
 		const tree = ['a', 'b'].map((id) => jsx('input', { key: id, id, type: 'text' }));
 
 		expect(renderToString(tree, { mode: 'hydrate' })).toBe(HYDRATE_KEYED_INPUTS_HTML);
+	});
+
+	test('HYDRATE_FRAGMENT_HOLE_HTML matches renderToString', () => {
+		const tree = jsx('main', {
+			children: jsxs(Fragment, { children: [jsx('button', { class: 'save', children: 'Save' }), null] }),
+		});
+
+		expect(renderToString(tree, { mode: 'hydrate' })).toBe(HYDRATE_FRAGMENT_HOLE_HTML);
+	});
+
+	test('HYDRATE_EMPTY_LIST_HTML matches renderToString', () => {
+		expect(renderToString(jsx('section', { class: 'list', children: [] }), { mode: 'hydrate' })).toBe(
+			HYDRATE_EMPTY_LIST_HTML,
+		);
+	});
+
+	test('HYDRATE_ROOT_HOLES_HTML matches renderToString', () => {
+		const tail = jsx('b', { class: 'tail', children: 'tail' });
+
+		expect(renderToString(jsxs(Fragment, { children: [null, null, tail] }), { mode: 'hydrate' })).toBe(
+			HYDRATE_ROOT_HOLES_HTML,
+		);
+		expect(renderToString(jsxs(Fragment, { children: [[], tail] }), { mode: 'hydrate' })).toBe(
+			HYDRATE_ROOT_HOLES_HTML,
+		);
+	});
+
+	test('HYDRATE_ROOT_LIST_HTML matches renderToString', () => {
+		const tree = jsxs(Fragment, {
+			children: [
+				['a'].map((value) => jsx('li', { class: value, children: value })),
+				jsx('b', { class: 'tail', children: 'tail' }),
+			],
+		});
+
+		expect(renderToString(tree, { mode: 'hydrate' })).toBe(HYDRATE_ROOT_LIST_HTML);
+	});
+
+	test('HYDRATE_ROOT_EMPTY_ROWS_HTML matches renderToString', () => {
+		const Row = () => null;
+		const tree = jsxs(Fragment, {
+			children: [jsx('h1', { class: 'title', children: 'Rows' }), ['a'].map((key) => jsx(Row, {}, key))],
+		});
+
+		expect(renderToString(tree, { mode: 'hydrate' })).toBe(HYDRATE_ROOT_EMPTY_ROWS_HTML);
 	});
 });

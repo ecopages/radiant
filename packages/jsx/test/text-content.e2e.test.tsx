@@ -66,6 +66,27 @@ describe('Radiant JSX text-content elements', () => {
 		}
 	});
 
+	test.each(TEXT_CONTENT_TAGS)('keeps %s when its children switch between empty and text', async (tagName) => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const renderView = (label: string | null) =>
+			jsx(tagName, tagName === 'script' ? { type: 'application/json', children: label } : { children: label });
+
+		root.render(renderView(null));
+		const element = container.querySelector(tagName);
+		root.render(renderView('hello'));
+
+		expect(container.querySelector(tagName)).toBe(element);
+		expect(element?.textContent).toBe('hello');
+
+		root.render(renderView(null));
+
+		expect(container.querySelector(tagName)).toBe(element);
+		expect(element?.textContent).toBe('');
+		expectNoInternalMarkers(element!);
+	});
+
 	test('hydrates textarea children without rewriting them as markers', async () => {
 		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');
