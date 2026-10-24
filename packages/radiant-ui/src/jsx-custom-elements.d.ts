@@ -6,6 +6,8 @@ import type { RuiCheckbox, RuiCheckboxProps } from './components/ui/checkbox/che
 import type { RuiCheckboxGroup, RuiCheckboxGroupProps } from './components/ui/checkbox-group/checkbox-group.script';
 import type { RuiCombobox, RuiComboboxProps } from './components/ui/combobox/combobox.script';
 import type { RuiCycleToggle, RuiCycleToggleProps } from './components/ui/cycle-toggle/cycle-toggle.script';
+import type { RuiCalendar, RuiCalendarProps } from './components/ui/calendar/calendar.script';
+import type { RuiDateInput, RuiDateInputProps } from './components/ui/date-input/date-input.script';
 import type { RuiDialog, RuiDialogProps } from './components/ui/dialog/dialog.script';
 import type { RuiDisclosureGroup, RuiDisclosureGroupProps } from './components/ui/disclosure/disclosure-group.script';
 import type { RuiDisclosure, RuiDisclosureProps } from './components/ui/disclosure/disclosure.script';
@@ -40,6 +42,7 @@ import type { RuiTooltip, RuiTooltipProps } from './components/ui/tooltip/toolti
 import type { RuiTree, RuiTreeProps } from './components/ui/tree/tree.script';
 import type { RuiTreegrid, RuiTreegridProps } from './components/ui/treegrid/treegrid.script';
 import type { RuiWindowSplitter, RuiWindowSplitterProps } from './components/ui/window-splitter/window-splitter.script';
+import type { WithoutChildren } from './lib/without-children';
 
 declare module '@ecopages/jsx/jsx-runtime' {
 	interface JsxCustomIntrinsicElements {
@@ -60,7 +63,7 @@ declare module '@ecopages/jsx/jsx-runtime' {
 		'rui-listbox': JsxCustomElementAttributes<RuiListbox, RuiListboxProps>;
 		'rui-menu-button': JsxCustomElementAttributes<RuiMenuButton, RuiMenuButtonProps>;
 		'rui-menubar': JsxCustomElementAttributes<RuiMenubar, RuiMenubarProps>;
-		'rui-meter': JsxCustomElementAttributes<RuiMeter, RuiMeterProps>;
+		'rui-meter': WithoutChildren<JsxCustomElementAttributes<RuiMeter, RuiMeterProps>>;
 		'rui-knob': JsxCustomElementAttributes<RuiKnob, RuiKnobProps>;
 		'rui-navigation-menu': JsxCustomElementAttributes<RuiNavigationMenu, RuiNavigationMenuProps>;
 		'rui-radio-group': JsxCustomElementAttributes<RuiRadioGroup, RuiRadioGroupProps>;
@@ -76,9 +79,11 @@ declare module '@ecopages/jsx/jsx-runtime' {
 		'rui-table': JsxCustomElementAttributes<RuiTable, RuiTableProps>;
 		'rui-tag-group': JsxCustomElementAttributes<RuiTagGroup, RuiTagGroupProps>;
 		'rui-tabs': JsxCustomElementAttributes<RuiTabs, RuiTabsProps>;
-		'rui-toc': JsxCustomElementAttributes<RuiToc, RuiTocProps>;
-		'rui-toast': JsxCustomElementAttributes<RuiToast, RuiToastProps>;
-		'rui-toaster': JsxCustomElementAttributes<RuiToaster, RuiToasterProps>;
+		'rui-toc': WithoutChildren<JsxCustomElementAttributes<RuiToc, RuiTocProps>>;
+		'rui-toast': WithoutChildren<JsxCustomElementAttributes<RuiToast, RuiToastProps>>;
+		'rui-toaster': WithoutChildren<JsxCustomElementAttributes<RuiToaster, RuiToasterProps>>;
+		'rui-calendar': WithoutChildren<JsxCustomElementAttributes<RuiCalendar, RuiCalendarProps>>;
+		'rui-date-input': WithoutChildren<JsxCustomElementAttributes<RuiDateInput, RuiDateInputProps>>;
 		'rui-toolbar': JsxCustomElementAttributes<RuiToolbar, RuiToolbarProps>;
 		'rui-tooltip': JsxCustomElementAttributes<RuiTooltip, RuiTooltipProps>;
 		'rui-tree': JsxCustomElementAttributes<RuiTree, RuiTreeProps>;

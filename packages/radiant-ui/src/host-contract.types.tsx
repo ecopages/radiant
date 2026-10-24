@@ -127,6 +127,19 @@ const _tocRejectsChildren = <RuiToc>{hint}</RuiToc>;
 // @ts-expect-error the meter renders its own label, bar and readout
 const _meterRejectsChildren = <RuiMeter>{hint}</RuiMeter>;
 
+// @ts-expect-error the intrinsic date input renders its own segments
+const _dateInputIntrinsicRejectsChildren = <rui-date-input>{hint}</rui-date-input>;
+// @ts-expect-error the intrinsic calendar renders its own month grid
+const _calendarIntrinsicRejectsChildren = <rui-calendar>{hint}</rui-calendar>;
+// @ts-expect-error the intrinsic toaster renders its own toast stack
+const _toasterIntrinsicRejectsChildren = <rui-toaster>{hint}</rui-toaster>;
+// @ts-expect-error the intrinsic toast renders its own surface
+const _toastIntrinsicRejectsChildren = <rui-toast>{hint}</rui-toast>;
+// @ts-expect-error the intrinsic table of contents renders its own link list
+const _tocIntrinsicRejectsChildren = <rui-toc>{hint}</rui-toc>;
+// @ts-expect-error the intrinsic meter renders its own label, bar and readout
+const _meterIntrinsicRejectsChildren = <rui-meter>{hint}</rui-meter>;
+
 void [
 	_selectHostBindingsAccepted,
 	_selectPropValueRejectsNumber,
@@ -156,4 +169,10 @@ void [
 	_toastRejectsChildren,
 	_tocRejectsChildren,
 	_meterRejectsChildren,
+	_dateInputIntrinsicRejectsChildren,
+	_calendarIntrinsicRejectsChildren,
+	_toasterIntrinsicRejectsChildren,
+	_toastIntrinsicRejectsChildren,
+	_tocIntrinsicRejectsChildren,
+	_meterIntrinsicRejectsChildren,
 ];

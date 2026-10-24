@@ -135,15 +135,16 @@ export function insertNodesBefore(referenceNode: Node, nodes: readonly Node[]): 
  * Moves the entire node range `[start, end]` (inclusive) to immediately before
  * `referenceNode` in a single fragment operation.
  *
- * No-ops when `referenceNode` is already `start` or falls within the range, preventing
- * accidental self-moves in the keyed reconciler.
+ * No-ops when `referenceNode` is already `start`, falls within the range, or already
+ * immediately follows the range. The last case preserves custom-element lifecycle state
+ * when reconciliation has already placed the range correctly.
  *
  * @param start Start boundary text node of the range to move.
  * @param end End boundary text node of the range to move.
  * @param referenceNode Target reference node.
  */
 export function moveRangeBefore(start: Text, end: Text, referenceNode: Node): void {
-	if (referenceNode === start || isNodeWithinRange(referenceNode, start, end)) {
+	if (referenceNode === start || end.nextSibling === referenceNode || isNodeWithinRange(referenceNode, start, end)) {
 		return;
 	}
 
