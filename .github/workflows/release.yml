@@ -5,8 +5,8 @@ on:
         branches:
             - main
             # Prerelease line only. Uncomment and set the branch when you `changeset pre enter`
-            # (alpha / beta / rc). Stable publishes stay on main; merge develop into main to ship.
-            # - release/v0.4.0
+            # (alpha / beta / rc). Stable publishes stay on main; a PR from next into main ships.
+            # - release/v1.0.0
     workflow_dispatch:
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
