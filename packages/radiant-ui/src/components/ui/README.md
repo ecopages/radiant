@@ -45,7 +45,7 @@ Default `@prop({ type: Array })` serializes attributes as JSON. These hosts pass
 
 ## Light-DOM ownership
 
-Parent JSX owns **Authored Children**. Do not let a custom element `render()` project that content through `<slot>` — it fights `moveRangeBefore` and causes range drift when the parent re-renders.
+Parent JSX owns **Authored Children**. Do not let a custom element `render()` project that content through `<slot>`: catalog composites keep chrome and children in the view, as a View-owned Shell.
 
 - **View-owned Shell:** JSX helpers (or named view props) place chrome and children. The CE has no `render()` slot tree. Query with `data-ref` / `data-*` / roles. **Never query BEM class names.** Toggle volatile attrs with `toggleAttribute`.
 - **Composition Helper:** named regions in the right DOM position (`RuiDialogTitle`, `RuiNumberFieldInput`, `primary` / `secondary` props) — not `slot="…"` + CE `<slot name="…">`.
@@ -86,7 +86,7 @@ Slider and knob normalize off-step values. Only floating-point noise is ignored 
 
 `this.$` / `this.bindings` only patch JSX ranges the host's own `render()` or `hydrate()` pass created. They do not reach parent-authored light DOM inside the custom element. Pick one shape per component:
 
-- **View-owned Shell** (most composites): no `render()` override, no `RadiantElement<Bindings>` generic. The view places chrome; the CE queries `data-ref` / `data-*` / roles. Copy 1:1 field values with `@bindTo`. Keep `@onUpdated` for procedures (focus, joined ARIA, branching). Do not query class names. Do not move this chrome into CE `render()` to "use bindings" — that either reintroduces `<slot>` projection (range drift) or drops composable children.
+- **View-owned Shell** (most composites): no `render()` override, no `RadiantElement<Bindings>` generic. The view places chrome; the CE queries `data-ref` / `data-*` / roles. Copy 1:1 field values with `@bindTo`. Keep `@onUpdated` for procedures (focus, joined ARIA, branching). Do not query class names. Do not move this chrome into CE `render()` to "use bindings": the catalog keeps composites as View-owned Shells.
 - **Derived Tree** (meter, toaster, calendar, TOC): override `render()` for derived structure. Use plain reads (`this.variant`, `this.entries`) for branches, lists, and `class`; use `this.$` for stable leaf text and whole attribute values that should patch without a full host rerender. Do not add `@onUpdated` + `requestUpdate()` for fields already bound with `this.$` — tracked `render()` handles structural reads; bindings handle leaves.
 - Never CE `render()` + `<slot>` for parent-owned chrome.
 

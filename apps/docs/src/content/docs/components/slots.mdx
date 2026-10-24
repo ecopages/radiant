@@ -1,17 +1,63 @@
 ---
 title: "Slots"
-description: "HTML-first light-DOM projection for render-owning RadiantElement hosts. JSX libraries compose with helpers instead."
+description: "Where a render-owning RadiantElement places its children: JSX children from a view as a value, HTML-authored children by slot name."
 group: Components
 order: 4
 ---
 
 # Slots
 
-Literal `<slot>` tags in `render()` project **direct host children** into a render-owning `RadiantElement`. That path is for **HTML-first** hosts: the consumer writes unordered children in markup, and nothing else will keep reconciling those nodes.
+`<slot>` in `render()` places a render-owning `RadiantElement`'s children. How they arrive decides how `<slot>` resolves:
 
-A live node can only have one parent. If a parent JSX tree still owns those children as ranges, host `render()` plus `<slot>` moves them and the next parent pass breaks. JSX libraries (including Radiant UI) therefore do **not** use CE `<slot>` as the public API.
+- **From a JSX view.** When a view renders `<x-card>{children}</x-card>` and `x-card` is defined and overrides `render()`, the view hands the children to the host as one value. `<slot />` renders that value, and the host's renderer is the only one that touches the resulting nodes. Named regions are properties.
+- **As HTML.** Children written in markup, created with DOM APIs, rendered before the tag was defined, or rendered on the server in a page outside every host's view are captured once, when the host first renders, and assigned to slots by their `slot` attribute.
 
-## HTML-first projection
+## Children from a JSX view
+
+```tsx
+/** @jsxImportSource @ecopages/jsx */
+
+import type { JsxRenderable } from '@ecopages/jsx';
+import { RadiantElement, customElement, state } from '@ecopages/radiant';
+
+@customElement('x-card')
+export class XCard extends RadiantElement {
+	@state header: JsxRenderable = null;
+	@state open = true;
+
+	override render() {
+		return (
+			<section class="x-card">
+				<header>{this.header}</header>
+				{this.open ? (
+					<slot>
+						<p>Nothing here yet</p>
+					</slot>
+				) : null}
+			</section>
+		);
+	}
+}
+```
+
+```tsx
+<x-card header={<h2>{title}</h2>}>
+	{items.map((item) => (
+		<p key={item.id}>{item.label}</p>
+	))}
+</x-card>
+```
+
+- `children` fills the default `<slot />`. Its fallback renders while the children are empty.
+- A named region is a property, rendered with `{this.header}`. An unprefixed name binds as a property on a custom element; write `prop:name` only for a name that binds as an attribute by default, such as `title` or `id`.
+- Every render of the view passes the children again and the host renders them in place, so adding, removing or reordering children, and binding updates inside them, show up even when the host hid its `<slot />` meanwhile.
+- `slot="name"` on a JSX child does not select a named slot: the child stays in the default slot, and development builds warn to pass it as a property. A `<slot name="…">` in such a host renders its fallback.
+- The host does not show nodes appended to it with DOM APIs; development builds warn to change the children in the view instead.
+- On the server, a host inside another host's view renders the children itself, inside its own context providers, so a consumer passed as a child of a provider host resolves that provider. The client gets them back from that view, so define the parent host on the client as well.
+
+A custom element that is not a Radiant host, or a Radiant host without a `render()` override, keeps its JSX children as DOM nodes inside it.
+
+## Children authored as HTML
 
 ```tsx
 /** @jsxImportSource @ecopages/jsx */
@@ -44,30 +90,25 @@ export class ShellCard extends RadiantElement {
 </shell-card>
 ```
 
-Use this when consumers author HTML and will not re-render those children from a parent JSX list or conditional.
-
-## JSX libraries: compose the parts
-
-When a view helper owns the shell, put chrome and children in the **parent tree**. Named helpers (or named props) occupy a region; `{children ?? default}` fills a default icon or control. The custom element queries `data-ref` / `data-*` and paints with [@bindTo](/docs/decorators/bind-to). It does not `render()` a `<slot>` around those children.
-
-```tsx
-<RuiDialog title={<>Edit plant</>}>Body</RuiDialog>
-
-<RuiSelectToggle>
-	<StarIcon />
-</RuiSelectToggle>
-```
-
-See the authored light-DOM host in [RadiantElement](/docs/components/radiant-element) and the Radiant UI composition guide.
-
-## Semantics (HTML-first)
-
 - Slots are resolved from direct host children.
 - The default slot receives direct host children without a `slot` attribute.
 - Named slots receive direct host children whose `slot` attribute matches the slot `name`.
 - Fallback JSX inside `<slot>` renders only when no matching projected content exists.
+- Nodes appended to the host after its first render are projected too.
 - SSR host rendering serializes the projected content and embeds the metadata needed to reconstruct slot assignments on the client.
+
+A tag defined only after a view rendered it takes those JSX children as HTML, and development builds warn: the host then does not follow later edits the view makes to them. Define custom elements before rendering views that use them.
+
+## View helpers
+
+A view helper that owns the shell can also put chrome and children in the **parent tree**: named helpers or props occupy a region, and the custom element queries `data-ref` / `data-*` and paints with [@bindTo](/docs/decorators/bind-to) instead of rendering a `<slot>`. Radiant UI composes its parts this way.
+
+```tsx
+<RuiDialog title={<>Edit plant</>}>Body</RuiDialog>
+```
+
+See the authored light-DOM host in [RadiantElement](/docs/components/radiant-element) and the Radiant UI composition guide.
 
 ## Querying Assigned Content
 
-Use [@querySlot](/docs/decorators/query-slot) when component logic needs the assigned elements for a default or named slot on an HTML-first host.
+Use [@querySlot](/docs/decorators/query-slot) when component logic needs the assigned elements for a default or named slot. On a host fed by a JSX view, the default slot's elements are the top-level elements its children rendered to, and named slots are empty.
