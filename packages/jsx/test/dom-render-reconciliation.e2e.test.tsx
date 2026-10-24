@@ -72,6 +72,31 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(rerenderedButton).toBe(initialButton);
 	});
 
+	test('replaces an element when undefined attributes are dropped from its template shape', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+
+		const renderSignInButton = (username: string, busy: boolean) =>
+			jsx('button', {
+				type: 'button',
+				disabled: busy || username === '',
+				'on:click': busy ? undefined : () => undefined,
+				title: username === '' ? 'Enter your username first' : undefined,
+				children: busy ? 'Signing in...' : 'Sign in',
+			});
+
+		root.render(renderSignInButton('', false));
+		const initialButton = container.querySelector('button');
+
+		root.render(renderSignInButton('ada', true));
+
+		const rerenderedButton = container.querySelector('button');
+		expect(rerenderedButton).not.toBe(initialButton);
+		expect(rerenderedButton?.title).toBe('');
+		expect(rerenderedButton?.textContent).toBe('Signing in...');
+	});
+
 	test('reorders keyed iterable children from the automatic-runtime key argument', async () => {
 		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');
