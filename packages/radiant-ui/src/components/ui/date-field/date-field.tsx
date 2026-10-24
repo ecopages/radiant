@@ -22,7 +22,9 @@ export function RuiDateFieldControl({ children, class: className, ...props }: Ru
 	);
 }
 
-export type RuiDateFieldInputProps = JsxCustomElementAttributes<RuiDateInputElement, RuiDateInputProps>;
+export type RuiDateFieldInputProps = JsxCustomElementAttributes<RuiDateInputElement, RuiDateInputProps> & {
+	children?: never;
+};
 
 /** Nested `rui-date-input`. Stamps `[data-date-field-input]`. */
 export function RuiDateFieldInput({ class: className, ...props }: RuiDateFieldInputProps) {
@@ -66,7 +68,9 @@ export function RuiDateFieldPopover({ children, class: className, ...props }: Ru
 	);
 }
 
-export type RuiDateFieldCalendarProps = JsxCustomElementAttributes<RuiCalendarElement, RuiCalendarProps>;
+export type RuiDateFieldCalendarProps = JsxCustomElementAttributes<RuiCalendarElement, RuiCalendarProps> & {
+	children?: never;
+};
 
 /** Nested `rui-calendar`. Stamps `[data-date-field-calendar]`. */
 export function RuiDateFieldCalendar(props: RuiDateFieldCalendarProps) {

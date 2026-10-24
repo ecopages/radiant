@@ -129,7 +129,7 @@ Default pattern — peel view-only fields, spread the rest, lock invariants afte
 );
 ```
 
-Self-closing hosts can spread the full props object (`<rui-meter {...props} />`); the JSX runtime peels `children` before binding attributes.
+A **Derived Tree** view takes no children: the host's first `render()` replaces them. Type its props `JsxCustomElementAttributes<RuiFooElement, RuiFooProps> & { children?: never }` and spread the full props object onto a self-closing host (`<rui-meter {...props} />`); a Composition Helper that forwards to such a view uses the same type. Use `children?: never`, not `Omit<…, 'children'>`: with no other attributes on the tag, the `data-*` index signature keeps TypeScript from flagging JSX body children, so `Omit` still accepts `<RuiMeter><p /></RuiMeter>`. `src/host-contract.types.tsx` pins this for every Derived Tree view.
 
 Peel props only when the view must transform or filter them:
 
