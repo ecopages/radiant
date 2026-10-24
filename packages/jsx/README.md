@@ -339,7 +339,7 @@ Use this rule of thumb:
 - `null` and `undefined` remove normal attributes
 - `false` removes boolean attributes such as `hidden` or `disabled`
 - `null` removes delegated and native event handlers by omitting the next listener
-- `undefined` clears deferred property bindings by writing `undefined`
+- an existing deferred property binding can be cleared by writing `undefined`; a plain `undefined` part is omitted during normalization
 
 For child content:
 
@@ -360,15 +360,15 @@ For attributes and bindings:
 
 return (
 	<button
-		class={shouldResetClass ? null : 'toolbar-action'}
+		class={shouldResetClass ? undefined : 'toolbar-action'}
 		hidden={isVisible ? false : true}
-		on:click={isInteractive ? handleClick : null}
+		on:click={isInteractive ? handleClick : undefined}
 		prop:payload={hasPayload ? payload : undefined}
 	/>
 );
 ```
 
-Important consequence: removing a binding by switching to `null`, `undefined`, or `false` follows normal template update semantics. If that changes the template shape, the renderer may replace the affected DOM node instead of preserving the previously committed instance.
+Important consequence: attribute normalization drops `undefined` parts. Changing a previously defined attribute or event handler to `undefined` therefore changes the template shape, so the renderer may replace the affected DOM node instead of preserving the previously committed instance. Child expressions keep their part and do not have this shape change.
 
 ### Textarea children
 
