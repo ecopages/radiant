@@ -3,8 +3,8 @@
 		{
 			"label": "client",
 			"entrypoint": "./src/client.ts",
-			"maxBytes": 32832,
-			"maxGzipBytes": 10840
+			"maxBytes": 32800,
+			"maxGzipBytes": 10816
 		},
 		{
 			"label": "index",
