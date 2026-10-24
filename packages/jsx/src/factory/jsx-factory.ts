@@ -132,7 +132,8 @@ export function createMarkupNodeLike(outerHTML: string): JsxNodeLike {
 	};
 }
 
-function takesChildrenValue(type: string): boolean {
+/** Whether the class registered for `type` takes its JSX children as a value ({@link CUSTOM_ELEMENT_CHILDREN_SYMBOL}). */
+export function takesChildrenValue(type: string): boolean {
 	const constructor =
 		type.includes('-') && typeof customElements !== 'undefined' ? customElements.get(type) : undefined;
 

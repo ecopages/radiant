@@ -78,7 +78,7 @@ if (container instanceof HTMLElement) {
 }
 ```
 
-If the target does not contain hydration markers, the runtime falls back to a normal client render.
+If the target does not contain hydration markers, counting those inside nested custom elements, the runtime falls back to a normal client render.
 
 For render-owning `RadiantElement` custom-element hosts, there is one extra gate: the explicit Radiant hydrator must also be installed. See [Hydration](/docs/ssr/hydration).
 
