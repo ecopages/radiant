@@ -1,4 +1,5 @@
 import { waitFor } from '@testing-library/dom';
+import { setDevWarningsEnabled } from '@ecopages/jsx/jsx-dev-runtime';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { commands } from 'vitest/browser';
 
@@ -24,6 +25,7 @@ function mountContainer(): HTMLElement {
 
 describe('published dist development warnings in a browser', () => {
 	afterEach(() => {
+		setDevWarningsEnabled(undefined);
 		vi.restoreAllMocks();
 		document.body.innerHTML = '';
 	});
@@ -73,6 +75,19 @@ describe('published dist development warnings in a browser', () => {
 		await waitFor(() => expect(frame.querySelector('main > h2')?.textContent).toBe('Title'));
 		await waitFor(() => expect(lateFrame.querySelector('main > p')?.textContent).toBe('Body'));
 
+		frame.append(document.createElement('i'));
+		await new Promise((resolve) => setTimeout(resolve, 0));
+
+		expect(warn).not.toHaveBeenCalled();
+	});
+
+	test('A development build honors the JSX development-warning switch', async () => {
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+		const app = await loadDistApp('development');
+		setDevWarningsEnabled(false);
+
+		const frame = app.mountFrame('dist-disabled-frame', mountContainer());
+		await waitFor(() => expect(frame.querySelector('main > h2')?.textContent).toBe('Title'));
 		frame.append(document.createElement('i'));
 		await new Promise((resolve) => setTimeout(resolve, 0));
 

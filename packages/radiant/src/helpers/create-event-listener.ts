@@ -1,5 +1,6 @@
 import { eventMatchesDelegatedSelector } from '../core/delegated-event';
 import { isServer } from '@ecopages/radiant/is-server';
+import { areJsxDevWarningsEnabled } from './dev-warnings';
 import { resolveHostElement } from './resolve-host-element';
 
 /**
@@ -45,14 +46,22 @@ export type DelegatedEventType =
  * @remarks `load` / `unload` have no bubbling twin — callers should attach them
  * on `window` / `document` or pass `options: { capture: true }`.
  */
-const NON_BUBBLING_DELEGATED_EVENTS = new Map<string, string>([
-	['focus', 'focusin'],
-	['blur', 'focusout'],
-	['mouseenter', 'mouseover or pointerover'],
-	['mouseleave', 'mouseout or pointerout'],
-]);
+function getNonBubblingReplacement(type: string): string | undefined {
+	switch (type) {
+		case 'focus':
+			return 'focusin';
+		case 'blur':
+			return 'focusout';
+		case 'mouseenter':
+			return 'mouseover or pointerover';
+		case 'mouseleave':
+			return 'mouseout or pointerout';
+		default:
+			return undefined;
+	}
+}
 
-const warnedNonBubblingEvents = new Set<string>();
+let warnedNonBubblingEvents: Set<string> | undefined;
 
 /**
  * @remarks
@@ -64,12 +73,15 @@ const warnedNonBubblingEvents = new Set<string>();
  */
 function warnNonBubblingDelegatedEvent(type: string, options?: AddEventListenerOptions): void {
 	try {
-		if (process.env.NODE_ENV !== 'production') {
-			const replacement = NON_BUBBLING_DELEGATED_EVENTS.get(type);
-			if (!replacement || options?.capture || warnedNonBubblingEvents.has(type)) {
+		if (process.env.NODE_ENV !== 'production' && areJsxDevWarningsEnabled()) {
+			const replacement = getNonBubblingReplacement(type);
+			if (!replacement || options?.capture) {
 				return;
 			}
-			warnedNonBubblingEvents.add(type);
+
+			const warnedEvents = (warnedNonBubblingEvents ??= new Set<string>());
+			if (warnedEvents.has(type)) return;
+			warnedEvents.add(type);
 
 			console.warn(
 				`[@ecopages/radiant] Delegated @onEvent listens on the host in the bubble phase, so "${type}" will never reach it. Use "${replacement}" or pass \`options: { capture: true }\`.`,

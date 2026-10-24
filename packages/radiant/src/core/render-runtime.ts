@@ -6,6 +6,7 @@ import {
 	type JsxRenderable,
 } from '@ecopages/jsx';
 import { isMinimalDomElement } from './minimal-dom-identity';
+import { areJsxDevWarningsEnabled } from '../helpers/dev-warnings';
 import {
 	createReactiveComputed,
 	createReactiveWatcher,
@@ -142,7 +143,7 @@ export class RenderRuntime {
 		this.#projectedSlotContent.clear();
 
 		try {
-			if (process.env.NODE_ENV !== 'production') {
+			if (process.env.NODE_ENV !== 'production' && areJsxDevWarningsEnabled()) {
 				warnSlotAttributeInChildren(this.#host, value);
 			}
 		} catch {}
@@ -227,7 +228,7 @@ export class RenderRuntime {
 			(isMinimalDomElement(this.#host) || !hasHydrationMarkers(this.#host))
 		) {
 			try {
-				if (process.env.NODE_ENV !== 'production') {
+				if (process.env.NODE_ENV !== 'production' && areJsxDevWarningsEnabled()) {
 					warnLateDefinition(this.#host);
 				}
 			} catch {}
@@ -240,7 +241,7 @@ export class RenderRuntime {
 	private handleSlotProjectionMutations(records: MutationRecord[]): void {
 		if (this.#hasChildrenValue) {
 			try {
-				if (process.env.NODE_ENV !== 'production') {
+				if (process.env.NODE_ENV !== 'production' && areJsxDevWarningsEnabled()) {
 					warnAppendedNodes(this.#host, records);
 				}
 			} catch {}

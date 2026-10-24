@@ -32,6 +32,7 @@ const loadJsxDevRuntime = async () =>
 	loadModule<typeof import('../src/jsx-dev-runtime.ts')>('../src/jsx-dev-runtime.ts');
 
 const booleanPropertyTagName = 'radiant-jsx-boolean-property-element';
+const hydrationPropertyTagName = 'radiant-jsx-hydration-property-element';
 
 class BooleanPropertyElement extends HTMLElement {
 	enabled = true;
@@ -64,6 +65,22 @@ customElements.define(lifecycleChildTagName, LifecycleChildElement);
 const wrappingElementTagName = 'radiant-jsx-wrapping-element';
 
 customElements.define(wrappingElementTagName, class extends HTMLElement {});
+
+class HydrationPropertyElement extends HTMLElement {
+	static writes = 0;
+	#value: unknown;
+
+	set value(value: unknown) {
+		HydrationPropertyElement.writes += 1;
+		this.#value = value;
+	}
+
+	get value(): unknown {
+		return this.#value;
+	}
+}
+
+customElements.define(hydrationPropertyTagName, HydrationPropertyElement);
 
 describe('Radiant JSX DOM reconciliation behavior', () => {
 	beforeEach(() => {
@@ -855,6 +872,21 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 
 		expect(element.enabled).toBe(false);
 		expect(container.innerHTML).not.toContain('data-radiant-jsx-bind-');
+	});
+
+	test('applies a hydrated custom-element property once', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+
+		container.innerHTML = `<${hydrationPropertyTagName} data-radiant-jsx-bind-0="prop:value"></${hydrationPropertyTagName}>`;
+		HydrationPropertyElement.writes = 0;
+
+		root.hydrate(jsx(hydrationPropertyTagName, { 'prop:value': 'hydrated' }));
+
+		const element = container.querySelector(hydrationPropertyTagName) as HydrationPropertyElement;
+		expect(element.value).toBe('hydrated');
+		expect(HydrationPropertyElement.writes).toBe(1);
 	});
 
 	test('mounts SVG child templates with SVG namespaces under SVG parents', async () => {

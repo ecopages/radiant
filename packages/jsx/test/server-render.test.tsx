@@ -1040,6 +1040,138 @@ describe('Radiant JSX server render', () => {
 		}
 	});
 
+	test.each([{ mode: 'plain' as const }, { mode: 'hydrate' as const }])(
+		'resolves reactive custom-element attributes before SSR in $mode mode',
+		async ({ mode }) => {
+			const [{ jsx, createSubscribableJsxValue }, { renderToString }] = await Promise.all([
+				loadJsxRuntime(),
+				loadServerRender(),
+			]);
+
+			class ReactiveAttributeElement extends EventTarget {
+				private readonly attributes = new Map<string, string>();
+				private currentLabel = '';
+				private currentReflectedLabel = '';
+				private currentOptionalLabel = 'default';
+
+				get label() {
+					return this.currentLabel;
+				}
+
+				set label(value: unknown) {
+					this.currentLabel = String(value);
+					this.setAttribute('label', this.currentLabel);
+				}
+
+				set reflectedLabel(value: unknown) {
+					this.currentReflectedLabel = String(value);
+					this.setAttribute('reflected-label', this.currentReflectedLabel);
+				}
+
+				set optionalLabel(value: unknown) {
+					this.currentOptionalLabel = value === undefined ? 'undefined' : String(value);
+					this.setAttribute('optional-label', this.currentOptionalLabel);
+				}
+
+				setAttribute(name: string, value: unknown) {
+					this.attributes.set(name, String(value));
+				}
+
+				removeAttribute(name: string) {
+					this.attributes.delete(name);
+				}
+
+				renderHostToString() {
+					const disabled = this.attributes.has('disabled') ? ' disabled' : '';
+					const missing = this.attributes.has('data-missing')
+						? ` data-missing="${this.attributes.get('data-missing')}"`
+						: '';
+					const nullish = this.attributes.has('data-nullish')
+						? ` data-nullish="${this.attributes.get('data-nullish')}"`
+						: '';
+
+					return `<reactive-attribute-element data-label="${this.attributes.get('data-label') ?? ''}" label="${this.attributes.get('label') ?? ''}" reflected-label="${this.attributes.get('reflected-label') ?? ''}" optional-label="${this.attributes.get('optional-label') ?? this.currentOptionalLabel}" style="${this.attributes.get('style') ?? ''}"${disabled}${missing}${nullish}></reactive-attribute-element>`;
+				}
+			}
+
+			const previousCustomElementsDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'customElements');
+			const previousForceServerCustomElementRender = (
+				globalThis as typeof globalThis & Record<PropertyKey, unknown>
+			)[forceServerCustomElementRenderSymbol];
+
+			Object.defineProperty(globalThis, 'customElements', {
+				configurable: true,
+				value: {
+					get(name: string) {
+						return name === 'reactive-attribute-element'
+							? (ReactiveAttributeElement as unknown as CustomElementConstructor)
+							: undefined;
+					},
+				},
+			});
+
+			(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[forceServerCustomElementRenderSymbol] =
+				true;
+
+			try {
+				const label = createSubscribableJsxValue({
+					getValue: () => 'one',
+					subscribe: () => () => undefined,
+				});
+				const disabled = createSubscribableJsxValue({
+					getValue: () => true,
+					subscribe: () => () => undefined,
+				});
+				const missing = createSubscribableJsxValue({
+					getValue: () => undefined,
+					subscribe: () => () => undefined,
+				});
+				const nullish = createSubscribableJsxValue({
+					getValue: () => null,
+					subscribe: () => () => undefined,
+				});
+				const style = createSubscribableJsxValue({
+					getValue: () => ({ color: 'red', fontSize: '12px' }),
+					subscribe: () => () => undefined,
+				});
+
+				expect(
+					renderToString(
+						jsx('reactive-attribute-element', {
+							'data-label': label,
+							label,
+							'prop:reflectedLabel': label,
+							'prop:optionalLabel': missing,
+							'attr:disabled': disabled,
+							'data-missing': missing,
+							'data-nullish': nullish,
+							style,
+						}),
+						{ mode },
+					),
+				).toBe(
+					'<reactive-attribute-element data-label="one" label="one" reflected-label="one" optional-label="undefined" style="color: red; font-size: 12px" disabled></reactive-attribute-element>',
+				);
+			} finally {
+				if (previousCustomElementsDescriptor) {
+					Object.defineProperty(globalThis, 'customElements', previousCustomElementsDescriptor);
+				} else {
+					Reflect.deleteProperty(globalThis, 'customElements');
+				}
+
+				if (previousForceServerCustomElementRender === undefined) {
+					delete (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
+						forceServerCustomElementRenderSymbol
+					];
+				} else {
+					(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
+						forceServerCustomElementRenderSymbol
+					] = previousForceServerCustomElementRender;
+				}
+			}
+		},
+	);
+
 	test('serializes light DOM children into SSR-capable intrinsic custom elements', async () => {
 		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
 
