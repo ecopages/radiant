@@ -2,6 +2,7 @@ import { serializeStyleSnapshot } from '../factory/attribute-normalize.ts';
 import { attachEventBindingListener, detachEventBindingListener, isEventListenerObject } from './event-delegation.ts';
 import { getElementAttributeValue, removeElementAttribute, setElementAttributeValue } from './namespaces.ts';
 import { resolveReactiveSnapshot } from './runtime-helpers.ts';
+import { CUSTOM_ELEMENT_CHILDREN_SYMBOL } from '../types/index.ts';
 import type { BindingDescriptor, DeferredPropertyBinding, LiveAttributePart } from './types.ts';
 
 type ApplyBindingOptions = {
@@ -31,8 +32,20 @@ export function applyBindingToElement(
 	value: unknown,
 	options: ApplyBindingOptions,
 ): void {
-	const resolvedValue = resolveReactiveSnapshot(value);
 	const livePart = options.livePart;
+
+	if (binding.kind === 'children') {
+		applyDeferredPropertyBinding(
+			element,
+			CUSTOM_ELEMENT_CHILDREN_SYMBOL,
+			value,
+			options.deferredProperties,
+			livePart,
+		);
+		return;
+	}
+
+	const resolvedValue = resolveReactiveSnapshot(value);
 
 	switch (binding.kind) {
 		case 'attr':
@@ -122,7 +135,7 @@ function applyNativeEventBinding(
 
 function applyDeferredPropertyBinding(
 	element: Element,
-	name: string,
+	name: PropertyKey,
 	value: unknown,
 	deferredProperties: DeferredPropertyBinding[],
 	livePart: LiveAttributePart | undefined,

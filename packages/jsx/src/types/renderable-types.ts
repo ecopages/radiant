@@ -17,6 +17,19 @@ declare const SLOT_JSX_VALUE_SYMBOL_TYPE: unique symbol;
 export const SLOT_JSX_VALUE_SYMBOL: typeof SLOT_JSX_VALUE_SYMBOL_TYPE = Symbol.for(
 	'@ecopages/jsx.slot-value',
 ) as typeof SLOT_JSX_VALUE_SYMBOL_TYPE;
+declare const CUSTOM_ELEMENT_CHILDREN_SYMBOL_TYPE: unique symbol;
+/**
+ * Custom-element protocol for taking JSX `children` as one value instead of DOM children.
+ *
+ * @remarks A custom element class whose static member under this key is `true` when a view creates the
+ * element gets no children inside it: the renderer assigns the children, as one value, to the element's
+ * member under this key, and assigns it again whenever the view renders new children. The element's own
+ * renderer then decides where they go. Any other element, including one whose tag is defined only after
+ * the view created it, gets its children as DOM nodes inside it.
+ */
+export const CUSTOM_ELEMENT_CHILDREN_SYMBOL: typeof CUSTOM_ELEMENT_CHILDREN_SYMBOL_TYPE = Symbol.for(
+	'@ecopages/jsx.custom-element-children',
+) as typeof CUSTOM_ELEMENT_CHILDREN_SYMBOL_TYPE;
 declare const RADIANT_MARKUP_NODE_SYMBOL_TYPE: unique symbol;
 /**
  * Symbol key present on trusted markup nodes created via `createMarkupNodeLike` /
@@ -52,7 +65,7 @@ export interface JsxNodeLike {
 }
 
 /** Kinds of dynamic bindings that the JSX runtime can encode into templates. */
-export type BindingKind = 'attr' | 'bool' | 'event' | 'native-event' | 'prop';
+export type BindingKind = 'attr' | 'bool' | 'children' | 'event' | 'native-event' | 'prop';
 
 /**
  * Describes what one interpolation slot binds to.

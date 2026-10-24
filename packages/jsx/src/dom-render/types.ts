@@ -26,7 +26,7 @@ export type BindingDescriptor =
  */
 export type DeferredPropertyBinding = {
 	element: Element;
-	name: string;
+	name: PropertyKey;
 	value: unknown;
 };
 

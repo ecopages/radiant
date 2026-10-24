@@ -4,6 +4,7 @@ import { forEachNormalizedAttribute } from './attribute-normalize.ts';
 import { shouldUseAttributeBindingByDefaultForElement, shouldUseBooleanAttributeBinding } from './binding-defaults.ts';
 import { isIterableJsxChild, isKeyedJsxValue, resolveReactiveSnapshot } from '../types/renderable-guards.ts';
 import {
+	CUSTOM_ELEMENT_CHILDREN_SYMBOL,
 	KEYED_VALUE_SYMBOL,
 	RADIANT_MARKUP_NODE_SYMBOL,
 	RADIANT_TEMPLATE_RESULT,
@@ -53,11 +54,16 @@ type ChildSlotMode = 'multiple' | 'single';
  * the JSX transform sets for every authored child expression (`<p>{x}</p>`) and omits
  * for `<p />`. The key, not the value, decides, so `undefined` still keeps its part
  * and the template shape follows the authored markup.
+ *
+ * A custom element whose class takes its children as a value
+ * ({@link CUSTOM_ELEMENT_CHILDREN_SYMBOL}) gets one `children` binding instead of child
+ * parts, unless `childrenAsDom` is set. The class is looked up when the element is created.
  */
 export function createJsxElement<Props extends object>(
 	type: string | JsxFragment | JsxComponent<Props>,
 	props: Props,
 	childSlotMode: ChildSlotMode,
+	childrenAsDom = false,
 ): JsxRenderable {
 	const keyedValue = (props as { key?: unknown }).key;
 
@@ -86,13 +92,21 @@ export function createJsxElement<Props extends object>(
 	forEachNormalizedAttribute(rawAttributes, (name, value) => {
 		appendBinding(strings, values, parts, type, name, value);
 	});
+	const hasChildren = 'children' in props;
+	const childrenAsValue = hasChildren && !childrenAsDom && takesChildrenValue(type);
+
+	if (childrenAsValue) {
+		parts.push({ kind: 'children', name: 'children', type: 'attribute' });
+		values.push(toChildSlot(children));
+		strings.push('');
+	}
 
 	strings[strings.length - 1] += '>';
 
 	// Void elements take neither children nor a closing tag; everything else is
 	// otherwise assembled identically.
 	if (!voidElementNames.has(type)) {
-		if ('children' in props) {
+		if (hasChildren && !childrenAsValue) {
 			appendElementChildren(strings, values, parts, type, children, childSlotMode);
 		}
 		strings[strings.length - 1] += `</${type}>`;
@@ -116,6 +130,17 @@ export function createMarkupNodeLike(outerHTML: string): JsxNodeLike {
 		nodeType: 1,
 		outerHTML,
 	};
+}
+
+function takesChildrenValue(type: string): boolean {
+	const constructor =
+		type.includes('-') && typeof customElements !== 'undefined' ? customElements.get(type) : undefined;
+
+	return (
+		(constructor as { [CUSTOM_ELEMENT_CHILDREN_SYMBOL]?: unknown } | undefined)?.[
+			CUSTOM_ELEMENT_CHILDREN_SYMBOL
+		] === true
+	);
 }
 
 function appendElementChildren(
