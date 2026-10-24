@@ -1,4 +1,4 @@
-import { RadiantElement, bound, customElement, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
+import { RadiantElement, bindTo, bound, customElement, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import { findFirstFocusableCandidate } from '@/lib/focusable-elements';
 import { uniqueId } from '@/lib/unique-id';
 import { applyFloatingPosition, attachFloating } from '../shared/floating-position';
@@ -13,17 +13,13 @@ export type RuiTooltipProps = {
 	delay?: number;
 };
 
-type RuiTooltipBindings = {
-	content: string;
-};
-
 const TOOLTIP_GAP = 8;
 
 /**
  * `<rui-tooltip>` — popup that describes a trigger on hover or focus.
  *
- * The host can render its own trigger + tooltip tree via `render()`, or you can import
- * the script and stamp the same structure in light DOM (as `RuiTooltip` does).
+ * View-owned Shell: the host has no `render()` tree. `RuiTooltip` (or your own markup)
+ * stamps the trigger and surface in light DOM and the host queries them.
  *
  * Implements the WAI-ARIA APG Tooltip pattern: the popup has `role="tooltip"`
  * and the focusable trigger references it with `aria-describedby`. The tooltip
@@ -39,8 +35,9 @@ const TOOLTIP_GAP = 8;
  * Per trigger:
  * - First focusable descendant inside `[data-ref="trigger"]` (or the wrapper) receives `aria-describedby`.
  *
- * Optional:
- * - `content` attribute — text bound into the tooltip surface when using CE `render()`.
+ * Host writes:
+ * - `content` attribute — replaces the `[data-ref="tooltip"]` text, including when omitted (empty).
+ *   Set it on custom markup instead of hand-writing the surface text.
  *
  * Do not set `id`, `hidden`, or `aria-describedby` on the anchor — the host owns those.
  *
@@ -49,7 +46,7 @@ const TOOLTIP_GAP = 8;
  * Event wiring:
  * - Bubbling events (`focusin` / `focusout`, document `keydown`) use `@onEvent`.
  * - `pointerenter` / `pointerleave` are bound directly on the host — they do not
- *   bubble, so `@onEvent` delegation cannot see them on the slotted trigger.
+ *   bubble, so `@onEvent` delegation cannot see them on the trigger.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/tooltip/
  *
@@ -65,13 +62,12 @@ const TOOLTIP_GAP = 8;
  * @cssprop --rui-tooltip-surface - Surface fill. Default: `--on-background`.
  * @cssprop --rui-tooltip-color - Surface text. Default: `--background`.
  * @cssprop --rui-tooltip-shadow - Surface shadow. Default: `--shadow-overlay`.
- *
- * @remarks
- * With CE `render()`, authored children are projected into `[data-ref="trigger"]`.
  */
 @customElement('rui-tooltip')
-export class RuiTooltip extends RadiantElement<RuiTooltipBindings> {
-	@prop({ type: String, defaultValue: '' }) content: string;
+export class RuiTooltip extends RadiantElement {
+	@bindTo({ ref: 'tooltip', text: true })
+	@prop({ type: String, defaultValue: '' })
+	content: string;
 	@prop({ type: String, defaultValue: 'top' }) placement: RuiPlacement;
 	@prop({ type: Number, defaultValue: 200 }) delay: number;
 
@@ -203,24 +199,5 @@ export class RuiTooltip extends RadiantElement<RuiTooltipBindings> {
 	@bound
 	onPointerLeave(): void {
 		this.scheduleHide();
-	}
-
-	override render() {
-		return (
-			<span class="rui-tooltip">
-				<span class="rui-tooltip__trigger" data-ref="trigger">
-					<slot></slot>
-				</span>
-				<span
-					data-ref="tooltip"
-					id={this.tooltipId}
-					class="rui-tooltip__content rui-floating"
-					role="tooltip"
-					hidden
-				>
-					{this.$.content}
-				</span>
-			</span>
-		);
 	}
 }
