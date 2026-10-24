@@ -61,6 +61,10 @@ class LifecycleChildElement extends HTMLElement {
 
 customElements.define(lifecycleChildTagName, LifecycleChildElement);
 
+const wrappingElementTagName = 'radiant-jsx-wrapping-element';
+
+customElements.define(wrappingElementTagName, class extends HTMLElement {});
+
 describe('Radiant JSX DOM reconciliation behavior', () => {
 	beforeEach(() => {
 		document.body.innerHTML = '';
@@ -238,15 +242,43 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		const child = container.querySelector(lifecycleChildTagName);
 		expect(child).toBeInstanceOf(LifecycleChildElement);
 
+		const connectedBeforeHydration = LifecycleChildElement.connectedCount;
+		const disconnectedBeforeHydration = LifecycleChildElement.disconnectedCount;
 		root.hydrate(renderParent('before'));
 		const hydratedChild = container.querySelector(lifecycleChildTagName);
-		const connectedAfterHydration = LifecycleChildElement.connectedCount;
-		const disconnectedAfterHydration = LifecycleChildElement.disconnectedCount;
+
+		expect(LifecycleChildElement.connectedCount).toBe(connectedBeforeHydration);
+		expect(LifecycleChildElement.disconnectedCount).toBe(disconnectedBeforeHydration);
+
 		root.render(renderParent('after'));
 
-		expect(LifecycleChildElement.connectedCount).toBe(connectedAfterHydration);
-		expect(LifecycleChildElement.disconnectedCount).toBe(disconnectedAfterHydration);
+		expect(LifecycleChildElement.connectedCount).toBe(connectedBeforeHydration);
+		expect(LifecycleChildElement.disconnectedCount).toBe(disconnectedBeforeHydration);
 		expect(container.querySelector(lifecycleChildTagName)).toBe(hydratedChild);
+	});
+
+	test('rebuilds a custom element when its server children do not match the authored shape', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		document.body.append(container);
+		const root = createRoot(container);
+
+		container.innerHTML = `<section><${wrappingElementTagName}><div><p>server</p></div></${wrappingElementTagName}><i data-radiant-jsx-bind-0="attr:title" title="before">after</i></section>`;
+		const serverElement = container.querySelector(wrappingElementTagName);
+
+		root.hydrate(
+			jsx('section', {
+				children: [
+					jsx(wrappingElementTagName, { children: jsx('p', { children: 'client' }) }),
+					jsx('i', { title: 'before', children: 'after' }),
+				],
+			}),
+		);
+
+		const hydratedElement = container.querySelector(wrappingElementTagName);
+		expect(hydratedElement).not.toBe(serverElement);
+		expect(hydratedElement?.querySelector(':scope > p')?.textContent).toBe('client');
+		expect(hydratedElement?.querySelector(':scope > div')).toBeNull();
 	});
 
 	test('preserves unkeyed iterable positions across append and truncate updates', async () => {
