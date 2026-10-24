@@ -1,6 +1,7 @@
 import { waitFor } from '@testing-library/dom';
 import type { JsxCustomElementAttributes, JsxRenderable } from '@ecopages/jsx';
 import { render as renderJsx } from '@ecopages/jsx';
+import { setDevWarningsEnabled } from '@ecopages/jsx/jsx-dev-runtime';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { customElement } from '../../src/decorators/custom-element';
@@ -368,6 +369,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+	setDevWarningsEnabled(undefined);
 	vi.restoreAllMocks();
 	document.body.innerHTML = '';
 });
@@ -479,6 +481,16 @@ describe('a render-owning host projecting JSX children of a parent view through 
 		await settle();
 
 		expect(parent.querySelector('h2')).toBeNull();
+	});
+
+	test('does not log render warnings when JSX development warnings are disabled', async () => {
+		setDevWarningsEnabled(false);
+		const parent = document.createElement('nested-named-slot-parent-test') as NestedNamedSlotParent;
+		parent.showTitle = true;
+		document.body.append(parent);
+
+		await waitFor(() => expect(parent.querySelector('main > h2')?.textContent).toBe('Title'));
+		expect(warn).not.toHaveBeenCalled();
 	});
 
 	test('shows parent edits made while the child slot was not rendered once the slot returns', async () => {
