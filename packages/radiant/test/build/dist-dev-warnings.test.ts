@@ -7,8 +7,15 @@ import { beforeAll, describe, expect, test } from 'vitest';
 const distRoot = path.resolve(import.meta.dirname, '../../dist');
 const DELEGATED_FOCUS_WARNING = 'Delegated @onEvent listens on the host in the bubble phase, so "focus"';
 const PEER_PACKAGES = ['@ecopages/jsx', '@ecopages/jsx/*', '@ecopages/signals', '@ecopages/signals/*'];
+const DEVELOPMENT_WARNING_TEXTS = [
+	'Delegated @onEvent listens',
+	'pass it as the',
+	'ignores appended nodes',
+	'was defined after a JSX view rendered it',
+];
 const NODE_ENV_READ = /process\.env\.NODE_ENV/g;
-const GUARDED_NODE_ENV_READ = /try\s*\{\s*if\s*\(\s*process\.env\.NODE_ENV\s*!==\s*"production"\s*\)\s*\{/g;
+/** Matches the check as the first expression in a `try` block, whether esbuild kept the `if` or minified it to `&&`. */
+const GUARDED_NODE_ENV_READ = /try\s*\{\s*(?:if\s*\(\s*)?process\.env\.NODE_ENV\s*!==\s*"production"/g;
 
 /**
  * A consumer app that delegates a `focus` listener, which never bubbles to the host.
@@ -73,6 +80,16 @@ describe('published dist development warnings', () => {
 		expect(warnings[0]).toContain('focusin');
 	});
 
+	test('A development build of an app importing @ecopages/radiant keeps every Radiant development warning', async () => {
+		const bundle = await bundleApp(`import * as entry from '@ecopages/radiant';\nglobalThis.entry = entry;`, {
+			define: { 'process.env.NODE_ENV': '"development"' },
+		});
+
+		for (const text of DEVELOPMENT_WARNING_TEXTS) {
+			expect(bundle).toContain(text);
+		}
+	});
+
 	test.for([
 		'@ecopages/radiant',
 		'@ecopages/radiant/decorators/on-event',
@@ -84,7 +101,9 @@ describe('published dist development warnings', () => {
 		});
 
 		expect(bundle).toContain('Radiant host target must be an Element');
-		expect(bundle).not.toContain('Delegated @onEvent listens');
+		for (const text of DEVELOPMENT_WARNING_TEXTS) {
+			expect(bundle).not.toContain(text);
+		}
 	});
 
 	test('A browser load that leaves process.env.NODE_ENV unreplaced does not throw', async () => {
