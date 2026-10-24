@@ -229,6 +229,40 @@ function matchesAuthoredElementChildren(
 }
 
 /**
+ * Whether a markerless page template can adopt a tree containing a nested root that already hydrated itself.
+ *
+ * @remarks A page can lose every marker of its own when its only dynamic work belongs to a custom-element child.
+ * The root is safe to recover only when its single static root node still matches and a nested root has already
+ * consumed its own markers; otherwise the normal marker requirement keeps stale HTML on the client-render path.
+ */
+export function canAdoptMarkerlessTemplate(
+	template: TemplateResultLike,
+	target: HTMLElement,
+	isHydratedRoot: (element: HTMLElement) => boolean,
+): boolean {
+	const compiledTemplate = getCompiledTemplate(template);
+	const blueprintRoot = compiledTemplate.blueprint.content.firstElementChild;
+	const actualRoot = target.firstElementChild;
+
+	if (
+		!(blueprintRoot instanceof Element) ||
+		!(actualRoot instanceof HTMLElement) ||
+		compiledTemplate.blueprint.content.childNodes.length !== 1 ||
+		blueprintRoot.localName !== actualRoot.localName ||
+		blueprintRoot.namespaceURI !== actualRoot.namespaceURI ||
+		target.childNodes.length !== countHydratedRangeNodes(template)
+	) {
+		return false;
+	}
+
+	if (isHydratedRoot(actualRoot)) {
+		return true;
+	}
+
+	return Array.from(actualRoot.querySelectorAll<HTMLElement>('*')).some(isHydratedRoot);
+}
+
+/**
  * Whether a template puts DOM children inside a custom-element root that is not defined yet, or whose class takes
  * its children as a value (the template was created before the tag was defined).
  *

@@ -419,7 +419,7 @@ const html = renderToString(view, { mode: 'plain' });
 const hydratedHtml = renderToString(view, { mode: 'hydrate' });
 ```
 
-Hydrated SSR adds binding markers so `hydrate(...)` can attach listeners and dynamic parts without rebuilding the existing DOM tree.
+Hydrated SSR adds binding markers so `hydrate(...)` can attach listeners and dynamic parts without rebuilding the existing DOM tree. A page root with no marker of its own can also reconnect when a nested custom-element root already hydrated itself and the page's static root shape still matches; otherwise the marker requirement remains.
 
 Property bindings are client-only in generic JSX SSR. A `prop:*` value may be an object, function, DOM node, or framework instance, so JSX emits a hydration marker but does not stringify the value into HTML. If a custom element's pre-hydration state matters, represent that state through a reflected/serializable attribute or the owning framework's SSR bridge, and keep the custom element's default aligned with the server output.
 
@@ -448,6 +448,8 @@ List children inside a hydrated range reconnect through the same path as a root 
 When a parent rerenders, a nested custom element that is already in the correct position stays connected, so its lifecycle callbacks do not run again. The same guarantee applies to the parent rerender that follows hydration.
 
 A matching, already-defined custom-element host keeps its server node during hydration. A custom element whose class takes its children as a value ([Children as a value](#children-as-a-value)) receives that value through its own binding and hydrates its rendered content in its own marker namespace. Other matching custom elements reconnect authored light-DOM children in place, so the host's lifecycle does not run again merely because its parent hydrates or rerenders. A late-defined or mismatched host, or an unrecoverable template, falls back to reconciliation. An empty text node in a child list serializes to nothing, so hydration inserts it.
+
+When a page's own bindings are absent, the page can still reconnect after a nested custom-element host has already consumed its markers. The client checks the page's single root shape and adopts only when that nested root was hydrated in place; a page with no matching hydrated child still renders fresh.
 
 ### Benchmarks
 
@@ -486,7 +488,7 @@ flowchart TD
 
 **2. Index contract.** `hydration-bindings.ts` owns the marker prefix, descriptor format, index advancement, and DOM walks. Iterable hydration advances `nextBindingIndex` with `countHydrationMarkers(...)` per child. Each recovered child template then calls `planTemplateHydrationIndices(template, bindingBaseIndex)` so fragment siblings stay aligned with the same global namespace.
 
-**3. Recover.** `hydrate(...)` dispatches on root shape as in [Hydration Root Shapes](#hydration-root-shapes). Failed recovery disposes any parts that already subscribed, then falls back to a full client render.
+**3. Recover.** `hydrate(...)` dispatches on root shape as in [Hydration Root Shapes](#hydration-root-shapes). A markerless page root may use an already-hydrated nested custom-element root as its recovery signal when its static root shape matches. Failed recovery disposes any parts that already subscribed, then falls back to a full client render.
 
 **Counter-shaped fragment example:**
 

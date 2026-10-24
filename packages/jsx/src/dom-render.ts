@@ -3,7 +3,7 @@ import { createBoundaryMarker } from './dom-render/dom-operations.ts';
 import { captureFocusSnapshot, restoreFocusSnapshot } from './dom-render/focus-snapshot.ts';
 import { hydrateIterableRoot } from './dom-render/hydration-iterable.ts';
 import { hydrateTemplateInstance } from './dom-render/hydration.ts';
-import { fillsRenderedElement } from './dom-render/hydration-mounted-range.ts';
+import { canAdoptMarkerlessTemplate, fillsRenderedElement } from './dom-render/hydration-mounted-range.ts';
 import { disposeMountedRoot } from './dom-render/mounted-disposal.ts';
 import {
 	flushDeferredProperties,
@@ -24,6 +24,9 @@ import type { JsxRenderable } from './types/index.ts';
  * every root reuses the same reconciliation engine as any nested dynamic slot.
  */
 const ROOT_RENDER_STATE = new WeakMap<HTMLElement, MountedRoot>();
+
+/** Tracks roots that successfully reconnected SSR markup, even after their markers were consumed. */
+const HYDRATED_ROOT_TARGETS = new WeakSet<HTMLElement>();
 
 /**
  * Imperative handle returned by {@link createRoot} for managing a mounted JSX tree.
@@ -100,6 +103,7 @@ export function hydrate(element: JsxRenderable, target: HTMLElement): void {
 	}
 
 	ROOT_RENDER_STATE.set(target, root);
+	HYDRATED_ROOT_TARGETS.add(target);
 	restoreFocusSnapshot(target, focusSnapshot);
 }
 
@@ -121,7 +125,11 @@ function reconnectSsrRoot(
 	const nextValue = unwrapKeyedValue(element);
 
 	if (isTemplateResultLike(nextValue)) {
-		if (!containsHydrationMarkers(target) || fillsRenderedElement(nextValue)) {
+		const hasMarkers = containsHydrationMarkers(target);
+		const canAdoptMarkerless =
+			!hasMarkers && canAdoptMarkerlessTemplate(nextValue, target, (root) => HYDRATED_ROOT_TARGETS.has(root));
+
+		if ((!hasMarkers && !canAdoptMarkerless) || fillsRenderedElement(nextValue)) {
 			return undefined;
 		}
 
@@ -216,6 +224,7 @@ export function createRoot(target: HTMLElement): JsxRoot {
 			}
 
 			ROOT_RENDER_STATE.delete(target);
+			HYDRATED_ROOT_TARGETS.delete(target);
 			target.replaceChildren();
 		},
 	};

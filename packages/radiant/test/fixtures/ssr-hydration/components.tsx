@@ -348,6 +348,18 @@ export function pageSlotCardView(body: JsxRenderable = 'SSR body') {
 	);
 }
 
+/** Page-level JSX with no binding of its own, so its host's hydration is the only marker source. */
+export function staticPageSlotCardView() {
+	return (
+		<main>
+			<hydrated-slot-card-test>
+				<h2 slot="header">SSR header</h2>
+				<p>SSR body</p>
+			</hydrated-slot-card-test>
+		</main>
+	);
+}
+
 @customElement('hydrated-optional-children-parent-test')
 export class HydratedOptionalChildrenParent extends RadiantElement<{ show: boolean }> {
 	@state show = false;
