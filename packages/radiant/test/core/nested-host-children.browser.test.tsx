@@ -156,6 +156,34 @@ class NestedNamedSlotParent extends RadiantElement {
 	}
 }
 
+@customElement('nested-silenced-slot-frame-test')
+class NestedSilencedSlotFrame extends RadiantElement {
+	override render() {
+		return (
+			<div>
+				<header>
+					<slot name="header" />
+				</header>
+				<main>
+					<slot />
+				</main>
+			</div>
+		);
+	}
+}
+
+@customElement('nested-silenced-slot-parent-test')
+class NestedSilencedSlotParent extends RadiantElement {
+	override render() {
+		return (
+			<nested-silenced-slot-frame-test>
+				<h2 slot="header">Title</h2>
+				<p>Body</p>
+			</nested-silenced-slot-frame-test>
+		);
+	}
+}
+
 @customElement('nested-toggle-slot-frame-test')
 class NestedToggleSlotFrame extends RadiantElement {
 	@state open = true;
@@ -485,8 +513,7 @@ describe('a render-owning host projecting JSX children of a parent view through 
 
 	test('does not log render warnings when JSX development warnings are disabled', async () => {
 		setDevWarningsEnabled(false);
-		const parent = document.createElement('nested-named-slot-parent-test') as NestedNamedSlotParent;
-		parent.showTitle = true;
+		const parent = document.createElement('nested-silenced-slot-parent-test') as NestedSilencedSlotParent;
 		document.body.append(parent);
 
 		await waitFor(() => expect(parent.querySelector('main > h2')?.textContent).toBe('Title'));
