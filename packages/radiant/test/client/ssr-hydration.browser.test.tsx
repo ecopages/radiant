@@ -9,7 +9,9 @@ import {
 	type HydratedCounter,
 	type HydratedCounterBinding,
 	type HydratedFragmentSlotParent,
+	type HydratedMarkerSlotChild,
 	type HydratedMarkerSlotParent,
+	type HydratedRegionParent,
 	type HydratedStaticView,
 	type HydratedSlotCard,
 	type NonHydratedCounter,
@@ -200,4 +202,48 @@ describe('hydrating server-rendered markup', () => {
 			expect(element.querySelector('p')?.textContent).toBe('first, second');
 		});
 	});
+
+	test('updates parent bindings in JSX passed to a nested host through a property after hydration', async () => {
+		installRadiantHydrator();
+		const element = mount<HydratedRegionParent>('region-parent', 'hydrated-region-parent-test');
+
+		await waitFor(() => expect(hasHydrationMarkers(element)).toBe(false));
+
+		element.label = 'two';
+		element.showBadge = true;
+
+		await waitFor(() => {
+			expect(element.querySelector('main > .label')?.textContent).toBe('two');
+			expect(element.querySelectorAll('main > .badge')).toHaveLength(1);
+		});
+	});
+
+	test.fails('keeps the server-rendered node of a nested host when its parent hydrates', async () => {
+		installRadiantHydrator();
+		const element = mount<HydratedMarkerSlotParent>('marker-slot-parent', 'hydrated-marker-slot-parent-test');
+		const serverChild = element.querySelector('hydrated-marker-slot-child-test');
+		const serverProjected = element.querySelector('b');
+
+		await waitFor(() => expect(hasHydrationMarkers(element)).toBe(false));
+
+		const child = element.querySelector('hydrated-marker-slot-child-test') as HydratedMarkerSlotChild | null;
+		expect(child).toBe(serverChild);
+		expect(child?.isServerRendered).toBe(true);
+		expect(element.querySelector('b')).toBe(serverProjected);
+	});
+
+	test.fails(
+		'keeps the server-rendered nodes of JSX passed to a nested host through a property when the parent hydrates',
+		async () => {
+			installRadiantHydrator();
+			const element = mount<HydratedRegionParent>('region-parent', 'hydrated-region-parent-test');
+			const serverCard = element.querySelector('hydrated-region-card-test');
+			const serverLabel = element.querySelector('.label');
+
+			await waitFor(() => expect(hasHydrationMarkers(element)).toBe(false));
+
+			expect(element.querySelector('hydrated-region-card-test')).toBe(serverCard);
+			expect(element.querySelector('.label')).toBe(serverLabel);
+		},
+	);
 });

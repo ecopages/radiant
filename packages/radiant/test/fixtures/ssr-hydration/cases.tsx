@@ -11,6 +11,7 @@ import {
 	HydratedCounterBinding,
 	HydratedFragmentSlotParent,
 	HydratedMarkerSlotParent,
+	HydratedRegionParent,
 	HydratedStaticView,
 	HydratedSlotCard,
 	NonHydratedCounter,
@@ -59,4 +60,5 @@ export const SSR_HYDRATION_CASES: Record<string, () => string> = {
 			'deferred-hydrated-card-test',
 			renderRadiantElementViewToString(new DeferredHydratedCard(), { mode: 'hydrate' }),
 		),
+	'region-parent': () => renderRadiantElementHostToString(new HydratedRegionParent(), { mode: 'hydrate' }),
 };
