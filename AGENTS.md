@@ -33,4 +33,4 @@ When behavior changes, update that folder's README and any parent index that lis
 
 ## Tracker
 
-GitHub issues on `ecopages/radiant`, from the forms in `.github/ISSUE_TEMPLATE/` and the labels in `.github/labels.yml`. Board: GitHub Project `radiant` (number 1, owner `ecopages`), Status field: `In progress` while building, `In review` when the PR opens, `Done` when it merges. Integration branch: `develop`; `main` receives `develop` at release.
+GitHub issues on `ecopages/radiant`, from the forms in `.github/ISSUE_TEMPLATE/` and the labels in `.github/labels.yml`. Board: GitHub Project `radiant` (number 1, owner `ecopages`), Status field: `In progress` while building, `In review` when the PR opens, `Done` when it merges. Integration branch: `main`; feature and fix PRs target it, and the Changesets Version Packages PR is the release gate.

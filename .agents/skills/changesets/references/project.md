@@ -6,12 +6,14 @@ Source of truth: `.changeset/config.json`. While a line is in prerelease, `.chan
 
 ## Branches
 
-| Branch    | Role                                                                                                           |
-| --------- | -------------------------------------------------------------------------------------------------------------- |
-| `main`    | GitHub default and production. Visitors clone this. Merge `develop` here to ship. Publish runs only from here. |
-| `develop` | Integration. Feature PRs land here. `changeset add` and `status` compare against it (`baseBranch`).            |
+| Branch      | Role                                                                                                                                                                            |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `main`      | GitHub default, integration and production. Feature and fix PRs target it. `changeset add` and `status` compare against it (`baseBranch`). Stable publishes run only from here. |
+| `release/*` | Active prerelease channel only (see below).                                                                                                                                     |
 
-Stable cuts are a merge (or PR) of `develop` into `main`. A `release/*` branch is only for an active prerelease channel: uncomment it in `.github/workflows/release.yml` (and optionally `ci.yml`) while `pre.json` is in `pre` mode, then comment it again when that line ships.
+`main` holds only work that is ready to release: a change that is not ready stays on its own branch, or lands without a public export and without a changeset until it is. The Version Packages PR is the release gate.
+
+A `release/*` branch is only for an active prerelease channel: uncomment it in `.github/workflows/release.yml` (and optionally `ci.yml`) while `pre.json` is in `pre` mode, then comment it again when that line ships.
 
 ## Package tiers
 
@@ -44,11 +46,11 @@ GITHUB_TOKEN="$(gh auth token)" pnpm changeset version
 
 ## CI
 
-`.github/workflows/ci.yml` runs on pull requests and on pushes to `main` and `develop`.
+`.github/workflows/ci.yml` runs on pull requests and on pushes to `main`.
 
-`.github/workflows/release.yml` runs only on `main`: install, `pnpm run build:all`, then `changesets/action@v2` with `pnpm run version-packages` and `pnpm changeset publish`. `version-packages` runs `changeset version` then `pnpm install --lockfile-only` so workspace `>=` specifiers and `pnpm-lock.yaml` stay in sync on the Version Packages PR. The token is `github-token: ${{ github.token }}`. Provenance is `NPM_CONFIG_PROVENANCE`.
+`.github/workflows/release.yml` runs on `main` (and on a `release/*` branch while its trigger is uncommented): install, `pnpm run build:all`, then `changesets/action@v2` with `pnpm run version-packages` and `pnpm changeset publish`. `version-packages` runs `changeset version` then `pnpm install --lockfile-only` so workspace `>=` specifiers and `pnpm-lock.yaml` stay in sync on the Version Packages PR. The token is `github-token: ${{ github.token }}`. Provenance is `NPM_CONFIG_PROVENANCE`.
 
-Pending changesets stay on `develop`. Merging `develop` into `main` either publishes already-versioned packages or opens a Version Packages PR against `main`; merging that PR publishes.
+Pending changesets accumulate on `main`. Each push to `main` either publishes already-versioned packages or opens or updates the Version Packages PR; merging that PR publishes.
 
 ## Dist tags
 
