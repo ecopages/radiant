@@ -108,7 +108,7 @@ rui-tooltip {
 | Target | Required | Host writes | Author owns |
 | --- | --- | --- | --- |
 | `[data-ref="trigger"]` | yes | — | trigger wrapper; focus bridge |
-| `[data-ref="tooltip"]` | yes | `id`, `hidden`, position | tooltip text / content |
+| `[data-ref="tooltip"]` | yes | `id`, `hidden`, position, text from `content` | the surface element |
 | focusable anchor | per trigger | `aria-describedby` | the control inside `[data-ref="trigger"]` |
 
 Do not set `id`, `hidden`, or `aria-describedby` on the anchor. Nested hosts: none.

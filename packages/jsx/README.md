@@ -327,7 +327,7 @@ for (const subscriber of subscribers) {
 
 That contract is intentionally small. The package does not impose a single state container, computed graph, or scheduler. It just gives the renderer a stable subscription surface for either signal-like values or explicit subscribable wrappers.
 
-Arrays and other iterables render as a list of children. A generator, or any other one-shot iterator, is consumed once for that iterator object; the runtime reuses that snapshot while the object remains reachable, including across later renders. JSX `children` flattening consumes the iterator when the element is created, so pass a new iterator to each `jsx()` call if those children should be yielded again.
+Arrays and other iterables render as a list of children. A generator, or any other one-shot iterator, is consumed once for that iterator object; the runtime reuses that snapshot while the object remains reachable, including across later renders. JSX `children` normalization consumes the iterator when the element is created, so pass a new iterator to each `jsx()` call if those children should be yielded again.
 
 ## Empty Values And Removal
 
@@ -350,6 +350,8 @@ const nextLabel = shouldShowLabel ? 'Ready' : null;
 
 return <p>{nextLabel}</p>;
 ```
+
+A child expression keeps its place in the template whatever value it holds, so the template shape follows the authored markup. `null`, `undefined`, `false` or an empty list leaves an empty range. A fragment with several children resolves to one entry per child, with `null` for an empty one, and a list keeps one entry per item, with nested lists as nested entries. When every filled item, nested lists included, is keyed, the list flattens to its keyed items and reconciles by key. Showing, hiding or emptying a child patches that range only: the element around it and its siblings keep their nodes. One exception: an unkeyed item that comes and goes in the same list or fragment as keyed items switches that list between keyed and positional reconciliation, which rebuilds the keyed items, so give such an item a key too.
 
 For attributes and bindings:
 
@@ -434,9 +436,9 @@ Adjacent text child bindings that SSR collapses into one text node are split int
 | Reactive wrapper around either shape       | Inner snapshot     | Reconnects the current value, then subscribes       |
 | Anything else                              | Client render      | Full mount; leftover SSR markers are replaced       |
 
-Iterable fragment hydration supports flat lists of intrinsic template children (for example `<> <button/> <span/> </>`), including subscribable child bindings inside those templates. Each recovered child template stays in the root's ownership tree, so `unmount()` and later replacement renders dispose subscriptions and native listeners.
+Iterable fragment hydration supports lists of intrinsic template children (for example `<> <button/> <span/> </>`), including subscribable child bindings inside those templates and nested lists such as `<>{items.map(renderItem)}<footer/></>`. Each recovered child template stays in the root's ownership tree, so `unmount()` and later replacement renders dispose subscriptions and native listeners.
 
-Keyed identity is retained only when **every** child in the list has a key. A mixed keyed/unkeyed list hydrates as an indexed list and can rebuild nodes on the next render. Nested fragments, bare reactive children at the fragment root, and DOM/script child-count mismatches fall back to a full client render. If an earlier sibling had already subscribed when that fallback happens, that sibling is disposed first. Incomplete recovery inside a single template disposes parts that already subscribed before falling back.
+Keyed identity is retained only when **every** child in the list has a key. A mixed keyed/unkeyed list hydrates as an indexed list and can rebuild nodes on the next render. Bare reactive children at the fragment root and DOM/script child-count mismatches fall back to a full client render. If an earlier sibling had already subscribed when that fallback happens, that sibling is disposed first. Incomplete recovery inside a single template disposes parts that already subscribed before falling back.
 
 Global SSR marker indexes are shared across both recovery paths via the binding collection helpers in `hydration-bindings.ts`, so fragment children resolve `data-radiant-jsx-bind-*` attributes against the same namespace used by `renderToString(..., { mode: 'hydrate' })`.
 
@@ -529,7 +531,7 @@ Iterable hydration assigns each child `bindingBaseIndex` by counting prior sibli
 
 Attribute markers cover dynamic attributes and listeners. Subscribable child text such as `{boundCount}` does not use `data-radiant-jsx-bind-*`; template compilation places comment markers around the child range, and iterable hydration reconnects those ranges during `hydrateTemplateInstance(...)`. Children of `textarea`, `title`, `style`, and `script` cannot use comment anchors — Chromium treats those comments as literal text — so compilation uses a locator attribute that is stripped from the blueprint, and hydration reconnects those slots as text-content parts.
 
-Nested custom-element hosts fork a fresh binding namespace during SSR so each host hydrates independently. See `withServerHydrationBindingState(...)` and framework bridges such as Radiant's element SSR hook. JSX children passed to a nested custom element are serialized as plain light DOM without markers, because parent hydration skips custom-element subtrees; custom elements inside those children still render through the hook.
+Nested custom-element hosts fork a fresh binding namespace during SSR so each host hydrates independently. See `withServerHydrationBindingState(...)` and framework bridges such as Radiant's element SSR hook. JSX children applied to a nested custom element as light DOM are serialized as plain markup without markers, because parent hydration skips custom-element subtrees; custom elements inside those children still render through the hook. A hook that hands an element its children as a value (see [Children as a value](#children-as-a-value)) lets the element serialize them in its own namespace instead.
 
 ### SSR-Capable Custom Elements
 
@@ -643,6 +645,12 @@ const gridApi: UserGridApi = {
 
 <user-grid items={rows} selection={currentRow} prop:api={gridApi} />;
 ```
+
+### Children as a value
+
+A custom element can take its JSX `children` as one value instead of DOM children. Its class sets a static `CUSTOM_ELEMENT_CHILDREN_SYMBOL` member (exported from `@ecopages/jsx`) to `true`; when a view creates the element while that class is defined, the renderer puts nothing inside the element and assigns the children, normalized like any child list, to the element's `CUSTOM_ELEMENT_CHILDREN_SYMBOL` member after the element is in the DOM. Every later render of the view assigns the new children again. The element's own renderer then decides where they go, and it is the only renderer that touches the resulting nodes. `RadiantElement` answers `true` when its class overrides `render()`.
+
+Any other element keeps its children as DOM nodes inside it, including an element whose tag is defined only after the view created it. The lookup happens when the view creates the element, so a later render of the view after the definition creates a new element that takes the value. On the server the class is not consulted: a custom-element render hook registered with `{ ownsChildren: true }` gets the raw children as `context.children` and decides; without that option they are applied as light DOM before the hook runs.
 
 ### Function Components And Fragments
 
@@ -790,6 +798,7 @@ Main exports:
 - `createSubscribableJsxValue`
 - `isKeyedJsxValue`
 - `isSubscribableJsxValue`
+- `CUSTOM_ELEMENT_CHILDREN_SYMBOL`
 
 Key types:
 

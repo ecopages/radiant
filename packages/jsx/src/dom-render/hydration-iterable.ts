@@ -29,10 +29,10 @@ function getHydratableChildNodes(target: HTMLElement): readonly ChildNode[] {
  * - a flat list of intrinsic template children (`<>...</>` with elements such as
  *   `<button>`, `<span>`, and other single-root templates)
  * - static primitive or markup children mixed between templates
+ * - nested lists, such as a mapped list beside a sibling, hydrated as ranges
  * - keyed lists of those children, which keep identity across the next render
  *
  * Unsupported shapes fall back to a full client render:
- * - nested iterable children (fragments inside fragments)
  * - bare reactive child sources at the fragment root without a wrapping template
  * - DOM/script child counts that no longer match the JSX child list
  *
@@ -67,9 +67,19 @@ export function hydrateIterableRoot(
 			return undefined;
 		}
 
-		if (isTemplateResultLike(childValue) && shouldSkipHydrationSubtree(childValue.rootLocalName ?? '')) {
+		if (
+			isIterableRenderable(childValue) ||
+			(isTemplateResultLike(childValue) && shouldSkipHydrationSubtree(childValue.rootLocalName ?? ''))
+		) {
 			hydratedChildren.push(
-				reconcileCustomElementChild(childValue, slice, options.rootTarget ?? target, nextBindingIndex),
+				reconcileRangedChild(
+					childValue,
+					slice,
+					target,
+					domChildren[domOffset] ?? null,
+					options.rootTarget ?? target,
+					nextBindingIndex,
+				),
 			);
 		} else if (isTemplateResultLike(childValue)) {
 			const instance = hydrateTemplateInstance(childValue, target, deferredProperties, {
@@ -85,9 +95,6 @@ export function hydrateIterableRoot(
 			}
 
 			hydratedChildren.push({ instance, nodes: instance.rootNodes });
-		} else if (isIterableRenderable(childValue)) {
-			disposeHydratedIterableChildren(hydratedChildren);
-			return undefined;
 		} else {
 			hydratedChildren.push({ nodes: slice });
 		}
@@ -110,23 +117,32 @@ export function hydrateIterableRoot(
 }
 
 /**
- * Reconciles a custom-element template child the way a ranged child is reconciled, so both root shapes treat it
- * alike.
+ * Hydrates a custom-element template child or a nested list the way a ranged child is hydrated, so both root
+ * shapes treat it alike.
  *
- * @remarks The element reconnects its own host, so the parent does not hydrate into it. Boundary markers give
- * the range reconciliation the start and end it works between; they are removed once the range holds its final
- * nodes.
+ * @remarks A custom element reconnects its own host, so the parent does not hydrate into it. A nested list keeps
+ * the boundary markers of its own records inside the returned nodes. The outer boundary markers give the range
+ * hydration the start and end it works between; they are removed once the range holds its final nodes. A nested
+ * list that rendered no nodes has an empty slice, so its markers go before `referenceNode` in `parent`.
  */
-function reconcileCustomElementChild(
+function reconcileRangedChild(
 	value: unknown,
 	existingNodes: readonly ChildNode[],
+	parent: Node,
+	referenceNode: Node | null,
 	rootTarget: HTMLElement,
 	bindingBaseIndex: number,
 ): HydratedIterableChild {
 	const startMarker = createBoundaryMarker();
 	const endMarker = createBoundaryMarker();
-	existingNodes[0]?.before(startMarker);
-	existingNodes[existingNodes.length - 1]?.after(endMarker);
+
+	if (existingNodes.length === 0) {
+		parent.insertBefore(startMarker, referenceNode);
+		parent.insertBefore(endMarker, referenceNode);
+	} else {
+		existingNodes[0]?.before(startMarker);
+		existingNodes[existingNodes.length - 1]?.after(endMarker);
+	}
 
 	const mounted = hydrateMountedRangeContent(
 		startMarker,

@@ -2,8 +2,9 @@ import { shouldDelegateEventBinding } from './event-binding-policy.ts';
 import { getTemplateShapeKey } from './template-shape.ts';
 import { forEachNormalizedAttribute } from './attribute-normalize.ts';
 import { shouldUseAttributeBindingByDefaultForElement, shouldUseBooleanAttributeBinding } from './binding-defaults.ts';
-import { isIterableJsxChild, resolveReactiveSnapshot } from '../types/renderable-guards.ts';
+import { isIterableJsxChild, isKeyedJsxValue, resolveReactiveSnapshot } from '../types/renderable-guards.ts';
 import {
+	CUSTOM_ELEMENT_CHILDREN_SYMBOL,
 	KEYED_VALUE_SYMBOL,
 	RADIANT_MARKUP_NODE_SYMBOL,
 	RADIANT_TEMPLATE_RESULT,
@@ -48,11 +49,21 @@ type ChildSlotMode = 'multiple' | 'single';
 
 /**
  * Core element factory called by both {@link jsx} and {@link jsxs}.
+ *
+ * @remarks An element gets child parts only when `props` has a `children` key, which
+ * the JSX transform sets for every authored child expression (`<p>{x}</p>`) and omits
+ * for `<p />`. The key, not the value, decides, so `undefined` still keeps its part
+ * and the template shape follows the authored markup.
+ *
+ * A custom element whose class takes its children as a value
+ * ({@link CUSTOM_ELEMENT_CHILDREN_SYMBOL}) gets one `children` binding instead of child
+ * parts, unless `childrenAsDom` is set. The class is looked up when the element is created.
  */
 export function createJsxElement<Props extends object>(
 	type: string | JsxFragment | JsxComponent<Props>,
 	props: Props,
 	childSlotMode: ChildSlotMode,
+	childrenAsDom = false,
 ): JsxRenderable {
 	const keyedValue = (props as { key?: unknown }).key;
 
@@ -63,7 +74,7 @@ export function createJsxElement<Props extends object>(
 	if (type === fragmentSymbol) {
 		const fragmentChildren = (props as JsxPropsWithChildren).children;
 
-		return wrapKeyedValue(normalizeChildrenWithMode(fragmentChildren, childSlotMode), keyedValue);
+		return wrapKeyedValue((toChildSlot(fragmentChildren) ?? '') as JsxRenderable, keyedValue);
 	}
 
 	if (type === 'slot') {
@@ -81,13 +92,23 @@ export function createJsxElement<Props extends object>(
 	forEachNormalizedAttribute(rawAttributes, (name, value) => {
 		appendBinding(strings, values, parts, type, name, value);
 	});
+	const hasChildren = 'children' in props;
+	const childrenAsValue = hasChildren && !childrenAsDom && takesChildrenValue(type);
+
+	if (childrenAsValue) {
+		parts.push({ kind: 'children', name: 'children', type: 'attribute' });
+		values.push(toChildSlot(children));
+		strings.push('');
+	}
 
 	strings[strings.length - 1] += '>';
 
 	// Void elements take neither children nor a closing tag; everything else is
 	// otherwise assembled identically.
 	if (!voidElementNames.has(type)) {
-		appendElementChildren(strings, values, parts, type, children, childSlotMode);
+		if (hasChildren && !childrenAsValue) {
+			appendElementChildren(strings, values, parts, type, children, childSlotMode);
+		}
 		strings[strings.length - 1] += `</${type}>`;
 	}
 
@@ -111,6 +132,17 @@ export function createMarkupNodeLike(outerHTML: string): JsxNodeLike {
 	};
 }
 
+function takesChildrenValue(type: string): boolean {
+	const constructor =
+		type.includes('-') && typeof customElements !== 'undefined' ? customElements.get(type) : undefined;
+
+	return (
+		(constructor as { [CUSTOM_ELEMENT_CHILDREN_SYMBOL]?: unknown } | undefined)?.[
+			CUSTOM_ELEMENT_CHILDREN_SYMBOL
+		] === true
+	);
+}
+
 function appendElementChildren(
 	strings: string[],
 	values: unknown[],
@@ -120,11 +152,7 @@ function appendElementChildren(
 	childSlotMode: ChildSlotMode,
 ): void {
 	if (type === 'script') {
-		const rawTextContent = renderJsxRenderableToRawText(normalizeChildrenWithMode(children, childSlotMode));
-
-		if (rawTextContent === '') {
-			return;
-		}
+		const rawTextContent = renderJsxRenderableToRawText(children);
 
 		values.push(createMarkupNodeLike(rawTextContent));
 		parts.push({ type: 'child' });
@@ -242,7 +270,11 @@ function resolveBindingPart(
  *
  * `multiple` mode (from `jsxs`) gives each sibling its own slot so the renderer can
  * reconcile them positionally; `single` mode collapses the whole subtree into one
- * slot. Empty slots are dropped entirely rather than emitted as blanks.
+ * slot.
+ *
+ * @remarks Every authored child expression keeps its slot, holding `null` while it
+ * renders nothing, so the template shape depends on the markup and not on the values.
+ * A dropped slot would change the shape key and make the renderer replace the element.
  */
 function appendChildren(
 	strings: string[],
@@ -259,96 +291,52 @@ function appendChildren(
 }
 
 /**
- * Resolves `children` to the value a fragment should render as.
- *
- * Unlike {@link appendChildren}, a fragment has no element to hang slots on, so a
- * lone surviving child renders as itself. That collapse deliberately does not apply
- * to element children: an element keeps a one-entry list as a list so the renderer
- * reconciles it positionally instead of treating it as a single child.
- */
-function normalizeChildrenWithMode(children: JsxRenderable | undefined, childSlotMode: ChildSlotMode): JsxRenderable {
-	if (childSlotMode === 'multiple' && isIterableJsxChild(children)) {
-		const slots = toChildSlots(children, childSlotMode);
-
-		if (slots.length === 0) {
-			return '';
-		}
-
-		return (slots.length === 1 ? slots[0] : slots) as JsxRenderable;
-	}
-
-	const slot = toChildSlot(children);
-
-	if (slot === undefined) {
-		return '';
-	}
-
-	return (Array.isArray(slot) && slot.length === 1 ? slot[0] : slot) as JsxRenderable;
-}
-
-/**
  * Splits `children` into the discrete slot values for the given slot mode.
  *
  * `multiple` keeps siblings in separate slots; `single` folds the whole subtree into
- * one. Both drop `undefined`, `null`, and `false`.
+ * one.
  */
 function toChildSlots(children: JsxRenderable | undefined, childSlotMode: ChildSlotMode): unknown[] {
 	if (childSlotMode === 'multiple' && isIterableJsxChild(children)) {
-		const slots: unknown[] = [];
-
-		for (const child of children) {
-			const slot = toChildSlot(child as JsxRenderable);
-
-			if (slot !== undefined) {
-				slots.push(slot);
-			}
-		}
-
-		return slots;
+		return Array.from(children, (child) => toChildSlot(child as JsxRenderable));
 	}
 
-	const slot = toChildSlot(children);
-	return slot === undefined ? [] : [slot];
+	return [toChildSlot(children)];
 }
 
 /**
- * Flattens one child into its slot value, or `undefined` when it renders nothing.
+ * Resolves one child to its slot value, or `null` when it renders nothing.
  *
- * Iterables stay arrays even when they hold a single entry, so the renderer keeps
- * treating them as lists.
+ * A fragment's value comes from here too: its children are a list, and a lone non-list
+ * child renders as itself. Iterables stay arrays even when they hold a single entry, so
+ * the renderer keeps treating them as lists.
+ *
+ * @remarks A list keeps one entry per item: an empty item is a `null` hole and a
+ * nested list stays one nested entry, so an item's position never depends on the
+ * values before it. A value that flipped between a single child and a list, or a list
+ * whose positions shifted, would make the renderer rebuild items that did not change.
+ * When every filled item, nested ones included, is keyed, the list is the flat keyed
+ * items instead: keyed reconciliation matches by key, so positions do not matter, and
+ * it needs every entry keyed. An empty list is `null`, like any other empty child.
  */
 function toChildSlot(child: JsxRenderable | undefined): unknown {
 	if (child === undefined || child === null || child === false) {
-		return undefined;
+		return null;
 	}
 
 	if (!isIterableJsxChild(child)) {
 		return child;
 	}
 
-	const flattenedChildren = flattenChildren(child);
-	return flattenedChildren.length === 0 ? undefined : flattenedChildren;
-}
+	const slots = Array.from(child, (entry) => toChildSlot(entry as JsxRenderable));
+	const filledSlots = slots.filter((slot) => slot !== null);
 
-function flattenChildren(children: JsxRenderable | undefined): unknown[] {
-	const flattenedChildren: unknown[] = [];
-	appendFlattenedChildren(flattenedChildren, children);
-	return flattenedChildren;
-}
-
-function appendFlattenedChildren(flattenedChildren: unknown[], children: JsxRenderable | undefined): void {
-	if (children === undefined || children === null || children === false) {
-		return;
+	if (filledSlots.length === 0) {
+		return null;
 	}
 
-	if (isIterableJsxChild(children)) {
-		for (const child of children) {
-			appendFlattenedChildren(flattenedChildren, child as JsxRenderable);
-		}
-		return;
-	}
-
-	flattenedChildren.push(children);
+	const filledLeaves = filledSlots.flat();
+	return filledLeaves.every(isKeyedJsxValue) ? filledLeaves : slots;
 }
 
 function createTemplateResult(

@@ -62,6 +62,7 @@ function renderFallbackCustomElementMarkup(
 			tagName,
 			{ ...attributes, children } as JsxPropsWithChildren & Record<string, unknown>,
 			'multiple',
+			true,
 		),
 		{ mode: 'plain' },
 	);
