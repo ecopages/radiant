@@ -193,8 +193,23 @@ function canAdoptCustomElement(template: TemplateResultLike, existingNodes: read
 		host instanceof Element &&
 		host.localName === localName &&
 		takesChildrenValue(localName) &&
-		!getCompiledTemplate(template).blueprint.content.firstChild?.hasChildNodes()
+		!fillsElement(template)
 	);
+}
+
+/**
+ * Whether a template puts DOM children inside a root element whose class now takes its children as a value, as when
+ * the template was created before the element's tag was defined.
+ *
+ * @remarks The element's server markup holds its own rendered content where the template's children would go, so
+ * such an element is rebuilt rather than hydrated.
+ */
+export function fillsValueElement(template: TemplateResultLike): boolean {
+	return takesChildrenValue(template.rootLocalName ?? '') && fillsElement(template);
+}
+
+function fillsElement(template: TemplateResultLike): boolean {
+	return getCompiledTemplate(template).blueprint.content.firstChild?.hasChildNodes() === true;
 }
 
 /**

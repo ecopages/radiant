@@ -1,8 +1,8 @@
 import type { JsxRenderable } from '@ecopages/jsx';
-import { createMarkupNodeLike } from '@ecopages/jsx';
+import { CUSTOM_ELEMENT_CHILDREN_SYMBOL, createMarkupNodeLike } from '@ecopages/jsx';
 import type { RenderToStringOptions } from '@ecopages/jsx/server';
 import { getCustomElementTagName } from '../../core/custom-element-metadata';
-import { SERVER_RENDERED_HOST_ATTRIBUTE } from '../../core/server-rendered-host';
+import { SERVER_RENDERED_AUTHORED_STAMP, SERVER_RENDERED_HOST_ATTRIBUTE } from '../../core/server-rendered-host';
 import { ensureLegacyHostReady } from '../../decorators/legacy/host-readiness';
 import { assertValidHtmlTagName } from '../../utils/html-names';
 import { withSsrContextProviders } from '../context-ssr';
@@ -61,15 +61,20 @@ export class RadiantElementSsrService {
 		this.ensureReady();
 		const tagName = this.getTagName();
 		const hydrate = isHydrateMode(options);
-		const hostAttributes = hydrate
-			? { ...attributes, [SERVER_RENDERED_HOST_ATTRIBUTE]: attributes[SERVER_RENDERED_HOST_ATTRIBUTE] ?? '' }
-			: attributes;
 
-		return withSsrContextProviders(
-			this.host.getContextProviders(),
-			() =>
-				`<${tagName}${stringifyHostAttributes(hostAttributes)}>${this.renderHostContent(options, hydrate)}</${tagName}>`,
-		);
+		return withSsrContextProviders(this.host.getContextProviders(), () => {
+			const slotProjectionScript = { markup: '' };
+			const content = this.renderHostContent(options, hydrate, slotProjectionScript);
+			const stamp =
+				slotProjectionScript.markup !== '' && takesChildrenValue(this.host.constructor)
+					? SERVER_RENDERED_AUTHORED_STAMP
+					: '';
+			const hostAttributes = hydrate
+				? { ...attributes, [SERVER_RENDERED_HOST_ATTRIBUTE]: attributes[SERVER_RENDERED_HOST_ATTRIBUTE] ?? stamp }
+				: attributes;
+
+			return `<${tagName}${stringifyHostAttributes(hostAttributes)}>${content}</${tagName}>`;
+		});
 	}
 
 	public getHostAttributes(): Record<string, string> {
@@ -77,7 +82,12 @@ export class RadiantElementSsrService {
 		return resolveHostAttributes(this.host);
 	}
 
-	private renderHostContent(options: RenderToStringOptions, hydrate: boolean): string {
+	/** @param slotProjectionScript Receives the slot-projection payload markup, empty when the host has none. */
+	private renderHostContent(
+		options: RenderToStringOptions,
+		hydrate: boolean,
+		slotProjectionScript: { markup: string },
+	): string {
 		const hydrationScripts = hydrate
 			? this.host
 					.getHydrationBindings()
@@ -88,12 +98,13 @@ export class RadiantElementSsrService {
 
 		const hostContent = this.renderView(this.host, options);
 		this.host.flushPostSyncCallbacks();
+		slotProjectionScript.markup = this.host.getSlotProjectionScriptTag?.() ?? '';
 
 		return composeHostContent(
 			{
 				hostContent,
 				authoredHydrationMarkup: this.host.getAuthoredHydrationScriptMarkup?.() ?? '',
-				slotProjectionScript: this.host.getSlotProjectionScriptTag?.() ?? '',
+				slotProjectionScript: slotProjectionScript.markup,
 				hydrationScripts,
 			},
 			hydrate,
@@ -109,4 +120,9 @@ export class RadiantElementSsrService {
 
 		return assertValidHtmlTagName(tagName, `${this.host.constructor.name} custom element tagName`);
 	}
+}
+
+/** @remarks Only a class that takes a Children Value from a view tells Authored Children apart in its stamp. */
+function takesChildrenValue(constructor: object): boolean {
+	return (constructor as { [CUSTOM_ELEMENT_CHILDREN_SYMBOL]?: unknown })[CUSTOM_ELEMENT_CHILDREN_SYMBOL] === true;
 }

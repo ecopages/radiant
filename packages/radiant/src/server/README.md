@@ -60,8 +60,10 @@ Lower-level host serialization lives on `@ecopages/radiant/server/radiant-elemen
 - **Adapter default:** `renderRadiantElementHostToString`
 - **View-only:** `renderRadiantElementViewToString`. It returns the view without a host tag, so it never stamps; a caller that writes the host tag itself adds `SERVER_RENDERED_HOST_ATTRIBUTE`.
 - **JSX / custom-element SSR integration:** `withRadiantServerCustomElementRenderBridge`, `renderRegisteredRadiantElementHost`, `renderRegisteredRadiantElementHostToString`
-- **Host stamp:** `SERVER_RENDERED_HOST_ATTRIBUTE` (`data-radiant-ssr`). Hydrate-mode host serialization writes it on every host, with the value `children` on a host that takes its children as a value from the view around it, and the client host reads and removes it at first connect into `isServerRendered`. Plain mode does not write it.
+- **Host stamp:** `SERVER_RENDERED_HOST_ATTRIBUTE` (`data-radiant-ssr`). Hydrate-mode host serialization writes it on every host: `children` on a host that takes its children as a value from the view around it, `authored` on a render-owning host it rendered with Authored Children and their slot-projection payload, and an empty value otherwise. The client host reads and removes it at first connect into `isServerRendered`. Plain mode does not write it.
 - **Advanced / runtime:** `getOrCreateRadiantElementSsrRuntime`, `withServerRadiantElementSsrRuntime`, `createRadiantElementSsrService`, `getRadiantElementHostSsrAttributes`, `resolveRadiantElementRenderBridge`
+
+On the client, the stamp decides how a server-rendered host takes its children. A host stamped `authored` keeps its Authored Children for its lifetime and ignores any Children Value, including the one page-level JSX passes when it hydrates over the host. A host stamped `children` waits for its Children Value and takes it. A host with an empty stamp, such as one a view rendered with no children, takes a Children Value a view passes later.
 
 When a component renders literal `<slot>` tags over **Authored Children**, host serialization also emits the slot-projection payload needed to reconstruct default and named light-DOM assignments on the client.
 

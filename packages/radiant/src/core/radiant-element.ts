@@ -24,7 +24,11 @@ import { REACTIVE_HOST, ReactiveHost, type ReactiveHostInternals } from './react
 import type { ReactiveState } from './reactivity-contract';
 import { runSsrPreparationCallbacks } from './ssr-preparation';
 import { isRadiantHydratorInstalled } from './radiant-hydrator-state';
-import { SERVER_RENDERED_CHILDREN_STAMP, SERVER_RENDERED_HOST_ATTRIBUTE } from './server-rendered-host';
+import {
+	SERVER_RENDERED_AUTHORED_STAMP,
+	SERVER_RENDERED_CHILDREN_STAMP,
+	SERVER_RENDERED_HOST_ATTRIBUTE,
+} from './server-rendered-host';
 import { getRadiantElementSsrRuntime, type RadiantElementRenderToStringOptions } from './radiant-element-ssr-registry';
 import { RADIANT_ELEMENT_BRAND } from './radiant-element-brand';
 
@@ -232,6 +236,8 @@ export class RadiantElement<Bindings extends object = {}>
 	 * hydrator is installed; cleared when the children arrive (see the children setter). The host is inert until then.
 	 */
 	private awaitsChildren = false;
+	/** Set at first connect for a host stamped {@link SERVER_RENDERED_AUTHORED_STAMP}; see the children setter. */
+	private keepsServerChildren = false;
 	/** Until the first connect sync adopts authored attributes; it can wait past the first connect. */
 	private initialSyncPending = false;
 	private readonly updateCycle: UpdateCycle;
@@ -285,8 +291,16 @@ export class RadiantElement<Bindings extends object = {}>
 	 * defined before its parent's, as when the parent's module imports it, that sync runs here, inside the parent's
 	 * hydration; otherwise the value arrives first and the sync runs at its usual time. Assigning the value the
 	 * host already holds does nothing, since hydration can assign it more than once.
+	 *
+	 * A host the server rendered with Authored Children (stamped {@link SERVER_RENDERED_AUTHORED_STAMP}) ignores
+	 * the value for its lifetime, so its named slots stay as the server rendered them: neither the value a page view
+	 * that hydrates over it passes, nor a later one, reaches it, and event bindings in those children never attach.
 	 */
 	set [CUSTOM_ELEMENT_CHILDREN_SYMBOL](value: JsxRenderable) {
+		if (this.keepsServerChildren) {
+			return;
+		}
+
 		const renderRuntime = this.getOrCreateRenderRuntime();
 
 		if (renderRuntime.holdsChildrenValue(value)) {
@@ -348,6 +362,7 @@ export class RadiantElement<Bindings extends object = {}>
 			const stamp = this.getAttribute(SERVER_RENDERED_HOST_ATTRIBUTE);
 			this.serverRendered = stamp !== null;
 			this.awaitsChildren = stamp === SERVER_RENDERED_CHILDREN_STAMP && isRadiantHydratorInstalled();
+			this.keepsServerChildren = stamp === SERVER_RENDERED_AUTHORED_STAMP;
 			this.initialSyncPending = true;
 			this.removeAttribute(SERVER_RENDERED_HOST_ATTRIBUTE);
 		}

@@ -16,3 +16,13 @@ export const SERVER_RENDERED_HOST_ATTRIBUTE = 'data-radiant-ssr';
  * own first connect when the host's tag was defined first. Such a host hydrates once its children arrive.
  */
 export const SERVER_RENDERED_CHILDREN_STAMP = 'children';
+
+/**
+ * Value of {@link SERVER_RENDERED_HOST_ATTRIBUTE} on a host the server rendered with Authored Children, which it
+ * ships in a slot-projection payload.
+ *
+ * @remarks Such a host keeps those children on the client for its lifetime: a view that hydrates over it, such as
+ * the page's JSX, hands it the same children as a value, which it ignores so its named slots stay as the server
+ * rendered them.
+ */
+export const SERVER_RENDERED_AUTHORED_STAMP = 'authored';

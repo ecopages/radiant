@@ -1,9 +1,11 @@
 /// <reference types="vite/client" />
 /** @jsxImportSource @ecopages/jsx */
 import { waitFor } from '@testing-library/dom';
-import { CUSTOM_ELEMENT_CHILDREN_SYMBOL } from '@ecopages/jsx';
-import { beforeEach, describe, expect, test, vi } from 'vitest';
+import { CUSTOM_ELEMENT_CHILDREN_SYMBOL, createRoot, jsx, type JsxRenderable } from '@ecopages/jsx';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { installRadiantHydrator, uninstallRadiantHydrator } from '../../src/client/hydrator';
+import { RadiantElement } from '../../src/core/radiant-element';
+import { customElement } from '../../src/decorators/custom-element';
 import {
 	type DeferredHydratedCard,
 	type HydratedArrayPropCard,
@@ -15,6 +17,7 @@ import {
 	type HydratedLateChildParent,
 	type HydratedMarkerSlotChild,
 	type HydratedMarkerSlotParent,
+	type HydratedOptionalChildrenParent,
 	type HydratedNestedCounter,
 	type HydratedNestedHostParent,
 	type HydratedRegionCard,
@@ -24,6 +27,7 @@ import {
 	type HydratedSlotCard,
 	type HydratedThirdPartyParent,
 	type NonHydratedCounter,
+	pageSlotCardView,
 } from '../fixtures/ssr-hydration/components';
 import '../fixtures/ssr-hydration/components';
 import {
@@ -146,6 +150,21 @@ describe('hydrating server-rendered markup', () => {
 
 		await waitFor(() => expect(element.querySelector('.child > b')?.getAttribute('title')).toBe('inside-1'));
 		expect(element.querySelectorAll('hydrated-marker-slot-child-test')).toHaveLength(1);
+	});
+
+	test('shows children a parent view passes to a nested host after hydration when the server rendered none', async () => {
+		installRadiantHydrator();
+		const element = mount<HydratedOptionalChildrenParent>(
+			'optional-children-parent',
+			'hydrated-optional-children-parent-test',
+		);
+		const serverChild = element.querySelector('hydrated-marker-slot-child-test');
+
+		await waitFor(() => expect(hasHydrationMarkers(element)).toBe(false));
+		element.show = true;
+
+		await waitFor(() => expect(element.querySelector('.child > b')?.textContent).toBe('shown'));
+		expect(element.querySelector('hydrated-marker-slot-child-test')).toBe(serverChild);
 	});
 
 	test('reports server-rendered hosts through isServerRendered even when the view has no markers', async () => {
@@ -587,5 +606,175 @@ describe('a nested host that waits for its children', () => {
 		expect(hasHydrationMarkers(document.body)).toBe(false);
 		expect(document.querySelectorAll(`${prefix}-child .child > b`)).toHaveLength(1);
 		expect((document.querySelector(`${prefix}-child`) as LifecycleChild).isServerRendered).toBe(false);
+	});
+});
+
+let cardRun = 0;
+
+/** Defines a copy of `hydrated-slot-card-test` under a tag no other test has defined. */
+function defineSlotCard(tagName: string): void {
+	@customElement(tagName)
+	class SlotCard extends RadiantElement {
+		override render() {
+			return (
+				<section>
+					<header>
+						<slot name="header" />
+					</header>
+					<div>
+						<slot />
+					</div>
+					<button type="button">Count 0</button>
+				</section>
+			);
+		}
+	}
+
+	void SlotCard;
+}
+
+let container: HTMLElement;
+let warn: ReturnType<typeof vi.spyOn>;
+
+function setUpPageContainer(): void {
+	uninstallRadiantHydrator();
+	document.body.innerHTML = '';
+	container = document.body.appendChild(document.createElement('div'));
+	warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+}
+
+function slotWarnings(): unknown[] {
+	return warn.mock.calls.filter((call: unknown[]) => String(call[0]).includes('slot='));
+}
+
+function expectServerSlots(host: Element): void {
+	expect(host.querySelectorAll('header > h2')).toHaveLength(1);
+	expect(host.querySelectorAll('h2')).toHaveLength(1);
+	expect(Array.from(host.querySelectorAll('div > *'), (node) => node.outerHTML)).toEqual(['<p>SSR body</p>']);
+}
+
+describe('hydrating page-level JSX over a host the server rendered with Authored Children', () => {
+	beforeEach(setUpPageContainer);
+	afterEach(() => vi.restoreAllMocks());
+
+	for (const hydrator of [true, false]) {
+		const variant = hydrator ? '' : ', without the hydrator';
+
+		test(`keeps the host and its named slots when the page JSX is the host${variant}`, async () => {
+			if (hydrator) {
+				installRadiantHydrator();
+			}
+
+			container.innerHTML = serverMarkup('slot-card');
+			const serverHost = container.firstElementChild as HydratedSlotCard;
+
+			createRoot(container).hydrate(
+				<hydrated-slot-card-test>
+					<h2 slot="header">SSR header</h2>
+					<p>SSR body</p>
+				</hydrated-slot-card-test>,
+			);
+			await settle();
+
+			expect(container.firstElementChild).toBe(serverHost);
+			expectServerSlots(serverHost);
+			expect(slotWarnings()).toEqual([]);
+		});
+
+		for (const order of ['before', 'after'] as const) {
+			test(`keeps the host and its named slots when the page JSX hydrates ${order} the host hydrates itself${variant}`, async () => {
+				if (hydrator) {
+					installRadiantHydrator();
+				}
+
+				container.innerHTML = serverMarkup('page-slot-card');
+				const serverHost = container.querySelector('hydrated-slot-card-test') as HydratedSlotCard;
+
+				if (order === 'after') {
+					await settle();
+				}
+
+				createRoot(container).hydrate(pageSlotCardView());
+				await settle();
+
+				expect(container.querySelector('hydrated-slot-card-test')).toBe(serverHost);
+				expect(container.innerHTML).not.toContain('data-radiant-jsx-bind-');
+				expect(container.querySelector('script[data-radiant-slot-projection]')).toBeNull();
+				expectServerSlots(serverHost);
+				expect(slotWarnings()).toEqual([]);
+			});
+		}
+	}
+
+	test('keeps the server children when a later page render passes other children', async () => {
+		installRadiantHydrator();
+		container.innerHTML = serverMarkup('page-slot-card');
+		const serverHost = container.querySelector('hydrated-slot-card-test') as HydratedSlotCard;
+		const root = createRoot(container);
+
+		root.hydrate(pageSlotCardView());
+		await settle();
+		root.render(pageSlotCardView('Changed'));
+		await settle();
+
+		expect(container.querySelector('hydrated-slot-card-test')).toBe(serverHost);
+		expectServerSlots(serverHost);
+	});
+
+	test('renders the children once when the page JSX was created before the tag was defined', async () => {
+		installRadiantHydrator();
+		cardRun += 1;
+		const tagName = `page-slot-card-run${cardRun}`;
+		container.innerHTML = serverMarkup('page-slot-card').replaceAll('hydrated-slot-card-test', tagName);
+		const view: JsxRenderable = (
+			<main title="page">{jsx(tagName, { children: [<h2 slot="header">SSR header</h2>, <p>SSR body</p>] })}</main>
+		);
+
+		defineSlotCard(tagName);
+		createRoot(container).hydrate(view);
+		await settle();
+
+		expectServerSlots(container.querySelector(tagName) as Element);
+		expect(
+			warn.mock.calls.some((call: unknown[]) =>
+				String(call[0]).includes('was defined after a JSX view rendered it'),
+			),
+		).toBe(true);
+	});
+
+	test('renders the children once when the page JSX is a host created before its tag was defined', async () => {
+		installRadiantHydrator();
+		cardRun += 1;
+		const tagName = `page-slot-card-run${cardRun}`;
+		container.innerHTML = serverMarkup('slot-card').replaceAll('hydrated-slot-card-test', tagName);
+		const view = jsx(tagName, { children: [<h2 slot="header">SSR header</h2>, <p>SSR body</p>] });
+
+		defineSlotCard(tagName);
+		createRoot(container).hydrate(view);
+		await settle();
+
+		expect(container.querySelectorAll(tagName)).toHaveLength(1);
+		expectServerSlots(container.querySelector(tagName) as Element);
+	});
+});
+
+describe('a host the client creates in page-level JSX', () => {
+	beforeEach(setUpPageContainer);
+	afterEach(() => vi.restoreAllMocks());
+
+	test('takes its JSX children as a Children Value and follows later renders', async () => {
+		const root = createRoot(container);
+		const view = (body: string) => (
+			<hydrated-slot-card-test>
+				<p>{body}</p>
+			</hydrated-slot-card-test>
+		);
+
+		root.render(view('First'));
+		await settle();
+		root.render(view('Second'));
+
+		await waitFor(() => expect(container.querySelector('div > p')?.textContent).toBe('Second'));
+		expect(container.querySelectorAll('p')).toHaveLength(1);
 	});
 });

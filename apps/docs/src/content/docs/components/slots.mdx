@@ -7,7 +7,7 @@ order: 4
 
 # Slots
 
-`<slot>` in `render()` places a render-owning `RadiantElement`'s children. How they arrive decides how `<slot>` resolves:
+`<slot>` in `render()` places a render-owning `RadiantElement`'s children. How they arrive decides how `<slot>` resolves, with one exception for hosts the server rendered outside every host's view (see [Server-rendered hosts](#server-rendered-hosts)):
 
 - **From a JSX view.** When a view renders `<x-card>{children}</x-card>` and `x-card` is defined and overrides `render()`, the view hands a **Children Value** to the host. `<slot />` renders that value, and the host's renderer is the only one that touches the resulting nodes. Named regions are properties.
 - **As HTML.** Children written in markup, created with DOM APIs, rendered before the tag was defined, or rendered on the server in a page outside every host's view become **Authored Children**. They are captured once, when the host first renders, and assigned to slots by their `slot` attribute.
@@ -98,6 +98,12 @@ export class ShellCard extends RadiantElement {
 - SSR host rendering serializes the projected content and embeds the metadata needed to reconstruct slot assignments on the client.
 
 A tag defined only after a view rendered it treats those JSX children as **Authored Children**, and development builds warn: the host then does not follow later edits the view makes to them. Define custom elements before rendering views that use them.
+
+### Server-rendered hosts
+
+What the server rendered decides how a server-rendered host takes its children on the client. A host the server renders outside every host's view gets **Authored Children**, ships them in a slot-projection payload, and is stamped `data-radiant-ssr="authored"`. It keeps those children for its lifetime and ignores any **Children Value**: when page-level JSX hydrates over it, its named slots stay as the server rendered them, a later render of the page JSX does not change them, and event bindings in them never attach. Render changing or interactive content inside a host's view, or pass it through a property. The page's hydration keeps the host's node when the tag was defined before the page JSX was created; otherwise the host is rebuilt and takes those children as **Authored Children**.
+
+A host the server renders inside another host's view in hydrate mode, and any host that client JSX creates while its tag is defined, takes the **Children Value**.
 
 ## View helpers
 
