@@ -1,7 +1,7 @@
 import { countHydrationMarkers, visitHydrationBindingMarkers } from '../hydration/hydration-bindings.ts';
 import { isIterableRenderable, isTemplateResultLike } from '../types/renderable-guards.ts';
 import type { JsxRenderable, KeyedJsxValue } from '../types/index.ts';
-import { countHydratedRangeNodes } from './hydration-planning.ts';
+import { countHydratedRangeNodes, isEmptyTextNode } from './hydration-planning.ts';
 import { hydrateTemplateInstance, type HydrateTemplateInstanceOptions } from './hydration.ts';
 import { createBoundaryMarker } from './dom-operations.ts';
 import { shouldSkipHydrationSubtree } from '../hydration/hydration-subtree-policy.ts';
@@ -67,10 +67,7 @@ export function hydrateIterableRoot(
 			return undefined;
 		}
 
-		if (
-			isIterableRenderable(childValue) ||
-			(isTemplateResultLike(childValue) && shouldSkipHydrationSubtree(childValue.rootLocalName ?? ''))
-		) {
+		if (isRangedChild(childValue)) {
 			hydratedChildren.push(
 				reconcileRangedChild(
 					childValue,
@@ -116,11 +113,20 @@ export function hydrateIterableRoot(
 	return adoptHydratedIterableRoot(hydratedChildren, target, keyedChildren);
 }
 
+function isRangedChild(value: unknown): boolean {
+	return (
+		isIterableRenderable(value) ||
+		isEmptyTextNode(value) ||
+		(isTemplateResultLike(value) && shouldSkipHydrationSubtree(value.rootLocalName ?? ''))
+	);
+}
+
 /**
- * Hydrates a custom-element template child or a nested list the way a ranged child is hydrated, so both root
- * shapes treat it alike.
+ * Hydrates a custom-element template child, an empty text node or a nested list the way a ranged child is
+ * hydrated, so both root shapes treat it alike.
  *
- * @remarks A custom element reconnects its own host, so the parent does not hydrate into it. A nested list keeps
+ * @remarks The parent binds only a custom element's own parts and never hydrates into it; an element it cannot
+ * adopt is rebuilt. An empty text node has no server node and is inserted. A nested list keeps
  * the boundary markers of its own records inside the returned nodes. The outer boundary markers give the range
  * hydration the start and end it works between; they are removed once the range holds its final nodes. A nested
  * list that rendered no nodes has an empty slice, so its markers go before `referenceNode` in `parent`.

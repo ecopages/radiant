@@ -20,6 +20,7 @@ import type {
 	RadiantElementViewRenderSource,
 } from '../../core/radiant-element-ssr-registry';
 import { withRadiantElementSsrRuntime } from '../../core/radiant-element-ssr-registry';
+import { SERVER_RENDERED_CHILDREN_STAMP, SERVER_RENDERED_HOST_ATTRIBUTE } from '../../core/server-rendered-host';
 
 let radiantElementSsrRuntime: RadiantElementSsrRuntime | undefined;
 
@@ -102,7 +103,9 @@ export function resolveRadiantElementRenderBridge(component: object): RadiantEle
  * does when the client renders that view, so its own render places them inside its context providers and serializes
  * them in its marker namespace. Anywhere else, such as a page around the hosts, the client sees the children
  * only as Authored Children: the host builds them as light-DOM nodes (`renderServerLightDom`, so no value is escaped and
- * parsed back) inside its own context providers, and captures them for its slots.
+ * parsed back) inside its own context providers, and captures them for its slots. In hydrate mode, a host that
+ * takes the value is stamped with {@link SERVER_RENDERED_CHILDREN_STAMP}, so on the client it waits for them before
+ * it hydrates.
  */
 export function withRadiantServerCustomElementRenderBridge<T>(render: () => T): T {
 	return withServerCustomElementRenderHook(
@@ -117,7 +120,9 @@ export function withRadiantServerCustomElementRenderBridge<T>(render: () => T): 
 				(constructor as { [CUSTOM_ELEMENT_CHILDREN_SYMBOL]?: boolean })[CUSTOM_ELEMENT_CHILDREN_SYMBOL] === true
 			) {
 				Reflect.set(instance, CUSTOM_ELEMENT_CHILDREN_SYMBOL, jsx(Fragment, { children }));
-				return createMarkupNodeLike(serializeNestedCustomElementHost(instance, () => undefined));
+				return createMarkupNodeLike(
+					serializeNestedCustomElementHost(instance, () => undefined, SERVER_RENDERED_CHILDREN_STAMP),
+				);
 			}
 
 			const applyChildren = () => {
@@ -136,6 +141,7 @@ export function withRadiantServerCustomElementRenderBridge<T>(render: () => T): 
 function serializeNestedCustomElementHost(
 	instance: RadiantElementServerRenderSsrCapable,
 	applyChildren: () => void,
+	stamp?: string,
 ): string {
 	const hydrate = isServerRenderHydrationActive();
 	const options: RenderToStringOptions = { hydrate, mode: hydrate ? 'hydrate' : 'plain' };
@@ -143,7 +149,13 @@ function serializeNestedCustomElementHost(
 		withServerRadiantElementSsrRuntime(() => {
 			const service = createRadiantElementSsrService(instance);
 			service.applyLightDom(applyChildren);
-			return service.renderHostToString(options, service.getHostAttributes());
+			const attributes = service.getHostAttributes();
+			return service.renderHostToString(
+				options,
+				hydrate && stamp !== undefined
+					? { ...attributes, [SERVER_RENDERED_HOST_ATTRIBUTE]: stamp }
+					: attributes,
+			);
 		});
 
 	return hydrate ? withServerHydrationBindingState(createServerHydrationBindingState(), render) : render();

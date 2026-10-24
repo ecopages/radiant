@@ -61,7 +61,9 @@ export class RadiantElementSsrService {
 		this.ensureReady();
 		const tagName = this.getTagName();
 		const hydrate = isHydrateMode(options);
-		const hostAttributes = hydrate ? { ...attributes, [SERVER_RENDERED_HOST_ATTRIBUTE]: '' } : attributes;
+		const hostAttributes = hydrate
+			? { ...attributes, [SERVER_RENDERED_HOST_ATTRIBUTE]: attributes[SERVER_RENDERED_HOST_ATTRIBUTE] ?? '' }
+			: attributes;
 
 		return withSsrContextProviders(
 			this.host.getContextProviders(),

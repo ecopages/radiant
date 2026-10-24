@@ -24,7 +24,7 @@ import { REACTIVE_HOST, ReactiveHost, type ReactiveHostInternals } from './react
 import type { ReactiveState } from './reactivity-contract';
 import { runSsrPreparationCallbacks } from './ssr-preparation';
 import { isRadiantHydratorInstalled } from './radiant-hydrator-state';
-import { SERVER_RENDERED_HOST_ATTRIBUTE } from './server-rendered-host';
+import { SERVER_RENDERED_CHILDREN_STAMP, SERVER_RENDERED_HOST_ATTRIBUTE } from './server-rendered-host';
 import { getRadiantElementSsrRuntime, type RadiantElementRenderToStringOptions } from './radiant-element-ssr-registry';
 import { RADIANT_ELEMENT_BRAND } from './radiant-element-brand';
 
@@ -227,6 +227,13 @@ export class RadiantElement<Bindings extends object = {}>
 	private elementReady = false;
 	private isFirstConnectPending = false;
 	private serverRendered = false;
+	/**
+	 * Set at first connect for a server-rendered host whose children come from its parent's view, while the
+	 * hydrator is installed; cleared when the children arrive (see the children setter). The host is inert until then.
+	 */
+	private awaitsChildren = false;
+	/** Until the first connect sync adopts authored attributes; it can wait past the first connect. */
+	private initialSyncPending = false;
 	private readonly updateCycle: UpdateCycle;
 	private renderRuntime?: RenderRuntime;
 
@@ -235,7 +242,7 @@ export class RadiantElement<Bindings extends object = {}>
 		this.reactivePropertyState = new ReactivePropertyState(this);
 		this.eventSubscriptionRegistry = new EventSubscriptionRegistry(this);
 		this.updateCycle = new UpdateCycle({
-			canFlush: () => this.isConnected && !this.isFirstConnectPending,
+			canFlush: () => this.isConnected && !this.isFirstConnectPending && !this.awaitsChildren,
 			runCallbacks: (changed) => this.reactiveHost.runUpdatedCallbacks(changed),
 			commit: () => this.getOrCreateRenderRuntime().render(this),
 			updated: (changed) => this.updated(changed),
@@ -269,10 +276,31 @@ export class RadiantElement<Bindings extends object = {}>
 		return (this.prototype as RadiantElement).shouldRunRenderLifecycle();
 	}
 
-	/** Receives the Children Value a view passes; `<slot />` in `render()` resolves to it. Framework plumbing. */
+	/**
+	 * Receives the Children Value a view passes; `<slot />` in `render()` resolves to them. Framework plumbing.
+	 *
+	 * @remarks A server-rendered host whose Children Value comes from its parent's view cannot hydrate without it, so it
+	 * stays inert until it arrives here: its first connect sync (attribute adoption, `@onUpdated` callbacks,
+	 * hydration, `@bindTo`, `onConnected()` and `updated()`) and any render it requests wait. When its tag was
+	 * defined before its parent's, as when the parent's module imports it, that sync runs here, inside the parent's
+	 * hydration; otherwise the value arrives first and the sync runs at its usual time. Assigning the value the
+	 * host already holds does nothing, since hydration can assign it more than once.
+	 */
 	set [CUSTOM_ELEMENT_CHILDREN_SYMBOL](value: JsxRenderable) {
-		this.getOrCreateRenderRuntime().setChildrenValue(value);
-		this.requestUpdate();
+		const renderRuntime = this.getOrCreateRenderRuntime();
+
+		if (renderRuntime.holdsChildrenValue(value)) {
+			return;
+		}
+
+		renderRuntime.setChildrenValue(value);
+
+		if (this.awaitsChildren) {
+			this.awaitsChildren = false;
+			this.runConnectSync();
+		} else {
+			this.requestUpdate();
+		}
 	}
 
 	/**
@@ -284,8 +312,10 @@ export class RadiantElement<Bindings extends object = {}>
 	 * whether the hydrator is installed; combine it with `hasRadiantHydrator()` when that matters. Plain-mode SSR
 	 * does not stamp hosts, so those report `false`. The attribute is removed once read, so markup copied from a
 	 * connected host does not carry it. Slot-projection payloads embed host markup as written, stamps included, so
-	 * a host the client rebuilds from a payload also reports `true`; a host replaced by a client-made instance
-	 * (for example a server host passed as a child of another custom element in a view) reports `false`.
+	 * a host the client rebuilds from a payload also reports `true`. A render-owning host in another host's view
+	 * keeps its server node when that parent hydrates, so it reports `true` too; one the parent's view rebuilds
+	 * instead (its tag was defined only after the parent hydrated, or the server markup does not match the view)
+	 * is a client-made instance and reports `false`.
 	 */
 	public get isServerRendered(): boolean {
 		return this.serverRendered;
@@ -315,7 +345,10 @@ export class RadiantElement<Bindings extends object = {}>
 		this.elementReady = true;
 
 		if (isFirstConnect) {
-			this.serverRendered = this.hasAttribute(SERVER_RENDERED_HOST_ATTRIBUTE);
+			const stamp = this.getAttribute(SERVER_RENDERED_HOST_ATTRIBUTE);
+			this.serverRendered = stamp !== null;
+			this.awaitsChildren = stamp === SERVER_RENDERED_CHILDREN_STAMP && isRadiantHydratorInstalled();
+			this.initialSyncPending = true;
 			this.removeAttribute(SERVER_RENDERED_HOST_ATTRIBUTE);
 		}
 
@@ -330,14 +363,19 @@ export class RadiantElement<Bindings extends object = {}>
 			this.isFirstConnectPending = false;
 
 			if (this.isConnected) {
-				this.runConnectSync(isFirstConnect);
+				this.runConnectSync();
 			}
 		});
 	}
 
-	private runConnectSync(isFirstConnect: boolean): void {
+	/**
+	 * @remarks A no-op while the update cycle cannot flush: the host is disconnected, its first-connect microtask
+	 * is pending, or it {@link awaitsChildren}. The children setter runs it again once they arrive.
+	 */
+	private runConnectSync(): void {
 		this.updateCycle.flush(() => {
-			if (isFirstConnect) {
+			if (this.initialSyncPending) {
+				this.initialSyncPending = false;
 				this.reactivePropertyState.completeInitialSync();
 			}
 
@@ -380,6 +418,10 @@ export class RadiantElement<Bindings extends object = {}>
 	 * This is not `ReactiveHost.registerConnectedCallback()`. Those callbacks
 	 * run synchronously from `connectHost()` at the start of `connectedCallback`,
 	 * before attribute catch-up. Override this hook for post-sync work.
+	 *
+	 * A server-rendered host whose children come from its parent's view runs it
+	 * only once those children arrive and it hydrates, which can be after its
+	 * first connect, and never when the parent does not render on the client.
 	 */
 	protected onConnected(): void {}
 
@@ -399,7 +441,7 @@ export class RadiantElement<Bindings extends object = {}>
 	/**
 	 * Resolves after the pending update cycle (and, on connect, the first render) finishes.
 	 *
-	 * @remarks Stays pending while the host is disconnected with queued work.
+	 * @remarks Stays pending while the host is disconnected with queued work, or while it waits for its children (it then never settles if the parent never renders on the client).
 	 */
 	public get updateComplete(): Promise<void> {
 		return this.updateCycle.updateComplete;
@@ -756,6 +798,10 @@ function requireRadiantElementSsrRuntime() {
 	return runtime;
 }
 
-function shouldHydrateOnConnect(component: HTMLElement): boolean {
-	return isRadiantHydratorInstalled() && hasHydrationMarkers(component);
+/**
+ * @remarks A server-rendered host hydrates even when its view left no marker of its own, such as a view whose
+ * only bindings are on the hosts it renders: those hosts are adopted rather than rebuilt.
+ */
+function shouldHydrateOnConnect(component: RadiantElement): boolean {
+	return isRadiantHydratorInstalled() && (component.isServerRendered || hasHydrationMarkers(component));
 }

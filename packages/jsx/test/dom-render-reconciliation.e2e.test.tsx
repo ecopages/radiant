@@ -1238,6 +1238,22 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(container.innerHTML).toBe('<section><p>Count: beta</p></section>');
 	});
 
+	test('hydrate inserts empty text nodes of a child list, which the server markup has no node for', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const [start, end] = [document.createTextNode(''), document.createTextNode('')];
+		container.innerHTML = '<p data-radiant-jsx-bind-0="attr:class" class="list"><b>one</b></p>';
+		const serverItem = container.querySelector('b');
+
+		createRoot(container).hydrate(
+			jsx('p', { class: 'list', children: [start, jsx('b', { children: 'one' }), end] }),
+		);
+
+		expect(container.querySelector('b')).toBe(serverItem);
+		expect(start.compareDocumentPosition(serverItem as Node)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+		expect(end.compareDocumentPosition(serverItem as Node)).toBe(Node.DOCUMENT_POSITION_PRECEDING);
+	});
+
 	test('hydrate performs a full rerender when the target has no hydration markers', async () => {
 		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');
