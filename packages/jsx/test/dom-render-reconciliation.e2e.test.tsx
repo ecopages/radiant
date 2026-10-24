@@ -39,6 +39,28 @@ class BooleanPropertyElement extends HTMLElement {
 
 customElements.define(booleanPropertyTagName, BooleanPropertyElement);
 
+const lifecycleChildTagName = 'radiant-jsx-lifecycle-child';
+
+class LifecycleChildElement extends HTMLElement {
+	static connectedCount = 0;
+	static disconnectedCount = 0;
+
+	connectedCallback() {
+		LifecycleChildElement.connectedCount += 1;
+	}
+
+	disconnectedCallback() {
+		LifecycleChildElement.disconnectedCount += 1;
+	}
+
+	static resetLifecycleCounts() {
+		LifecycleChildElement.connectedCount = 0;
+		LifecycleChildElement.disconnectedCount = 0;
+	}
+}
+
+customElements.define(lifecycleChildTagName, LifecycleChildElement);
+
 describe('Radiant JSX DOM reconciliation behavior', () => {
 	beforeEach(() => {
 		document.body.innerHTML = '';
@@ -166,6 +188,65 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(rerenderedItems[0]).toBe(initialItems[0]);
 		expect(rerenderedItems[1]).toBe(initialItems[1]);
 		expect(rerenderedItems[2]).toBe(initialItems[2]);
+	});
+
+	test('keeps nested custom elements connected when a parent rerenders in place', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		document.body.append(container);
+		const root = createRoot(container);
+		LifecycleChildElement.resetLifecycleCounts();
+
+		const renderParent = (title: string) =>
+			jsx('section', {
+				children: [
+					jsx(lifecycleChildTagName, { children: jsx('span', { children: 'nested' }) }),
+					jsx('i', { title, children: 'after' }),
+				],
+			});
+
+		root.render(renderParent('before'));
+
+		const child = container.querySelector(lifecycleChildTagName);
+		expect(child).toBeInstanceOf(LifecycleChildElement);
+		expect(LifecycleChildElement.connectedCount).toBe(1);
+
+		LifecycleChildElement.disconnectedCount = 0;
+		root.render(renderParent('after'));
+
+		expect(container.querySelector(lifecycleChildTagName)).toBe(child);
+		expect(LifecycleChildElement.connectedCount).toBe(1);
+		expect(LifecycleChildElement.disconnectedCount).toBe(0);
+	});
+
+	test('keeps nested custom elements connected when a parent rerenders after hydration', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		document.body.append(container);
+		const root = createRoot(container);
+		LifecycleChildElement.resetLifecycleCounts();
+
+		const renderParent = (title: string) =>
+			jsx('section', {
+				children: [
+					jsx(lifecycleChildTagName, { children: jsx('span', { children: 'nested' }) }),
+					jsx('i', { title, children: 'after' }),
+				],
+			});
+
+		container.innerHTML = `<section><${lifecycleChildTagName}><span>nested</span></${lifecycleChildTagName}><i data-radiant-jsx-bind-0="attr:title" title="before">after</i></section>`;
+		const child = container.querySelector(lifecycleChildTagName);
+		expect(child).toBeInstanceOf(LifecycleChildElement);
+
+		root.hydrate(renderParent('before'));
+		const hydratedChild = container.querySelector(lifecycleChildTagName);
+		const connectedAfterHydration = LifecycleChildElement.connectedCount;
+		const disconnectedAfterHydration = LifecycleChildElement.disconnectedCount;
+		root.render(renderParent('after'));
+
+		expect(LifecycleChildElement.connectedCount).toBe(connectedAfterHydration);
+		expect(LifecycleChildElement.disconnectedCount).toBe(disconnectedAfterHydration);
+		expect(container.querySelector(lifecycleChildTagName)).toBe(hydratedChild);
 	});
 
 	test('preserves unkeyed iterable positions across append and truncate updates', async () => {

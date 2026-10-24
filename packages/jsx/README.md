@@ -444,6 +444,8 @@ Global SSR marker indexes are shared across both recovery paths via the binding 
 
 List children inside a hydrated range reconnect through the same path as a root template, so a child carrying dynamic content — `<li>{item.name}</li>` — keeps its SSR elements rather than being rebuilt. A child whose template owns several root nodes reconnects too. Both element and text-node identity are preserved, so listeners, focus, and selection survive hydration. `pnpm run bench:hydrate` measures these shapes.
 
+When a parent rerenders, a nested custom element that is already in the correct position stays connected, so its lifecycle callbacks do not run again. The same guarantee applies to the parent rerender that follows hydration.
+
 ### Benchmarks
 
 | Command                    | Measures                                                                |
