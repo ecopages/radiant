@@ -571,6 +571,8 @@ Such a hook can apply the children as nodes, not a string, with `renderServerLig
 - **Text-only elements:** `script`, `style`, `textarea` and `title` get their text verbatim.
 - **Markers:** the output carries no hydration markers, matching the plain light-DOM serialization.
 
+Reactive values passed to a registered, SSR-capable custom element are resolved to their current snapshot before the instance receives them. Its `renderHostToString(...)` method or server hook can then reflect or consume that snapshot so `data-*`, reflected attributes, and property-backed host state stay aligned in plain and hydrate SSR output.
+
 ## Authoring Patterns
 
 ### Intrinsic Elements
