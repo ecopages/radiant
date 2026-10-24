@@ -1,5 +1,13 @@
 # @ecopages/radiant-themes
 
+## 0.2.3
+
+### Patch Changes
+
+- [#384](https://github.com/ecopages/radiant/pull/384) [`c56c0ee`](https://github.com/ecopages/radiant/commit/c56c0ee2533292f0663c7252ca50c35524545845) Thanks [@andeeplus](https://github.com/andeeplus)! - macOS tabs render as a 24px segmented control at 13px in both tab variants, and boxed tabs sit on the top edge of their panel, as `NSTabView` does. The catalog's variant styles no longer override the theme's tab size, padding and font.
+- Updated dependencies [[`6a097db`](https://github.com/ecopages/radiant/commit/6a097db52875b557ca267146f91ea7f43324b883), [`1a08f6d`](https://github.com/ecopages/radiant/commit/1a08f6d040c27dbdaed14343facc6511fab40611)]:
+    - @ecopages/radiant-ui@0.2.3
+
 ## 0.2.2
 
 ### Patch Changes

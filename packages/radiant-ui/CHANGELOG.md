@@ -1,5 +1,13 @@
 # @ecopages/radiant-ui
 
+## 0.2.3
+
+### Patch Changes
+
+- [#388](https://github.com/ecopages/radiant/pull/388) [`6a097db`](https://github.com/ecopages/radiant/commit/6a097db52875b557ca267146f91ea7f43324b883) Thanks [@andeeplus](https://github.com/andeeplus)! - Accept native control attributes on `RuiInput`, `RuiTextarea`, `RuiButton`, and the other native input and button helpers, so props such as `required`, `autocomplete`, `name`, and `value` type-check the same way they do on the intrinsic elements.
+
+- [#387](https://github.com/ecopages/radiant/pull/387) [`1a08f6d`](https://github.com/ecopages/radiant/commit/1a08f6d040c27dbdaed14343facc6511fab40611) Thanks [@andeeplus](https://github.com/andeeplus)! - Emit `RuiLabel`'s `htmlFor` prop as the HTML `for` attribute so the label is associated with its control.
+
 ## 0.2.2
 
 ### Patch Changes
