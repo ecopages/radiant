@@ -472,11 +472,7 @@ describe('a nested host that waits for its children', () => {
 		expect(log.indexOf('child:onConnected hydrated=true')).toBeGreaterThan(log.indexOf('parent:render'));
 	});
 
-	/**
-	 * @remarks The second connect and render come from the parent's range moving the host while it reconciles
-	 * (`moveRangeBefore` in `@ecopages/jsx`), not from hydration; tracked separately.
-	 */
-	test('renders and connects twice when its tag is defined before its parent', async () => {
+	test('renders and connects once when its tag is defined before its parent', async () => {
 		installRadiantHydrator();
 		const { prefix, log } = mountLifecycle();
 
@@ -485,8 +481,8 @@ describe('a nested host that waits for its children', () => {
 		await waitFor(() => expect(hasHydrationMarkers(document.body)).toBe(false));
 		await settle();
 
-		expect(log.filter((entry) => entry === 'child:render')).toHaveLength(2);
-		expect(log.filter((entry) => entry === 'child:connected')).toHaveLength(2);
+		expect(log.filter((entry) => entry === 'child:render')).toHaveLength(1);
+		expect(log.filter((entry) => entry === 'child:connected')).toHaveLength(1);
 	});
 
 	test('renders once when its parent is defined first', async () => {
