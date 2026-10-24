@@ -3,7 +3,7 @@
 '@ecopages/radiant': patch
 ---
 
-A render-owning `RadiantElement` now receives the JSX children a view passes it as a value, on the client and on the server, and only its own renderer touches the nodes they render to. `<slot />` in its `render()` shows the parent view's edits wherever they happen: added, removed and reordered children, binding updates, and edits made while the host hid its `<slot />`, which used to be lost with range-drift warnings. On the server, a host inside another host's view now renders those children itself, in its hydration marker namespace, and no longer ships a slot-projection payload for them.
+A render-owning `RadiantElement` now receives the JSX children a view passes it as a value, on the client and on the server, and only its own renderer touches the nodes they render to. `<slot />` in its `render()` shows the parent view's edits wherever they happen: added, removed and reordered children, binding updates, and edits made while the host hid its `<slot />`, which used to be lost with range-drift warnings. In hydrate-mode SSR, a host inside another host's view now renders those children itself, in its hydration marker namespace, and no longer ships a slot-projection payload for them. Plain-mode SSR, where the parent may never render on the client, still renders them as children authored as HTML, with the payload.
 
 **Breaking: named regions in JSX are properties.** A JSX child marked `slot="name"` no longer goes to `<slot name="name">` in a host fed by a view: it stays in the default slot, and development builds warn. To migrate, pass the region as a property and render it where the named slot was:
 
@@ -23,7 +23,7 @@ A render-owning `RadiantElement` now receives the JSX children a view passes it 
 // x-card render(): <header>{this.header}</header><main><slot /></main>
 ```
 
-An unprefixed name binds as a property on a custom element; use `prop:name` only for a name that binds as an attribute by default, such as `title` or `id`. `<slot name>` still assigns children authored as HTML: markup, DOM-created children, and a page rendered on the server outside any host's view.
+An unprefixed name binds as a property on a custom element; use `prop:name` only for a name that binds as an attribute by default, such as `title` or `id`. `<slot name>` still assigns children authored as HTML: markup, DOM-created children, and children rendered on the server outside any host's view or in plain mode.
 
 Also changed:
 

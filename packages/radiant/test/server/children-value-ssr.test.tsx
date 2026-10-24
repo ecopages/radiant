@@ -119,13 +119,14 @@ describe('a render-owning host in a view, on the server', () => {
 		expect(html).not.toContain('fallback');
 	});
 
-	test('stamps the host as waiting for its children in hydrate mode only', () => {
+	test('takes the value and the stamp in hydrate mode only, and Authored Children with a payload in plain mode', () => {
 		const parent = new SsrValueParent();
 		parent.variant = 'children';
 		const plain = renderRadiantElementHostToString(parent, { mode: 'plain' });
 
 		expect(renderParent('children')).toContain('<ssr-value-frame-test data-radiant-ssr="children">');
 		expect(plain).toContain('<ssr-value-frame-test><div class="frame">');
+		expect(plain).toContain('data-radiant-slot-projection');
 		expect(plain).not.toContain('data-radiant-ssr');
 	});
 

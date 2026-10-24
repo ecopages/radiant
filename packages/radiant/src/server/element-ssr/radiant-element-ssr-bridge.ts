@@ -24,7 +24,10 @@ import { SERVER_RENDERED_CHILDREN_STAMP, SERVER_RENDERED_HOST_ATTRIBUTE } from '
 
 let radiantElementSsrRuntime: RadiantElementSsrRuntime | undefined;
 
-/** Set while a host's view serializes: the client renders that view again and owns the elements in it. */
+/**
+ * Set while a host's view serializes. In hydrate mode the client hydrates that view again and hands the render-owning
+ * hosts in it their Children Value, so with hydrate mode it selects the Children Value path.
+ */
 const RADIANT_VIEW_SCOPE_KEY = Symbol.for('@ecopages/radiant.ssr-view');
 
 export function createRadiantElementSsrService(component: object): RadiantElementSsrService {
@@ -99,13 +102,14 @@ export function resolveRadiantElementRenderBridge(component: object): RadiantEle
  * Installs the JSX custom-element render hook so nested CEs serialize through
  * {@link renderRadiantElementHostToString} (same path as `renderComponent`).
  *
- * @remarks The hook owns JSX children. In a host's view, a render-owning host takes them as a Children Value, as it
- * does when the client renders that view, so its own render places them inside its context providers and serializes
- * them in its marker namespace. Anywhere else, such as a page around the hosts, the client sees the children
- * only as Authored Children: the host builds them as light-DOM nodes (`renderServerLightDom`, so no value is escaped and
- * parsed back) inside its own context providers, and captures them for its slots. In hydrate mode, a host that
- * takes the value is stamped with {@link SERVER_RENDERED_CHILDREN_STAMP}, so on the client it waits for them before
- * it hydrates.
+ * @remarks The hook owns JSX children. In hydrate mode, inside a host's view, a render-owning host takes them as a
+ * Children Value, as it does when the client renders that view, so its own render places them inside its context
+ * providers and serializes them in its marker namespace; it is stamped with {@link SERVER_RENDERED_CHILDREN_STAMP},
+ * so on the client it waits for the parent's hydration to hand them back. In plain mode nothing makes the host wait
+ * (no stamp) and its parent may never render on the client, so there, as anywhere outside a host's view (such as a
+ * page around the hosts), the client sees the children only as Authored Children: the host builds them as light-DOM nodes
+ * (`renderServerLightDom`, so no value is escaped and parsed back) inside its own context providers, and captures
+ * them for its slots, with the slot-projection payload.
  */
 export function withRadiantServerCustomElementRenderBridge<T>(render: () => T): T {
 	return withServerCustomElementRenderHook(
@@ -116,6 +120,7 @@ export function withRadiantServerCustomElementRenderBridge<T>(render: () => T): 
 
 			if (
 				children !== undefined &&
+				isServerRenderHydrationActive() &&
 				getActiveSsrScopeValue(RADIANT_VIEW_SCOPE_KEY) === true &&
 				(constructor as { [CUSTOM_ELEMENT_CHILDREN_SYMBOL]?: boolean })[CUSTOM_ELEMENT_CHILDREN_SYMBOL] === true
 			) {
@@ -152,9 +157,7 @@ function serializeNestedCustomElementHost(
 			const attributes = service.getHostAttributes();
 			return service.renderHostToString(
 				options,
-				hydrate && stamp !== undefined
-					? { ...attributes, [SERVER_RENDERED_HOST_ATTRIBUTE]: stamp }
-					: attributes,
+				stamp === undefined ? attributes : { ...attributes, [SERVER_RENDERED_HOST_ATTRIBUTE]: stamp },
 			);
 		});
 

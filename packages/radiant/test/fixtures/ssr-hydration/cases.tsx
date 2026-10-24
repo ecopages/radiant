@@ -43,6 +43,7 @@ export const SSR_HYDRATION_CASES: Record<string, () => string> = {
 	},
 	'marker-slot-parent': () => renderRadiantElementHostToString(new HydratedMarkerSlotParent(), { mode: 'hydrate' }),
 	'root-slot-parent': () => renderRadiantElementHostToString(new HydratedRootSlotParent(), { mode: 'hydrate' }),
+	'root-slot-parent-plain': () => renderRadiantElementHostToString(new HydratedRootSlotParent(), { mode: 'plain' }),
 	'static-view': () => renderRadiantElementHostToString(new HydratedStaticView(), { mode: 'hydrate' }),
 	'fragment-slot-parent': () =>
 		renderRadiantElementHostToString(new HydratedFragmentSlotParent(), { mode: 'hydrate' }),
