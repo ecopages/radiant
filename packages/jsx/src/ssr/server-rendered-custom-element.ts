@@ -1,5 +1,5 @@
 import { createJsxElement, createMarkupNodeLike } from '../factory/jsx-factory.ts';
-import { forEachNormalizedAttribute } from '../factory/attribute-normalize.ts';
+import { forEachNormalizedAttribute, serializeStyleSnapshot } from '../factory/attribute-normalize.ts';
 import {
 	shouldUseAttributeBindingByDefaultForElement,
 	shouldUseBooleanAttributeBinding,
@@ -126,41 +126,66 @@ function isServerRenderableCustomElement(value: unknown): value is ServerRendera
 function applyServerCustomElementAttributes(element: HTMLElement, attributes: Record<string, unknown>): void {
 	const assignableElement = element as HTMLElement & Record<string, unknown>;
 
-	forEachNormalizedAttribute(attributes, (name, value) => {
-		const normalizedName = name.startsWith('attr:') ? name.slice(5) : name;
-		const bindingShapeValue = resolveReactiveSnapshot(value);
+	forEachNormalizedAttribute(attributes, (name, value) =>
+		applyServerCustomElementAttribute(assignableElement, name, value),
+	);
+}
 
-		if (value === undefined || name.startsWith('on:') || name.startsWith('on-native:')) {
-			return;
-		}
+function applyServerCustomElementAttribute(
+	element: HTMLElement & Record<string, unknown>,
+	name: string,
+	value: unknown,
+): void {
+	const normalizedName = name.startsWith('attr:') ? name.slice(5) : name;
+	const resolvedValue = resolveReactiveSnapshot(value);
 
-		if (name.startsWith('prop:')) {
-			assignableElement[name.slice(5)] = value;
-			return;
-		}
+	if (isServerCustomElementEventBinding(name)) {
+		return;
+	}
 
-		if (
-			!name.startsWith('attr:') &&
-			!shouldUseAttributeBindingByDefaultForElement('custom-element', normalizedName)
-		) {
-			assignableElement[normalizedName] = value;
-			return;
-		}
+	if (name.startsWith('prop:')) {
+		element[name.slice(5)] = resolvedValue;
+		return;
+	}
 
-		if (typeof bindingShapeValue === 'boolean' && shouldUseBooleanAttributeBinding(normalizedName)) {
-			syncServerCustomElementProperty(assignableElement, normalizedName, bindingShapeValue);
+	if (!shouldUseServerCustomElementAttributeBinding(name, normalizedName)) {
+		element[normalizedName] = resolvedValue;
+		return;
+	}
 
-			if (bindingShapeValue) {
-				element.setAttribute?.(normalizedName, '');
-			} else {
-				element.removeAttribute?.(normalizedName);
-			}
-			return;
-		}
+	if (resolvedValue === undefined || resolvedValue === null) {
+		element.removeAttribute?.(normalizedName);
+		return;
+	}
 
-		syncServerCustomElementProperty(assignableElement, normalizedName, value);
-		element.setAttribute?.(normalizedName, String(value));
-	});
+	if (typeof resolvedValue === 'boolean' && shouldUseBooleanAttributeBinding(normalizedName)) {
+		syncServerCustomElementProperty(element, normalizedName, resolvedValue);
+		applyServerBooleanAttribute(element, normalizedName, resolvedValue);
+		return;
+	}
+
+	syncServerCustomElementProperty(element, normalizedName, resolvedValue);
+	element.setAttribute?.(normalizedName, serializeServerCustomElementAttribute(normalizedName, resolvedValue));
+}
+
+function isServerCustomElementEventBinding(name: string): boolean {
+	return name.startsWith('on:') || name.startsWith('on-native:');
+}
+
+function shouldUseServerCustomElementAttributeBinding(name: string, normalizedName: string): boolean {
+	return name.startsWith('attr:') || shouldUseAttributeBindingByDefaultForElement('custom-element', normalizedName);
+}
+
+function applyServerBooleanAttribute(element: HTMLElement, name: string, value: boolean): void {
+	if (value) {
+		element.setAttribute?.(name, '');
+	} else {
+		element.removeAttribute?.(name);
+	}
+}
+
+function serializeServerCustomElementAttribute(name: string, value: unknown): string {
+	return name.toLowerCase() === 'style' ? serializeStyleSnapshot(value) : String(value);
 }
 
 function applyServerCustomElementChildren(element: HTMLElement, children: JsxRenderable | undefined): void {

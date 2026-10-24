@@ -435,6 +435,9 @@ importers:
       ts-dedent:
         specifier: ^2.2.0
         version: 2.3.0
+      tsc-alias:
+        specifier: 1.8.10
+        version: 1.8.10
       tsx:
         specifier: ^4.20.6
         version: 4.23.13

@@ -1,7 +1,31 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
+import { join } from 'node:path';
 import { test } from 'node:test';
+import { fileURLToPath } from 'node:url';
+
+function declarationFiles(directory) {
+	const files = [];
+
+	for (const entry of readdirSync(directory, { withFileTypes: true })) {
+		const entryPath = join(directory, entry.name);
+		if (entry.isDirectory()) {
+			files.push(...declarationFiles(entryPath));
+		} else if (entry.name.endsWith('.d.ts')) {
+			files.push(entryPath);
+		}
+	}
+
+	return files;
+}
+
+test('published declarations do not expose source path aliases', () => {
+	const distPath = fileURLToPath(new URL('../dist/', import.meta.url));
+	const aliasImports = declarationFiles(distPath).filter((file) => /['"]@\//.test(readFileSync(file, 'utf8')));
+
+	assert.deepEqual(aliasImports, [], `Declaration files contain unresolved @/ imports:\n${aliasImports.join('\n')}`);
+});
 
 test('published default theme keeps its Radiant Default color and geometry controls', () => {
 	const readStyle = (path) => readFileSync(new URL(path, import.meta.url), 'utf8');

@@ -1,6 +1,7 @@
 import { waitFor } from '@testing-library/dom';
 import type { JsxCustomElementAttributes, JsxRenderable } from '@ecopages/jsx';
 import { render as renderJsx } from '@ecopages/jsx';
+import { setDevWarningsEnabled } from '@ecopages/jsx/jsx-dev-runtime';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { customElement } from '../../src/decorators/custom-element';
@@ -151,6 +152,34 @@ class NestedNamedSlotParent extends RadiantElement {
 				{this.showTitle ? <h2 slot="header">Title</h2> : null}
 				<p>Body</p>
 			</nested-named-slot-frame-test>
+		);
+	}
+}
+
+@customElement('nested-silenced-slot-frame-test')
+class NestedSilencedSlotFrame extends RadiantElement {
+	override render() {
+		return (
+			<div>
+				<header>
+					<slot name="header" />
+				</header>
+				<main>
+					<slot />
+				</main>
+			</div>
+		);
+	}
+}
+
+@customElement('nested-silenced-slot-parent-test')
+class NestedSilencedSlotParent extends RadiantElement {
+	override render() {
+		return (
+			<nested-silenced-slot-frame-test>
+				<h2 slot="header">Title</h2>
+				<p>Body</p>
+			</nested-silenced-slot-frame-test>
 		);
 	}
 }
@@ -368,6 +397,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+	setDevWarningsEnabled(undefined);
 	vi.restoreAllMocks();
 	document.body.innerHTML = '';
 });
@@ -479,6 +509,15 @@ describe('a render-owning host projecting JSX children of a parent view through 
 		await settle();
 
 		expect(parent.querySelector('h2')).toBeNull();
+	});
+
+	test('does not log render warnings when JSX development warnings are disabled', async () => {
+		setDevWarningsEnabled(false);
+		const parent = document.createElement('nested-silenced-slot-parent-test') as NestedSilencedSlotParent;
+		document.body.append(parent);
+
+		await waitFor(() => expect(parent.querySelector('main > h2')?.textContent).toBe('Title'));
+		expect(warn).not.toHaveBeenCalled();
 	});
 
 	test('shows parent edits made while the child slot was not rendered once the slot returns', async () => {
