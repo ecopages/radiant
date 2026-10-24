@@ -9,7 +9,6 @@ import {
 	isolateHydratedTextRange,
 	type HydratedChildRange,
 } from './hydration-planning.ts';
-import { updateLiveAttributePart } from './live-attribute-update.ts';
 import { disposeLiveTemplateParts } from './mounted-disposal.ts';
 import { getNodeAtPath, getPathKey } from './path-utils.ts';
 import { getCompiledTemplate } from './template-compiler.ts';
@@ -96,12 +95,6 @@ export function hydrateTemplateInstance(
 		rootNodes: hostRoots,
 		update: createTemplateInstanceUpdate(parts, rootTarget),
 	};
-
-	for (const part of parts) {
-		if (part.type === 'attribute') {
-			updateLiveAttributePart(part, template.values[part.index], deferredProperties);
-		}
-	}
 
 	instance.update(template.values, deferredProperties);
 
