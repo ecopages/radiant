@@ -2,9 +2,11 @@ name: CI
 
 on:
     pull_request:
+    workflow_dispatch:
     push:
         branches:
             - main
+            - next
             # - 'release/**'  # re-enable if a prerelease line needs CI on push, not only PRs
 
 concurrency:

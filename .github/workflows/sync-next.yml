@@ -1,0 +1,61 @@
+name: Sync next
+
+on:
+    push:
+        branches:
+            - main
+    workflow_dispatch:
+
+concurrency: sync-next
+
+permissions:
+    actions: write
+    contents: write
+    pull-requests: write
+
+jobs:
+    sync:
+        name: Merge main into next
+        runs-on: ubuntu-latest
+        env:
+            GH_TOKEN: ${{ github.token }}
+            SYNC_BRANCH: sync/main-into-next
+        steps:
+            - name: Checkout next
+              uses: actions/checkout@v5
+              with:
+                  ref: next
+                  fetch-depth: 0
+
+            - name: Merge main into next
+              id: merge
+              run: |
+                  git config user.name "github-actions[bot]"
+                  git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+                  for attempt in 1 2 3; do
+                      git fetch origin main next
+                      git reset --hard origin/next
+                      if ! git merge --no-edit origin/main; then
+                          git merge --abort
+                          echo "conflict=true" >> "$GITHUB_OUTPUT"
+                          exit 0
+                      fi
+                      if git push origin HEAD:next; then
+                          gh workflow run ci.yml --ref next
+                          exit 0
+                      fi
+                  done
+                  echo "::error::next moved during each of 3 attempts; the next push to main retries."
+                  exit 1
+
+            - name: Open a sync PR for the conflict
+              if: steps.merge.outputs.conflict == 'true'
+              run: |
+                  if [ -z "$(gh pr list --base next --head "$SYNC_BRANCH" --state open --json number --jq '.[0].number')" ]; then
+                      git push --force origin "origin/main:refs/heads/$SYNC_BRANCH"
+                      gh pr create --base next --head "$SYNC_BRANCH" \
+                          --title "chore: merge main into next" \
+                          --body "Merging main into next conflicts. Resolve the conflict on the \`$SYNC_BRANCH\` branch (merge \`next\` into it), then merge this PR with a merge commit (not squash or rebase) and run the Sync next workflow again to pick up later pushes to \`main\`. Never push the resolution to \`main\`."
+                  fi
+                  echo "::error::main does not merge cleanly into next. Resolve the open PR from $SYNC_BRANCH, merge it with a merge commit, then run Sync next again."
+                  exit 1
