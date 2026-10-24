@@ -34,9 +34,9 @@ export type RenderRuntimeHost = HTMLElement & {
 /**
  * Owns a render-owning host's render and the content its `<slot>` elements resolve against.
  *
- * @remarks Slot content has one of two sources. A host that a JSX view creates receives its children as a
- * value ({@link setChildrenValue}): `<slot />` resolves to it, named slots to their fallback, and only this
- * host's renderer touches the resulting nodes. Any other host takes its children authored as HTML: they are
+ * @remarks Slot content has one of two sources. A host that a JSX view creates receives a Children Value
+ * ({@link setChildrenValue}): `<slot />` resolves to it, named slots to their fallback, and only this host's
+ * renderer touches the resulting nodes. Any other host takes its Authored Children: they are
  * captured once at first render, from the SSR slot-projection payload when present, and nodes appended to the
  * host later are projected too.
  */
@@ -79,8 +79,8 @@ export class RenderRuntime {
 	}
 
 	/**
-	 * @remarks For a host fed by a JSX view, the default slot's elements are the top-level elements its children
-	 * rendered to, and named slots are always empty. Before the first client render there are none.
+	 * @remarks For a host that receives a Children Value, the default slot's elements are the top-level elements
+	 * that value rendered to, and named slots are always empty. Before the first client render there are none.
 	 */
 	getSlotElements<T extends Element = Element>(name?: string): T[] {
 		if (this.#hasChildrenValue) {
@@ -348,8 +348,8 @@ export class RenderRuntime {
 	}
 
 	/**
-	 * @remarks For a host fed by a JSX view, `<slot />` resolves to its children value, or to its fallback when
-	 * the value is empty. On the client the children render between two empty text nodes this runtime keeps, so
+	 * @remarks For a host that receives a Children Value, `<slot />` resolves to that value, or to its fallback
+	 * when the value is empty. On the client the children render between two empty text nodes this runtime keeps, so
 	 * {@link getSlotElements} can find what they rendered to.
 	 */
 	private resolveRenderOutput(): { containsSlots: boolean; value: JsxRenderable } {
@@ -428,7 +428,7 @@ function warnLateDefinition(host: HTMLElement): void {
 		!isMinimalDomElement(host) &&
 		Array.from(host.childNodes).some((node) => node.nodeType === Node.TEXT_NODE && !node.textContent)
 	) {
-		warnOnce(host, 'was defined after a JSX view rendered it, so it takes its children as HTML.');
+		warnOnce(host, 'was defined after a JSX view rendered it, so it treats its children as Authored Children.');
 	}
 }
 

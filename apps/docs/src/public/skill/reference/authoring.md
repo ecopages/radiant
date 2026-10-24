@@ -14,7 +14,7 @@
 4. **Keep event code plain** — ordinary methods or arrow functions; use the browser event object directly.
 5. **Keep JSX intentional** — avoid extra wrapper components, memoization-style patterns without need, and assuming cached JSX nodes with plain props stay live automatically.
 6. **Paint existing DOM with `@bindTo`** — sit it on a `@prop` / `@state` / `@signal` field. Do not `@query` + `@onUpdated` to copy a value into text, an attribute, or a DOM property. `@onUpdated` is for procedures (focus, timers, joined ARIA, derived state).
-7. **Use slots deliberately** — a view hands a render-owning host its JSX children as a value: `<slot />` renders them, and named regions are properties (`<x-card header={<h2 />}>`, rendered with `{this.header}`), not `slot="name"`. `<slot name>` assigns children authored as HTML. Radiant UI keeps Authored Children in the parent tree instead.
+7. **Use slots deliberately** — a view hands a render-owning host a **Children Value**: `<slot />` renders it, and named regions are properties (`<x-card header={<h2 />}>`, rendered with `{this.header}`), not `slot="name"`. `<slot name>` assigns **Authored Children**. Radiant UI keeps Authored Children in the parent tree instead.
 8. **Document important APIs** — meaningful TSDoc for new public APIs or significant architecture. No noisy inline comments.
 9. **Keep docs examples minimal** — smallest number of hosts that still demonstrates the target API. A second custom element only when provider/consumer boundaries or leaf ownership is the lesson.
 
