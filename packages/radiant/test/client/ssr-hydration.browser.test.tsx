@@ -589,3 +589,50 @@ describe('a nested host that waits for its children', () => {
 		expect((document.querySelector(`${prefix}-child`) as LifecycleChild).isServerRendered).toBe(false);
 	});
 });
+
+describe('a nested host rendered in plain mode', () => {
+	beforeEach(() => {
+		uninstallRadiantHydrator();
+		document.body.innerHTML = '';
+	});
+
+	for (const hydrator of [false, true]) {
+		test(`renders its server-rendered children once when its parent is not defined on the client${hydrator ? ', with the hydrator' : ''}`, async () => {
+			if (hydrator) {
+				installRadiantHydrator();
+			}
+
+			document.body.innerHTML = serverMarkup('root-slot-parent-plain').replaceAll(
+				'hydrated-root-slot-parent-test',
+				'undefined-plain-parent-test',
+			);
+			const child = document.querySelector('hydrated-marker-slot-child-test') as HydratedMarkerSlotChild;
+
+			await child.updateComplete;
+			await settle();
+
+			expect(child.querySelectorAll('.child')).toHaveLength(1);
+			expect(child.querySelectorAll('.child > b')).toHaveLength(1);
+			expect(child.querySelector('script[data-radiant-slot-projection]')).toBeNull();
+		});
+
+		test(`renders its children once and updates them when its parent is defined${hydrator ? ', with the hydrator' : ''}`, async () => {
+			if (hydrator) {
+				installRadiantHydrator();
+			}
+
+			const element = mount<HydratedRootSlotParent>('root-slot-parent-plain', 'hydrated-root-slot-parent-test');
+
+			await element.updateComplete;
+			await settle();
+
+			expect(element.querySelectorAll('.child > b')).toHaveLength(1);
+			expect(element.querySelector('script[data-radiant-slot-projection]')).toBeNull();
+
+			element.inside = 'inside-1';
+
+			await waitFor(() => expect(element.querySelector('.child > b')?.getAttribute('title')).toBe('inside-1'));
+			expect(element.querySelectorAll('.child > b')).toHaveLength(1);
+		});
+	}
+});
