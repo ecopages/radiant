@@ -173,28 +173,59 @@ function hydrateTemplateRange(
 }
 
 /**
- * Whether the parent can keep the server node of a custom-element child and bind only the element's own
- * attribute, property, event and children parts to it.
+ * Whether the parent can keep the server node of a custom-element child and reconnect its authored template in place.
  *
- * @remarks A custom element's content belongs to the element: SSR serialized it through the render hook, in the
- * element's own marker namespace, and the element hydrates it itself. The parent can adopt the node only when
- * its template puts nothing inside the element, which holds when the class takes its children as a value
- * ({@link takesChildrenValue}): the children then reach the element through its children part, and the parent's
- * JSX in them hydrates inside the element's namespace. The host tag carries no marker of the parent's
- * namespace, so binding its parts removes none. Any other custom element (one that takes DOM children, a
- * third-party element, a tag defined only after the view created it) and server markup that is not this
- * element are rebuilt.
+ * @remarks A custom element's content belongs to the element: SSR serialized it through the render hook, and the
+ * element hydrates it itself. A children-value host has no authored DOM children in its template, so the parent binds
+ * only the host's own parts and the children value reaches the host's renderer. Other custom elements can be adopted
+ * when their tag is defined and authored DOM children are present in the matching server host; hydrating that template
+ * keeps the host identity while reconnecting the parent's light-DOM bindings. A late-defined or mismatched host, or an
+ * unrecoverable template, still falls back to reconciliation.
  */
 function canAdoptCustomElement(template: TemplateResultLike, existingNodes: readonly Node[]): boolean {
 	const [host] = existingNodes;
 	const localName = template.rootLocalName ?? '';
+	const isDefinedCustomElement = Boolean(globalThis.customElements?.get(localName));
+	const compiledTemplate = getCompiledTemplate(template);
 
 	return (
 		host instanceof Element &&
 		host.localName === localName &&
-		takesChildrenValue(localName) &&
-		!fillsElement(template)
+		isDefinedCustomElement &&
+		(takesChildrenValue(localName)
+			? !compiledTemplate.blueprint.content.firstChild?.hasChildNodes()
+			: matchesAuthoredElementChildren(template, host, compiledTemplate))
 	);
+}
+
+function matchesAuthoredElementChildren(
+	template: TemplateResultLike,
+	host: Element,
+	compiledTemplate: ReturnType<typeof getCompiledTemplate>,
+): boolean {
+	const childParts = compiledTemplate.parts.filter((part) => part.type === 'child');
+
+	if (childParts.length === 0) {
+		return host.children.length === 0;
+	}
+
+	if (childParts.length !== 1) {
+		return false;
+	}
+
+	const childPart = childParts[0];
+
+	if (!childPart) {
+		return false;
+	}
+
+	const childValue = unwrapKeyedValue(template.values[childPart.index]);
+
+	if (!isTemplateResultLike(childValue) || !childValue.rootLocalName) {
+		return host.children.length === 0;
+	}
+
+	return host.children.length === 1 && host.children[0]?.localName === childValue.rootLocalName;
 }
 
 /**
@@ -205,11 +236,10 @@ function canAdoptCustomElement(template: TemplateResultLike, existingNodes: read
  * such an element is rebuilt rather than hydrated.
  */
 export function fillsValueElement(template: TemplateResultLike): boolean {
-	return takesChildrenValue(template.rootLocalName ?? '') && fillsElement(template);
-}
-
-function fillsElement(template: TemplateResultLike): boolean {
-	return getCompiledTemplate(template).blueprint.content.firstChild?.hasChildNodes() === true;
+	return (
+		takesChildrenValue(template.rootLocalName ?? '') &&
+		!!getCompiledTemplate(template).blueprint.content.firstChild?.hasChildNodes()
+	);
 }
 
 /**
