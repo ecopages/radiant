@@ -137,9 +137,11 @@ export class RenderRuntime {
 		this.#childrenValue = value;
 		this.#projectedSlotContent.clear();
 
-		if (process.env.NODE_ENV !== 'production') {
-			warnSlotAttributeInChildren(this.#host, value);
-		}
+		try {
+			if (process.env.NODE_ENV !== 'production') {
+				warnSlotAttributeInChildren(this.#host, value);
+			}
+		} catch {}
 	}
 
 	observeSlotProjection(): void {
@@ -220,9 +222,11 @@ export class RenderRuntime {
 			this.#host.childNodes.length > 0 &&
 			(isMinimalDomElement(this.#host) || !hasHydrationMarkers(this.#host))
 		) {
-			if (process.env.NODE_ENV !== 'production') {
-				warnLateDefinition(this.#host);
-			}
+			try {
+				if (process.env.NODE_ENV !== 'production') {
+					warnLateDefinition(this.#host);
+				}
+			} catch {}
 
 			this.#projectedSlotContent = captureProjectedSlotRenderables(this.#host);
 			this.#slotProjectionVersion += 1;
@@ -231,9 +235,11 @@ export class RenderRuntime {
 
 	private handleSlotProjectionMutations(records: MutationRecord[]): void {
 		if (this.#hasChildrenValue) {
-			if (process.env.NODE_ENV !== 'production') {
-				warnAppendedNodes(this.#host, records);
-			}
+			try {
+				if (process.env.NODE_ENV !== 'production') {
+					warnAppendedNodes(this.#host, records);
+				}
+			} catch {}
 
 			return;
 		}
@@ -369,7 +375,11 @@ export class RenderRuntime {
 
 const issuedWarnings = new Set<string>();
 
-/** @remarks Development-only: callers guard on `NODE_ENV` so production builds drop the messages. */
+/**
+ * @remarks
+ * Development-only: callers wrap the call in `try { if (process.env.NODE_ENV !== 'production') { ... } } catch {}`,
+ * so the app's bundler drops it in production and a page without `process` does not throw (see the package README).
+ */
 function warnOnce(host: HTMLElement, message: string): void {
 	const warning = `[@ecopages/radiant] <${host.localName}> ${message}`;
 

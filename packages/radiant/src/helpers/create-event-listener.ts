@@ -55,26 +55,27 @@ const NON_BUBBLING_DELEGATED_EVENTS = new Map<string, string>([
 const warnedNonBubblingEvents = new Set<string>();
 
 /**
- * @remarks Development-only. Production builds (`NODE_ENV === "production"`) skip the diagnostic.
+ * @remarks
+ * Development-only: the consumer's bundler decides by replacing `process.env.NODE_ENV`,
+ * and a `"production"` build drops the whole block. The `try` keeps an unbundled browser
+ * load, where `process` does not exist, from throwing. The check wraps the warning instead of
+ * returning early, because some bundlers (Rollup) keep the code after an early `return`
+ * inside a `try`.
  */
 function warnNonBubblingDelegatedEvent(type: string, options?: AddEventListenerOptions): void {
-	if (process.env.NODE_ENV === 'production') {
-		return;
-	}
+	try {
+		if (process.env.NODE_ENV !== 'production') {
+			const replacement = NON_BUBBLING_DELEGATED_EVENTS.get(type);
+			if (!replacement || options?.capture || warnedNonBubblingEvents.has(type)) {
+				return;
+			}
+			warnedNonBubblingEvents.add(type);
 
-	const replacement = NON_BUBBLING_DELEGATED_EVENTS.get(type);
-	if (!replacement || options?.capture || warnedNonBubblingEvents.has(type)) {
-		return;
-	}
-	warnedNonBubblingEvents.add(type);
-
-	if (typeof console === 'undefined') {
-		return;
-	}
-
-	console.warn(
-		`[@ecopages/radiant] Delegated @onEvent listens on the host in the bubble phase, so "${type}" will never reach it. Use "${replacement}" or pass \`options: { capture: true }\`.`,
-	);
+			console.warn(
+				`[@ecopages/radiant] Delegated @onEvent listens on the host in the bubble phase, so "${type}" will never reach it. Use "${replacement}" or pass \`options: { capture: true }\`.`,
+			);
+		}
+	} catch {}
 }
 
 type BaseOnEventConfig = {
