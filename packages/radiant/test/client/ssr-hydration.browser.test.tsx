@@ -1,4 +1,5 @@
 /// <reference types="vite/client" />
+/** @jsxImportSource @ecopages/jsx */
 import { waitFor } from '@testing-library/dom';
 import { CUSTOM_ELEMENT_CHILDREN_SYMBOL } from '@ecopages/jsx';
 import { beforeEach, describe, expect, test, vi } from 'vitest';

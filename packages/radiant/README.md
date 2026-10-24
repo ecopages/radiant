@@ -40,7 +40,7 @@ Application code does not need to import JSX helpers or Signals primitives direc
 - If `render()` is omitted, the base implementation behaves like `<slot />`, so authored light-DOM children pass through unchanged. Copy fields onto that DOM with `@bindTo(...)`.
 - `onConnected()` runs after every connection, once attribute catch-up and (when `render()` is overridden) the initial hydrate/update have finished. Use it instead of `connectedCallback` + `queueMicrotask(sync)`. It is not `registerConnectedCallback()`, which runs synchronously before catch-up.
 - `FormAssociatedElement` extends `RadiantElement` for native form controls. Each concrete subclass inherits the static FACE flag and owns one `ElementInternals`; implement `formValue()` and `restoreFormState()`. Override `formState()` when submission can be `null` before a name is assigned or uses multi-entry `FormData`, so reset keeps the authored value. The first form value sync, normally in the first connect cycle, records that reset state.
-- Literal `<slot>` tags place a render-owning host's children. A view that renders `<x-card>{children}</x-card>` hands those children to the host as a value: `<slot />` renders it, named regions are properties (`<x-card header={<h2 />}>` rendered with `{this.header}`), and only the host's renderer touches the nodes. Children authored as HTML are captured at first render and assigned by their `slot` attribute. `getSlotElement(...)`, `getSlotElements(...)`, or `@querySlot(...)` read the assigned elements for both. See [Slots](https://radiant.ecopages.app/docs/components/slots).
+- Literal `<slot>` tags place a render-owning host's children. A view that renders `<x-card>{children}</x-card>` hands a **Children Value** to the host: `<slot />` renders it, named regions are properties (`<x-card header={<h2 />}>` rendered with `{this.header}`), and only the host's renderer touches the nodes. **Authored Children** are captured at first render and assigned by their `slot` attribute. `getSlotElement(...)`, `getSlotElements(...)`, or `@querySlot(...)` read the assigned elements for both. See [Slots](https://radiant.ecopages.app/docs/components/slots).
 
 The key distinction is this:
 
@@ -271,6 +271,14 @@ The mental model stays simple:
 - DOM events come in through JSX handlers or `@onEvent(...)`
 - component events go out through `@event(...)`
 - both are ordinary browser events at runtime
+
+## Development Warnings
+
+Radiant logs development warnings when a delegated `@onEvent(...)` listener uses a non-bubbling event type, such as `focus`, when a host fed by a view gets a JSX child marked `slot="name"` or nodes appended with DOM APIs, and when a tag is defined after a view rendered it. The published files keep the `process.env.NODE_ENV` check that gates them, so the app's build decides, not Radiant's: the warnings show when the bundler sets `process.env.NODE_ENV` to anything other than `"production"`, and a production build removes them along with their text. What counts as a production build depends on the bundler: esbuild sets `"production"` for a browser-platform build with minification on, Vite for `vite build` unless `NODE_ENV` says otherwise, webpack for `mode: "production"`, and Bun for `--production`. A page that loads the files without a bundler, where `process` does not exist, gets no warnings and no error.
+
+The JSX hydration and DOM anchor warnings come from `@ecopages/jsx` and follow its own switch; see "Dev Warnings" in [the JSX README](../jsx/README.md#dev-warnings).
+
+Contributors: wrap a development warning in `try { if (process.env.NODE_ENV !== 'production') { ... } } catch {}`. The `try` keeps a page without `process` from throwing, and keeping the check inside it lets every bundler drop the block in production; see `warnNonBubblingDelegatedEvent` in `src/helpers/create-event-listener.ts` and `setChildrenValue` in `src/core/render-runtime.ts`. `test/build/dist-dev-warnings.test.ts` fails when a built `dist` file reads `process.env.NODE_ENV` outside that shape, and bundles an app against the `dist` for development, for production, and with the check left unreplaced. `test/build/dist-dev-warnings.browser.test.ts` runs a development and a production bundle of an app in Chromium and checks which warnings reach `console.warn`. Both fail when `dist` is missing or older than `src`.
 
 ## Public Entry Points
 

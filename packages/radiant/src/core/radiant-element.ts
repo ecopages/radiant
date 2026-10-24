@@ -266,7 +266,7 @@ export class RadiantElement<Bindings extends object = {}>
 	}
 
 	/**
-	 * Whether a JSX view hands this element its children as a value: true when the class overrides `render()`.
+	 * Whether a JSX view hands this element a Children Value: true when the class overrides `render()`.
 	 *
 	 * @remarks Framework plumbing read by `@ecopages/jsx` when a view creates the element; not part of the
 	 * authoring API. Hosts without a `render()` keep their JSX children as DOM, which their view-owned markup
@@ -277,10 +277,10 @@ export class RadiantElement<Bindings extends object = {}>
 	}
 
 	/**
-	 * Receives the JSX children a view passes; `<slot />` in `render()` resolves to them. Framework plumbing.
+	 * Receives the Children Value a view passes; `<slot />` in `render()` resolves to them. Framework plumbing.
 	 *
-	 * @remarks A server-rendered host whose children came from its parent's view cannot hydrate without them, so it
-	 * stays inert until they arrive here: its first connect sync (attribute adoption, `@onUpdated` callbacks,
+	 * @remarks A server-rendered host whose Children Value comes from its parent's view cannot hydrate without it, so it
+	 * stays inert until it arrives here: its first connect sync (attribute adoption, `@onUpdated` callbacks,
 	 * hydration, `@bindTo`, `onConnected()` and `updated()`) and any render it requests wait. When its tag was
 	 * defined before its parent's, as when the parent's module imports it, that sync runs here, inside the parent's
 	 * hydration; otherwise the value arrives first and the sync runs at its usual time. Assigning the value the

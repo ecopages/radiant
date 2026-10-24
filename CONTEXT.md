@@ -74,6 +74,10 @@ _Avoid_: light DOM, authored child tree
 The consumer-provided child nodes at a host boundary that remain part of the visible DOM structure.
 _Avoid_: internal render output, shadow-internal children
 
+**Children Value**:
+The JSX children value a view hands to a render-owning Element Host for its own rendered tree.
+_Avoid_: authored children, child nodes, slot content
+
 **Hydration**:
 The process of attaching client-side reactive behavior to server-rendered output without discarding the existing DOM.
 _Avoid_: fresh client render, static HTML only
@@ -99,7 +103,7 @@ A decorator that copies a reactive field onto existing DOM (the host or a descen
 _Avoid_: Binding, onUpdated glue, query-and-write
 
 **Slot**:
-The projection boundary inside a render-owning Element Host that accepts matching Authored Children and can provide fallback content when none are assigned.
+The projection boundary inside a render-owning Element Host that resolves either a Children Value from a JSX view or matching Authored Children and can provide fallback content when neither supplies content.
 _Avoid_: internal child list, shadow-only slot, query helper
 
 **View-owned Shell**:
@@ -161,10 +165,12 @@ _Avoid_: provider, selector field, local state copy
 - **Shadow DOM** is a contrasting DOM model, not the default mental model of **Radiant**
 - **Light DOM** keeps authored children, styling, and DOM inspection visible at the host boundary
 - **Authored Children** stay visible at the host boundary in the **Light DOM** model
+- A **Children Value** is JSX children a view hands to a **Render-owning Element Host**
+- A **Render-owning Element Host** can receive a **Children Value** from a JSX view or capture **Authored Children** from HTML
 - **Element Hosts** and **Controller Hosts** can work with **Authored Children** without hiding them behind **Shadow DOM** by default
-- A **Slot** is the projection boundary between an **Element Host** and matching **Authored Children**
+- A **Slot** resolves a **Children Value** or matching **Authored Children**
 - A **Slot** can be default or named
-- A **Slot** can render fallback content when no matching **Authored Children** are assigned
+- A **Slot** can render fallback content when neither source supplies content
 - A **View-owned Shell** keeps **Authored Children** in parent JSX instead of projecting them through a **Slot**
 - A **Derived Tree** is host-owned render output, not **Authored Children**
 - A **Composition Helper** places a named region of a **View-owned Shell**; it is not a **Slot**
@@ -277,7 +283,7 @@ _Avoid_: provider, selector field, local state copy
 > **Domain expert:** "A **Binding** is the connection from a reactive runtime value to rendered output, so the DOM can update the affected part without rebuilding the whole view."
 
 > **Dev:** "What is a slot in Radiant?"
-> **Domain expert:** "A **Slot** is the projection boundary where an **Element Host** accepts matching **Authored Children**. It can be default or named, and it can render fallback content when nothing is assigned."
+> **Domain expert:** "A **Slot** is the projection boundary where an **Element Host** accepts a **Children Value** from a JSX view or matching **Authored Children**. It can be default or named, and it can render fallback content when neither source supplies content."
 
 > **Dev:** "Should a radiant-ui composite project chrome through `<slot>`?"
 > **Domain expert:** "No. Those composites use a **View-owned Shell**. Parent JSX owns **Authored Children**; **Composition Helpers** place named regions. Keep host `render()` for a **Derived Tree** only."

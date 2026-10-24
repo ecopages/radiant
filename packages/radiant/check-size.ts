@@ -48,6 +48,7 @@ for (const bundle of budgetFile.bundles) {
 		await esbuild.build({
 			absWorkingDir: packageRoot,
 			bundle: true,
+			define: { 'process.env.NODE_ENV': '"production"' },
 			entryPoints: [path.resolve(packageRoot, bundle.entrypoint)],
 			external: [...externalPackages, ...(bundle.external ?? [])],
 			format: 'esm',
