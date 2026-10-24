@@ -168,6 +168,46 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(truncatedItems[0]).toBe(alphaItem);
 	});
 
+	test.fails('keeps a fragment sibling node when a conditional item in the fragment appears', async () => {
+		const [{ Fragment, jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+
+		const renderPanel = (showBadge: boolean) =>
+			jsx('main', {
+				children: jsx(Fragment, {
+					children: [jsx('button', { children: 'Save' }), showBadge ? jsx('b', { children: 'new' }) : null],
+				}),
+			});
+
+		root.render(renderPanel(false));
+		const button = container.querySelector('button');
+
+		root.render(renderPanel(true));
+
+		expect(container.querySelector('b')?.textContent).toBe('new');
+		expect(container.querySelector('button')).toBe(button);
+	});
+
+	test.fails('keeps an element when its mapped child list becomes empty', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+
+		const renderList = (values: string[]) =>
+			jsx('section', {
+				children: values.map((value) => jsx('li', { children: value })),
+			});
+
+		root.render(renderList(['alpha']));
+		const section = container.querySelector('section');
+
+		root.render(renderList([]));
+
+		expect(container.querySelectorAll('li')).toHaveLength(0);
+		expect(container.querySelector('section')).toBe(section);
+	});
+
 	test('preserves keyed DOM nodes across insertions and removals', async () => {
 		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');

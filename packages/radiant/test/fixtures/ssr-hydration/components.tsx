@@ -1,3 +1,4 @@
+import type { JsxRenderable } from '@ecopages/jsx';
 import { RadiantElement } from '../../../src/core/radiant-element';
 import { customElement } from '../../../src/decorators/custom-element';
 import { prop } from '../../../src/decorators/prop';
@@ -197,5 +198,35 @@ export class HydratedArrayPropCard extends RadiantElement {
 
 	override render() {
 		return <p>{this.items.map((item) => item.label).join(', ') || 'empty'}</p>;
+	}
+}
+
+@customElement('hydrated-region-card-test')
+export class HydratedRegionCard extends RadiantElement {
+	@state body: JsxRenderable = null;
+
+	override render() {
+		return <main class="card">{this.body}</main>;
+	}
+}
+
+@customElement('hydrated-region-parent-test')
+export class HydratedRegionParent extends RadiantElement<{ label: string }> {
+	@state label = 'one';
+	@state showBadge = false;
+
+	override render() {
+		return (
+			<section>
+				<hydrated-region-card-test
+					prop:body={
+						<>
+							<span class="label">{this.$.label}</span>
+							{this.showBadge ? <b class="badge">new</b> : null}
+						</>
+					}
+				/>
+			</section>
+		);
 	}
 }
