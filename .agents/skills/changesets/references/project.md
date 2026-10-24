@@ -49,7 +49,7 @@ GITHUB_TOKEN="$(gh auth token)" pnpm changeset version
 
 ## CI
 
-`.github/workflows/ci.yml` runs on pull requests and on pushes to `main` and `next`.
+`.github/workflows/ci.yml` runs on pull requests and on pushes to `main` and `next`. `.github/workflows/close-issues.yml` closes the issues a PR resolves (`Closes #n`) when it merges into `next`, because GitHub only does that for the default branch.
 
 `.github/workflows/release.yml` runs on `main` (and on a `release/*` branch while its trigger is uncommented): install, `pnpm run build:all`, then `changesets/action@v2` with `pnpm run version-packages` and `pnpm changeset publish`. `version-packages` runs `changeset version` then `pnpm install --lockfile-only` so workspace `>=` specifiers and `pnpm-lock.yaml` stay in sync on the Version Packages PR. The token is `github-token: ${{ github.token }}`. Provenance is `NPM_CONFIG_PROVENANCE`.
 
