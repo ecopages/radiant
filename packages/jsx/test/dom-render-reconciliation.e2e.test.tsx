@@ -5,6 +5,8 @@ import {
 	HYDRATE_BUTTON_ALPHA_HTML,
 	HYDRATE_CARD_ALPHA_HTML,
 	HYDRATE_DYNAMIC_LIST_HTML,
+	HYDRATE_EMPTY_LIST_HTML,
+	HYDRATE_FRAGMENT_HOLE_HTML,
 	HYDRATE_FRAGMENT_COUNTER_HTML,
 	HYDRATE_GRADIENT_ICON_HTML,
 	HYDRATE_ITERABLE_NATIVE_CLICK_HTML,
@@ -13,6 +15,9 @@ import {
 	HYDRATE_KEYED_INPUTS_HTML,
 	HYDRATE_METRIC_HTML,
 	HYDRATE_NESTED_SVG_ICON_HTML,
+	HYDRATE_ROOT_HOLES_HTML,
+	HYDRATE_ROOT_LIST_HTML,
+	HYDRATE_ROOT_EMPTY_ROWS_HTML,
 	PLAIN_BUTTON_ALPHA_HTML,
 	TRUE_CHILDREN_HTML,
 } from './fixtures/hydrate-html.ts';
@@ -168,7 +173,7 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(truncatedItems[0]).toBe(alphaItem);
 	});
 
-	test.fails('keeps a fragment sibling node when a conditional item in the fragment appears', async () => {
+	test('keeps a fragment sibling node when a conditional item in the fragment appears', async () => {
 		const [{ Fragment, jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');
 		const root = createRoot(container);
@@ -189,7 +194,7 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(container.querySelector('button')).toBe(button);
 	});
 
-	test.fails('keeps an element when its mapped child list becomes empty', async () => {
+	test('keeps an element when its mapped child list becomes empty', async () => {
 		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');
 		const root = createRoot(container);
@@ -206,6 +211,329 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 
 		expect(container.querySelectorAll('li')).toHaveLength(0);
 		expect(container.querySelector('section')).toBe(section);
+	});
+
+	test('keeps an element when a conditional child appears beside a static one', async () => {
+		const [{ jsx, jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+
+		const renderPanel = (showBadge: boolean) =>
+			jsxs('div', {
+				children: [jsx('button', { children: 'Save' }), showBadge ? jsx('b', { children: 'new' }) : null],
+			});
+
+		root.render(renderPanel(false));
+		const panel = container.querySelector('div');
+		const button = container.querySelector('button');
+
+		root.render(renderPanel(true));
+
+		expect(container.querySelector('b')?.textContent).toBe('new');
+		expect(container.querySelector('div')).toBe(panel);
+		expect(container.querySelector('button')).toBe(button);
+	});
+
+	test('keeps an element when its only child switches between empty and content', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+
+		const renderLabel = (label: string | null | undefined) => jsx('p', { children: label });
+
+		root.render(renderLabel(null));
+		const paragraph = container.querySelector('p');
+
+		root.render(renderLabel('Ready'));
+		expect(container.querySelector('p')?.textContent).toBe('Ready');
+		expect(container.querySelector('p')).toBe(paragraph);
+
+		root.render(renderLabel(undefined));
+		expect(container.querySelector('p')?.textContent).toBe('');
+		expect(container.querySelector('p')).toBe(paragraph);
+	});
+
+	test('keeps a fragment sibling node when a leading conditional item in the fragment appears', async () => {
+		const [{ Fragment, jsx, jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+
+		const renderPanel = (showLead: boolean) =>
+			jsx('main', {
+				children: jsxs(Fragment, {
+					children: [showLead ? jsx('i', { children: 'lead' }) : null, jsx('button', { children: 'Save' })],
+				}),
+			});
+
+		root.render(renderPanel(false));
+		const button = container.querySelector('button');
+
+		root.render(renderPanel(true));
+
+		expect(Array.from(container.querySelector('main')!.children, (child) => child.localName)).toEqual([
+			'i',
+			'button',
+		]);
+		expect(container.querySelector('button')).toBe(button);
+	});
+
+	test('keeps a custom element when its mapped child list empties and fills', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+
+		const renderList = (values: string[]) =>
+			jsx(booleanPropertyTagName, {
+				children: values.map((value) => jsx('li', { children: value })),
+			});
+
+		root.render(renderList(['alpha']));
+		const host = container.querySelector(booleanPropertyTagName);
+
+		root.render(renderList([]));
+		expect(container.querySelectorAll('li')).toHaveLength(0);
+		expect(container.querySelector(booleanPropertyTagName)).toBe(host);
+
+		root.render(renderList(['beta']));
+		expect(container.querySelector('li')?.textContent).toBe('beta');
+		expect(container.querySelector(booleanPropertyTagName)).toBe(host);
+	});
+
+	test('hydrates a fragment with a conditional hole and keeps its sibling when the hole fills', async () => {
+		const [{ Fragment, jsx, jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+
+		const renderPanel = (showBadge: boolean) =>
+			jsx('main', {
+				children: jsxs(Fragment, {
+					children: [
+						jsx('button', { class: 'save', children: 'Save' }),
+						showBadge ? jsx('b', { children: 'new' }) : null,
+					],
+				}),
+			});
+
+		container.innerHTML = HYDRATE_FRAGMENT_HOLE_HTML;
+		const button = container.querySelector('button');
+		root.hydrate(renderPanel(false));
+
+		expect(container.querySelector('button')).toBe(button);
+		expect(container.innerHTML).not.toContain('data-radiant-jsx-bind-');
+
+		root.render(renderPanel(true));
+
+		expect(container.querySelector('main > b')?.textContent).toBe('new');
+		expect(container.querySelector('button')).toBe(button);
+	});
+
+	test('hydrates an element with an empty mapped list and keeps it when the list fills', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+
+		const renderList = (values: string[]) =>
+			jsx('section', {
+				class: 'list',
+				children: values.map((value) => jsx('li', { children: value })),
+			});
+
+		container.innerHTML = HYDRATE_EMPTY_LIST_HTML;
+		const section = container.querySelector('section');
+		root.hydrate(renderList([]));
+
+		expect(container.querySelector('section')).toBe(section);
+		expect(container.innerHTML).not.toContain('data-radiant-jsx-bind-');
+
+		root.render(renderList(['alpha']));
+
+		expect(container.querySelector('li')?.textContent).toBe('alpha');
+		expect(container.querySelector('section')).toBe(section);
+	});
+
+	test('hydrates a root fragment with holes and fills a hole before its sibling', async () => {
+		const [{ Fragment, jsx, jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+
+		const renderRoot = (showLead: boolean) =>
+			jsxs(Fragment, {
+				children: [
+					showLead ? jsx('i', { children: 'lead' }) : null,
+					null,
+					jsx('b', { class: 'tail', children: 'tail' }),
+				],
+			});
+
+		container.innerHTML = HYDRATE_ROOT_HOLES_HTML;
+		const tail = container.querySelector('b');
+		root.hydrate(renderRoot(false));
+
+		expect(container.querySelector('b')).toBe(tail);
+
+		root.render(renderRoot(true));
+
+		expect(Array.from(container.children, (child) => child.localName)).toEqual(['i', 'b']);
+		expect(container.querySelector('b')).toBe(tail);
+	});
+
+	test('hydrates a root fragment holding a mapped list and keeps its nodes when the list grows', async () => {
+		const [{ Fragment, jsx, jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+
+		const renderRoot = (values: string[]) =>
+			jsxs(Fragment, {
+				children: [
+					values.map((value) => jsx('li', { class: value, children: value })),
+					jsx('b', { class: 'tail', children: 'tail' }),
+				],
+			});
+
+		container.innerHTML = HYDRATE_ROOT_LIST_HTML;
+		const item = container.querySelector('li');
+		const tail = container.querySelector('b');
+		root.hydrate(renderRoot(['a']));
+
+		expect(container.querySelector('li')).toBe(item);
+		expect(container.querySelector('b')).toBe(tail);
+		expect(container.innerHTML).not.toContain('data-radiant-jsx-bind-');
+
+		root.render(renderRoot(['a', 'c']));
+
+		expect(Array.from(container.children, (child) => child.className)).toEqual(['a', 'c', 'tail']);
+		expect(container.querySelector('li')).toBe(item);
+		expect(container.querySelector('b')).toBe(tail);
+	});
+
+	test('hydrates a root fragment holding an empty mapped list and keeps its sibling when the list fills', async () => {
+		const [{ Fragment, jsx, jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+
+		const renderRoot = (values: string[]) =>
+			jsxs(Fragment, {
+				children: [
+					values.map((value) => jsx('li', { children: value })),
+					jsx('b', { class: 'tail', children: 'tail' }),
+				],
+			});
+
+		container.innerHTML = HYDRATE_ROOT_HOLES_HTML;
+		const tail = container.querySelector('b');
+		root.hydrate(renderRoot([]));
+
+		expect(container.querySelector('b')).toBe(tail);
+
+		root.render(renderRoot(['a']));
+
+		expect(Array.from(container.children, (child) => child.localName)).toEqual(['li', 'b']);
+		expect(container.querySelector('b')).toBe(tail);
+	});
+
+	test('keeps later list items when an earlier unkeyed item hides', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+
+		const renderList = (hidden: string) =>
+			jsx('ul', {
+				children: ['alpha', 'beta'].map((value) => (value === hidden ? null : jsx('li', { children: value }))),
+			});
+
+		root.render(renderList(''));
+		const beta = container.querySelectorAll('li')[1];
+
+		root.render(renderList('alpha'));
+
+		expect(Array.from(container.querySelectorAll('li'), (item) => item.textContent)).toEqual(['beta']);
+		expect(container.querySelector('li')).toBe(beta);
+	});
+
+	test('reconciles a keyed list with hidden items by key', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+
+		const renderList = (values: string[], hidden: string) =>
+			jsx('ul', {
+				children: values.map((value) => (value === hidden ? null : jsx('li', { children: value, key: value }))),
+			});
+
+		root.render(renderList(['alpha', 'beta', 'gamma'], ''));
+		const [alpha, , gamma] = Array.from(container.querySelectorAll('li'));
+
+		root.render(renderList(['gamma', 'beta', 'alpha'], 'beta'));
+
+		const items = Array.from(container.querySelectorAll('li'));
+		expect(items.map((item) => item.textContent)).toEqual(['gamma', 'alpha']);
+		expect(items[0]).toBe(gamma);
+		expect(items[1]).toBe(alpha);
+	});
+
+	test('keeps a following list item when an earlier nested list grows', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const renderItem = (value: string) => jsx('li', { children: value });
+
+		const renderList = (first: string[]) =>
+			jsx('ul', { children: [first.map(renderItem), ['tail'].map(renderItem)] });
+
+		root.render(renderList(['a']));
+		const tail = container.querySelectorAll('li')[1];
+
+		root.render(renderList(['a', 'b']));
+
+		expect(Array.from(container.querySelectorAll('li'), (item) => item.textContent)).toEqual(['a', 'b', 'tail']);
+		expect(container.querySelectorAll('li')[2]).toBe(tail);
+	});
+
+	test('keeps keyed items when a group of keyed items is inserted before them', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+
+		const renderGroups = (groups: string[][]) =>
+			jsx('ul', {
+				children: groups.map((group) => group.map((value) => jsx('li', { children: value, key: value }))),
+			});
+
+		root.render(renderGroups([['alpha']]));
+		const alpha = container.querySelector('li');
+
+		root.render(renderGroups([['beta'], ['alpha']]));
+
+		expect(Array.from(container.querySelectorAll('li'), (item) => item.textContent)).toEqual(['beta', 'alpha']);
+		expect(container.querySelectorAll('li')[1]).toBe(alpha);
+	});
+
+	test('hydrates a root fragment holding keyed rows that render nothing and shows them once they render', async () => {
+		const [{ Fragment, jsx, jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const Row = ({ show, value }: { show: boolean; value: string }) =>
+			show ? jsx('li', { children: value }) : null;
+
+		const renderRoot = (show: boolean) =>
+			jsxs(Fragment, {
+				children: [
+					jsx('h1', { class: 'title', children: 'Rows' }),
+					['a'].map((value) => jsx(Row, { show, value }, value)),
+				],
+			});
+
+		container.innerHTML = HYDRATE_ROOT_EMPTY_ROWS_HTML;
+		const title = container.querySelector('h1');
+		root.hydrate(renderRoot(false));
+
+		expect(container.querySelector('h1')).toBe(title);
+		expect(container.innerHTML).not.toContain('data-radiant-jsx-bind-');
+
+		root.render(renderRoot(true));
+
+		expect(Array.from(container.children, (child) => child.localName)).toEqual(['h1', 'li']);
+		expect(container.querySelector('h1')).toBe(title);
 	});
 
 	test('preserves keyed DOM nodes across insertions and removals', async () => {

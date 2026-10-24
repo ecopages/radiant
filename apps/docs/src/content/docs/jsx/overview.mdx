@@ -119,6 +119,8 @@ return (
 
 Removing a binding this way follows the normal renderer path. If the next render changes the template shape, the DOM renderer may replace the affected node rather than preserve the previous instance.
 
+Child content is different: a child expression keeps its place in the template whatever it holds. Showing, hiding or emptying a child, including a mapped list or an item in a fragment, patches that child only, and the element around it and its siblings keep their nodes. When a list or fragment mixes keyed items with an unkeyed item that comes and goes, give that item a key too, or the keyed items are rebuilt when it toggles.
+
 ## Quick Start With RadiantElement
 
 ```tsx

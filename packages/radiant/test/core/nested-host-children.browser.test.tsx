@@ -426,7 +426,7 @@ describe('a render-owning host rendering JSX a parent view passes through a prop
 		expect(parent.clicks).toBe(2);
 	});
 
-	test.fails('keeps the parent button node in the region when a sibling appears', async () => {
+	test('keeps the parent button node in the region when a sibling appears', async () => {
 		const parent = mount<NestedRegionParent>('nested-region-parent-test');
 		await waitFor(() => expect(parent.querySelector('main > .label')).not.toBeNull());
 		const button = parent.querySelector('.label');
