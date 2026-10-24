@@ -441,7 +441,7 @@ export class RadiantElement<Bindings extends object = {}>
 	/**
 	 * Resolves after the pending update cycle (and, on connect, the first render) finishes.
 	 *
-	 * @remarks Stays pending while the host is disconnected with queued work.
+	 * @remarks Stays pending while the host is disconnected with queued work, or while it waits for its children (it then never settles if the parent never renders on the client).
 	 */
 	public get updateComplete(): Promise<void> {
 		return this.updateCycle.updateComplete;
