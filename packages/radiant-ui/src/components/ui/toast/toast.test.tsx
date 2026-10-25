@@ -2,10 +2,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createRoot, type JsxRenderable, type JsxRoot } from '@ecopages/jsx';
 import { RuiToaster, toast, TOAST_COLLAPSED_PEEK, TOAST_EXIT_MS, TOAST_GAP, TOAST_POSITIONS } from './index';
 import { collapsedStackHeight } from './stack-layout';
-import type { RuiToast } from './toast.script';
+import { RuiToast } from './toast.script';
 import { resetToastDeadlines } from './toast.script';
-import './toast.script';
-import './toaster.script';
+import { RuiToaster as RuiToasterScript } from './toaster.script';
+void RuiToast;
+void RuiToasterScript;
 
 function mount(element: JsxRenderable): { host: HTMLElement; cleanup: () => void } {
 	const host = document.createElement('div');

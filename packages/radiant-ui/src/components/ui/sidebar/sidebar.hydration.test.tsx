@@ -1,7 +1,7 @@
 import '@ecopages/radiant/client/install-hydrator';
 import { afterEach, describe, expect, it } from 'vitest';
-import './sidebar.script';
-import type { RuiSidebar as RuiSidebarElement } from './sidebar.script';
+import { RuiSidebar as RuiSidebarElement } from './sidebar.script';
+void RuiSidebarElement;
 
 /** Real SSR output written by `sidebar.ssr.test.tsx`. */
 const fixtures = import.meta.glob<string>('./__snapshots__/sidebar.hydration/*.html', {

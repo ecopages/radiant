@@ -1,6 +1,5 @@
 import type { JsxCustomElementAttributes } from '@ecopages/jsx';
-import type { RuiForm as RuiFormElement, RuiFormProps } from './form.script';
-import './form.script';
+import { RuiForm as RuiFormElement, type RuiFormProps } from './form.script';
 
 /**
  * Form coordinator view. Stamps `[data-ref="form"]` on the native `<form>` and passes
@@ -20,7 +19,7 @@ export function RuiForm({
 	...props
 }: JsxCustomElementAttributes<RuiFormElement, RuiFormProps>) {
 	return (
-		<rui-form
+		<RuiFormElement
 			{...props}
 			action={action}
 			method={method}
@@ -37,7 +36,7 @@ export function RuiForm({
 			<form class="rui-form" data-ref="form" noValidate action={action} method={method}>
 				{children}
 			</form>
-		</rui-form>
+		</RuiFormElement>
 	);
 }
 

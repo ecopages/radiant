@@ -1,10 +1,9 @@
 import { type JsxCustomElementAttributes } from '@ecopages/jsx';
 import {
 	sidebarTriggerButtonClass,
-	type RuiSidebarTrigger as RuiSidebarTriggerElement,
+	RuiSidebarTrigger as RuiSidebarTriggerElement,
 	type RuiSidebarTriggerProps,
 } from './sidebar-trigger.script';
-import './sidebar-trigger.script';
 
 export type RuiSidebarTriggerViewProps = JsxCustomElementAttributes<RuiSidebarTriggerElement, RuiSidebarTriggerProps>;
 
@@ -83,7 +82,7 @@ export function RuiSidebarTrigger({
 	...props
 }: RuiSidebarTriggerViewProps) {
 	return (
-		<rui-sidebar-trigger
+		<RuiSidebarTriggerElement
 			{...props}
 			prop:buttonLabel={triggerLabel}
 			placement={placement}
@@ -94,6 +93,6 @@ export function RuiSidebarTrigger({
 			<button data-ref="button" type="button" class={sidebarTriggerButtonClass({ variant, size })}>
 				{children ?? <RuiSidebarTriggerIcon />}
 			</button>
-		</rui-sidebar-trigger>
+		</RuiSidebarTriggerElement>
 	);
 }

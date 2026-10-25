@@ -12,7 +12,8 @@ import {
 	createDialogHandle,
 	type DialogActionDetail,
 } from './index';
-import './dialog.script';
+import { RuiDialog as RuiDialogScript } from './dialog.script';
+void RuiDialogScript;
 
 type DialogEl = HTMLElement & { open: boolean };
 

@@ -1,6 +1,5 @@
 import type { JsxCustomElementAttributes } from '@ecopages/jsx';
-import type { RuiSwitch as RuiSwitchElement, RuiSwitchProps } from './switch.script';
-import './switch.script';
+import { RuiSwitch as RuiSwitchElement, type RuiSwitchProps } from './switch.script';
 
 /**
  * Switch view. Stamps `[data-ref="input"]` on a native `role="switch"` checkbox
@@ -23,7 +22,7 @@ export function RuiSwitch({
 	...props
 }: JsxCustomElementAttributes<RuiSwitchElement, RuiSwitchProps>) {
 	return (
-		<rui-switch {...props} checked={checked} disabled={disabled} name={name}>
+		<RuiSwitchElement {...props} checked={checked} disabled={disabled} name={name}>
 			<label class="rui-switch">
 				<input
 					type="checkbox"
@@ -41,6 +40,6 @@ export function RuiSwitch({
 				</span>
 				<span class="rui-switch__label">{children}</span>
 			</label>
-		</rui-switch>
+		</RuiSwitchElement>
 	);
 }

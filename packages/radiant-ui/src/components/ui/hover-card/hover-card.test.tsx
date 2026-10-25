@@ -2,8 +2,8 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { createRoot, type JsxRenderable } from '@ecopages/jsx';
 import { resetPreviewTimingForTests, resolvePreviewOpenDelay } from '../shared/preview-timing';
 import { RuiHoverCard, RuiHoverCardContent, RuiHoverCardTrigger } from './hover-card';
-import type { RuiHoverCard as RuiHoverCardElement } from './hover-card.script';
-import './hover-card.script';
+import { RuiHoverCard as RuiHoverCardElement } from './hover-card.script';
+void RuiHoverCardElement;
 
 function mount(element: JsxRenderable): { host: HTMLElement; cleanup: () => void } {
 	const host = document.createElement('div');

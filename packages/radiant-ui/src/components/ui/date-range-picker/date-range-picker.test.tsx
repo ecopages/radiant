@@ -3,9 +3,11 @@ import { createRoot } from '@ecopages/jsx';
 import { typeIsoIntoDateInput } from '@sb/date-input-typing';
 import { userEvent } from 'storybook/test';
 import { RuiDateRangePicker } from './date-range-picker';
-import './date-range-picker.script';
-import '../date-input/date-input.script';
+import { RuiDateRangePicker as RuiDateRangePickerScript } from './date-range-picker.script';
+import { RuiDateInput as RuiDateInputScript } from '../date-input/date-input.script';
 import '../date-input/date-input.css';
+void RuiDateRangePickerScript;
+void RuiDateInputScript;
 
 async function flushRender(): Promise<void> {
 	await new Promise<void>((resolve) => {

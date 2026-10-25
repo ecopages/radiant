@@ -30,18 +30,24 @@ import {
 	RuiSelectValue,
 } from '../select';
 import { RuiForm } from './form';
-import '../field/field.script';
-import './form.script';
-import '../switch/switch.script';
-import '../date-field/date-field.script';
-import '../date-input/date-input.script';
-import '../number-field/number-field.script';
-import '../slider/slider.script';
-import '../knob/knob.script';
+import { RuiSwitch as RuiSwitchScript } from '../switch/switch.script';
+import { RuiDateField as RuiDateFieldScript } from '../date-field/date-field.script';
+import { RuiDateInput as RuiDateInputScript } from '../date-input/date-input.script';
+import { RuiNumberField as RuiNumberFieldScript } from '../number-field/number-field.script';
+import { RuiSlider as RuiSliderScript } from '../slider/slider.script';
+import { RuiKnob as RuiKnobScript } from '../knob/knob.script';
 import { findFieldControl, findFieldError, registerFieldControl } from './control-protocol';
-import type { RuiField as RuiFieldElement } from '../field/field.script';
-import type { RuiForm as RuiFormElement } from './form.script';
+import { RuiField as RuiFieldElement } from '../field/field.script';
+import { RuiForm as RuiFormElement } from './form.script';
 import type { FormContextValue } from './form-context';
+void RuiFieldElement;
+void RuiFormElement;
+void RuiSwitchScript;
+void RuiDateFieldScript;
+void RuiDateInputScript;
+void RuiNumberFieldScript;
+void RuiSliderScript;
+void RuiKnobScript;
 
 const LANGUAGE_OPTIONS = [
 	{ value: 'js', label: 'JavaScript' },

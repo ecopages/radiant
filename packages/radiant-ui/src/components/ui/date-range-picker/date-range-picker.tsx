@@ -6,13 +6,13 @@ import { RuiIconCalendar } from '@/lib/icons';
 import type { NativeButtonProps } from '@/lib/native-element-props';
 import { RuiCalendar, type RuiCalendarElement, type RuiCalendarProps } from '../calendar';
 import { RuiDateInput, type RuiDateInputElement, type RuiDateInputProps } from '../date-input';
-import type {
+import {
 	RuiDateRangePicker as RuiDateRangePickerElement,
-	RuiDateRangePickerProps,
+	type RuiDateRangePickerProps,
 } from './date-range-picker.script';
-import './date-range-picker.script';
-import '../date-input/date-input.script';
+import { RuiDateInput as RuiDateInputScript } from '../date-input/date-input.script';
 import type { WithoutChildren } from '../../../lib/without-children';
+void RuiDateInputScript;
 
 export type RuiDateRangePickerControlProps = JsxElementProps<HTMLDivElement>;
 
@@ -154,7 +154,7 @@ export function RuiDateRangePicker(props: RuiDateRangePickerViewProps) {
 	const range = parseIsoRange(value ?? '');
 
 	return (
-		<rui-date-range-picker
+		<RuiDateRangePickerElement
 			data-rui-aria-targets='[data-range-start] [data-ref="root"],[data-range-end] [data-ref="root"]'
 			{...props}
 		>
@@ -191,6 +191,6 @@ export function RuiDateRangePicker(props: RuiDateRangePickerViewProps) {
 					</RuiDateRangePickerPopover>
 				</>
 			)}
-		</rui-date-range-picker>
+		</RuiDateRangePickerElement>
 	);
 }

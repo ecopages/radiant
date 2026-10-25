@@ -1,5 +1,4 @@
-import type { RuiDialog } from './dialog.script';
-import './dialog.script';
+import { RuiDialog } from './dialog.script';
 import { createRuiIconX } from '@/lib/icons/x';
 import {
 	RUI_DIALOG_ACTION_EVENT,
@@ -16,6 +15,7 @@ import {
 	type DialogToggleDetail,
 	isNamedDialogOpen,
 } from './dialog-types';
+void RuiDialog;
 
 export type InstallDialogsOptions = {
 	/** Parent node for the imperative host mount. Default: `document.body`. */

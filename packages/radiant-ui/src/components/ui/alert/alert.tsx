@@ -1,9 +1,6 @@
 import type { JsxElementProps } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
-import type { RuiAlertProps, RuiAlertVariant } from './alert.script';
-
-/** Registers `<rui-alert>` when the JSX helpers are imported. */
-import './alert.script';
+import { type RuiAlertProps, type RuiAlertVariant, RuiAlert as RuiAlertElement } from './alert.script';
 
 const ALERT_ICON_PATHS: Record<RuiAlertVariant, string | readonly string[]> = {
 	info: ['M12 16v-4', 'M12 8h.01', 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z'],
@@ -118,7 +115,13 @@ export function RuiAlert({
 	...props
 }: RuiAlertComponentProps) {
 	return (
-		<rui-alert slot={slot} variant={variant} layout={layout} dismissible={dismissible} close-label={closeLabel}>
+		<RuiAlertElement
+			slot={slot}
+			variant={variant}
+			layout={layout}
+			dismissible={dismissible}
+			close-label={closeLabel}
+		>
 			<div
 				{...props}
 				class={cx(
@@ -156,6 +159,6 @@ export function RuiAlert({
 					</button>
 				) : null}
 			</div>
-		</rui-alert>
+		</RuiAlertElement>
 	);
 }

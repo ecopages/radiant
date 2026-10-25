@@ -5,10 +5,9 @@ import { RuiButton } from '../button';
 import {
 	PAGINATION_DEFAULT_LABEL,
 	clampPage,
-	type RuiPagination as RuiPaginationElement,
+	RuiPagination as RuiPaginationElement,
 	type RuiPaginationProps,
 } from './pagination.script';
-import './pagination.script';
 
 type PageItem = number | 'start-ellipsis' | 'end-ellipsis';
 
@@ -177,7 +176,7 @@ export function RuiPagination({
 	const resolvedSiblingCount = Math.max(0, Math.floor(siblingCount) || 0);
 
 	return (
-		<rui-pagination
+		<RuiPaginationElement
 			{...props}
 			class={cx('rui-pagination', className)}
 			label={label}
@@ -201,6 +200,6 @@ export function RuiPagination({
 					statusLabel={statusLabel}
 				/>
 			)}
-		</rui-pagination>
+		</RuiPaginationElement>
 	);
 }

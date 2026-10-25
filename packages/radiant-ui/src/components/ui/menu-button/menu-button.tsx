@@ -5,8 +5,7 @@ import type { NativeButtonProps } from '@/lib/native-element-props';
 import { RuiButton, type RuiButtonControlProps } from '../button';
 import { RuiSeparator } from '../separator';
 import { renderMenuEntries, type RuiMenuEntry } from '../shared/menu-entry';
-import type { RuiMenuButton as RuiMenuButtonElement, RuiMenuButtonProps } from './menu-button.script';
-import './menu-button.script';
+import { RuiMenuButton as RuiMenuButtonElement, type RuiMenuButtonProps } from './menu-button.script';
 
 export type { RuiMenuEntry, RuiMenuItem, RuiMenuSeparator } from '../shared/menu-entry';
 
@@ -129,14 +128,14 @@ export function RuiMenuButton({
 >) {
 	if (trigger == null && items == null) {
 		return (
-			<rui-menu-button {...props} class={cx('rui-menu-button', className)}>
+			<RuiMenuButtonElement {...props} class={cx('rui-menu-button', className)}>
 				{children}
-			</rui-menu-button>
+			</RuiMenuButtonElement>
 		);
 	}
 
 	return (
-		<rui-menu-button {...props} class={cx('rui-menu-button', className)}>
+		<RuiMenuButtonElement {...props} class={cx('rui-menu-button', className)}>
 			<RuiMenuButtonTrigger>{trigger}</RuiMenuButtonTrigger>
 			<RuiMenuButtonContent>
 				{items
@@ -147,6 +146,6 @@ export function RuiMenuButton({
 						})
 					: children}
 			</RuiMenuButtonContent>
-		</rui-menu-button>
+		</RuiMenuButtonElement>
 	);
 }

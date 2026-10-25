@@ -14,7 +14,8 @@ import {
 	RuiTableHeader,
 	RuiTableRow,
 } from './table';
-import './table.script';
+import { RuiTable as RuiTableScript } from './table.script';
+void RuiTableScript;
 
 function mount(element: JsxRenderable): { host: HTMLElement; cleanup: () => void } {
 	const host = document.createElement('div');
@@ -170,8 +171,6 @@ describe('RuiTable range ownership', () => {
 		cleanup();
 	});
 });
-
-
 
 declare global {
 	interface HTMLElementTagNameMap {

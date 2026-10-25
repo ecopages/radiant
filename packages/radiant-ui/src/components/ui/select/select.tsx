@@ -6,8 +6,7 @@ import type { NativeButtonProps, NativeInputProps } from '@/lib/native-element-p
 import { RuiListbox, type RuiListboxOptionData } from '../listbox';
 import { parseViewValue, type ViewMultiValue } from '../shared/multi-value';
 import { RuiTagGroup } from '../tag-group';
-import type { RuiSelect as RuiSelectElement, RuiSelectProps } from './select.script';
-import './select.script';
+import { RuiSelect as RuiSelectElement, type RuiSelectProps } from './select.script';
 
 export type RuiSelectControlProps = JsxElementProps<HTMLDivElement>;
 
@@ -206,7 +205,7 @@ export function RuiSelect({ options, children, value, ...props }: RuiSelectViewP
 		.map((option) => ({ value: option.value, label: option.label }));
 
 	return (
-		<rui-select {...props} value={selectedValues}>
+		<RuiSelectElement {...props} value={selectedValues}>
 			<SelectShell>
 				{options == null ? (
 					children
@@ -235,6 +234,6 @@ export function RuiSelect({ options, children, value, ...props }: RuiSelectViewP
 					</>
 				)}
 			</SelectShell>
-		</rui-select>
+		</RuiSelectElement>
 	);
 }
