@@ -1,4 +1,4 @@
-import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RuiButton } from '@ecopages/radiant-ui/button';
 import {
 	type ContextProvider,
@@ -23,6 +23,7 @@ const weatherContext = createContext<WeatherContext>(Symbol('weather-context'));
 
 @customElement('radiant-weather-summary')
 export class RadiantWeatherSummary extends RadiantElement {
+	declare readonly [JSX_PROPS]?: Record<never, never>;
 	@contextSelector({
 		context: weatherContext,
 		select: ({ visibleReport }) => visibleReport,
@@ -65,6 +66,7 @@ export class RadiantWeatherSummary extends RadiantElement {
 
 @customElement('radiant-weather-app')
 export class RadiantWeatherAppElement extends RadiantElement {
+	declare readonly [JSX_PROPS]?: Record<never, never>;
 	@state activeCityId = DEFAULT_CITY_ID;
 
 	@provideContext<typeof weatherContext>({
@@ -216,9 +218,9 @@ export class RadiantWeatherAppElement extends RadiantElement {
 	}
 }
 
-declare module '@ecopages/jsx/jsx-runtime' {
-	interface JsxCustomIntrinsicElements {
-		'radiant-weather-app': JsxCustomElementAttributes<RadiantWeatherAppElement>;
-		'radiant-weather-summary': JsxCustomElementAttributes<RadiantWeatherSummary>;
+declare global {
+	interface HTMLElementTagNameMap {
+		'radiant-weather-app': RadiantWeatherAppElement;
+		'radiant-weather-summary': RadiantWeatherSummary;
 	}
 }

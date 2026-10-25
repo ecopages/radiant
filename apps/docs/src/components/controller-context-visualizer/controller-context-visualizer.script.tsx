@@ -1,4 +1,4 @@
-import type { JsxCustomElementAttributes, JsxRenderable } from '@ecopages/jsx';
+import type { JSX_PROPS, JsxRenderable } from '@ecopages/jsx';
 import {
 	type ContextProvider,
 	RadiantController,
@@ -109,6 +109,7 @@ export class ControllerContextConsumer extends RadiantController {
 
 @customElement('controller-context-viewer')
 export class ControllerContextViewer extends RadiantElement {
+	declare readonly [JSX_PROPS]?: Record<never, never>;
 	@contextSelector({ context: controllerVisualizerContext, select: (context) => context.count }) count = 0;
 
 	@contextSelector({ context: controllerVisualizerContext, select: (context) => context.history })
@@ -152,9 +153,9 @@ export class ControllerContextViewer extends RadiantElement {
 	}
 }
 
-declare module '@ecopages/jsx/jsx-runtime' {
-	interface JsxCustomIntrinsicElements {
-		'controller-context-viewer': JsxCustomElementAttributes<ControllerContextViewer>;
+declare global {
+	interface HTMLElementTagNameMap {
+		'controller-context-viewer': ControllerContextViewer;
 	}
 }
 

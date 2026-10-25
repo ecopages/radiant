@@ -1,6 +1,6 @@
 // @vitest-environment node
 import '../../src/server/install-ssr-runtime';
-import type { JsxCustomElementAttributes, JsxRenderable } from '@ecopages/jsx';
+import type { JSX_PROPS, JsxRenderable } from '@ecopages/jsx';
 import { renderToString } from '@ecopages/jsx/server';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { RadiantElement } from '../../src/core/radiant-element';
@@ -11,14 +11,11 @@ import {
 	withRadiantServerCustomElementRenderBridge,
 } from '../../src/server/radiant-element-ssr';
 
-declare module '@ecopages/jsx/jsx-runtime' {
-	interface JsxCustomIntrinsicElements {
-		'ssr-value-frame-test': JsxCustomElementAttributes<
-			SsrValueFrame,
-			{ children?: JsxRenderable; header?: JsxRenderable }
-		>;
-		'ssr-value-badge-test': JsxCustomElementAttributes<SsrValueBadge>;
-		'ssr-value-shell-test': JsxCustomElementAttributes<SsrValueShell, { children?: JsxRenderable }>;
+declare global {
+	interface HTMLElementTagNameMap {
+		'ssr-value-frame-test': SsrValueFrame;
+		'ssr-value-badge-test': SsrValueBadge;
+		'ssr-value-shell-test': SsrValueShell;
 	}
 }
 
@@ -27,6 +24,7 @@ class SsrValueShell extends RadiantElement {}
 
 @customElement('ssr-value-frame-test')
 class SsrValueFrame extends RadiantElement {
+	declare readonly [JSX_PROPS]?: { children?: JsxRenderable; header?: JsxRenderable };
 	@state header: JsxRenderable = null;
 
 	override render() {
@@ -45,6 +43,7 @@ class SsrValueFrame extends RadiantElement {
 
 @customElement('ssr-value-badge-test')
 class SsrValueBadge extends RadiantElement<{ label: string }> {
+	declare readonly [JSX_PROPS]?: Record<never, never>;
 	@state label = 'badge';
 
 	override render() {

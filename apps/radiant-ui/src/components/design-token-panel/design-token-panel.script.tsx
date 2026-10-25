@@ -1,4 +1,4 @@
-import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, onEvent } from '@ecopages/radiant';
 import { RuiFeed, RuiFeedArticle, RuiFeedArticleContent } from '@ecopages/radiant-ui/feed';
 import { RuiHeading, RuiHeadingDescription, RuiHeadingEyebrow, RuiHeadingTitle } from '@ecopages/radiant-ui/heading';
@@ -41,6 +41,7 @@ function TokenOptions({
  */
 @customElement('radiant-design-token-panel')
 export class DesignTokenPanelElement extends RadiantElement {
+	declare readonly [JSX_PROPS]?: Record<never, never>;
 	private selection: DocsThemeSelection = defaultDocsThemeSelection;
 	private rootObserver: MutationObserver | null = null;
 
@@ -123,8 +124,8 @@ export class DesignTokenPanelElement extends RadiantElement {
 	}
 }
 
-declare module '@ecopages/jsx/jsx-runtime' {
-	interface JsxCustomIntrinsicElements {
-		'radiant-design-token-panel': JsxCustomElementAttributes<DesignTokenPanelElement>;
+declare global {
+	interface HTMLElementTagNameMap {
+		'radiant-design-token-panel': DesignTokenPanelElement;
 	}
 }

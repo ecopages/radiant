@@ -1,17 +1,9 @@
 import { waitFor } from '@testing-library/dom';
-import type { JsxCustomElementAttributes } from '@ecopages/jsx';
 import { beforeEach, describe, expect, test } from 'vitest';
 import { uninstallRadiantHydrator } from '../../src/client/hydrator';
 import { prop } from '../../src/decorators/prop';
 import { customElement } from '../../src/decorators/custom-element';
 import { RadiantElement } from '../../src/core/radiant-element';
-
-declare module '@ecopages/jsx/jsx-runtime' {
-	interface JsxCustomIntrinsicElements {
-		'repro-counter-binding': JsxCustomElementAttributes<RadiantElement>;
-		'repro-counter-plain': JsxCustomElementAttributes<RadiantElement>;
-	}
-}
 
 describe('counter binding repro', () => {
 	@customElement('repro-counter-binding')

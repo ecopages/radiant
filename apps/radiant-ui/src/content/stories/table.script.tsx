@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, onEvent, state } from '@ecopages/radiant';
 import {
 	RuiTable,
@@ -32,6 +33,7 @@ function comparePlants(left: Plant, right: Plant, column: string, direction: Rui
  */
 @customElement('rui-table-docs-sort-demo')
 export class RuiTableDocsSortDemo extends RadiantElement {
+	declare readonly [JSX_PROPS]?: Record<string, never>;
 	@state sortColumn = 'name';
 	@state sortDirection: RuiTableSortDirection = 'ascending';
 	@state plants = [...PLANTS].sort((left, right) => comparePlants(left, right, 'name', 'ascending'));
@@ -71,8 +73,8 @@ export class RuiTableDocsSortDemo extends RadiantElement {
 	}
 }
 
-declare module '@ecopages/jsx/jsx-runtime' {
-	interface JsxCustomIntrinsicElements {
-		'rui-table-docs-sort-demo': Record<string, never>;
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-table-docs-sort-demo': RuiTableDocsSortDemo;
 	}
 }

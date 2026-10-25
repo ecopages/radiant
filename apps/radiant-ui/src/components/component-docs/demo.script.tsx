@@ -1,4 +1,4 @@
-import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, registerSsrPreparationCallback } from '@ecopages/radiant';
 import { type ContextProvider, provideContext } from '@ecopages/radiant/context';
 import '@/content/stories';
@@ -7,6 +7,7 @@ import { getRegisteredStory, getStoryArgs } from '@/lib/docs-stories';
 
 @customElement('radiant-docs-demo')
 export class DocsDemoElement extends RadiantElement {
+	declare readonly [JSX_PROPS]?: { storyId?: string };
 	@provideContext<typeof docsStoryContext>({
 		context: docsStoryContext,
 		initialValue: { storyId: '', args: {}, renderRevision: 0 },
@@ -44,8 +45,8 @@ export class DocsDemoElement extends RadiantElement {
 	}
 }
 
-declare module '@ecopages/jsx/jsx-runtime' {
-	interface JsxCustomIntrinsicElements {
-		'radiant-docs-demo': JsxCustomElementAttributes<DocsDemoElement> & { storyId?: string };
+declare global {
+	interface HTMLElementTagNameMap {
+		'radiant-docs-demo': DocsDemoElement;
 	}
 }

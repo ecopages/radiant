@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, onEvent, prop, query } from '@ecopages/radiant';
 
 import {
@@ -39,6 +40,7 @@ class Logger {
 
 @customElement('radiant-todo-item')
 export class RadiantTodoItem extends RadiantElement {
+	declare readonly [JSX_PROPS]?: RadiantTodoProps;
 	@query({ selector: 'input[type="checkbox"]' }) checkbox!: HTMLInputElement | null;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) complete!: boolean;
 	@consumeContext(todoContext) context!: ContextProvider<typeof todoContext>;
@@ -79,6 +81,7 @@ export class RadiantTodoItem extends RadiantElement {
 
 @customElement('radiant-todo-app')
 export class RadiantTodoApp extends RadiantElement {
+	declare readonly [JSX_PROPS]?: RadiantTodoAppProps;
 	@prop({ type: Array, defaultValue: [] }) initialTodos!: Todo[];
 
 	@provideContext<typeof todoContext>({
@@ -160,4 +163,9 @@ export class RadiantTodoApp extends RadiantElement {
 	}
 }
 
-declare global {}
+declare global {
+	interface HTMLElementTagNameMap {
+		'radiant-todo-app': RadiantTodoApp;
+		'radiant-todo-item': RadiantTodoItem;
+	}
+}

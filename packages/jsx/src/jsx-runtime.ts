@@ -4,6 +4,7 @@ import { SLOT_JSX_VALUE_SYMBOL, SUBSCRIBABLE_JSX_VALUE_SYMBOL } from './types/in
 import type {
 	JsxBindingSourceValue,
 	JsxComponent,
+	JsxCustomElementAttributes,
 	JsxCustomIntrinsicElements,
 	JsxIntrinsicAttributes,
 	JsxKey,
@@ -84,7 +85,12 @@ type JsxDomIntrinsicAttributes<ElementType extends Element> = JsxIntrinsicAttrib
  * `title`). SVG-only tags keep their SVG instance types.
  */
 type JsxDomIntrinsicElements = {
-	[ElementName in keyof HTMLElementTagNameMap]: JsxDomIntrinsicAttributes<HTMLElementTagNameMap[ElementName]>;
+	[ElementName in keyof HTMLElementTagNameMap]: ElementName extends `${string}-${string}`
+		? JsxCustomElementAttributes<
+				HTMLElementTagNameMap[ElementName],
+				JsxPublicProps<HTMLElementTagNameMap[ElementName]>
+			>
+		: JsxDomIntrinsicAttributes<HTMLElementTagNameMap[ElementName]>;
 } & {
 	[ElementName in Exclude<keyof SVGElementTagNameMap, keyof HTMLElementTagNameMap>]: JsxDomIntrinsicAttributes<
 		SVGElementTagNameMap[ElementName]

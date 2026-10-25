@@ -108,6 +108,18 @@ import type { JSX_PROPS } from '@ecopages/jsx';
 <UserCard name="Ada" />;
 ```
 
+If a view uses the string tag instead, add the class to `HTMLElementTagNameMap`:
+
+```tsx
+declare global {
+	interface HTMLElementTagNameMap {
+		'user-card': UserCard;
+	}
+}
+
+<user-card name="Ada" />;
+```
+
 At runtime, import the class's module so its `@customElement(...)` decorator
 registers the element before rendering.
 

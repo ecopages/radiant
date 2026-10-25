@@ -1,5 +1,5 @@
 import { waitFor } from '@testing-library/dom';
-import type { JsxCustomElementAttributes, JsxRenderable } from '@ecopages/jsx';
+import type { JSX_PROPS, JsxRenderable } from '@ecopages/jsx';
 import { beforeEach, describe, expect, test } from 'vitest';
 import {
 	type ContextProvider,
@@ -12,19 +12,14 @@ import {
 import { RadiantElement } from '../../src/core/radiant-element';
 
 class JsxReceiverElement extends HTMLElement {
+	declare readonly [JSX_PROPS]?: Record<never, never>;
 	value: unknown;
 }
 
-declare module '@ecopages/jsx/jsx-runtime' {
-	interface JsxCustomIntrinsicElements {
-		'jsx-receiver': JsxCustomElementAttributes<JsxReceiverElement>;
-		'radiant-element-todo-item-test': JsxCustomElementAttributes<
-			RadiantElementTodoItemTest,
-			{
-				children?: JsxRenderable;
-				complete?: boolean;
-			}
-		>;
+declare global {
+	interface HTMLElementTagNameMap {
+		'jsx-receiver': JsxReceiverElement;
+		'radiant-element-todo-item-test': RadiantElementTodoItemTest;
 	}
 }
 
@@ -50,6 +45,7 @@ class MyRadiantElementElement extends RadiantElement {
 customElements.define('my-radiant-component-jsx', MyRadiantElementElement);
 
 class RadiantElementTodoItemTest extends RadiantElement {
+	declare readonly [JSX_PROPS]?: { children?: JsxRenderable; complete?: boolean };
 	declare complete: boolean;
 	connected = false;
 

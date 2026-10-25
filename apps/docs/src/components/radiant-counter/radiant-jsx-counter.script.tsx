@@ -1,4 +1,4 @@
-import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, prop } from '@ecopages/radiant';
 
 export type RadiantCounterProps = {
@@ -7,6 +7,7 @@ export type RadiantCounterProps = {
 
 @customElement('radiant-counter')
 export class RadiantCounter extends RadiantElement<RadiantCounterProps> {
+	declare readonly [JSX_PROPS]?: RadiantCounterProps;
 	@prop({ type: Number, reflect: true, defaultValue: 0 }) value!: number;
 
 	private readonly decrement = () => {
@@ -34,8 +35,8 @@ export class RadiantCounter extends RadiantElement<RadiantCounterProps> {
 	}
 }
 
-declare module '@ecopages/jsx/jsx-runtime' {
-	interface JsxCustomIntrinsicElements {
-		'radiant-counter': JsxCustomElementAttributes<RadiantCounter, RadiantCounterProps>;
+declare global {
+	interface HTMLElementTagNameMap {
+		'radiant-counter': RadiantCounter;
 	}
 }

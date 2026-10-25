@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { state } from '@ecopages/radiant';
 import { RadiantElement } from '@ecopages/radiant/core/radiant-element';
 import { customElement } from '@ecopages/radiant/decorators/custom-element';
@@ -18,6 +19,7 @@ type DetailsAnimation = {
 
 @customElement('radiant-accordion')
 export class RadiantAccordion extends RadiantElement {
+	declare readonly [JSX_PROPS]?: RadiantAccordionProps;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) multiple!: boolean;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) shouldAnimate!: boolean;
 	@state currentIndex!: number;
@@ -164,5 +166,11 @@ export class RadiantAccordion extends RadiantElement {
 		for (const animation of this.animations) {
 			animation.reference?.cancel();
 		}
+	}
+}
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'radiant-accordion': RadiantAccordion;
 	}
 }

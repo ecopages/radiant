@@ -1,4 +1,4 @@
-import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, onEvent } from '@ecopages/radiant';
 import { DOCS_THEME_STYLESHEET_LOAD_EVENT } from '@/lib/docs-theme-preview';
 
@@ -28,6 +28,7 @@ async function copyTextToClipboard(text: string): Promise<void> {
  */
 @customElement('radiant-token-swatches')
 export class TokenSwatchesElement extends RadiantElement {
+	declare readonly [JSX_PROPS]?: Record<never, never>;
 	private rootObserver: MutationObserver | null = null;
 	private resetTimeoutId: number | null = null;
 
@@ -108,8 +109,8 @@ export class TokenSwatchesElement extends RadiantElement {
 	}
 }
 
-declare module '@ecopages/jsx/jsx-runtime' {
-	interface JsxCustomIntrinsicElements {
-		'radiant-token-swatches': JsxCustomElementAttributes<TokenSwatchesElement>;
+declare global {
+	interface HTMLElementTagNameMap {
+		'radiant-token-swatches': TokenSwatchesElement;
 	}
 }
