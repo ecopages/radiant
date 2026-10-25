@@ -50,9 +50,15 @@ export interface JsxRoot {
  * updates mutate node data, and reactive sources stay subscribed.
  */
 export function render(element: JsxRenderable, target: HTMLElement): void {
+	const existingRoot = ROOT_RENDER_STATE.get(target);
+
+	if (!existingRoot) {
+		HYDRATED_ROOT_TARGETS.delete(target);
+	}
+
 	const focusSnapshot = captureFocusSnapshot(target);
 	const deferredProperties: DeferredPropertyBinding[] = [];
-	const root = getOrCreateMountedRoot(target);
+	const root = existingRoot ?? getOrCreateMountedRoot(target);
 
 	root.mounted = updateRangeContent(root.start, root.end, element, root.mounted, target, deferredProperties);
 
@@ -66,6 +72,8 @@ export function render(element: JsxRenderable, target: HTMLElement): void {
  * Falls back to a full client render whenever the SSR DOM cannot be reconnected.
  */
 export function hydrate(element: JsxRenderable, target: HTMLElement): void {
+	HYDRATED_ROOT_TARGETS.delete(target);
+
 	const currentRenderState = ROOT_RENDER_STATE.get(target);
 
 	if (currentRenderState) {
