@@ -17,13 +17,5 @@ export function RuiToast({ toastId, ...props }: RuiToastViewProps) {
 	return <rui-toast {...props} toastId={toastId != null ? String(toastId) : undefined} />;
 }
 
-/** The `<rui-toaster>` element renders the toast stack, so the view takes no children. */
+/** @deprecated `RuiToaster` is now the custom-element class. Use `RuiToasterProps` for its JSX props. */
 export type RuiToasterViewProps = WithoutChildren<JsxCustomElementAttributes<RuiToasterElement, RuiToasterProps>>;
-
-/**
- * JSX helper around `<rui-toaster>`. Mount once at the app root and drive with
- * `toast()`. See `RuiToasterElement` for the full contract.
- */
-export function RuiToaster(props: RuiToasterViewProps) {
-	return <rui-toaster {...props} />;
-}

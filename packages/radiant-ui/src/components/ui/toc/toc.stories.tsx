@@ -1,8 +1,7 @@
 import type { Decorator, Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import type { JsxRenderable } from '@ecopages/jsx';
 import { expect } from 'storybook/test';
-import { RuiToc } from './toc';
-import { RuiToc as RuiTocElement } from './toc.script';
+import { RuiToc, RuiToc as RuiTocElement } from './index';
 
 const Article = () => (
 	<article class="toc-story-article min-w-0 pb-48">

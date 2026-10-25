@@ -8,7 +8,8 @@ import { RuiFeed, RuiFeedArticle } from './components/ui/feed/feed';
 import { RuiGrid } from './components/ui/grid/grid';
 import { RuiSelect, RuiSelectListbox, RuiSelectTrigger } from './components/ui/select/select';
 import { RuiSidebarMenuButton } from './components/ui/sidebar/sidebar';
-import { RuiTab, RuiTabList, RuiTabPanel, RuiTabPanels, RuiTabs } from './components/ui/tabs/tabs';
+import { RuiTabs } from './components/ui/tabs';
+import { RuiTab, RuiTabList, RuiTabPanel, RuiTabPanels } from './components/ui/tabs/tabs';
 
 describe('host defaulting', () => {
 	it('keeps consumer feed aria over label aliases', () => {

@@ -1,17 +1,17 @@
 import type { RuiButtonControlProps, RuiButtonLinkProps } from './components/ui/button/button';
-import { RuiCalendar } from './components/ui/calendar/calendar';
+import { RuiCalendar } from './components/ui/calendar';
 import { RuiDateInput } from './components/ui/date-input/date-input';
 import type { RuiDialogCloseProps } from './components/ui/dialog/dialog';
 import type { RuiHeadingProps } from './components/ui/heading/heading';
 import type { RuiHeadlineProps } from './components/ui/headline/headline';
 import type { RuiInputProps } from './components/ui/input/input';
-import { RuiMeter } from './components/ui/meter/meter';
+import { RuiMeter } from './components/ui/meter';
 import type { RuiNumberFieldInputProps } from './components/ui/number-field/number-field';
 import type { RuiSelectSearchProps, RuiSelectViewProps } from './components/ui/select/select';
 import type { RuiSidebarMenuButtonControlProps, RuiSidebarMenuButtonLinkProps } from './components/ui/sidebar/sidebar';
 import type { RuiTextareaProps } from './components/ui/textarea/textarea';
-import { RuiToast, RuiToaster } from './components/ui/toast/toast';
-import { RuiToc } from './components/ui/toc/toc';
+import { RuiToast, RuiToaster } from './components/ui/toast';
+import { RuiToc } from './components/ui/toc';
 import type { RuiIconProps } from './lib/icons/types';
 
 type Assert<T extends true> = T;

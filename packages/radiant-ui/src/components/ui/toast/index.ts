@@ -1,6 +1,6 @@
 export { RuiToast as RuiToastElement, type RuiToastProps } from './toast.script';
-export { RuiToaster as RuiToasterElement, type RuiToasterProps } from './toaster.script';
-export { RuiToast, RuiToaster, type RuiToastViewProps, type RuiToasterViewProps } from './toast';
+export { RuiToaster, RuiToaster as RuiToasterElement, type RuiToasterProps } from './toaster.script';
+export { RuiToast, type RuiToastViewProps, type RuiToasterViewProps } from './toast';
 export { toast, showToast, dismissToast, type ToastCallable } from './toast-api';
 export {
 	RUI_TOAST_SHOW_EVENT,

@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, waitFor } from 'storybook/test';
-import { RuiMeter } from './meter';
-import { RuiMeter as RuiMeterElement } from './meter.script';
+import { RuiMeter, RuiMeter as RuiMeterElement } from './index';
 
 const meta = {
 	title: 'Components/Meter',
