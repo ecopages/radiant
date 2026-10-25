@@ -8,6 +8,8 @@ Radiant deliberately renders into light DOM only; it has no shadow render mode. 
 
 For the full docs site, see [radiant.ecopages.app](https://radiant.ecopages.app/).
 
+`@customElement(name, options)` registers autonomous custom elements only. Passing a defined `options.extends` value to define a customized built-in throws a `TypeError` at class definition time, and `extends` is excluded from the TypeScript options type.
+
 ## Installation
 
 `@ecopages/radiant` is the core package. `@ecopages/jsx` provides TSX rendering, and `@ecopages/signals` provides the renderer-agnostic reactive layer underneath Radiant.
