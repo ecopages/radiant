@@ -52,21 +52,39 @@ export class RadiantElementSsrService {
 	}
 
 	public renderHost(): JsxRenderable {
-		this.ensureReady();
-
 		return createMarkupNodeLike(this.renderHostToString({ mode: 'hydrate' }));
 	}
 
-	public renderHostToString(options: RenderToStringOptions = {}, attributes = this.getHostAttributes()): string {
+	/**
+	 * @param attributeOverrides Merged after attributes are read from the prepared host, so a nested children stamp can replace the default host stamp.
+	 * @remarks One pass: align the tag and legacy readiness, prepare, render the view, flush `@bindTo`, then read attributes, the slot-projection payload, and hydration bindings. A later serialization prepares again.
+	 */
+	public renderHostToString(
+		options: RenderToStringOptions = {},
+		attributeOverrides?: Record<string, string>,
+	): string {
 		this.ensureReady();
 		const tagName = this.getTagName();
 		const hydrate = isHydrateMode(options);
 
 		return withSsrContextProviders(this.host.getContextProviders(), () => {
-			const slotProjectionScript = { markup: '' };
-			const content = this.renderHostContent(options, hydrate, slotProjectionScript);
+			const hostContent = this.renderView(this.host, options);
+			this.host.flushPostSyncCallbacks();
+			const slotProjectionMarkup = this.host.getSlotProjectionScriptTag?.() ?? '';
+			const authoredHydrationMarkup = this.host.getAuthoredHydrationScriptMarkup?.() ?? '';
+			const hydrationScripts = hydrate
+				? this.host
+						.getHydrationBindings()
+						.map((binding) => binding.renderHydrationScriptTag())
+						.filter((markup): markup is string => typeof markup === 'string')
+						.join('')
+				: '';
+			const attributes = {
+				...this.getHostAttributes(),
+				...attributeOverrides,
+			};
 			const stamp =
-				takesChildrenValue(this.host.constructor) && hasNamedSlotContent(slotProjectionScript.markup)
+				takesChildrenValue(this.host.constructor) && hasNamedSlotContent(slotProjectionMarkup)
 					? SERVER_RENDERED_AUTHORED_STAMP
 					: '';
 			const hostAttributes = hydrate
@@ -75,43 +93,25 @@ export class RadiantElementSsrService {
 						[SERVER_RENDERED_HOST_ATTRIBUTE]: attributes[SERVER_RENDERED_HOST_ATTRIBUTE] ?? stamp,
 					}
 				: attributes;
+			const content = composeHostContent(
+				{
+					hostContent,
+					authoredHydrationMarkup,
+					slotProjectionScript: slotProjectionMarkup,
+					hydrationScripts,
+				},
+				hydrate,
+			);
 
 			return `<${tagName}${stringifyHostAttributes(hostAttributes)}>${content}</${tagName}>`;
 		});
 	}
 
+	/**
+	 * @remarks Does not run SSR preparation. Host serialization owns that pass and reads attributes afterwards.
+	 */
 	public getHostAttributes(): Record<string, string> {
-		this.ensureReady();
 		return resolveHostAttributes(this.host);
-	}
-
-	/** @param slotProjectionScript Receives the slot-projection payload markup, empty when the host has none. */
-	private renderHostContent(
-		options: RenderToStringOptions,
-		hydrate: boolean,
-		slotProjectionScript: { markup: string },
-	): string {
-		const hydrationScripts = hydrate
-			? this.host
-					.getHydrationBindings()
-					.map((binding) => binding.renderHydrationScriptTag())
-					.filter((markup): markup is string => typeof markup === 'string')
-					.join('')
-			: '';
-
-		const hostContent = this.renderView(this.host, options);
-		this.host.flushPostSyncCallbacks();
-		slotProjectionScript.markup = this.host.getSlotProjectionScriptTag?.() ?? '';
-
-		return composeHostContent(
-			{
-				hostContent,
-				authoredHydrationMarkup: this.host.getAuthoredHydrationScriptMarkup?.() ?? '',
-				slotProjectionScript: slotProjectionScript.markup,
-				hydrationScripts,
-			},
-			hydrate,
-		);
 	}
 
 	private getTagName(): string {

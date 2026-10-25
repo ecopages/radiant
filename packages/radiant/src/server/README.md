@@ -65,6 +65,8 @@ Lower-level host serialization lives on `@ecopages/radiant/server/radiant-elemen
 
 On the client, the stamp decides how a server-rendered host takes its children. A host stamped `authored` keeps its Authored Children for its lifetime and ignores any Children Value, including the one page-level JSX passes when it hydrates over the host. A host stamped `children` waits for its Children Value and takes it. A host with an empty stamp, such as one a view rendered with no children, or one whose Authored Children only fill its default slot, takes a Children Value a view passes, which renders those children in the same place with live bindings.
 
+Each host serialization is one pass: align the tag and legacy readiness, apply children, prepare once, render the view, flush `@bindTo`, then read attributes, the slot-projection payload, and hydration bindings from that final state. A later, separate serialization prepares again so changed inputs are honoured. `renderComponent()` builds `preview` by wrapping that markup; it does not serialize the host a second time.
+
 When a component renders literal `<slot>` tags over **Authored Children**, host serialization also emits the slot-projection payload needed to reconstruct default and named light-DOM assignments on the client.
 
 Under `withRadiantServerCustomElementRenderBridge` in hydrate mode, a render-owning host inside another host's view receives a **Children Value**, as it does when the client renders that view. Its own render places it, so it serializes inside its context providers and in its marker namespace, and it emits no slot-projection payload. The client gets that value back only from the parent's view, so the parent host must be defined on the client too. Such a host is stamped `data-radiant-ssr="children"`: on the client it stays inert (no event bindings, no `onConnected()`) until the parent's view hands it its Children Value, then hydrates, so a nested host whose parent never renders on the client stays inert server markup. In plain mode nothing makes the host wait for that value (it is not stamped) and its parent may never render on the client, so the same host takes the Authored Children path below, with the slot-projection payload, and still renders its children when its parent is not defined on the client. Any other host claimed by the bridge, such as one in a page rendered outside every host view, or a host without a `render()` override, receives its JSX children as **Authored Children** in light-DOM nodes (`renderServerLightDom` from `@ecopages/jsx/server`), not as an HTML string to parse. Text and attribute values go straight into the DOM, so they are escaped exactly once, when the host serializes. The children are built inside the host's own context providers, after construction and legacy decorator setup but before `prepareForSsr`. A context consumer passed as a child of a provider host therefore resolves that provider during SSR. It sees values set by construction or decorators (`initialValue`), but not values the provider only sets during preparation.
@@ -77,7 +79,7 @@ withServerCustomElementRenderHook(
 		if (!instance || !resolveRadiantElementRenderBridge(instance)) return undefined;
 		const service = createRadiantElementSsrService(instance);
 		service.applyLightDom(() => applyChildren?.());
-		return createMarkupNodeLike(service.renderHostToString({ mode: 'hydrate' }, service.getHostAttributes()));
+		return createMarkupNodeLike(service.renderHostToString({ mode: 'hydrate' }));
 	},
 	render,
 	{ ownsChildren: true },
@@ -189,7 +191,7 @@ Other useful server helpers:
 
 - `renderComponentToString()` returns only the host markup string.
 - `renderComponentToPayload()` returns the flat payload shape directly.
-- `renderComponentWithPreview()` returns payload fields plus a JSX-compatible preview value.
+- `renderComponentWithPreview()` returns payload fields plus a JSX-compatible preview that wraps the same markup. In plain mode that preview has no hydration stamp.
 - `ssrContext` injects ambient context values for standalone fragment renders.
 - `assets` and `resolveAssets(...)` describe runtime scripts, styles, and preload hints through a transport-agnostic metadata model.
 - `prepareHost(...)` is the dedicated host-preparation hook when slot-aware SSR needs authored light-DOM nodes, not just an HTML string.
