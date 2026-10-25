@@ -30,6 +30,7 @@ import {
 	type NonHydratedCounter,
 	pageBuyCardView,
 	pageSlotCardView,
+	staticPageBindlessCardView,
 	staticPageSlotCardView,
 } from '../fixtures/ssr-hydration/components';
 import '../fixtures/ssr-hydration/components';
@@ -738,6 +739,41 @@ describe('hydrating page-level JSX over a host the server rendered with Authored
 		await settle();
 
 		expect(container.querySelector('hydrated-slot-card-test')).toBe(serverHost);
+		expectServerSlots(serverHost);
+		expect(slotWarnings()).toEqual([]);
+	});
+
+	test('keeps a host whose view has no binding when a markerless page hydrates after it rendered', async () => {
+		installRadiantHydrator();
+		container.innerHTML = serverMarkup('static-page-bindless-card');
+		const serverHost = container.querySelector('hydrated-bindless-slot-card-test') as Element;
+
+		await settle();
+		createRoot(container).hydrate(staticPageBindlessCardView());
+		await settle();
+
+		expect(container.querySelector('hydrated-bindless-slot-card-test')).toBe(serverHost);
+		expect(serverHost.querySelectorAll('header > h2')).toHaveLength(1);
+		expect(Array.from(serverHost.querySelectorAll('div > *'), (node) => node.outerHTML)).toEqual([
+			'<p>SSR body</p>',
+		]);
+		expect(slotWarnings()).toEqual([]);
+	});
+
+	test('keeps a host and its state when it updated before a markerless page hydrates', async () => {
+		installRadiantHydrator();
+		container.innerHTML = serverMarkup('static-page-slot-card');
+		const serverHost = container.querySelector('hydrated-slot-card-test') as HydratedSlotCard;
+
+		await settle();
+		serverHost.querySelector('button')?.click();
+		await waitFor(() => expect(serverHost.querySelector('button')?.textContent).toBe('Count 1'));
+
+		createRoot(container).hydrate(staticPageSlotCardView());
+		await settle();
+
+		expect(container.querySelector('hydrated-slot-card-test')).toBe(serverHost);
+		expect(serverHost.querySelector('button')?.textContent).toBe('Count 1');
 		expectServerSlots(serverHost);
 		expect(slotWarnings()).toEqual([]);
 	});

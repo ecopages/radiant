@@ -25,9 +25,6 @@ import type { JsxRenderable } from './types/index.ts';
  */
 const ROOT_RENDER_STATE = new WeakMap<HTMLElement, MountedRoot>();
 
-/** Tracks roots that successfully reconnected SSR markup, even after their markers were consumed. */
-const HYDRATED_ROOT_TARGETS = new WeakSet<HTMLElement>();
-
 /**
  * Imperative handle returned by {@link createRoot} for managing a mounted JSX tree.
  *
@@ -50,12 +47,9 @@ export interface JsxRoot {
  * updates mutate node data, and reactive sources stay subscribed.
  */
 export function render(element: JsxRenderable, target: HTMLElement): void {
-	const existingRoot = ROOT_RENDER_STATE.get(target);
-	HYDRATED_ROOT_TARGETS.delete(target);
-
 	const focusSnapshot = captureFocusSnapshot(target);
 	const deferredProperties: DeferredPropertyBinding[] = [];
-	const root = existingRoot ?? getOrCreateMountedRoot(target);
+	const root = getOrCreateMountedRoot(target);
 
 	root.mounted = updateRangeContent(root.start, root.end, element, root.mounted, target, deferredProperties);
 
@@ -69,8 +63,6 @@ export function render(element: JsxRenderable, target: HTMLElement): void {
  * Falls back to a full client render whenever the SSR DOM cannot be reconnected.
  */
 export function hydrate(element: JsxRenderable, target: HTMLElement): void {
-	HYDRATED_ROOT_TARGETS.delete(target);
-
 	const currentRenderState = ROOT_RENDER_STATE.get(target);
 
 	if (currentRenderState) {
@@ -108,7 +100,6 @@ export function hydrate(element: JsxRenderable, target: HTMLElement): void {
 	}
 
 	ROOT_RENDER_STATE.set(target, root);
-	HYDRATED_ROOT_TARGETS.add(target);
 	restoreFocusSnapshot(target, focusSnapshot);
 }
 
@@ -132,7 +123,7 @@ function reconnectSsrRoot(
 	if (isTemplateResultLike(nextValue)) {
 		const hasMarkers = containsHydrationMarkers(target);
 		const canAdoptMarkerless =
-			!hasMarkers && canAdoptMarkerlessTemplate(nextValue, target, (root) => HYDRATED_ROOT_TARGETS.has(root));
+			!hasMarkers && canAdoptMarkerlessTemplate(nextValue, target, (root) => ROOT_RENDER_STATE.has(root));
 
 		if ((!hasMarkers && !canAdoptMarkerless) || fillsRenderedElement(nextValue)) {
 			return undefined;
@@ -229,7 +220,6 @@ export function createRoot(target: HTMLElement): JsxRoot {
 			}
 
 			ROOT_RENDER_STATE.delete(target);
-			HYDRATED_ROOT_TARGETS.delete(target);
 			target.replaceChildren();
 		},
 	};

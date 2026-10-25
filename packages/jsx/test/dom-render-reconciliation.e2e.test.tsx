@@ -1388,7 +1388,7 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 	});
 
 	for (const mode of ['hydrate', 'render'] as const) {
-		test(`does not reuse a root after ${mode} as markerless hydration evidence`, async () => {
+		test(`does not adopt an element with a client root that a markerless page fills with DOM children, after ${mode}`, async () => {
 			const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 			const container = document.createElement('div');
 			container.innerHTML =

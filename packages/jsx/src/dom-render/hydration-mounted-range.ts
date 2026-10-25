@@ -230,16 +230,19 @@ function matchesAuthoredElementChildren(
 }
 
 /**
- * Whether a markerless page template can adopt a tree containing a nested root that already hydrated itself.
+ * Whether a markerless page template can adopt a tree containing a nested element that already owns its content.
  *
- * @remarks A page can lose every marker of its own when its only dynamic work belongs to a custom-element child.
- * The root is safe to recover only when its single static root node still matches and a nested root has already
- * consumed its own markers; otherwise the normal marker requirement keeps stale HTML on the client-render path.
+ * @remarks A page can lose every marker of its own when its only dynamic work belongs to a custom-element child,
+ * whose markers that child consumed when it hydrated, or never had when its view has no binding and it rendered
+ * over its server markup. `ownsContent` tells such an element: one with a client root, which stays across its later
+ * renders. The page recovers only when its single static root node and its static content still match, and the
+ * page puts nothing inside an element that owns its content; otherwise the normal marker requirement keeps stale
+ * HTML on the client-render path.
  */
 export function canAdoptMarkerlessTemplate(
 	template: TemplateResultLike,
 	target: HTMLElement,
-	isHydratedRoot: (element: HTMLElement) => boolean,
+	ownsContent: (element: HTMLElement) => boolean,
 ): boolean {
 	const compiledTemplate = getCompiledTemplate(template);
 	const blueprintRoot = compiledTemplate.blueprint.content.firstElementChild;
@@ -257,13 +260,13 @@ export function canAdoptMarkerlessTemplate(
 		return false;
 	}
 
-	let hasHydratedRoot = false;
+	let hasOwningElement = false;
 	const expectedNodes = materializeExpectedValue(template);
 
 	return (
 		expectedNodes !== undefined &&
 		matchesExpectedNodes(expectedNodes, Array.from(target.childNodes)) &&
-		hasHydratedRoot
+		hasOwningElement
 	);
 
 	function materializeExpectedValue(value: unknown): Node[] | undefined {
@@ -353,13 +356,9 @@ export function canAdoptMarkerlessTemplate(
 					return false;
 				}
 
-				if (actualNode instanceof HTMLElement && isHydratedRoot(actualNode)) {
-					hasHydratedRoot = true;
-					return Array.from(expectedNode.attributes).every(
-						(attribute) =>
-							attribute.name.startsWith('data-radiant-jsx-bind-') ||
-							actualNode.getAttributeNS(attribute.namespaceURI, attribute.name) === attribute.value,
-					);
+				if (actualNode instanceof HTMLElement && ownsContent(actualNode)) {
+					hasOwningElement = true;
+					return matchesOwningElement(expectedNode, actualNode);
 				}
 
 				if (expectedNode.attributes.length !== actualNode.attributes.length) {
@@ -386,6 +385,21 @@ export function canAdoptMarkerlessTemplate(
 			);
 		});
 	}
+}
+
+/**
+ * @remarks The page may put nothing inside an element that owns its content, since that content is the element's
+ * own render; the element's static attributes must still match, ignoring hydration markers.
+ */
+function matchesOwningElement(expectedNode: Element, actualNode: Element): boolean {
+	return (
+		!expectedNode.hasChildNodes() &&
+		Array.from(expectedNode.attributes).every(
+			(attribute) =>
+				attribute.name.startsWith('data-radiant-jsx-bind-') ||
+				actualNode.getAttributeNS(attribute.namespaceURI, attribute.name) === attribute.value,
+		)
+	);
 }
 
 /**
