@@ -1,5 +1,11 @@
 # @ecopages/radiant-ui
 
+## 0.2.4
+
+### Patch Changes
+
+- [#412](https://github.com/ecopages/radiant/pull/412) [`b2bce55`](https://github.com/ecopages/radiant/commit/b2bce5517d10fc846b8a05885f7d5bf9f0ea6a1b) Thanks [@andeeplus](https://github.com/andeeplus)! - Rewrite published `radiant-ui` declaration imports to package-relative paths so consumer TypeScript resolves component prop types.
+
 ## 0.2.3
 
 ### Patch Changes
