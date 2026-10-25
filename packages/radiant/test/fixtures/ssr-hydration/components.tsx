@@ -348,6 +348,48 @@ export function pageSlotCardView(body: JsxRenderable = 'SSR body') {
 	);
 }
 
+/** Page-level JSX with no binding of its own, so its host's hydration is the only marker source. */
+export function staticPageSlotCardView() {
+	return (
+		<main>
+			<h1>SSR title</h1>
+			<hydrated-slot-card-test>
+				<h2 slot="header">SSR header</h2>
+				<p>SSR body</p>
+			</hydrated-slot-card-test>
+		</main>
+	);
+}
+
+@customElement('hydrated-bindless-slot-card-test')
+export class HydratedBindlessSlotCard extends RadiantElement {
+	override render() {
+		return (
+			<section>
+				<header>
+					<slot name="header" />
+				</header>
+				<div>
+					<slot />
+				</div>
+			</section>
+		);
+	}
+}
+
+/** Page-level JSX with no binding of its own around a host whose view has no binding either, only slots. */
+export function staticPageBindlessCardView() {
+	return (
+		<main>
+			<h1>SSR title</h1>
+			<hydrated-bindless-slot-card-test>
+				<h2 slot="header">SSR header</h2>
+				<p>SSR body</p>
+			</hydrated-bindless-slot-card-test>
+		</main>
+	);
+}
+
 @customElement('hydrated-optional-children-parent-test')
 export class HydratedOptionalChildrenParent extends RadiantElement<{ show: boolean }> {
 	@state show = false;

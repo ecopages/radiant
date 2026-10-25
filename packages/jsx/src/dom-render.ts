@@ -3,7 +3,7 @@ import { createBoundaryMarker } from './dom-render/dom-operations.ts';
 import { captureFocusSnapshot, restoreFocusSnapshot } from './dom-render/focus-snapshot.ts';
 import { hydrateIterableRoot } from './dom-render/hydration-iterable.ts';
 import { hydrateTemplateInstance } from './dom-render/hydration.ts';
-import { fillsRenderedElement } from './dom-render/hydration-mounted-range.ts';
+import { canAdoptMarkerlessTemplate, fillsRenderedElement } from './dom-render/hydration-mounted-range.ts';
 import { disposeMountedRoot } from './dom-render/mounted-disposal.ts';
 import {
 	flushDeferredProperties,
@@ -121,7 +121,11 @@ function reconnectSsrRoot(
 	const nextValue = unwrapKeyedValue(element);
 
 	if (isTemplateResultLike(nextValue)) {
-		if (!containsHydrationMarkers(target) || fillsRenderedElement(nextValue)) {
+		const hasMarkers = containsHydrationMarkers(target);
+		const canAdoptMarkerless =
+			!hasMarkers && canAdoptMarkerlessTemplate(nextValue, target, (root) => ROOT_RENDER_STATE.has(root));
+
+		if ((!hasMarkers && !canAdoptMarkerless) || fillsRenderedElement(nextValue)) {
 			return undefined;
 		}
 

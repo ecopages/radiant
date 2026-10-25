@@ -25,6 +25,8 @@ import {
 	NonHydratedCounter,
 	pageBuyCardView,
 	pageSlotCardView,
+	staticPageBindlessCardView,
+	staticPageSlotCardView,
 } from './components';
 import { HydratedOrderParent } from './define-order';
 import { LIFECYCLE_PREFIX, defineLifecycleChild, defineLifecycleParent } from './lifecycle-pair';
@@ -89,6 +91,12 @@ export const SSR_HYDRATION_CASES: Record<string, () => string> = {
 		),
 	'page-slot-card': () =>
 		withRadiantServerCustomElementRenderBridge(() => renderToString(pageSlotCardView(), { mode: 'hydrate' })),
+	'static-page-bindless-card': () =>
+		withRadiantServerCustomElementRenderBridge(() =>
+			renderToString(staticPageBindlessCardView(), { mode: 'hydrate' }),
+		),
+	'static-page-slot-card': () =>
+		withRadiantServerCustomElementRenderBridge(() => renderToString(staticPageSlotCardView(), { mode: 'hydrate' })),
 	'region-parent': () => renderRadiantElementHostToString(new HydratedRegionParent(), { mode: 'hydrate' }),
 	'nested-host-parent': () => renderRadiantElementHostToString(new HydratedNestedHostParent(), { mode: 'hydrate' }),
 	'keyed-hosts-parent': () => renderRadiantElementHostToString(new HydratedKeyedHostsParent(), { mode: 'hydrate' }),

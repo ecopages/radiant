@@ -66,6 +66,10 @@ const wrappingElementTagName = 'radiant-jsx-wrapping-element';
 
 customElements.define(wrappingElementTagName, class extends HTMLElement {});
 
+const markerlessResetElementTagName = 'radiant-jsx-markerless-reset-element';
+
+customElements.define(markerlessResetElementTagName, class extends HTMLElement {});
+
 class HydrationPropertyElement extends HTMLElement {
 	static writes = 0;
 	#value: unknown;
@@ -1382,6 +1386,41 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 
 		expect(container.innerHTML).toBe('<section><p>Count: beta</p></section>');
 	});
+
+	for (const mode of ['hydrate', 'render'] as const) {
+		test(`does not adopt an element with a client root that a markerless page fills with DOM children, after ${mode}`, async () => {
+			const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+			const container = document.createElement('div');
+			container.innerHTML =
+				`<main><${markerlessResetElementTagName}><section data-radiant-jsx-bind-0="attr:title" title="server">` +
+				'<p>server</p></section></' +
+				`${markerlessResetElementTagName}></main>`;
+			document.body.append(container);
+
+			const serverHost = container.querySelector(markerlessResetElementTagName) as HTMLElement;
+			const childRoot = createRoot(serverHost);
+
+			childRoot.hydrate(jsx('section', { title: 'server', children: jsx('p', { children: 'server' }) }));
+
+			if (mode === 'hydrate') {
+				childRoot.hydrate(jsx('section', { title: 'client', children: 'client' }));
+			} else {
+				childRoot.render(jsx('section', { title: 'client', children: 'client' }));
+			}
+
+			createRoot(container).hydrate(
+				jsx('main', {
+					children: jsx(markerlessResetElementTagName, { children: jsx('p', { children: 'authored' }) }),
+				}),
+			);
+
+			expect(container.querySelector(markerlessResetElementTagName)).not.toBe(serverHost);
+			expect(container.innerHTML).toBe(
+				`<main><${markerlessResetElementTagName}><p>authored</p></${markerlessResetElementTagName}></main>`,
+			);
+			container.remove();
+		});
+	}
 
 	test('hydrate inserts empty text nodes of a child list, which the server markup has no node for', async () => {
 		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);

@@ -3,6 +3,7 @@ import { shouldSkipHydrationSubtree } from '../hydration/hydration-subtree-polic
 import { hydrateTemplateInstance } from './hydration.ts';
 import { takesChildrenValue } from '../factory/jsx-factory.ts';
 import { getCompiledTemplate } from './template-compiler.ts';
+import { CHILD_BINDING_END_PREFIX, CHILD_BINDING_START_PREFIX } from './constants.ts';
 import type { JsxKey, JsxRenderable, TemplateResultLike } from '../types/index.ts';
 import { mountReactiveChildSource, updateRangeContent } from './child-range-update.ts';
 import { countHydratedRangeNodes, isEmptyTextNode } from './hydration-planning.ts';
@@ -226,6 +227,179 @@ function matchesAuthoredElementChildren(
 	}
 
 	return host.children.length === 1 && host.children[0]?.localName === childValue.rootLocalName;
+}
+
+/**
+ * Whether a markerless page template can adopt a tree containing a nested element that already owns its content.
+ *
+ * @remarks A page can lose every marker of its own when its only dynamic work belongs to a custom-element child,
+ * whose markers that child consumed when it hydrated, or never had when its view has no binding and it rendered
+ * over its server markup. `ownsContent` tells such an element: one with a client root, which stays across its later
+ * renders. The page recovers only when its single static root node and its static content still match, and the
+ * page puts nothing inside an element that owns its content; otherwise the normal marker requirement keeps stale
+ * HTML on the client-render path.
+ */
+export function canAdoptMarkerlessTemplate(
+	template: TemplateResultLike,
+	target: HTMLElement,
+	ownsContent: (element: HTMLElement) => boolean,
+): boolean {
+	const compiledTemplate = getCompiledTemplate(template);
+	const blueprintRoot = compiledTemplate.blueprint.content.firstElementChild;
+	const actualRoot = target.firstElementChild;
+
+	if (
+		!(blueprintRoot instanceof Element) ||
+		!(actualRoot instanceof HTMLElement) ||
+		compiledTemplate.blueprint.content.childNodes.length !== 1 ||
+		compiledTemplate.parts.some((part) => part.type !== 'child') ||
+		blueprintRoot.localName !== actualRoot.localName ||
+		blueprintRoot.namespaceURI !== actualRoot.namespaceURI ||
+		target.childNodes.length !== countHydratedRangeNodes(template)
+	) {
+		return false;
+	}
+
+	let hasOwningElement = false;
+	const expectedNodes = materializeExpectedValue(template);
+
+	return (
+		expectedNodes !== undefined &&
+		matchesExpectedNodes(expectedNodes, Array.from(target.childNodes)) &&
+		hasOwningElement
+	);
+
+	function materializeExpectedValue(value: unknown): Node[] | undefined {
+		const nextValue = unwrapKeyedValue(value);
+
+		if (nextValue == null || typeof nextValue === 'boolean') {
+			return [];
+		}
+
+		if (isTemplateResultLike(nextValue)) {
+			const fragment = getCompiledTemplate(nextValue).blueprint.content.cloneNode(true) as DocumentFragment;
+			const walker = document.createTreeWalker(fragment, NodeFilter.SHOW_COMMENT);
+			const startMarkers: Comment[] = [];
+			let currentNode = walker.nextNode();
+
+			while (currentNode) {
+				if (currentNode instanceof Comment && currentNode.data.startsWith(CHILD_BINDING_START_PREFIX)) {
+					startMarkers.push(currentNode);
+				}
+
+				currentNode = walker.nextNode();
+			}
+
+			for (const startMarker of startMarkers) {
+				const endMarker = startMarker.nextSibling;
+
+				if (!(endMarker instanceof Comment) || !endMarker.data.startsWith(CHILD_BINDING_END_PREFIX)) {
+					return undefined;
+				}
+
+				const valueIndex = Number(startMarker.data.slice(CHILD_BINDING_START_PREFIX.length));
+				const childNodes = materializeExpectedValue(nextValue.values[valueIndex]);
+
+				if (childNodes === undefined) {
+					return undefined;
+				}
+
+				startMarker.replaceWith(...childNodes);
+				endMarker.remove();
+			}
+
+			return Array.from(fragment.childNodes);
+		}
+
+		const iterableChildren = getIterableChildren(nextValue);
+
+		if (iterableChildren) {
+			const nodes: Node[] = [];
+
+			for (const child of iterableChildren) {
+				const childNodes = materializeExpectedValue(child);
+
+				if (childNodes === undefined) {
+					return undefined;
+				}
+
+				nodes.push(...childNodes);
+			}
+
+			return nodes;
+		}
+
+		return canRenderAsTextNode(nextValue) ? [document.createTextNode(String(nextValue))] : undefined;
+	}
+
+	function matchesExpectedNodes(expectedNodes: readonly Node[], actualNodes: readonly Node[]): boolean {
+		if (expectedNodes.length !== actualNodes.length) {
+			return false;
+		}
+
+		return expectedNodes.every((expectedNode, index) => {
+			const actualNode = actualNodes[index];
+
+			if (!actualNode) {
+				return false;
+			}
+
+			if (expectedNode instanceof Element) {
+				if (!(actualNode instanceof Element)) {
+					return false;
+				}
+
+				if (
+					expectedNode.localName !== actualNode.localName ||
+					expectedNode.namespaceURI !== actualNode.namespaceURI
+				) {
+					return false;
+				}
+
+				if (actualNode instanceof HTMLElement && ownsContent(actualNode)) {
+					hasOwningElement = true;
+					return matchesOwningElement(expectedNode, actualNode);
+				}
+
+				if (expectedNode.attributes.length !== actualNode.attributes.length) {
+					return false;
+				}
+
+				for (const attribute of Array.from(expectedNode.attributes)) {
+					if (actualNode.getAttributeNS(attribute.namespaceURI, attribute.name) !== attribute.value) {
+						return false;
+					}
+				}
+
+				return matchesExpectedNodes(Array.from(expectedNode.childNodes), Array.from(actualNode.childNodes));
+			}
+
+			if (expectedNode instanceof Text) {
+				return actualNode instanceof Text && expectedNode.data === actualNode.data;
+			}
+
+			return (
+				expectedNode instanceof Comment &&
+				actualNode instanceof Comment &&
+				expectedNode.data === actualNode.data
+			);
+		});
+	}
+}
+
+/**
+ * @remarks The page may put nothing inside an element that owns its content, since that content is the element's
+ * own render; the element's static attributes must still match, ignoring hydration markers.
+ */
+function matchesOwningElement(expectedNode: Element, actualNode: Element): boolean {
+	return (
+		!expectedNode.hasChildNodes() &&
+		Array.from(expectedNode.attributes).every(
+			(attribute) =>
+				attribute.name.startsWith('data-radiant-jsx-bind-') ||
+				actualNode.getAttributeNS(attribute.namespaceURI, attribute.name) === attribute.value,
+		)
+	);
 }
 
 /**
