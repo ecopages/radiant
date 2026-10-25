@@ -150,8 +150,8 @@ export function canRenderAsTextNode(value: unknown): value is bigint | boolean |
  * Returns the value as an array of {@link KeyedJsxValue} entries when every element of
  * an iterable carries a key, otherwise returns `undefined`.
  *
- * A single non-keyed child in an otherwise keyed list causes the whole list to be
- * downgraded to indexed mode.
+ * A single non-keyed child in an otherwise keyed list uses mixed reconciliation,
+ * which keeps keyed entries matched by key while positional entries stay in place.
  *
  * @param children Materialized iterable children to inspect.
  */

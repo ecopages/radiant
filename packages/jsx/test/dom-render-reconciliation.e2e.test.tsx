@@ -726,6 +726,115 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(finalItems).not.toContain(betaItem);
 	});
 
+	test('keeps keyed items when an unkeyed sibling appears, moves, or disappears', async () => {
+		const [{ Fragment, jsx, jsxDEV, jsxs }, { createRoot }] = await Promise.all([
+			loadJsxRuntime(),
+			loadJsxModule(),
+		]);
+		const factories = [jsx, jsxs, jsxDEV];
+
+		for (const createElement of factories) {
+			for (const rootKind of ['list', 'fragment'] as const) {
+				const container = document.createElement('div');
+				const root = createRoot(container);
+				const renderRoot = (loading: boolean) => {
+					const children = [
+						createElement('li', { children: 'alpha', key: 'alpha' }),
+						createElement('li', { children: 'beta', key: 'beta' }),
+						loading ? createElement('li', { children: 'Loading...' }) : null,
+					];
+
+					return rootKind === 'list'
+						? createElement('ul', { children })
+						: createElement(Fragment, { children });
+				};
+
+				root.render(renderRoot(false));
+				const initialItems = Array.from(container.querySelectorAll('li'));
+
+				root.render(renderRoot(true));
+				const updatedItems = Array.from(container.querySelectorAll('li'));
+
+				expect(updatedItems.map((item) => item.textContent)).toEqual(['alpha', 'beta', 'Loading...']);
+				expect(updatedItems[0]).toBe(initialItems[0]);
+				expect(updatedItems[1]).toBe(initialItems[1]);
+
+				if (createElement === jsxs) {
+					root.render(renderRoot(false));
+					const removedItems = Array.from(container.querySelectorAll('li'));
+
+					expect(removedItems.map((item) => item.textContent)).toEqual(['alpha', 'beta']);
+					expect(removedItems[0]).toBe(initialItems[0]);
+					expect(removedItems[1]).toBe(initialItems[1]);
+					continue;
+				}
+
+				root.render(
+					rootKind === 'list'
+						? createElement('ul', {
+								children: [
+									createElement('li', { children: 'alpha', key: 'alpha' }),
+									createElement('li', { children: 'Loading...' }),
+									createElement('li', { children: 'beta', key: 'beta' }),
+								],
+							})
+						: createElement(Fragment, {
+								children: [
+									createElement('li', { children: 'alpha', key: 'alpha' }),
+									createElement('li', { children: 'Loading...' }),
+									createElement('li', { children: 'beta', key: 'beta' }),
+								],
+							}),
+				);
+				const movedItems = Array.from(container.querySelectorAll('li'));
+
+				expect(movedItems.map((item) => item.textContent)).toEqual(['alpha', 'Loading...', 'beta']);
+				expect(movedItems[0]).toBe(initialItems[0]);
+				expect(movedItems[2]).toBe(initialItems[1]);
+
+				root.render(renderRoot(false));
+				const removedItems = Array.from(container.querySelectorAll('li'));
+
+				expect(removedItems.map((item) => item.textContent)).toEqual(['alpha', 'beta']);
+				expect(removedItems[0]).toBe(initialItems[0]);
+				expect(removedItems[1]).toBe(initialItems[1]);
+			}
+		}
+	});
+
+	test('hydrates mixed keyed lists and preserves their keyed nodes through updates and unmount', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const renderItem = (value: 'alpha' | 'beta' | 'loading') =>
+			value === 'loading'
+				? jsx('li', { 'data-id': value, children: 'Loading...' })
+				: jsx('li', { 'data-id': value, children: value, key: value });
+		const renderList = (values: Array<'alpha' | 'beta' | 'loading'>) =>
+			jsx('ul', { class: 'mixed', children: values.map(renderItem) });
+
+		container.innerHTML = `<ul data-radiant-jsx-bind-0="attr:class" class="mixed"><li data-radiant-jsx-bind-1="attr:data-id" data-id="alpha">alpha</li><li data-radiant-jsx-bind-2="attr:data-id" data-id="loading">Loading...</li><li data-radiant-jsx-bind-3="attr:data-id" data-id="beta">beta</li></ul>`;
+		root.hydrate(renderList(['alpha', 'loading', 'beta']));
+
+		const hydratedItems = Array.from(container.querySelectorAll('li'));
+		root.render(renderList(['alpha', 'beta']));
+
+		const keyedItems = Array.from(container.querySelectorAll('li'));
+		expect(keyedItems.map((item) => item.textContent)).toEqual(['alpha', 'beta']);
+		expect(keyedItems[0]).toBe(hydratedItems[0]);
+		expect(keyedItems[1]).toBe(hydratedItems[2]);
+
+		root.render(renderList(['beta', 'loading', 'alpha']));
+
+		const finalItems = Array.from(container.querySelectorAll('li'));
+		expect(finalItems.map((item) => item.textContent)).toEqual(['beta', 'Loading...', 'alpha']);
+		expect(finalItems[0]).toBe(hydratedItems[2]);
+		expect(finalItems[2]).toBe(hydratedItems[0]);
+
+		root.unmount();
+		expect(container.childNodes).toHaveLength(0);
+	});
+
 	test('replaces keyed ranges cleanly when switching back to non-keyed children', async () => {
 		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');
