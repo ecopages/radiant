@@ -111,8 +111,7 @@ function serializeTemplateResult(template: TemplateResultLike, options: Serializ
 	}
 
 	const nestedCustomElementRoot =
-		options.nestedInParentHydrationNamespace === true &&
-		isCustomElementSubtreeRoot(template.rootLocalName ?? '');
+		options.nestedInParentHydrationNamespace === true && isCustomElementSubtreeRoot(template.rootLocalName ?? '');
 	const childOptions: SerializeRenderableOptions = {
 		...options,
 		nestedInParentHydrationNamespace: true,

@@ -89,9 +89,7 @@ function listPlannedHydrationMarkers(
 		}
 
 		for (const [valueIndex, childBaseIndex] of plan.childBaseIndices) {
-			markers.push(
-				...listPlannedHydrationMarkers(value.values[valueIndex], childBaseIndex, true, bindings),
-			);
+			markers.push(...listPlannedHydrationMarkers(value.values[valueIndex], childBaseIndex, true, bindings));
 		}
 
 		return markers;
@@ -435,7 +433,7 @@ describe('visitHydrationBindingMarkers DOM compatibility', () => {
 });
 
 describe('unregistered custom-element hydration markers', () => {
-	test('An unregistered custom element does not consume the parent\'s hydration markers', async () => {
+	test("An unregistered custom element does not consume the parent's hydration markers", async () => {
 		const [{ jsx, jsxs }, bindings, { renderToString }] = await Promise.all([
 			loadJsxRuntime(),
 			loadHydrationBindings(),

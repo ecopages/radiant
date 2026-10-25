@@ -208,11 +208,7 @@ function renderCustomElementLightDom(value: JsxRenderable): string {
 
 /** Renders a registered custom element template through the active hook or its own host renderer. */
 export function renderIntrinsicCustomElementTemplate(template: TemplateResultLike): string | undefined {
-	if (
-		!template.rootLocalName ||
-		!isCustomElementSubtreeRoot(template.rootLocalName) ||
-		!template.ssrIntrinsicProps
-	) {
+	if (!template.rootLocalName || !isCustomElementSubtreeRoot(template.rootLocalName) || !template.ssrIntrinsicProps) {
 		return undefined;
 	}
 
