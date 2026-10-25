@@ -107,7 +107,7 @@
 		color: var(--macos-text);
 	}
 
-	:root .rui-button--ghost:hover:not(:disabled) {
+	:root .rui-button--ghost:hover:not(:disabled, [aria-pressed='true']) {
 		background-color: var(--macos-hover-fill);
 	}
 
@@ -513,7 +513,7 @@
 	:root rui-tabs[variant='boxed'] .rui-tabs__panel {
 		@apply rounded-md text-on-surface;
 		border: 1px solid color-mix(in srgb, var(--macos-text) 12%, transparent);
-		background-color: color-mix(in srgb, var(--macos-text) 4%, transparent);
+		background-color: var(--macos-surface);
 		padding: var(--rui-tabs-panel-padding);
 		padding-top: calc(var(--rui-tabs-panel-padding) + 0.75rem);
 	}

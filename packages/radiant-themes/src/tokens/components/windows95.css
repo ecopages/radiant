@@ -269,6 +269,14 @@
 	}
 
 	/**
+	 * @remarks A calendar in a date popover shares the popover's bevel instead of drawing a second raised frame inside it.
+	 */
+	:root .rui-popover .rui-calendar {
+		background-color: transparent;
+		box-shadow: none;
+	}
+
+	/**
 	 * @remarks Tooltips use the pale yellow info color with a 1px black frame.
 	 */
 	:root .rui-tooltip__content {
