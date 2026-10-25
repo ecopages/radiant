@@ -355,7 +355,11 @@ export function canAdoptMarkerlessTemplate(
 
 				if (actualNode instanceof HTMLElement && isHydratedRoot(actualNode)) {
 					hasHydratedRoot = true;
-					return true;
+					return Array.from(expectedNode.attributes).every(
+						(attribute) =>
+							attribute.name.startsWith('data-radiant-jsx-bind-') ||
+							actualNode.getAttributeNS(attribute.namespaceURI, attribute.name) === attribute.value,
+					);
 				}
 
 				if (expectedNode.attributes.length !== actualNode.attributes.length) {
