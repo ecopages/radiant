@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { bindTo, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import { FormAssociatedElement, type FormValue } from '@ecopages/radiant/form-associated-element';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
@@ -108,6 +109,8 @@ export const KNOB_DEFAULT_VALUE = 50;
  */
 @customElement('rui-knob')
 export class RuiKnob extends FormAssociatedElement {
+	declare readonly [JSX_PROPS]?: RuiKnobProps;
+
 	@prop({ type: Number, reflect: true, defaultValue: KNOB_DEFAULT_VALUE }) value: number;
 	@prop({ type: Number, defaultValue: 0 }) min: number;
 	@prop({ type: Number, defaultValue: 100 }) max: number;
@@ -362,5 +365,13 @@ export class RuiKnob extends FormAssociatedElement {
 		event.preventDefault();
 		this.lastEmitted = this.value;
 		this.commitValue(next);
+	}
+}
+
+
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-knob': RuiKnob;
 	}
 }

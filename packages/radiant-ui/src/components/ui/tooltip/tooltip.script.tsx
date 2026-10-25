@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, bindTo, bound, customElement, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import { findFirstFocusableCandidate } from '@/lib/focusable-elements';
 import { uniqueId } from '@/lib/unique-id';
@@ -65,6 +66,8 @@ const TOOLTIP_GAP = 8;
  */
 @customElement('rui-tooltip')
 export class RuiTooltip extends RadiantElement {
+	declare readonly [JSX_PROPS]?: RuiTooltipProps;
+
 	@bindTo({ ref: 'tooltip', text: true })
 	@prop({ type: String, defaultValue: '' })
 	content: string;
@@ -199,5 +202,13 @@ export class RuiTooltip extends RadiantElement {
 	@bound
 	onPointerLeave(): void {
 		this.scheduleHide();
+	}
+}
+
+
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-tooltip': RuiTooltip;
 	}
 }

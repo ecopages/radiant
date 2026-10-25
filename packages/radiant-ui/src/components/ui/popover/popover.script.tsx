@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, bound, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import { isServer } from '@ecopages/radiant/is-server';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
@@ -79,6 +80,8 @@ export type RuiPopoverProps = {
  */
 @customElement('rui-popover')
 export class RuiPopover extends RadiantElement {
+	declare readonly [JSX_PROPS]?: RuiPopoverProps;
+
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) open: boolean;
 	@prop({ type: String, defaultValue: 'bottom' }) placement: RuiPlacement;
 	@prop({ type: Boolean, defaultValue: true }) portal: boolean;
@@ -300,6 +303,8 @@ export type RuiPopoverTriggerProps = {
  */
 @customElement('rui-popover-trigger')
 export class RuiPopoverTrigger extends RadiantElement {
+	declare readonly [JSX_PROPS]?: RuiPopoverTriggerProps;
+
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) open: boolean;
 
 	@query({ ref: 'root' }) rootTarget: HTMLElement | null;
@@ -354,4 +359,15 @@ export class RuiPopoverTrigger extends RadiantElement {
 function resolvePopoverAnchor(trigger: HTMLElement): HTMLElement {
 	const focusable = trigger.querySelector<HTMLElement>('button, a[href], input, select, textarea, [role="button"]');
 	return focusable ?? trigger;
+}
+
+
+
+
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-popover': RuiPopover;
+		'rui-popover-trigger': RuiPopoverTrigger;
+	}
 }

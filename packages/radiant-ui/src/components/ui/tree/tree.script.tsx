@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, event, onEvent, onUpdated, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { applyRovingTabindex, focusRovingItem, navigateRovingTabindex } from '@/lib/roving-tabindex';
@@ -51,6 +52,8 @@ export type RuiTreeChangeDetail = { value: string };
  */
 @customElement('rui-tree')
 export class RuiTree extends RadiantElement {
+	declare readonly [JSX_PROPS]?: RuiTreeProps;
+
 	@prop({ type: String, defaultValue: '' }) label: string;
 	@prop({ type: String, reflect: true, defaultValue: '' }) value: string;
 
@@ -239,5 +242,13 @@ export class RuiTree extends RadiantElement {
 		const items = this.getVisibleItems();
 		const index = items.indexOf(item);
 		if (index >= 0) focusRovingItem(items, index);
+	}
+}
+
+
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-tree': RuiTree;
 	}
 }

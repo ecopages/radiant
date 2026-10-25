@@ -42,7 +42,7 @@
 		"typecheck": "tsc --noEmit -p tsconfig.app.json"
 	},
 	"peerDependencies": {
-		"@ecopages/jsx": ">=0.5.0",
+		"@ecopages/jsx": "workspace:>=0.5.0",
 		"@ecopages/radiant": ">=0.5.0",
 		"@ecopages/signals": ">=0.5.0"
 	},

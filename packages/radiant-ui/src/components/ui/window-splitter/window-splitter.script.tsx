@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import {
 	RadiantElement,
 	bindTo,
@@ -72,6 +73,8 @@ function isHorizontalSplit(orientation: string): boolean {
  */
 @customElement('rui-window-splitter')
 export class RuiWindowSplitter extends RadiantElement {
+	declare readonly [JSX_PROPS]?: RuiWindowSplitterProps;
+
 	@prop({ type: Number, reflect: true, defaultValue: 50 })
 	@bindTo({ ref: 'separator', attr: 'aria-valuenow' })
 	value: number;
@@ -195,5 +198,13 @@ export class RuiWindowSplitter extends RadiantElement {
 		this.dragging = false;
 		document.removeEventListener('pointermove', this.onPointerMove);
 		document.removeEventListener('pointerup', this.onPointerUp);
+	}
+}
+
+
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-window-splitter': RuiWindowSplitter;
 	}
 }

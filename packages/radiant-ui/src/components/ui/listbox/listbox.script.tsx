@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { navigateRovingTabindex } from '@/lib/roving-tabindex';
@@ -83,6 +84,8 @@ export type RuiListboxChangeDetail = { value: string[] };
  */
 @customElement('rui-listbox')
 export class RuiListbox extends RadiantElement {
+	declare readonly [JSX_PROPS]?: RuiListboxProps;
+
 	@prop({ ...multiValuePropOptions, defaultValue: [] })
 	value: string[];
 	@prop({ type: String, defaultValue: '' }) label: string;
@@ -212,5 +215,13 @@ export class RuiListbox extends RadiantElement {
 			return;
 		}
 		this.select(result.item);
+	}
+}
+
+
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-listbox': RuiListbox;
 	}
 }

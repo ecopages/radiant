@@ -1,7 +1,19 @@
 import assert from 'node:assert/strict';
-import { readdirSync, readFileSync } from 'node:fs';
+import {
+	copyFileSync,
+	existsSync,
+	mkdirSync,
+	mkdtempSync,
+	readdirSync,
+	readFileSync,
+	rmSync,
+	symlinkSync,
+	writeFileSync,
+} from 'node:fs';
+import { createRequire } from 'node:module';
+import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
-import { join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
@@ -25,6 +37,46 @@ test('published declarations do not expose source path aliases', () => {
 	const aliasImports = declarationFiles(distPath).filter((file) => /['"]@\//.test(readFileSync(file, 'utf8')));
 
 	assert.deepEqual(aliasImports, [], `Declaration files contain unresolved @/ imports:\n${aliasImports.join('\n')}`);
+});
+
+test('built custom-element declarations expose tag props to package consumers', () => {
+	const here = fileURLToPath(new URL('.', import.meta.url));
+	const packageRoot = resolve(here, '..');
+	const repoRoot = resolve(packageRoot, '../..');
+	const scratch = mkdtempSync(join(tmpdir(), 'radiant-ui-consumer-types-'));
+	const scope = join(scratch, 'node_modules/@ecopages');
+
+	try {
+		mkdirSync(scope, { recursive: true });
+		for (const name of ['jsx', 'radiant', 'signals']) {
+			const dist = join(repoRoot, 'packages', name, 'dist');
+			assert.ok(existsSync(join(dist, 'package.json')), `packages/${name}/dist is missing: build it first`);
+			symlinkSync(dist, join(scope, name), 'dir');
+		}
+		symlinkSync(packageRoot, join(scope, 'radiant-ui'), 'dir');
+		copyFileSync(join(here, 'consumer-types/consumer.tsx'), join(scratch, 'consumer.tsx'));
+		writeFileSync(
+			join(scratch, 'tsconfig.json'),
+			JSON.stringify({
+				extends: resolve(repoRoot, 'tsconfig.json'),
+				compilerOptions: {
+					declaration: true,
+					emitDeclarationOnly: true,
+					jsxImportSource: '@ecopages/jsx',
+					noEmit: false,
+					outDir: 'out',
+					rootDir: '.',
+				},
+				include: ['consumer.tsx'],
+			}),
+		);
+
+		const tsc = join(dirname(createRequire(import.meta.url).resolve('typescript/package.json')), 'bin/tsc');
+		const result = spawnSync(process.execPath, [tsc, '-p', join(scratch, 'tsconfig.json')], { encoding: 'utf8' });
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+	} finally {
+		rmSync(scratch, { recursive: true, force: true });
+	}
 });
 
 test('published default theme keeps its Radiant Default color and geometry controls', () => {

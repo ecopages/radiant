@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, event, onEvent, onUpdated, prop } from '@ecopages/radiant';
 import { provideContext } from '@ecopages/radiant/context';
 import type { ContextProvider } from '@ecopages/radiant/context';
@@ -92,6 +93,8 @@ const initialFormActions: FormContextActions = {
  */
 @customElement('rui-form')
 export class RuiForm extends RadiantElement {
+	declare readonly [JSX_PROPS]?: RuiFormProps;
+
 	@provideContext({
 		context: formContext,
 		initialValue: {
@@ -340,5 +343,13 @@ export class RuiForm extends RadiantElement {
 	@onEvent({ ref: 'form', type: 'reset' })
 	onNativeReset(): void {
 		this.store?.reset();
+	}
+}
+
+
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-form': RuiForm;
 	}
 }

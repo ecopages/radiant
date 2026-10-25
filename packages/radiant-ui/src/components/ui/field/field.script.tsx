@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import {
 	RadiantElement,
 	customElement,
@@ -104,6 +105,8 @@ export type RuiFieldProps = {
  */
 @customElement('rui-field')
 export class RuiField extends RadiantElement {
+	declare readonly [JSX_PROPS]?: RuiFieldProps;
+
 	@prop({ type: String, reflect: true, defaultValue: '' }) name: string;
 	@prop({ type: Object }) rules?: FieldRules;
 	@prop({ type: Object }) defaultValue?: unknown;
@@ -502,4 +505,12 @@ function isSameFieldContext(previous: FieldContextValue, next: FieldContextValue
 		previous.invalid === next.invalid &&
 		previous.required === next.required
 	);
+}
+
+
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-field': RuiField;
+	}
 }

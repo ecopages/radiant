@@ -29,7 +29,7 @@ Work one component at a time. Copy a neighbor of the same **tier** (Native / Com
 5. **Connect** — post-sync work in `onConnected()`, not `connectedCallback` + `queueMicrotask(sync)`. Tear down in `disconnectedCallback` what `onConnected` rebuilds.
 6. **Style** — one `<name>.css`; `@reference` the theme entry; semantic tokens only. Public `--rui-*` knobs: defaults on the host (or portaled surface root), never on a BEM grain ([`DESIGN.md`](../../../packages/radiant-ui/DESIGN.md)). Do not `import './<name>.css'` from the view. Storybook: `parameters.radiant.cssImports`. Themes in `@ecopages/radiant-themes` restyle `.rui-*` classes directly, so a change to a class, border or padding needs a per-theme check: [references/themes.md](references/themes.md).
 7. **Stories + tests** — `*.stories.tsx` with `parameters.radiant.element`. Tests cover behavior, not BEM as a query contract. Visual asserts on classes are fine.
-8. **Public surface** — `index.ts` + package export. Events `rui-*`. Collection item `id` is a semantic key, not a DOM `id`.
+8. **Public surface** — `index.ts` + package export. For each catalog tag exposed through the package's typed JSX API, declare its public props on the class with `declare readonly [JSX_PROPS]?: RuiFooProps` and add its hyphenated name to `HTMLElementTagNameMap` beside the class. JSX uses that contract for the `RuiFooElement` class export and its `<rui-foo>` tag; the `RuiFoo` view has its own props. `JsxCustomIntrinsicElements` is deprecated compatibility only. Events `rui-*`. Collection item `id` is a semantic key, not a DOM `id`.
 9. **Docs** — follow radiant-ui-docs (TSDoc contract, MDX, Canvas for extra capabilities).
 10. **Changeset** — if consumers of `@ecopages/radiant-ui` can observe the change.
 
@@ -46,6 +46,8 @@ Update the README beside the code when behavior or ownership changes.
 - A `@query` field is `T | null` (`T[]` with `all: true`): bind it to a local and return early, with no non-null assertion ([Query fields](../../../packages/radiant-ui/src/components/ui/README.md#query-fields)).
 - Hosts query `data-ref` / `data-*` / roles. Never BEM. `data-ref` values are unique inside **this** host (do not stamp a parent column as `root` when a child already uses `root`).
 - `@cssclass` on the export that authors the class. `@slot` / `@csspart` off unless HTML slots / shadow parts are actually the API.
+- Keep the `JSX_PROPS` class declaration and the `HTMLElementTagNameMap` entry in the custom-element script. Do not add catalog tags to `JsxCustomIntrinsicElements`.
+- Use `WithoutChildren<RuiFooProps>` for Derived Tree hosts whose first render replaces children: meter, calendar, date input, TOC, toast, and toaster.
 
 ## Reuse before inventing
 

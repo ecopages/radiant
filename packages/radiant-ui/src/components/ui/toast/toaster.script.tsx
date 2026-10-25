@@ -1,3 +1,5 @@
+import type { WithoutChildren } from '../../../lib/without-children';
+import type { JSX_PROPS } from '@ecopages/jsx';
 import {
 	RadiantElement,
 	bindTo,
@@ -111,6 +113,8 @@ function isInsideToaster(node: EventTarget | null, root: Element): boolean {
  */
 @customElement('rui-toaster')
 export class RuiToaster extends RadiantElement {
+	declare readonly [JSX_PROPS]?: WithoutChildren<RuiToasterProps>;
+
 	@prop({ type: String, reflect: true, defaultValue: DEFAULT_TOAST_POSITION })
 	@bindTo([
 		{ attr: 'data-y-position', map: (position) => splitToastPosition(position).y },
@@ -535,5 +539,13 @@ export class RuiToaster extends RadiantElement {
 				</ol>
 			</section>
 		);
+	}
+}
+
+
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-toaster': RuiToaster;
 	}
 }

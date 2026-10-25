@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { nonEmpty } from '@/lib/non-empty';
@@ -69,6 +70,8 @@ export type RuiRadioGroupChangeDetail = {
  */
 @customElement('rui-radio-group')
 export class RuiRadioGroup extends RadiantElement {
+	declare readonly [JSX_PROPS]?: RuiRadioGroupProps;
+
 	@prop({ type: String, reflect: true, defaultValue: '' }) value: string;
 	@prop({ type: String, defaultValue: '' }) name: string;
 
@@ -114,5 +117,13 @@ export class RuiRadioGroup extends RadiantElement {
 		if (!input.checked) return;
 		this.value = input.value;
 		this.changeEvent.emit({ value: this.value });
+	}
+}
+
+
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-radio-group': RuiRadioGroup;
 	}
 }

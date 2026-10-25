@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, onEvent, state } from '@ecopages/radiant';
 import { expect, spyOn, userEvent, waitFor } from 'storybook/test';
 import { applyDesignTokens } from '../../../../.storybook/apply-design-tokens';
@@ -101,6 +102,8 @@ function comparePlantColumn(
 
 @customElement('rui-table-sort-demo')
 class RuiTableSortDemo extends RadiantElement {
+	declare readonly [JSX_PROPS]?: Record<string, never>;
+
 	@state sortColumn = 'name';
 	@state sortDirection: RuiTableSortDirection = 'ascending';
 	@state plants = [...rows].sort((left, right) => comparePlantColumn(left, right, 'name', 'ascending'));
@@ -328,8 +331,10 @@ export const DesignTokens: Story = {
 	},
 };
 
-declare module '@ecopages/jsx/jsx-runtime' {
-	interface JsxCustomIntrinsicElements {
-		'rui-table-sort-demo': Record<string, never>;
+
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-table-sort-demo': RuiTableSortDemo;
 	}
 }

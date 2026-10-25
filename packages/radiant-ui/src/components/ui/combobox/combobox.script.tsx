@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { textContains } from '@/lib/text-filter';
@@ -93,6 +94,8 @@ export type RuiComboboxChangeDetail = { value: string[] };
  */
 @customElement('rui-combobox')
 export class RuiCombobox extends RadiantElement {
+	declare readonly [JSX_PROPS]?: RuiComboboxProps;
+
 	@prop({ ...multiValuePropOptions, defaultValue: [] })
 	value: string[];
 	@prop({ type: String, defaultValue: '' }) label: string;
@@ -607,5 +610,13 @@ export class RuiCombobox extends RadiantElement {
 			return;
 		}
 		this.setOpen(false);
+	}
+}
+
+
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-combobox': RuiCombobox;
 	}
 }

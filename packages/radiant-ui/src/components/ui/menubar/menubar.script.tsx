@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, event, onEvent, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { applyRovingTabindex, navigateRovingTabindex } from '@/lib/roving-tabindex';
@@ -65,6 +66,8 @@ export type RuiMenubarChangeDetail = { value: string };
  */
 @customElement('rui-menubar')
 export class RuiMenubar extends RadiantElement {
+	declare readonly [JSX_PROPS]?: RuiMenubarProps;
+
 	@prop({ type: String, defaultValue: '' }) label: string;
 
 	@event({ name: 'rui-change', bubbles: true, composed: true })
@@ -301,5 +304,13 @@ export class RuiMenubar extends RadiantElement {
 		const value = item.getAttribute('data-value') || item.textContent?.trim() || '';
 		this.changeEvent.emit({ value });
 		this.closeOpenMenu(true);
+	}
+}
+
+
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-menubar': RuiMenubar;
 	}
 }

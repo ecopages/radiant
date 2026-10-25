@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, bindTo, customElement, event, onEvent, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { nonEmpty } from '@/lib/non-empty';
@@ -84,6 +85,8 @@ export const CHECKBOX_DEFAULT_VALUE = 'on';
  */
 @customElement('rui-checkbox')
 export class RuiCheckbox extends RadiantElement {
+	declare readonly [JSX_PROPS]?: RuiCheckboxProps;
+
 	@prop({ type: Boolean, reflect: true, defaultValue: false })
 	@bindTo({ ref: 'input', prop: 'checked' })
 	checked: boolean;
@@ -124,5 +127,13 @@ export class RuiCheckbox extends RadiantElement {
 		this.checked = input.checked;
 		input.indeterminate = this.indeterminate;
 		this.changeEvent.emit({ checked: this.checked, indeterminate: this.indeterminate });
+	}
+}
+
+
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-checkbox': RuiCheckbox;
 	}
 }

@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, event, onEvent, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 
@@ -64,6 +65,8 @@ export function clampPage(page: number, pageCount: number): number {
  */
 @customElement('rui-pagination')
 export class RuiPagination extends RadiantElement {
+	declare readonly [JSX_PROPS]?: RuiPaginationProps;
+
 	@prop({ type: String, defaultValue: PAGINATION_DEFAULT_LABEL }) label: string;
 	@prop({ type: Number, reflect: true, defaultValue: 1 }) page: number;
 	@prop({ type: Number, attribute: 'page-count', defaultValue: 1 }) pageCount: number;
@@ -85,5 +88,13 @@ export class RuiPagination extends RadiantElement {
 		const button = (event.target as HTMLElement).closest<HTMLElement>('[data-pagination-page]');
 		const page = Number(button?.getAttribute('data-pagination-page'));
 		if (Number.isInteger(page)) this.changePage(page);
+	}
+}
+
+
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-pagination': RuiPagination;
 	}
 }

@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, event, onEvent, onUpdated, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { navigateRovingTabindex } from '@/lib/roving-tabindex';
@@ -73,6 +74,8 @@ export type RuiTabsChangeDetail = {
  */
 @customElement('rui-tabs')
 export class RuiTabs extends RadiantElement {
+	declare readonly [JSX_PROPS]?: RuiTabsProps;
+
 	@prop({ type: String, reflect: true, defaultValue: 'boxed' }) variant: RuiTabsVariant;
 	@prop({ type: String, reflect: true, defaultValue: '' }) value: string;
 	@prop({ type: String, defaultValue: '' }) label: string;
@@ -192,5 +195,13 @@ export class RuiTabs extends RadiantElement {
 
 		event.preventDefault();
 		if (this.automatic) this.activateTab(result.item);
+	}
+}
+
+
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-tabs': RuiTabs;
 	}
 }

@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, bindTo, customElement, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import { uniqueId } from '@/lib/unique-id';
 import { CarouselAutoplay } from './carousel-autoplay';
@@ -137,6 +138,8 @@ export type RuiCarouselProps = {
  */
 @customElement('rui-carousel')
 export class RuiCarousel extends RadiantElement {
+	declare readonly [JSX_PROPS]?: RuiCarouselProps;
+
 	@prop({ type: String, defaultValue: CAROUSEL_DEFAULTS.label }) label: string;
 	@prop({ type: Number, reflect: true, defaultValue: 0 }) index: number;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) autoplay: boolean;
@@ -617,5 +620,13 @@ export class RuiCarousel extends RadiantElement {
 	@onEvent({ ref: 'viewport', type: 'pointercancel' })
 	onViewportPointerCancel(event: PointerEvent): void {
 		this.swipe.onPointerCancel(event);
+	}
+}
+
+
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-carousel': RuiCarousel;
 	}
 }

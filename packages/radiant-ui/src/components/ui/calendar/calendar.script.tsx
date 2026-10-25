@@ -1,3 +1,5 @@
+import type { WithoutChildren } from '../../../lib/without-children';
+import type { JSX_PROPS } from '@ecopages/jsx';
 import {
 	RadiantElement,
 	customElement,
@@ -108,6 +110,8 @@ type MonthPanel = {
  */
 @customElement('rui-calendar')
 export class RuiCalendar extends RadiantElement {
+	declare readonly [JSX_PROPS]?: WithoutChildren<RuiCalendarProps>;
+
 	@prop({ type: String, reflect: true, defaultValue: '' }) value: string;
 	@prop({ type: String, defaultValue: '' }) min: string;
 	@prop({ type: String, defaultValue: '' }) max: string;
@@ -579,5 +583,13 @@ export class RuiCalendar extends RadiantElement {
 				</div>
 			</div>
 		);
+	}
+}
+
+
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-calendar': RuiCalendar;
 	}
 }

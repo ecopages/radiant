@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, bindTo, bound, customElement, onEvent, onUpdated, prop } from '@ecopages/radiant';
 import { uniqueId } from '@/lib/unique-id';
 
@@ -57,6 +58,8 @@ export type RuiDisclosureToggleDetail = {
  */
 @customElement('rui-disclosure')
 export class RuiDisclosure extends RadiantElement {
+	declare readonly [JSX_PROPS]?: RuiDisclosureProps;
+
 	@prop({ type: Boolean, reflect: true, defaultValue: false })
 	@bindTo([
 		{ selector: '[data-disclosure-trigger]', attr: 'aria-expanded' },
@@ -126,5 +129,13 @@ export class RuiDisclosure extends RadiantElement {
 
 		panel.toggleAttribute('hidden', !this.open);
 		panel.removeAttribute('aria-hidden');
+	}
+}
+
+
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-disclosure': RuiDisclosure;
 	}
 }
