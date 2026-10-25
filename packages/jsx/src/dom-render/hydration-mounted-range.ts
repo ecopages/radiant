@@ -232,10 +232,10 @@ function matchesAuthoredElementChildren(
 /**
  * Whether a markerless page template can adopt a tree containing a nested element that already owns its content.
  *
- * @remarks A page can lose every marker of its own when its only dynamic work belongs to a custom-element child,
- * whose markers that child consumed when it hydrated, or never had when its view has no binding and it rendered
- * over its server markup. `ownsContent` tells such an element: one with a client root, which stays across its later
- * renders. The page recovers only when its single static root node and its static content still match, and the
+ * @remarks A page can lose every marker of its own when its only dynamic work belongs to a nested element with its
+ * own client root, such as a custom element or an island root, whose markers that element consumed when it hydrated,
+ * or never had when its view has no binding and it rendered over its server markup. `ownsContent` tells such an
+ * element: one with its own client root, which stays across its later renders. It need not be a custom element. The page recovers only when its single static root node and its static content still match, and the
  * page puts nothing inside an element that owns its content; otherwise the normal marker requirement keeps stale
  * HTML on the client-render path.
  */
