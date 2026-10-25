@@ -13,6 +13,7 @@ import {
 	serializeBindingDescriptor,
 	takeNextHydrationMarkerIndex,
 } from '../hydration/hydration-bindings.ts';
+import { isCustomElementSubtreeRoot } from '../hydration/hydration-subtree-policy.ts';
 import { isClientOnlyBinding } from '../hydration/hydration-marker-policy.ts';
 import { serializeStyleSnapshot } from '../factory/attribute-normalize.ts';
 import { escapeAttribute, escapeHtml } from './html-escape.ts';
@@ -25,6 +26,11 @@ export type SerializeRenderableOptions = {
 	mode: SerializeRenderableMode;
 	/** When provided, attribute bindings advance `nextBindingIndex` even in `plain` mode. */
 	hydrationBindingState?: { nextBindingIndex: number };
+	/**
+	 * True when this value is nested under a template or iterable that already
+	 * owns the hydrate marker namespace.
+	 */
+	nestedInParentHydrationNamespace?: boolean;
 	/** Optional custom-element renderer invoked before generic template serialization. */
 	renderCustomElementTemplate?: (template: TemplateResultLike) => string | undefined;
 };
@@ -73,10 +79,14 @@ export function serializeRenderable(value: JsxRenderable | undefined, options: S
 	}
 
 	if (isIterableRenderable(value)) {
+		const childOptions: SerializeRenderableOptions = {
+			...options,
+			nestedInParentHydrationNamespace: true,
+		};
 		let html = '';
 
 		for (const child of value) {
-			html += serializeRenderable(child as JsxRenderable, options);
+			html += serializeRenderable(child as JsxRenderable, childOptions);
 		}
 
 		return html;
@@ -85,6 +95,12 @@ export function serializeRenderable(value: JsxRenderable | undefined, options: S
 	return escapeHtml(String(value));
 }
 
+/**
+ * @remarks A nested hyphenated tag does not take indexes from the parent
+ * namespace. Registered hosts already return through the custom-element
+ * renderer; unregistered tags serialize as plain markup so later siblings keep
+ * the indexes the client planner assigns.
+ */
 function serializeTemplateResult(template: TemplateResultLike, options: SerializeRenderableOptions): string {
 	if (options.renderCustomElementTemplate) {
 		const customElementHtml = options.renderCustomElementTemplate(template);
@@ -94,14 +110,21 @@ function serializeTemplateResult(template: TemplateResultLike, options: Serializ
 		}
 	}
 
-	const hydrationState = options.hydrationBindingState;
+	const nestedCustomElementRoot =
+		options.nestedInParentHydrationNamespace === true &&
+		isCustomElementSubtreeRoot(template.rootLocalName ?? '');
+	const childOptions: SerializeRenderableOptions = {
+		...options,
+		nestedInParentHydrationNamespace: true,
+		...(nestedCustomElementRoot ? { mode: 'plain' as const, hydrationBindingState: undefined } : {}),
+	};
 	let html = '';
 
 	for (let index = 0; index < template.values.length; index += 1) {
 		const childValue = resolveReactiveSnapshot(template.values[index]);
 
 		html += template.strings[index] ?? '';
-		html += serializeTemplatePart(template.parts[index], childValue, options, hydrationState);
+		html += serializeTemplatePart(template.parts[index], childValue, childOptions);
 	}
 
 	html += template.strings[template.strings.length - 1] ?? '';
@@ -112,12 +135,12 @@ function serializeTemplatePart(
 	part: TemplateResultLike['parts'][number] | undefined,
 	value: unknown,
 	options: SerializeRenderableOptions,
-	hydrationState: SerializeRenderableOptions['hydrationBindingState'],
 ): string {
 	if (!part || part.type === 'child') {
 		return serializeRenderable(value as JsxRenderable, options);
 	}
 
+	const hydrationState = options.hydrationBindingState;
 	const bindingIndex = hydrationState ? takeNextHydrationMarkerIndex(hydrationState) : 0;
 	const hydrationMarker =
 		options.mode === 'hydrate' && hydrationState

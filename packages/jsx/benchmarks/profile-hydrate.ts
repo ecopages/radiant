@@ -1,6 +1,5 @@
 import { jsx } from '../src/jsx-runtime.ts';
 import { renderToString } from '../src/ssr/server-render.ts';
-import { collectHydrationBindings } from '../src/hydration/hydration-bindings.ts';
 import { createBenchmarkProps, RealWorldPage } from './realworld-page.tsx';
 
 type ProfileCase = {
@@ -99,7 +98,7 @@ function profile(label: string, value: unknown, hydrate: boolean): ProfileResult
 
 	return {
 		avgUs: Number(((elapsed * 1_000) / iterations).toFixed(2)),
-		bindings: collectHydrationBindings(value as never).size,
+		bindings: (rendered.match(/data-radiant-jsx-bind-/g) ?? []).length,
 		hydrate,
 		label,
 		size: rendered.length,

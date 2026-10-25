@@ -442,7 +442,7 @@ Iterable fragment hydration supports lists of intrinsic template children (for e
 
 Keyed identity is retained for keyed entries even when a list also has unkeyed entries. A mixed keyed/unkeyed list hydrates with keyed and positional ownership, so a later update does not rebuild keyed nodes when an unkeyed sibling changes. Bare reactive children at the fragment root and DOM/script child-count mismatches fall back to a full client render. If an earlier sibling had already subscribed when that fallback happens, that sibling is disposed first. Incomplete recovery inside a single template disposes parts that already subscribed before falling back.
 
-Global SSR marker indexes are shared across both recovery paths via the binding collection helpers in `hydration-bindings.ts`, so fragment children resolve `data-radiant-jsx-bind-*` attributes against the same namespace used by `renderToString(..., { mode: 'hydrate' })`.
+Global SSR marker indexes are shared across both recovery paths via `planTemplateHydrationIndices(...)` in `hydration-bindings.ts`, so fragment children resolve `data-radiant-jsx-bind-*` attributes against the same namespace used by `renderToString(..., { mode: 'hydrate' })`.
 
 List children inside a hydrated range reconnect through the same path as a root template, so a child carrying dynamic content — `<li>{item.name}</li>` — keeps its SSR elements rather than being rebuilt. A child whose template owns several root nodes reconnects too. Both element and text-node identity are preserved, so listeners, focus, and selection survive hydration. `pnpm run bench:hydrate` measures these shapes.
 
@@ -539,11 +539,11 @@ Iterable hydration assigns each child `bindingBaseIndex` by counting prior sibli
 
 Attribute markers cover dynamic attributes and listeners. Subscribable child text such as `{boundCount}` does not use `data-radiant-jsx-bind-*`; template compilation places comment markers around the child range, and iterable hydration reconnects those ranges during `hydrateTemplateInstance(...)`. Children of `textarea`, `title`, `style`, and `script` cannot use comment anchors — Chromium treats those comments as literal text — so compilation uses a locator attribute that is stripped from the blueprint, and hydration reconnects those slots as text-content parts.
 
-Nested custom-element hosts fork a fresh binding namespace during SSR so each host hydrates independently. See `withServerHydrationBindingState(...)` and framework bridges such as Radiant's element SSR hook. JSX children applied to a nested custom element as light DOM are serialized as plain markup without markers; when the server host matches the authored template, parent hydration reconnects that light DOM in place. A hook that hands an element its children as a value (see [Children as a value](#children-as-a-value)) lets the element serialize and hydrate them in its own namespace instead.
+A hyphenated tag is a custom-element subtree root, registered or not. The serializer and the client marker counter share that rule, so a nested custom element's own parts never take indexes from the parent namespace. An unregistered hyphenated tag serializes without parent markers. Nested registered hosts fork a fresh binding namespace during SSR so each host hydrates independently; see `withServerHydrationBindingState(...)` and framework bridges such as Radiant's element SSR hook. JSX children applied to a nested custom element as light DOM are serialized as plain markup without markers; when the server host matches the authored template, parent hydration reconnects that light DOM in place. A hook that hands an element its children as a value (see [Children as a value](#children-as-a-value)) lets the element serialize and hydrate them in its own namespace instead.
 
 ### SSR-Capable Custom Elements
 
-Within the JSX SSR pipeline, any registered intrinsic tag containing `-` is treated as a custom-element candidate.
+Within the JSX SSR pipeline, any intrinsic tag containing `-` is a custom-element subtree root. A registered tag is also an SSR custom-element candidate.
 
 There are three practical outcomes during SSR:
 
