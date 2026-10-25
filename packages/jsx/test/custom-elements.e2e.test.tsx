@@ -132,3 +132,112 @@ describe('Radiant JSX custom-element interop', () => {
 		});
 	}
 });
+
+const CHILDREN_VALUE: unique symbol = Symbol.for('@ecopages/jsx.custom-element-children');
+
+class ChildrenValueElement extends HTMLElement {
+	static [CHILDREN_VALUE] = true;
+	received: unknown[] = [];
+
+	set [CHILDREN_VALUE](value: unknown) {
+		this.received.push(value);
+	}
+}
+
+customElements.define('jsx-children-value-element', ChildrenValueElement);
+
+describe('custom elements that take their JSX children as a value', () => {
+	beforeEach(() => {
+		document.body.innerHTML = '';
+	});
+
+	test('get no DOM children and receive the children again on every render', async () => {
+		const [{ jsx, jsxs }, { createRoot, CUSTOM_ELEMENT_CHILDREN_SYMBOL }] = await Promise.all([
+			loadJsxRuntime(),
+			loadJsxModule(),
+		]);
+		expect(CUSTOM_ELEMENT_CHILDREN_SYMBOL).toBe(CHILDREN_VALUE);
+		const container = document.body.appendChild(document.createElement('div'));
+		const root = createRoot(container);
+		const view = (label: string) =>
+			jsxs('jsx-children-value-element', {
+				children: [jsx('b', { children: label }), null],
+			});
+
+		root.render(view('one'));
+		const element = container.querySelector('jsx-children-value-element') as ChildrenValueElement;
+		root.render(view('two'));
+
+		expect(container.querySelector('jsx-children-value-element')).toBe(element);
+		expect(element.childNodes).toHaveLength(0);
+		expect(element.received).toHaveLength(2);
+		expect(element.received[1]).toEqual([expect.objectContaining({ values: ['two'] }), null]);
+	});
+
+	test('receive a reactive sole child as the reactive value itself', async () => {
+		const [{ jsx, createSubscribableJsxValue }, { createRoot }] = await Promise.all([
+			loadJsxRuntime(),
+			loadJsxModule(),
+		]);
+		const container = document.body.appendChild(document.createElement('div'));
+		const label = createSubscribableJsxValue({ getValue: () => 'one', subscribe: () => () => undefined });
+
+		createRoot(container).render(jsx('jsx-children-value-element', { children: label }));
+
+		const element = container.querySelector('jsx-children-value-element') as ChildrenValueElement;
+		expect(element.received).toEqual([label]);
+	});
+
+	test('keep their server node on hydrate, even in a view whose only markers are inside them', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.body.appendChild(document.createElement('div'));
+		container.innerHTML =
+			'<section><jsx-children-value-element><p data-radiant-jsx-bind-0="attr:class" class="own"></p></jsx-children-value-element></section>';
+		const serverElement = container.querySelector('jsx-children-value-element') as ChildrenValueElement;
+		const children = jsx('b', { children: 'one' });
+
+		createRoot(container).hydrate(jsx('section', { children: jsx('jsx-children-value-element', { children }) }));
+
+		expect(container.querySelector('jsx-children-value-element')).toBe(serverElement);
+		expect(serverElement.innerHTML).toBe('<p data-radiant-jsx-bind-0="attr:class" class="own"></p>');
+		expect(serverElement.received.at(-1)).toBe(children);
+	});
+
+	test('render instead of hydrating a root created with DOM children before the tag was defined', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.body.appendChild(document.createElement('div'));
+		container.innerHTML =
+			'<jsx-late-root-value-element><p data-radiant-jsx-bind-0="attr:class" class="own"></p></jsx-late-root-value-element>';
+		const view = jsx('jsx-late-root-value-element', { children: jsx('b', { children: 'one' }) });
+		customElements.define('jsx-late-root-value-element', class extends ChildrenValueElement {});
+
+		createRoot(container).hydrate(view);
+
+		expect(container.innerHTML).toBe('<jsx-late-root-value-element><b>one</b></jsx-late-root-value-element>');
+	});
+
+	test('render instead of hydrating a root with DOM children whose tag is not defined yet', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.body.appendChild(document.createElement('div'));
+		container.innerHTML =
+			'<jsx-undefined-root-element><p data-radiant-jsx-bind-0="attr:class" class="own"></p></jsx-undefined-root-element>';
+
+		createRoot(container).hydrate(jsx('jsx-undefined-root-element', { children: jsx('b', { children: 'one' }) }));
+
+		expect(container.innerHTML).toBe('<jsx-undefined-root-element><b>one</b></jsx-undefined-root-element>');
+	});
+
+	test('keep DOM children when the tag is defined after the view created the element', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.body.appendChild(document.createElement('div'));
+
+		createRoot(container).render(
+			jsx('jsx-late-children-value-element', { children: jsx('b', { children: 'one' }) }),
+		);
+		customElements.define('jsx-late-children-value-element', class extends ChildrenValueElement {});
+
+		const element = container.querySelector('jsx-late-children-value-element') as ChildrenValueElement;
+		expect(element.querySelector('b')?.textContent).toBe('one');
+		expect(element.received).toEqual([]);
+	});
+});

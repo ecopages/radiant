@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
+import { setDevWarningsEnabled } from '@ecopages/jsx/jsx-dev-runtime';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { createEventListener } from '../../src/helpers/create-event-listener';
 
@@ -17,6 +18,7 @@ function mountBlurListenerHost(): BlurListenerElement {
 
 describe('createEventListener non-bubbling delegation warning', () => {
 	afterEach(() => {
+		setDevWarningsEnabled(undefined);
 		vi.restoreAllMocks();
 		vi.unstubAllEnvs();
 		document.body.innerHTML = '';
@@ -39,6 +41,16 @@ describe('createEventListener non-bubbling delegation warning', () => {
 
 		createEventListener(host, { selector: '[data-input]', type: 'blur', options: { capture: true } }, () => {});
 		createEventListener(host, { selector: '[data-input]', type: 'focusout' }, () => {});
+
+		expect(warn).not.toHaveBeenCalled();
+	});
+
+	test('stays silent when JSX development warnings are disabled', () => {
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+		const host = mountBlurListenerHost();
+		setDevWarningsEnabled(false);
+
+		createEventListener(host, { selector: '[data-input]', type: 'mouseenter' }, () => {});
 
 		expect(warn).not.toHaveBeenCalled();
 	});

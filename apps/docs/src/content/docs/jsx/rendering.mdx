@@ -78,7 +78,7 @@ if (container instanceof HTMLElement) {
 }
 ```
 
-If the target does not contain hydration markers, the runtime falls back to a normal client render.
+If the target does not contain hydration markers, counting those inside nested custom elements, the runtime falls back to a normal client render.
 
 For render-owning `RadiantElement` custom-element hosts, there is one extra gate: the explicit Radiant hydrator must also be installed. See [Hydration](/docs/ssr/hydration).
 
@@ -179,7 +179,7 @@ How each removal rule applies between those two renders:
 - `on:click={... ? undefined : signIn}` — `undefined` detaches the handler while a sign-in request is in flight
 - child text swaps between the two states as normal content
 
-The template shape is the same in both renders, so the renderer preserves the committed button node and only patches bindings. That is the general rule: if a later render changes the template shape, the client renderer may replace the affected node instead of preserving the previous instance.
+The template shape changes between these renders: `title` and `on:click` are present in the first template but are dropped from the second because their values are `undefined`. The renderer therefore replaces the committed button node. A child expression is different: its child part keeps its place whatever value it holds, so changing child content does not change the surrounding element's template shape.
 
 ## Runtime Output Contract
 

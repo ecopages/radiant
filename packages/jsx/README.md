@@ -327,7 +327,7 @@ for (const subscriber of subscribers) {
 
 That contract is intentionally small. The package does not impose a single state container, computed graph, or scheduler. It just gives the renderer a stable subscription surface for either signal-like values or explicit subscribable wrappers.
 
-Arrays and other iterables render as a list of children. A generator, or any other one-shot iterator, is consumed once for that iterator object; the runtime reuses that snapshot while the object remains reachable, including across later renders. JSX `children` flattening consumes the iterator when the element is created, so pass a new iterator to each `jsx()` call if those children should be yielded again.
+Arrays and other iterables render as a list of children. A generator, or any other one-shot iterator, is consumed once for that iterator object; the runtime reuses that snapshot while the object remains reachable, including across later renders. JSX `children` normalization consumes the iterator when the element is created, so pass a new iterator to each `jsx()` call if those children should be yielded again.
 
 ## Empty Values And Removal
 
@@ -339,7 +339,7 @@ Use this rule of thumb:
 - `null` and `undefined` remove normal attributes
 - `false` removes boolean attributes such as `hidden` or `disabled`
 - `null` removes delegated and native event handlers by omitting the next listener
-- `undefined` clears deferred property bindings by writing `undefined`
+- an existing deferred property binding can be cleared by writing `undefined`; a plain `undefined` part is omitted during normalization
 
 For child content:
 
@@ -351,6 +351,8 @@ const nextLabel = shouldShowLabel ? 'Ready' : null;
 return <p>{nextLabel}</p>;
 ```
 
+A child expression keeps its place in the template whatever value it holds, so the template shape follows the authored markup. `null`, `undefined`, `false` or an empty list leaves an empty range. A fragment with several children resolves to one entry per child, with `null` for an empty one, and a list keeps one entry per item, with nested lists as nested entries. A nested list is never merged into its parent: a keyed group such as `rows.map(...)` keeps its own range and its nodes whatever its siblings hold, so an unkeyed sibling that fills or empties beside it changes nothing in it, whichever of `jsx`, `jsxs` or `jsxDEV` built it. When every filled item is itself keyed, the list drops its holes and reconciles by key; a list that mixes keyed and unkeyed items matches keyed entries by key and unkeyed entries by position around them. Keys match within one list only: to keep the nodes of items that move between groups, or of a group that another group is inserted before, key the groups too, for example with a keyed `Fragment` around each group. A key that appears twice in one list renders once, at its first position, as in a keyed list. Showing, hiding or emptying a child patches that range only: the element around it and its siblings keep their nodes.
+
 For attributes and bindings:
 
 ```tsx
@@ -358,15 +360,15 @@ For attributes and bindings:
 
 return (
 	<button
-		class={shouldResetClass ? null : 'toolbar-action'}
+		class={shouldResetClass ? undefined : 'toolbar-action'}
 		hidden={isVisible ? false : true}
-		on:click={isInteractive ? handleClick : null}
+		on:click={isInteractive ? handleClick : undefined}
 		prop:payload={hasPayload ? payload : undefined}
 	/>
 );
 ```
 
-Important consequence: removing a binding by switching to `null`, `undefined`, or `false` follows normal template update semantics. If that changes the template shape, the renderer may replace the affected DOM node instead of preserving the previously committed instance.
+Important consequence: attribute normalization drops `undefined` parts. Changing a previously defined attribute or event handler to `undefined` therefore changes the template shape, so the renderer may replace the affected DOM node instead of preserving the previously committed instance. Child expressions keep their part and do not have this shape change.
 
 ### Textarea children
 
@@ -417,7 +419,7 @@ const html = renderToString(view, { mode: 'plain' });
 const hydratedHtml = renderToString(view, { mode: 'hydrate' });
 ```
 
-Hydrated SSR adds binding markers so `hydrate(...)` can attach listeners and dynamic parts without rebuilding the existing DOM tree.
+Hydrated SSR adds binding markers so `hydrate(...)` can attach listeners and dynamic parts without rebuilding the existing DOM tree. A page root with no marker of its own can also reconnect when a nested element already owns its content through its own client root, such as a custom element or an island root (it hydrated or rendered itself, possibly updating since) and the page's static markup still matches; otherwise the marker requirement remains.
 
 Property bindings are client-only in generic JSX SSR. A `prop:*` value may be an object, function, DOM node, or framework instance, so JSX emits a hydration marker but does not stringify the value into HTML. If a custom element's pre-hydration state matters, represent that state through a reflected/serializable attribute or the owning framework's SSR bridge, and keep the custom element's default aligned with the server output.
 
@@ -427,20 +429,28 @@ Adjacent text child bindings that SSR collapses into one text node are split int
 
 `hydrate(...)` reconnects a template or iterable root in place. A reactive wrapper hydrates its current snapshot, then subscribes. Any other shape falls back to a full client render.
 
-| Root shape                                 | Recovery path      | Notes                                               |
-| ------------------------------------------ | ------------------ | --------------------------------------------------- |
-| Single template (`<section>...</section>`) | Template hydration | Reconnects attribute and child parts in place       |
-| Iterable / fragment (`<>...</>`)           | Iterable hydration | Hydrates each child into the mounted ownership tree |
-| Reactive wrapper around either shape       | Inner snapshot     | Reconnects the current value, then subscribes       |
-| Anything else                              | Client render      | Full mount; leftover SSR markers are replaced       |
+| Root shape                                                                                            | Recovery path      | Notes                                                                                             |
+| ----------------------------------------------------------------------------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------- |
+| Single template (`<section>...</section>`)                                                            | Template hydration | Reconnects attribute and child parts in place                                                     |
+| Custom element not defined yet, or one that takes a Children Value, with DOM children in the template | Client render      | Its server content may be its own render; a defined element that takes DOM children hydrates them |
+| Single template with no marker, around an element that owns its content through its own client root   | Template hydration | Only when the static markup matches and the template puts nothing inside that element             |
+| Iterable / fragment (`<>...</>`)                                                                      | Iterable hydration | Hydrates each child into the mounted ownership tree                                               |
+| Reactive wrapper around either shape                                                                  | Inner snapshot     | Reconnects the current value, then subscribes                                                     |
+| Anything else                                                                                         | Client render      | Full mount; leftover SSR markers are replaced                                                     |
 
-Iterable fragment hydration supports flat lists of intrinsic template children (for example `<> <button/> <span/> </>`), including subscribable child bindings inside those templates. Each recovered child template stays in the root's ownership tree, so `unmount()` and later replacement renders dispose subscriptions and native listeners.
+Iterable fragment hydration supports lists of intrinsic template children (for example `<> <button/> <span/> </>`), including subscribable child bindings inside those templates and nested lists such as `<>{items.map(renderItem)}<footer/></>`. Each recovered child template stays in the root's ownership tree, so `unmount()` and later replacement renders dispose subscriptions and native listeners.
 
-Keyed identity is retained only when **every** child in the list has a key. A mixed keyed/unkeyed list hydrates as an indexed list and can rebuild nodes on the next render. Nested fragments, bare reactive children at the fragment root, and DOM/script child-count mismatches fall back to a full client render. If an earlier sibling had already subscribed when that fallback happens, that sibling is disposed first. Incomplete recovery inside a single template disposes parts that already subscribed before falling back.
+Keyed identity is retained for keyed entries even when a list also has unkeyed entries. A mixed keyed/unkeyed list hydrates with keyed and positional ownership, so a later update does not rebuild keyed nodes when an unkeyed sibling changes. Bare reactive children at the fragment root and DOM/script child-count mismatches fall back to a full client render. If an earlier sibling had already subscribed when that fallback happens, that sibling is disposed first. Incomplete recovery inside a single template disposes parts that already subscribed before falling back.
 
 Global SSR marker indexes are shared across both recovery paths via the binding collection helpers in `hydration-bindings.ts`, so fragment children resolve `data-radiant-jsx-bind-*` attributes against the same namespace used by `renderToString(..., { mode: 'hydrate' })`.
 
 List children inside a hydrated range reconnect through the same path as a root template, so a child carrying dynamic content — `<li>{item.name}</li>` — keeps its SSR elements rather than being rebuilt. A child whose template owns several root nodes reconnects too. Both element and text-node identity are preserved, so listeners, focus, and selection survive hydration. `pnpm run bench:hydrate` measures these shapes.
+
+When a parent rerenders, a nested custom element that is already in the correct position stays connected, so its lifecycle callbacks do not run again. The same guarantee applies to the parent rerender that follows hydration.
+
+A matching, already-defined custom-element host keeps its server node during hydration. A custom element whose class takes its children as a value ([Children as a value](#children-as-a-value)) receives that value through its own binding and hydrates its rendered content in its own marker namespace. Other matching custom elements reconnect authored light-DOM children in place, so the host's lifecycle does not run again merely because its parent hydrates or rerenders. A late-defined or mismatched host, or an unrecoverable template, falls back to reconciliation. An empty text node in a child list serializes to nothing, so hydration inserts it.
+
+When a page's own bindings are absent, the page can still reconnect after a nested element, such as a custom element or an island root, took ownership of its content through its own client root: it hydrated and consumed its markers, or its view had none and it rendered over its server markup. A client root on that element is the sign, and it stays across the element's later renders. The client compares the page's single root and its static markup, and adopts only when such an element is in it and the page puts nothing inside that element; anything else still renders fresh.
 
 ### Benchmarks
 
@@ -479,7 +489,7 @@ flowchart TD
 
 **2. Index contract.** `hydration-bindings.ts` owns the marker prefix, descriptor format, index advancement, and DOM walks. Iterable hydration advances `nextBindingIndex` with `countHydrationMarkers(...)` per child. Each recovered child template then calls `planTemplateHydrationIndices(template, bindingBaseIndex)` so fragment siblings stay aligned with the same global namespace.
 
-**3. Recover.** `hydrate(...)` dispatches on root shape as in [Hydration Root Shapes](#hydration-root-shapes). Failed recovery disposes any parts that already subscribed, then falls back to a full client render.
+**3. Recover.** `hydrate(...)` dispatches on root shape as in [Hydration Root Shapes](#hydration-root-shapes). A markerless page root may use a nested element that owns its content through its own client root as its recovery signal when its static markup matches. Failed recovery disposes any parts that already subscribed, then falls back to a full client render.
 
 **Counter-shaped fragment example:**
 
@@ -529,7 +539,7 @@ Iterable hydration assigns each child `bindingBaseIndex` by counting prior sibli
 
 Attribute markers cover dynamic attributes and listeners. Subscribable child text such as `{boundCount}` does not use `data-radiant-jsx-bind-*`; template compilation places comment markers around the child range, and iterable hydration reconnects those ranges during `hydrateTemplateInstance(...)`. Children of `textarea`, `title`, `style`, and `script` cannot use comment anchors — Chromium treats those comments as literal text — so compilation uses a locator attribute that is stripped from the blueprint, and hydration reconnects those slots as text-content parts.
 
-Nested custom-element hosts fork a fresh binding namespace during SSR so each host hydrates independently. See `withServerHydrationBindingState(...)` and framework bridges such as Radiant's element SSR hook. JSX children passed to a nested custom element are serialized as plain light DOM without markers, because parent hydration skips custom-element subtrees; custom elements inside those children still render through the hook.
+Nested custom-element hosts fork a fresh binding namespace during SSR so each host hydrates independently. See `withServerHydrationBindingState(...)` and framework bridges such as Radiant's element SSR hook. JSX children applied to a nested custom element as light DOM are serialized as plain markup without markers; when the server host matches the authored template, parent hydration reconnects that light DOM in place. A hook that hands an element its children as a value (see [Children as a value](#children-as-a-value)) lets the element serialize and hydrate them in its own namespace instead.
 
 ### SSR-Capable Custom Elements
 
@@ -566,6 +576,8 @@ Such a hook can apply the children as nodes, not a string, with `renderServerLig
 - **Nested custom elements:** they render through the active hook.
 - **Text-only elements:** `script`, `style`, `textarea` and `title` get their text verbatim.
 - **Markers:** the output carries no hydration markers, matching the plain light-DOM serialization.
+
+Reactive values passed to a registered, SSR-capable custom element are resolved to their current snapshot before the instance receives them. Its `renderHostToString(...)` method or server hook can then reflect or consume that snapshot so `data-*`, reflected attributes, and property-backed host state stay aligned in plain and hydrate SSR output.
 
 ## Authoring Patterns
 
@@ -643,6 +655,12 @@ const gridApi: UserGridApi = {
 
 <user-grid items={rows} selection={currentRow} prop:api={gridApi} />;
 ```
+
+### Children as a value
+
+A custom element can take its JSX `children` as one value instead of DOM children. Its class sets a static `CUSTOM_ELEMENT_CHILDREN_SYMBOL` member (exported from `@ecopages/jsx`) to `true`; when a view creates the element while that class is defined, the renderer puts nothing inside the element and assigns the children, normalized like any child list, to the element's `CUSTOM_ELEMENT_CHILDREN_SYMBOL` member after the element is in the DOM. Every later render of the view assigns the new children again. The element's own renderer then decides where they go, and it is the only renderer that touches the resulting nodes. `RadiantElement` answers `true` when its class overrides `render()`.
+
+Any other element keeps its children as DOM nodes inside it, including an element whose tag is defined only after the view created it. The lookup happens when the view creates the element, so a later render of the view after the definition creates a new element that takes the value. On the server the class is not consulted: a custom-element render hook registered with `{ ownsChildren: true }` gets the raw children as `context.children` and decides; without that option they are applied as light DOM before the hook runs.
 
 ### Function Components And Fragments
 
@@ -790,6 +808,7 @@ Main exports:
 - `createSubscribableJsxValue`
 - `isKeyedJsxValue`
 - `isSubscribableJsxValue`
+- `CUSTOM_ELEMENT_CHILDREN_SYMBOL`
 
 Key types:
 
@@ -804,7 +823,7 @@ Key types:
 - `SubscribableJsxValue`
 - `TemplateResultLike`
 
-The automatic development runtime also exports `jsxDEV` from `@ecopages/jsx/jsx-dev-runtime`.
+The automatic development runtime also exports `jsxDEV` from `@ecopages/jsx/jsx-dev-runtime`. It passes static children (the ones the production transform hands to `jsxs`) to `jsxs`, so development and production builds give the same template shape.
 
 Server-only exports from `@ecopages/jsx/server` include:
 

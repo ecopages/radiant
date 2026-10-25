@@ -15,6 +15,9 @@
  *
  * **Platform split:** Browser builds use `platform: 'browser'`; server builds use
  * `platform: 'node'` with `@ecopages/jsx` / `@ecopages/signals` external.
+ *
+ * **Development warnings:** `process.env.NODE_ENV` stays in the dist, so the app's bundler,
+ * not this build, decides whether development warnings ship (see `runEsbuild`).
  */
 import { copyFile, readFileSync, watch, writeFileSync } from 'node:fs';
 import path from 'node:path';
@@ -137,11 +140,19 @@ const externalPackages = [
 const watchMode = process.argv.includes('--watch');
 const minify = !watchMode;
 
+/**
+ * @remarks
+ * The identity `define` stops esbuild from replacing `process.env.NODE_ENV` with
+ * `"production"` (minified browser builds) or `"development"` (unminified browser builds,
+ * as in watch mode), which would fix the development-warning decision when Radiant is
+ * built instead of when the app is.
+ */
 async function runEsbuild(label: string, options: esbuild.BuildOptions): Promise<boolean> {
 	try {
 		await esbuild.build({
 			absWorkingDir: packageRoot,
 			bundle: true,
+			define: { 'process.env.NODE_ENV': 'process.env.NODE_ENV' },
 			format: 'esm',
 			logLevel: 'silent',
 			minify,

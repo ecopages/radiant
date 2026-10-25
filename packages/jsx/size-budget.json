@@ -3,14 +3,14 @@
 		{
 			"label": "client",
 			"entrypoint": "./src/client.ts",
-			"maxBytes": 32768,
-			"maxGzipBytes": 10752
+			"maxBytes": 36032,
+			"maxGzipBytes": 11792
 		},
 		{
 			"label": "index",
 			"entrypoint": "./src/index.ts",
-			"maxBytes": 35072,
-			"maxGzipBytes": 11008
+			"maxBytes": 36160,
+			"maxGzipBytes": 11888
 		},
 		{
 			"label": "jsx-runtime",

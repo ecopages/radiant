@@ -224,7 +224,7 @@ Use these when you build host adapters, tests, or custom decorators. Prefer `@st
 - Override `render()` when the host itself should own a JSX view.
 - Skip `render()` when the host should enhance authored light DOM instead.
 - Override `onConnected()` for post-catch-up connect work; keep listeners in `connectedCallback`.
-- In JSX-authored composite libraries, keep parent-owned children in the view shell; do not re-project them through `<slot>` (see [Slots](/docs/components/slots)).
+- A render-owning host places the JSX children a view passes it with `<slot />`, and takes named regions as properties (see [Slots](/docs/components/slots)). Radiant UI keeps parent-owned children in the view shell instead.
 - Use [RadiantController](/docs/components/radiant-controller) when the DOM is authored elsewhere and a custom element wrapper would be unnecessary.
 
 ## See Also

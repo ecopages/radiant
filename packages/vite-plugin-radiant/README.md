@@ -31,6 +31,8 @@ plugins: [...radiant({ elements: true })];
 
 `elements: true` (or `radiantSsr()`) is **required** when you import `@ecopages/vite-plugin-radiant/ssr` or `/nitro` helpers that resolve `virtual:radiant/*` asset and component registries.
 
+`startRadiantApp(...)` loads the server-discovered element assets, or scans the existing document when no document state is present, before it creates the app JSX. This lets page-level server-rendered hosts be defined before hydration and avoids a late-definition rebuild. The `bootstrap` callback now runs after the element modules load and the hosts upgrade, so code that must run before a host connects belongs in a module loaded earlier. Client-only output is still rescanned after the app mounts so elements created by the app are discovered.
+
 ### Nitro full-stack
 
 ```bash

@@ -38,6 +38,14 @@ export async function startRadiantApp<AppProps = void>(options: StartRadiantAppO
 		await import('@ecopages/radiant/client/install-hydrator');
 	}
 
+	const documentState = readRadiantDocumentStateFromDom(documentRoot);
+
+	if (documentState) {
+		await ensureRadiantAssets(documentState.state);
+	} else {
+		await loadRadiantDomModules(documentRoot);
+	}
+
 	const preparedApp = await prepareRadiantApp({
 		app: options.app,
 		bootstrap: options.bootstrap,
@@ -47,14 +55,6 @@ export async function startRadiantApp<AppProps = void>(options: StartRadiantAppO
 			shouldHydrate,
 		},
 	});
-
-	const documentState = readRadiantDocumentStateFromDom(documentRoot);
-
-	if (documentState) {
-		await ensureRadiantAssets(documentState.state);
-	} else {
-		await loadRadiantDomModules(documentRoot);
-	}
 
 	const root = createRoot(rootElement);
 	const renderApp = () => {

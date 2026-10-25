@@ -291,7 +291,7 @@ export function countHydratedRangeNodes(value: unknown): number {
 	}
 
 	if (resolvedValue instanceof Node) {
-		return 1;
+		return isEmptyTextNode(resolvedValue) ? 0 : 1;
 	}
 
 	// Markup stand-ins carry arbitrary HTML, so their node count is only knowable by
@@ -311,6 +311,14 @@ export function countHydratedRangeNodes(value: unknown): number {
 	}
 
 	return 1;
+}
+
+/**
+ * @remarks An empty text node serializes to no markup, so the server's DOM has no node for it; hydration
+ * inserts it instead of matching it.
+ */
+export function isEmptyTextNode(value: unknown): boolean {
+	return value instanceof Text && value.data === '';
 }
 
 function getHydratedNodeContribution(node: Node | undefined): number {

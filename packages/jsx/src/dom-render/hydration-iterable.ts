@@ -1,7 +1,7 @@
 import { countHydrationMarkers, visitHydrationBindingMarkers } from '../hydration/hydration-bindings.ts';
 import { isIterableRenderable, isTemplateResultLike } from '../types/renderable-guards.ts';
 import type { JsxRenderable, KeyedJsxValue } from '../types/index.ts';
-import { countHydratedRangeNodes } from './hydration-planning.ts';
+import { countHydratedRangeNodes, isEmptyTextNode } from './hydration-planning.ts';
 import { hydrateTemplateInstance, type HydrateTemplateInstanceOptions } from './hydration.ts';
 import { createBoundaryMarker } from './dom-operations.ts';
 import { shouldSkipHydrationSubtree } from '../hydration/hydration-subtree-policy.ts';
@@ -10,6 +10,7 @@ import { disposeMountedRangeContent, disposeTemplateInstance } from './mounted-d
 import { createHydratedRangeRecord, mountedContentFromNodes } from './range-records.ts';
 import { materializeIterableChildren } from '../hydration/iterable-snapshot.ts';
 import { getKeyedChildren, unwrapKeyedValue } from './runtime-helpers.ts';
+import { isKeyedJsxValue } from '../types/renderable-guards.ts';
 import type { DeferredPropertyBinding, MountedRangeContent, MountedRangeRecord, TemplateInstance } from './types.ts';
 
 type HydratedIterableChild = {
@@ -29,10 +30,12 @@ function getHydratableChildNodes(target: HTMLElement): readonly ChildNode[] {
  * - a flat list of intrinsic template children (`<>...</>` with elements such as
  *   `<button>`, `<span>`, and other single-root templates)
  * - static primitive or markup children mixed between templates
+ * - nested lists, such as a mapped list beside a sibling, hydrated as ranges
  * - keyed lists of those children, which keep identity across the next render
+ * - mixed keyed and positional lists, which keep keyed identity while positional
+ *   entries reconcile by slot
  *
  * Unsupported shapes fall back to a full client render:
- * - nested iterable children (fragments inside fragments)
  * - bare reactive child sources at the fragment root without a wrapping template
  * - DOM/script child counts that no longer match the JSX child list
  *
@@ -67,9 +70,16 @@ export function hydrateIterableRoot(
 			return undefined;
 		}
 
-		if (isTemplateResultLike(childValue) && shouldSkipHydrationSubtree(childValue.rootLocalName ?? '')) {
+		if (isRangedChild(childValue)) {
 			hydratedChildren.push(
-				reconcileCustomElementChild(childValue, slice, options.rootTarget ?? target, nextBindingIndex),
+				reconcileRangedChild(
+					childValue,
+					slice,
+					target,
+					domChildren[domOffset] ?? null,
+					options.rootTarget ?? target,
+					nextBindingIndex,
+				),
 			);
 		} else if (isTemplateResultLike(childValue)) {
 			const instance = hydrateTemplateInstance(childValue, target, deferredProperties, {
@@ -85,9 +95,6 @@ export function hydrateIterableRoot(
 			}
 
 			hydratedChildren.push({ instance, nodes: instance.rootNodes });
-		} else if (isIterableRenderable(childValue)) {
-			disposeHydratedIterableChildren(hydratedChildren);
-			return undefined;
 		} else {
 			hydratedChildren.push({ nodes: slice });
 		}
@@ -106,27 +113,45 @@ export function hydrateIterableRoot(
 		return undefined;
 	}
 
-	return adoptHydratedIterableRoot(hydratedChildren, target, keyedChildren);
+	return adoptHydratedIterableRoot(hydratedChildren, target, jsxChildren, keyedChildren);
+}
+
+function isRangedChild(value: unknown): boolean {
+	return (
+		isIterableRenderable(value) ||
+		isEmptyTextNode(value) ||
+		(isTemplateResultLike(value) && shouldSkipHydrationSubtree(value.rootLocalName ?? ''))
+	);
 }
 
 /**
- * Reconciles a custom-element template child the way a ranged child is reconciled, so both root shapes treat it
- * alike.
+ * Hydrates a custom-element template child, an empty text node or a nested list the way a ranged child is
+ * hydrated, so both root shapes treat it alike.
  *
- * @remarks The element reconnects its own host, so the parent does not hydrate into it. Boundary markers give
- * the range reconciliation the start and end it works between; they are removed once the range holds its final
- * nodes.
+ * @remarks The parent binds only a custom element's own parts and never hydrates into it; an element it cannot
+ * adopt is rebuilt. An empty text node has no server node and is inserted. A nested list keeps
+ * the boundary markers of its own records inside the returned nodes. The outer boundary markers give the range
+ * hydration the start and end it works between; they are removed once the range holds its final nodes. A nested
+ * list that rendered no nodes has an empty slice, so its markers go before `referenceNode` in `parent`.
  */
-function reconcileCustomElementChild(
+function reconcileRangedChild(
 	value: unknown,
 	existingNodes: readonly ChildNode[],
+	parent: Node,
+	referenceNode: Node | null,
 	rootTarget: HTMLElement,
 	bindingBaseIndex: number,
 ): HydratedIterableChild {
 	const startMarker = createBoundaryMarker();
 	const endMarker = createBoundaryMarker();
-	existingNodes[0]?.before(startMarker);
-	existingNodes[existingNodes.length - 1]?.after(endMarker);
+
+	if (existingNodes.length === 0) {
+		parent.insertBefore(startMarker, referenceNode);
+		parent.insertBefore(endMarker, referenceNode);
+	} else {
+		existingNodes[0]?.before(startMarker);
+		existingNodes[existingNodes.length - 1]?.after(endMarker);
+	}
 
 	const mounted = hydrateMountedRangeContent(
 		startMarker,
@@ -161,6 +186,7 @@ function disposeHydratedIterableChildren(children: readonly HydratedIterableChil
 function adoptHydratedIterableRoot(
 	children: readonly HydratedIterableChild[],
 	target: HTMLElement,
+	jsxChildren: readonly unknown[],
 	keyedChildren: KeyedJsxValue[] | undefined,
 ): MountedRangeContent {
 	const endMarker = createBoundaryMarker();
@@ -178,12 +204,18 @@ function adoptHydratedIterableRoot(
 
 	endMarker.remove();
 
-	if (!keyedChildren) {
-		return { kind: 'indexed-list', records };
+	if (keyedChildren) {
+		return {
+			kind: 'keyed-list',
+			records: new Map(keyedChildren.map((child, index) => [child.key, records[index]!])),
+		};
 	}
 
 	return {
-		kind: 'keyed-list',
-		records: new Map(keyedChildren.map((child, index) => [child.key, records[index]!])),
+		entries: records.map((record, index) => {
+			const child = jsxChildren[index];
+			return { key: isKeyedJsxValue(child) ? child.key : undefined, record };
+		}),
+		kind: 'mixed-list',
 	};
 }

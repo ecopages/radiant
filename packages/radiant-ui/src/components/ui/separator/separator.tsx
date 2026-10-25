@@ -1,9 +1,10 @@
 import type { JsxElementProps } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
+import type { WithoutChildren } from '../../../lib/without-children';
 
 export type RuiSeparatorOrientation = 'horizontal' | 'vertical';
 
-export type RuiSeparatorProps = Omit<JsxElementProps<HTMLHRElement>, 'children'> & {
+export type RuiSeparatorProps = WithoutChildren<JsxElementProps<HTMLHRElement>> & {
 	/** Visual and semantic direction. Default: `horizontal`. */
 	orientation?: RuiSeparatorOrientation;
 };

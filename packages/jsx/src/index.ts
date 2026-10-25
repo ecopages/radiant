@@ -1,4 +1,5 @@
 export { createRoot, hasHydrationMarkers, hydrate, render, type JsxRoot } from './dom-render.ts';
+export { CUSTOM_ELEMENT_CHILDREN_SYMBOL } from './types/index.ts';
 
 export {
 	Fragment,

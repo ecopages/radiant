@@ -1,9 +1,13 @@
 import { countHydrationMarkers } from '../hydration/hydration-bindings.ts';
 import { shouldSkipHydrationSubtree } from '../hydration/hydration-subtree-policy.ts';
+import { isKeyedJsxValue } from '../types/renderable-guards.ts';
 import { hydrateTemplateInstance } from './hydration.ts';
+import { takesChildrenValue } from '../factory/jsx-factory.ts';
+import { getCompiledTemplate } from './template-compiler.ts';
+import { CHILD_BINDING_END_PREFIX, CHILD_BINDING_START_PREFIX } from './constants.ts';
 import type { JsxKey, JsxRenderable, TemplateResultLike } from '../types/index.ts';
 import { mountReactiveChildSource, updateRangeContent } from './child-range-update.ts';
-import { countHydratedRangeNodes } from './hydration-planning.ts';
+import { countHydratedRangeNodes, isEmptyTextNode } from './hydration-planning.ts';
 import { disposeMountedRangeContent } from './mounted-disposal.ts';
 import { createHydratedRangeRecord, mountedContentFromNodes } from './range-records.ts';
 import {
@@ -18,8 +22,8 @@ import {
 } from './runtime-helpers.ts';
 import type {
 	DeferredPropertyBinding,
-	MountedIndexedList,
 	MountedKeyedList,
+	MountedMixedList,
 	MountedRangeContent,
 	MountedRangeRecord,
 	TemplateInstance,
@@ -73,10 +77,10 @@ function hydrateMountedRangeContentSnapshot(
 ): MountedRangeContent {
 	const bootstrapMounted = mountedContentFromNodes(existingNodes);
 
-	// A custom-element child owns its own hydration: SSR produced its markup through
-	// the render hook, and the element reconnects its host itself. Reconnecting it
-	// from here would consume markers that were never emitted in this namespace.
-	if (isTemplateResultLike(nextValue) && !shouldSkipHydrationSubtree(nextValue.rootLocalName ?? '')) {
+	if (
+		isTemplateResultLike(nextValue) &&
+		(!shouldSkipHydrationSubtree(nextValue.rootLocalName ?? '') || canAdoptCustomElement(nextValue, existingNodes))
+	) {
 		const hydratedTemplateInstance = hydrateTemplateRange(nextValue, existingNodes, rootTarget, bindingBaseIndex);
 
 		if (hydratedTemplateInstance) {
@@ -121,7 +125,7 @@ function needsReconciliationAgainstSsrNodes(nextValue: unknown, bootstrapMounted
 		return true;
 	}
 
-	if (nextValue === undefined || nextValue === null || nextValue === false) {
+	if (nextValue === undefined || nextValue === null || nextValue === false || isEmptyTextNode(nextValue)) {
 		return true;
 	}
 
@@ -171,6 +175,253 @@ function hydrateTemplateRange(
 }
 
 /**
+ * Whether the parent can keep the server node of a custom-element child and reconnect its authored template in place.
+ *
+ * @remarks A custom element's content belongs to the element: SSR serialized it through the render hook, and the
+ * element hydrates it itself. A children-value host has no authored DOM children in its template, so the parent binds
+ * only the host's own parts and the children value reaches the host's renderer. Other custom elements can be adopted
+ * when their tag is defined and authored DOM children are present in the matching server host; hydrating that template
+ * keeps the host identity while reconnecting the parent's light-DOM bindings. A late-defined or mismatched host, or an
+ * unrecoverable template, still falls back to reconciliation.
+ */
+function canAdoptCustomElement(template: TemplateResultLike, existingNodes: readonly Node[]): boolean {
+	const [host] = existingNodes;
+	const localName = template.rootLocalName ?? '';
+	const isDefinedCustomElement = Boolean(globalThis.customElements?.get(localName));
+	const compiledTemplate = getCompiledTemplate(template);
+
+	return (
+		host instanceof Element &&
+		host.localName === localName &&
+		isDefinedCustomElement &&
+		(takesChildrenValue(localName)
+			? !compiledTemplate.blueprint.content.firstChild?.hasChildNodes()
+			: matchesAuthoredElementChildren(template, host, compiledTemplate))
+	);
+}
+
+function matchesAuthoredElementChildren(
+	template: TemplateResultLike,
+	host: Element,
+	compiledTemplate: ReturnType<typeof getCompiledTemplate>,
+): boolean {
+	const childParts = compiledTemplate.parts.filter((part) => part.type === 'child');
+
+	if (childParts.length === 0) {
+		return host.children.length === 0;
+	}
+
+	if (childParts.length !== 1) {
+		return false;
+	}
+
+	const childPart = childParts[0];
+
+	if (!childPart) {
+		return false;
+	}
+
+	const childValue = unwrapKeyedValue(template.values[childPart.index]);
+
+	if (!isTemplateResultLike(childValue) || !childValue.rootLocalName) {
+		return host.children.length === 0;
+	}
+
+	return host.children.length === 1 && host.children[0]?.localName === childValue.rootLocalName;
+}
+
+/**
+ * Whether a markerless page template can adopt a tree containing a nested element that already owns its content.
+ *
+ * @remarks A page can lose every marker of its own when its only dynamic work belongs to a nested element with its
+ * own client root, such as a custom element or an island root, whose markers that element consumed when it hydrated,
+ * or never had when its view has no binding and it rendered over its server markup. `ownsContent` tells such an
+ * element: one with its own client root, which stays across its later renders. It need not be a custom element. The page recovers only when its single static root node and its static content still match, and the
+ * page puts nothing inside an element that owns its content; otherwise the normal marker requirement keeps stale
+ * HTML on the client-render path.
+ */
+export function canAdoptMarkerlessTemplate(
+	template: TemplateResultLike,
+	target: HTMLElement,
+	ownsContent: (element: HTMLElement) => boolean,
+): boolean {
+	const compiledTemplate = getCompiledTemplate(template);
+	const blueprintRoot = compiledTemplate.blueprint.content.firstElementChild;
+	const actualRoot = target.firstElementChild;
+
+	if (
+		!(blueprintRoot instanceof Element) ||
+		!(actualRoot instanceof HTMLElement) ||
+		compiledTemplate.blueprint.content.childNodes.length !== 1 ||
+		compiledTemplate.parts.some((part) => part.type !== 'child') ||
+		blueprintRoot.localName !== actualRoot.localName ||
+		blueprintRoot.namespaceURI !== actualRoot.namespaceURI ||
+		target.childNodes.length !== countHydratedRangeNodes(template)
+	) {
+		return false;
+	}
+
+	let hasOwningElement = false;
+	const expectedNodes = materializeExpectedValue(template);
+
+	return (
+		expectedNodes !== undefined &&
+		matchesExpectedNodes(expectedNodes, Array.from(target.childNodes)) &&
+		hasOwningElement
+	);
+
+	function materializeExpectedValue(value: unknown): Node[] | undefined {
+		const nextValue = unwrapKeyedValue(value);
+
+		if (nextValue == null || typeof nextValue === 'boolean') {
+			return [];
+		}
+
+		if (isTemplateResultLike(nextValue)) {
+			const fragment = getCompiledTemplate(nextValue).blueprint.content.cloneNode(true) as DocumentFragment;
+			const walker = document.createTreeWalker(fragment, NodeFilter.SHOW_COMMENT);
+			const startMarkers: Comment[] = [];
+			let currentNode = walker.nextNode();
+
+			while (currentNode) {
+				if (currentNode instanceof Comment && currentNode.data.startsWith(CHILD_BINDING_START_PREFIX)) {
+					startMarkers.push(currentNode);
+				}
+
+				currentNode = walker.nextNode();
+			}
+
+			for (const startMarker of startMarkers) {
+				const endMarker = startMarker.nextSibling;
+
+				if (!(endMarker instanceof Comment) || !endMarker.data.startsWith(CHILD_BINDING_END_PREFIX)) {
+					return undefined;
+				}
+
+				const valueIndex = Number(startMarker.data.slice(CHILD_BINDING_START_PREFIX.length));
+				const childNodes = materializeExpectedValue(nextValue.values[valueIndex]);
+
+				if (childNodes === undefined) {
+					return undefined;
+				}
+
+				startMarker.replaceWith(...childNodes);
+				endMarker.remove();
+			}
+
+			return Array.from(fragment.childNodes);
+		}
+
+		const iterableChildren = getIterableChildren(nextValue);
+
+		if (iterableChildren) {
+			const nodes: Node[] = [];
+
+			for (const child of iterableChildren) {
+				const childNodes = materializeExpectedValue(child);
+
+				if (childNodes === undefined) {
+					return undefined;
+				}
+
+				nodes.push(...childNodes);
+			}
+
+			return nodes;
+		}
+
+		return canRenderAsTextNode(nextValue) ? [document.createTextNode(String(nextValue))] : undefined;
+	}
+
+	function matchesExpectedNodes(expectedNodes: readonly Node[], actualNodes: readonly Node[]): boolean {
+		if (expectedNodes.length !== actualNodes.length) {
+			return false;
+		}
+
+		return expectedNodes.every((expectedNode, index) => {
+			const actualNode = actualNodes[index];
+
+			if (!actualNode) {
+				return false;
+			}
+
+			if (expectedNode instanceof Element) {
+				if (!(actualNode instanceof Element)) {
+					return false;
+				}
+
+				if (
+					expectedNode.localName !== actualNode.localName ||
+					expectedNode.namespaceURI !== actualNode.namespaceURI
+				) {
+					return false;
+				}
+
+				if (actualNode instanceof HTMLElement && ownsContent(actualNode)) {
+					hasOwningElement = true;
+					return matchesOwningElement(expectedNode, actualNode);
+				}
+
+				if (expectedNode.attributes.length !== actualNode.attributes.length) {
+					return false;
+				}
+
+				for (const attribute of Array.from(expectedNode.attributes)) {
+					if (actualNode.getAttributeNS(attribute.namespaceURI, attribute.name) !== attribute.value) {
+						return false;
+					}
+				}
+
+				return matchesExpectedNodes(Array.from(expectedNode.childNodes), Array.from(actualNode.childNodes));
+			}
+
+			if (expectedNode instanceof Text) {
+				return actualNode instanceof Text && expectedNode.data === actualNode.data;
+			}
+
+			return (
+				expectedNode instanceof Comment &&
+				actualNode instanceof Comment &&
+				expectedNode.data === actualNode.data
+			);
+		});
+	}
+}
+
+/**
+ * @remarks The page may put nothing inside an element that owns its content, since that content is the element's
+ * own render; the element's static attributes must still match, ignoring hydration markers.
+ */
+function matchesOwningElement(expectedNode: Element, actualNode: Element): boolean {
+	return (
+		!expectedNode.hasChildNodes() &&
+		Array.from(expectedNode.attributes).every(
+			(attribute) =>
+				attribute.name.startsWith('data-radiant-jsx-bind-') ||
+				actualNode.getAttributeNS(attribute.namespaceURI, attribute.name) === attribute.value,
+		)
+	);
+}
+
+/**
+ * Whether a template puts DOM children inside a custom-element root that is not defined yet, or whose class takes
+ * its children as a value (the template was created before the tag was defined).
+ *
+ * @remarks The element's server markup can hold its own rendered content where the template's children would go,
+ * so such a root is rendered rather than hydrated, as before hydration counted the markers inside custom elements.
+ * A defined element that takes DOM children keeps hydrating them.
+ */
+export function fillsRenderedElement(template: TemplateResultLike): boolean {
+	const localName = template.rootLocalName ?? '';
+
+	return (
+		localName.includes('-') &&
+		(!globalThis.customElements?.get(localName) || takesChildrenValue(localName)) &&
+		!!getCompiledTemplate(template).blueprint.content.firstChild?.hasChildNodes()
+	);
+}
+
+/**
  * Wraps each child of an iterable range in its own hydrated sub-range.
  *
  * Keyed and indexed lists walk the SSR nodes identically — only how a child's
@@ -188,16 +439,16 @@ function hydrateListRangeContent(
 	existingNodes: readonly Node[],
 	rootTarget: HTMLElement,
 	bindingBaseIndex: number,
-): MountedIndexedList | MountedKeyedList | undefined {
+): MountedKeyedList | MountedMixedList | undefined {
 	const keyedChildren = getKeyedChildren(children);
-	const indexedRecords: MountedRangeRecord[] = [];
 	const keyedRecords = new Map<JsxKey, MountedRangeRecord>();
+	const mixedEntries: MountedMixedList['entries'] = [];
 	const adopted: MountedRangeRecord[] = [];
 	let nextNodeIndex = 0;
 	let nextBindingIndex = bindingBaseIndex;
 
-	for (const [index, child] of children.entries()) {
-		const keyedChild = keyedChildren?.[index];
+	for (const child of children) {
+		const keyedChild = isKeyedJsxValue(child) ? child : undefined;
 		const childValue = keyedChild ? keyedChild.value : child;
 		const childNodeCount = countHydratedRangeNodes(childValue);
 		const childNodes = existingNodes.slice(nextNodeIndex, nextNodeIndex + childNodeCount);
@@ -227,10 +478,9 @@ function hydrateListRangeContent(
 
 		if (keyedChild) {
 			keyedRecords.set(keyedChild.key, record);
-			continue;
 		}
 
-		indexedRecords.push(record);
+		mixedEntries.push({ key: keyedChild?.key, record });
 	}
 
 	if (nextNodeIndex !== existingNodes.length) {
@@ -240,7 +490,7 @@ function hydrateListRangeContent(
 
 	return keyedChildren
 		? { kind: 'keyed-list', records: keyedRecords }
-		: { kind: 'indexed-list', records: indexedRecords };
+		: { entries: mixedEntries, kind: 'mixed-list' };
 }
 
 function disposeHydratedListRecords(records: readonly MountedRangeRecord[]): void {

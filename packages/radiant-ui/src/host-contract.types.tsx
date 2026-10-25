@@ -1,12 +1,17 @@
 import type { RuiButtonControlProps, RuiButtonLinkProps } from './components/ui/button/button';
+import { RuiCalendar } from './components/ui/calendar/calendar';
+import { RuiDateInput } from './components/ui/date-input/date-input';
 import type { RuiDialogCloseProps } from './components/ui/dialog/dialog';
 import type { RuiHeadingProps } from './components/ui/heading/heading';
 import type { RuiHeadlineProps } from './components/ui/headline/headline';
 import type { RuiInputProps } from './components/ui/input/input';
+import { RuiMeter } from './components/ui/meter/meter';
 import type { RuiNumberFieldInputProps } from './components/ui/number-field/number-field';
 import type { RuiSelectSearchProps, RuiSelectViewProps } from './components/ui/select/select';
 import type { RuiSidebarMenuButtonControlProps, RuiSidebarMenuButtonLinkProps } from './components/ui/sidebar/sidebar';
 import type { RuiTextareaProps } from './components/ui/textarea/textarea';
+import { RuiToast, RuiToaster } from './components/ui/toast/toast';
+import { RuiToc } from './components/ui/toc/toc';
 import type { RuiIconProps } from './lib/icons/types';
 
 type Assert<T extends true> = T;
@@ -101,6 +106,40 @@ const _iconRejectsUndeclared: RuiIconProps = {
 	notAField: true,
 };
 
+/**
+ * A Derived Tree host's first `render()` replaces its children, so its view rejects them.
+ *
+ * @remarks
+ * Written as JSX body children on a tag with no attributes: that is the shape TypeScript
+ * does not report as an excess property, so only a `children?: never` prop catches it.
+ */
+const hint = <p>Hint</p>;
+// @ts-expect-error the date input renders its own segments
+const _dateInputRejectsChildren = <RuiDateInput>{hint}</RuiDateInput>;
+// @ts-expect-error the calendar renders its own month grid
+const _calendarRejectsChildren = <RuiCalendar>{hint}</RuiCalendar>;
+// @ts-expect-error the toaster renders its own toast stack
+const _toasterRejectsChildren = <RuiToaster>{hint}</RuiToaster>;
+// @ts-expect-error the toast renders its own surface
+const _toastRejectsChildren = <RuiToast>{hint}</RuiToast>;
+// @ts-expect-error the table of contents renders its own link list
+const _tocRejectsChildren = <RuiToc>{hint}</RuiToc>;
+// @ts-expect-error the meter renders its own label, bar and readout
+const _meterRejectsChildren = <RuiMeter>{hint}</RuiMeter>;
+
+// @ts-expect-error the intrinsic date input renders its own segments
+const _dateInputIntrinsicRejectsChildren = <rui-date-input>{hint}</rui-date-input>;
+// @ts-expect-error the intrinsic calendar renders its own month grid
+const _calendarIntrinsicRejectsChildren = <rui-calendar>{hint}</rui-calendar>;
+// @ts-expect-error the intrinsic toaster renders its own toast stack
+const _toasterIntrinsicRejectsChildren = <rui-toaster>{hint}</rui-toaster>;
+// @ts-expect-error the intrinsic toast renders its own surface
+const _toastIntrinsicRejectsChildren = <rui-toast>{hint}</rui-toast>;
+// @ts-expect-error the intrinsic table of contents renders its own link list
+const _tocIntrinsicRejectsChildren = <rui-toc>{hint}</rui-toc>;
+// @ts-expect-error the intrinsic meter renders its own label, bar and readout
+const _meterIntrinsicRejectsChildren = <rui-meter>{hint}</rui-meter>;
+
 void [
 	_selectHostBindingsAccepted,
 	_selectPropValueRejectsNumber,
@@ -124,4 +163,16 @@ void [
 	_selectSearchAcceptsIntrinsicAttributes,
 	_dialogCloseAcceptsIntrinsicAttributes,
 	_iconRejectsUndeclared,
+	_dateInputRejectsChildren,
+	_calendarRejectsChildren,
+	_toasterRejectsChildren,
+	_toastRejectsChildren,
+	_tocRejectsChildren,
+	_meterRejectsChildren,
+	_dateInputIntrinsicRejectsChildren,
+	_calendarIntrinsicRejectsChildren,
+	_toasterIntrinsicRejectsChildren,
+	_toastIntrinsicRejectsChildren,
+	_tocIntrinsicRejectsChildren,
+	_meterIntrinsicRejectsChildren,
 ];

@@ -3,6 +3,7 @@ import { createBoundaryMarker } from './dom-render/dom-operations.ts';
 import { captureFocusSnapshot, restoreFocusSnapshot } from './dom-render/focus-snapshot.ts';
 import { hydrateIterableRoot } from './dom-render/hydration-iterable.ts';
 import { hydrateTemplateInstance } from './dom-render/hydration.ts';
+import { canAdoptMarkerlessTemplate, fillsRenderedElement } from './dom-render/hydration-mounted-range.ts';
 import { disposeMountedRoot } from './dom-render/mounted-disposal.ts';
 import {
 	flushDeferredProperties,
@@ -106,7 +107,8 @@ export function hydrate(element: JsxRenderable, target: HTMLElement): void {
  * Reconnects SSR DOM for a template or iterable root.
  *
  * Other shapes — including primitives and leftover marker trees — return
- * `undefined` so {@link hydrate} can fall back to a full client render. Reactive
+ * `undefined` so {@link hydrate} can fall back to a full client render, as does a
+ * custom-element root it cannot hydrate ({@link fillsRenderedElement}). Reactive
  * wrappers are unwrapped by the caller before this runs.
  *
  * @returns The reconnected range content, or `undefined` when the DOM cannot be recovered.
@@ -119,7 +121,11 @@ function reconnectSsrRoot(
 	const nextValue = unwrapKeyedValue(element);
 
 	if (isTemplateResultLike(nextValue)) {
-		if (!hasHydrationMarkers(target)) {
+		const hasMarkers = containsHydrationMarkers(target);
+		const canAdoptMarkerless =
+			!hasMarkers && canAdoptMarkerlessTemplate(nextValue, target, (root) => ROOT_RENDER_STATE.has(root));
+
+		if ((!hasMarkers && !canAdoptMarkerless) || fillsRenderedElement(nextValue)) {
 			return undefined;
 		}
 
@@ -128,7 +134,7 @@ function reconnectSsrRoot(
 	}
 
 	if (isIterableRenderable(nextValue)) {
-		if (!hasHydrationMarkers(target)) {
+		if (!containsHydrationMarkers(target)) {
 			return undefined;
 		}
 
@@ -136,6 +142,15 @@ function reconnectSsrRoot(
 	}
 
 	return undefined;
+}
+
+/**
+ * @remarks Unlike {@link hasHydrationMarkers}, counts the markers inside nested custom elements: a view whose
+ * only bindings are on the custom elements it renders leaves none of its own, and those elements are still
+ * adopted.
+ */
+function containsHydrationMarkers(target: HTMLElement): boolean {
+	return visitHydrationBindingMarkers(target, () => undefined, true);
 }
 
 function getOrCreateMountedRoot(target: HTMLElement): MountedRoot {

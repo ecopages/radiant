@@ -64,5 +64,6 @@ focusHeading() {
 ## Notes
 
 - `@querySlot` returns elements only. Text nodes in projected content are ignored.
-- Cache invalidation follows slot projection changes, including later direct-host child mutations.
+- Cache invalidation follows slot projection changes: later direct-host child mutations on a host whose **Authored Children** were written as HTML, and every render of a host that receives a **Children Value**.
+- On a host that receives a **Children Value**, the default slot returns the top-level elements that value rendered to, and a named slot returns nothing: named regions are properties there. See [Slots](/docs/components/slots).
 - Use [@query](/docs/decorators/query) for selector or `data-ref` queries over the rendered light DOM subtree.

@@ -125,14 +125,17 @@ export function jsxs<Props extends object>(
  * Development JSX entrypoint used by toolchains that emit `jsxDEV(...)` calls.
  *
  * @remarks
- * Matches the automatic JSX signature: `(type, props, key, ...)`.
+ * Matches the automatic JSX signature: `(type, props, key, isStaticChildren, ...)`. Static children, the ones the
+ * production transform passes to {@link jsxs}, get the same per-sibling slots, so development and production builds
+ * build the same template shape.
  */
 export function jsxDEV<Props extends object>(
 	type: string | JsxFragment | JsxComponent<Props>,
 	props: Props,
 	key?: JsxKey,
+	isStaticChildren?: boolean,
 ): JsxRenderable {
-	return jsx(type, props, key);
+	return (isStaticChildren ? jsxs : jsx)(type, props, key);
 }
 
 /**

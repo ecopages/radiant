@@ -207,6 +207,8 @@ export function serializeBindingDescriptor(kind: BindingKind, name: string): str
  * Attributes are iterated in reverse index order so that callers may safely call
  * `removeAttribute` inside `visit` without corrupting the live `NamedNodeMap`.
  *
+ * @param intoCustomElements Also walk nested custom elements, whose markers belong to their own namespaces.
+ *
  * @remarks
  * Incomplete SSR DOM shims may omit a real `NamedNodeMap`/`HTMLCollection`. Those
  * hosts have no Attr markers to recover, so the walk is a no-op.
@@ -214,6 +216,7 @@ export function serializeBindingDescriptor(kind: BindingKind, name: string): str
 export function visitHydrationBindingMarkers(
 	target: HTMLElement,
 	visit: (element: Element, attribute: Attr) => void,
+	intoCustomElements = false,
 ): boolean {
 	if (!isNamedNodeMapLike(target.attributes)) {
 		return false;
@@ -234,7 +237,7 @@ export function visitHydrationBindingMarkers(
 			visit(element, attribute);
 		}
 
-		if (element !== target && shouldSkipHydrationSubtree(element.localName)) {
+		if (!intoCustomElements && element !== target && shouldSkipHydrationSubtree(element.localName)) {
 			return;
 		}
 

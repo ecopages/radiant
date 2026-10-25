@@ -1,5 +1,12 @@
-import { hasHydrationMarkers, hydrate as hydrateJsx, render as renderJsx, type JsxRenderable } from '@ecopages/jsx';
+import {
+	hasHydrationMarkers,
+	hydrate as hydrateJsx,
+	isKeyedJsxValue,
+	render as renderJsx,
+	type JsxRenderable,
+} from '@ecopages/jsx';
 import { isMinimalDomElement } from './minimal-dom-identity';
+import { areJsxDevWarningsEnabled } from '../helpers/dev-warnings';
 import {
 	createReactiveComputed,
 	createReactiveWatcher,
@@ -14,6 +21,7 @@ import {
 	collectAuthoredHydrationScriptMarkup,
 	captureProjectedSlotRenderables,
 	deserializeProjectedSlotRenderables,
+	isTemplateResultLike,
 	resolveSlotProjection,
 	serializeProjectedSlotRenderables,
 	takeSlotProjectionScriptPayload,
@@ -24,9 +32,21 @@ export type RenderRuntimeHost = HTMLElement & {
 	requestUpdate(): void;
 };
 
+/**
+ * Owns a render-owning host's render and the content its `<slot>` elements resolve against.
+ *
+ * @remarks Slot content has one of two sources. A host that a JSX view creates receives a Children Value
+ * ({@link setChildrenValue}): `<slot />` resolves to it, named slots to their fallback, and only this host's
+ * renderer touches the resulting nodes. Any other host takes its Authored Children: they are
+ * captured once at first render, from the SSR slot-projection payload when present, and nodes appended to the
+ * host later are projected too.
+ */
 export class RenderRuntime {
 	#host: RenderRuntimeHost;
 	#projectedSlotContent = new Map<string, JsxRenderable[]>();
+	#hasChildrenValue = false;
+	#childrenValue: JsxRenderable = null;
+	#childrenBounds?: [Text, Text];
 	#renderSignal?: ReactiveComputed<{ containsSlots: boolean; value: JsxRenderable }>;
 	readonly #renderWatcher: ReactiveWatcher;
 	#slotProjectionObserver?: MutationObserver;
@@ -59,7 +79,26 @@ export class RenderRuntime {
 		return this.#projectedSlotContent.size > 0;
 	}
 
+	/**
+	 * @remarks For a host that receives a Children Value, the default slot's elements are the top-level elements
+	 * that value rendered to, and named slots are always empty. Before the first client render there are none.
+	 */
 	getSlotElements<T extends Element = Element>(name?: string): T[] {
+		if (this.#hasChildrenValue) {
+			const elements: T[] = [];
+			const [start, end] = this.#childrenBounds ?? [];
+
+			if (name) {
+				return elements;
+			}
+
+			for (let node = start?.nextSibling; node && node !== end; node = node.nextSibling) {
+				if (node instanceof Element) elements.push(node as T);
+			}
+
+			return elements;
+		}
+
 		this.ensureSlotProjectionState();
 
 		return (this.#projectedSlotContent.get(name ?? DEFAULT_SLOT_NAME) ?? []).filter(
@@ -83,25 +122,31 @@ export class RenderRuntime {
 	}
 
 	hydrate(renderTarget: HTMLElement): void {
-		this.disconnectSlotProjectionObserver();
-
-		try {
-			hydrateJsx(this.resolveTrackedRenderOutput().value, renderTarget);
-		} finally {
-			this.#hasMounted = true;
-			this.observeSlotProjection();
-		}
+		this.commit(hydrateJsx, renderTarget);
 	}
 
 	render(renderTarget: HTMLElement): void {
-		this.disconnectSlotProjectionObserver();
+		this.commit(renderJsx, renderTarget);
+	}
+
+	holdsChildrenValue(value: JsxRenderable): boolean {
+		return this.#hasChildrenValue && this.#childrenValue === value;
+	}
+
+	/**
+	 * Makes `value` the host's children, as a JSX view passed them. From then on the host no longer captures
+	 * or projects its DOM children.
+	 */
+	setChildrenValue(value: JsxRenderable): void {
+		this.#hasChildrenValue = true;
+		this.#childrenValue = value;
+		this.#projectedSlotContent.clear();
 
 		try {
-			renderJsx(this.resolveTrackedRenderOutput().value, renderTarget);
-		} finally {
-			this.#hasMounted = true;
-			this.observeSlotProjection();
-		}
+			if (process.env.NODE_ENV !== 'production' && areJsxDevWarningsEnabled()) {
+				warnSlotAttributeInChildren(this.#host, value);
+			}
+		} catch {}
 	}
 
 	observeSlotProjection(): void {
@@ -165,7 +210,7 @@ export class RenderRuntime {
 	 * so the marker walk is skipped for those hosts.
 	 */
 	private ensureSlotProjectionState(): void {
-		if (this.#projectedSlotContent.size > 0) {
+		if (this.#hasChildrenValue || this.#projectedSlotContent.size > 0) {
 			return;
 		}
 
@@ -182,12 +227,28 @@ export class RenderRuntime {
 			this.#host.childNodes.length > 0 &&
 			(isMinimalDomElement(this.#host) || !hasHydrationMarkers(this.#host))
 		) {
+			try {
+				if (process.env.NODE_ENV !== 'production' && areJsxDevWarningsEnabled()) {
+					warnLateDefinition(this.#host);
+				}
+			} catch {}
+
 			this.#projectedSlotContent = captureProjectedSlotRenderables(this.#host);
 			this.#slotProjectionVersion += 1;
 		}
 	}
 
 	private handleSlotProjectionMutations(records: MutationRecord[]): void {
+		if (this.#hasChildrenValue) {
+			try {
+				if (process.env.NODE_ENV !== 'production' && areJsxDevWarningsEnabled()) {
+					warnAppendedNodes(this.#host, records);
+				}
+			} catch {}
+
+			return;
+		}
+
 		let hasProjectionChanges = false;
 
 		for (const record of records) {
@@ -271,9 +332,108 @@ export class RenderRuntime {
 		return false;
 	}
 
+	/**
+	 * @remarks A host fed by a view gets a new slot projection version on every commit, since each one can
+	 * change what its children rendered to.
+	 */
+	private commit(mount: (value: JsxRenderable, target: HTMLElement) => void, renderTarget: HTMLElement): void {
+		this.disconnectSlotProjectionObserver();
+
+		try {
+			mount(this.resolveTrackedRenderOutput().value, renderTarget);
+		} finally {
+			this.#hasMounted = true;
+
+			if (this.#hasChildrenValue) {
+				this.#slotProjectionVersion += 1;
+			}
+
+			this.observeSlotProjection();
+		}
+	}
+
+	/**
+	 * @remarks For a host that receives a Children Value, `<slot />` resolves to that value, or to its fallback
+	 * when the value is empty. On the client the children render between two empty text nodes this runtime keeps, so
+	 * {@link getSlotElements} can find what they rendered to.
+	 */
 	private resolveRenderOutput(): { containsSlots: boolean; value: JsxRenderable } {
 		this.ensureSlotProjectionState();
-		return resolveSlotProjection(this.#host.render(), this.#projectedSlotContent);
+		const value = this.#childrenValue;
+		let content = this.#projectedSlotContent;
+
+		if (this.#hasChildrenValue && value !== null && value !== undefined && value !== '') {
+			if (this.#host.isConnected) {
+				const [start, end] = (this.#childrenBounds ??= [
+					document.createTextNode(''),
+					document.createTextNode(''),
+				]);
+				content = new Map([[DEFAULT_SLOT_NAME, [start, value, end]]]);
+			} else {
+				content = new Map([[DEFAULT_SLOT_NAME, [value]]]);
+			}
+		}
+
+		return resolveSlotProjection(this.#host.render(), content);
+	}
+}
+
+const issuedWarnings = new Set<string>();
+
+/**
+ * @remarks
+ * Development-only: callers wrap the call in `try { if (process.env.NODE_ENV !== 'production') { ... } } catch {}`,
+ * so the app's bundler drops it in production and a page without `process` does not throw (see the package README).
+ */
+function warnOnce(host: HTMLElement, message: string): void {
+	const warning = `[@ecopages/radiant] <${host.localName}> ${message}`;
+
+	if (!issuedWarnings.has(warning)) {
+		issuedWarnings.add(warning);
+		console.warn(warning);
+	}
+}
+
+/** @remarks A JSX child marked `slot="name"` still fills the default slot of a host fed by a view. */
+function warnSlotAttributeInChildren(host: HTMLElement, value: JsxRenderable): void {
+	const child = isKeyedJsxValue(value) ? value.value : value;
+
+	if (Array.isArray(child)) {
+		child.forEach((entry: JsxRenderable) => warnSlotAttributeInChildren(host, entry));
+	} else if (isTemplateResultLike(child)) {
+		const { parts, values } = child;
+		const name = values[parts.findIndex((part) => part.type === 'attribute' && part.name === 'slot')];
+
+		if (typeof name === 'string') {
+			warnOnce(
+				host,
+				`fills its default slot with a JSX child marked slot="${name}"; pass it as the ${name} property.`,
+			);
+		}
+	}
+}
+
+/**
+ * @remarks The host's renderer always inserts before a range marker it keeps inside the host, so a node it
+ * places never ends up last. A node appended with DOM APIs does; nodes inserted elsewhere go unreported.
+ */
+function warnAppendedNodes(host: HTMLElement, records: readonly MutationRecord[]): void {
+	if (records.some((record) => Array.from(record.addedNodes).some((node) => node === host.lastChild))) {
+		warnOnce(host, 'ignores appended nodes; change its children in the parent view.');
+	}
+}
+
+/**
+ * @remarks A JSX renderer leaves empty text nodes around the ranges it owns, and the HTML parser never
+ * creates one, so finding one at capture means a view rendered the children before the tag was defined. The
+ * server's light DOM is skipped: it builds an empty text node for an empty string child.
+ */
+function warnLateDefinition(host: HTMLElement): void {
+	if (
+		!isMinimalDomElement(host) &&
+		Array.from(host.childNodes).some((node) => node.nodeType === Node.TEXT_NODE && !node.textContent)
+	) {
+		warnOnce(host, 'was defined after a JSX view rendered it, so it treats its children as Authored Children.');
 	}
 }
 

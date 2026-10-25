@@ -55,3 +55,16 @@ export const HYDRATE_SCRIPT_HTML = '<script data-radiant-jsx-bind-0="attr:type" 
 export const HYDRATE_KEYED_INPUTS_HTML =
 	'<input data-radiant-jsx-bind-0="attr:id" id="a" data-radiant-jsx-bind-1="attr:type" type="text">' +
 	'<input data-radiant-jsx-bind-2="attr:id" id="b" data-radiant-jsx-bind-3="attr:type" type="text">';
+
+export const HYDRATE_FRAGMENT_HOLE_HTML =
+	'<main><button data-radiant-jsx-bind-0="attr:class" class="save">Save</button></main>';
+
+export const HYDRATE_EMPTY_LIST_HTML = '<section data-radiant-jsx-bind-0="attr:class" class="list"></section>';
+
+export const HYDRATE_ROOT_HOLES_HTML = '<b data-radiant-jsx-bind-0="attr:class" class="tail">tail</b>';
+
+export const HYDRATE_ROOT_LIST_HTML =
+	'<li data-radiant-jsx-bind-0="attr:class" class="a">a</li>' +
+	'<b data-radiant-jsx-bind-1="attr:class" class="tail">tail</b>';
+
+export const HYDRATE_ROOT_EMPTY_ROWS_HTML = '<h1 data-radiant-jsx-bind-0="attr:class" class="title">Rows</h1>';

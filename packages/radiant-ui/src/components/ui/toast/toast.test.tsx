@@ -1,6 +1,6 @@
-import { describe, expect, it, afterEach } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createRoot, type JsxRenderable, type JsxRoot } from '@ecopages/jsx';
-import { RuiToaster, toast, TOAST_COLLAPSED_PEEK, TOAST_GAP, TOAST_POSITIONS } from './index';
+import { RuiToaster, toast, TOAST_COLLAPSED_PEEK, TOAST_EXIT_MS, TOAST_GAP, TOAST_POSITIONS } from './index';
 import { collapsedStackHeight } from './stack-layout';
 import type { RuiToast } from './toast.script';
 import { resetToastDeadlines } from './toast.script';
@@ -27,6 +27,13 @@ async function settled(): Promise<void> {
 	await customElements.whenDefined('rui-toaster');
 	await customElements.whenDefined('rui-toast');
 	await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve(undefined))));
+}
+
+async function settledToasts(host: ParentNode): Promise<void> {
+	await settled();
+	await vi.waitFor(() => {
+		expect(toastElements(host).every((element) => element.dataset.mounted === 'true')).toBe(true);
+	});
 }
 
 function toastElements(host: ParentNode): HTMLElement[] {
@@ -193,7 +200,7 @@ describe('rui-toaster', () => {
 		await settled();
 
 		toast('Remount me');
-		await settled();
+		await settledToasts(host);
 
 		const el = host.querySelector('rui-toast') as RuiToast | null;
 		expect(el).not.toBeNull();
@@ -201,9 +208,9 @@ describe('rui-toaster', () => {
 		await new Promise((resolve) => setTimeout(resolve, 300));
 		el!.disconnectedCallback();
 		el!.connectedCallback();
-		await settled();
+		await settledToasts(host);
 
-		await new Promise((resolve) => setTimeout(resolve, 650));
+		await new Promise((resolve) => setTimeout(resolve, 650 + TOAST_EXIT_MS));
 		await settled();
 
 		expect(host.querySelectorAll('rui-toast').length).toBe(0);
@@ -300,24 +307,23 @@ describe('rui-toaster', () => {
 		await settled();
 
 		toast('Held on hover');
-		await settled();
+		await settledToasts(host);
 
 		await new Promise((resolve) => setTimeout(resolve, 200));
 
 		const toaster = host.querySelector('rui-toaster') as unknown as {
 			interacting: boolean;
-			expanded: boolean;
 			syncPauseState: () => void;
 		};
 
-		toaster.expanded = true;
+		toaster.interacting = true;
 		toaster.syncPauseState();
 
 		await new Promise((resolve) => setTimeout(resolve, 900));
 		await settled();
 		expect(host.querySelectorAll('rui-toast').length).toBe(1);
 
-		toaster.expanded = false;
+		toaster.interacting = false;
 		toaster.syncPauseState();
 
 		await new Promise((resolve) => setTimeout(resolve, 250));

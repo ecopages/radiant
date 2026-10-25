@@ -65,9 +65,11 @@ Returns a `QuerySlotResult<T>` object with a single `.value` getter:
 - When `all` is `true`: returns `T[]`, empty if nothing is projected.
 - When `all` is a `boolean` variable: returns `Element[] | Element | null`, and `createQuerySlot` then takes no type argument.
 
+On a host that receives a **Children Value**, the default slot holds the top-level elements that value rendered to, and a named slot holds nothing.
+
 ## Cache Invalidation
 
-Cached results are automatically invalidated when the host's `slotProjectionVersion` counter changes. This happens when slot content is added, removed, or re-projected. Set `cache: false` to re-query on every `.value` read.
+Cached results are automatically invalidated when the host's `slotProjectionVersion` counter changes. This happens when slot content is added, removed, or re-projected, and on every render of a host that receives a **Children Value**. Set `cache: false` to re-query on every `.value` read.
 
 ```typescript
 const allHeaders = createQuerySlot<HTMLHeadingElement>(this, {
