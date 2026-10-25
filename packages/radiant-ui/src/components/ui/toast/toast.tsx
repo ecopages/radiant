@@ -17,5 +17,5 @@ export function RuiToast({ toastId, ...props }: RuiToastViewProps) {
 	return <rui-toast {...props} toastId={toastId != null ? String(toastId) : undefined} />;
 }
 
-/** @deprecated `RuiToaster` is now the custom-element class. Use `RuiToasterProps` for its JSX props. */
+/** Props for consumers that still use the former `RuiToaster` view export. */
 export type RuiToasterViewProps = WithoutChildren<JsxCustomElementAttributes<RuiToasterElement, RuiToasterProps>>;
