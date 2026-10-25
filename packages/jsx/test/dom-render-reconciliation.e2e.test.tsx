@@ -1387,33 +1387,40 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(container.innerHTML).toBe('<section><p>Count: beta</p></section>');
 	});
 
-	test('does not reuse a root that fell back to client rendering as markerless hydration evidence', async () => {
-		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
-		const container = document.createElement('div');
-		container.innerHTML =
-			`<main><${markerlessResetElementTagName}><section data-radiant-jsx-bind-0="attr:title" title="server">` +
-			'<p>server</p></section></' +
-			`${markerlessResetElementTagName}></main>`;
-		document.body.append(container);
+	for (const mode of ['hydrate', 'render'] as const) {
+		test(`does not reuse a root after ${mode} as markerless hydration evidence`, async () => {
+			const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+			const container = document.createElement('div');
+			container.innerHTML =
+				`<main><${markerlessResetElementTagName}><section data-radiant-jsx-bind-0="attr:title" title="server">` +
+				'<p>server</p></section></' +
+				`${markerlessResetElementTagName}></main>`;
+			document.body.append(container);
 
-		const serverHost = container.querySelector(markerlessResetElementTagName) as HTMLElement;
-		const childRoot = createRoot(serverHost);
+			const serverHost = container.querySelector(markerlessResetElementTagName) as HTMLElement;
+			const childRoot = createRoot(serverHost);
 
-		childRoot.hydrate(jsx('section', { title: 'server', children: jsx('p', { children: 'server' }) }));
-		childRoot.hydrate(jsx('section', { title: 'client', children: 'client' }));
+			childRoot.hydrate(jsx('section', { title: 'server', children: jsx('p', { children: 'server' }) }));
 
-		createRoot(container).hydrate(
-			jsx('main', {
-				children: jsx(markerlessResetElementTagName, { children: jsx('p', { children: 'authored' }) }),
-			}),
-		);
+			if (mode === 'hydrate') {
+				childRoot.hydrate(jsx('section', { title: 'client', children: 'client' }));
+			} else {
+				childRoot.render(jsx('section', { title: 'client', children: 'client' }));
+			}
 
-		expect(container.querySelector(markerlessResetElementTagName)).not.toBe(serverHost);
-		expect(container.innerHTML).toBe(
-			`<main><${markerlessResetElementTagName}><p>authored</p></${markerlessResetElementTagName}></main>`,
-		);
-		container.remove();
-	});
+			createRoot(container).hydrate(
+				jsx('main', {
+					children: jsx(markerlessResetElementTagName, { children: jsx('p', { children: 'authored' }) }),
+				}),
+			);
+
+			expect(container.querySelector(markerlessResetElementTagName)).not.toBe(serverHost);
+			expect(container.innerHTML).toBe(
+				`<main><${markerlessResetElementTagName}><p>authored</p></${markerlessResetElementTagName}></main>`,
+			);
+			container.remove();
+		});
+	}
 
 	test('hydrate inserts empty text nodes of a child list, which the server markup has no node for', async () => {
 		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);

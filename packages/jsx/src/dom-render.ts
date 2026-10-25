@@ -51,10 +51,7 @@ export interface JsxRoot {
  */
 export function render(element: JsxRenderable, target: HTMLElement): void {
 	const existingRoot = ROOT_RENDER_STATE.get(target);
-
-	if (!existingRoot) {
-		HYDRATED_ROOT_TARGETS.delete(target);
-	}
+	HYDRATED_ROOT_TARGETS.delete(target);
 
 	const focusSnapshot = captureFocusSnapshot(target);
 	const deferredProperties: DeferredPropertyBinding[] = [];
