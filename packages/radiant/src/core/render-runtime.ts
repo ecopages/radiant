@@ -149,6 +149,18 @@ export class RenderRuntime {
 		} catch {}
 	}
 
+	/** Warns when first-connect hydration finds nested-host markup still waiting for its parent's Children Value. */
+	warnIfMissingChildrenValue(): void {
+		try {
+			if (process.env.NODE_ENV !== 'production' && areJsxDevWarningsEnabled() && !this.#hasChildrenValue) {
+				warnOnce(
+					this.#host,
+					'was server-rendered inside another host view but has not received its Children Value; define its parent host on the client.',
+				);
+			}
+		} catch {}
+	}
+
 	observeSlotProjection(): void {
 		if (typeof MutationObserver === 'undefined' || this.#slotProjectionObserver || !this.#host.isConnected) {
 			return;

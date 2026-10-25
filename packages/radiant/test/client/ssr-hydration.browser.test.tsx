@@ -471,8 +471,10 @@ describe('a nested host that waits for its children', () => {
 		uninstallRadiantHydrator();
 		document.body.innerHTML = '';
 	});
+	afterEach(() => vi.restoreAllMocks());
 
 	test('runs onConnected after it hydrates when its tag is defined before its parent', async () => {
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 		installRadiantHydrator();
 		const { prefix, log } = mountLifecycle();
 		const serverChild = document.querySelector(`${prefix}-child`);
@@ -482,6 +484,11 @@ describe('a nested host that waits for its children', () => {
 		await settle();
 
 		expect(log).toEqual(['child:connected']);
+		expect(warn).toHaveBeenCalledWith(
+			expect.stringContaining(
+				`<${prefix}-child> was server-rendered inside another host view but has not received its Children Value; define its parent host on the client.`,
+			),
+		);
 
 		defineLifecycleParent(prefix, log);
 		await waitFor(() => expect(hasHydrationMarkers(document.body)).toBe(false));
@@ -515,6 +522,7 @@ describe('a nested host that waits for its children', () => {
 	});
 
 	test('renders once when its parent is defined first', async () => {
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 		installRadiantHydrator();
 		const { prefix, log } = mountLifecycle();
 
@@ -525,6 +533,7 @@ describe('a nested host that waits for its children', () => {
 
 		expect(log.filter((entry) => entry === 'child:render')).toHaveLength(1);
 		expect(log).toContain('child:onConnected hydrated=true');
+		expect(warn).not.toHaveBeenCalled();
 	});
 
 	test('keeps its server nodes when it requests a render while it waits', async () => {
@@ -549,6 +558,7 @@ describe('a nested host that waits for its children', () => {
 	});
 
 	test('stays inert server markup while its parent never renders on the client', async () => {
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 		installRadiantHydrator();
 		const { prefix, log } = mountLifecycle();
 
@@ -559,6 +569,11 @@ describe('a nested host that waits for its children', () => {
 		expect(log).toEqual(['child:connected']);
 		expect(child.isServerRendered).toBe(true);
 		expect(hasHydrationMarkers(child)).toBe(true);
+		expect(warn).toHaveBeenCalledWith(
+			expect.stringContaining(
+				`<${prefix}-child> was server-rendered inside another host view but has not received its Children Value; define its parent host on the client.`,
+			),
+		);
 	});
 
 	test('hydrates after a disconnect and reconnect while it waits', async () => {

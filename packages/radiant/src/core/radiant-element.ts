@@ -379,6 +379,10 @@ export class RadiantElement<Bindings extends object = {}>
 			this.isFirstConnectPending = false;
 
 			if (this.isConnected) {
+				if (this.awaitsChildren) {
+					this.getOrCreateRenderRuntime().warnIfMissingChildrenValue();
+				}
+
 				this.runConnectSync();
 			}
 		});
