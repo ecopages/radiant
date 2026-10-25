@@ -126,15 +126,15 @@ export function disposeMountedRangeContent(mounted: MountedRangeContent): void {
 			disposeTemplateInstance(mounted.instance);
 			return;
 
-		case 'indexed-list':
-			for (const record of mounted.records) {
+		case 'keyed-list':
+			for (const record of mounted.records.values()) {
 				disposeMountedRangeContent(record.mounted);
 			}
 			return;
 
-		case 'keyed-list':
-			for (const record of mounted.records.values()) {
-				disposeMountedRangeContent(record.mounted);
+		case 'mixed-list':
+			for (const entry of mounted.entries) {
+				disposeMountedRangeContent(entry.record.mounted);
 			}
 			return;
 

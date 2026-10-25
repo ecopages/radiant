@@ -201,18 +201,6 @@ export type MountedRangeRecord = {
 };
 
 /**
- * Mounted state for a child range that contains an ordered, position-stable list of
- * sub-ranges.
- *
- * Positions are reconciled by index, so DOM ownership tracks slot position rather than
- * child identity. Extra records are removed when the list shrinks.
- */
-export type MountedIndexedList = {
-	kind: 'indexed-list';
-	records: MountedRangeRecord[];
-};
-
-/**
  * Mounted state for a child range that contains a keyed list of sub-ranges.
  *
  * Each entry in `records` is owned by the child that produced a matching key.
@@ -223,6 +211,25 @@ export type MountedIndexedList = {
 export type MountedKeyedList = {
 	kind: 'keyed-list';
 	records: Map<JsxKey, MountedRangeRecord>;
+};
+
+/** A positional list entry whose keyed children can still be matched by key on later passes. */
+export type MountedMixedListEntry = {
+	key?: JsxKey;
+	record: MountedRangeRecord;
+};
+
+/**
+ * Mounted state for a list that mixes keyed and positional children.
+ *
+ * Positional entries keep their slot record, while keyed entries are matched by
+ * their key even when a positional sibling appears or disappears around them.
+ */
+export type MountedMixedList = {
+	entries: MountedMixedListEntry[];
+	/** Whether an entry has a key, so the next update must match entries by key. */
+	keyed?: boolean;
+	kind: 'mixed-list';
 };
 
 /**
@@ -272,8 +279,8 @@ export type ReactiveChildSource = SignalLike | SubscribableJsxValue;
  */
 export type MountedRangeContent =
 	| MountedEmpty
-	| MountedIndexedList
 	| MountedKeyedList
+	| MountedMixedList
 	| MountedNodes
 	| MountedSubscription
 	| MountedTemplate

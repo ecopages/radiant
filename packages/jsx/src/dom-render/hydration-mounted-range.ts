@@ -1,5 +1,6 @@
 import { countHydrationMarkers } from '../hydration/hydration-bindings.ts';
 import { shouldSkipHydrationSubtree } from '../hydration/hydration-subtree-policy.ts';
+import { isKeyedJsxValue } from '../types/renderable-guards.ts';
 import { hydrateTemplateInstance } from './hydration.ts';
 import { takesChildrenValue } from '../factory/jsx-factory.ts';
 import { getCompiledTemplate } from './template-compiler.ts';
@@ -21,8 +22,8 @@ import {
 } from './runtime-helpers.ts';
 import type {
 	DeferredPropertyBinding,
-	MountedIndexedList,
 	MountedKeyedList,
+	MountedMixedList,
 	MountedRangeContent,
 	MountedRangeRecord,
 	TemplateInstance,
@@ -438,16 +439,16 @@ function hydrateListRangeContent(
 	existingNodes: readonly Node[],
 	rootTarget: HTMLElement,
 	bindingBaseIndex: number,
-): MountedIndexedList | MountedKeyedList | undefined {
+): MountedKeyedList | MountedMixedList | undefined {
 	const keyedChildren = getKeyedChildren(children);
-	const indexedRecords: MountedRangeRecord[] = [];
 	const keyedRecords = new Map<JsxKey, MountedRangeRecord>();
+	const mixedEntries: MountedMixedList['entries'] = [];
 	const adopted: MountedRangeRecord[] = [];
 	let nextNodeIndex = 0;
 	let nextBindingIndex = bindingBaseIndex;
 
-	for (const [index, child] of children.entries()) {
-		const keyedChild = keyedChildren?.[index];
+	for (const child of children) {
+		const keyedChild = isKeyedJsxValue(child) ? child : undefined;
 		const childValue = keyedChild ? keyedChild.value : child;
 		const childNodeCount = countHydratedRangeNodes(childValue);
 		const childNodes = existingNodes.slice(nextNodeIndex, nextNodeIndex + childNodeCount);
@@ -477,10 +478,9 @@ function hydrateListRangeContent(
 
 		if (keyedChild) {
 			keyedRecords.set(keyedChild.key, record);
-			continue;
 		}
 
-		indexedRecords.push(record);
+		mixedEntries.push({ key: keyedChild?.key, record });
 	}
 
 	if (nextNodeIndex !== existingNodes.length) {
@@ -490,7 +490,7 @@ function hydrateListRangeContent(
 
 	return keyedChildren
 		? { kind: 'keyed-list', records: keyedRecords }
-		: { kind: 'indexed-list', records: indexedRecords };
+		: { entries: mixedEntries, kind: 'mixed-list' };
 }
 
 function disposeHydratedListRecords(records: readonly MountedRangeRecord[]): void {

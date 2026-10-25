@@ -351,7 +351,7 @@ const nextLabel = shouldShowLabel ? 'Ready' : null;
 return <p>{nextLabel}</p>;
 ```
 
-A child expression keeps its place in the template whatever value it holds, so the template shape follows the authored markup. `null`, `undefined`, `false` or an empty list leaves an empty range. A fragment with several children resolves to one entry per child, with `null` for an empty one, and a list keeps one entry per item, with nested lists as nested entries. When every filled item, nested lists included, is keyed, the list flattens to its keyed items and reconciles by key. Showing, hiding or emptying a child patches that range only: the element around it and its siblings keep their nodes. One exception: an unkeyed item that comes and goes in the same list or fragment as keyed items switches that list between keyed and positional reconciliation, which rebuilds the keyed items, so give such an item a key too.
+A child expression keeps its place in the template whatever value it holds, so the template shape follows the authored markup. `null`, `undefined`, `false` or an empty list leaves an empty range. A fragment with several children resolves to one entry per child, with `null` for an empty one, and a list keeps one entry per item, with nested lists as nested entries. A nested list is never merged into its parent: a keyed group such as `rows.map(...)` keeps its own range and its nodes whatever its siblings hold, so an unkeyed sibling that fills or empties beside it changes nothing in it, whichever of `jsx`, `jsxs` or `jsxDEV` built it. When every filled item is itself keyed, the list drops its holes and reconciles by key; a list that mixes keyed and unkeyed items matches keyed entries by key and unkeyed entries by position around them. Keys match within one list only: to keep the nodes of items that move between groups, or of a group that another group is inserted before, key the groups too, for example with a keyed `Fragment` around each group. A key that appears twice in one list renders once, at its first position, as in a keyed list. Showing, hiding or emptying a child patches that range only: the element around it and its siblings keep their nodes.
 
 For attributes and bindings:
 
@@ -440,7 +440,7 @@ Adjacent text child bindings that SSR collapses into one text node are split int
 
 Iterable fragment hydration supports lists of intrinsic template children (for example `<> <button/> <span/> </>`), including subscribable child bindings inside those templates and nested lists such as `<>{items.map(renderItem)}<footer/></>`. Each recovered child template stays in the root's ownership tree, so `unmount()` and later replacement renders dispose subscriptions and native listeners.
 
-Keyed identity is retained only when **every** child in the list has a key. A mixed keyed/unkeyed list hydrates as an indexed list and can rebuild nodes on the next render. Bare reactive children at the fragment root and DOM/script child-count mismatches fall back to a full client render. If an earlier sibling had already subscribed when that fallback happens, that sibling is disposed first. Incomplete recovery inside a single template disposes parts that already subscribed before falling back.
+Keyed identity is retained for keyed entries even when a list also has unkeyed entries. A mixed keyed/unkeyed list hydrates with keyed and positional ownership, so a later update does not rebuild keyed nodes when an unkeyed sibling changes. Bare reactive children at the fragment root and DOM/script child-count mismatches fall back to a full client render. If an earlier sibling had already subscribed when that fallback happens, that sibling is disposed first. Incomplete recovery inside a single template disposes parts that already subscribed before falling back.
 
 Global SSR marker indexes are shared across both recovery paths via the binding collection helpers in `hydration-bindings.ts`, so fragment children resolve `data-radiant-jsx-bind-*` attributes against the same namespace used by `renderToString(..., { mode: 'hydrate' })`.
 
@@ -823,7 +823,7 @@ Key types:
 - `SubscribableJsxValue`
 - `TemplateResultLike`
 
-The automatic development runtime also exports `jsxDEV` from `@ecopages/jsx/jsx-dev-runtime`.
+The automatic development runtime also exports `jsxDEV` from `@ecopages/jsx/jsx-dev-runtime`. It passes static children (the ones the production transform hands to `jsxs`) to `jsxs`, so development and production builds give the same template shape.
 
 Server-only exports from `@ecopages/jsx/server` include:
 

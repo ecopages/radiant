@@ -316,9 +316,11 @@ function toChildSlots(children: JsxRenderable | undefined, childSlotMode: ChildS
  * nested list stays one nested entry, so an item's position never depends on the
  * values before it. A value that flipped between a single child and a list, or a list
  * whose positions shifted, would make the renderer rebuild items that did not change.
- * When every filled item, nested ones included, is keyed, the list is the flat keyed
- * items instead: keyed reconciliation matches by key, so positions do not matter, and
- * it needs every entry keyed. An empty list is `null`, like any other empty child.
+ * A nested list is never merged into its parent, even when it is all keyed: a keyed
+ * group such as `rows.map(...)` keeps its own range whatever its siblings hold. When
+ * every filled item is itself keyed, the list is those keyed items without the holes:
+ * keyed reconciliation matches by key, so positions do not matter. An empty list is
+ * `null`, like any other empty child.
  */
 function toChildSlot(child: JsxRenderable | undefined): unknown {
 	if (child === undefined || child === null || child === false) {
@@ -336,8 +338,7 @@ function toChildSlot(child: JsxRenderable | undefined): unknown {
 		return null;
 	}
 
-	const filledLeaves = filledSlots.flat();
-	return filledLeaves.every(isKeyedJsxValue) ? filledLeaves : slots;
+	return filledSlots.every(isKeyedJsxValue) ? filledSlots : slots;
 }
 
 function createTemplateResult(

@@ -10,6 +10,7 @@ import { disposeMountedRangeContent, disposeTemplateInstance } from './mounted-d
 import { createHydratedRangeRecord, mountedContentFromNodes } from './range-records.ts';
 import { materializeIterableChildren } from '../hydration/iterable-snapshot.ts';
 import { getKeyedChildren, unwrapKeyedValue } from './runtime-helpers.ts';
+import { isKeyedJsxValue } from '../types/renderable-guards.ts';
 import type { DeferredPropertyBinding, MountedRangeContent, MountedRangeRecord, TemplateInstance } from './types.ts';
 
 type HydratedIterableChild = {
@@ -31,6 +32,8 @@ function getHydratableChildNodes(target: HTMLElement): readonly ChildNode[] {
  * - static primitive or markup children mixed between templates
  * - nested lists, such as a mapped list beside a sibling, hydrated as ranges
  * - keyed lists of those children, which keep identity across the next render
+ * - mixed keyed and positional lists, which keep keyed identity while positional
+ *   entries reconcile by slot
  *
  * Unsupported shapes fall back to a full client render:
  * - bare reactive child sources at the fragment root without a wrapping template
@@ -110,7 +113,7 @@ export function hydrateIterableRoot(
 		return undefined;
 	}
 
-	return adoptHydratedIterableRoot(hydratedChildren, target, keyedChildren);
+	return adoptHydratedIterableRoot(hydratedChildren, target, jsxChildren, keyedChildren);
 }
 
 function isRangedChild(value: unknown): boolean {
@@ -183,6 +186,7 @@ function disposeHydratedIterableChildren(children: readonly HydratedIterableChil
 function adoptHydratedIterableRoot(
 	children: readonly HydratedIterableChild[],
 	target: HTMLElement,
+	jsxChildren: readonly unknown[],
 	keyedChildren: KeyedJsxValue[] | undefined,
 ): MountedRangeContent {
 	const endMarker = createBoundaryMarker();
@@ -200,12 +204,18 @@ function adoptHydratedIterableRoot(
 
 	endMarker.remove();
 
-	if (!keyedChildren) {
-		return { kind: 'indexed-list', records };
+	if (keyedChildren) {
+		return {
+			kind: 'keyed-list',
+			records: new Map(keyedChildren.map((child, index) => [child.key, records[index]!])),
+		};
 	}
 
 	return {
-		kind: 'keyed-list',
-		records: new Map(keyedChildren.map((child, index) => [child.key, records[index]!])),
+		entries: records.map((record, index) => {
+			const child = jsxChildren[index];
+			return { key: isKeyedJsxValue(child) ? child.key : undefined, record };
+		}),
+		kind: 'mixed-list',
 	};
 }

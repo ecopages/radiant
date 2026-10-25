@@ -1,7 +1,7 @@
 import { installDefaultDevWarningFormatter } from './warnings/jsx-dev-warnings.ts';
-import { Fragment, jsx, jsxs } from './jsx-runtime.ts';
+import { Fragment, jsx, jsxDEV, jsxs } from './jsx-runtime.ts';
 
-export { Fragment, jsx, jsxs, jsx as jsxDEV };
+export { Fragment, jsx, jsxDEV, jsxs };
 
 export {
 	areDevWarningsEnabled,
