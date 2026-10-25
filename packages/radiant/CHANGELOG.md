@@ -1,5 +1,61 @@
 # @ecopages/radiant
 
+## 0.5.1
+
+### Patch Changes
+
+- [#408](https://github.com/ecopages/radiant/pull/408) [`49fb7bc`](https://github.com/ecopages/radiant/commit/49fb7bc6047677635cb54bca72d1407bc4736024) Thanks [@andeeplus](https://github.com/andeeplus)! - Ship Radiant's development warnings in the published package: the delegated `@onEvent` listener on a non-bubbling event such as `focus`, the JSX child marked `slot="name"` and the nodes appended to a host fed by a view, and the tag defined after a view rendered it. The published files now keep the `process.env.NODE_ENV` check, so an app's development build logs these warnings and its production build removes them. A page that loads the files without a bundler gets no warnings and no error.
+
+- [#401](https://github.com/ecopages/radiant/pull/401) [`cf99195`](https://github.com/ecopages/radiant/commit/cf99195398fcea80d4fe305f5478635d56fb15a7) Thanks [@andeeplus](https://github.com/andeeplus)! - A render-owning `RadiantElement` now receives the JSX children a view passes it as a value, when a view creates it on the client and when a host's view renders it in hydrate-mode SSR, and only its own renderer touches the nodes they render to. `<slot />` in its `render()` shows the parent view's edits wherever they happen: added, removed and reordered children, binding updates, and edits made while the host hid its `<slot />`, which used to be lost with range-drift warnings. In hydrate-mode SSR, a host inside another host's view now renders those children itself, in its hydration marker namespace, and no longer ships a slot-projection payload for them. Plain-mode SSR, where the parent may never render on the client, still renders them as children authored as HTML, with the payload.
+
+    **Breaking: named regions in JSX are properties.** A JSX child marked `slot="name"` no longer goes to `<slot name="name">` in a host fed by a view: it stays in the default slot, and development builds warn. To migrate, pass the region as a property and render it where the named slot was:
+
+    ```tsx
+    // Before
+    <x-card>
+    	<h2 slot="header">Title</h2>
+    	<p>Body</p>
+    </x-card>
+    // x-card render(): <header><slot name="header" /></header><main><slot /></main>
+
+    // After
+    <x-card header={<h2>Title</h2>}>
+    	<p>Body</p>
+    </x-card>
+    // x-card: @state header: JsxRenderable = null;
+    // x-card render(): <header>{this.header}</header><main><slot /></main>
+    ```
+
+    An unprefixed name binds as a property on a custom element; use `prop:name` only for a name that binds as an attribute by default, such as `title` or `id`. `<slot name>` still assigns children authored as HTML: markup, DOM-created children, and children rendered on the server outside any host's view or in plain mode.
+
+    **Breaking: a host the server rendered outside every host's view keeps the children it rendered when some fill a named slot.** In hydrate mode the server stamps such a host `data-radiant-ssr="authored"` and ships its children as HTML with a slot-projection payload. A host whose children only fill its default slot is not affected: it takes the page JSX's children as a value, with live bindings. On the client it keeps them, with their named slots, and ignores the children of page-level JSX that hydrates over it: a later render of the page JSX no longer changes them, and event bindings in them do not attach. It used to be rebuilt with the page's children. To keep page-level content changing or interactive after hydration, render it inside a host's view, or pass it to the host through a property.
+
+    Also changed:
+
+    - Nodes appended with DOM APIs to a host fed by a view are no longer projected; they stay where they were put, and development builds warn. Change the children in the parent view instead. Hosts whose children were authored as HTML still project appended nodes.
+    - `getSlotElements()`, `getSlotElement()` and `@querySlot` return the top-level elements a host's children rendered to, and nothing for a named slot, on a host fed by a view.
+    - A tag defined after a view rendered it keeps taking those children as HTML, and development builds warn. Define custom elements before rendering the views that use them.
+    - `@ecopages/jsx` exports `CUSTOM_ELEMENT_CHILDREN_SYMBOL`: a custom element class whose static member under it is `true` receives its JSX children as one value assigned to the element's member under the same key, instead of DOM children.
+
+- [#409](https://github.com/ecopages/radiant/pull/409) [`a212331`](https://github.com/ecopages/radiant/commit/a2123318f90aa39d759de50047ba816bb3653532) Thanks [@andeeplus](https://github.com/andeeplus)! - A render-owning `RadiantElement` inside another host's view now keeps its server-rendered node when the parent hydrates, instead of being replaced by a new client instance. Its view, the children the parent passed it (as JSX children or through a property), focus, selection and typed input survive, the parent no longer builds a second instance of it, and `isServerRendered` reports `true`.
+
+    - In hydrate-mode SSR, a nested host that receives JSX children is stamped `data-radiant-ssr="children"`. With the hydrator installed it stays inert until the parent's view hands it its children (no event bindings; the first `@bindTo` flush, `onConnected()` and `updated()` wait, and so do render requests; a write to a `@bindTo` field still reaches its target), then hydrates, whichever of the two tags is defined first. A nested host whose parent never renders on the client stays inert server markup.
+    - A server-rendered host now hydrates even when its own view has no hydration marker, for example a view whose only bindings are on the hosts it renders.
+    - `hydrate()` from `@ecopages/jsx` keeps the server node of a custom element that takes its children as a value (`CUSTOM_ELEMENT_CHILDREN_SYMBOL`) and binds only that element's own attributes, properties, events and children. It counts hydration markers inside nested custom elements when deciding whether the target holds server output, and inserts empty text nodes of a child list, which the server markup has no node for.
+    - Other custom elements, a tag defined only after the parent hydrated, and server markup that does not match the view are still rendered again by the parent.
+
+- [#436](https://github.com/ecopages/radiant/pull/436) [`7a8d32b`](https://github.com/ecopages/radiant/commit/7a8d32b97e9fb883be3b05c13814d2a45b81d91f) Thanks [@andeeplus](https://github.com/andeeplus)! - Reconnect a markerless page root when a nested element that owns its content through its own client root, such as a custom-element host, has already hydrated or rendered itself, even if it updated since, preserving that element's node, its state and its named-slot content.
+
+- [#422](https://github.com/ecopages/radiant/pull/422) [`78b36b6`](https://github.com/ecopages/radiant/commit/78b36b6ec11f2213136db1d911546139fa0860b3) Thanks [@andeeplus](https://github.com/andeeplus)! - Honor the shared `@ecopages/jsx` development-warning switch for Radiant development warnings.
+
+- [#424](https://github.com/ecopages/radiant/pull/424) [`a806505`](https://github.com/ecopages/radiant/commit/a806505a57bd6f0b36b9eafbb16a61c985f487d0) Thanks [@andeeplus](https://github.com/andeeplus)! - **Breaking (types only): the `rui-meter`, `rui-toc`, `rui-toast`, `rui-toaster`, `rui-date-input` and `rui-calendar` tags reject children.** These tags are rendered by their views and never read children, so a body child is now a type error. To migrate, remove the children, or pass the content through the view's props.
+
+    Also changed: a hydrated element's properties are written once instead of twice, the separator view rejects children like the other views, and the docs and the published typings describe named regions as properties.
+
+- Updated dependencies [[`cf99195`](https://github.com/ecopages/radiant/commit/cf99195398fcea80d4fe305f5478635d56fb15a7), [`6c0c391`](https://github.com/ecopages/radiant/commit/6c0c391f9304fda1156f3241c4d3fdbff68d6c50), [`a212331`](https://github.com/ecopages/radiant/commit/a2123318f90aa39d759de50047ba816bb3653532), [`eb9bbde`](https://github.com/ecopages/radiant/commit/eb9bbde483950e544fdc490c4cf0a660a9cd5a28), [`9ee89f9`](https://github.com/ecopages/radiant/commit/9ee89f964fdffc0f7ae3e9a727a02cff3a306115), [`4f73e51`](https://github.com/ecopages/radiant/commit/4f73e51003ad801448614461528930e2e2b5036d), [`7a8d32b`](https://github.com/ecopages/radiant/commit/7a8d32b97e9fb883be3b05c13814d2a45b81d91f), [`f1bbbf6`](https://github.com/ecopages/radiant/commit/f1bbbf6b8edd833e2b934779857338c5013c83d1), [`a806505`](https://github.com/ecopages/radiant/commit/a806505a57bd6f0b36b9eafbb16a61c985f487d0)]:
+    - @ecopages/jsx@0.5.1
+    - @ecopages/signals@0.5.1
+
 ## 0.5.0
 
 ### Minor Changes
