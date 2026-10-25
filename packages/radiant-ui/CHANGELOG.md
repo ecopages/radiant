@@ -122,7 +122,7 @@ First stable of the Radiant UI catalog: view-owned light-DOM shells, form-associ
 
 - Composite `Rui*` views own chrome and authored children in the light DOM. Custom-element `<slot>` markup from earlier pre-1.0 cuts is not the public API; migrate to the documented view helpers or equivalent light-DOM structure.
 - `FormAssociation` is removed. Form-associated hosts extend `FormAssociatedElement` from `@ecopages/radiant/form-associated-element`.
-- Rui JSX views type the declared root host (`JsxCustomElementAttributes` or `JsxElementProps`). Direct kebab-case ARIA/data attributes take precedence over structured values. Deprecated select/combobox option aliases and mask helper aliases are gone.
+- Rui JSX views type the declared root host (`JsxCustomElementAttributes` or `JsxElementProps`). Direct kebab-case ARIA/data attributes take precedence over structured values. Legacy select/combobox option aliases and mask helper aliases are gone.
 - `RuiTextarea` no longer accepts `size`; height comes from `rows` and the shared control tokens.
 - `@floating-ui/dom` is gone. Tooltips and menu buttons use the in-package floating helper.
 

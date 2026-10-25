@@ -131,13 +131,15 @@ Default pattern — peel view-only fields, spread the rest, lock invariants afte
 
 ```tsx
 import { RuiFoo as RuiFooElement } from './foo.script';
+import type { RuiFooProps } from './foo.script';
+import type { JsxCustomElementAttributes } from '@ecopages/jsx';
 
 ({ children, ...props }: JsxCustomElementAttributes<RuiFooElement, RuiFooProps>) => (
 	<RuiFooElement {...props}>{children}</RuiFooElement>
 );
 ```
 
-A **Derived Tree** view takes no children: the host's first `render()` replaces them. When a wrapper is needed, type its props `WithoutChildren<JsxCustomElementAttributes<RuiFooElement, RuiFooProps>>` (from `src/lib/without-children.ts`, imported by relative path) and spread the full props object onto a self-closing class host (`<RuiMeterElement {...props} />`); a Composition Helper that forwards to such a view uses the same type. `WithoutChildren` adds `children?: never` rather than omitting the key: with no other attributes on the tag, the `data-*` index signature keeps TypeScript from flagging JSX body children, so `Omit` still accepts `<RuiMeter><p /></RuiMeter>`. `src/host-contract.types.tsx` pins this for every Derived Tree host and any retained view.
+A **Derived Tree** view takes no children: the host's first `render()` replaces them. When a wrapper is needed, type its props `WithoutChildren<JsxCustomElementAttributes<RuiFooElement, RuiFooProps>>` (from `src/lib/without-children.ts`, imported by relative path) and spread the full props object onto a self-closing class host (`<RuiMeterElement {...props} />`); a Composition Helper that forwards to such a view uses the same type. `WithoutChildren` adds `children?: never`; omitting that key with `Omit` can let a wrapper accept JSX body children through the `data-*` index signature. Catalog class props use `WithoutChildren` directly, and `src/host-contract.types.tsx` asserts that `<RuiMeter><p /></RuiMeter>` is rejected.
 
 Peel props only when the view must transform or filter them:
 

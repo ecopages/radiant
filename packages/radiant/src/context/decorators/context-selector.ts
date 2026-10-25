@@ -42,8 +42,7 @@ type ContextSelectorDecorator<Selected> = {
  * updated whenever the provider changes. On `RadiantElement` hosts, each
  * update schedules `requestUpdate()` automatically so `render()` stays in sync.
  *
- * **Method form (deprecated — use `@onContextUpdate`):** The method is called
- * with the new value on each change.
+ * **Method form:** The method is called with the new value on each change.
  *
  * @remarks
  * `Selected` comes from `select`, or is the context's value without it. The returned decorator takes it

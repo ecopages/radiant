@@ -315,7 +315,7 @@ First stable of the light-DOM platform. Custom elements render into authored lig
 - Removed `trackReactiveRead`, `registerReactiveDependencyReader`, and the exported `ReactiveField` type. Use `createReactiveField` / `@state`. Host members are `State`; tracking is `State.get()`.
 - Removed the legacy internal-state and property decorator aliases. Use `@state` and `@prop(...)`.
 - SSR boot is `@ecopages/radiant/server/install-ssr-runtime`. Deep imports of `install-ssr-scope-adapters` and `withForcedServerCustomElementRendering` are gone.
-- Removed `@ecopages/radiant/core/reactive-jsx-value` and `@ecopages/radiant/tools/render-jsx-template`. `@ecopages/radiant/server/radiant-element-ssr-bridge` is a deprecated alias of `radiant-element-ssr`.
+- Removed `@ecopages/radiant/core/reactive-jsx-value` and `@ecopages/radiant/tools/render-jsx-template`. The `@ecopages/radiant/server/radiant-element-ssr-bridge` alias points to `radiant-element-ssr`.
 - `render-component` no longer ships fragment HTTP header constants or header-builder helpers.
 
 | Old                                                               | Use instead                                        |
