@@ -31,4 +31,6 @@ export {
 	type TemplateResultLike,
 } from './jsx-runtime.ts';
 
+export type { JSX_PROPS } from './types/index.ts';
+
 export { createRoot, hasHydrationMarkers, hydrate, render, type JsxRoot } from './dom-render.ts';

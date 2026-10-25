@@ -1,15 +1,38 @@
 ---
-title: "JSX Custom Element Types"
-description: "Typing and binding defaults for custom elements in @ecopages/jsx."
+title: 'JSX Custom Element Types'
+description: 'Typing and binding defaults for custom elements in @ecopages/jsx.'
 group: JSX
 order: 3
 ---
 
 # JSX Custom Element Types
 
-When `jsxImportSource` points at `@ecopages/jsx`, custom elements should augment the runtime module instead of the global `JSX` namespace.
+When a custom element class is available, use the class directly in JSX and declare its public props with the `JSX_PROPS` symbol.
+
+## Using The Class
+
+```tsx
+import type { JSX_PROPS } from '@ecopages/jsx';
+
+type UserCardProps = {
+	name: string;
+	isAdmin: boolean;
+};
+
+class UserCard extends HTMLElement {
+	declare readonly [JSX_PROPS]?: UserCardProps;
+}
+
+customElements.define('user-card', UserCard);
+
+<UserCard name="Ada" isAdmin={false} />;
+```
+
+`JSX_PROPS` declares unprefixed public props. Required fields remain required. Explicit `prop:*` bindings use the custom element instance type; `attr:*` bindings use DOM attribute types.
 
 ## Augmenting The Runtime
+
+If JSX uses a tag name without importing the class, augment `JsxCustomIntrinsicElements` in the JSX runtime module.
 
 ```tsx
 import type { JsxCustomElementAttributes } from '@ecopages/jsx';
@@ -26,10 +49,7 @@ declare module '@ecopages/jsx/jsx-runtime' {
 }
 ```
 
-`JsxCustomElementAttributes<Host, Props>` types the element in two layers:
-
-- **`Props`** holds the public, unprefixed JSX props. It keeps its own required and optional fields, so required props stay required.
-- **the host type** backs explicit `prop:*` bindings, which are typed from the element class properties.
+`JsxCustomElementAttributes<Host, Props>` types public unprefixed props from `Props` and explicit `prop:*` bindings from `Host`.
 
 ## Binding Defaults For Custom Elements
 
@@ -42,11 +62,11 @@ This split is deliberate: markup names serialize so SSR output stays meaningful,
 ## Worked Example
 
 ```tsx
-<user-grid id="people" class="panel" items={rows} selection={currentRow} attr:status="ready" prop:api={gridApi} />
+<UserGrid id="people" class="panel" items={rows} selection={currentRow} attr:status="ready" prop:api={gridApi} />
 ```
 
 ```tsx
-import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+import type { JSX_PROPS } from '@ecopages/jsx';
 
 type UserGridRow = {
 	id: string;
@@ -57,18 +77,13 @@ type UserGridProps = {
 	selection?: UserGridRow;
 };
 
-class UserGridElement extends HTMLElement {
-	api?: UserGridApi;
-}
-
 type UserGridApi = {
 	focusRow(id: string): void;
 };
 
-declare module '@ecopages/jsx/jsx-runtime' {
-	interface JsxCustomIntrinsicElements {
-		'user-grid': JsxCustomElementAttributes<UserGridElement, UserGridProps>;
-	}
+class UserGrid extends HTMLElement {
+	declare readonly [JSX_PROPS]?: UserGridProps;
+	api?: UserGridApi;
 }
 
 const rows: UserGridRow[] = [{ id: '1' }];
@@ -77,7 +92,9 @@ const gridApi: UserGridApi = {
 	focusRow: (_id) => undefined,
 };
 
-<user-grid items={rows} selection={currentRow} prop:api={gridApi} />;
+customElements.define('user-grid', UserGrid);
+
+<UserGrid items={rows} selection={currentRow} prop:api={gridApi} />;
 ```
 
 In that example:
@@ -85,7 +102,7 @@ In that example:
 - `items` and `selection` are typed from `UserGridProps` (defaults to property binding on the instance)
 - `id` and `class` are typed and serialized as attributes
 - `attr:status` serializes to markup even though `status` is not an attribute default
-- `prop:api` is typed from `UserGridElement.api` and never serializes to HTML
+- `prop:api` is typed from `UserGrid.api` and never serializes to HTML
 
 ## Design Note: Custom Elements Versus Radiant Hosts
 

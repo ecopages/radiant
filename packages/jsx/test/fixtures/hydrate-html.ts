@@ -19,6 +19,9 @@ export const HYDRATE_BUTTON_ALPHA_HTML =
 
 export const HYDRATE_CARD_ALPHA_HTML = '<section><p>Count: alpha</p></section>';
 
+export const HYDRATE_CLASS_FORM_ELEMENT_HTML =
+	'<main data-radiant-jsx-bind-0="attr:title" title="server"><radiant-jsx-class-form-element data-radiant-jsx-bind-1="attr:id" id="card"><span>inside</span></radiant-jsx-class-form-element></main>';
+
 export const PLAIN_BUTTON_ALPHA_HTML = '<button class="action">alpha</button>';
 
 export const HYDRATE_ADJACENT_FIELDS_HTML =

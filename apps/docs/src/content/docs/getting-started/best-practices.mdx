@@ -84,8 +84,11 @@ export type UserCardProps = {
   isAdmin?: boolean;
 };
 
+import type { JSX_PROPS } from '@ecopages/jsx';
+
 @customElement('user-card')
 export class UserCard extends RadiantElement {
+  declare readonly [JSX_PROPS]?: UserCardProps;
   @prop({ type: String }) name!: string;
   @prop({ type: String }) avatarUrl!: string;
   @prop({ type: Boolean }) isAdmin?: boolean;
@@ -94,18 +97,19 @@ export class UserCard extends RadiantElement {
 
 ### JSX Integration (Ecopages JSX)
 
-To enable type checking for your custom element in JSX templates with
-`jsxImportSource: "@ecopages/jsx"`, augment the Ecopages JSX runtime module.
+With `jsxImportSource: "@ecopages/jsx"`, declare the public props on the class
+with `JSX_PROPS`, then use the class as the JSX element type.
 
-```typescript
-import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+```tsx
+/** @jsxImportSource @ecopages/jsx */
 
-declare module '@ecopages/jsx/jsx-runtime' {
-  interface JsxCustomIntrinsicElements {
-    'user-card': JsxCustomElementAttributes<HTMLElement, UserCardProps>;
-  }
-}
+import type { JSX_PROPS } from '@ecopages/jsx';
+
+<UserCard name="Ada" />;
 ```
+
+At runtime, import the class's module so its `@customElement(...)` decorator
+registers the element before rendering.
 
 ### Public Props vs Internal Bindings
 
@@ -122,7 +126,7 @@ not the same.
 ```tsx
 /** @jsxImportSource @ecopages/jsx */
 
-import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, prop, state } from '@ecopages/radiant';
 
 export type UserCardProps = {
@@ -136,6 +140,8 @@ type UserCardBindings = UserCardProps & {
 
 @customElement('user-card')
 export class UserCard extends RadiantElement<UserCardBindings> {
+  declare readonly [JSX_PROPS]?: UserCardProps;
+
   @prop({ type: String, defaultValue: 'Anonymous' }) name!: string;
   @prop({ type: String, defaultValue: '' }) avatarUrl!: string;
   @state isExpanded = false;
@@ -157,11 +163,7 @@ export class UserCard extends RadiantElement<UserCardBindings> {
   }
 }
 
-declare module '@ecopages/jsx/jsx-runtime' {
-  interface JsxCustomIntrinsicElements {
-    'user-card': JsxCustomElementAttributes<HTMLElement, UserCardProps>;
-  }
-}
+<UserCard name="Ada" />;
 ```
 
 In this pattern:

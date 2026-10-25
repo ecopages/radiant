@@ -57,7 +57,7 @@ This counter shows the intended `RadiantElement` style for stable templates: pub
 ```tsx
 /** @jsxImportSource @ecopages/jsx */
 
-import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, prop, state } from '@ecopages/radiant';
 
 type CounterCardBindings = {
@@ -65,12 +65,14 @@ type CounterCardBindings = {
 	label: string;
 };
 
-type CounterCardAttributes = {
+type CounterCardProps = {
 	label?: string;
 };
 
 @customElement('counter-card')
 export class CounterCard extends RadiantElement<CounterCardBindings> {
+	declare readonly [JSX_PROPS]?: CounterCardProps;
+
 	@prop({ type: String, defaultValue: 'Clicks' }) label!: string;
 	@state count = 0;
 
@@ -91,11 +93,7 @@ export class CounterCard extends RadiantElement<CounterCardBindings> {
 	}
 }
 
-declare module '@ecopages/jsx/jsx-runtime' {
-	interface JsxCustomIntrinsicElements {
-		'counter-card': JsxCustomElementAttributes<HTMLElement, CounterCardAttributes>;
-	}
-}
+<CounterCard label="Clicks" />;
 ```
 
 How this works:
@@ -104,7 +102,7 @@ How this works:
 - `@state` is internal mutable state.
 - `this.$.label` and `this.$.count` are cached JSX bindings, so those text positions can update directly when the underlying reactive members change.
 - This example does not call `update()` because the view structure is stable. Only the bound child values change.
-- The JSX intrinsic-element declaration uses a public attribute type that is narrower than the internal binding shape. That is usually the right split.
+- `JSX_PROPS` declares a public type that is narrower than the internal binding shape. That is usually the right split.
 
 If the same type truly represents both internal bindings and public JSX attributes, you can reuse it for both. Otherwise, keep those contracts separate.
 

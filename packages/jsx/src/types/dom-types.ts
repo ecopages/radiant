@@ -28,6 +28,21 @@ type ReactiveAttributeValue<Value extends StructuredAttributePrimitive> =
 	| SubscribableJsxValue<Extract<Value, undefined>>
 	| SubscribableJsxValueWithAccess<Extract<Value, JsxBindingSourceValue>>;
 
+/** Symbol key for the public props type declared by a custom-element class. */
+export declare const JSX_PROPS: unique symbol;
+
+/**
+ * Public, unprefixed JSX props declared by a custom-element instance.
+ *
+ * @remarks Classes without a declaration stay open so they accept the same
+ * unprefixed props as an unknown custom-element tag.
+ */
+export type JsxPublicProps<Instance> = Instance extends { readonly [JSX_PROPS]?: infer Props }
+	? NonNullable<Props> extends object
+		? NonNullable<Props>
+		: { [key: string]: unknown }
+	: { [key: string]: unknown };
+
 /**
  * Bivariant event handler type for native DOM events.
  */
