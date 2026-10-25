@@ -26,7 +26,8 @@
 		"test:all": "pnpm run test:lib && pnpm run size:check",
 		"test:standard": "vitest run",
 		"test:legacy": "vitest run -- --legacy",
-		"test:lib": "pnpm run test:standard && pnpm run test:legacy",
+		"test:vite-plugin-radiant": "vitest run --config vitest.vite-plugin-radiant.browser.config.ts && vitest run --config vitest.vite-plugin-radiant.browser.config.ts -- --legacy",
+		"test:lib": "pnpm run test:standard && pnpm run test:legacy && pnpm run test:vite-plugin-radiant",
 		"test:lib:coverage": "vitest run --coverage --project node && vitest run --coverage --project node -- --legacy"
 	},
 	"dependencies": {
