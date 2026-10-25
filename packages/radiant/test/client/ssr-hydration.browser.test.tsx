@@ -756,6 +756,19 @@ describe('hydrating page-level JSX over a host the server rendered with Authored
 		expect(container.querySelector('hydrated-slot-card-test')).not.toBe(serverHost);
 	});
 
+	test('renders stale static page content instead of adopting it', async () => {
+		installRadiantHydrator();
+		container.innerHTML = serverMarkup('static-page-slot-card').replace('SSR title', 'stale title');
+		const serverHost = container.querySelector('hydrated-slot-card-test') as HydratedSlotCard;
+
+		await settle();
+		createRoot(container).hydrate(staticPageSlotCardView());
+		await settle();
+
+		expect(container.querySelector('h1')?.textContent).toBe('SSR title');
+		expect(container.querySelector('hydrated-slot-card-test')).not.toBe(serverHost);
+	});
+
 	test('leaves bindings in the children of a host with named slots unattached', async () => {
 		installRadiantHydrator();
 		container.innerHTML = serverMarkup('page-slot-card');

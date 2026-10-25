@@ -3,6 +3,7 @@ import { shouldSkipHydrationSubtree } from '../hydration/hydration-subtree-polic
 import { hydrateTemplateInstance } from './hydration.ts';
 import { takesChildrenValue } from '../factory/jsx-factory.ts';
 import { getCompiledTemplate } from './template-compiler.ts';
+import { CHILD_BINDING_END_PREFIX, CHILD_BINDING_START_PREFIX } from './constants.ts';
 import type { JsxKey, JsxRenderable, TemplateResultLike } from '../types/index.ts';
 import { mountReactiveChildSource, updateRangeContent } from './child-range-update.ts';
 import { countHydratedRangeNodes, isEmptyTextNode } from './hydration-planning.ts';
@@ -248,6 +249,7 @@ export function canAdoptMarkerlessTemplate(
 		!(blueprintRoot instanceof Element) ||
 		!(actualRoot instanceof HTMLElement) ||
 		compiledTemplate.blueprint.content.childNodes.length !== 1 ||
+		compiledTemplate.parts.some((part) => part.type !== 'child') ||
 		blueprintRoot.localName !== actualRoot.localName ||
 		blueprintRoot.namespaceURI !== actualRoot.namespaceURI ||
 		target.childNodes.length !== countHydratedRangeNodes(template)
@@ -255,11 +257,131 @@ export function canAdoptMarkerlessTemplate(
 		return false;
 	}
 
-	if (isHydratedRoot(actualRoot)) {
-		return true;
+	let hasHydratedRoot = false;
+	const expectedNodes = materializeExpectedValue(template);
+
+	return (
+		expectedNodes !== undefined &&
+		matchesExpectedNodes(expectedNodes, Array.from(target.childNodes)) &&
+		hasHydratedRoot
+	);
+
+	function materializeExpectedValue(value: unknown): Node[] | undefined {
+		const nextValue = unwrapKeyedValue(value);
+
+		if (nextValue == null || typeof nextValue === 'boolean') {
+			return [];
+		}
+
+		if (isTemplateResultLike(nextValue)) {
+			const fragment = getCompiledTemplate(nextValue).blueprint.content.cloneNode(true) as DocumentFragment;
+			const walker = document.createTreeWalker(fragment, NodeFilter.SHOW_COMMENT);
+			const startMarkers: Comment[] = [];
+			let currentNode = walker.nextNode();
+
+			while (currentNode) {
+				if (currentNode instanceof Comment && currentNode.data.startsWith(CHILD_BINDING_START_PREFIX)) {
+					startMarkers.push(currentNode);
+				}
+
+				currentNode = walker.nextNode();
+			}
+
+			for (const startMarker of startMarkers) {
+				const endMarker = startMarker.nextSibling;
+
+				if (!(endMarker instanceof Comment) || !endMarker.data.startsWith(CHILD_BINDING_END_PREFIX)) {
+					return undefined;
+				}
+
+				const valueIndex = Number(startMarker.data.slice(CHILD_BINDING_START_PREFIX.length));
+				const childNodes = materializeExpectedValue(nextValue.values[valueIndex]);
+
+				if (childNodes === undefined) {
+					return undefined;
+				}
+
+				startMarker.replaceWith(...childNodes);
+				endMarker.remove();
+			}
+
+			return Array.from(fragment.childNodes);
+		}
+
+		const iterableChildren = getIterableChildren(nextValue);
+
+		if (iterableChildren) {
+			const nodes: Node[] = [];
+
+			for (const child of iterableChildren) {
+				const childNodes = materializeExpectedValue(child);
+
+				if (childNodes === undefined) {
+					return undefined;
+				}
+
+				nodes.push(...childNodes);
+			}
+
+			return nodes;
+		}
+
+		return canRenderAsTextNode(nextValue) ? [document.createTextNode(String(nextValue))] : undefined;
 	}
 
-	return Array.from(actualRoot.querySelectorAll<HTMLElement>('*')).some(isHydratedRoot);
+	function matchesExpectedNodes(expectedNodes: readonly Node[], actualNodes: readonly Node[]): boolean {
+		if (expectedNodes.length !== actualNodes.length) {
+			return false;
+		}
+
+		return expectedNodes.every((expectedNode, index) => {
+			const actualNode = actualNodes[index];
+
+			if (!actualNode) {
+				return false;
+			}
+
+			if (expectedNode instanceof Element) {
+				if (!(actualNode instanceof Element)) {
+					return false;
+				}
+
+				if (
+					expectedNode.localName !== actualNode.localName ||
+					expectedNode.namespaceURI !== actualNode.namespaceURI
+				) {
+					return false;
+				}
+
+				if (actualNode instanceof HTMLElement && isHydratedRoot(actualNode)) {
+					hasHydratedRoot = true;
+					return true;
+				}
+
+				if (expectedNode.attributes.length !== actualNode.attributes.length) {
+					return false;
+				}
+
+				for (const attribute of Array.from(expectedNode.attributes)) {
+					if (actualNode.getAttributeNS(attribute.namespaceURI, attribute.name) !== attribute.value) {
+						return false;
+					}
+				}
+
+				return matchesExpectedNodes(Array.from(expectedNode.childNodes), Array.from(actualNode.childNodes));
+			}
+
+			if (expectedNode instanceof Text) {
+				return actualNode instanceof Text && expectedNode.data === actualNode.data;
+			}
+
+			return (
+				expectedNode instanceof Comment &&
+				actualNode instanceof Comment &&
+				expectedNode.data === actualNode.data
+			);
+		});
+	}
 }
 
 /**

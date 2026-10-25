@@ -352,6 +352,7 @@ export function pageSlotCardView(body: JsxRenderable = 'SSR body') {
 export function staticPageSlotCardView() {
 	return (
 		<main>
+			<h1>SSR title</h1>
 			<hydrated-slot-card-test>
 				<h2 slot="header">SSR header</h2>
 				<p>SSR body</p>
