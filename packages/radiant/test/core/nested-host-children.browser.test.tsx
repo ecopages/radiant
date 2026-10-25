@@ -172,6 +172,8 @@ class NestedSilencedSlotFrame extends RadiantElement {
 	}
 }
 
+void NestedSilencedSlotFrame;
+
 @customElement('nested-silenced-slot-parent-test')
 class NestedSilencedSlotParent extends RadiantElement {
 	override render() {

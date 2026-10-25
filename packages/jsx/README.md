@@ -419,7 +419,7 @@ const html = renderToString(view, { mode: 'plain' });
 const hydratedHtml = renderToString(view, { mode: 'hydrate' });
 ```
 
-Hydrated SSR adds binding markers so `hydrate(...)` can attach listeners and dynamic parts without rebuilding the existing DOM tree. A page root with no marker of its own can also reconnect when a nested custom element already owns its content through a client root (it hydrated or rendered itself, possibly updating since) and the page's static markup still matches; otherwise the marker requirement remains.
+Hydrated SSR adds binding markers so `hydrate(...)` can attach listeners and dynamic parts without rebuilding the existing DOM tree. A page root with no marker of its own can also reconnect when a nested element already owns its content through its own client root, such as a custom element or an island root (it hydrated or rendered itself, possibly updating since) and the page's static markup still matches; otherwise the marker requirement remains.
 
 Property bindings are client-only in generic JSX SSR. A `prop:*` value may be an object, function, DOM node, or framework instance, so JSX emits a hydration marker but does not stringify the value into HTML. If a custom element's pre-hydration state matters, represent that state through a reflected/serializable attribute or the owning framework's SSR bridge, and keep the custom element's default aligned with the server output.
 
@@ -433,7 +433,7 @@ Adjacent text child bindings that SSR collapses into one text node are split int
 | ----------------------------------------------------------------------------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------- |
 | Single template (`<section>...</section>`)                                                            | Template hydration | Reconnects attribute and child parts in place                                                     |
 | Custom element not defined yet, or one that takes a Children Value, with DOM children in the template | Client render      | Its server content may be its own render; a defined element that takes DOM children hydrates them |
-| Single template with no marker, around a custom element that owns its content through a client root   | Template hydration | Only when the static markup matches and the template puts nothing inside that element             |
+| Single template with no marker, around an element that owns its content through its own client root   | Template hydration | Only when the static markup matches and the template puts nothing inside that element             |
 | Iterable / fragment (`<>...</>`)                                                                      | Iterable hydration | Hydrates each child into the mounted ownership tree                                               |
 | Reactive wrapper around either shape                                                                  | Inner snapshot     | Reconnects the current value, then subscribes                                                     |
 | Anything else                                                                                         | Client render      | Full mount; leftover SSR markers are replaced                                                     |
@@ -450,7 +450,7 @@ When a parent rerenders, a nested custom element that is already in the correct 
 
 A matching, already-defined custom-element host keeps its server node during hydration. A custom element whose class takes its children as a value ([Children as a value](#children-as-a-value)) receives that value through its own binding and hydrates its rendered content in its own marker namespace. Other matching custom elements reconnect authored light-DOM children in place, so the host's lifecycle does not run again merely because its parent hydrates or rerenders. A late-defined or mismatched host, or an unrecoverable template, falls back to reconciliation. An empty text node in a child list serializes to nothing, so hydration inserts it.
 
-When a page's own bindings are absent, the page can still reconnect after a nested custom element took ownership of its content: it hydrated and consumed its markers, or its view had none and it rendered over its server markup. A client root on that element is the sign, and it stays across the element's later renders. The client compares the page's single root and its static markup, and adopts only when such an element is in it and the page puts nothing inside that element; anything else still renders fresh.
+When a page's own bindings are absent, the page can still reconnect after a nested element, such as a custom element or an island root, took ownership of its content through its own client root: it hydrated and consumed its markers, or its view had none and it rendered over its server markup. A client root on that element is the sign, and it stays across the element's later renders. The client compares the page's single root and its static markup, and adopts only when such an element is in it and the page puts nothing inside that element; anything else still renders fresh.
 
 ### Benchmarks
 
@@ -489,7 +489,7 @@ flowchart TD
 
 **2. Index contract.** `hydration-bindings.ts` owns the marker prefix, descriptor format, index advancement, and DOM walks. Iterable hydration advances `nextBindingIndex` with `countHydrationMarkers(...)` per child. Each recovered child template then calls `planTemplateHydrationIndices(template, bindingBaseIndex)` so fragment siblings stay aligned with the same global namespace.
 
-**3. Recover.** `hydrate(...)` dispatches on root shape as in [Hydration Root Shapes](#hydration-root-shapes). A markerless page root may use a nested custom element that owns its content through a client root as its recovery signal when its static markup matches. Failed recovery disposes any parts that already subscribed, then falls back to a full client render.
+**3. Recover.** `hydrate(...)` dispatches on root shape as in [Hydration Root Shapes](#hydration-root-shapes). A markerless page root may use a nested element that owns its content through its own client root as its recovery signal when its static markup matches. Failed recovery disposes any parts that already subscribed, then falls back to a full client render.
 
 **Counter-shaped fragment example:**
 
