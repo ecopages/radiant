@@ -2,10 +2,9 @@ import type { JsxCustomElementAttributes, JsxElementProps } from '@ecopages/jsx'
 import { cx } from '@/lib/cx';
 import {
 	HOVER_CARD_DEFAULT_CONTENT_LABEL,
-	type RuiHoverCard as RuiHoverCardElement,
+	RuiHoverCard as RuiHoverCardElement,
 	type RuiHoverCardProps,
 } from './hover-card.script';
-import './hover-card.script';
 
 export type RuiHoverCardTriggerProps = JsxElementProps<HTMLSpanElement>;
 
@@ -48,8 +47,8 @@ export function RuiHoverCard({
 	...props
 }: JsxCustomElementAttributes<RuiHoverCardElement, RuiHoverCardProps>) {
 	return (
-		<rui-hover-card contentLabel={contentLabel} {...props}>
+		<RuiHoverCardElement contentLabel={contentLabel} {...props}>
 			<span class="rui-hover-card">{children}</span>
-		</rui-hover-card>
+		</RuiHoverCardElement>
 	);
 }

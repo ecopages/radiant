@@ -2,8 +2,8 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { createRoot, type JsxRenderable } from '@ecopages/jsx';
 import { RuiCombobox } from './combobox';
-import type { RuiCombobox as RuiComboboxElement } from './combobox.script';
-import './combobox.script';
+import { RuiCombobox as RuiComboboxElement } from './combobox.script';
+void RuiComboboxElement;
 
 const OPTIONS = [
 	{ value: 'de', label: 'Germany' },

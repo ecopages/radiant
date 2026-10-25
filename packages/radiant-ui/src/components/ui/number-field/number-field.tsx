@@ -2,8 +2,7 @@ import type { JsxCustomElementAttributes, JsxElementProps } from '@ecopages/jsx'
 import { withDefaultAriaLabel } from '@/aria';
 import { cx } from '@/lib/cx';
 import type { NativeButtonProps, NativeInputProps } from '@/lib/native-element-props';
-import type { RuiNumberField as RuiNumberFieldElement, RuiNumberFieldProps } from './number-field.script';
-import './number-field.script';
+import { RuiNumberField as RuiNumberFieldElement, type RuiNumberFieldProps } from './number-field.script';
 
 export type RuiNumberFieldGroupProps = JsxElementProps<HTMLDivElement>;
 
@@ -143,10 +142,10 @@ export function RuiNumberField({
 	...props
 }: JsxCustomElementAttributes<RuiNumberFieldElement, RuiNumberFieldProps>) {
 	return (
-		<rui-number-field {...props}>
+		<RuiNumberFieldElement {...props}>
 			<div class="rui-number-field" data-ref="root">
 				{children ?? <NumberFieldDefaultGroup />}
 			</div>
-		</rui-number-field>
+		</RuiNumberFieldElement>
 	);
 }

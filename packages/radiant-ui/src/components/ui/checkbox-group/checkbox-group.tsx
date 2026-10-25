@@ -2,12 +2,11 @@ import type { JsxCustomElementAttributes, JsxElementProps, JsxRenderable } from 
 import { cx } from '@/lib/cx';
 import { RuiCheckbox } from '../checkbox';
 import { parseViewValue } from '../shared/multi-value';
-import type {
+import {
 	RuiCheckboxGroup as RuiCheckboxGroupElement,
-	RuiCheckboxGroupOrientation,
-	RuiCheckboxGroupProps,
+	type RuiCheckboxGroupOrientation,
+	type RuiCheckboxGroupProps,
 } from './checkbox-group.script';
-import './checkbox-group.script';
 
 export type RuiCheckboxOption = {
 	value: string;
@@ -59,7 +58,7 @@ export function RuiCheckboxGroup({
 	const selected = new Set(selectedValues);
 
 	return (
-		<rui-checkbox-group {...props} value={selectedValues} orientation={orientation}>
+		<RuiCheckboxGroupElement {...props} value={selectedValues} orientation={orientation}>
 			{options == null ? (
 				children
 			) : (
@@ -75,6 +74,6 @@ export function RuiCheckboxGroup({
 					))}
 				</RuiCheckboxGroupControl>
 			)}
-		</rui-checkbox-group>
+		</RuiCheckboxGroupElement>
 	);
 }

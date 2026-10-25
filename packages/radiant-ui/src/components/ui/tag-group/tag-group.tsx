@@ -3,8 +3,7 @@ import { withDefaultAriaLabel } from '@/aria';
 import { cx } from '@/lib/cx';
 import { RuiIconX } from '@/lib/icons';
 import type { NativeButtonProps } from '@/lib/native-element-props';
-import type { RuiTagGroup as RuiTagGroupElement, RuiTagGroupProps } from './tag-group.script';
-import './tag-group.script';
+import { RuiTagGroup as RuiTagGroupElement, type RuiTagGroupProps } from './tag-group.script';
 
 export type RuiTagListProps = JsxElementProps<HTMLDivElement>;
 
@@ -108,7 +107,7 @@ export function RuiTagGroup({
 >) {
 	if (tags != null) {
 		return (
-			<rui-tag-group {...props} value={value}>
+			<RuiTagGroupElement {...props} value={value}>
 				<TagGroupShell>
 					<RuiTagList>
 						{tags.map((tag) => (
@@ -122,13 +121,13 @@ export function RuiTagGroup({
 						))}
 					</RuiTagList>
 				</TagGroupShell>
-			</rui-tag-group>
+			</RuiTagGroupElement>
 		);
 	}
 
 	return (
-		<rui-tag-group {...props} value={value}>
+		<RuiTagGroupElement {...props} value={value}>
 			<TagGroupShell>{children}</TagGroupShell>
-		</rui-tag-group>
+		</RuiTagGroupElement>
 	);
 }

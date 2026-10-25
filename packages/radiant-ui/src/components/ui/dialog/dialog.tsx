@@ -3,8 +3,7 @@ import { withDefaultAriaLabel } from '@/aria';
 import { cx } from '@/lib/cx';
 import { RuiIconX } from '@/lib/icons';
 import type { NativeButtonProps } from '@/lib/native-element-props';
-import type { RuiDialog as RuiDialogElement, RuiDialogProps } from './dialog.script';
-import './dialog.script';
+import { RuiDialog as RuiDialogElement, type RuiDialogProps } from './dialog.script';
 
 export type RuiDialogTitleProps = JsxElementProps<HTMLDivElement>;
 
@@ -127,22 +126,22 @@ export type RuiDialogViewProps = Omit<JsxCustomElementAttributes<RuiDialogElemen
 export function RuiDialog({ title, actions, children, open, alert, ...props }: RuiDialogViewProps) {
 	if (title != null || actions != null) {
 		return (
-			<rui-dialog {...props} open={open} alert={alert}>
+			<RuiDialogElement {...props} open={open} alert={alert}>
 				<DialogShell open={open} alert={alert}>
 					<RuiDialogClose />
 					{title != null ? <RuiDialogTitle>{title}</RuiDialogTitle> : null}
 					{children != null ? <RuiDialogBody>{children}</RuiDialogBody> : null}
 					{actions != null ? <RuiDialogActions>{actions}</RuiDialogActions> : null}
 				</DialogShell>
-			</rui-dialog>
+			</RuiDialogElement>
 		);
 	}
 
 	return (
-		<rui-dialog {...props} open={open} alert={alert}>
+		<RuiDialogElement {...props} open={open} alert={alert}>
 			<DialogShell open={open} alert={alert}>
 				{children}
 			</DialogShell>
-		</rui-dialog>
+		</RuiDialogElement>
 	);
 }

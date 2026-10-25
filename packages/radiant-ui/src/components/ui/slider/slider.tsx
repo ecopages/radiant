@@ -1,8 +1,7 @@
 import type { JsxCustomElementAttributes, JsxElementProps } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
 import { formatNumericValue } from '../shared/numeric-range';
-import { seedSliderView, type RuiSlider as RuiSliderElement, type RuiSliderProps } from './slider.script';
-import './slider.script';
+import { seedSliderView, RuiSlider as RuiSliderElement, type RuiSliderProps } from './slider.script';
 
 export type RuiSliderValueProps = JsxElementProps<HTMLSpanElement>;
 
@@ -150,7 +149,7 @@ export function RuiSlider({
 	const hasVisibleReadout = Boolean(children) || showValue;
 
 	return (
-		<rui-slider
+		<RuiSliderElement
 			{...props}
 			variant={seed.variant}
 			orientation={orientation}
@@ -174,7 +173,7 @@ export function RuiSlider({
 				hasVisibleReadout={hasVisibleReadout}
 				valueReadout={valueReadout}
 			/>
-		</rui-slider>
+		</RuiSliderElement>
 	);
 }
 

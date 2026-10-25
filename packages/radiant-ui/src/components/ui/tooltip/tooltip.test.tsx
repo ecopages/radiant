@@ -1,7 +1,8 @@
 import { createRoot } from '@ecopages/jsx';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { RuiTooltip } from './tooltip';
-import './tooltip.script';
+import { RuiTooltip as RuiTooltipScript } from './tooltip.script';
+void RuiTooltipScript;
 
 describe('RuiTooltip', () => {
 	afterEach(() => {

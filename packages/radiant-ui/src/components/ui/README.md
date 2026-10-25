@@ -123,17 +123,21 @@ Views should declare the public DOM surface they render. Custom-element views us
 
 For each existing typed catalog tag in `HTMLElementTagNameMap`, its custom-element class declares public JSX props with `declare readonly [JSX_PROPS]?: RuiFooProps`. JSX reads that contract for the class export (for example, `<RuiAlertElement>`) and its matching tag (for example, `<rui-alert>`). A pass-through export such as `RuiMeter` can be that class directly; `RuiMeterElement` remains an explicit alias. A real view such as `RuiToast` retains its own view props. Keep the declaration and tag-map entry beside the class. Existing `JsxCustomIntrinsicElements` augmentations remain available for compatibility.
 
+Views import a custom-element class as a runtime value and render that class (`<RuiAlertElement>`), aliasing it when the view export has the same name. The value import evaluates the decorator registration while giving JSX the class's declared prop contract. When a related script must still evaluate but its host is not rendered by that file, use a named class value import and reference it with `void RuiFooScript;`.
+
 For the Derived Tree hosts meter, calendar, date input, TOC, toast, and toaster, use `WithoutChildren<RuiFooProps>` because the host replaces its children on its first render. Pass-through exports use the class's JSX props; keep a view wrapper only when it adds defaults, transforms, invariants, or class composition. `RuiToast` remains a helper because it transforms `toastId`.
 
 Default pattern — peel view-only fields, spread the rest, lock invariants after the spread:
 
 ```tsx
+import { RuiFoo as RuiFooElement } from './foo.script';
+
 ({ children, ...props }: JsxCustomElementAttributes<RuiFooElement, RuiFooProps>) => (
-	<rui-foo {...props}>{children}</rui-foo>
+	<RuiFooElement {...props}>{children}</RuiFooElement>
 );
 ```
 
-A **Derived Tree** view takes no children: the host's first `render()` replaces them. When a wrapper is needed, type its props `WithoutChildren<JsxCustomElementAttributes<RuiFooElement, RuiFooProps>>` (from `src/lib/without-children.ts`, imported by relative path) and spread the full props object onto a self-closing host (`<rui-meter {...props} />`); a Composition Helper that forwards to such a view uses the same type. `WithoutChildren` adds `children?: never` rather than omitting the key: with no other attributes on the tag, the `data-*` index signature keeps TypeScript from flagging JSX body children, so `Omit` still accepts `<RuiMeter><p /></RuiMeter>`. `src/host-contract.types.tsx` pins this for every Derived Tree host and any retained view.
+A **Derived Tree** view takes no children: the host's first `render()` replaces them. When a wrapper is needed, type its props `WithoutChildren<JsxCustomElementAttributes<RuiFooElement, RuiFooProps>>` (from `src/lib/without-children.ts`, imported by relative path) and spread the full props object onto a self-closing class host (`<RuiMeterElement {...props} />`); a Composition Helper that forwards to such a view uses the same type. `WithoutChildren` adds `children?: never` rather than omitting the key: with no other attributes on the tag, the `data-*` index signature keeps TypeScript from flagging JSX body children, so `Omit` still accepts `<RuiMeter><p /></RuiMeter>`. `src/host-contract.types.tsx` pins this for every Derived Tree host and any retained view.
 
 Peel props only when the view must transform or filter them:
 

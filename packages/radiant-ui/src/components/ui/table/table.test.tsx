@@ -9,9 +9,10 @@ import {
 	RuiTableRow,
 	RuiTableSelectionCell,
 } from './table';
-import type { RuiTable as RuiTableElement } from './table.script';
-import './table.script';
-import '../checkbox/checkbox.script';
+import { RuiTable as RuiTableElement } from './table.script';
+import { RuiCheckbox as RuiCheckboxScript } from '../checkbox/checkbox.script';
+void RuiTableElement;
+void RuiCheckboxScript;
 
 function mount(element: JsxRenderable): { host: HTMLElement; cleanup: () => void } {
 	const host = document.createElement('div');
