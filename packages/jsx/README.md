@@ -665,7 +665,7 @@ const gridApi: UserGridApi = {
 <user-grid items={rows} selection={currentRow} prop:api={gridApi} />;
 ```
 
-`JsxCustomIntrinsicElements` remains available for existing module augmentations, but is deprecated in favor of `JSX_PROPS` and `HTMLElementTagNameMap`.
+`JsxCustomIntrinsicElements` remains available as a supported compatibility path for existing module augmentations.
 
 ### Children as a value
 

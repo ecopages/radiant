@@ -279,9 +279,6 @@ export type JsxCustomElementAttributes<
 > = JsxIntrinsicAttributes<ElementType> & Props;
 
 /**
- * Module-augmentable registry of custom JSX intrinsic elements for the Ecopages JSX runtime.
- *
- * @deprecated Declare `JSX_PROPS` on the element class and add its tag to
- * `HTMLElementTagNameMap` instead.
+ * Compatibility registry for module-augmented custom JSX intrinsic elements.
  */
 export interface JsxCustomIntrinsicElements {}
