@@ -99,32 +99,15 @@ export function updateRangeContent(
 	);
 }
 
-/**
- * @remarks A nested keyed group, which a list keeps nested only while an unkeyed sibling is filled (see `toChildSlot`
- * in the JSX factory), hands its records up: the list's flat keyed items then keep their nodes, and only the group's
- * own boundary markers go.
- */
+/** Keeps the keyed entries of a mixed list as a keyed list's records and removes the positional ones. */
 function migrateMixedListToKeyed(current: MountedMixedList): MountedRangeContent {
 	const keyedRecords = new Map<JsxKey, MountedRangeRecord>();
 
 	for (const entry of current.entries) {
-		const { mounted } = entry.record;
-
-		if (entry.key !== undefined) {
-			keyedRecords.set(entry.key, entry.record);
-		} else if (mounted.kind === 'keyed-list') {
-			for (const [key, record] of mounted.records) {
-				if (keyedRecords.has(key)) {
-					removeRangeRecord(record);
-				} else {
-					keyedRecords.set(key, record);
-				}
-			}
-
-			entry.record.start.remove();
-			entry.record.end.remove();
-		} else {
+		if (entry.key === undefined) {
 			removeRangeRecord(entry.record);
+		} else {
+			keyedRecords.set(entry.key, entry.record);
 		}
 	}
 
@@ -359,7 +342,6 @@ function updateKeyedMixedChildren(
 	const entries: MountedMixedListEntry[] = [];
 	const values: unknown[] = [];
 	const usedKeys = new Set<JsxKey>();
-	const lentRecords: MountedRangeRecord[] = [];
 
 	for (const child of children) {
 		const key = isKeyedJsxValue(child) ? child.key : undefined;
@@ -375,15 +357,7 @@ function updateKeyedMixedChildren(
 			record = keyedRecords.get(key);
 		}
 
-		if (!record) {
-			record = createRangeRecord(endMarker);
-
-			if (key === undefined) {
-				lentRecords.push(...lendKeyedRecords(record, child, keyedRecords));
-			}
-		}
-
-		entries.push({ key, record });
+		entries.push({ key, record: record ?? createRangeRecord(endMarker) });
 		values.push(child);
 	}
 
@@ -399,7 +373,7 @@ function updateKeyedMixedChildren(
 		);
 	}
 
-	const usedRecords = new Set([...entries.map((entry) => entry.record), ...lentRecords]);
+	const usedRecords = new Set(entries.map((entry) => entry.record));
 	const previousRecords =
 		current.kind === 'keyed-list' ? current.records.values() : previousEntries.map((entry) => entry.record);
 
@@ -410,39 +384,6 @@ function updateKeyedMixedChildren(
 	}
 
 	return { entries, keyed: usedKeys.size > 0, kind: 'mixed-list' };
-}
-
-/**
- * Gives a new record for a nested keyed group the records its keys had in the list, moved inside it.
- *
- * @remarks A list flattens a keyed group into its own keyed items while every filled item is keyed, and keeps the
- * group nested once an unkeyed sibling is filled (see `toChildSlot` in the JSX factory). Lending the records keeps
- * the group's nodes across that switch. The keys leave `keyedRecords`, so no sibling can take them too.
- */
-function lendKeyedRecords(
-	record: MountedRangeRecord,
-	child: unknown,
-	keyedRecords: Map<JsxKey, MountedRangeRecord>,
-): MountedRangeRecord[] {
-	const groupChildren = getIterableChildren(child);
-	const keyedChildren = groupChildren && getKeyedChildren(groupChildren);
-	const records = new Map<JsxKey, MountedRangeRecord>();
-
-	for (const { key } of keyedChildren ?? []) {
-		const lent = keyedRecords.get(key);
-
-		if (lent) {
-			keyedRecords.delete(key);
-			records.set(key, lent);
-			moveRangeBefore(lent.start, lent.end, record.end);
-		}
-	}
-
-	if (records.size > 0) {
-		record.mounted = { kind: 'keyed-list', records };
-	}
-
-	return [...records.values()];
 }
 
 /** Moves `record` before `insertionPoint`, renders `value` into it, and returns its start as the next point. */

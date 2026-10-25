@@ -648,14 +648,20 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(container.querySelectorAll('li')[2]).toBe(tail);
 	});
 
-	test('keeps keyed items when a group of keyed items is inserted before them', async () => {
-		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+	test('keeps keyed items when a keyed group of keyed items is inserted before them', async () => {
+		const [{ Fragment, jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');
 		const root = createRoot(container);
 
 		const renderGroups = (groups: string[][]) =>
 			jsx('ul', {
-				children: groups.map((group) => group.map((value) => jsx('li', { children: value, key: value }))),
+				children: groups.map((group) =>
+					jsx(
+						Fragment,
+						{ children: group.map((value) => jsx('li', { children: value, key: value })) },
+						group.join(),
+					),
+				),
 			});
 
 		root.render(renderGroups([['alpha']]));
@@ -806,7 +812,12 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 			loadJsxDevRuntime(),
 			loadJsxModule(),
 		]);
-		const factories = { jsx, jsxDEV, jsxs } as const;
+		const factories = {
+			jsx,
+			jsxDEV,
+			jsxDEVStatic: (type: string | typeof Fragment, props: object) => jsxDEV(type, props, undefined, true),
+			jsxs,
+		} as const;
 
 		for (const [factoryName, factory] of Object.entries(factories)) {
 			for (const rootKind of ['list', 'fragment'] as const) {
@@ -872,6 +883,39 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 
 		root.render(jsx('ul', { children: [jsx('li', { children: 'x' })] }));
 		expect(texts()).toEqual(['x']);
+	});
+
+	test('hydrates a mapped keyed list beside an unkeyed item and keeps its rows when the item toggles', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const renderList = (loading: boolean) =>
+			jsx('ul', {
+				class: 'rows',
+				children: [
+					['a', 'b'].map((row) => jsx('li', { children: row, key: row })),
+					loading ? jsx('li', { children: 'Loading...' }) : null,
+				],
+			});
+
+		container.innerHTML =
+			'<ul data-radiant-jsx-bind-0="attr:class" class="rows"><li>a</li><li>b</li><li>Loading...</li></ul>';
+		const [rowA, rowB] = Array.from(container.querySelectorAll('li'));
+		root.hydrate(renderList(true));
+
+		root.render(renderList(false));
+		expect(Array.from(container.querySelectorAll('li'), (item) => item.textContent)).toEqual(['a', 'b']);
+		expect(container.querySelectorAll('li')[0]).toBe(rowA);
+		expect(container.querySelectorAll('li')[1]).toBe(rowB);
+
+		root.render(renderList(true));
+		expect(Array.from(container.querySelectorAll('li'), (item) => item.textContent)).toEqual([
+			'a',
+			'b',
+			'Loading...',
+		]);
+		expect(container.querySelectorAll('li')[0]).toBe(rowA);
+		expect(container.querySelectorAll('li')[1]).toBe(rowB);
 	});
 
 	test('hydrates mixed keyed lists and preserves their keyed nodes through updates and unmount', async () => {
