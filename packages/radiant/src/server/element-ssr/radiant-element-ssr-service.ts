@@ -1,7 +1,7 @@
 import type { JsxRenderable } from '@ecopages/jsx';
 import { CUSTOM_ELEMENT_CHILDREN_SYMBOL, createMarkupNodeLike } from '@ecopages/jsx';
 import type { RenderToStringOptions } from '@ecopages/jsx/server';
-import { getCustomElementTagName } from '../../core/custom-element-metadata';
+import { getCustomElementTagName } from '@ecopages/jsx';
 import { SERVER_RENDERED_AUTHORED_STAMP, SERVER_RENDERED_HOST_ATTRIBUTE } from '../../core/server-rendered-host';
 import { ensureLegacyHostReady } from '../../decorators/legacy/host-readiness';
 import { assertValidHtmlTagName } from '../../utils/html-names';

@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from 'vitest';
-import { getCustomElementTagName } from '../../src/core/custom-element-metadata';
+import { getCustomElementTagName } from '@ecopages/jsx';
 import { customElement } from '../../src/decorators/custom-element';
 
 @customElement('my-custom-element')

@@ -1,4 +1,4 @@
-import { getCustomElementTagName } from '../../../core/custom-element-metadata';
+import { getCustomElementTagName } from '@ecopages/jsx';
 
 function isMinimalDomElement(host: object): host is { localName: string; tagName: string } {
 	return (

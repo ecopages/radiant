@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
+import { CUSTOM_ELEMENT_TAG_NAME } from '../src/jsx-runtime.ts';
 import { HYDRATE_CLASS_FORM_ELEMENT_HTML } from './fixtures/hydrate-html.ts';
 
 async function loadModule<T>(path: string): Promise<T> {
@@ -114,7 +115,7 @@ describe('Radiant JSX custom-element interop', () => {
 		const [{ jsx }] = await Promise.all([loadJsxRuntime()]);
 		class CustomizedButtonBase extends HTMLButtonElement {}
 		class CustomizedButton extends CustomizedButtonBase {}
-		Object.defineProperty(CustomizedButton, Symbol.for('@ecopages/radiant.customElementTagName'), {
+		Object.defineProperty(CustomizedButton, CUSTOM_ELEMENT_TAG_NAME, {
 			value: 'radiant-jsx-customized-button',
 		});
 

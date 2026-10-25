@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { CUSTOM_ELEMENT_TAG_NAME } from './constants';
+import { CUSTOM_ELEMENT_TAG_NAME } from '@ecopages/jsx/jsx-runtime';
 import { resolveSsrTarget, syncViewMetadata } from './resolve-ssr';
 import { RADIANT_SCRIPT_EXPORT, RADIANT_SCRIPT_MODULE, RADIANT_VIEW_ELEMENT } from './symbols';
 import type { Meta, RadiantStoryParameters } from './types';

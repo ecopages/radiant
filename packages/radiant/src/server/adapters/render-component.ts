@@ -5,7 +5,7 @@ import type { RenderToStringOptions } from '@ecopages/jsx/server';
 import type { SsrSerializableContextProvider } from '../../context/context-provider';
 import { runWithSsrProviderStack, withSsrContextProviders } from '../context-ssr';
 import type { ContextType, UnknownContext } from '../../context/types';
-import { getCustomElementTagName } from '../../core/custom-element-metadata';
+import { getCustomElementTagName } from '@ecopages/jsx';
 import { assertValidHtmlTagName } from '../../utils/html-names';
 import { alignMinimalDomHostTagName } from '../shim/minimal-dom/align-host-tag-name';
 import { ensureLegacyHostReady } from '../../decorators/legacy/host-readiness';
