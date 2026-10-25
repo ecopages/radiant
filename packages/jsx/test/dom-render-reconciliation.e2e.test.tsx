@@ -733,20 +733,18 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		]);
 		const factories = [jsx, jsxs, jsxDEV];
 
-		for (const createElement of factories) {
+		for (const factory of factories) {
 			for (const rootKind of ['list', 'fragment'] as const) {
 				const container = document.createElement('div');
 				const root = createRoot(container);
 				const renderRoot = (loading: boolean) => {
 					const children = [
-						createElement('li', { children: 'alpha', key: 'alpha' }),
-						createElement('li', { children: 'beta', key: 'beta' }),
-						loading ? createElement('li', { children: 'Loading...' }) : null,
+						factory('li', { children: 'alpha', key: 'alpha' }),
+						factory('li', { children: 'beta', key: 'beta' }),
+						loading ? factory('li', { children: 'Loading...' }) : null,
 					];
 
-					return rootKind === 'list'
-						? createElement('ul', { children })
-						: createElement(Fragment, { children });
+					return rootKind === 'list' ? factory('ul', { children }) : factory(Fragment, { children });
 				};
 
 				root.render(renderRoot(false));
@@ -759,7 +757,7 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 				expect(updatedItems[0]).toBe(initialItems[0]);
 				expect(updatedItems[1]).toBe(initialItems[1]);
 
-				if (createElement === jsxs) {
+				if (factory === jsxs) {
 					root.render(renderRoot(false));
 					const removedItems = Array.from(container.querySelectorAll('li'));
 
@@ -771,18 +769,18 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 
 				root.render(
 					rootKind === 'list'
-						? createElement('ul', {
+						? factory('ul', {
 								children: [
-									createElement('li', { children: 'alpha', key: 'alpha' }),
-									createElement('li', { children: 'Loading...' }),
-									createElement('li', { children: 'beta', key: 'beta' }),
+									factory('li', { children: 'alpha', key: 'alpha' }),
+									factory('li', { children: 'Loading...' }),
+									factory('li', { children: 'beta', key: 'beta' }),
 								],
 							})
-						: createElement(Fragment, {
+						: factory(Fragment, {
 								children: [
-									createElement('li', { children: 'alpha', key: 'alpha' }),
-									createElement('li', { children: 'Loading...' }),
-									createElement('li', { children: 'beta', key: 'beta' }),
+									factory('li', { children: 'alpha', key: 'alpha' }),
+									factory('li', { children: 'Loading...' }),
+									factory('li', { children: 'beta', key: 'beta' }),
 								],
 							}),
 				);
@@ -800,6 +798,80 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 				expect(removedItems[1]).toBe(initialItems[1]);
 			}
 		}
+	});
+
+	test('keeps the rows of a mapped keyed list when an unkeyed sibling toggles, for every runtime and root', async () => {
+		const [{ Fragment, jsx, jsxs }, { jsxDEV }, { createRoot }] = await Promise.all([
+			loadJsxRuntime(),
+			loadJsxDevRuntime(),
+			loadJsxModule(),
+		]);
+		const factories = { jsx, jsxDEV, jsxs } as const;
+
+		for (const [factoryName, factory] of Object.entries(factories)) {
+			for (const rootKind of ['list', 'fragment'] as const) {
+				const container = document.createElement('div');
+				const root = createRoot(container);
+				const renderRoot = (loading: boolean) => {
+					const children = [
+						['a', 'b'].map((row) => jsx('li', { children: row, key: row })),
+						loading ? jsx('li', { children: 'Loading...' }) : null,
+					];
+
+					return rootKind === 'list' ? factory('ul', { children }) : factory(Fragment, { children });
+				};
+				const rows = () => Array.from(container.querySelectorAll('li'));
+				const context = `${factoryName} ${rootKind}`;
+
+				root.render(renderRoot(false));
+				const [rowA, rowB] = rows();
+				const expectSameRows = () => {
+					expect(rows()[0], context).toBe(rowA);
+					expect(rows()[1], context).toBe(rowB);
+				};
+
+				root.render(renderRoot(true));
+				expect(
+					rows().map((item) => item.textContent),
+					context,
+				).toEqual(['a', 'b', 'Loading...']);
+				expectSameRows();
+
+				root.render(renderRoot(false));
+				expect(
+					rows().map((item) => item.textContent),
+					context,
+				).toEqual(['a', 'b']);
+				expectSameRows();
+
+				root.render(renderRoot(true));
+				expectSameRows();
+			}
+		}
+	});
+
+	test('drops a duplicate key in a list that mixes keyed and unkeyed items, as a keyed list does', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const renderList = (label: string) =>
+			jsx('ul', {
+				children: [
+					jsx('li', { children: label, key: 'a' }),
+					jsx('li', { children: `${label}-duplicate`, key: 'a' }),
+					jsx('li', { children: 'x' }),
+				],
+			});
+		const texts = () => Array.from(container.querySelectorAll('li'), (item) => item.textContent);
+
+		root.render(renderList('first'));
+		expect(texts()).toEqual(['first', 'x']);
+
+		root.render(renderList('second'));
+		expect(texts()).toEqual(['second', 'x']);
+
+		root.render(jsx('ul', { children: [jsx('li', { children: 'x' })] }));
+		expect(texts()).toEqual(['x']);
 	});
 
 	test('hydrates mixed keyed lists and preserves their keyed nodes through updates and unmount', async () => {

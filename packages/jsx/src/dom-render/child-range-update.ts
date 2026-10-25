@@ -23,6 +23,7 @@ import type {
 	MountedRangeContent,
 	MountedRangeRecord,
 	MountedMixedList,
+	MountedMixedListEntry,
 	MountedSubscription,
 	ReactiveChildSource,
 	TemplateInstance,
@@ -98,18 +99,31 @@ export function updateRangeContent(
 	);
 }
 
+/**
+ * @remarks A nested keyed group, which a list keeps nested only while an unkeyed sibling is filled (see `toChildSlot`
+ * in the JSX factory), hands its records up: the list's flat keyed items then keep their nodes, and only the group's
+ * own boundary markers go.
+ */
 function migrateMixedListToKeyed(current: MountedMixedList): MountedRangeContent {
 	const keyedRecords = new Map<JsxKey, MountedRangeRecord>();
 
 	for (const entry of current.entries) {
+		const { mounted } = entry.record;
+
 		if (entry.key !== undefined) {
 			keyedRecords.set(entry.key, entry.record);
-		}
-	}
+		} else if (mounted.kind === 'keyed-list') {
+			for (const [key, record] of mounted.records) {
+				if (keyedRecords.has(key)) {
+					removeRangeRecord(record);
+				} else {
+					keyedRecords.set(key, record);
+				}
+			}
 
-	const retainedRecords = new Set(keyedRecords.values());
-	for (const entry of current.entries) {
-		if (!retainedRecords.has(entry.record)) {
+			entry.record.start.remove();
+			entry.record.end.remove();
+		} else {
 			removeRangeRecord(entry.record);
 		}
 	}
@@ -289,6 +303,13 @@ function updateKeyedChildren(
 	return keyedState;
 }
 
+/**
+ * Reconciles a list that is not all keyed: unkeyed entries by position, keyed entries by key.
+ *
+ * @remarks A keyed entry keeps its record whatever unkeyed siblings come and go around it. As in a keyed list, a
+ * key that appears twice is rendered once, at its first position. A list with no keyed entry, now or before, takes
+ * the positional path, which updates its records in place.
+ */
 function updateMixedChildren(
 	startMarker: Text,
 	endMarker: Text,
@@ -302,94 +323,146 @@ function updateMixedChildren(
 		clearRangeBetween(startMarker, endMarker);
 	}
 
-	const previousEntries = current.kind === 'mixed-list' ? current.entries : [];
-	const keyedRecords = getMixedKeyedRecords(current, previousEntries);
-	const nextEntries: MountedMixedList['entries'] = [];
-	const usedRecords = new Set<MountedRangeRecord>();
+	const state: MountedMixedList = current.kind === 'mixed-list' ? current : { entries: [], kind: 'mixed-list' };
 
-	for (const [index, child] of children.entries()) {
-		const keyedChild = isKeyedJsxValue(child) ? child : undefined;
-		const record =
-			findMixedRecord(keyedChild, index, previousEntries, keyedRecords) ?? createRangeRecord(endMarker);
-
-		nextEntries.push({ key: keyedChild?.key, record });
-		usedRecords.add(record);
+	if (current.kind === 'keyed-list' || state.keyed || children.some(isKeyedJsxValue)) {
+		return updateKeyedMixedChildren(endMarker, children, current, state.entries, rootTarget, deferredProperties);
 	}
 
-	updateMixedRecords(nextEntries, children, endMarker, rootTarget, deferredProperties);
-	removeUnusedMixedRecords(current, usedRecords);
+	const entries = state.entries;
+	let insertionPoint: Node = endMarker;
 
-	return { entries: nextEntries, kind: 'mixed-list' };
+	for (let index = children.length - 1; index >= 0; index -= 1) {
+		const record = (entries[index] ??= { record: createRangeRecord(endMarker) }).record;
+		insertionPoint = updateRecordBefore(record, children[index], insertionPoint, rootTarget, deferredProperties);
+	}
+
+	while (entries.length > children.length) {
+		removeRangeRecord(entries.pop()!.record);
+	}
+
+	return state;
 }
 
-function getMixedKeyedRecords(
-	current: MountedRangeContent,
-	previousEntries: MountedMixedList['entries'],
-): Map<JsxKey, MountedRangeRecord> {
-	if (current.kind === 'keyed-list') {
-		return current.records;
-	}
-
-	const keyedRecords = new Map<JsxKey, MountedRangeRecord>();
-	for (const entry of previousEntries) {
-		if (entry.key !== undefined) {
-			keyedRecords.set(entry.key, entry.record);
-		}
-	}
-
-	return keyedRecords;
-}
-
-function findMixedRecord(
-	keyedChild: KeyedJsxValue | undefined,
-	index: number,
-	previousEntries: MountedMixedList['entries'],
-	keyedRecords: Map<JsxKey, MountedRangeRecord>,
-): MountedRangeRecord | undefined {
-	if (keyedChild) {
-		return keyedRecords.get(keyedChild.key);
-	}
-
-	const previousEntry = previousEntries[index];
-	return previousEntry && previousEntry.key === undefined ? previousEntry.record : undefined;
-}
-
-function updateMixedRecords(
-	entries: MountedMixedList['entries'],
-	children: readonly unknown[],
+function updateKeyedMixedChildren(
 	endMarker: Text,
+	children: readonly unknown[],
+	current: MountedRangeContent,
+	previousEntries: MountedMixedListEntry[],
 	rootTarget: HTMLElement,
 	deferredProperties: DeferredPropertyBinding[],
-): void {
+): MountedMixedList {
+	const keyedRecords =
+		current.kind === 'keyed-list'
+			? current.records
+			: new Map(previousEntries.flatMap((entry) => (entry.key === undefined ? [] : [[entry.key, entry.record]])));
+	const entries: MountedMixedListEntry[] = [];
+	const values: unknown[] = [];
+	const usedKeys = new Set<JsxKey>();
+	const lentRecords: MountedRangeRecord[] = [];
+
+	for (const child of children) {
+		const key = isKeyedJsxValue(child) ? child.key : undefined;
+		let record: MountedRangeRecord | undefined;
+
+		if (key === undefined) {
+			const previousEntry = previousEntries[entries.length];
+			record = previousEntry?.key === undefined ? previousEntry?.record : undefined;
+		} else if (usedKeys.has(key)) {
+			continue;
+		} else {
+			usedKeys.add(key);
+			record = keyedRecords.get(key);
+		}
+
+		if (!record) {
+			record = createRangeRecord(endMarker);
+
+			if (key === undefined) {
+				lentRecords.push(...lendKeyedRecords(record, child, keyedRecords));
+			}
+		}
+
+		entries.push({ key, record });
+		values.push(child);
+	}
+
 	let insertionPoint: Node = endMarker;
-	for (let index = children.length - 1; index >= 0; index -= 1) {
-		const entry = entries[index]!;
-		moveRangeBefore(entry.record.start, entry.record.end, insertionPoint);
-		entry.record.mounted = updateRangeContent(
-			entry.record.start,
-			entry.record.end,
-			children[index],
-			entry.record.mounted,
+
+	for (let index = entries.length - 1; index >= 0; index -= 1) {
+		insertionPoint = updateRecordBefore(
+			entries[index]!.record,
+			values[index],
+			insertionPoint,
 			rootTarget,
 			deferredProperties,
 		);
-		insertionPoint = entry.record.start;
 	}
-}
 
-function removeUnusedMixedRecords(current: MountedRangeContent, usedRecords: Set<MountedRangeRecord>): void {
+	const usedRecords = new Set([...entries.map((entry) => entry.record), ...lentRecords]);
 	const previousRecords =
-		current.kind === 'mixed-list'
-			? current.entries.map((entry) => entry.record)
-			: current.kind === 'keyed-list'
-				? [...current.records.values()]
-				: [];
+		current.kind === 'keyed-list' ? current.records.values() : previousEntries.map((entry) => entry.record);
 
 	for (const record of previousRecords) {
 		if (!usedRecords.has(record)) {
 			removeRangeRecord(record);
 		}
 	}
+
+	return { entries, keyed: usedKeys.size > 0, kind: 'mixed-list' };
+}
+
+/**
+ * Gives a new record for a nested keyed group the records its keys had in the list, moved inside it.
+ *
+ * @remarks A list flattens a keyed group into its own keyed items while every filled item is keyed, and keeps the
+ * group nested once an unkeyed sibling is filled (see `toChildSlot` in the JSX factory). Lending the records keeps
+ * the group's nodes across that switch. The keys leave `keyedRecords`, so no sibling can take them too.
+ */
+function lendKeyedRecords(
+	record: MountedRangeRecord,
+	child: unknown,
+	keyedRecords: Map<JsxKey, MountedRangeRecord>,
+): MountedRangeRecord[] {
+	const groupChildren = getIterableChildren(child);
+	const keyedChildren = groupChildren && getKeyedChildren(groupChildren);
+	const records = new Map<JsxKey, MountedRangeRecord>();
+
+	for (const { key } of keyedChildren ?? []) {
+		const lent = keyedRecords.get(key);
+
+		if (lent) {
+			keyedRecords.delete(key);
+			records.set(key, lent);
+			moveRangeBefore(lent.start, lent.end, record.end);
+		}
+	}
+
+	if (records.size > 0) {
+		record.mounted = { kind: 'keyed-list', records };
+	}
+
+	return [...records.values()];
+}
+
+/** Moves `record` before `insertionPoint`, renders `value` into it, and returns its start as the next point. */
+function updateRecordBefore(
+	record: MountedRangeRecord,
+	value: unknown,
+	insertionPoint: Node,
+	rootTarget: HTMLElement,
+	deferredProperties: DeferredPropertyBinding[],
+): Node {
+	moveRangeBefore(record.start, record.end, insertionPoint);
+	record.mounted = updateRangeContent(
+		record.start,
+		record.end,
+		value,
+		record.mounted,
+		rootTarget,
+		deferredProperties,
+	);
+	return record.start;
 }
 
 function removeRangeRecord(record: MountedRangeRecord): void {

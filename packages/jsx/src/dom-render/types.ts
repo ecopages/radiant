@@ -227,6 +227,8 @@ export type MountedMixedListEntry = {
  */
 export type MountedMixedList = {
 	entries: MountedMixedListEntry[];
+	/** Whether an entry has a key, so the next update must match entries by key. */
+	keyed?: boolean;
 	kind: 'mixed-list';
 };
 
