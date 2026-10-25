@@ -12,7 +12,7 @@ const DEVELOPMENT_WARNING_TEXTS = [
 	'pass it as the',
 	'ignores appended nodes',
 	'was defined after a JSX view rendered it',
-	'has not received its Children Value',
+	"has not received its children from its parent's view",
 ];
 const NODE_ENV_READ = /process\.env\.NODE_ENV/g;
 /** Matches the check as the first expression in a `try` block, whether esbuild kept the `if` or minified it to `&&`. */

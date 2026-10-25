@@ -18,7 +18,8 @@ import {
 } from './reactive-prop-core';
 import { EventSubscriptionRegistry } from './event-subscription-registry';
 import { ReactivePropertyState } from './reactive-property-state';
-import { RenderRuntime, type RenderRuntimeHost } from './render-runtime';
+import { areJsxDevWarningsEnabled } from '../helpers/dev-warnings';
+import { RenderRuntime, warnIfChildrenNeverArrive, type RenderRuntimeHost } from './render-runtime';
 import { UpdateCycle } from './update-cycle';
 import { REACTIVE_HOST, ReactiveHost, type ReactiveHostInternals } from './reactive-host';
 import type { ReactiveState } from './reactivity-contract';
@@ -366,6 +367,12 @@ export class RadiantElement<Bindings extends object = {}>
 			this.keepsServerChildren = stamp === SERVER_RENDERED_AUTHORED_STAMP;
 			this.initialSyncPending = true;
 			this.removeAttribute(SERVER_RENDERED_HOST_ATTRIBUTE);
+
+			try {
+				if (process.env.NODE_ENV !== 'production' && this.awaitsChildren && areJsxDevWarningsEnabled()) {
+					warnIfChildrenNeverArrive(this, () => this.awaitsChildren);
+				}
+			} catch {}
 		}
 
 		this.reactiveHost.connectHost();
@@ -379,10 +386,6 @@ export class RadiantElement<Bindings extends object = {}>
 			this.isFirstConnectPending = false;
 
 			if (this.isConnected) {
-				if (this.awaitsChildren) {
-					this.getOrCreateRenderRuntime().warnIfMissingChildrenValue();
-				}
-
 				this.runConnectSync();
 			}
 		});

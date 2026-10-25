@@ -149,18 +149,6 @@ export class RenderRuntime {
 		} catch {}
 	}
 
-	/** Warns when first-connect hydration finds nested-host markup still waiting for its parent's Children Value. */
-	warnIfMissingChildrenValue(): void {
-		try {
-			if (process.env.NODE_ENV !== 'production' && areJsxDevWarningsEnabled() && !this.#hasChildrenValue) {
-				warnOnce(
-					this.#host,
-					'was server-rendered inside another host view but has not received its Children Value; define its parent host on the client.',
-				);
-			}
-		} catch {}
-	}
-
 	observeSlotProjection(): void {
 		if (typeof MutationObserver === 'undefined' || this.#slotProjectionObserver || !this.#host.isConnected) {
 			return;
@@ -391,6 +379,38 @@ export class RenderRuntime {
 }
 
 const issuedWarnings = new Set<string>();
+
+/**
+ * Warns once a server-rendered nested host is still waiting for the children its parent's view hands it, and that
+ * parent is not defined.
+ *
+ * @remarks Development-only, called under the same guard as {@link warnOnce}. The parent can be defined well after the
+ * host connects (its module loads later, or the page's JSX hydrates after awaiting other work), so the check runs one
+ * second after the page has loaded, and only when the nearest enclosing custom element's tag is still undefined.
+ */
+export function warnIfChildrenNeverArrive(host: HTMLElement, isWaiting: () => boolean): void {
+	const check = () =>
+		setTimeout(() => {
+			let parent = host.parentElement;
+
+			while (parent && !parent.localName.includes('-')) {
+				parent = parent.parentElement;
+			}
+
+			if (isWaiting() && host.isConnected && !(parent && customElements.get(parent.localName))) {
+				warnOnce(
+					host,
+					`has not received its children from its parent's view; define ${parent ? `<${parent.localName}>` : 'its parent host'} on the client.`,
+				);
+			}
+		}, 1000);
+
+	if (document.readyState === 'complete') {
+		check();
+	} else {
+		addEventListener('load', check, { once: true });
+	}
+}
 
 /**
  * @remarks

@@ -425,6 +425,7 @@ describe('hydrating server-rendered markup', () => {
 	});
 
 	test('keeps a nested host whose tag is defined before its parent over parsed markup', async () => {
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 		installRadiantHydrator();
 		document.body.innerHTML = serverMarkup('define-order-parent');
 		const serverChild = document.querySelector('hydrated-order-child-test');
@@ -444,6 +445,8 @@ describe('hydrating server-rendered markup', () => {
 
 		await waitFor(() => expect(element.querySelector('b')?.getAttribute('title')).toBe('inside-1'));
 		expect(element.querySelectorAll('b')).toHaveLength(1);
+		expect(warn).not.toHaveBeenCalled();
+		warn.mockRestore();
 	});
 
 	test('rebuilds a nested host whose tag is defined only after its parent hydrated', async () => {
@@ -484,11 +487,6 @@ describe('a nested host that waits for its children', () => {
 		await settle();
 
 		expect(log).toEqual(['child:connected']);
-		expect(warn).toHaveBeenCalledWith(
-			expect.stringContaining(
-				`<${prefix}-child> was server-rendered inside another host view but has not received its Children Value; define its parent host on the client.`,
-			),
-		);
 
 		defineLifecycleParent(prefix, log);
 		await waitFor(() => expect(hasHydrationMarkers(document.body)).toBe(false));
@@ -500,6 +498,8 @@ describe('a nested host that waits for its children', () => {
 			'child:onConnected hydrated=false',
 		);
 		expect(log.indexOf('child:onConnected hydrated=true')).toBeGreaterThan(log.indexOf('parent:render'));
+		await new Promise((resolve) => setTimeout(resolve, 1100));
+		expect(warn).not.toHaveBeenCalled();
 	});
 
 	/**
@@ -569,10 +569,13 @@ describe('a nested host that waits for its children', () => {
 		expect(log).toEqual(['child:connected']);
 		expect(child.isServerRendered).toBe(true);
 		expect(hasHydrationMarkers(child)).toBe(true);
-		expect(warn).toHaveBeenCalledWith(
-			expect.stringContaining(
-				`<${prefix}-child> was server-rendered inside another host view but has not received its Children Value; define its parent host on the client.`,
-			),
+		expect(warn).not.toHaveBeenCalled();
+		await waitFor(
+			() =>
+				expect(warn).toHaveBeenCalledWith(
+					`[@ecopages/radiant] <${prefix}-child> has not received its children from its parent's view; define <${prefix}-parent> on the client.`,
+				),
+			{ timeout: 3000 },
 		);
 	});
 
