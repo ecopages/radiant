@@ -7,6 +7,7 @@ const PLUMBING = [
 	'notifyUpdate',
 	'getReactiveBinding',
 	'registerPostSync',
+	'registerConnectSync',
 	'registerUpdatedCallback',
 	'registerContextProvider',
 	'registerHydrationBinding',
@@ -15,6 +16,7 @@ const PLUMBING = [
 	'getSsrContextProviders',
 	'getSsrHydrationBindings',
 	'flushPostSync',
+	'flushConnectSync',
 	'registerEventEmitter',
 ];
 

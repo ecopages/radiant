@@ -40,8 +40,10 @@ export interface ReactiveHostInternals {
 	readonly ssrRegistry: HostSsrRegistry;
 	notifyUpdate(changedProperty: string, oldValue: unknown, value: unknown): void;
 	registerPostSync(callback: () => void): void;
+	registerConnectSync(callback: () => void): void;
 	registerUpdatedCallback(keys: readonly string[], callback: UpdatedCallback): () => void;
 	flushPostSync(): void;
+	flushConnectSync(): void;
 }
 
 /**
@@ -99,6 +101,7 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	private onConnectedCallbacks: (() => void)[] = [];
 	private onDisconnectedCallback: (() => void)[] = [];
 	private postSyncCallbacks: (() => void)[] = [];
+	private connectSyncCallbacks: (() => void)[] = [];
 
 	constructor(
 		private readonly host: Host,
@@ -200,10 +203,25 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	}
 
 	/**
+	 * Registers work for the client connect pass after post-sync callbacks.
+	 *
+	 * @remarks Callbacks remain registered across disconnects. The Element Host's client connect path owns flushing them; SSR preparation and serialization do not.
+	 */
+	public registerConnectSync(callback: () => void): void {
+		this.connectSyncCallbacks.push(callback);
+	}
+
+	/**
 	 * Runs every post-sync callback registered on this host.
 	 */
 	public flushPostSync(): void {
 		for (const callback of this.postSyncCallbacks) {
+			callback();
+		}
+	}
+
+	public flushConnectSync(): void {
+		for (const callback of this.connectSyncCallbacks) {
 			callback();
 		}
 	}
