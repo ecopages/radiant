@@ -1,3 +1,4 @@
+import { RAW_TEXT_ELEMENT_NAMES } from './raw-text-element-names.ts';
 import {
 	isIterableRenderable,
 	isJsxNodeLike,
@@ -14,14 +15,9 @@ const OPEN_TAG_NAME_PATTERN = /<([a-z][a-z0-9-]*)(?:\s[^>]*)?>$/i;
  * of them would be literal text, so their children are bound as text instead.
  */
 export const TEXT_CONTENT_ELEMENT_NAMES: ReadonlySet<string> = new Set([
-	'script',
-	'style',
+	...RAW_TEXT_ELEMENT_NAMES,
 	'textarea',
 	'title',
-	'xmp',
-	'iframe',
-	'noembed',
-	'noframes',
 ]);
 
 /** Returns whether compiled HTML currently ends inside a text-content element's opening tag. */

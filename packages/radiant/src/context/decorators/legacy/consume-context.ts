@@ -27,13 +27,9 @@ export function consumeContext(context: UnknownContext) {
 		};
 
 		registerLegacyPostConstructionInitializer(proto, (element) => {
-			if (
-				bootstrapSsrConsumedContext(element, context, (provider) => {
-					assignContextProvider(element, provider);
-				})
-			) {
-				return;
-			}
+			bootstrapSsrConsumedContext(element, context, (provider) => {
+				assignContextProvider(element, provider);
+			});
 
 			element.registerConnectedCallback(() => {
 				if (initializeConsumedContextForHost(element, { emitMounted: true })) {

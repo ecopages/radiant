@@ -26,9 +26,7 @@ export function contextSelectorField<T extends Context<unknown, unknown>, Select
 				true,
 			);
 
-			if (bootstrapSsrContextSelection<T, Selected>(element, context, applyValue, select)) {
-				return;
-			}
+			bootstrapSsrContextSelection<T, Selected>(element, context, applyValue, select);
 
 			const connectSelection = () =>
 				connectContextSelection<T, Selected>(element, context, applyValue, {

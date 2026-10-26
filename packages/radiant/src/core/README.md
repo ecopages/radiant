@@ -39,11 +39,10 @@ flowchart TD
     B -->|SSR| Q[Create component instance in server runtime]
     Q --> R[Set props fields and attributes]
     R --> S[Call renderComponent or renderRadiantElementHostToString]
-    S --> T[Server derives tag and host attributes]
-    S --> U[Server serializes render output via JSX renderToString]
-    U --> V[Optional hydration markers when mode is hydrate]
-    T --> X[Compose host HTML string]
-    V --> X
+    S --> Prep[Run prepareForSsr once]
+    Prep --> U[Serialize the view; hydrate mode emits view markers]
+    U --> Attr[Read host attributes and hydration payloads]
+    Attr --> X[Compose host HTML and stamp]
     X --> Y[Send HTML to browser]
     Y --> C
 ```
@@ -83,10 +82,10 @@ SSR works like this:
 
 1. Server code creates the component instance (typically via `renderComponent(...)`).
 2. Server code sets props, fields, or attributes exactly as client code would.
-3. When authored light DOM is needed, a server render environment prepares the host before rendering.
+3. When authored light DOM is needed, a server render environment applies it through `prepareHost` / `authoredContent` before serialization.
 4. Prefer `@ecopages/radiant/server/render-component` for adapters and fragment responses.
-5. The JSX server renderer turns `render()` output into HTML.
-6. When hydration is requested, hydration markers are emitted into the rendered view and the host tag is stamped with `data-radiant-ssr`.
+5. Each host serialization runs `prepareForSsr` once, renders the view, then reads attributes and hydration payloads from that state.
+6. When hydration is requested, the view may include hydration markers and the host tag is stamped with `data-radiant-ssr`.
 7. The browser receives `<my-element ...>...</my-element>` markup.
 8. On first connect, the same component instance logic decides whether to hydrate or do a fresh render.
 

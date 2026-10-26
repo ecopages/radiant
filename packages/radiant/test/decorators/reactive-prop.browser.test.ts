@@ -165,6 +165,28 @@ describe('@prop', () => {
 	});
 
 	describe('observedAttributes and attribute channel', () => {
+		test('updates Number and Boolean camelCase props from kebab-case attributes', () => {
+			@customElement('my-reactive-kebab-case-attributes')
+			class MyReactiveKebabCaseAttributes extends RadiantElement {
+				@prop({ type: Number, defaultValue: 200 }) minWidth: number;
+				@prop({ type: Boolean, defaultValue: false }) isOpen: boolean;
+			}
+
+			expect(observedAttributesOf(MyReactiveKebabCaseAttributes)).toContain('min-width');
+			expect(observedAttributesOf(MyReactiveKebabCaseAttributes)).toContain('is-open');
+
+			const element = document.createElement(
+				'my-reactive-kebab-case-attributes',
+			) as MyReactiveKebabCaseAttributes;
+			document.body.appendChild(element);
+
+			element.setAttribute('min-width', '300');
+			element.setAttribute('is-open', '');
+
+			expect(element.minWidth).toBe(300);
+			expect(element.isOpen).toBe(true);
+		});
+
 		test('registers every @prop attribute on observedAttributes without a manual static list', () => {
 			@customElement('my-reactive-observed-props')
 			class MyReactiveObservedProps extends RadiantElement {

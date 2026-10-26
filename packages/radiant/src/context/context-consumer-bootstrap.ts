@@ -11,43 +11,54 @@ import type { ContextType, UnknownContext } from './types';
 type ConsumedContextAssignment = (provider: unknown) => void;
 
 /**
- * Resolves a consumed context immediately and registers the same resolution to
- * run again during the later SSR preparation phase.
+ * Registers consumed-context resolution for the host's SSR preparation pass.
  *
- * This keeps constructor-time state and pre-serialization state aligned after
- * instance fields, props, or authored host content change during SSR setup.
+ * @remarks Delivery waits until `prepareForSsr`, after instance fields exist and before `@onUpdated`
+ * callbacks, so a constructor-time write is not overwritten by `@state` field initialization. Client
+ * hosts still connect through {@link connectConsumedContext}.
  */
 export function bootstrapSsrConsumedContext(
 	host: ContextHostLike,
 	context: UnknownContext,
 	assign: ConsumedContextAssignment,
 	options: { emitMounted?: boolean } = {},
-): boolean {
-	return registerAndResolveConsumerBootstrap(host, () => initializeConsumedContext(host, context, assign, options));
+): void {
+	registerSsrPreparationCallback(
+		host,
+		() => {
+			initializeConsumedContext(host, context, assign, options);
+		},
+		true,
+	);
 }
 
 /**
- * Resolves a selected context value immediately and registers the same
- * selection for the later SSR preparation phase.
+ * Registers context selection for the host's SSR preparation pass.
  *
- * This lets nested SSR renders recompute selector-backed state after the host
- * has finished construction and any server-side configuration hooks have run.
+ * @remarks Delivery runs during SSR preparation after construction and before `@onUpdated` callbacks, so
+ * `@contextSelector` and `@onContextUpdate` see the provider value at that point. Client hosts still
+ * connect through {@link connectContextSelection}.
  */
 export function bootstrapSsrContextSelection<TContext extends UnknownContext, Selected = ContextType<TContext>>(
 	host: object,
 	context: TContext,
 	callback: (value: Selected) => void,
 	select?: (context: ContextType<TContext>) => Selected,
-): boolean {
-	return registerAndResolveConsumerBootstrap(host, () => {
-		if (select) {
-			return initializeContextSelection(context, { callback, select });
-		}
+): void {
+	registerSsrPreparationCallback(
+		host,
+		() => {
+			if (select) {
+				initializeContextSelection(context, { callback, select });
+				return;
+			}
 
-		return initializeContextSelection(context, {
-			callback: callback as (value: ContextType<TContext>) => void,
-		});
-	});
+			initializeContextSelection(context, {
+				callback: callback as (value: ContextType<TContext>) => void,
+			});
+		},
+		true,
+	);
 }
 
 /**
@@ -110,9 +121,4 @@ export function connectContextSelection<TContext extends UnknownContext, Selecte
 		subscribe: options.subscribe,
 		onSubscribe: options.onSubscribe,
 	});
-}
-
-function registerAndResolveConsumerBootstrap<TResult>(host: object, resolve: () => TResult): TResult {
-	registerSsrPreparationCallback(host, resolve);
-	return resolve();
 }

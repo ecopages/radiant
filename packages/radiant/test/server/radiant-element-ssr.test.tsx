@@ -8,6 +8,7 @@ import { prop } from '../../src/decorators/prop';
 import { querySlot } from '../../src/decorators/query-slot';
 import { signal } from '../../src/decorators/signal';
 import { state } from '../../src/decorators/state';
+import { createResource } from '../../src/signals/host-resource';
 import type { WritableSignal } from '@ecopages/signals';
 import { resolveSsrContextValue } from '../../src/server/context-ssr';
 import {
@@ -54,6 +55,29 @@ class ServerHostSlotQueryCard extends RadiantElement {
 }
 
 describe('RadiantElement SSR', () => {
+	test('renderRadiantElementHostToString() does not start host resources', () => {
+		let fetches = 0;
+
+		@customElement('server-host-resource-card-test')
+		class ServerHostResourceCard extends RadiantElement {
+			resource = createResource(this, {
+				fetcher: async () => {
+					fetches += 1;
+					return 'weather';
+				},
+			});
+
+			override render() {
+				return <p>{this.resource.status.get()}</p>;
+			}
+		}
+
+		const html = renderRadiantElementHostToString(new ServerHostResourceCard());
+
+		expect(html).toContain('<server-host-resource-card-test>');
+		expect(fetches).toBe(0);
+	});
+
 	test('renderRadiantElementViewToString() serializes the current view without connecting', () => {
 		class ServerGreetingCard extends RadiantElement {
 			message = 'Hello SSR';
@@ -158,10 +182,10 @@ describe('RadiantElement SSR', () => {
 		expect(baseHtml).not.toContain('childLabel');
 		expect(baseHtml).not.toContain('siblingLabel');
 		expect(childHtml).toContain('shared="from-base"');
-		expect(childHtml).toContain('childLabel="from-child"');
+		expect(childHtml).toContain('child-label="from-child"');
 		expect(childHtml).not.toContain('siblingLabel');
 		expect(siblingHtml).toContain('shared="from-base"');
-		expect(siblingHtml).toContain('siblingLabel="from-sibling"');
+		expect(siblingHtml).toContain('sibling-label="from-sibling"');
 		expect(siblingHtml).not.toContain('childLabel');
 	});
 
@@ -509,6 +533,40 @@ describe('RadiantElement SSR', () => {
 		expect(html).toContain('<header><h2 slot="header">Server heading</h2></header>');
 		expect(html).toContain('<div><p>Server body</p></div>');
 		expect(html).toContain('data-radiant-slot-projection');
+	});
+
+	test('A View-owned Shell ships its children once', () => {
+		@customElement('shell-card')
+		class ShellCard extends RadiantElement {}
+
+		const element = new ShellCard();
+		element.innerHTML = '<h2>Title</h2><p>Body</p>';
+
+		const html = renderRadiantElementHostToString(element, { mode: 'hydrate' });
+
+		expect(html).toContain('<h2>Title</h2><p>Body</p>');
+		expect(html).not.toContain('data-radiant-slot-projection');
+	});
+
+	test('A host whose view has no slot ships no slot-projection payload', () => {
+		@customElement('derived-list')
+		class DerivedList extends RadiantElement {
+			override render() {
+				return (
+					<ul>
+						<li>derived</li>
+					</ul>
+				);
+			}
+		}
+
+		const element = new DerivedList();
+		element.innerHTML = '<p>ignored by render</p>';
+
+		const html = renderRadiantElementHostToString(element, { mode: 'hydrate' });
+
+		expect(html).toContain('<ul><li>derived</li></ul>');
+		expect(html).not.toContain('data-radiant-slot-projection');
 	});
 
 	test('slot projection payload keeps escaped text escaped', () => {
