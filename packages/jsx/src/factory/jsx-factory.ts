@@ -70,19 +70,24 @@ function isCustomizedBuiltIn(type: Function): boolean {
 	return false;
 }
 
+/**
+ * @remarks Every function JSX type passes through here on every render. A class constructor's `prototype` is
+ * not writable, unlike a `function` or generator's, and an arrow function has none, so the class check never
+ * stringifies the function source.
+ */
 function resolveCustomElementTagName(type: Function): string | undefined {
 	const tagName =
 		(type as CustomElementConstructor & { [CUSTOM_ELEMENT_TAG_NAME]?: string })[CUSTOM_ELEMENT_TAG_NAME] ||
 		globalThis.customElements?.getName?.(type as CustomElementConstructor);
 	if (tagName) {
 		if (isCustomizedBuiltIn(type)) {
-			throw new TypeError('Customized built-ins are unsupported.');
+			throw new TypeError(`Class ${type.name} (<${tagName}>): customized built-ins are unsupported.`);
 		}
 
 		return tagName;
 	}
 
-	if (Function.prototype.toString.call(type).startsWith('class')) {
+	if (Object.getOwnPropertyDescriptor(type, 'prototype')?.writable === false) {
 		throw new TypeError(`Class ${type.name}: use @customElement(...) or customElements.define() before rendering.`);
 	}
 

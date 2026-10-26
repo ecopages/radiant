@@ -632,6 +632,21 @@ Custom elements default to property bindings for unprefixed names, with a small 
 
 `JSX_PROPS` declares the public unprefixed props on the element class. `prop:*` bindings are typed from the class instance, and `attr:*` bindings use the DOM attribute value type. Required fields in the declared props remain required.
 
+`prop:*` accepts any writable, non-method instance property. Readonly fields and getters without a setter are rejected, because assigning them throws or replaces state the element owns. Every public field is writable this way, including Radiant `@state` fields: decorators do not change a field's type, so JSX cannot tell `@prop` from `@state`. Mark internal state `protected` or `private` to keep it out of `prop:*`.
+
+A class meant to be extended takes its public props as a type parameter. A subclass passes its wider props instead of redeclaring `JSX_PROPS`, which a `declare` field cannot do under `noImplicitOverride`:
+
+```tsx
+class UserCard<Props extends UserCardProps = UserCardProps> extends RadiantElement {
+	declare readonly [JSX_PROPS]?: Props;
+	@prop({ type: String }) name = '';
+}
+
+class AdminCard extends UserCard<UserCardProps & { level: string }> {
+	@prop({ type: String }) level = '';
+}
+```
+
 At runtime, JSX resolves the class to its tag from Radiant's `@customElement(...)` metadata or the registered browser `customElements` registry. The class must be decorated or registered before rendering; an unregistered class throws a `TypeError`.
 
 ```tsx

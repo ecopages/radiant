@@ -9,13 +9,13 @@
 		{
 			"label": "index",
 			"entrypoint": "./src/index.ts",
-			"maxBytes": 36864,
+			"maxBytes": 37120,
 			"maxGzipBytes": 12288
 		},
 		{
 			"label": "jsx-runtime",
 			"entrypoint": "./src/jsx-runtime.ts",
-			"maxBytes": 10560,
+			"maxBytes": 10880,
 			"maxGzipBytes": 4096
 		},
 		{
