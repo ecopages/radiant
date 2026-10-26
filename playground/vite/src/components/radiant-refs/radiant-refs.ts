@@ -1,7 +1,9 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, onEvent, query } from '@ecopages/radiant';
 
 @customElement('radiant-refs')
 export class RadiantRefs extends RadiantElement {
+	declare readonly [JSX_PROPS]?: Record<never, never>;
 	@query({ ref: 'container' }) refContainer!: HTMLDivElement | null;
 	@query({ ref: 'count' }) countTarget!: HTMLDivElement | null;
 	@query({ ref: 'item', all: true, cache: false }) itemTargets!: HTMLDivElement[];
@@ -52,5 +54,11 @@ export class RadiantRefs extends RadiantElement {
 		}
 
 		this.renderCount();
+	}
+}
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'radiant-refs': RadiantRefs;
 	}
 }

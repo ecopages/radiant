@@ -1,4 +1,4 @@
-import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, onEvent } from '@ecopages/radiant';
 import type { RuiSelectElement } from '@ecopages/radiant-ui/select';
 import {
@@ -14,6 +14,7 @@ import {
 /** Shared docs header theme picker; selection changes are stored in docs-only state. */
 @customElement('radiant-theme-palette-picker')
 export class ThemePalettePickerElement extends RadiantElement {
+	declare readonly [JSX_PROPS]?: Record<never, never>;
 	private selection: DocsThemeSelection = defaultDocsThemeSelection;
 	private rootObserver: MutationObserver | null = null;
 
@@ -61,8 +62,8 @@ export class ThemePalettePickerElement extends RadiantElement {
 	}
 }
 
-declare module '@ecopages/jsx/jsx-runtime' {
-	interface JsxCustomIntrinsicElements {
-		'radiant-theme-palette-picker': JsxCustomElementAttributes<ThemePalettePickerElement>;
+declare global {
+	interface HTMLElementTagNameMap {
+		'radiant-theme-palette-picker': ThemePalettePickerElement;
 	}
 }

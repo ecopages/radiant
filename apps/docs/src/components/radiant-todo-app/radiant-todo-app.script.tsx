@@ -1,4 +1,4 @@
-import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, onEvent, prop } from '@ecopages/radiant';
 import { type ContextProvider, consumeContext, contextSelector, provideContext } from '@ecopages/radiant/context';
 import { TodoLogger, todoContext, type Todo, type TodoContext } from './todo-context';
@@ -15,6 +15,7 @@ type RadiantTodoBindings = {
 
 @customElement('radiant-todo-item')
 export class RadiantTodoItem extends RadiantElement<RadiantTodoBindings> {
+	declare readonly [JSX_PROPS]?: RadiantTodoProps;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) complete!: boolean;
 	@prop({ type: String, defaultValue: '' }) text!: string;
 	@consumeContext(todoContext) context!: ContextProvider<typeof todoContext>;
@@ -82,6 +83,7 @@ export class RadiantTodoItem extends RadiantElement<RadiantTodoBindings> {
 
 @customElement('radiant-todo-app')
 export class RadiantTodoAppElement extends RadiantElement {
+	declare readonly [JSX_PROPS]?: Record<never, never>;
 	@provideContext<typeof todoContext>({
 		context: todoContext,
 		initialValue: { todos: [], logger: new TodoLogger() },
@@ -166,9 +168,9 @@ export class RadiantTodoAppElement extends RadiantElement {
 	}
 }
 
-declare module '@ecopages/jsx/jsx-runtime' {
-	interface JsxCustomIntrinsicElements {
-		'radiant-todo-app': JsxCustomElementAttributes<RadiantTodoAppElement>;
-		'radiant-todo-item': JsxCustomElementAttributes<RadiantTodoItem, RadiantTodoProps>;
+declare global {
+	interface HTMLElementTagNameMap {
+		'radiant-todo-app': RadiantTodoAppElement;
+		'radiant-todo-item': RadiantTodoItem;
 	}
 }

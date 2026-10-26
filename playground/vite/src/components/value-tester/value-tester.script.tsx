@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement } from '@ecopages/radiant/core/radiant-element';
 import { customElement } from '@ecopages/radiant/decorators/custom-element';
 import { onEvent } from '@ecopages/radiant/decorators/on-event';
@@ -15,6 +16,7 @@ export type RadiantValueTesterProps = {
 
 @customElement('radiant-tester')
 export class RadiantValueTester extends RadiantElement {
+	declare readonly [JSX_PROPS]?: RadiantValueTesterProps;
 	@prop({ type: Number, reflect: true, defaultValue: 0 }) number!: number;
 	@prop({ type: String, reflect: true, defaultValue: 'string' }) string!: string;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) boolean!: boolean;
@@ -111,3 +113,9 @@ export const ValueTester = ({ number, string, boolean, object, array }: RadiantV
 		</radiant-tester>
 	);
 };
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'radiant-tester': RadiantValueTester;
+	}
+}

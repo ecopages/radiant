@@ -30,26 +30,34 @@ customElements.define('user-card', UserCard);
 
 `JSX_PROPS` declares unprefixed public props. Required fields remain required. Explicit `prop:*` bindings use the custom element instance type; `attr:*` bindings use DOM attribute types.
 
-## Augmenting The Runtime
+## Typing By Tag Name
 
-If JSX uses a tag name without importing the class, augment `JsxCustomIntrinsicElements` in the JSX runtime module.
+If JSX uses a tag name without importing the class, add that tag to `HTMLElementTagNameMap`. The class's `JSX_PROPS` declaration supplies the same public prop contract as the class form.
 
 ```tsx
-import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+import type { JSX_PROPS } from '@ecopages/jsx';
 
 type UserCardProps = {
 	name: string;
 	isAdmin: boolean;
 };
 
-declare module '@ecopages/jsx/jsx-runtime' {
-	interface JsxCustomIntrinsicElements {
-		'user-card': JsxCustomElementAttributes<HTMLElement, UserCardProps>;
+class UserCard extends HTMLElement {
+	declare readonly [JSX_PROPS]?: UserCardProps;
+}
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'user-card': UserCard;
 	}
 }
+
+customElements.define('user-card', UserCard);
+
+<user-card name="Ada" isAdmin={false} />;
 ```
 
-`JsxCustomElementAttributes<Host, Props>` types public unprefixed props from `Props` and explicit `prop:*` bindings from `Host`.
+Unprefixed props come from `JSX_PROPS`; `prop:*` bindings are typed from the element instance. Existing `JsxCustomIntrinsicElements` augmentations remain available as a supported compatibility path.
 
 ## Binding Defaults For Custom Elements
 

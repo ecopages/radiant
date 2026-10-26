@@ -279,6 +279,6 @@ export type JsxCustomElementAttributes<
 > = JsxIntrinsicAttributes<ElementType> & Props;
 
 /**
- * Module-augmentable registry of custom JSX intrinsic elements for the Ecopages JSX runtime.
+ * Compatibility registry for module-augmented custom JSX intrinsic elements.
  */
 export interface JsxCustomIntrinsicElements {}

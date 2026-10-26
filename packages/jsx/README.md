@@ -628,7 +628,7 @@ customElements.define('user-card', UserCard);
 <UserCard name="Ada" isAdmin={false} />;
 ```
 
-Custom elements default to property bindings for unprefixed names, with a small attribute-default set for obvious HTML semantics: `id`, `class`, `style`, `title`, `role`, `slot`, `part`, `tabindex`, `hidden`, `lang`, `dir`, plus expanded `data-*` and `aria-*`. Use `attr:*` when a non-default name must serialize to markup, and `prop:*` when you want to override the default explicitly. Unregistered tags still type-check; a registered `JsxCustomIntrinsicElements` entry keeps its public `Props` and is not stripped down to generic HTML attributes.
+Custom elements default to property bindings for unprefixed names, with a small attribute-default set for obvious HTML semantics: `id`, `class`, `style`, `title`, `role`, `slot`, `part`, `tabindex`, `hidden`, `lang`, `dir`, plus expanded `data-*` and `aria-*`. Use `attr:*` when a non-default name must serialize to markup, and `prop:*` when you want to override the default explicitly. Unregistered tags still type-check. A custom tag declared in `HTMLElementTagNameMap` gets its public `JSX_PROPS` contract, while tags without that marker retain the open fallback.
 
 `JSX_PROPS` declares the public unprefixed props on the element class. `prop:*` bindings are typed from the class instance, and `attr:*` bindings use the DOM attribute value type. Required fields in the declared props remain required.
 
@@ -638,10 +638,10 @@ At runtime, JSX resolves the class to its tag from Radiant's `@customElement(...
 <UserGrid id="people" class="panel" items={rows} selection={currentRow} attr:status="ready" prop:api={gridApi} />
 ```
 
-If JSX only uses a tag name and does not import the class, augment the runtime module instead:
+If JSX only uses a tag name and does not import the class, declare the tag in the standard DOM map. The tag then uses the public props from the class's `JSX_PROPS` declaration:
 
 ```tsx
-import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+import type { JSX_PROPS } from '@ecopages/jsx';
 
 type UserGridRow = {
 	id: string;
@@ -657,14 +657,17 @@ type UserGridApi = {
 };
 
 class UserGridElement extends HTMLElement {
+	declare readonly [JSX_PROPS]?: UserGridProps;
 	api?: UserGridApi;
 }
 
-declare module '@ecopages/jsx/jsx-runtime' {
-	interface JsxCustomIntrinsicElements {
-		'user-grid': JsxCustomElementAttributes<UserGridElement, UserGridProps>;
+declare global {
+	interface HTMLElementTagNameMap {
+		'user-grid': UserGridElement;
 	}
 }
+
+customElements.define('user-grid', UserGridElement);
 
 const rows: UserGridRow[] = [{ id: '1' }];
 const currentRow = rows[0];
@@ -674,6 +677,8 @@ const gridApi: UserGridApi = {
 
 <user-grid items={rows} selection={currentRow} prop:api={gridApi} />;
 ```
+
+`JsxCustomIntrinsicElements` remains available as a supported compatibility path for existing module augmentations.
 
 ### Children as a value
 

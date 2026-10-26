@@ -1,4 +1,4 @@
-import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, state } from '@ecopages/radiant';
 
 @customElement('radiant-event-binding-lab')
@@ -10,6 +10,7 @@ export class RadiantEventBindingLab extends RadiantElement<{
 	nativeClicks: number;
 	nativeLog: string;
 }> {
+	declare readonly [JSX_PROPS]?: Record<never, never>;
 	@state autoClicks = 0;
 	@state autoLog = 'Waiting for a delegated click.';
 	@state blockedAutoClicks = 0;
@@ -106,8 +107,8 @@ export class RadiantEventBindingLab extends RadiantElement<{
 	}
 }
 
-declare module '@ecopages/jsx/jsx-runtime' {
-	interface JsxCustomIntrinsicElements {
-		'radiant-event-binding-lab': JsxCustomElementAttributes<HTMLElement, Record<never, never>>;
+declare global {
+	interface HTMLElementTagNameMap {
+		'radiant-event-binding-lab': RadiantEventBindingLab;
 	}
 }

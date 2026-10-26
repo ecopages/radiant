@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import type { FocusableElement } from '@/types';
 import { onUpdated } from '@ecopages/radiant';
 import { RadiantElement } from '@ecopages/radiant/core/radiant-element';
@@ -34,6 +35,7 @@ export type RadiantDropdownProps = {
  */
 @customElement('radiant-dropdown')
 export class RadiantDropdown extends RadiantElement {
+	declare readonly [JSX_PROPS]?: RadiantDropdownProps;
 	@query({ ref: 'trigger' }) triggerTarget!: HTMLButtonElement | null;
 	@query({ ref: 'content' }) contentTarget!: HTMLElement | null;
 	@query({ ref: 'arrow' }) arrowTarget!: HTMLElement | null;
@@ -104,5 +106,11 @@ export class RadiantDropdown extends RadiantElement {
 			content.hidden = true;
 			document.removeEventListener('click', this.closeContent);
 		}
+	}
+}
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'radiant-dropdown': RadiantDropdown;
 	}
 }

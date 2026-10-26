@@ -1,17 +1,18 @@
-import { createRoot, type JsxCustomElementAttributes } from '@ecopages/jsx';
+import { type JSX_PROPS, createRoot } from '@ecopages/jsx';
 import { describe, expect, test } from 'vitest';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { customElement } from '../../src/decorators/custom-element';
 import { prop } from '../../src/decorators/prop';
 
-declare module '@ecopages/jsx/jsx-runtime' {
-	interface JsxCustomIntrinsicElements {
-		'prop-upgrade-jsx': JsxCustomElementAttributes<RadiantElement, { value?: string }>;
+declare global {
+	interface HTMLElementTagNameMap {
+		'prop-upgrade-jsx': JsxValueHost;
 	}
 }
 
 @customElement('prop-upgrade-jsx')
 class JsxValueHost extends RadiantElement {
+	declare readonly [JSX_PROPS]?: { value?: string };
 	@prop({ type: String, reflect: true, defaultValue: '' }) value = '';
 }
 

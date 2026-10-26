@@ -1,5 +1,5 @@
 import { waitFor } from '@testing-library/dom';
-import type { JsxCustomElementAttributes, JsxRenderable } from '@ecopages/jsx';
+import type { JSX_PROPS, JsxRenderable } from '@ecopages/jsx';
 import { render as renderJsx } from '@ecopages/jsx';
 import { setDevWarningsEnabled } from '@ecopages/jsx/jsx-dev-runtime';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
@@ -26,12 +26,9 @@ function mount<T extends HTMLElement>(tagName: string): T {
 	return element;
 }
 
-declare module '@ecopages/jsx/jsx-runtime' {
-	interface JsxCustomIntrinsicElements {
-		'nested-plain-region-card-test': JsxCustomElementAttributes<
-			NestedPlainRegionCard,
-			{ children?: JsxRenderable; header?: JsxRenderable }
-		>;
+declare global {
+	interface HTMLElementTagNameMap {
+		'nested-plain-region-card-test': NestedPlainRegionCard;
 	}
 }
 
@@ -255,6 +252,7 @@ class NestedRegionParent extends RadiantElement<{ label: string }> {
 
 @customElement('nested-plain-region-card-test')
 class NestedPlainRegionCard extends RadiantElement {
+	declare readonly [JSX_PROPS]?: { children?: JsxRenderable; header?: JsxRenderable };
 	@state header: JsxRenderable = null;
 
 	override render() {

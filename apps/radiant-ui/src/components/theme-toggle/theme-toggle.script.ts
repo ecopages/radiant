@@ -1,4 +1,4 @@
-import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { customElement, onEvent } from '@ecopages/radiant';
 import {
 	RuiCycleToggleElement,
@@ -45,6 +45,7 @@ function resolveIsDark(preference: ThemePreference): boolean {
  */
 @customElement(THEME_TOGGLE_TAG)
 export class ThemeToggle extends RuiCycleToggleElement {
+	declare readonly [JSX_PROPS]?: ThemeToggleProps;
 	/**
 	 * @remarks
 	 * First-connect attribute catch-up is deferred to a microtask. Applying the
@@ -105,8 +106,8 @@ export class ThemeToggle extends RuiCycleToggleElement {
 
 export type ThemeToggleProps = RuiCycleToggleProps & { id?: string };
 
-declare module '@ecopages/jsx/jsx-runtime' {
-	interface JsxCustomIntrinsicElements {
-		'theme-toggle': JsxCustomElementAttributes<ThemeToggle, ThemeToggleProps>;
+declare global {
+	interface HTMLElementTagNameMap {
+		'theme-toggle': ThemeToggle;
 	}
 }

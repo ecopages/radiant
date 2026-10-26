@@ -3,7 +3,7 @@ import { customElement } from '@ecopages/radiant/decorators/custom-element';
 import { onEvent } from '@ecopages/radiant/decorators/on-event';
 import { prop } from '@ecopages/radiant/decorators/prop';
 import { state } from '@ecopages/radiant/decorators/state';
-import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RuiButton } from '@ecopages/radiant-ui/button';
 import { copyForLlmCheckIcon, copyForLlmSparkleIcon } from './copy-for-llm-icons';
 
@@ -33,6 +33,7 @@ async function copyTextToClipboard(text: string): Promise<void> {
 
 @customElement('radiant-copy-for-llm')
 export class RadiantCopyForLlm extends RadiantElement {
+	declare readonly [JSX_PROPS]?: Partial<CopyForLlmProps>;
 	@prop({ type: String, attribute: 'llm-url' }) llmUrl = '';
 	@prop({ type: String }) label = 'Copy for LLM';
 	@state copyState: 'idle' | 'copied' | 'error' = 'idle';
@@ -118,17 +119,8 @@ export class RadiantCopyForLlm extends RadiantElement {
 	}
 }
 
-/**
- * JSX host attributes for {@link RadiantCopyForLlm}.
- *
- * @remarks
- * Props are optional: the element defaults both, and `llmUrl` is driven via `prop:` because
- * the attribute name is `llm-url` — requiring an unprefixed `llmUrl` would be wrong.
- */
-type RadiantCopyForLlmJsxAttributes = JsxCustomElementAttributes<RadiantCopyForLlm, Partial<CopyForLlmProps>>;
-
-declare module '@ecopages/jsx/jsx-runtime' {
-	interface JsxCustomIntrinsicElements {
-		'radiant-copy-for-llm': RadiantCopyForLlmJsxAttributes;
+declare global {
+	interface HTMLElementTagNameMap {
+		'radiant-copy-for-llm': RadiantCopyForLlm;
 	}
 }

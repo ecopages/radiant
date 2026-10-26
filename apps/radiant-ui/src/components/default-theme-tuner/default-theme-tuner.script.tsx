@@ -1,4 +1,4 @@
-import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, onEvent, state } from '@ecopages/radiant';
 import { RuiButton } from '@ecopages/radiant-ui/button';
 import { RuiField, RuiFieldDescription } from '@ecopages/radiant-ui/field';
@@ -22,6 +22,7 @@ const tuningControls = (Object.keys(DOCS_DEFAULT_TUNING_SCHEMA) as (keyof DocsDe
 /** Docs-only controls for exploring the Radiant Default seed and geometry inputs. */
 @customElement('radiant-default-theme-tuner')
 export class DefaultThemeTunerElement extends RadiantElement {
+	declare readonly [JSX_PROPS]?: Record<never, never>;
 	@state private tuning = readDocsDefaultThemeTuning();
 	private rootObserver: MutationObserver | null = null;
 	private persistenceTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -170,8 +171,8 @@ export class DefaultThemeTunerElement extends RadiantElement {
 	}
 }
 
-declare module '@ecopages/jsx/jsx-runtime' {
-	interface JsxCustomIntrinsicElements {
-		'radiant-default-theme-tuner': JsxCustomElementAttributes<DefaultThemeTunerElement>;
+declare global {
+	interface HTMLElementTagNameMap {
+		'radiant-default-theme-tuner': DefaultThemeTunerElement;
 	}
 }
