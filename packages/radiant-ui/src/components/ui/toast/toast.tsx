@@ -1,9 +1,8 @@
 import type { JsxCustomElementAttributes } from '@ecopages/jsx';
 import { RuiToast as RuiToastElement, type RuiToastProps } from './toast.script';
 
-import { RuiToaster as RuiToasterElement, type RuiToasterProps } from './toaster.script';
+import type { RuiToaster as RuiToasterElement, RuiToasterProps } from './toaster.script';
 import type { WithoutChildren } from '../../../lib/without-children';
-void RuiToasterElement;
 
 /** The `<rui-toast>` element renders the toast surface, so the view takes no children. */
 export type RuiToastViewProps = WithoutChildren<JsxCustomElementAttributes<RuiToastElement, RuiToastProps>>;

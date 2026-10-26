@@ -6,9 +6,7 @@ import type { NativeButtonProps } from '@/lib/native-element-props';
 import { RuiCalendar, type RuiCalendarElement, type RuiCalendarProps } from '../calendar';
 import { RuiDateInput, type RuiDateInputElement, type RuiDateInputProps } from '../date-input';
 import { RuiDateField as RuiDateFieldElement, type RuiDateFieldProps } from './date-field.script';
-import { RuiDateInput as RuiDateInputScript } from '../date-input/date-input.script';
 import type { WithoutChildren } from '../../../lib/without-children';
-void RuiDateInputScript;
 
 export type RuiDateFieldControlProps = JsxElementProps<HTMLDivElement>;
 
