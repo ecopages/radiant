@@ -55,7 +55,7 @@ class ServerHostSlotQueryCard extends RadiantElement {
 }
 
 describe('RadiantElement SSR', () => {
-	test('renderRadiantElementHostToString() does not start host resources', () => {
+	test('renderRadiantElementHostToString() does not start host resources', async () => {
 		let fetches = 0;
 
 		@customElement('server-host-resource-card-test')
@@ -73,6 +73,7 @@ describe('RadiantElement SSR', () => {
 		}
 
 		const html = renderRadiantElementHostToString(new ServerHostResourceCard());
+		await new Promise((resolve) => setTimeout(resolve, 10));
 
 		expect(html).toContain('<server-host-resource-card-test>');
 		expect(fetches).toBe(0);

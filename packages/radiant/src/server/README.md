@@ -113,6 +113,10 @@ before calling the render helper, then inject resolved values through
 `initialize`, `prepareHost`, or explicit host attributes. Do not perform async
 work inside `render()`.
 
+`createResource(...)` starts only from the Element Host's client connect pass,
+after authored attributes synchronize. Server serialization never starts
+resource fetches, regardless of the active package export condition.
+
 ## Adapter install (copy-paste)
 
 One boot path for Node adapters:

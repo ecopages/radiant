@@ -1,5 +1,4 @@
 import { asyncState, state, type AsyncStateFetcherOptions, type AsyncStateResult } from '@ecopages/signals';
-import { isServer } from '@ecopages/radiant/is-server';
 import type { RadiantElement } from '../core/radiant-element';
 import { REACTIVE_HOST } from '../core/reactive-host';
 
@@ -185,10 +184,8 @@ export function createResource<Host extends RadiantElement, Source, Value>(
 ): HostResource<Host, Value, Source> {
 	const hostResource = new HostResource<Host, Value, Source>(host, config);
 
-	host[REACTIVE_HOST].registerPostSync(() => {
-		if (!isServer) {
-			hostResource.connect();
-		}
+	host[REACTIVE_HOST].registerConnectSync(() => {
+		hostResource.connect();
 	});
 
 	host.registerCleanupCallback(() => {

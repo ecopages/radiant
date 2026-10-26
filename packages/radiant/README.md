@@ -164,6 +164,8 @@ There is no durable Element Host instance API named `renderHostToString()`. `ren
 
 Because Radiant's SSR environment shims `window` and `document`, global checks like `typeof window !== 'undefined'` or `typeof document !== 'undefined'` evaluate to `true` on the server. Guard top-level event listeners on `document` or `window` with `!isServer` from `@ecopages/radiant/is-server` so browser navigation and event listeners do not attach during SSR. This flag follows the package export condition, so it reads `true` under Node even when a DOM shim is installed. Use a DOM capability check for code that depends on specific DOM methods.
 
+`createResource(...)` starts from the Element Host client connect pass, after authored attributes synchronize. SSR serialization never starts resource fetches, regardless of the active package export condition. For server-rendered data, fetch before rendering and provide the value through `initialize`, `prepareHost`, or host attributes.
+
 Server runtime setup, fragment rendering helpers, and SSR-specific import guidance live in [src/server/README.md](src/server/README.md).
 
 For the client lifecycle and hydration flow diagram, see [src/core/README.md](src/core/README.md).

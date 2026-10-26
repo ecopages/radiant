@@ -414,6 +414,7 @@ export class RadiantElement<Bindings extends object = {}>
 			}
 
 			this.reactiveHost.flushPostSync();
+			this.reactiveHost.flushConnectSync();
 			this.onConnected();
 		});
 	}
