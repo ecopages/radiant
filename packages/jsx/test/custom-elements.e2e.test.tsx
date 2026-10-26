@@ -111,6 +111,23 @@ describe('Radiant JSX custom-element interop', () => {
 		expect(container.querySelectorAll(classFormTagName)[1]).toBe(first);
 	});
 
+	test('calls function components without stringifying their source', async () => {
+		const [{ jsx }] = await Promise.all([loadJsxRuntime()]);
+		const Arrow = (props: { text: string }) => jsx('span', { children: props.text });
+		function Declared(props: { text: string }) {
+			return jsx('b', { children: props.text });
+		}
+		const toString = vi.spyOn(Function.prototype, 'toString');
+
+		try {
+			expect(jsx(Arrow, { text: 'a' })).toBeTruthy();
+			expect(jsx(Declared, { text: 'b' })).toBeTruthy();
+			expect(toString).not.toHaveBeenCalled();
+		} finally {
+			toString.mockRestore();
+		}
+	});
+
 	test('rejects customized built-in classes with a supported registration hint', async () => {
 		const [{ jsx }] = await Promise.all([loadJsxRuntime()]);
 		class CustomizedButtonBase extends HTMLButtonElement {}
@@ -119,7 +136,7 @@ describe('Radiant JSX custom-element interop', () => {
 			value: 'radiant-jsx-customized-button',
 		});
 
-		expect(() => jsx(CustomizedButton, {})).toThrowError(/Customized built-ins are unsupported/);
+		expect(() => jsx(CustomizedButton, {})).toThrowError(/CustomizedButton .*customized built-ins are unsupported/);
 	});
 
 	test('renders custom elements with light DOM children and shadow DOM slots', async () => {
