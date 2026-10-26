@@ -197,8 +197,11 @@ describe('RadiantElement SSR', () => {
 			host.append(target);
 			const setAttribute = vi.spyOn(target, 'setAttribute');
 
-			expect(serialize(host)).toContain('data-bound="bound"');
+			const html = serialize(host);
+
+			expect(html).toContain('data-bound="bound"');
 			expect(setAttribute).toHaveBeenCalledTimes(1);
+			expect(html.includes('data-radiant-slot-projection')).toBe(serializer === 'host');
 		});
 	}
 
