@@ -14,4 +14,4 @@ import { renderRadiantElementViewToString } from '@ecopages/radiant/server/radia
 const html = renderRadiantElementViewToString(host, { mode: 'hydrate' });
 ```
 
-The view-only function now prepares the host, renders inside its context providers, and flushes `@bindTo` once, matching host serialization.
+The view-only function now prepares the host, renders inside its context providers, and flushes `@bindTo` once, matching host serialization. It takes a `RadiantElement` host, as `renderRadiantElementHostToString` does.
