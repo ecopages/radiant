@@ -16,7 +16,7 @@ order: 6
 | Path | Behavior |
 | :-- | :-- |
 | Text children | Escaped on SSR; mounted as text nodes on the client |
-| Text children in `textarea`, `title`, `style`, `script` | Written as the element's character data; comment anchors are not used |
+| Text children in text-content elements | Written as the element's character data; comment anchors are not used |
 | Ordinary attributes | Escaped for HTML attribute context (including `"`) |
 | Plain `{ nodeType, outerHTML }` objects | Treated as text (escaped / text node), not raw HTML |
 
@@ -31,7 +31,7 @@ These surfaces emit or parse raw HTML by design. Pass only content you already t
 | `unsafeHtml(...)` / `createMarkupNodeLike(...)` | Branded markup; `outerHTML` emitted and parsed raw |
 | Live `Node` instances | `outerHTML` emitted raw (slot projection / host passthrough) |
 | Custom-element `renderHostToString` / server render hooks | Host HTML is trusted; return branded markup via `createMarkupNodeLike(...)` |
-| `<script>` children | Raw element text; only the `</script` closing sequence is escaped, so executable content stays valid |
+| Raw-text children (`script`, `style`, `xmp`, `iframe`, `noembed`, `noframes`) | Joined before SSR escaping. In HTML only the matching `</tag` sequence is rewritten, so CSS and script text stay byte-identical; inside `svg` or `math` the text is entity-escaped. Script contents are emitted as code and must be trusted; a JSON payload in a script must escape `<` as `\u003c`, because `<!--<script>` stops the closing tag from ending the element. |
 | `prop:*` (including `prop:innerHTML`) | Live property assignment; no sanitization |
 | `href` / `src` / `style` | Escaped as attribute text only — no URL-scheme or CSS sanitization |
 

@@ -1,4 +1,3 @@
-import { RAW_TEXT_ELEMENT_NAMES } from './raw-text-element-names.ts';
 import { shouldDelegateEventBinding } from './event-binding-policy.ts';
 import { getTemplateShapeKey } from './template-shape.ts';
 import { forEachNormalizedAttribute } from './attribute-normalize.ts';
@@ -159,7 +158,7 @@ export function createJsxElement<Props extends object>(
 	// otherwise assembled identically.
 	if (!voidElementNames.has(type)) {
 		if (hasChildren && !childrenAsValue) {
-			appendElementChildren(strings, values, parts, type, children, childSlotMode);
+			appendChildren(strings, values, parts, children, childSlotMode);
 		}
 		strings[strings.length - 1] += `</${type}>`;
 	}
@@ -194,63 +193,6 @@ export function takesChildrenValue(type: string): boolean {
 			CUSTOM_ELEMENT_CHILDREN_SYMBOL
 		] === true
 	);
-}
-
-function appendElementChildren(
-	strings: string[],
-	values: unknown[],
-	parts: TemplatePartDescriptor[],
-	type: string,
-	children: JsxRenderable | undefined,
-	childSlotMode: ChildSlotMode,
-): void {
-	if (RAW_TEXT_ELEMENT_NAMES.has(type)) {
-		const rawTextContent = renderJsxRenderableToRawText(type, children);
-
-		values.push(createMarkupNodeLike(rawTextContent));
-		parts.push({ type: 'child' });
-		strings.push('');
-		return;
-	}
-
-	appendChildren(strings, values, parts, children, childSlotMode);
-}
-
-function renderJsxRenderableToRawText(tagName: string, value: JsxRenderable | undefined): string {
-	if (value === undefined || value === null || value === false || value === true) {
-		return '';
-	}
-
-	if (typeof value === 'string') {
-		return escapeRawTextElementText(tagName, value);
-	}
-
-	if (typeof value === 'number' || typeof value === 'bigint') {
-		return String(value);
-	}
-
-	if (isIterableJsxChild(value)) {
-		let rawText = '';
-
-		for (const child of value) {
-			rawText += renderJsxRenderableToRawText(tagName, child as JsxRenderable);
-		}
-
-		return rawText;
-	}
-
-	return escapeRawTextElementText(tagName, String(value));
-}
-
-/**
- * Escapes the only sequence that can terminate a raw-text element's content early.
- *
- * @remarks Inside `script` or `style` the parser looks for `</{tag}`, so that is the sole
- * sequence rewritten. Escaping every `<` would corrupt CSS and executable content —
- * `.a > .b` and `if (a < b)` are not tags.
- */
-function escapeRawTextElementText(tagName: string, value: string): string {
-	return value.replace(new RegExp(`</(?=${tagName}[\\s/>])`, 'gi'), '<\\/');
 }
 
 function appendBinding(

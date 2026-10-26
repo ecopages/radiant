@@ -31,10 +31,6 @@
 			"types": "./dist/server.d.ts",
 			"import": "./dist/server.js"
 		},
-		"./raw-text": {
-			"types": "./dist/raw-text.d.ts",
-			"import": "./dist/raw-text.js"
-		},
 		"./jsx-runtime": {
 			"types": "./dist/jsx-runtime.d.ts",
 			"import": "./dist/jsx-runtime.js"
