@@ -25,6 +25,19 @@ describe('Radiant JSX raw-text elements', () => {
 		expect(parsed.querySelector('svg style')?.textContent).toBe(css);
 	});
 
+	test.each(['desc', 'title'] as const)('style CSS in svg %s stays raw', async (point) => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+		const css = '@media (width < 600px) { p { color: red } }';
+		const html = renderToString(
+			jsx('svg', { children: jsx(point, { children: jsx('style', { children: css }) }) }),
+		);
+		const parsed = new DOMParser().parseFromString(html, 'text/html');
+
+		expect(html).toBe(`<svg><${point}><style>${css}</style></${point}></svg>`);
+		expect(parsed.querySelector('img')).toBeNull();
+		expect(parsed.querySelector(`svg ${point} style`)?.textContent).toBe(css);
+	});
+
 	test('a foreignObject inside math stays foreign content', async () => {
 		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
 		const css = '.x{}<img id="pwn" src="x">';
@@ -115,5 +128,167 @@ describe('Radiant JSX raw-text elements', () => {
 
 		root.unmount();
 		expect(subscribers).toBe(0);
+	});
+});
+
+describe('custom elements inside foreign content', () => {
+	const injected = '<img id="pwn" src="x">';
+	const loadLightDom = async () =>
+		loadModule<typeof import('../src/ssr/server-light-dom.ts')>('../src/ssr/server-light-dom.ts');
+
+	class ForeignHookProbe extends HTMLElement {}
+	class ForeignPlainProbe extends HTMLElement {}
+	class ForeignHostProbe extends HTMLElement {
+		renderHostToString(options?: { foreignContent?: string }) {
+			return `<foreign-host-probe data-namespace="${options?.foreignContent ?? 'html'}">${this.innerHTML}</foreign-host-probe>`;
+		}
+	}
+	customElements.define('foreign-hook-probe', ForeignHookProbe);
+	customElements.define('foreign-plain-probe', ForeignPlainProbe);
+	customElements.define('foreign-host-probe', ForeignHostProbe);
+
+	function parse(html: string): Document {
+		return new DOMParser().parseFromString(`<body>${html}`, 'text/html');
+	}
+
+	test('the render hook gets the namespace the element sits in', async () => {
+		const [{ jsx, jsxs }, { renderToString, withServerCustomElementRenderHook }] = await Promise.all([
+			loadJsxRuntime(),
+			loadServerRender(),
+		]);
+		const probe = jsx('foreign-hook-probe', {});
+		const seen: unknown[] = [];
+
+		withServerCustomElementRenderHook(
+			({ foreignContent }) => {
+				seen.push(foreignContent);
+				return undefined;
+			},
+			() =>
+				renderToString(
+					jsxs('div', {
+						children: [
+							probe,
+							jsxs('svg', {
+								children: [
+									probe,
+									jsx('g', { children: probe }),
+									jsx('foreignObject', { children: probe }),
+								],
+							}),
+							jsx('math', { children: jsx('mi', { children: probe }) }),
+						],
+					}),
+				),
+		);
+
+		expect(seen).toEqual([undefined, 'svg', 'svg', undefined, 'math']);
+	});
+
+	test('svg desc and title are HTML for the hook; under math they stay foreign', async () => {
+		const [{ jsx, jsxs }, { renderToString, withServerCustomElementRenderHook }] = await Promise.all([
+			loadJsxRuntime(),
+			loadServerRender(),
+		]);
+		const probe = jsx('foreign-hook-probe', {});
+		const seen: unknown[] = [];
+
+		withServerCustomElementRenderHook(
+			({ foreignContent }) => {
+				seen.push(foreignContent);
+				return undefined;
+			},
+			() =>
+				renderToString(
+					jsxs('div', {
+						children: [
+							jsxs('svg', {
+								children: [jsx('desc', { children: probe }), jsx('title', { children: probe })],
+							}),
+							jsx('math', { children: jsx('desc', { children: probe }) }),
+						],
+					}),
+				),
+		);
+
+		expect(seen).toEqual([undefined, undefined, 'math']);
+	});
+
+	test.each(['svg', 'math'] as const)(
+		'a hook view rendered with foreignContent %s cannot create elements',
+		async (root) => {
+			const [{ jsx, createMarkupNodeLike }, { renderToString, withServerCustomElementRenderHook }] =
+				await Promise.all([loadJsxRuntime(), loadServerRender()]);
+			const html = withServerCustomElementRenderHook(
+				({ foreignContent }) =>
+					createMarkupNodeLike(
+						`<foreign-hook-probe>${renderToString(jsx('style', { children: injected }), { foreignContent })}</foreign-hook-probe>`,
+					),
+				() => renderToString(jsx(root, { children: jsx('foreign-hook-probe', {}) })),
+			);
+			const parsed = parse(html);
+
+			expect(parsed.querySelector('img')).toBeNull();
+			expect(parsed.querySelector(`${root} style`)?.textContent).toBe(injected);
+		},
+	);
+
+	test('a hook view in HTML keeps raw CSS byte-identical', async () => {
+		const [{ jsx, createMarkupNodeLike }, { renderToString, withServerCustomElementRenderHook }] =
+			await Promise.all([loadJsxRuntime(), loadServerRender()]);
+		const css = '@media (width < 600px) { p { color: red } }';
+		const html = withServerCustomElementRenderHook(
+			({ foreignContent }) =>
+				createMarkupNodeLike(
+					`<foreign-hook-probe>${renderToString(jsx('style', { children: css }), { foreignContent })}</foreign-hook-probe>`,
+				),
+			() => renderToString(jsx('foreign-hook-probe', {})),
+		);
+
+		expect(html).toBe(`<foreign-hook-probe><style>${css}</style></foreign-hook-probe>`);
+	});
+
+	test.each(['svg', 'math'] as const)(
+		'children of an SSR-capable element inside %s cannot create elements',
+		async (root) => {
+			const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+			const html = renderToString(
+				jsx(root, { children: jsx('foreign-host-probe', { children: jsx('xmp', { children: injected }) }) }),
+			);
+			const parsed = parse(html);
+
+			expect(parsed.querySelector('img')).toBeNull();
+			expect(parsed.querySelector('foreign-host-probe')?.getAttribute('data-namespace')).toBe(root);
+			expect(parsed.querySelector(`${root} xmp`)?.textContent).toBe(injected);
+		},
+	);
+
+	test.each(['svg', 'math'] as const)(
+		'children of an element without an SSR contract inside %s cannot create elements',
+		async (root) => {
+			const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+			const html = renderToString(
+				jsx(root, {
+					children: jsx('foreign-plain-probe', { children: jsx('noframes', { children: injected }) }),
+				}),
+			);
+			const parsed = parse(html);
+
+			expect(parsed.querySelector('img')).toBeNull();
+			expect(parsed.querySelector(`${root} noframes`)?.textContent).toBe(injected);
+		},
+	);
+
+	test('light-DOM nodes for svg parse a nested custom element as svg content', async () => {
+		const [{ jsx }, { renderServerLightDom }] = await Promise.all([loadJsxRuntime(), loadLightDom()]);
+		const [probe] = renderServerLightDom(
+			jsx('foreign-plain-probe', { children: jsx('style', { children: injected }) }),
+			document,
+			'svg',
+		) as Element[];
+
+		expect(probe?.namespaceURI).toBe('http://www.w3.org/2000/svg');
+		expect(probe?.querySelector('style')?.textContent).toBe(injected);
+		expect(probe?.querySelector('img')).toBeNull();
 	});
 });

@@ -23,6 +23,8 @@ import type { JsxNodeLike, JsxRenderable, TemplateResultLike } from '../types/in
 
 export type SerializeRenderableMode = 'plain' | 'hydrate';
 
+const SVG_HTML_INTEGRATION_POINTS = new Set(['foreignobject', 'desc', 'title']);
+
 export type SerializeRenderableOptions = {
 	/** `plain` omits hydration markers; `hydrate` emits binding markers where required. */
 	mode: SerializeRenderableMode;
@@ -36,14 +38,22 @@ export type SerializeRenderableOptions = {
 	/**
 	 * The foreign namespace this value sits in, where the browser parses raw-text tags as ordinary elements.
 	 *
-	 * @remarks Set by a template whose root is `svg` or `math`, and cleared by an SVG `foreignObject`, whose
-	 * children the browser parses as HTML again. A `foreignObject` inside `math` is an ordinary MathML element
-	 * and keeps the namespace. It follows template roots only: `svg` or `math` written in the static strings of
+	 * @remarks Set by a template whose root is `svg` or `math`, and cleared by an SVG `foreignObject`, `desc` or
+	 * `title`, whose children the browser parses as HTML again. The same names inside `math` are ordinary MathML
+	 * elements and keep the namespace. It follows template roots only: `svg` or `math` written in the static strings of
 	 * a transported template does not set it.
 	 */
 	foreignContent?: 'svg' | 'math';
-	/** Optional custom-element renderer invoked before generic template serialization. */
-	renderCustomElementTemplate?: (template: TemplateResultLike) => string | undefined;
+	/**
+	 * Optional custom-element renderer invoked before generic template serialization.
+	 *
+	 * @remarks Receives {@link SerializeRenderableOptions.foreignContent} of the element, so the element's light DOM
+	 * and view serialize in the namespace the browser parses them in.
+	 */
+	renderCustomElementTemplate?: (
+		template: TemplateResultLike,
+		foreignContent: SerializeRenderableOptions['foreignContent'],
+	) => string | undefined;
 };
 
 /**
@@ -114,7 +124,7 @@ export function serializeRenderable(value: JsxRenderable | undefined, options: S
  */
 function serializeTemplateResult(template: TemplateResultLike, options: SerializeRenderableOptions): string {
 	if (options.renderCustomElementTemplate) {
-		const customElementHtml = options.renderCustomElementTemplate(template);
+		const customElementHtml = options.renderCustomElementTemplate(template, options.foreignContent);
 
 		if (customElementHtml !== undefined) {
 			return customElementHtml;
@@ -156,7 +166,13 @@ function serializeTemplateResult(template: TemplateResultLike, options: Serializ
 	return html;
 }
 
-function childForeignContent(
+/**
+ * The foreign namespace the children of a `rootLocalName` element sit in, given the one the element sits in.
+ *
+ * @remarks An SVG `foreignObject`, `desc` or `title` is an HTML integration point: the browser parses its children
+ * as HTML. Under `math` the same names are ordinary MathML elements and stay foreign.
+ */
+export function childForeignContent(
 	rootLocalName: string | undefined,
 	foreignContent: SerializeRenderableOptions['foreignContent'],
 ): SerializeRenderableOptions['foreignContent'] {
@@ -164,7 +180,9 @@ function childForeignContent(
 		return rootLocalName;
 	}
 
-	return foreignContent === 'svg' && rootLocalName === 'foreignobject' ? undefined : foreignContent;
+	return foreignContent === 'svg' && rootLocalName !== undefined && SVG_HTML_INTEGRATION_POINTS.has(rootLocalName)
+		? undefined
+		: foreignContent;
 }
 
 /**

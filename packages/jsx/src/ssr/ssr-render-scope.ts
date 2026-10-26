@@ -10,8 +10,11 @@ export type SsrRenderContext = {
 	customElementRenderHook?: ServerCustomElementRenderHook;
 	/** True when {@link customElementRenderHook} applies claimed elements' JSX children itself. */
 	customElementRenderHookOwnsChildren?: boolean;
-	/** Serializes nested custom-element light DOM as plain markup, still server-rendering nested custom elements. */
-	renderChild?: (value: JsxRenderable) => string;
+	/**
+	 * Serializes nested custom-element light DOM as plain markup, still server-rendering nested custom elements.
+	 * `foreignContent` is the foreign namespace the element sits in.
+	 */
+	renderChild?: (value: JsxRenderable, foreignContent?: 'svg' | 'math') => string;
 	scopeValues?: Map<symbol, unknown>;
 };
 

@@ -4,6 +4,7 @@ import { playwright } from '@vitest/browser-playwright';
 import { defineConfig, mergeConfig } from 'vitest/config';
 import legacyConfig from './tsconfig.legacy.json' with { type: 'json' };
 import { bundleDistAppCommand } from './test/build/dist-app.js';
+import { renderForeignContentHostsCommand } from './test/server/foreign-content-host-ssr.js';
 import { createRadiantVitestBase } from './vitest.shared.js';
 
 const base = await createRadiantVitestBase({
@@ -31,7 +32,10 @@ export default mergeConfig(
 				headless: true,
 				provider: playwright({}),
 				instances: [{ browser: 'chromium' }],
-				commands: { bundleDistApp: bundleDistAppCommand },
+				commands: {
+					bundleDistApp: bundleDistAppCommand,
+					renderForeignContentHosts: renderForeignContentHostsCommand,
+				},
 			},
 		},
 	}),

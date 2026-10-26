@@ -7,7 +7,7 @@ import {
 import { isCustomElementSubtreeRoot } from '../hydration/hydration-subtree-policy.ts';
 import { resolveReactiveSnapshot } from '../types/renderable-guards.ts';
 import { renderJsxRenderableToString } from './serialize-plain.ts';
-import { serializeRenderable } from './serialize-renderable.ts';
+import { serializeRenderable, type SerializeRenderableOptions } from './serialize-renderable.ts';
 import { getActiveSsrRenderContext } from './ssr-render-scope.ts';
 import { RADIANT_MARKUP_NODE_SYMBOL } from '../types/index.ts';
 import type {
@@ -17,9 +17,13 @@ import type {
 	ServerRenderableCustomElement,
 } from '../types/index.ts';
 
+type ForeignContent = SerializeRenderableOptions['foreignContent'];
+
+/** @param foreignContent The foreign namespace the element sits in; its light DOM and view serialize in it. */
 export function createServerRenderedCustomElement<Props extends object>(
 	type: string,
 	props: Props,
+	foreignContent?: ForeignContent,
 ): JsxNodeLike | undefined {
 	if (!shouldServerRenderCustomElement(type)) {
 		return undefined;
@@ -44,11 +48,17 @@ export function createServerRenderedCustomElement<Props extends object>(
 		[RADIANT_MARKUP_NODE_SYMBOL]: true,
 		nodeType: 1,
 		get outerHTML() {
-			const resolvedRender = resolveServerRenderedCustomElementRender(constructor, type, rawAttributes, children);
+			const resolvedRender = resolveServerRenderedCustomElementRender(
+				constructor,
+				type,
+				rawAttributes,
+				children,
+				foreignContent,
+			);
 
 			return resolvedRender
 				? renderJsxRenderableToString(resolvedRender)
-				: renderFallbackCustomElementMarkup(type, rawAttributes, children);
+				: renderFallbackCustomElementMarkup(type, rawAttributes, children, foreignContent);
 		},
 	};
 }
@@ -57,6 +67,7 @@ function renderFallbackCustomElementMarkup(
 	tagName: string,
 	attributes: Record<string, unknown>,
 	children: JsxRenderable | undefined,
+	foreignContent: ForeignContent,
 ): string {
 	return serializeRenderable(
 		createJsxElement(
@@ -65,7 +76,7 @@ function renderFallbackCustomElementMarkup(
 			'multiple',
 			true,
 		),
-		{ mode: 'plain' },
+		{ mode: 'plain', foreignContent },
 	);
 }
 
@@ -74,6 +85,7 @@ function resolveServerRenderedCustomElementRender(
 	tagName: string,
 	attributes: Record<string, unknown>,
 	children: JsxRenderable | undefined,
+	foreignContent: ForeignContent,
 ): JsxRenderable | undefined {
 	const instance = new constructor();
 	const ssr = getActiveSsrRenderContext();
@@ -81,7 +93,7 @@ function resolveServerRenderedCustomElementRender(
 	const applyChildren = () => {
 		if (childrenApplied) return;
 		childrenApplied = true;
-		applyServerCustomElementChildren(instance, children);
+		applyServerCustomElementChildren(instance, children, foreignContent);
 	};
 
 	applyServerCustomElementAttributes(instance, attributes);
@@ -94,6 +106,7 @@ function resolveServerRenderedCustomElementRender(
 		applyChildren,
 		children,
 		constructor,
+		foreignContent,
 		hydrate: ssr?.hydrate === true,
 		instance,
 		props: attributes,
@@ -112,7 +125,11 @@ function resolveServerRenderedCustomElementRender(
 
 	const hydrateActive = ssr?.hydrate === true;
 	return createMarkupNodeLike(
-		instance.renderHostToString({ hydrate: hydrateActive, mode: hydrateActive ? 'hydrate' : 'plain' }),
+		instance.renderHostToString({
+			hydrate: hydrateActive,
+			mode: hydrateActive ? 'hydrate' : 'plain',
+			foreignContent,
+		}),
 	);
 }
 
@@ -189,13 +206,17 @@ function serializeServerCustomElementAttribute(name: string, value: unknown): st
 	return name.toLowerCase() === 'style' ? serializeStyleSnapshot(value) : String(value);
 }
 
-function applyServerCustomElementChildren(element: HTMLElement, children: JsxRenderable | undefined): void {
+function applyServerCustomElementChildren(
+	element: HTMLElement,
+	children: JsxRenderable | undefined,
+	foreignContent: ForeignContent,
+): void {
 	if (children === undefined || !('children' in element || 'innerHTML' in element)) {
 		return;
 	}
 
 	const serializedChildren =
-		getActiveSsrRenderContext()?.renderChild?.(children) ?? renderJsxRenderableToString(children);
+		getActiveSsrRenderContext()?.renderChild?.(children, foreignContent) ?? renderJsxRenderableToString(children);
 
 	if (canAssignServerCustomElementProperty(element, 'children')) {
 		Reflect.set(element, 'children', serializedChildren);
