@@ -13,7 +13,7 @@ On `RadiantElement`, use it for values that belong to the custom element's exter
 
 On `RadiantController`, `@prop(...)` instead exposes a host property channel. That lets surrounding JS assign real values like objects or arrays directly on the attached host element without serializing them into attributes.
 
-For a `RadiantElement`, the HTML attribute defaults to the kebab-case property name (`minWidth` becomes `min-width`). Set `attribute` to use a different name; the explicit value is used as authored. JSX keeps the camelCase property name, so `<RuiSidebar minWidth={200} />` maps to the same `min-width` HTML attribute during SSR.
+For a `RadiantElement`, the HTML attribute defaults to the kebab-case property name (`minWidth` becomes `min-width`). Set `attribute` to use a different name; Radiant preserves that configured spelling. HTML normalizes attribute names to lowercase and matches observed names exactly, so use a lowercase `attribute` value when consumers author the attribute in HTML. JSX keeps the camelCase property name, so `<RuiSidebar minWidth={200} />` maps to the same `min-width` HTML attribute during SSR.
 
 ## Example
 
