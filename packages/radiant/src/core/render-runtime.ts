@@ -25,6 +25,7 @@ import {
 	resolveSlotProjection,
 	serializeProjectedSlotRenderables,
 	takeSlotProjectionScriptPayload,
+	type ForeignSlotContentProjector,
 } from './slot-projection-runtime';
 
 export type RenderRuntimeHost = HTMLElement & {
@@ -166,8 +167,12 @@ export class RenderRuntime {
 		this.#renderSignal = undefined;
 	}
 
-	resolveTrackedRenderOutput(): { containsSlots: boolean; value: JsxRenderable } {
-		const nextRenderSignal = createReactiveComputed(() => this.resolveRenderOutput());
+	/** @param projectForeign Passed by the server only; see {@link resolveSlotProjection}. */
+	resolveTrackedRenderOutput(projectForeign?: ForeignSlotContentProjector): {
+		containsSlots: boolean;
+		value: JsxRenderable;
+	} {
+		const nextRenderSignal = createReactiveComputed(() => this.resolveRenderOutput(projectForeign));
 		const output = nextRenderSignal.get();
 
 		if (!this.#host.isConnected) {
@@ -351,7 +356,10 @@ export class RenderRuntime {
 	 * when the value is empty. On the client the children render between two empty text nodes this runtime keeps, so
 	 * {@link getSlotElements} can find what they rendered to.
 	 */
-	private resolveRenderOutput(): { containsSlots: boolean; value: JsxRenderable } {
+	private resolveRenderOutput(projectForeign?: ForeignSlotContentProjector): {
+		containsSlots: boolean;
+		value: JsxRenderable;
+	} {
 		this.ensureSlotProjectionState();
 		const value = this.#childrenValue;
 		let content = this.#projectedSlotContent;
@@ -368,7 +376,7 @@ export class RenderRuntime {
 			}
 		}
 
-		return resolveSlotProjection(this.#host.render(), content);
+		return resolveSlotProjection(this.#host.render(), content, projectForeign);
 	}
 }
 

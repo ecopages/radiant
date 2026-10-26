@@ -19,6 +19,7 @@ import {
 import { EventSubscriptionRegistry } from './event-subscription-registry';
 import { ReactivePropertyState } from './reactive-property-state';
 import { RenderRuntime, type RenderRuntimeHost } from './render-runtime';
+import type { ForeignSlotContentProjector } from './slot-projection-runtime';
 import { UpdateCycle } from './update-cycle';
 import { REACTIVE_HOST, ReactiveHost, type ReactiveHostInternals } from './reactive-host';
 import type { ReactiveState } from './reactivity-contract';
@@ -760,8 +761,11 @@ export class RadiantElement<Bindings extends object = {}>
 		return this.getOrCreateRenderRuntime().getAuthoredHydrationScriptMarkup();
 	}
 
-	public resolveTrackedRenderOutput(): { containsSlots: boolean; value: JsxRenderable } {
-		return this.getOrCreateRenderRuntime().resolveTrackedRenderOutput();
+	public resolveTrackedRenderOutput(projectForeign?: ForeignSlotContentProjector): {
+		containsSlots: boolean;
+		value: JsxRenderable;
+	} {
+		return this.getOrCreateRenderRuntime().resolveTrackedRenderOutput(projectForeign);
 	}
 
 	private getOrCreateRenderRuntime() {

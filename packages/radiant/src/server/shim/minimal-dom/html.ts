@@ -223,9 +223,39 @@ export function setDetachedRootNamespace(root: Node, namespace: ContentNamespace
 	detachedRootNamespaces.set(root, namespace);
 }
 
-/** Namespace the browser parses `node` itself in: its parent's content namespace, or a detached root's hint. */
+const namespaceOverrides = new WeakMap<Node, ContentNamespace>();
+
+/**
+ * Serializes `node` as the browser parses it in `namespace`, whatever its DOM parent.
+ *
+ * @remarks A slotted light-DOM node sits under its host, in HTML, but is emitted where the host's view puts it, which
+ * can be inside `svg` or `math`. Its subtree is first built and stripped of the source HTML kept from parsing it, since
+ * that source spells the content for the context it was parsed in.
+ */
+export function serializeNodeInNamespace(node: Node, namespace: ContentNamespace): string {
+	dropParsedSource(node);
+	namespaceOverrides.set(node, namespace);
+	try {
+		return serializeNodeHtml(node);
+	} finally {
+		namespaceOverrides.delete(node);
+	}
+}
+
+function dropParsedSource(node: Node): void {
+	if (node instanceof MinimalElement) node.invalidateSerialization();
+	for (const child of Array.from(node.childNodes)) dropParsedSource(child);
+}
+
+/**
+ * Namespace the browser parses `node` itself in: an override from {@link serializeNodeInNamespace}, its parent's
+ * content namespace, or a detached root's hint.
+ */
 function namespaceOf(node: Node): ContentNamespace {
-	return node.parentNode ? contentNamespaceOf(node.parentNode) : (detachedRootNamespaces.get(node) ?? 'html');
+	return (
+		namespaceOverrides.get(node) ??
+		(node.parentNode ? contentNamespaceOf(node.parentNode) : (detachedRootNamespaces.get(node) ?? 'html'))
+	);
 }
 
 /**

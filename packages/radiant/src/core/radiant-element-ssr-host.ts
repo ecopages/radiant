@@ -3,6 +3,7 @@ import type { SsrSerializableContextProvider } from '../context/context-provider
 import type { ReactiveProperty } from './reactive-prop-core';
 import type { ReactivePropDefinition } from './reactive-prop-metadata';
 import type { SsrSerializableHydrationBinding } from './ssr-hydration-binding';
+import type { ForeignSlotContentProjector } from './slot-projection-runtime';
 
 /**
  * Server-owned snapshot of host state used during Element Host serialization.
@@ -22,7 +23,10 @@ export type InternalRadiantSsrHost = {
 	getReactivePropDefinitions: () => ReactivePropDefinition[];
 	getPropertyValue: (name: string) => unknown;
 	getProjectedSlotPayload?: () => Record<string, string[]> | undefined;
-	resolveTrackedRenderOutput: () => { containsSlots: boolean; value: JsxRenderable };
+	resolveTrackedRenderOutput: (projectForeign?: ForeignSlotContentProjector) => {
+		containsSlots: boolean;
+		value: JsxRenderable;
+	};
 	flushPostSync: () => void;
 	prepareForSsr: () => void;
 };
