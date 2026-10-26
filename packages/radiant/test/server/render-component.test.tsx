@@ -8,7 +8,11 @@ import {
 	onContextUpdate,
 	provideContext,
 } from '../../src/context';
+import { ContextEventsTypes } from '../../src/context/events';
+import type { UnknownContext } from '../../src/context/types';
+import { registerSsrPreparationCallback } from '../../src/core/ssr-preparation';
 import { attr } from '../../src/decorators/attr';
+import { ensureLegacyHostReady } from '../../src/decorators/legacy/host-readiness';
 import { RadiantController } from '../../src/core/radiant-controller';
 import { getRadiantElementSsrRuntime } from '../../src/core/radiant-element-ssr-registry';
 import { RadiantElement } from '../../src/core/radiant-element';
@@ -29,8 +33,10 @@ import {
 	type RenderedComponentAsset,
 } from '../../src/server/render-component';
 import { renderController, renderControllerToPayload } from '../../src/server/render-controller';
-import { resolveSsrContextValue } from '../../src/server/context-ssr';
+import { resolveSsrContextValue, runWithSsrProviderStack, withSsrContextProviders } from '../../src/server/context-ssr';
 import { getOrCreateRadiantElementSsrRuntime } from '../../src/server/radiant-element-ssr';
+
+declare const __LEGACY_ENVIRONMENT__: boolean;
 
 const cardAssets: readonly RenderedComponentAsset[] = [
 	{ kind: 'script-module', src: '/assets/render-component-card.js', stage: 'hydrate' },
@@ -185,6 +191,62 @@ class RenderControllerContextProvider extends RadiantController {
 	}
 }
 
+@controller('render-controller-context-consumer')
+class RenderControllerContextConsumer extends RadiantController {
+	@consumeContext(renderControllerContext) contextProvider!: ContextProvider<typeof renderControllerContext>;
+	connectedContextCalls = 0;
+	selectorCalls = 0;
+
+	override connectedContextCallback(_context: UnknownContext): void {
+		this.connectedContextCalls += 1;
+	}
+
+	@onContextUpdate({ context: renderControllerContext, select: (context) => ({ label: context.label }) })
+	countSelection(_selection: { label: string }) {
+		this.selectorCalls += 1;
+	}
+
+	override render() {
+		return <p>{this.contextProvider?.getContext().label ?? 'missing'}</p>;
+	}
+}
+
+const singleDeliveryContext = createContext<{ n: number }>(Symbol('render-component-single-delivery'));
+
+@customElement('render-component-single-delivery-test')
+class RenderComponentSingleDeliveryCard extends RadiantElement {
+	@consumeContext(singleDeliveryContext) contextProvider!: ContextProvider<typeof singleDeliveryContext>;
+	connectedContextCalls = 0;
+	mountedEvents = 0;
+	selectorCalls = 0;
+	prepareCount = 0;
+	renderCount = 0;
+
+	constructor() {
+		super();
+		this.addEventListener(ContextEventsTypes.MOUNTED, () => {
+			this.mountedEvents += 1;
+		});
+		registerSsrPreparationCallback(this, () => {
+			this.prepareCount += 1;
+		});
+	}
+
+	override connectedContextCallback(_context: UnknownContext): void {
+		this.connectedContextCalls += 1;
+	}
+
+	@onContextUpdate({ context: singleDeliveryContext, select: (context) => ({ n: context.n }), subscribe: false })
+	countSelection(_selection: { n: number }) {
+		this.selectorCalls += 1;
+	}
+
+	override render() {
+		this.renderCount += 1;
+		return <p>{this.contextProvider?.getContext().n}</p>;
+	}
+}
+
 @controller('render-controller-element-context-provider')
 class RenderControllerElementContextProvider extends RadiantController {
 	@provideContext<typeof renderComponentContext>({
@@ -272,6 +334,66 @@ describe('render-component server helpers', () => {
 		expect(second.markup).toContain('concurrent-b');
 		expect(second.markup).not.toContain('concurrent-a');
 		expect(getRadiantElementSsrRuntime()).toBeUndefined();
+	});
+
+	test('renderComponent() resolves consumed context before initialize', async () => {
+		let initializedContext: string | undefined;
+
+		const rendered = await renderComponent(RenderComponentContextCard, {
+			ssrContext: [{ context: renderComponentContext, value: { label: 'initialize context value' } }],
+			initialize: (component) => {
+				initializedContext = component.contextProvider?.getContext().label;
+			},
+		});
+
+		expect(initializedContext).toBe('initialize context value');
+		expect(rendered.markup).toContain('initialize context value');
+	});
+
+	test('renderComponent() delivers consumed context to the host once', async () => {
+		let host: RenderComponentSingleDeliveryCard | undefined;
+		let initializedValue: number | undefined;
+
+		const rendered = await renderComponent(RenderComponentSingleDeliveryCard, {
+			ssrContext: [{ context: singleDeliveryContext, value: { n: 5 } }],
+			initialize: (component) => {
+				host = component;
+				initializedValue = component.contextProvider?.getContext().n;
+			},
+		});
+
+		expect(initializedValue).toBe(5);
+		expect(rendered.markup).toContain('<p>5</p>');
+		expect(host?.connectedContextCalls).toBe(1);
+		expect(host?.mountedEvents).toBe(__LEGACY_ENVIRONMENT__ ? 0 : 1);
+		expect(host?.selectorCalls).toBe(1);
+		expect(host?.prepareCount).toBe(1);
+		expect(host?.renderCount).toBe(1);
+	});
+
+	test('renderController() resolves consumed context before initialize and delivers it once', async () => {
+		const providerHost = new RenderControllerContextProvider(document.createElement('div'));
+		ensureLegacyHostReady(providerHost, 'ssr');
+		providerHost.provider.setContext({ label: 'controller initialize context' });
+		let initializedContext: string | undefined;
+		let consumer: RenderControllerContextConsumer | undefined;
+
+		const rendered = await runWithSsrProviderStack(() =>
+			withSsrContextProviders([providerHost.provider], () =>
+				renderController(RenderControllerContextConsumer, {
+					tagName: 'section',
+					initialize: (controller) => {
+						consumer = controller;
+						initializedContext = controller.contextProvider?.getContext().label;
+					},
+				}),
+			),
+		);
+
+		expect(initializedContext).toBe('controller initialize context');
+		expect(rendered.markup).toContain('<p>controller initialize context</p>');
+		expect(consumer?.connectedContextCalls).toBe(1);
+		expect(consumer?.selectorCalls).toBe(1);
 	});
 
 	test('renderComponent() returns the canonical server render descriptor', async () => {

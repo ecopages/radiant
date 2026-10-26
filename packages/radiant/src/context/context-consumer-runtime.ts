@@ -19,10 +19,29 @@ type ContextSelectionRequest<TContext extends UnknownContext, Selected = Context
 	DirectContextSelectionRequest<TContext> | SelectedContextSelectionRequest<TContext, Selected>;
 
 /**
+ * The SSR provider each consumer assignment was last announced with.
+ *
+ * @remarks A server host resolves its consumed context before `initialize` and again in `prepareForSsr`, and a
+ * server-rendered controller again when it connects. Keying by the assignment keeps each field's
+ * `connectedContextCallback` and mounted event to one per provider.
+ */
+const announcedSsrProviders = new WeakMap<ConsumedContextAssignment, unknown>();
+
+/**
+ * The SSR provider and context value each selection callback was last delivered from.
+ *
+ * @remarks The same repeated resolution as {@link announcedSsrProviders}. A selector is pure over the context
+ * value, so an unchanged provider and value skip the callback even when `select` returns a fresh object.
+ */
+const deliveredSsrSelections = new WeakMap<object, { provider: unknown; value: unknown }>();
+
+/**
  * Resolves a consumed context from the active SSR provider stack when one is available.
  *
  * This keeps SSR-specific lookup outside decorator implementations while preserving
  * the same consumer initialization contract for both standard and legacy decorators.
+ *
+ * @remarks The field is assigned on every call; the host is notified only the first time `assign` sees a provider.
  *
  * @returns `true` when the context was resolved synchronously from SSR state.
  */
@@ -39,6 +58,12 @@ export function initializeConsumedContext(
 	}
 
 	assign(provider);
+
+	if (announcedSsrProviders.get(assign) === provider) {
+		return true;
+	}
+
+	announcedSsrProviders.set(assign, provider);
 	host.connectedContextCallback(context);
 
 	if (options.emitMounted) {
@@ -73,6 +98,8 @@ export function requestConsumedContext(
 /**
  * Resolves a selected context value from the active SSR provider stack when available.
  *
+ * @remarks Skips the callback when it was already delivered from the same provider and context value.
+ *
  * @returns `true` when the selection callback was satisfied synchronously from SSR state.
  */
 export function initializeContextSelection<TContext extends UnknownContext>(
@@ -94,6 +121,13 @@ export function initializeContextSelection<TContext extends UnknownContext, Sele
 	}
 
 	const resolvedContext = provider.getContext() as ContextType<TContext>;
+	const delivered = deliveredSsrSelections.get(request.callback);
+
+	if (delivered?.provider === provider && Object.is(delivered.value, resolvedContext)) {
+		return true;
+	}
+
+	deliveredSsrSelections.set(request.callback, { provider, value: resolvedContext });
 
 	if (request.select) {
 		request.callback(request.select(resolvedContext));
