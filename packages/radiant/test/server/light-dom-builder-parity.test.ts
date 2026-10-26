@@ -8,12 +8,13 @@ import { describe, expect, test } from 'vitest';
  * Parity between the light-DOM node builder and the string serializer it replaces for custom-element children.
  *
  * @remarks Seeded JSX trees are rendered both ways and compared as parsed trees (node types, names, attribute
- * values, text), so equivalent spellings (`hidden` vs `hidden=""`) match. `<style>` text is kept free of
- * `&`, `<` and `>` here: the serializer escapes it, which corrupts CSS, and the builder keeps it raw.
+ * values, text), so equivalent spellings (`hidden` vs `hidden=""`) match. `<style>` text may include
+ * `&`, `<`, `>` and `</style`; both paths keep it as raw text.
  */
 
 const CASES = 500;
 const TEXT_PIECES = ['Terms', ' ', '&', '<b>', '>', '"q"', "'", '&amp;', ' ', '[{"type":1}]', '</script>', '0'];
+const STYLE_TEXT_PIECES = ['.a > .b { color: red; }', '.a{}</style><script>x</script>', 'a & b < c > d'];
 
 type Random = () => number;
 
@@ -71,7 +72,7 @@ const NODE_BUILDERS: ReadonlyArray<readonly [number, (random: Random, depth: num
 	[3, (random) => jsx('textarea', { children: text(random) })],
 	[2, (random) => jsx('title', { children: text(random) })],
 	[2, (random) => jsx('script', { type: 'application/json', children: text(random) })],
-	[2, () => jsx('style', { children: '.a { color: red }' })],
+	[2, (random) => jsx('style', { children: pick(random, STYLE_TEXT_PIECES) })],
 	[3, () => jsx('svg', { viewBox: '0 0 1 1', children: jsx('path', { d: 'M0 0' }) })],
 	[4, (random, depth) => jsx('ul', { children: [jsx('li', { children: children(random, depth + 1) })] })],
 	[34, element],
@@ -135,10 +136,10 @@ describe('light-DOM builder matches the string serializer', () => {
 		}
 	});
 
-	test('keeps style text raw, where the serializer escapes it', () => {
+	test('keeps style text raw on both paths', () => {
 		const tree = jsx('style', { children: '.a > .b { content: "&" }' });
 		expect(renderWithBuilder(tree)).toBe('<style>.a > .b { content: "&" }</style>');
-		expect(renderToString(tree)).toBe('<style>.a &gt; .b { content: "&amp;" }</style>');
+		expect(renderToString(tree)).toBe('<style>.a > .b { content: "&" }</style>');
 	});
 
 	test('never parses dynamic text', () => {

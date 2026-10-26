@@ -70,7 +70,7 @@ export class RadiantElementSsrService {
 
 		return withSsrContextProviders(this.host.getContextProviders(), () => {
 			const hostContent = this.renderView(this.host, options);
-			this.host.flushPostSyncCallbacks();
+			this.host.flushPostSync();
 			const slotPayload = this.host.getProjectedSlotPayload?.();
 			const slotProjectionMarkup =
 				slotPayload !== undefined && this.host.resolveTrackedRenderOutput().containsSlots

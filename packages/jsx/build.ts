@@ -3,7 +3,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import * as esbuild from 'esbuild';
 
-const prodBrowserEntrypoints = ['src/index.ts', 'src/client.ts', 'src/jsx-runtime.ts'];
+const prodBrowserEntrypoints = ['src/index.ts', 'src/client.ts', 'src/jsx-runtime.ts', 'src/raw-text.ts'];
 const devBrowserEntrypoints = ['src/jsx-dev-runtime.ts'];
 const serverEntrypoints = ['src/server.ts'];
 

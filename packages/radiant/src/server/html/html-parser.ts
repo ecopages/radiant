@@ -1,3 +1,5 @@
+import { RAW_TEXT_ELEMENT_NAMES } from '@ecopages/jsx/raw-text';
+
 export type ParsedHtmlTag = {
 	attributes: Record<string, string>;
 	end: number;
@@ -25,7 +27,7 @@ export type ParseHtmlTagTokenOptions = {
 };
 
 /** Raw text elements: content is text up to the matching close tag, never decoded or escaped. */
-export const rawTextElementNames = new Set(['script', 'style', 'xmp', 'iframe', 'noembed', 'noframes']);
+export const rawTextElementNames = RAW_TEXT_ELEMENT_NAMES;
 
 /** Escapable raw text elements: content is text up to the matching close tag, with character references decoded. */
 export const escapableRawTextElementNames = new Set(['textarea', 'title']);
