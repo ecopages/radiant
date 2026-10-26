@@ -13,7 +13,7 @@ type HtmlParsers = {
 		contextTagName?: string,
 		followsStartTag?: boolean,
 	) => Node[];
-	serializeNodeHtml: (node: Node) => string;
+	serializeChildNodesHtml: (parent: Node) => string;
 };
 
 let htmlParsers: HtmlParsers | undefined;
@@ -693,7 +693,7 @@ export class MinimalElement extends MinimalNode {
 	}
 
 	private serializeChildNodes(): string {
-		return this.childNodes.map((child) => ensureHtmlParsers().serializeNodeHtml(child)).join('');
+		return ensureHtmlParsers().serializeChildNodesHtml(this as unknown as Node);
 	}
 
 	set innerHTML(html: string) {

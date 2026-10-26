@@ -196,9 +196,55 @@ function hasFaithfulSource(node: MinimalTextNode): boolean {
 	return faithful;
 }
 
+const SVG_HTML_INTEGRATION_POINTS = new Set(['foreignobject', 'desc', 'title']);
+const MATHML_TEXT_INTEGRATION_POINTS = new Set(['mi', 'mo', 'mn', 'ms', 'mtext']);
+
+/**
+ * Namespace the browser parses the children of `node` in.
+ *
+ * @remarks The minimal DOM has no namespaces, so this follows the tree construction rules from the root: `svg`
+ * and `math` enter foreign content, their descendants inherit it, and an HTML integration point (SVG
+ * `foreignObject`, `desc`, `title`; MathML `mi`, `mo`, `mn`, `ms`, `mtext`) returns to HTML. Where the rules need
+ * more than names (`annotation-xml` with an HTML `encoding`, HTML tags that break out of foreign content) the
+ * answer stays foreign, where escaping text is always safe.
+ */
+function childContentNamespace(node: Node | null): 'html' | 'svg' | 'math' {
+	if (node?.nodeType !== MinimalNode.ELEMENT_NODE) return 'html';
+
+	const { localName } = node as Element;
+	const namespace = childContentNamespace(node.parentNode);
+
+	if (namespace === 'html') return localName === 'svg' || localName === 'math' ? localName : 'html';
+
+	const integrationPoints = namespace === 'svg' ? SVG_HTML_INTEGRATION_POINTS : MATHML_TEXT_INTEGRATION_POINTS;
+	return integrationPoints.has(localName) ? 'html' : namespace;
+}
+
+/**
+ * @remarks `script`, `style`, `xmp`, `iframe`, `noembed` and `noframes` hold raw text only in the HTML namespace.
+ * Inside `svg` or `math` they are ordinary elements whose content the browser parses as markup.
+ */
+function isHtmlRawTextElement(node: Node | null): node is Element {
+	return (
+		node?.nodeType === MinimalNode.ELEMENT_NODE &&
+		rawTextElementNames.has((node as Element).localName) &&
+		childContentNamespace(node.parentNode) === 'html'
+	);
+}
+
+/**
+ * @remarks The HTML parser ends raw text only at `</{tag}` followed by whitespace, `/` or `>`, case-insensitive,
+ * so that sequence is the only one rewritten and CSS such as `@media (width < 600px)` stays byte-identical.
+ */
+function escapeRawText(text: string, tagName: string): string {
+	return text.replace(new RegExp(`</(?=${tagName}[\\s/>])`, 'gi'), '<\\/');
+}
+
 /**
  * @remarks A text node from parsed HTML is emitted from its source when that is faithful, so entities the
- * decoder does not need to rewrite keep their spelling.
+ * decoder does not need to rewrite keep their spelling. Text in an HTML raw text element is emitted unescaped,
+ * as browsers serialize it, with only that element's closing tag rewritten. Everywhere else, including a `style`
+ * or `xmp` inside `svg` or `math`, it is entity-escaped, which decodes back to the same text in foreign content.
  */
 function serializeTextNode(node: Node): string {
 	if (node instanceof MinimalTextNode && hasFaithfulSource(node)) {
@@ -206,17 +252,11 @@ function serializeTextNode(node: Node): string {
 	}
 
 	const text = node.textContent ?? '';
-	const parentName = (node.parentNode as Partial<Element> | null)?.localName ?? '';
+	const parent = node.parentNode;
 
-	return rawTextElementNames.has(parentName)
-		? text.replace(new RegExp(`</(${parentName})`, 'gi'), '<\\/$1')
-		: escapeHtmlText(text);
+	return isHtmlRawTextElement(parent) ? escapeRawText(text, parent.localName) : escapeHtmlText(text);
 }
 
-/**
- * @remarks Text inside raw text elements is emitted unescaped, as browsers serialize it, with only a closing
- * tag for that element neutralized so the content cannot end it early.
- */
 export function serializeNodeHtml(node: Node): string {
 	if (node.nodeType === MinimalNode.TEXT_NODE) {
 		return serializeTextNode(node);
@@ -230,7 +270,22 @@ export function serializeNodeHtml(node: Node): string {
 	return typeof outerHtml === 'string' ? outerHtml : escapeHtmlText(node.textContent ?? '');
 }
 
+/**
+ * @remarks The children of an HTML raw text element are joined before the closing tag is rewritten, so a
+ * closing tag split across adjacent text nodes cannot end the element early.
+ */
+function serializeChildNodesHtml(parent: Node): string {
+	const children = Array.from(parent.childNodes);
+
+	if (!isHtmlRawTextElement(parent)) return children.map(serializeNodeHtml).join('');
+
+	const text = children
+		.map((child) => (child.nodeType === MinimalNode.TEXT_NODE ? (child.textContent ?? '') : serializeNodeHtml(child)))
+		.join('');
+	return escapeRawText(text, parent.localName);
+}
+
 registerMinimalDomHtmlParsers({
 	parseHtmlToNodes,
-	serializeNodeHtml,
+	serializeChildNodesHtml,
 });

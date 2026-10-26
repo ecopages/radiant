@@ -70,6 +70,22 @@ describe('JSX children of nested hosts on the minimal DOM', () => {
 });
 
 describe('renderServerLightDom edge cases', () => {
+	it('escapes raw-text tag text inside svg and math in Authored Children of a host', () => {
+		const text = '<img id="pwn" src="x">';
+
+		for (const [root, tag] of [
+			['svg', 'style'],
+			['svg', 'xmp'],
+			['math', 'style'],
+			['math', 'noframes'],
+		]) {
+			const page = jsx('minimal-dom-light-child-test', { children: jsx(root, { children: jsx(tag, { children: text }) }) });
+			const html = withRadiantServerCustomElementRenderBridge(() => renderToString(page));
+
+			expect(html).toContain(`<${root}><${tag}>&lt;img id="pwn" src="x"&gt;</${tag}></${root}>`);
+		}
+	});
+
 	it('keeps children of every text-only element, not just script and textarea', () => {
 		for (const tag of ['iframe', 'xmp', 'noembed', 'noframes'] as const) {
 			const host = document.createElement('div');
