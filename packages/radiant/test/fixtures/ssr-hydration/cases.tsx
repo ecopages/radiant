@@ -9,6 +9,7 @@ import {
 	DeferredHydratedCard,
 	HydratedArrayPropCard,
 	HydratedComplexSlotCard,
+	HydratedConditionalSlotCard,
 	HydratedCounter,
 	HydratedCounterBinding,
 	HydratedFragmentSlotParent,
@@ -19,6 +20,7 @@ import {
 	HydratedRegionParent,
 	HydratedRootSlotParent,
 	HydratedStaticView,
+	HydratedShellCard,
 	HydratedThirdPartyParent,
 	HydratedSlotCard,
 	HydratedOptionalChildrenParent,
@@ -46,6 +48,16 @@ export const SSR_HYDRATION_CASES: Record<string, () => string> = {
 	'slot-card': () => {
 		const element = new HydratedSlotCard();
 		element.innerHTML = '<h2 slot="header">SSR header</h2><p>SSR body</p>';
+		return renderRadiantElementHostToString(element, { mode: 'hydrate' });
+	},
+	'conditional-slot': () => {
+		const element = new HydratedConditionalSlotCard();
+		element.innerHTML = '<em>child</em>';
+		return renderRadiantElementHostToString(element, { mode: 'hydrate' });
+	},
+	'view-owned-shell': () => {
+		const element = new HydratedShellCard();
+		element.innerHTML = '<h2>Title</h2><p>Body</p>';
 		return renderRadiantElementHostToString(element, { mode: 'hydrate' });
 	},
 	'marker-slot-parent': () => renderRadiantElementHostToString(new HydratedMarkerSlotParent(), { mode: 'hydrate' }),

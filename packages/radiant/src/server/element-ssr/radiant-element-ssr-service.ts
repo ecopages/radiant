@@ -80,10 +80,7 @@ export class RadiantElementSsrService {
 		const hydrate = isHydrateMode(options);
 
 		const slotPayload = this.host.getProjectedSlotPayload?.();
-		const slotProjectionMarkup =
-			slotPayload !== undefined && this.host.resolveTrackedRenderOutput().containsSlots
-				? createSlotProjectionScriptTag(slotPayload)
-				: '';
+		const slotProjectionMarkup = slotPayload !== undefined ? createSlotProjectionScriptTag(slotPayload) : '';
 		const authoredHydrationMarkup = this.host.getAuthoredHydrationScriptMarkup?.() ?? '';
 		const hydrationScripts = hydrate
 			? this.host

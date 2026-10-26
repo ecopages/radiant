@@ -11,6 +11,7 @@ import {
 	type DeferredHydratedCard,
 	type HydratedArrayPropCard,
 	type HydratedComplexSlotCard,
+	type HydratedConditionalSlotCard,
 	type HydratedCounter,
 	type HydratedCounterBinding,
 	type HydratedFragmentSlotParent,
@@ -26,6 +27,7 @@ import {
 	type HydratedRootSlotParent,
 	type HydratedStaticView,
 	type HydratedSlotCard,
+	type HydratedShellCard,
 	type HydratedThirdPartyParent,
 	type NonHydratedCounter,
 	pageBuyCardView,
@@ -123,18 +125,29 @@ describe('hydrating server-rendered markup', () => {
 	});
 
 	test('a hydrated View-owned Shell keeps its children and has no leftover payload script', async () => {
-		@customElement('shell-card-hydrate-test')
-		class ShellCardHydrate extends RadiantElement {}
-
-		document.body.innerHTML =
-			'<shell-card-hydrate-test data-radiant-ssr><h2>Title</h2><p>Body</p></shell-card-hydrate-test>';
-		const element = document.querySelector('shell-card-hydrate-test') as ShellCardHydrate;
+		const markup = serverMarkup('view-owned-shell');
+		expect(markup).not.toContain('data-radiant-slot-projection');
+		document.body.innerHTML = markup;
+		const element = document.querySelector('shell-card-hydrate-test') as HydratedShellCard;
 
 		await settle();
 
 		expect(element.querySelector('h2')?.textContent).toBe('Title');
 		expect(element.querySelector('p')?.textContent).toBe('Body');
 		expect(element.querySelector('script[data-radiant-slot-projection]')).toBeNull();
+	});
+
+	test('keeps Authored Children when the default slot appears after hydration', async () => {
+		installRadiantHydrator();
+		const markup = serverMarkup('conditional-slot');
+		expect(markup).toContain('data-radiant-slot-projection');
+		const element = mount<HydratedConditionalSlotCard>('conditional-slot', 'conditional-slot-card-hydrate-test');
+
+		await settle();
+		expect(element.querySelector('p')?.textContent).toBe('closed');
+		element.open = true;
+
+		await waitFor(() => expect(element.innerHTML).toBe('<section><em>child</em></section>'));
 	});
 
 	test('hydrates parent bindings that follow a nested host with reactive JSX children', async () => {

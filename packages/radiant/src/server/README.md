@@ -66,7 +66,7 @@ On the client, the stamp decides how a server-rendered host takes its children. 
 
 Each host serialization is one pass: align the tag and legacy readiness, apply children, prepare once, render the view, flush `@bindTo`, then read attributes, the slot-projection payload, and hydration bindings from that final state. A later, separate serialization prepares again so changed inputs are honoured. `renderComponent()` builds `preview` by wrapping that markup; it does not serialize the host a second time.
 
-When a component renders literal `<slot>` tags over **Authored Children**, host serialization also emits the slot-projection payload needed to reconstruct default and named light-DOM assignments on the client.
+When a render-owning host has **Authored Children**, host serialization emits the slot-projection payload needed to reconstruct default and named light-DOM assignments on the client, even when its current server-time view does not contain a `<slot>`. A View-owned Shell has no render lifecycle, so its children stay in the markup without a payload.
 
 Under `withRadiantServerCustomElementRenderBridge` in hydrate mode, a render-owning host inside another host's view receives a **Children Value**, as it does when the client renders that view. Its own render places it, so it serializes inside its context providers and in its marker namespace, and it emits no slot-projection payload. The client gets that value back only from the parent's view, so the parent host must be defined on the client too. Such a host is stamped `data-radiant-ssr="children"`: on the client it stays inert (no event bindings, no `onConnected()`) until the parent's view hands it its Children Value, then hydrates, so a nested host whose parent never renders on the client stays inert server markup. In plain mode nothing makes the host wait for that value (it is not stamped) and its parent may never render on the client, so the same host takes the Authored Children path below, with the slot-projection payload, and still renders its children when its parent is not defined on the client. Any other host claimed by the bridge, such as one in a page rendered outside every host view, or a host without a `render()` override, receives its JSX children as **Authored Children** in light-DOM nodes (`renderServerLightDom` from `@ecopages/jsx/server`), not as an HTML string to parse. Text and attribute values go straight into the DOM, so they are escaped exactly once, when the host serializes. The children are built inside the host's own context providers, after construction and legacy decorator setup but before `prepareForSsr`. A context consumer passed as a child of a provider host therefore resolves that provider during SSR. It sees values set by construction or decorators (`initialValue`), but not values the provider only sets during preparation.
 
@@ -108,6 +108,10 @@ The actual JSX serialization pass is still synchronous. Fetch or prepare data
 before calling the render helper, then inject resolved values through
 `initialize`, `prepareHost`, or explicit host attributes. Do not perform async
 work inside `render()`.
+
+`createResource(...)` starts only from the Element Host's client connect pass,
+after authored attributes synchronize. Server serialization never starts
+resource fetches, regardless of the active package export condition.
 
 ## Adapter install (copy-paste)
 
