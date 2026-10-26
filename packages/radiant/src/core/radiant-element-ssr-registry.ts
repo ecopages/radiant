@@ -18,14 +18,12 @@ export type RadiantElementServerRenderSsrCapable = RadiantElementSsrHostSource;
 export type { RadiantElementViewRenderSource };
 
 export type RadiantElementSsrRuntime = {
-	getHostAttributes(component: RadiantElementServerRenderSsrCapable): Record<string, string>;
 	renderHost(component: RadiantElementServerRenderSsrCapable): JsxRenderable;
 	renderHostToString(
 		component: RadiantElementServerRenderSsrCapable,
 		options?: RadiantElementRenderToStringOptions,
 	): string;
 	resolveRenderBridge(component: object): RadiantElementRenderBridge | undefined;
-	renderView(component: RadiantElementServerRenderSsrCapable, options?: RadiantElementRenderToStringOptions): string;
 };
 
 /** JSX SSR scope adapters installed by the server layer into client-safe core. */

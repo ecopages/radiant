@@ -1,9 +1,12 @@
 import '../../src/server/install-ssr-runtime';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import { ContextProvider, createContext, onContextUpdate, provideContext } from '../../src/context';
 import { setCustomElementTagName } from '../../src/core/custom-element-metadata';
 import { RadiantElement } from '../../src/core/radiant-element';
+import { registerSsrPreparationCallback } from '../../src/core/ssr-preparation';
+import { bindTo } from '../../src/decorators/bind-to';
 import { customElement } from '../../src/decorators/custom-element';
+import { onUpdated } from '../../src/decorators/on-updated';
 import { prop } from '../../src/decorators/prop';
 import { querySlot } from '../../src/decorators/query-slot';
 import { signal } from '../../src/decorators/signal';
@@ -12,6 +15,7 @@ import { createResource } from '../../src/signals/host-resource';
 import type { WritableSignal } from '@ecopages/signals';
 import { resolveSsrContextValue } from '../../src/server/context-ssr';
 import {
+	getRadiantElementHostSsrAttributes,
 	renderRadiantElementHostToString,
 	renderRadiantElementViewToString,
 } from '../../src/server/radiant-element-ssr';
@@ -29,6 +33,81 @@ class SsrArrayPropCard extends RadiantElement {
 
 	override render() {
 		return <p>{this.items.map((item) => item.label).join(', ') || 'empty'}</p>;
+	}
+}
+
+const preparedViewContext = createContext<{ value: string }>(Symbol('prepared-view-context'));
+
+@customElement('prepared-view-context-child-test')
+class PreparedViewContextChild extends RadiantElement {
+	@state value = 'missing provider';
+
+	@onContextUpdate({ context: preparedViewContext })
+	protected updateValue(context: { value: string }): void {
+		this.value = context.value;
+	}
+
+	override render() {
+		return <em>{this.value}</em>;
+	}
+}
+
+@customElement('prepared-view-parent-test')
+class PreparedViewParent extends RadiantElement {
+	@provideContext({ context: preparedViewContext, initialValue: { value: 'initial' }, hydrate: Object })
+	context!: ContextProvider<typeof preparedViewContext>;
+
+	@state source = 'initial';
+	@state label = 'initial';
+
+	@onUpdated('source')
+	protected updateDerivedState(): void {
+		this.label = this.source.toUpperCase();
+		this.context.setContext({ value: this.label });
+	}
+
+	constructor() {
+		super();
+		registerSsrPreparationCallback(this, () => {
+			this.source = 'prepared';
+		});
+	}
+
+	override render() {
+		return (
+			<section>
+				<p>{this.label}</p>
+				<prepared-view-context-child-test />
+			</section>
+		);
+	}
+}
+
+@customElement('prepared-view-bind-to-test')
+class PreparedViewBindToHost extends RadiantElement {
+	@bindTo({ selector: '[data-bind-target]', attr: 'data-bound' })
+	@state
+	value = 'bound';
+
+	targetCreated?: (target: Element) => void;
+
+	override render() {
+		const target = this.ownerDocument.createElement('button');
+		target.setAttribute('data-bind-target', '');
+		this.append(target);
+		this.targetCreated?.(target);
+		return <section>{target}</section>;
+	}
+}
+
+@customElement('prepared-authored-bind-to-test')
+class PreparedAuthoredBindToHost extends RadiantElement {
+	@bindTo({ selector: '[data-bind-target]', attr: 'data-bound' })
+	@state
+	value = 'bound';
+
+	override render() {
+		return <slot />;
 	}
 }
 
@@ -55,6 +134,101 @@ class ServerHostSlotQueryCard extends RadiantElement {
 }
 
 describe('RadiantElement SSR', () => {
+	test('the view serializer prepares the host and renders inside its provider scope', () => {
+		expect(customElements.get('prepared-view-context-child-test')).toBe(PreparedViewContextChild);
+		const viewHost = new PreparedViewParent();
+		const viewHtml = renderRadiantElementViewToString(viewHost, { mode: 'plain' });
+
+		expect(viewHtml).toContain('<p>PREPARED</p>');
+		expect(viewHtml).toContain('<em>PREPARED</em>');
+		const hydrateViewHtml = renderRadiantElementViewToString(new PreparedViewParent(), { mode: 'hydrate' });
+		expect(hydrateViewHtml).toContain('<p>PREPARED</p>');
+		expect(hydrateViewHtml.startsWith('<prepared-view-parent-test')).toBe(false);
+
+		const host = new PreparedViewParent();
+		const hostHtml = renderRadiantElementHostToString(host, { mode: 'plain' });
+		const hostInnerHtml = hostHtml.slice(
+			hostHtml.indexOf('>') + 1,
+			hostHtml.lastIndexOf('</prepared-view-parent-test>'),
+		);
+
+		expect(viewHtml).toBe(hostInnerHtml);
+	});
+
+	test('the view serializer prepares exactly once per call', () => {
+		const host = new PreparedViewParent();
+		const prepare = vi.spyOn(host, 'prepareForSsr');
+
+		renderRadiantElementViewToString(host);
+		expect(prepare).toHaveBeenCalledTimes(1);
+
+		prepare.mockClear();
+		renderRadiantElementViewToString(host);
+		expect(prepare).toHaveBeenCalledTimes(1);
+	});
+
+	test('the view serializer flushes @bindTo once after rendering', () => {
+		const host = new PreparedViewBindToHost();
+		let setAttribute: ReturnType<typeof vi.spyOn> | undefined;
+		host.targetCreated = (target) => {
+			setAttribute = vi.spyOn(target, 'setAttribute');
+		};
+
+		expect(host.querySelector('[data-bind-target]')).toBeNull();
+
+		const html = renderRadiantElementViewToString(host);
+
+		if (!setAttribute) {
+			throw new Error('Expected the Derived Tree to create a bind target.');
+		}
+
+		expect(setAttribute).toHaveBeenCalledTimes(1);
+		expect(html).toContain('data-bound="bound"');
+	});
+
+	for (const [serializer, serialize] of [
+		['view', (host: RadiantElement) => renderRadiantElementViewToString(host)],
+		['host', (host: RadiantElement) => renderRadiantElementHostToString(host)],
+	] as const) {
+		test(`the ${serializer} serializer writes an authored @bindTo target once`, () => {
+			const host = new PreparedAuthoredBindToHost();
+			const target = host.ownerDocument.createElement('i');
+			target.setAttribute('data-bind-target', '');
+			host.append(target);
+			const setAttribute = vi.spyOn(target, 'setAttribute');
+
+			const html = serialize(host);
+
+			expect(html).toContain('data-bound="bound"');
+			expect(setAttribute).toHaveBeenCalledTimes(1);
+			expect(html.includes('data-radiant-slot-projection')).toBe(serializer === 'host');
+		});
+	}
+
+	test('host attribute reading prepares the host once', () => {
+		@customElement('prepared-host-attributes-test')
+		class PreparedHostAttributes extends RadiantElement {
+			constructor() {
+				super();
+				registerSsrPreparationCallback(this, () => this.setAttribute('data-prepared', 'true'));
+			}
+
+			override render() {
+				return <p>prepared</p>;
+			}
+		}
+
+		const host = new PreparedHostAttributes();
+		const prepare = vi.spyOn(host, 'prepareForSsr');
+
+		expect(getRadiantElementHostSsrAttributes(host)).toEqual({ 'data-prepared': 'true' });
+		expect(prepare).toHaveBeenCalledTimes(1);
+
+		prepare.mockClear();
+		expect(renderRadiantElementHostToString(host)).toContain('data-prepared="true"');
+		expect(prepare).toHaveBeenCalledTimes(1);
+	});
+
 	test('renderRadiantElementHostToString() does not start host resources', async () => {
 		let fetches = 0;
 

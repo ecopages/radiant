@@ -17,6 +17,7 @@ export function toInternalRadiantSsrHost(component: object): InternalRadiantSsrH
 
 	return {
 		constructor: component.constructor as CustomElementConstructor,
+		getInnerHTML: () => component.innerHTML,
 		getAttribute: (name) => component.getAttribute(name),
 		getAttributeNames: () => component.getAttributeNames(),
 		getAuthoredHydrationScriptMarkup: () => component.getAuthoredHydrationScriptMarkup(),

@@ -97,6 +97,7 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	private changeSubscriptions = new Map<string, () => void>();
 	/** Member values captured while unobserved, diffed when observation resumes. */
 	private memberSnapshots = new Map<string, unknown>();
+	private initializingReactiveFields = new Set<string>();
 	private observing = false;
 	private onConnectedCallbacks: (() => void)[] = [];
 	private onDisconnectedCallback: (() => void)[] = [];
@@ -361,7 +362,11 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 		current?.unsubscribe();
 		callbacks.set(update, {
 			signal,
-			unsubscribe: signal.subscribe(() => update()),
+			unsubscribe: signal.subscribe(() => {
+				if (!this.initializingReactiveFields.has(propertyName)) {
+					update();
+				}
+			}),
 		});
 	}
 
@@ -473,14 +478,24 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	 *
 	 * @remarks A member bootstrapped earlier (legacy decorators register it before
 	 * class fields run) adopts `initialValue` as initialization: while members are
-	 * unobserved, the adoption is not reported to the update cycle.
+	 * unobserved, the adoption is not reported to the update cycle or synchronous
+	 * callbacks such as `@bindTo`.
 	 */
 	public createReactiveField<T>(propertyName: string, initialValue: T, options: ReactiveFieldOptions = {}): void {
 		const existing = this.reactiveMembers.get(propertyName) as ReactiveState<T> | undefined;
 		const signal = existing ?? this.createReactiveMember(propertyName, initialValue);
 
 		if (existing && initialValue !== undefined) {
-			signal.set(initialValue);
+			const wasInitializing = this.initializingReactiveFields.has(propertyName);
+			this.initializingReactiveFields.add(propertyName);
+
+			try {
+				signal.set(initialValue);
+			} finally {
+				if (!wasInitializing) {
+					this.initializingReactiveFields.delete(propertyName);
+				}
+			}
 
 			if (!this.observing) {
 				this.memberSnapshots.set(propertyName, signal.get());
