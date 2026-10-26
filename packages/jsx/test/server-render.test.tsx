@@ -64,7 +64,16 @@ describe('Radiant JSX server render', () => {
 		const template = jsx('style', { children: '.a{}</style><script>x</script>' });
 		const html = renderToString(template);
 
-		expect(html).toBe('<style>.a{}<\\/style><script>x</script></style>');
+		expect(html).toBe('<style>.a{}\\3c /style>\\3c script>x\\3c /script></style>');
+		expect(html.indexOf('</style>')).toBe(html.length - '</style>'.length);
+	});
+
+	test('String SSR joins style children before escaping closing tags', async () => {
+		const [{ jsxs }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+		const template = jsxs('style', { children: ['.a{}</', 'style><script>alert(1)</script>'] });
+		const html = renderToString(template);
+
+		expect(html).toBe('<style>.a{}\\3c /style>\\3c script>alert(1)\\3c /script></style>');
 		expect(html.indexOf('</style>')).toBe(html.length - '</style>'.length);
 	});
 
@@ -76,10 +85,25 @@ describe('Radiant JSX server render', () => {
 			const html = renderToString(template);
 			const close = `</${tag}>`;
 
-			expect(html.includes(`<\\/${tag}>`)).toBe(true);
+			if (tag === 'style') {
+				expect(html.includes('\\3c /style>')).toBe(true);
+			} else {
+				expect(html.includes(`<\\/${tag}>`)).toBe(true);
+			}
 			expect(html.indexOf(close)).toBe(html.length - close.length);
 		},
 	);
+
+	test.each(['style', 'script', 'xmp'] as const)('String SSR reads %s signal children', async (tag) => {
+		const [{ jsx }, { renderToString }, { state }] = await Promise.all([
+			loadJsxRuntime(),
+			loadServerRender(),
+			import('@ecopages/signals'),
+		]);
+		const signal = state('live');
+
+		expect(renderToString(jsx(tag, { children: signal }))).toBe(`<${tag}>live</${tag}>`);
+	});
 
 	test('serializes unsafeHtml content without escaping it again', async () => {
 		const [{ jsx, unsafeHtml }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
@@ -141,6 +165,34 @@ describe('Radiant JSX server render', () => {
 		expect(renderToString(toTemplateResultLike(deferredTemplate))).toBe(
 			'<div>Hello &lt;script&gt;</div><img src=x onerror=alert(1)//',
 		);
+	});
+
+	test('escapes script closing tags split across transported static and dynamic content', async () => {
+		const [{ toTemplateResultLike }, { renderToString }] = await Promise.all([
+			loadJsxRuntime(),
+			loadServerRender(),
+		]);
+		const deferredTemplate = {
+			rootLocalName: 'script',
+			strings: ['<script></scr', 'ipt></script>'],
+			values: ['ipt>alert(1)'],
+		} as const;
+
+		expect(renderToString(toTemplateResultLike(deferredTemplate))).toBe('<script><\\/script>alert(1)ipt></script>');
+	});
+
+	test('escapes script closing tags split across dynamic and transported static content', async () => {
+		const [{ toTemplateResultLike }, { renderToString }] = await Promise.all([
+			loadJsxRuntime(),
+			loadServerRender(),
+		]);
+		const deferredTemplate = {
+			rootLocalName: 'script',
+			strings: ['<script>', 'ipt></script>'],
+			values: ['before</scr'],
+		} as const;
+
+		expect(renderToString(toTemplateResultLike(deferredTemplate))).toBe('<script>before<\\/script></script>');
 	});
 
 	test('does not treat an unbranded object with a strings array as a template', async () => {

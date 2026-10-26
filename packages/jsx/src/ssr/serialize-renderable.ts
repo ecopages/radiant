@@ -16,6 +16,8 @@ import {
 import { isCustomElementSubtreeRoot } from '../hydration/hydration-subtree-policy.ts';
 import { isClientOnlyBinding } from '../hydration/hydration-marker-policy.ts';
 import { serializeStyleSnapshot } from '../factory/attribute-normalize.ts';
+import { RAW_TEXT_ELEMENT_NAMES } from '../factory/raw-text-element-names.ts';
+import { stringifyTextContentValue } from '../factory/text-content-value.ts';
 import { escapeAttribute, escapeHtml } from './html-escape.ts';
 import type { JsxNodeLike, JsxRenderable, TemplateResultLike } from '../types/index.ts';
 
@@ -117,6 +119,15 @@ function serializeTemplateResult(template: TemplateResultLike, options: Serializ
 		nestedInParentHydrationNamespace: true,
 		...(nestedCustomElementRoot ? { mode: 'plain' as const, hydrationBindingState: undefined } : {}),
 	};
+	const rawTextElementName = template.rootLocalName?.toLowerCase();
+	if (rawTextElementName && RAW_TEXT_ELEMENT_NAMES.has(rawTextElementName)) {
+		const rawTextHtml = serializeRawTextTemplate(template, childOptions, rawTextElementName);
+
+		if (rawTextHtml !== undefined) {
+			return rawTextHtml;
+		}
+	}
+
 	let html = '';
 
 	for (let index = 0; index < template.values.length; index += 1) {
@@ -128,6 +139,100 @@ function serializeTemplateResult(template: TemplateResultLike, options: Serializ
 
 	html += template.strings[template.strings.length - 1] ?? '';
 	return html;
+}
+
+function serializeRawTextTemplate(
+	template: TemplateResultLike,
+	options: SerializeRenderableOptions,
+	elementName: string,
+): string | undefined {
+	const childIndexes = template.parts.flatMap((part, index) => (part?.type === 'child' ? [index] : []));
+	const firstChildIndex = childIndexes[0];
+	const lastChildIndex = childIndexes[childIndexes.length - 1];
+	if (
+		firstChildIndex === undefined ||
+		lastChildIndex === undefined ||
+		template.parts.slice(firstChildIndex, lastChildIndex + 1).some((part) => part?.type !== 'child') ||
+		lastChildIndex !== template.parts.length - 1
+	) {
+		return undefined;
+	}
+
+	let openingAndContentPrefix = '';
+	for (let index = 0; index < firstChildIndex; index += 1) {
+		openingAndContentPrefix += template.strings[index] ?? '';
+		openingAndContentPrefix += serializeTemplatePart(
+			template.parts[index],
+			resolveReactiveSnapshot(template.values[index]),
+			options,
+		);
+	}
+	openingAndContentPrefix += template.strings[firstChildIndex] ?? '';
+	const openingTagEnd = findRawTextOpeningTagEnd(openingAndContentPrefix, elementName);
+	if (openingTagEnd === undefined) {
+		return undefined;
+	}
+
+	let rawText = openingAndContentPrefix.slice(openingTagEnd + 1);
+	for (let index = firstChildIndex; index <= lastChildIndex; index += 1) {
+		rawText += stringifyTextContentValue(template.values[index]);
+		if (index < lastChildIndex) {
+			rawText += template.strings[index + 1] ?? '';
+		}
+	}
+
+	const closingSuffix = template.strings[template.strings.length - 1] ?? '';
+	const closingTagStart = findRawTextClosingTagStart(closingSuffix, elementName);
+	if (closingTagStart === undefined) {
+		return undefined;
+	}
+
+	rawText += closingSuffix.slice(0, closingTagStart);
+	return `${openingAndContentPrefix.slice(0, openingTagEnd + 1)}${escapeRawTextElementText(elementName, rawText)}${closingSuffix.slice(closingTagStart)}`;
+}
+
+function findRawTextOpeningTagEnd(html: string, elementName: string): number | undefined {
+	const openingTag = new RegExp(`<${elementName}(?=[\\s/>])`, 'i').exec(html);
+	if (openingTag?.index === undefined) {
+		return undefined;
+	}
+
+	let quote: '"' | "'" | undefined;
+	for (let index = openingTag.index + openingTag[0].length; index < html.length; index += 1) {
+		const character = html[index];
+		if (quote) {
+			if (character === quote) {
+				quote = undefined;
+			}
+			continue;
+		}
+		if (character === '"' || character === "'") {
+			quote = character;
+			continue;
+		}
+		if (character === '>') {
+			return index;
+		}
+	}
+
+	return undefined;
+}
+
+function findRawTextClosingTagStart(html: string, elementName: string): number | undefined {
+	const closingTag = new RegExp(`</${elementName}\\s*>`, 'gi');
+	let closingTagStart: number | undefined;
+	for (const match of html.matchAll(closingTag)) {
+		closingTagStart = match.index;
+	}
+	return closingTagStart;
+}
+
+function escapeRawTextElementText(elementName: string, value: string): string {
+	if (elementName === 'style') {
+		return value.replaceAll('<', '\\3c ');
+	}
+
+	return value.replace(new RegExp(`</(?=${elementName}[\\s/>])`, 'gi'), '<\\/');
 }
 
 function serializeTemplatePart(

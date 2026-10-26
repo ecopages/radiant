@@ -1,4 +1,4 @@
-import { RAW_TEXT_ELEMENT_NAMES } from '@ecopages/jsx/raw-text';
+import { RAW_TEXT_ELEMENT_NAMES } from '@ecopages/jsx/server';
 
 export type ParsedHtmlTag = {
 	attributes: Record<string, string>;
