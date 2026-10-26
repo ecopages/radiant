@@ -1,5 +1,18 @@
 # @ecopages/storybook-radiant-vite
 
+## 0.2.0
+
+### Patch Changes
+
+- [#464](https://github.com/ecopages/radiant/pull/464) [`ab9404f`](https://github.com/ecopages/radiant/commit/ab9404ff953a66222c6aa7a472ebf6b9adde7228) Thanks [@andeeplus](https://github.com/andeeplus)! - Use a registered custom-element class directly as a JSX element type (`<UserCard name="Ada" />`). Declare its public props with `declare readonly [JSX_PROPS]?: Props` (`import type { JSX_PROPS } from '@ecopages/jsx'`); a tag listed in `HTMLElementTagNameMap` gets the same props. JSX finds the tag from `@customElement(...)` metadata or `customElements.getName()`, on the server too. Rendering an unregistered class, or one that extends a built-in element other than `HTMLElement`, throws a `TypeError` naming the class. `CUSTOM_ELEMENT_TAG_NAME` and `getCustomElementTagName()` are exported from `@ecopages/jsx`. Existing `JsxCustomIntrinsicElements` augmentations keep working. `getCustomElementTagName()` resolves a class's own `@customElement(...)` tag, else its `customElements` registration (on the server too), so a subclass defined with `customElements.define()` renders, and server-renders, under its own tag instead of its parent's.
+
+- [#502](https://github.com/ecopages/radiant/pull/502) [`db4b297`](https://github.com/ecopages/radiant/commit/db4b297aebbe76657c45d52ce7fbd34319969796) Thanks [@andeeplus](https://github.com/andeeplus)! - Remove the unused internal `inferScriptModuleFromViewModule` helper. It was not a package export.
+- Updated dependencies [[`0197e16`](https://github.com/ecopages/radiant/commit/0197e16dbd34e70755807051b29c5ed868f6cb58), [`4058bf9`](https://github.com/ecopages/radiant/commit/4058bf9c4a2cf98db9a50938c5ee0fdca7915ffd), [`1d35d3e`](https://github.com/ecopages/radiant/commit/1d35d3ed090dfbcc2819d03cf6beeae10e9d89ed), [`ab9404f`](https://github.com/ecopages/radiant/commit/ab9404ff953a66222c6aa7a472ebf6b9adde7228), [`977785f`](https://github.com/ecopages/radiant/commit/977785fc73b327648642d4eb3a317c6e19b7ffbb), [`817a98d`](https://github.com/ecopages/radiant/commit/817a98dd64b93d9fe08c2604b68d76949e61c669), [`a2789eb`](https://github.com/ecopages/radiant/commit/a2789ebb21f5c077fbb393a0fddae89d22d38477), [`719b466`](https://github.com/ecopages/radiant/commit/719b466308b749d2864b8e184dff1583e8c476dc), [`64010bf`](https://github.com/ecopages/radiant/commit/64010bf58e782ad78439f378d1e6aef9c234e87d), [`9234d6b`](https://github.com/ecopages/radiant/commit/9234d6bef0b29f4081a7b174aff240c3db703864), [`21883b1`](https://github.com/ecopages/radiant/commit/21883b183f4b982beb0dc7fb41b77cda748854ab), [`b5d2dad`](https://github.com/ecopages/radiant/commit/b5d2dade53815a474c11cddf7e32d3ea8fb87338), [`df1b225`](https://github.com/ecopages/radiant/commit/df1b2250e54f7245edcebc81e6207d96d226599d), [`f48dc1a`](https://github.com/ecopages/radiant/commit/f48dc1adbd1e43f6bfa3e0aa1ba2f28e3f3f3a4b), [`a7409b7`](https://github.com/ecopages/radiant/commit/a7409b7b8573d28c656230b5870dee7c6aed0dd3), [`828dd15`](https://github.com/ecopages/radiant/commit/828dd15882a04e81b98e152a4d5dbd78716f5393), [`76b8c27`](https://github.com/ecopages/radiant/commit/76b8c27e8e73db1b69ed1ba056c10b41232d43b1)]:
+    - @ecopages/vite-plugin-radiant@0.2.0
+    - @ecopages/radiant@0.6.0
+    - @ecopages/jsx@0.6.0
+    - @ecopages/signals@0.6.0
+
 ## 0.1.1
 
 ### Patch Changes

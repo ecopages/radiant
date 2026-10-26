@@ -1,5 +1,64 @@
 # @ecopages/radiant
 
+## 0.6.0
+
+### Minor Changes
+
+- [#463](https://github.com/ecopages/radiant/pull/463) [`4058bf9`](https://github.com/ecopages/radiant/commit/4058bf9c4a2cf98db9a50938c5ee0fdca7915ffd) Thanks [@andeeplus](https://github.com/andeeplus)! - **Breaking:** `@customElement` rejects customized built-ins. A defined `extends` option throws a `TypeError` and no longer type-checks. Replace `@customElement('fancy-button', { extends: 'button' }) class FancyButton extends HTMLButtonElement` with an autonomous element (`@customElement('fancy-button') class FancyButton extends RadiantElement` that renders its own `<button>`), and `<button is="fancy-button">` with `<fancy-button>`.
+
+- [#474](https://github.com/ecopages/radiant/pull/474) [`1d35d3e`](https://github.com/ecopages/radiant/commit/1d35d3ed090dfbcc2819d03cf6beeae10e9d89ed) Thanks [@andeeplus](https://github.com/andeeplus)! - **Breaking:** Default camelCase `@prop` attributes to kebab-case (`minWidth` becomes `min-width`) across observed attributes, client updates and SSR. To migrate authored HTML, rename camelCase attributes to kebab-case; JSX property names remain camelCase. Underscores map to hyphens too (`max_width` becomes `max-width`), and `@attr` now collapses runs of underscores the same way (`a__b` becomes `a-b`, was `a--b`). Reflected and server-rendered host attributes use the new names, so update CSS selectors and `getAttribute`/`setAttribute` calls (`[exclusivetoggles]` becomes `[exclusive-toggles]`). An explicit `attribute` option, or `source` on `@attr`, keeps its configured name; choose a lowercase `attribute` value when consumers write it in HTML.
+
+    Radiant UI hosts follow the same rule: authored HTML such as `<rui-sidebar minWidth="200">` becomes `<rui-sidebar min-width="200">`.
+
+- [#494](https://github.com/ecopages/radiant/pull/494) [`64010bf`](https://github.com/ecopages/radiant/commit/64010bf58e782ad78439f378d1e6aef9c234e87d) Thanks [@andeeplus](https://github.com/andeeplus)! - **Breaking:** Remove `RadiantElement.renderViewToString()`. Import the server function and pass the host explicitly:
+
+    ```ts
+    // before
+    import '@ecopages/radiant/server/radiant-element-ssr';
+    const html = host.renderViewToString({ mode: 'hydrate' });
+
+    // after
+    import { renderRadiantElementViewToString } from '@ecopages/radiant/server/radiant-element-ssr';
+    const html = renderRadiantElementViewToString(host, { mode: 'hydrate' });
+    ```
+
+    The view-only function now prepares the host, renders inside its context providers, and flushes `@bindTo` once, matching host serialization. It takes a `RadiantElement` host, as `renderRadiantElementHostToString` does.
+
+    Advanced exports from `@ecopages/radiant/server/radiant-element-ssr` changed too: the runtime from `getOrCreateRadiantElementSsrRuntime()` no longer has `renderView` or `getHostAttributes`; `RadiantElement.getSlotProjectionScriptTag()` is replaced by `getProjectedSlotPayload()`; `prepareForSsr()` no longer flushes `@bindTo`; the second argument of `createRadiantElementSsrService(host).renderHostToString(options, attributes)` is now overrides merged over the prepared attributes; and `getHostAttributes()` / `getRadiantElementHostSsrAttributes(host)` now prepare the host first.
+
+- [#502](https://github.com/ecopages/radiant/pull/502) [`9234d6b`](https://github.com/ecopages/radiant/commit/9234d6bef0b29f4081a7b174aff240c3db703864) Thanks [@andeeplus](https://github.com/andeeplus)! - **Breaking:** Remove two deprecated surfaces.
+
+    - The `@ecopages/radiant/server/radiant-element-ssr-bridge` entry is gone. Import from `@ecopages/radiant/server/radiant-element-ssr`, which exports the same names.
+    - `@contextSelector(...)` decorates fields only. On a method it no longer type-checks and throws a `TypeError` naming `@onContextUpdate`, in standard and legacy decorator modes. Replace `@contextSelector({ context, select })` on a method with `@onContextUpdate({ context, select })`; it runs the same delivery, so the method behaves as before.
+
+- [#462](https://github.com/ecopages/radiant/pull/462) [`f48dc1a`](https://github.com/ecopages/radiant/commit/f48dc1adbd1e43f6bfa3e0aa1ba2f28e3f3f3a4b) Thanks [@andeeplus](https://github.com/andeeplus)! - Serialize each Element Host once per `renderComponent()` call, so host attributes, view content, and provider hydration payloads describe the same prepared state. `preview` now wraps that markup, matching `renderController()`. Callers of `renderComponentWithPreview()` in plain mode no longer receive a hydrate-mode preview with `data-radiant-ssr` and hydration markers.
+
+    **Breaking:** Server rendering resolves consumed context after construction: before `initialize` (`renderComponent`, and `renderController` inside an active provider) and before `@onUpdated` callbacks. A host gets one `connectedContextCallback`, mounted event and context update callback per provider and value. Constructors and field initializers no longer see consumed context during SSR; read it in `initialize`, `@onUpdated` or `render()`.
+
+    Custom server adapters: `runSsrPreparationCallbacks(host)` no longer resolves consumed context. Call `runSsrPreparationCallbacks(host, true)` first, inside the SSR provider scope, then `runSsrPreparationCallbacks(host)`.
+
+### Patch Changes
+
+- [#464](https://github.com/ecopages/radiant/pull/464) [`ab9404f`](https://github.com/ecopages/radiant/commit/ab9404ff953a66222c6aa7a472ebf6b9adde7228) Thanks [@andeeplus](https://github.com/andeeplus)! - Use a registered custom-element class directly as a JSX element type (`<UserCard name="Ada" />`). Declare its public props with `declare readonly [JSX_PROPS]?: Props` (`import type { JSX_PROPS } from '@ecopages/jsx'`); a tag listed in `HTMLElementTagNameMap` gets the same props. JSX finds the tag from `@customElement(...)` metadata or `customElements.getName()`, on the server too. Rendering an unregistered class, or one that extends a built-in element other than `HTMLElement`, throws a `TypeError` naming the class. `CUSTOM_ELEMENT_TAG_NAME` and `getCustomElementTagName()` are exported from `@ecopages/jsx`. Existing `JsxCustomIntrinsicElements` augmentations keep working. `getCustomElementTagName()` resolves a class's own `@customElement(...)` tag, else its `customElements` registration (on the server too), so a subclass defined with `customElements.define()` renders, and server-renders, under its own tag instead of its parent's.
+
+- [#493](https://github.com/ecopages/radiant/pull/493) [`977785f`](https://github.com/ecopages/radiant/commit/977785fc73b327648642d4eb3a317c6e19b7ffbb) Thanks [@andeeplus](https://github.com/andeeplus)! - `createResource(...)` starts on the client connect pass, after authored attributes sync and the initial render or hydration, just before `onConnected()`, so the first fetch uses authored prop values instead of the defaults.
+
+- [#503](https://github.com/ecopages/radiant/pull/503) [`817a98d`](https://github.com/ecopages/radiant/commit/817a98dd64b93d9fe08c2604b68d76949e61c669) Thanks [@andeeplus](https://github.com/andeeplus)! - Security fix: a custom element placed inside `svg` or `math` no longer lets text in a `style`, `xmp`, `noframes`, `iframe` or other raw-text tag under it create elements in SSR output. Its light DOM and view used to serialize as HTML, so that text was emitted raw, while the browser parses it as foreign content. They now serialize in the namespace the element sits in: the text is entity-escaped, and the browser decodes it back to the same characters. This covers a host's Authored Children, its own `render()`, a Children Value from a parent view, slotted children and nested hosts. Under an SVG `foreignObject`, `desc` or `title`, and anywhere in HTML, CSS such as `@media (width < 600px)` is still emitted unchanged. Plain JSX such as `<svg><desc><style>` now keeps that CSS raw too, as browsers read it. Custom-element render hooks get the namespace as `context.foreignContent`, and `renderToString` and `renderServerLightDom` accept it, so an integration that serializes a host itself can do the same.
+
+- [#497](https://github.com/ecopages/radiant/pull/497) [`719b466`](https://github.com/ecopages/radiant/commit/719b466308b749d2864b8e184dff1583e8c476dc) Thanks [@andeeplus](https://github.com/andeeplus)! - Security fix: SSR no longer lets Authored Children text create elements when it sits in a `style`, `script`, `xmp`, `iframe`, `noembed` or `noframes` tag inside `svg` or `math`. Those tags are ordinary elements there, so their text is now entity-escaped, anywhere under `math` (including `mi` and `mtext`) and under `svg` outside `foreignObject`, `desc` and `title`. In HTML they stay raw text, and only a matching closing tag (`</style` followed by whitespace, `/` or `>`) is rewritten, also when it is split across text nodes, so CSS such as `@media (width < 600px)` is emitted unchanged. Parsed markup such as `<svg><style>a&amp;b</style></svg>` now decodes its character references there, as browsers do, so changing it does not double-escape the text. Inside `svg` and `math` the server DOM also reads comments and `<![CDATA[…]]>` sections as browsers do, so a `</style>` inside them no longer ends the element, and a changed SVG icon keeps its CDATA-wrapped CSS.
+
+- [#477](https://github.com/ecopages/radiant/pull/477) [`b5d2dad`](https://github.com/ecopages/radiant/commit/b5d2dade53815a474c11cddf7e32d3ea8fb87338) Thanks [@andeeplus](https://github.com/andeeplus)! - A View-owned Shell (a host without a `render()` override) no longer ships its children a second time as a slot-projection payload. Render-owning hosts with Authored Children keep the payload whether or not their server-time view contains a `<slot>`.
+
+- [#506](https://github.com/ecopages/radiant/pull/506) [`df1b225`](https://github.com/ecopages/radiant/commit/df1b2250e54f7245edcebc81e6207d96d226599d) Thanks [@andeeplus](https://github.com/andeeplus)! - Security fix: a host whose view puts `<slot />` inside `svg` or `math` no longer lets text in a slotted `style`, `xmp`, `noframes` or other raw-text tag create elements in SSR output. The slotted light-DOM nodes were emitted as HTML, where that text is raw, while the browser parses them as foreign content. They are now emitted in the namespace of the slot, so the text is entity-escaped and the browser decodes it back to the same characters, for default and named slots, in plain and hydrate mode, and for nested hosts among the slotted children. For a host in HTML, a slot in HTML, or under an SVG `foreignObject`, `desc` or `title`, emits CSS such as `@media (width < 600px)` unchanged. Client rendering is unchanged.
+
+- [#475](https://github.com/ecopages/radiant/pull/475) [`a7409b7`](https://github.com/ecopages/radiant/commit/a7409b7b8573d28c656230b5870dee7c6aed0dd3) Thanks [@andeeplus](https://github.com/andeeplus)! - `<script>` children are now text-content parts on the client like other raw-text children, so a signal child stays live. String SSR joins each element's children before escaping. In HTML it rewrites only the element's matching closing-tag sequence, so CSS such as `@media (width < 600px)` stays byte-identical; inside `svg` or `math`, where these tags are ordinary elements, it entity-escapes the text. `RAW_TEXT_ELEMENT_NAMES` is exported from `@ecopages/jsx/server`, which Radiant uses for its server HTML parser.
+
+    A `foreignObject` inside `<math>` keeps its MathML parsing, so raw-text tags under it are entity-escaped; only an SVG `foreignObject` switches back to HTML.
+
+- Updated dependencies [[`ab9404f`](https://github.com/ecopages/radiant/commit/ab9404ff953a66222c6aa7a472ebf6b9adde7228), [`817a98d`](https://github.com/ecopages/radiant/commit/817a98dd64b93d9fe08c2604b68d76949e61c669), [`a2789eb`](https://github.com/ecopages/radiant/commit/a2789ebb21f5c077fbb393a0fddae89d22d38477), [`a7409b7`](https://github.com/ecopages/radiant/commit/a7409b7b8573d28c656230b5870dee7c6aed0dd3), [`828dd15`](https://github.com/ecopages/radiant/commit/828dd15882a04e81b98e152a4d5dbd78716f5393), [`76b8c27`](https://github.com/ecopages/radiant/commit/76b8c27e8e73db1b69ed1ba056c10b41232d43b1)]:
+    - @ecopages/jsx@0.6.0
+    - @ecopages/signals@0.6.0
+
 ## 0.5.1
 
 ### Patch Changes
