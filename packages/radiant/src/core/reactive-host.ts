@@ -39,9 +39,9 @@ export const REACTIVE_HOST: unique symbol = Symbol.for('@ecopages/radiant.reacti
 export interface ReactiveHostInternals {
 	readonly ssrRegistry: HostSsrRegistry;
 	notifyUpdate(changedProperty: string, oldValue: unknown, value: unknown): void;
-	registerPostSyncCallback(callback: () => void): void;
+	registerPostSync(callback: () => void): void;
 	registerUpdatedCallback(keys: readonly string[], callback: UpdatedCallback): () => void;
-	flushPostSyncCallbacks(): void;
+	flushPostSync(): void;
 }
 
 /**
@@ -182,7 +182,7 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	}
 
 	/**
-	 * Registers a callback that should run whenever the host connects.
+	 * Registers work that runs synchronously when the host starts connecting.
 	 */
 	public registerConnectedCallback(callback: () => void): void {
 		this.onConnectedCallbacks.push(callback);
@@ -195,14 +195,14 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	 * Used by `@bindTo` so the first paint can see parent-authored or just-rendered
 	 * `data-ref` nodes. Callbacks persist across disconnect and run again on reconnect.
 	 */
-	public registerPostSyncCallback(callback: () => void): void {
+	public registerPostSync(callback: () => void): void {
 		this.postSyncCallbacks.push(callback);
 	}
 
 	/**
 	 * Runs every post-sync callback registered on this host.
 	 */
-	public flushPostSyncCallbacks(): void {
+	public flushPostSync(): void {
 		for (const callback of this.postSyncCallbacks) {
 			callback();
 		}

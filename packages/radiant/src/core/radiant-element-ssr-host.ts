@@ -22,6 +22,6 @@ export type InternalRadiantSsrHost = {
 	getPropertyValue: (name: string) => unknown;
 	getProjectedSlotPayload?: () => Record<string, string[]> | undefined;
 	resolveTrackedRenderOutput: () => { containsSlots: boolean; value: JsxRenderable };
-	flushPostSyncCallbacks: () => void;
+	flushPostSync: () => void;
 	prepareForSsr: () => void;
 };
