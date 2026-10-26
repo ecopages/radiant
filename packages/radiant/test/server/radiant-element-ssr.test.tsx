@@ -8,6 +8,7 @@ import { prop } from '../../src/decorators/prop';
 import { querySlot } from '../../src/decorators/query-slot';
 import { signal } from '../../src/decorators/signal';
 import { state } from '../../src/decorators/state';
+import { createResource } from '../../src/signals/host-resource';
 import type { WritableSignal } from '@ecopages/signals';
 import { resolveSsrContextValue } from '../../src/server/context-ssr';
 import {
@@ -54,6 +55,29 @@ class ServerHostSlotQueryCard extends RadiantElement {
 }
 
 describe('RadiantElement SSR', () => {
+	test('renderRadiantElementHostToString() does not start host resources', () => {
+		let fetches = 0;
+
+		@customElement('server-host-resource-card-test')
+		class ServerHostResourceCard extends RadiantElement {
+			resource = createResource(this, {
+				fetcher: async () => {
+					fetches += 1;
+					return 'weather';
+				},
+			});
+
+			override render() {
+				return <p>{this.resource.status.get()}</p>;
+			}
+		}
+
+		const html = renderRadiantElementHostToString(new ServerHostResourceCard());
+
+		expect(html).toContain('<server-host-resource-card-test>');
+		expect(fetches).toBe(0);
+	});
+
 	test('renderRadiantElementViewToString() serializes the current view without connecting', () => {
 		class ServerGreetingCard extends RadiantElement {
 			message = 'Hello SSR';

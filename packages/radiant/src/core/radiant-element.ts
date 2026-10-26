@@ -141,10 +141,11 @@ export interface IRadiantElement<Bindings extends object = {}> {
 	registerCleanupCallback(callback: () => void): void;
 
 	/**
-	 * Registers a callback to run on each future host connection.
+	 * Registers a callback to run synchronously at the start of each future connection.
 	 *
-	 * The callback is only invoked from `connectedCallback()`. Registering it
-	 * after the host is already connected does not invoke it immediately.
+	 * @remarks
+	 * This is a pre-sync hook and is not invoked immediately when registered on an already connected host. Use
+	 * `onConnected()` for work that depends on adopted attributes or rendered DOM.
 	 */
 	registerConnectedCallback(callback: () => void): void;
 
@@ -412,7 +413,7 @@ export class RadiantElement<Bindings extends object = {}>
 				}
 			}
 
-			this.reactiveHost.flushPostSyncCallbacks();
+			this.reactiveHost.flushPostSync();
 			this.onConnected();
 		});
 	}
@@ -569,7 +570,7 @@ export class RadiantElement<Bindings extends object = {}>
 		this.prepareForSsr();
 
 		const html = requireRadiantElementSsrRuntime().renderView(this, options);
-		this.reactiveHost.flushPostSyncCallbacks();
+		this.reactiveHost.flushPostSync();
 		return html;
 	}
 
@@ -637,7 +638,7 @@ export class RadiantElement<Bindings extends object = {}>
 			stopObserving();
 		}
 
-		this.reactiveHost.flushPostSyncCallbacks();
+		this.reactiveHost.flushPostSync();
 	}
 
 	/** Framework plumbing for decorators and SSR adapters; not part of the authoring API. */
@@ -713,11 +714,11 @@ export class RadiantElement<Bindings extends object = {}>
 	}
 
 	/**
-	 * Registers a callback that runs from `connectedCallback()` on future host
-	 * connections.
+	 * Registers a callback to run synchronously at the start of each future connection.
 	 *
-	 * Registering after the host is already connected does not invoke the
-	 * callback immediately.
+	 * @remarks
+	 * This is a pre-sync hook and is not invoked immediately when registered on an already connected host. Use
+	 * `onConnected()` for work that depends on adopted attributes or rendered DOM.
 	 */
 	public registerConnectedCallback(callback: () => void): void {
 		this.reactiveHost.registerConnectedCallback(callback);
