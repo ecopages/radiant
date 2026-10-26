@@ -55,9 +55,10 @@ Radiant SSR is **light-DOM only**, like the client render path. The pipeline doe
 
 For adapters, fragment responses, and framework integrations, prefer the explicit helpers from `@ecopages/radiant/server/render-component` (for example `renderComponent()` / `renderComponentToString()`). Prefer `render-component` unless you are writing a renderer integration.
 
-Lower-level host serialization lives on `@ecopages/radiant/server/radiant-element-ssr`, not as Element Host instance methods:
+Adapters and fragment helpers should use `renderComponent()` / `renderComponentToString()` from `@ecopages/radiant/server/render-component`. Those default to **hydrate** mode (`normalizeRenderOptions`). Lower-level host serialization lives on `@ecopages/radiant/server/radiant-element-ssr`, not as Element Host instance methods:
 
-- **Adapter default:** `renderRadiantElementHostToString`
+- **Host to string:** `renderRadiantElementHostToString` — defaults to **plain** mode (`{}` is not hydrate). Pass `{ mode: 'hydrate' }` for the host stamp and hydration scripts.
+- **Host as JSX:** `renderRadiantElementHost` — always hydrate mode.
 - **View-only:** `renderRadiantElementViewToString`. It returns the view without a host tag, so it never stamps; a caller that writes the host tag itself adds `SERVER_RENDERED_HOST_ATTRIBUTE`.
 - **JSX / custom-element SSR integration:** `withRadiantServerCustomElementRenderBridge`, `renderRegisteredRadiantElementHost`, `renderRegisteredRadiantElementHostToString`
 - **Host stamp:** `SERVER_RENDERED_HOST_ATTRIBUTE` (`data-radiant-ssr`). Hydrate-mode host serialization writes it on every host: `children` on a host that takes its children as a value from the view around it, `authored` on a render-owning host it rendered with Authored Children that fill a named slot (shipped in its slot-projection payload), and an empty value otherwise. The client host reads and removes it at first connect into `isServerRendered`. Plain mode does not write it.
@@ -92,9 +93,9 @@ Hosts the hook does not claim still get their children applied as usual. `test/s
 
 ### Typed Boolean host attributes
 
-Radiant `@prop({ type: Boolean })` values serialize as **value booleans** (`enabled="true"` / `enabled="false"`), including explicit `false`. That is intentional pre-hydration transport so a client upgrade cannot restore a true default before hydration.
+`@prop({ type: Boolean })` follows the rule in [`resolveHostAttributes`](element-ssr/host-attribute-serialization.ts): omit `false` unless the declared default is `true`; otherwise write `"true"` / `"false"`. A true-default prop therefore round-trips explicit `false` through SSR so a client upgrade cannot restore the default before hydration. A false-default prop omits `false` and writes `name="true"` when true. That is not HTML presence (`name` with an empty value).
 
-This is not HTML presence-boolean semantics. A selector like `[enabled]` matches any serialized value, including `"false"`. Prefer `[enabled="true"]` / `[enabled="false"]`, or drive styles from component state attributes/classes (`data-state`, etc.).
+A selector like `[enabled]` matches `"true"` and `"false"`. Prefer `[enabled="true"]` / `[enabled="false"]`, or drive styles from component state attributes/classes (`data-state`, etc.).
 
 Generic JSX `prop:*` bindings remain client-only and do not stringify property values into HTML; use the Radiant SSR host bridge (or a reflected attribute) when pre-hydration state must appear in markup.
 
@@ -226,7 +227,7 @@ The shim supports a focused query surface for component lifecycle code that runs
 - `element.parentElement`
 - Node traversal: `childNodes`, `firstChild`, `lastChild`, `nextSibling`, `previousSibling`, `firstElementChild`, `lastElementChild`, `nextElementSibling`, `previousElementSibling`, `childElementCount`
 - Node edits: `append`, `prepend`, `before`, `after`, `replaceWith`, `remove`, `insertBefore`, `replaceChildren`, `insertAdjacentHTML`
-- `document.createElement` / `createElementNS` (no namespaces), `createTextNode`, `createComment`
+- `document.createElement` / `createElementNS` (no namespaces), `createTextNode`, `createComment`. `createElement` of a registered custom-element tag still returns a generic minimal element: the component is not constructed and its view is not serialized. Use JSX for nested hosts that must server-render.
 - `document.querySelector(selector)` / `document.querySelectorAll(selector)`
 - `document.getElementById(id)`
 - `element.style` (`setProperty`, property assignment, serializes to the `style` attribute)
