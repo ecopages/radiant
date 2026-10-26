@@ -71,7 +71,7 @@ export function stringifyHostAttributes(attributes: Record<string, string>): str
 /**
  * Source 1: Reactive properties with established converters.
  *
- * Nullish runtime values are omitted. Boolean `false` is omitted unless the default is `true`.
+ * Nullish runtime values are omitted. Boolean defaults follow {@link resolveHostAttributes}.
  */
 function appendReactivePropertyAttributes(
 	host: HostAttributeSource,
@@ -141,9 +141,7 @@ function appendAuthoredAttributes(host: HostAttributeSource, attributes: Record<
 /**
  * Omits values that have no useful host-attribute representation.
  *
- * @remarks False-default booleans follow HTML presence (omit `false`). True-default
- * booleans emit `"false"` so a client upgrade cannot restore the default before
- * hydration. Style those with `[name="true"]` / `[name="false"]`, not bare `[name]`.
+ * @remarks Boolean default handling follows {@link resolveHostAttributes}.
  */
 function shouldOmitReactivePropValue(value: unknown, type: AttributeTypeConstant, defaultValue?: unknown): boolean {
 	if (value === undefined || value === null) {

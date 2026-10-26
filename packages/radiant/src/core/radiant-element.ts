@@ -29,7 +29,6 @@ import {
 	SERVER_RENDERED_CHILDREN_STAMP,
 	SERVER_RENDERED_HOST_ATTRIBUTE,
 } from './server-rendered-host';
-import { getRadiantElementSsrRuntime, type RadiantElementRenderToStringOptions } from './radiant-element-ssr-registry';
 import { RADIANT_ELEMENT_BRAND } from './radiant-element-brand';
 
 export type {
@@ -552,28 +551,6 @@ export class RadiantElement<Bindings extends object = {}>
 		return Reflect.get(this, name);
 	}
 
-	/**
-	 * Serializes the JSX view through the installed server runtime.
-	 *
-	 * @remarks Returns the view only, so it never stamps a host. A caller that writes the host tag itself must add
-	 * `SERVER_RENDERED_HOST_ATTRIBUTE` (`data-radiant-ssr`) to it for `isServerRendered` to be `true` on the client;
-	 * `renderRadiantElementHostToString` does that. Flushes `@bindTo` after `render()` so targets created by a Derived
-	 * Tree exist before serialization. `prepareForSsr` still flushes authored
-	 * light-DOM children that exist before render.
-	 */
-	public renderViewToString(options: RadiantElementRenderToStringOptions = {}): string {
-		if (!this.shouldRunRenderLifecycle()) {
-			return this.innerHTML;
-		}
-
-		ensureLegacyHostReady(this, 'ssr');
-		this.prepareForSsr();
-
-		const html = requireRadiantElementSsrRuntime().renderView(this, options);
-		this.reactiveHost.flushPostSync();
-		return html;
-	}
-
 	public hydrate(): void {
 		if (!this.shouldRunRenderLifecycle() || !this.isConnected) {
 			return;
@@ -624,9 +601,9 @@ export class RadiantElement<Bindings extends object = {}>
 	 * duration of this call: context consumers resolve first, then writes made
 	 * since construction (JSX props) and the writes callbacks make in turn run
 	 * the batched `@onUpdated` callbacks here, before and after the other SSR
-	 * preparation callbacks. Then `@bindTo` flushes, so the first server render
-	 * sees finalized fields, props, and authored content. `updated()` never runs
-	 * on the server.
+	 * preparation callbacks, so the first server render sees finalized fields,
+	 * props, and authored content. The SSR serializer flushes `@bindTo` after
+	 * rendering its view. `updated()` never runs on the server.
 	 */
 	public prepareForSsr(): void {
 		const stopObserving = this.reactiveHost.observeMembers();
@@ -639,8 +616,6 @@ export class RadiantElement<Bindings extends object = {}>
 		} finally {
 			stopObserving();
 		}
-
-		this.reactiveHost.flushPostSync();
 	}
 
 	/** Framework plumbing for decorators and SSR adapters; not part of the authoring API. */
@@ -815,16 +790,6 @@ function adoptPreUpgradeChildrenValue(element: RadiantElement): void {
 	const value = Reflect.get(element, CUSTOM_ELEMENT_CHILDREN_SYMBOL) as JsxRenderable;
 	Reflect.deleteProperty(element, CUSTOM_ELEMENT_CHILDREN_SYMBOL);
 	element[CUSTOM_ELEMENT_CHILDREN_SYMBOL] = value;
-}
-
-function requireRadiantElementSsrRuntime() {
-	const runtime = getRadiantElementSsrRuntime();
-
-	if (!runtime) {
-		throw new Error('Radiant SSR runtime unavailable. Import `@ecopages/radiant/server/render-component` first.');
-	}
-
-	return runtime;
 }
 
 /**

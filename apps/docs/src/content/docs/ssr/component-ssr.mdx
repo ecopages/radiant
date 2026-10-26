@@ -43,7 +43,7 @@ const rendered = await renderComponent(MyCard, {
 | --- | --- |
 | Adapter / fragment HTML | `renderComponent` / `renderComponentToString` from `@ecopages/radiant/server/render-component` |
 | Lower-level host string | `renderRadiantElementHostToString` from `@ecopages/radiant/server/radiant-element-ssr` |
-| View-only string | `element.renderViewToString(...)` after a server entry is imported |
+| View-only string | `renderRadiantElementViewToString(element, options)` from `@ecopages/radiant/server/radiant-element-ssr` |
 
 There is no durable Element Host instance API named `renderHostToString()`.
 

@@ -11,7 +11,7 @@ Its main responsibilities are:
 - `connectedCallback()` decides whether first connect should hydrate or do a fresh client render.
 - `update()` explicitly flushes callbacks and commits a pending render.
 - `hydrate()` is the explicit SSR-to-client entrypoint.
-- `renderViewToString()` is the narrow host hook that asks the installed server runtime to serialize the JSX view (requires a server SSR entry import).
+- Server code serializes a view with `renderRadiantElementViewToString(...)` from `@ecopages/radiant/server/radiant-element-ssr`.
 
 ```mermaid
 flowchart TD
@@ -91,7 +91,7 @@ SSR works like this:
 
 Radiant renders into the host's light DOM only, on the client and on the server.
 
-`renderRadiantElementViewToString(...)` / `renderViewToString()` serialize only the component view.
+`renderRadiantElementViewToString(...)` serializes only the component view. It prepares the host, enters its context providers, and flushes `@bindTo` once after rendering, like the full host serializer.
 `renderRadiantElementHostToString(...)` from `@ecopages/radiant/server/radiant-element-ssr` / `renderComponent(...)` serialize the full custom-element host together with the view.
 When slot-aware SSR needs authored light DOM, adapters prepare the host through `prepareHost` / `authoredContent` on `renderComponent`.
 
@@ -101,7 +101,7 @@ When slot-aware SSR needs authored light DOM, adapters prepare the host through 
 - `update()` runs the update cycle now and rerenders the host from the current JSX tree when `render()` is overridden.
 - `hydrate()` hydrates SSR markup already present in the host.
 - `isServerRendered` is `true` when the instance was first connected from markup that hydrate-mode SSR produced. Hosts that adopt server-rendered content check it instead of `hasHydrationMarkers`.
-- `renderViewToString()` asks the installed server runtime to serialize the view (server entry must be imported first).
+- `renderRadiantElementViewToString(...)` from `@ecopages/radiant/server/radiant-element-ssr` serializes the view without the host tag.
 
 Host attribute serialization and full host HTML composition live in the server pipeline. They are not Element Host instance APIs.
 

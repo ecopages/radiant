@@ -31,7 +31,7 @@ let radiantElementSsrRuntime: RadiantElementSsrRuntime | undefined;
 const RADIANT_VIEW_SCOPE_KEY = Symbol.for('@ecopages/radiant.ssr-view');
 
 export function createRadiantElementSsrService(component: object): RadiantElementSsrService {
-	return new RadiantElementSsrService(component, renderRadiantElementViewToString);
+	return new RadiantElementSsrService(component, renderRadiantElementRawViewToString);
 }
 
 /** One host-serialization entry used by adapters and nested JSX custom-element SSR. */
@@ -73,16 +73,28 @@ export function renderRadiantElementViewToString(
 	options: RenderToStringOptions = {},
 ): string {
 	return withServerRadiantElementSsrRuntime(() =>
+		createRadiantElementSsrService(component).renderPreparedViewToString(options),
+	);
+}
+
+function renderRadiantElementRawViewToString(
+	component: RadiantElementViewRenderSource,
+	options: RenderToStringOptions,
+	beforeSerialize: () => void,
+): string {
+	return withServerRadiantElementSsrRuntime(() =>
 		withRadiantServerCustomElementRenderBridge(() =>
-			withActiveSsrScopeValue(RADIANT_VIEW_SCOPE_KEY, true, () =>
-				renderJsxToString(component.resolveTrackedRenderOutput().value, options),
-			),
+			withActiveSsrScopeValue(RADIANT_VIEW_SCOPE_KEY, true, () => {
+				const renderable = component.resolveTrackedRenderOutput().value;
+				beforeSerialize();
+				return renderJsxToString(renderable, options);
+			}),
 		),
 	);
 }
 
 /**
- * @remarks Does not run SSR preparation. Host serialization owns that pass and reads attributes afterwards.
+ * Returns attributes from the host's prepared server state.
  */
 export function getRadiantElementHostSsrAttributes(
 	component: RadiantElementServerRenderSsrCapable,
@@ -172,11 +184,9 @@ export function getOrCreateRadiantElementSsrRuntime(): RadiantElementSsrRuntime 
 	}
 
 	radiantElementSsrRuntime = {
-		getHostAttributes: getRadiantElementHostSsrAttributes,
 		renderHost: renderRadiantElementHost,
 		renderHostToString: renderRadiantElementHostToString,
 		resolveRenderBridge: resolveRadiantElementRenderBridge,
-		renderView: renderRadiantElementViewToString,
 	};
 
 	return radiantElementSsrRuntime;

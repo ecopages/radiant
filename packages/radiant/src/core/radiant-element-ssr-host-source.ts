@@ -11,6 +11,7 @@ import { RADIANT_ELEMENT_BRAND } from './radiant-element-brand';
  */
 export type RadiantElementSsrHostSource = {
 	constructor: Function;
+	innerHTML: string;
 	getAttribute(name: string): string | null;
 	getAttributeNames(): string[];
 	getAuthoredHydrationScriptMarkup(): string | undefined;
