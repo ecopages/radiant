@@ -37,7 +37,7 @@ export type RenderToStringOptions = {
 	 * The foreign namespace the output is inserted in, `svg` or `math`, when it is not HTML.
 	 *
 	 * @remarks Raw-text tags (`style`, `script`, `xmp`, ...) are ordinary elements there, so their text is
-	 * entity-escaped. An SVG `foreignObject` in the output returns to HTML. Set it when the output is the content of
+	 * entity-escaped. An SVG `foreignObject`, `desc` or `title` in the output returns to HTML. Set it when the output is the content of
 	 * an element inside `svg` or `math`, such as the view of a custom element the browser parses there.
 	 */
 	foreignContent?: 'svg' | 'math';

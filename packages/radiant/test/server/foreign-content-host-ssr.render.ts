@@ -75,6 +75,27 @@ const foreignCases: Array<[name: string, value: JsxRenderable, mode: 'plain' | '
 		'plain',
 		'style',
 	],
+	[
+		'math > desc > host light DOM style, plain',
+		element('math', element('desc', element('light-host', element('style', INJECTED)))),
+		'plain',
+		'style',
+	],
+];
+
+const htmlCases: Array<[name: string, value: JsxRenderable]> = [
+	['host light DOM style in HTML, plain', element('light-host', element('style', RANGE_MEDIA_QUERY_CSS))],
+	[
+		'svg > title > host light DOM style, plain',
+		element('svg', element('title', element('light-host', element('style', RANGE_MEDIA_QUERY_CSS)))),
+	],
+	[
+		'svg > host > desc > nested host light DOM style, plain',
+		element(
+			'svg',
+			element('light-host', element('desc', element('light-host', element('style', RANGE_MEDIA_QUERY_CSS)))),
+		),
+	],
 ];
 
 const renders: ForeignContentHostRender[] = [
@@ -85,13 +106,13 @@ const renders: ForeignContentHostRender[] = [
 		text: INJECTED,
 		foreign: true,
 	})),
-	{
-		name: 'host light DOM style in HTML, plain',
-		html: render(element('light-host', element('style', RANGE_MEDIA_QUERY_CSS)), 'plain'),
+	...htmlCases.map(([name, value]) => ({
+		name,
+		html: render(value, 'plain'),
 		tag: 'style',
 		text: RANGE_MEDIA_QUERY_CSS,
 		foreign: false,
-	},
+	})),
 ];
 
 process.stdout.write(JSON.stringify(renders));

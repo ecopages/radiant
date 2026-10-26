@@ -25,6 +25,19 @@ describe('Radiant JSX raw-text elements', () => {
 		expect(parsed.querySelector('svg style')?.textContent).toBe(css);
 	});
 
+	test.each(['desc', 'title'] as const)('style CSS in svg %s stays raw', async (point) => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+		const css = '@media (width < 600px) { p { color: red } }';
+		const html = renderToString(
+			jsx('svg', { children: jsx(point, { children: jsx('style', { children: css }) }) }),
+		);
+		const parsed = new DOMParser().parseFromString(html, 'text/html');
+
+		expect(html).toBe(`<svg><${point}><style>${css}</style></${point}></svg>`);
+		expect(parsed.querySelector('img')).toBeNull();
+		expect(parsed.querySelector(`svg ${point} style`)?.textContent).toBe(css);
+	});
+
 	test('a foreignObject inside math stays foreign content', async () => {
 		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
 		const css = '.x{}<img id="pwn" src="x">';
@@ -170,6 +183,35 @@ describe('custom elements inside foreign content', () => {
 		);
 
 		expect(seen).toEqual([undefined, 'svg', 'svg', undefined, 'math']);
+	});
+
+	test('svg desc and title are HTML for the hook; under math they stay foreign', async () => {
+		const [{ jsx, jsxs }, { renderToString, withServerCustomElementRenderHook }] = await Promise.all([
+			loadJsxRuntime(),
+			loadServerRender(),
+		]);
+		const probe = jsx('foreign-hook-probe', {});
+		const seen: unknown[] = [];
+
+		withServerCustomElementRenderHook(
+			({ foreignContent }) => {
+				seen.push(foreignContent);
+				return undefined;
+			},
+			() =>
+				renderToString(
+					jsxs('div', {
+						children: [
+							jsxs('svg', {
+								children: [jsx('desc', { children: probe }), jsx('title', { children: probe })],
+							}),
+							jsx('math', { children: jsx('desc', { children: probe }) }),
+						],
+					}),
+				),
+		);
+
+		expect(seen).toEqual([undefined, undefined, 'math']);
 	});
 
 	test.each(['svg', 'math'] as const)(

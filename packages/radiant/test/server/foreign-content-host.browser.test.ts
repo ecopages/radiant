@@ -26,10 +26,20 @@ describe('a host inside foreign content in server HTML', () => {
 });
 
 describe('a host in HTML context in server HTML', () => {
-	test('keeps raw CSS byte-identical', () => {
-		const render = renders.find((entry) => !entry.foreign);
+	test.each(renders.filter((render) => !render.foreign).map((render) => [render.name, render] as const))(
+		'%s keeps raw CSS byte-identical',
+		(_name, render) => {
+			const parsed = parse(render.html);
+
+			expect(render.html).toContain(`<style>${render.text}</style>`);
+			expect(parsed.querySelector('img')).toBeNull();
+			expect(parsed.querySelector(render.tag)?.textContent).toBe(render.text);
+		},
+	);
+
+	test('a host in HTML is emitted exactly', () => {
+		const render = renders.find((entry) => entry.name === 'host light DOM style in HTML, plain');
 
 		expect(render?.html).toBe(`<light-host><style>${render?.text}</style></light-host>`);
-		expect(parse(render?.html ?? '').querySelector('style')?.textContent).toBe(render?.text);
 	});
 });
