@@ -24,7 +24,49 @@ export type ParsedHtmlToken =
 export type ParseHtmlTagTokenOptions = {
 	/** When false, open tags omit `innerHtml` (for linear stack walks). Default true. */
 	includeInnerHtml?: boolean;
+	/** Namespace the tag is parsed in, which decides how its `innerHtml` ends. Default `html`. */
+	namespace?: ContentNamespace;
 };
+
+/** Namespace the HTML parser inserts elements in: HTML, or SVG and MathML foreign content. */
+export type ContentNamespace = 'html' | 'svg' | 'math';
+
+const SVG_HTML_INTEGRATION_POINTS = new Set(['foreignobject', 'desc', 'title']);
+const CDATA_START = '<![CDATA[';
+
+/**
+ * Namespace the children of a `tagName` element are parsed in, given the namespace the element sits in.
+ *
+ * @remarks `svg` and `math` enter foreign content and their descendants inherit it. Only an SVG HTML integration
+ * point (`foreignObject`, `desc`, `title` under `svg`) returns to HTML. Everything under `math` stays foreign, as
+ * in the jsx string serializer: MathML text integration points such as `mi` still create `mglyph` and
+ * `malignmark` as MathML, so treating their children as HTML would let raw text through. HTML tags that break
+ * out of foreign content are not followed.
+ */
+export function childContentNamespace(namespace: ContentNamespace, tagName: string): ContentNamespace {
+	if (namespace === 'html') return tagName === 'svg' || tagName === 'math' ? tagName : 'html';
+	return namespace === 'svg' && SVG_HTML_INTEGRATION_POINTS.has(tagName) ? 'html' : namespace;
+}
+
+/** `script`, `style`, `textarea`, … hold text only in the HTML namespace; in foreign content they are ordinary elements. */
+function isTextOnlyElementIn(namespace: ContentNamespace, tagName: string): boolean {
+	return namespace === 'html' && isTextOnlyElement(tagName);
+}
+
+/** @remarks An unterminated CDATA section runs to the end of the input. */
+function findCdataEnd(html: string, startIndex: number): number {
+	const end = html.indexOf(']]>', startIndex + CDATA_START.length);
+	return end === -1 ? html.length : end + 3;
+}
+
+/** A CDATA section is text in foreign content; in HTML, `<![CDATA[` starts a bogus comment. */
+export function isCdataStart(html: string, index: number, namespace: ContentNamespace): boolean {
+	return namespace !== 'html' && html.startsWith(CDATA_START, index);
+}
+
+export function readCdataText(fragment: string): string {
+	return fragment.slice(CDATA_START.length, fragment.endsWith(']]>') ? -3 : undefined);
+}
 
 /** Raw text elements: content is text up to the matching close tag, never decoded or escaped. */
 export const rawTextElementNames = RAW_TEXT_ELEMENT_NAMES;
@@ -56,12 +98,13 @@ export const voidElementNames = new Set([
 	'wbr',
 ]);
 
-export function collectTopLevelHtmlFragments(html: string): string[] {
+/** @param namespace Namespace the content is parsed in. */
+export function collectTopLevelHtmlFragments(html: string, namespace: ContentNamespace = 'html'): string[] {
 	const fragments: string[] = [];
 	let index = 0;
 
 	while (index < html.length) {
-		const nextIndex = findTopLevelFragmentEnd(html, index);
+		const nextIndex = findTopLevelFragmentEnd(html, index, namespace);
 		fragments.push(html.slice(index, nextIndex));
 		index = nextIndex;
 	}
@@ -76,15 +119,16 @@ export function collectTopLevelHtmlFragments(html: string): string[] {
  * treats a void `</input>` as closing an ancestor `<div>`, after which the leftover
  * `</div>` is parsed as a text node and shows up in the page.
  */
-function findTopLevelFragmentEnd(html: string, startIndex: number): number {
+function findTopLevelFragmentEnd(html: string, startIndex: number, namespace: ContentNamespace): number {
 	if (html.startsWith('<!--', startIndex)) return findCommentEnd(html, startIndex);
+	if (isCdataStart(html, startIndex, namespace)) return findCdataEnd(html, startIndex);
 	if (!isMarkupStart(html, startIndex)) return findTextEnd(html, startIndex + 1);
 	const token = parseHtmlTagToken(html, startIndex, { includeInnerHtml: false });
 	if (!token || token.type !== 'open' || token.selfClosing || voidElementNames.has(token.tagName)) {
 		return token?.end ?? html.length;
 	}
 
-	return findElementCloseEnd(html, token.end, token.tagName);
+	return findElementCloseEnd(html, token.end, token.tagName, namespace);
 }
 
 /**
@@ -172,7 +216,13 @@ export function parseAttributes(rawAttributes: string): Record<string, string> {
 	return attributes;
 }
 
-function parseOpenTag(html: string, endIndex: number, rawToken: string, includeInnerHtml: boolean): ParsedHtmlTag {
+function parseOpenTag(
+	html: string,
+	endIndex: number,
+	rawToken: string,
+	includeInnerHtml: boolean,
+	namespace: ContentNamespace,
+): ParsedHtmlTag {
 	const selfClosing = /\/\s*$/.test(rawToken);
 	const tagBody = selfClosing ? rawToken.replace(/\/\s*$/, '').trim() : rawToken;
 	const tagName = tagBody.split(/[\s/>]/, 1)[0]?.toLowerCase() ?? '';
@@ -181,7 +231,7 @@ function parseOpenTag(html: string, endIndex: number, rawToken: string, includeI
 	const innerHtml =
 		!includeInnerHtml || selfClosing || voidElementNames.has(tagName)
 			? ''
-			: extractInnerHtmlFragment(html, endIndex, tagName);
+			: extractInnerHtmlFragment(html, endIndex, tagName, namespace);
 
 	return {
 		attributes: parseAttributes(rawAttributes),
@@ -224,7 +274,7 @@ export function parseHtmlTagToken(
 		};
 	}
 
-	return parseOpenTag(html, endIndex, rawToken, options.includeInnerHtml ?? true);
+	return parseOpenTag(html, endIndex, rawToken, options.includeInnerHtml ?? true, options.namespace ?? 'html');
 }
 
 /**
@@ -232,13 +282,23 @@ export function parseHtmlTagToken(
  *
  * @remarks Void and self-closing opens never push. Stray `</input>` closes are ignored.
  */
-export function extractInnerHtmlFragment(html: string, openTagEndIndex: number, rootTagName: string): string {
-	const bounds = findElementContentBounds(html, openTagEndIndex, rootTagName);
+export function extractInnerHtmlFragment(
+	html: string,
+	openTagEndIndex: number,
+	rootTagName: string,
+	namespace: ContentNamespace = 'html',
+): string {
+	const bounds = findElementContentBounds(html, openTagEndIndex, rootTagName, namespace);
 	return bounds ? html.slice(openTagEndIndex, bounds.closeTagStart) : html.slice(openTagEndIndex);
 }
 
-function findElementCloseEnd(html: string, openTagEndIndex: number, rootTagName: string): number {
-	const bounds = findElementContentBounds(html, openTagEndIndex, rootTagName);
+function findElementCloseEnd(
+	html: string,
+	openTagEndIndex: number,
+	rootTagName: string,
+	namespace: ContentNamespace,
+): number {
+	const bounds = findElementContentBounds(html, openTagEndIndex, rootTagName, namespace);
 	return bounds ? bounds.closeTagEnd : html.length;
 }
 
@@ -263,22 +323,40 @@ function findRawTextContentBounds(
 	return match ? { closeTagStart: match.index, closeTagEnd: findHtmlTagEnd(html, match.index) } : undefined;
 }
 
+/** @param namespace Namespace the root element sits in. */
 function findElementContentBounds(
 	html: string,
 	openTagEndIndex: number,
 	rootTagName: string,
+	namespace: ContentNamespace,
 ): ElementContentBounds | undefined {
-	return isTextOnlyElement(rootTagName)
+	return isTextOnlyElementIn(namespace, rootTagName)
 		? findRawTextContentBounds(html, openTagEndIndex, rootTagName)
-		: findNestedContentBounds(html, openTagEndIndex, rootTagName);
+		: findNestedContentBounds(html, openTagEndIndex, rootTagName, namespace);
 }
 
+function opensNestedElement(token: ParsedHtmlTag, namespace: ContentNamespace): boolean {
+	return !token.selfClosing && !voidElementNames.has(token.tagName) && !isTextOnlyElementIn(namespace, token.tagName);
+}
+
+/** Index after an open tag where the scan resumes: past the content of an HTML text-only element. */
+function scanIndexAfterOpenTag(html: string, token: ParsedHtmlTag, namespace: ContentNamespace): number {
+	return isTextOnlyElementIn(namespace, token.tagName)
+		? (findRawTextContentBounds(html, token.end, token.tagName)?.closeTagEnd ?? html.length)
+		: token.end;
+}
+
+/**
+ * @remarks Each open element records the namespace of its content, so a `style` inside `svg` nests like any
+ * element and a CDATA section there is skipped as text, including any `</style>` it holds.
+ */
 function findNestedContentBounds(
 	html: string,
 	openTagEndIndex: number,
 	rootTagName: string,
+	rootNamespace: ContentNamespace,
 ): ElementContentBounds | undefined {
-	const stack = [rootTagName];
+	const stack = [{ tagName: rootTagName, namespace: childContentNamespace(rootNamespace, rootTagName) }];
 	let index = openTagEndIndex;
 
 	while (index < html.length) {
@@ -288,6 +366,13 @@ function findNestedContentBounds(
 			return undefined;
 		}
 
+		const namespace = stack.at(-1)?.namespace ?? 'html';
+
+		if (isCdataStart(html, nextTagIndex, namespace)) {
+			index = findCdataEnd(html, nextTagIndex);
+			continue;
+		}
+
 		const token = parseHtmlTagToken(html, nextTagIndex, { includeInnerHtml: false });
 
 		if (!token) {
@@ -295,26 +380,21 @@ function findNestedContentBounds(
 			continue;
 		}
 
-		if (token.type === 'close') {
-			if (!voidElementNames.has(token.tagName) && token.tagName === stack[stack.length - 1]) {
-				stack.pop();
-
-				if (stack.length === 0) {
-					return { closeTagStart: nextTagIndex, closeTagEnd: token.end };
-				}
+		if (token.type === 'open') {
+			if (opensNestedElement(token, namespace)) {
+				stack.push({ tagName: token.tagName, namespace: childContentNamespace(namespace, token.tagName) });
 			}
 
-			index = token.end;
+			index = scanIndexAfterOpenTag(html, token, namespace);
 			continue;
 		}
 
-		if (token.type === 'open' && isTextOnlyElement(token.tagName)) {
-			index = findRawTextContentBounds(html, token.end, token.tagName)?.closeTagEnd ?? html.length;
-			continue;
-		}
+		if (token.type === 'close' && token.tagName === stack.at(-1)?.tagName && !voidElementNames.has(token.tagName)) {
+			stack.pop();
 
-		if (token.type === 'open' && !token.selfClosing && !voidElementNames.has(token.tagName)) {
-			stack.push(token.tagName);
+			if (stack.length === 0) {
+				return { closeTagStart: nextTagIndex, closeTagEnd: token.end };
+			}
 		}
 
 		index = token.end;

@@ -3,18 +3,27 @@ import '../../src/server/install-ssr-runtime';
 import { jsx, unsafeHtml, type JsxRenderable } from '@ecopages/jsx';
 import { renderServerLightDom, renderToString } from '@ecopages/jsx/server';
 import { describe, expect, test } from 'vitest';
+import { MinimalTextNode } from '../../src/server/shim/minimal-dom/nodes';
 
 /**
  * Parity between the light-DOM node builder and the string serializer it replaces for custom-element children.
  *
  * @remarks Seeded JSX trees are rendered both ways and compared as parsed trees (node types, names, attribute
- * values, text), so equivalent spellings (`hidden` vs `hidden=""`) match. `<style>` text may include
- * `&`, `<`, `>` and `</style`; both paths keep it as raw text.
+ * values, text), so equivalent attribute spellings (`hidden` vs `hidden=""`) match. Text is compared as written,
+ * not decoded, so an escaping difference fails. Raw-text tags (`style`, `xmp`, …) may hold `&`, `<`, `>` and
+ * `</style`: both paths keep that text raw in HTML and entity-escape it inside `svg` or `math`.
  */
 
 const CASES = 500;
 const TEXT_PIECES = ['Terms', ' ', '&', '<b>', '>', '"q"', "'", '&amp;', ' ', '[{"type":1}]', '</script>', '0'];
-const STYLE_TEXT_PIECES = ['.a > .b { color: red; }', '.a{}</style><script>x</script>', 'a & b < c > d'];
+const STYLE_TEXT_PIECES = [
+	'.a > .b { color: red; }',
+	'.a{}</style><script>x</script>',
+	'a & b < c > d',
+	'@media (width < 600px) { p { color: red } }',
+	'.x{fill:red}<img id="pwn" src="x">}',
+];
+const RAW_TEXT_TAGS = ['script', 'style', 'xmp', 'iframe', 'noembed', 'noframes'];
 
 type Random = () => number;
 
@@ -54,6 +63,10 @@ function signalLike(value: string): JsxRenderable {
 	return { get: () => value, subscribe: () => () => undefined } as unknown as JsxRenderable;
 }
 
+function rawTextElement(random: Random): JsxRenderable {
+	return jsx(pick(random, RAW_TEXT_TAGS), { children: pick(random, STYLE_TEXT_PIECES) });
+}
+
 function element(random: Random, depth: number): JsxRenderable {
 	const tag = pick(random, ['div', 'span', 'p', 'b', 'section']);
 	const key = random() < 0.1 ? 'k' : undefined;
@@ -74,6 +87,9 @@ const NODE_BUILDERS: ReadonlyArray<readonly [number, (random: Random, depth: num
 	[2, (random) => jsx('script', { type: 'application/json', children: text(random) })],
 	[2, (random) => jsx('style', { children: pick(random, STYLE_TEXT_PIECES) })],
 	[3, () => jsx('svg', { viewBox: '0 0 1 1', children: jsx('path', { d: 'M0 0' }) })],
+	[4, (random) => jsx(pick(random, ['svg', 'math']), { children: rawTextElement(random) })],
+	[1, (random) => jsx('svg', { children: jsx('foreignObject', { children: rawTextElement(random) }) })],
+	[1, (random) => jsx('math', { children: jsx('mi', { children: rawTextElement(random) }) })],
 	[4, (random, depth) => jsx('ul', { children: [jsx('li', { children: children(random, depth + 1) })] })],
 	[34, element],
 ];
@@ -107,6 +123,7 @@ function describeHtml(html: string): Described {
 
 function describeChildren(parent: Node): Described {
 	return Array.from(parent.childNodes, (child) => {
+		if (child instanceof MinimalTextNode) return [child.nodeType, child.sourceHtml ?? child.textContent];
 		if (child.nodeType !== 1) return [child.nodeType, child.textContent];
 		const element = child as Element;
 		return [
@@ -140,6 +157,15 @@ describe('light-DOM builder matches the string serializer', () => {
 		const tree = jsx('style', { children: '.a > .b { content: "&" }' });
 		expect(renderWithBuilder(tree)).toBe('<style>.a > .b { content: "&" }</style>');
 		expect(renderToString(tree)).toBe('<style>.a > .b { content: "&" }</style>');
+	});
+
+	test('escapes style text inside svg and math on both paths', () => {
+		for (const root of ['svg', 'math']) {
+			const tree = jsx(root, { children: jsx('style', { children: '<img id="pwn" src="x">' }) });
+			const expected = `<${root}><style>&lt;img id="pwn" src="x"&gt;</style></${root}>`;
+			expect(renderWithBuilder(tree)).toBe(expected);
+			expect(renderToString(tree)).toBe(expected);
+		}
 	});
 
 	test('never parses dynamic text', () => {
