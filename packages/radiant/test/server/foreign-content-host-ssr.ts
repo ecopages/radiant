@@ -5,7 +5,7 @@ import type { BrowserCommand } from 'vitest/node';
 
 /**
  * One server render: `html` is what the page sends, and `text` the text of its `tag` element, a raw-text tag. `foreign`
- * is false for the host in HTML context, whose `style` stays raw CSS.
+ * is false for a host in HTML context, including under an SVG `title` or `desc`, whose `style` stays raw CSS.
  */
 export type ForeignContentHostRender = { name: string; html: string; tag: string; text: string; foreign: boolean };
 
@@ -19,6 +19,7 @@ export const renderForeignContentHostsCommand: BrowserCommand<[]> = async () => 
 	const script = fileURLToPath(new URL('./foreign-content-host-ssr.render.ts', import.meta.url));
 	const { stdout } = await promisify(execFile)(process.execPath, ['--import', 'tsx', script], {
 		cwd: fileURLToPath(new URL('../..', import.meta.url)),
+		timeout: 60_000,
 	});
 	return JSON.parse(stdout) as ForeignContentHostRender[];
 };
