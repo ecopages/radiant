@@ -106,15 +106,9 @@ export class RenderRuntime {
 		);
 	}
 
-	getSlotProjectionScriptTag(): string | undefined {
+	getProjectedSlotPayload(): Record<string, string[]> | undefined {
 		this.ensureSlotProjectionState();
-		const payload = serializeProjectedSlotRenderables(this.#projectedSlotContent);
-
-		if (!payload) {
-			return undefined;
-		}
-
-		return `<script type="application/json" ${SLOT_PROJECTION_SCRIPT_ATTRIBUTE}>${escapeScriptText(payload)}</script>`;
+		return serializeProjectedSlotRenderables(this.#projectedSlotContent);
 	}
 
 	getAuthoredHydrationScriptMarkup(): string | undefined {
@@ -435,8 +429,4 @@ function warnLateDefinition(host: HTMLElement): void {
 	) {
 		warnOnce(host, 'was defined after a JSX view rendered it, so it treats its children as Authored Children.');
 	}
-}
-
-function escapeScriptText(value: string): string {
-	return value.replace(/</g, '\\u003c');
 }

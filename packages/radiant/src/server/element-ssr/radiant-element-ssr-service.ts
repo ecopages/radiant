@@ -7,6 +7,10 @@ import { ensureLegacyHostReady } from '../../decorators/legacy/host-readiness';
 import { assertValidHtmlTagName } from '../../utils/html-names';
 import { withSsrContextProviders } from '../context-ssr';
 import { alignMinimalDomHostTagName } from '../shim/minimal-dom/align-host-tag-name';
+import {
+	createSlotProjectionScriptTag,
+	hasNamedSlotNames,
+} from '../../core/slot-projection-runtime';
 import { composeHostContent } from './host-script-composition';
 import { resolveHostAttributes, stringifyHostAttributes } from './host-attribute-serialization';
 import { toInternalRadiantSsrHost } from './radiant-element-ssr-extractor';
@@ -70,7 +74,11 @@ export class RadiantElementSsrService {
 		return withSsrContextProviders(this.host.getContextProviders(), () => {
 			const hostContent = this.renderView(this.host, options);
 			this.host.flushPostSyncCallbacks();
-			const slotProjectionMarkup = this.host.getSlotProjectionScriptTag?.() ?? '';
+			const slotPayload = this.host.getProjectedSlotPayload?.();
+			const slotProjectionMarkup =
+				slotPayload !== undefined && this.host.resolveTrackedRenderOutput().containsSlots
+					? createSlotProjectionScriptTag(slotPayload)
+					: '';
 			const authoredHydrationMarkup = this.host.getAuthoredHydrationScriptMarkup?.() ?? '';
 			const hydrationScripts = hydrate
 				? this.host
@@ -84,7 +92,9 @@ export class RadiantElementSsrService {
 				...attributeOverrides,
 			};
 			const stamp =
-				takesChildrenValue(this.host.constructor) && hasNamedSlotContent(slotProjectionMarkup)
+				takesChildrenValue(this.host.constructor) &&
+				slotProjectionMarkup !== '' &&
+				hasNamedSlotNames(slotPayload ?? {})
 					? SERVER_RENDERED_AUTHORED_STAMP
 					: '';
 			const hostAttributes = hydrate
@@ -128,23 +138,4 @@ export class RadiantElementSsrService {
 /** @remarks Only a class that takes a Children Value from a view tells Authored Children apart in its stamp. */
 function takesChildrenValue(constructor: object): boolean {
 	return (constructor as { [CUSTOM_ELEMENT_CHILDREN_SYMBOL]?: unknown })[CUSTOM_ELEMENT_CHILDREN_SYMBOL] === true;
-}
-
-/**
- * Whether a slot-projection payload assigns children to a named slot.
- *
- * @remarks Only named-slot children need the Authored Children path on the client: a Children Value renders
- * default-slot children in the same place and keeps their bindings live. The payload is the JSON this service just
- * wrote, keyed by slot name, with `""` for the default slot.
- */
-function hasNamedSlotContent(scriptMarkup: string): boolean {
-	if (scriptMarkup === '') {
-		return false;
-	}
-
-	const payload = JSON.parse(
-		scriptMarkup.slice(scriptMarkup.indexOf('>') + 1, scriptMarkup.lastIndexOf('</')),
-	) as Record<string, unknown>;
-
-	return Object.keys(payload).some((slotName) => slotName !== '');
 }

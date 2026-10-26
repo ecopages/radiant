@@ -765,8 +765,18 @@ export class RadiantElement<Bindings extends object = {}>
 		);
 	}
 
-	public getSlotProjectionScriptTag(): string | undefined {
-		return this.getOrCreateRenderRuntime().getSlotProjectionScriptTag();
+	/**
+	 * Authored Children keyed by slot name, for SSR to decide whether to emit a slot-projection payload.
+	 *
+	 * @remarks Undefined when this host does not own a render lifecycle. The service emits the payload script
+	 * only when this is set and the resolved view contains a `<slot>`.
+	 */
+	public getProjectedSlotPayload(): Record<string, string[]> | undefined {
+		if (!this.shouldRunRenderLifecycle()) {
+			return undefined;
+		}
+
+		return this.getOrCreateRenderRuntime().getProjectedSlotPayload();
 	}
 
 	public getAuthoredHydrationScriptMarkup(): string | undefined {
