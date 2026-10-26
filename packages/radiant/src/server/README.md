@@ -193,7 +193,7 @@ Other useful server helpers:
 - `renderComponentToString()` returns only the host markup string.
 - `renderComponentToPayload()` returns the flat payload shape directly.
 - `renderComponentWithPreview()` returns payload fields plus a JSX-compatible preview that wraps the same markup. In plain mode that preview has no hydration stamp.
-- `ssrContext` injects ambient context values for standalone fragment renders.
+- `ssrContext` injects ambient context values for standalone `renderComponent` renders. Both `renderComponent` and `renderController` resolve consumed contexts before `initialize`; controllers inherit the active provider context.
 - `assets` and `resolveAssets(...)` describe runtime scripts, styles, and preload hints through a transport-agnostic metadata model.
 - `prepareHost(...)` is the dedicated host-preparation hook when slot-aware SSR needs authored light-DOM nodes, not just an HTML string.
 - `clientModuleSrc` and `resolveClientModuleSrc(...)` are focused shorthands for one hydration module.

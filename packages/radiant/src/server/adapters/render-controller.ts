@@ -5,6 +5,7 @@ import { getControllerIdentifier } from '../../core/controller-metadata';
 import { withRadiantElementSsrRuntime } from '../../core/radiant-element-ssr-registry';
 import type { RadiantController } from '../../core/radiant-controller';
 import { REACTIVE_HOST } from '../../core/reactive-host';
+import { runSsrPreparationCallbacks } from '../../core/ssr-preparation';
 import { CONTROLLER_ATTRIBUTE } from '../../controller-registry';
 import { ensureLegacyHostReady } from '../../decorators/legacy/host-readiness';
 import { assertValidHtmlAttributeName, assertValidHtmlTagName } from '../../utils/html-names';
@@ -157,6 +158,7 @@ async function renderResolvedController<TController extends RadiantController>(
 			ensureLegacyHostReady(controller, 'ssr');
 
 			try {
+				runSsrPreparationCallbacks(controller, true);
 				options.initialize?.(controller);
 				controller.runWithSsrLifecycle(() => controller.connect());
 				const markup = renderRenderedControllerHost(controller, tagName, renderOptions);

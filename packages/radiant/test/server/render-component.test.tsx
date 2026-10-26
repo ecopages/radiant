@@ -9,6 +9,7 @@ import {
 	provideContext,
 } from '../../src/context';
 import { attr } from '../../src/decorators/attr';
+import { ensureLegacyHostReady } from '../../src/decorators/legacy/host-readiness';
 import { RadiantController } from '../../src/core/radiant-controller';
 import { getRadiantElementSsrRuntime } from '../../src/core/radiant-element-ssr-registry';
 import { RadiantElement } from '../../src/core/radiant-element';
@@ -29,7 +30,7 @@ import {
 	type RenderedComponentAsset,
 } from '../../src/server/render-component';
 import { renderController, renderControllerToPayload } from '../../src/server/render-controller';
-import { resolveSsrContextValue } from '../../src/server/context-ssr';
+import { resolveSsrContextValue, runWithSsrProviderStack, withSsrContextProviders } from '../../src/server/context-ssr';
 import { getOrCreateRadiantElementSsrRuntime } from '../../src/server/radiant-element-ssr';
 
 const cardAssets: readonly RenderedComponentAsset[] = [
@@ -185,6 +186,15 @@ class RenderControllerContextProvider extends RadiantController {
 	}
 }
 
+@controller('render-controller-context-consumer')
+class RenderControllerContextConsumer extends RadiantController {
+	@consumeContext(renderControllerContext) contextProvider!: ContextProvider<typeof renderControllerContext>;
+
+	override render() {
+		return <p>{this.contextProvider?.getContext().label ?? 'missing'}</p>;
+	}
+}
+
 @controller('render-controller-element-context-provider')
 class RenderControllerElementContextProvider extends RadiantController {
 	@provideContext<typeof renderComponentContext>({
@@ -272,6 +282,41 @@ describe('render-component server helpers', () => {
 		expect(second.markup).toContain('concurrent-b');
 		expect(second.markup).not.toContain('concurrent-a');
 		expect(getRadiantElementSsrRuntime()).toBeUndefined();
+	});
+
+	test('renderComponent() resolves consumed context before initialize', async () => {
+		let initializedContext: string | undefined;
+
+		const rendered = await renderComponent(RenderComponentContextCard, {
+			ssrContext: [{ context: renderComponentContext, value: { label: 'initialize context value' } }],
+			initialize: (component) => {
+				initializedContext = component.contextProvider?.getContext().label;
+			},
+		});
+
+		expect(initializedContext).toBe('initialize context value');
+		expect(rendered.markup).toContain('initialize context value');
+	});
+
+	test('renderController() resolves consumed context before initialize', async () => {
+		const providerHost = new RenderControllerContextProvider(document.createElement('div'));
+		ensureLegacyHostReady(providerHost, 'ssr');
+		providerHost.provider.setContext({ label: 'controller initialize context' });
+		let initializedContext: string | undefined;
+
+		const rendered = await runWithSsrProviderStack(() =>
+			withSsrContextProviders([providerHost.provider], () =>
+				renderController(RenderControllerContextConsumer, {
+					tagName: 'section',
+					initialize: (controller) => {
+						initializedContext = controller.contextProvider?.getContext().label;
+					},
+				}),
+			),
+		);
+
+		expect(initializedContext).toBe('controller initialize context');
+		expect(rendered.markup).toContain('controller initialize context');
 	});
 
 	test('renderComponent() returns the canonical server render descriptor', async () => {

@@ -37,6 +37,8 @@ const rendered = await renderComponent(MyCard, {
 // rendered.preview — JSX-compatible embed value
 ```
 
+When `ssrContext` supplies a consumed context, `renderComponent` resolves it before `initialize` runs. A `renderController` call inside an active provider context does the same. Use either callback to derive initial host state from the consumed value.
+
 ## Surfaces
 
 | Need | API |

@@ -2,6 +2,7 @@ import '../install/install-ssr-runtime';
 import { createMarkupNodeLike } from '@ecopages/jsx';
 import type { RenderToStringOptions } from '@ecopages/jsx/server';
 import type { SsrSerializableContextProvider } from '../../context/context-provider';
+import { runSsrPreparationCallbacks } from '../../core/ssr-preparation';
 import { runWithSsrProviderStack, withSsrContextProviders } from '../context-ssr';
 import type { ContextType, UnknownContext } from '../../context/types';
 import { getCustomElementTagName } from '@ecopages/jsx';
@@ -275,6 +276,7 @@ async function renderResolvedComponent<TComponent extends ServerRenderableCompon
 					normalizedOptions.authoredContent,
 					normalizedOptions.prepareHost,
 				);
+				runSsrPreparationCallbacks(component, true);
 				normalizedOptions.initialize?.(component);
 
 				const markup = requireRegisteredRadiantElementMarkup(component, renderOptions);
