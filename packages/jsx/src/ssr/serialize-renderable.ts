@@ -34,14 +34,14 @@ export type SerializeRenderableOptions = {
 	 */
 	nestedInParentHydrationNamespace?: boolean;
 	/**
-	 * True when this value sits inside an `svg` or `math` template, where the browser parses raw-text tags as
-	 * ordinary elements.
+	 * The foreign namespace this value sits in, where the browser parses raw-text tags as ordinary elements.
 	 *
-	 * @remarks Set by a template whose root is `svg` or `math` and cleared by `foreignObject`, whose children the
-	 * browser parses as HTML again. It follows template roots only: `svg` or `math` written in the static
-	 * strings of a transported template does not set it.
+	 * @remarks Set by a template whose root is `svg` or `math`, and cleared by an SVG `foreignObject`, whose
+	 * children the browser parses as HTML again. A `foreignObject` inside `math` is an ordinary MathML element
+	 * and keeps the namespace. It follows template roots only: `svg` or `math` written in the static strings of
+	 * a transported template does not set it.
 	 */
-	foreignContent?: boolean;
+	foreignContent?: 'svg' | 'math';
 	/** Optional custom-element renderer invoked before generic template serialization. */
 	renderCustomElementTemplate?: (template: TemplateResultLike) => string | undefined;
 };
@@ -127,7 +127,7 @@ function serializeTemplateResult(template: TemplateResultLike, options: Serializ
 	const childOptions: SerializeRenderableOptions = {
 		...options,
 		nestedInParentHydrationNamespace: true,
-		foreignContent: isForeignContentChild(rootLocalName, options.foreignContent === true),
+		foreignContent: childForeignContent(rootLocalName, options.foreignContent),
 		...(nestedCustomElementRoot ? { mode: 'plain' as const, hydrationBindingState: undefined } : {}),
 	};
 	if (rootLocalName && RAW_TEXT_ELEMENT_NAMES.has(rootLocalName)) {
@@ -135,7 +135,7 @@ function serializeTemplateResult(template: TemplateResultLike, options: Serializ
 			template,
 			childOptions,
 			rootLocalName,
-			options.foreignContent === true,
+			options.foreignContent !== undefined,
 		);
 
 		if (rawTextHtml !== undefined) {
@@ -156,8 +156,15 @@ function serializeTemplateResult(template: TemplateResultLike, options: Serializ
 	return html;
 }
 
-function isForeignContentChild(rootLocalName: string | undefined, foreignContent: boolean): boolean {
-	return rootLocalName === 'svg' || rootLocalName === 'math' || (foreignContent && rootLocalName !== 'foreignobject');
+function childForeignContent(
+	rootLocalName: string | undefined,
+	foreignContent: SerializeRenderableOptions['foreignContent'],
+): SerializeRenderableOptions['foreignContent'] {
+	if (rootLocalName === 'svg' || rootLocalName === 'math') {
+		return rootLocalName;
+	}
+
+	return foreignContent === 'svg' && rootLocalName === 'foreignobject' ? undefined : foreignContent;
 }
 
 /**
@@ -245,6 +252,9 @@ function findRawTextOpeningTagEnd(html: string, elementName: string): number | u
 	return undefined;
 }
 
+/**
+ * @remarks Takes the last match: earlier `</tag>` sequences in the suffix are raw text that the caller escapes.
+ */
 function findRawTextClosingTagStart(html: string, elementName: string): number | undefined {
 	const closingTag = new RegExp(`</${elementName}\\s*>`, 'gi');
 	let closingTagStart: number | undefined;
