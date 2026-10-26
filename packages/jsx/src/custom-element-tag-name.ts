@@ -14,13 +14,17 @@ type CustomElementConstructorWithTagName = CustomElementConstructor & {
 };
 
 /**
- * Reads the tag stored under {@link CUSTOM_ELEMENT_TAG_NAME} by `@customElement(...)`.
+ * Resolves a custom-element constructor's tag: the one `@customElement(...)` stored under
+ * {@link CUSTOM_ELEMENT_TAG_NAME}, else the name it is registered under in `customElements`.
  *
- * @remarks Reads an own property only. A subclass inherits static properties, so an inherited read would give a
- * subclass its parent's tag. Does not consult `customElements.getName()`; JSX resolution falls back to it.
+ * @remarks Reads the metadata as an own property only. A subclass inherits static properties, so an inherited read
+ * would give a subclass defined with `customElements.define()` its parent's tag. The registry fallback works on the
+ * server too, through the SSR shim's `getName()`.
  */
 export function getCustomElementTagName(constructor: CustomElementConstructor): string | undefined {
-	return Object.hasOwn(constructor, CUSTOM_ELEMENT_TAG_NAME)
-		? (constructor as CustomElementConstructorWithTagName)[CUSTOM_ELEMENT_TAG_NAME]
-		: undefined;
+	if (Object.hasOwn(constructor, CUSTOM_ELEMENT_TAG_NAME)) {
+		return (constructor as CustomElementConstructorWithTagName)[CUSTOM_ELEMENT_TAG_NAME];
+	}
+
+	return globalThis.customElements?.getName?.(constructor) ?? undefined;
 }

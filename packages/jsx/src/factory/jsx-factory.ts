@@ -79,9 +79,7 @@ function isCustomizedBuiltIn(type: Function): boolean {
  * stringifies the function source.
  */
 function resolveCustomElementTagName(type: Function): string | undefined {
-	const tagName =
-		getCustomElementTagName(type as CustomElementConstructor) ||
-		globalThis.customElements?.getName?.(type as CustomElementConstructor);
+	const tagName = getCustomElementTagName(type as CustomElementConstructor);
 	if (tagName) {
 		if (isCustomizedBuiltIn(type)) {
 			throw new TypeError(`Class ${type.name} (<${tagName}>): customized built-ins are unsupported.`);
