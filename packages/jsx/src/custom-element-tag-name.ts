@@ -16,8 +16,11 @@ type CustomElementConstructorWithTagName = CustomElementConstructor & {
 /**
  * Reads the tag stored under {@link CUSTOM_ELEMENT_TAG_NAME} by `@customElement(...)`.
  *
- * @remarks Does not consult `customElements.getName()`; JSX resolution falls back to it.
+ * @remarks Reads an own property only. A subclass inherits static properties, so an inherited read would give a
+ * subclass its parent's tag. Does not consult `customElements.getName()`; JSX resolution falls back to it.
  */
 export function getCustomElementTagName(constructor: CustomElementConstructor): string | undefined {
-	return (constructor as CustomElementConstructorWithTagName)[CUSTOM_ELEMENT_TAG_NAME];
+	return Object.hasOwn(constructor, CUSTOM_ELEMENT_TAG_NAME)
+		? (constructor as CustomElementConstructorWithTagName)[CUSTOM_ELEMENT_TAG_NAME]
+		: undefined;
 }

@@ -3,7 +3,7 @@ import { getTemplateShapeKey } from './template-shape.ts';
 import { forEachNormalizedAttribute } from './attribute-normalize.ts';
 import { shouldUseAttributeBindingByDefaultForElement, shouldUseBooleanAttributeBinding } from './binding-defaults.ts';
 import { isIterableJsxChild, isKeyedJsxValue, resolveReactiveSnapshot } from '../types/renderable-guards.ts';
-import { CUSTOM_ELEMENT_TAG_NAME } from '../custom-element-tag-name.ts';
+import { getCustomElementTagName } from '../custom-element-tag-name.ts';
 import {
 	CUSTOM_ELEMENT_CHILDREN_SYMBOL,
 	KEYED_VALUE_SYMBOL,
@@ -80,7 +80,7 @@ function isCustomizedBuiltIn(type: Function): boolean {
  */
 function resolveCustomElementTagName(type: Function): string | undefined {
 	const tagName =
-		(type as CustomElementConstructor & { [CUSTOM_ELEMENT_TAG_NAME]?: string })[CUSTOM_ELEMENT_TAG_NAME] ||
+		getCustomElementTagName(type as CustomElementConstructor) ||
 		globalThis.customElements?.getName?.(type as CustomElementConstructor);
 	if (tagName) {
 		if (isCustomizedBuiltIn(type)) {
