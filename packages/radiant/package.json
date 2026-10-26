@@ -164,10 +164,6 @@
 			"types": "./dist/server/radiant-element-ssr.d.ts",
 			"import": "./dist/server/radiant-element-ssr.js"
 		},
-		"./server/radiant-element-ssr-bridge": {
-			"types": "./dist/server/radiant-element-ssr-bridge.d.ts",
-			"import": "./dist/server/radiant-element-ssr-bridge.js"
-		},
 		"./server/render-controller": {
 			"types": "./dist/server/render-controller.d.ts",
 			"import": "./dist/server/render-controller.js"

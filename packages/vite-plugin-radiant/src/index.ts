@@ -13,7 +13,7 @@ export {
 export { radiantElements, type RadiantElementsPluginOptions, type RadiantAppLoadMode } from './elements';
 export { createRadiantJsxConfig, createRadiantSsrExternalsPlugin } from './jsx-config';
 export { defineRadiantNitroConfig, mergeRadiantNitroConfig } from './nitro-config';
-export { radiantNitro, radiantNitroExternals } from './nitro-externals';
+export { radiantNitro } from './nitro-externals';
 
 export type RadiantDecoratorOption = 'babel';
 
