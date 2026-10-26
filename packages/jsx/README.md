@@ -770,7 +770,7 @@ These surfaces emit or parse raw HTML by design. Pass only content you already t
 | `unsafeHtml(...)` / `createMarkupNodeLike(...)`           | Branded markup; `outerHTML` emitted and parsed raw                                                          |
 | Live `Node` instances                                     | `outerHTML` emitted raw (slot projection / host passthrough)                                                |
 | Custom-element `renderHostToString` / server render hooks | Host HTML is trusted; return branded markup via `createMarkupNodeLike(...)`                                 |
-| `<script>` children                                       | Raw element text; only the `</script` closing sequence is escaped, so executable content stays valid        |
+| Raw-text children (`script`, `style`, `xmp`, `iframe`, `noembed`, `noframes`) | Raw element text; only that tag's `</name` closing sequence is escaped |
 | `prop:*` (including `prop:innerHTML`)                     | Live property assignment; no sanitization                                                                   |
 | `href` / `src` / `style`                                  | Escaped as attribute text only — no URL-scheme or CSS sanitization                                          |
 
@@ -831,6 +831,8 @@ Server-only exports from `@ecopages/jsx/server` include:
 - `RenderToStringOptions`
 - `withServerCustomElementRenderHook`
 - `isServerRenderHydrationActive`
+
+`RAW_TEXT_ELEMENT_NAMES` is exported from `@ecopages/jsx/raw-text`. The factory and Radiant's HTML parser share that set.
 
 ## Constraints
 
