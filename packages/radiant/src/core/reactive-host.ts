@@ -220,7 +220,6 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 		}
 	}
 
-	/** Runs the callbacks registered for client connect after post-sync work. */
 	public flushConnectSync(): void {
 		for (const callback of this.connectSyncCallbacks) {
 			callback();

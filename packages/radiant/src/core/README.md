@@ -59,11 +59,11 @@ Client rendering works like this:
 
 Writes in the same turn share one update cycle. `@onUpdated` runs once for each batch of watched members; if a callback changes one of them, it can run again in the same cycle. A pending render commits, then `updated(changed)` runs. `await updateComplete` waits for that cycle, including the first connect render.
 
-After the first-connect update or hydration and post-sync callbacks, the Element Host flushes connect-only callbacks before `onConnected()`. `createResource(...)` uses this client-only phase, so authored prop values are ready before its first fetch and server serialization never starts it.
+On every client connect, after the update or hydration and post-sync callbacks, the Element Host flushes connect-only callbacks before `onConnected()`. `createResource(...)` uses this client-only phase, so authored prop values are ready before its first fetch and server serialization never starts it.
 
 Hosts observe their members only while connected, snapshotting values on disconnect and reporting what changed on the next connect. Automatic updates run for connected hosts in any DOM. Server rendering never connects hosts: it observes members only while preparing a host, drains pending `@onUpdated` callbacks, and never calls `updated()`. A cycle that throws drops pending member changes and render requests, then rejects `updateComplete`; a later write starts a new cycle. This also stops a self-updater that reaches the 100-round limit.
 
-Decorators and SSR adapters reach host plumbing (post-sync and batched callback registration, the SSR provider and hydration registry, initial update emits) through the `REACTIVE_HOST` symbol, not through public host methods.
+Decorators and SSR adapters reach host plumbing (post-sync, connect-sync and batched callback registration, the SSR provider and hydration registry, initial update emits) through the `REACTIVE_HOST` symbol, not through public host methods.
 
 `render()` describes the view. `update()` runs the cycle that commits it into the host.
 
