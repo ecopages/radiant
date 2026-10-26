@@ -5,6 +5,7 @@ import { RadiantElement } from '../../src/core/radiant-element';
 import { attr } from '../../src/decorators/attr';
 import { customElement } from '../../src/decorators/custom-element';
 import { onUpdated } from '../../src/decorators/on-updated';
+import { prop } from '../../src/decorators/prop';
 
 @customElement('attr-element-test')
 class AttrElement extends RadiantElement<{ count: number; state: string | undefined }> {
@@ -30,7 +31,37 @@ class AttrReconnectController extends RadiantController<{ state: string | undefi
 	}
 }
 
+@customElement('attr-underscore-name-test')
+class AttrUnderscoreNameElement extends RadiantElement {
+	@attr({ type: Number }) max_Width = 0;
+	@attr({ type: Number }) max__Width = 0;
+}
+
+@customElement('prop-underscore-name-test')
+class PropUnderscoreNameElement extends RadiantElement {
+	@prop({ type: Number, reflect: true }) max_Width = 0;
+	@prop({ type: Number, reflect: true }) max__Width = 0;
+}
+
 describe('@attr', () => {
+	test('uses the same default attribute name as @prop for underscored fields', () => {
+		const attrElement = document.createElement('attr-underscore-name-test') as AttrUnderscoreNameElement;
+		const propElement = document.createElement('prop-underscore-name-test') as PropUnderscoreNameElement;
+		document.body.append(attrElement, propElement);
+
+		attrElement.max_Width = 2;
+		propElement.max_Width = 2;
+
+		expect(attrElement.getAttribute('max-width')).toBe('2');
+		expect(propElement.getAttribute('max-width')).toBe('2');
+
+		attrElement.max__Width = 3;
+		propElement.max__Width = 3;
+
+		expect(attrElement.getAttribute('max-width')).toBe('3');
+		expect(propElement.getAttribute('max-width')).toBe('3');
+	});
+
 	test('reads and reacts to element attributes', async () => {
 		const element = document.createElement('attr-element-test') as AttrElement;
 		element.setAttribute('data-state', 'ready');

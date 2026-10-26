@@ -55,6 +55,12 @@ export type ReactivePropertyOptions<T, C extends AttributeTypeConstant = Attribu
 	 */
 	type: C;
 	reflect?: boolean;
+	/**
+	 * Name of the attribute associated with the property.
+	 *
+	 * @remarks Defaults to kebab-case conversion of the property name: camelCase and underscores become `-`.
+	 * An explicit attribute name is used as provided.
+	 */
 	attribute?: string;
 	/**
 	 * Value used when no attribute or earlier property write supplies one.
