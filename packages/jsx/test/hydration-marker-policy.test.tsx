@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'vitest';
+import { isCustomElementSubtreeRoot } from '../src/hydration/hydration-subtree-policy.ts';
 import { isIterableRenderable, isTemplateResultLike } from '../src/types/renderable-guards.ts';
-import type { TemplateResultLike } from '../src/jsx-runtime.ts';
+import type { JsxRenderable, TemplateResultLike } from '../src/jsx-runtime.ts';
+import { HYDRATE_UNREGISTERED_CUSTOM_ELEMENT_SIBLINGS_HTML } from './fixtures/hydrate-html.ts';
 
 async function loadModule<T>(path: string): Promise<T> {
 	return import(/* @vite-ignore */ path) as Promise<T>;
@@ -35,6 +37,115 @@ const loadHydrationBindings = async () =>
 const loadJsxRuntime = async () => loadModule<typeof import('../src/jsx-runtime.ts')>('../src/jsx-runtime.ts');
 const loadServerRender = async () =>
 	loadModule<typeof import('../src/ssr/server-render.ts')>('../src/ssr/server-render.ts');
+
+const REGISTERED_HOST_TAG = 'jsx-registered-marker-host';
+const UNREGISTERED_WIDGET_TAG = 'third-party-widget';
+const forceServerCustomElementRenderSymbol = Symbol.for('@ecopages/jsx.force-server-custom-element-render');
+
+type PlannedHydrationMarker = {
+	descriptor: string;
+	index: number;
+};
+
+type HydrationBindingsApi = Pick<
+	typeof import('../src/hydration/hydration-bindings.ts'),
+	'countHydrationMarkers' | 'planTemplateHydrationIndices' | 'serializeBindingDescriptor'
+>;
+
+function listSerializedHydrationMarkers(html: string): PlannedHydrationMarker[] {
+	return [...html.matchAll(/data-radiant-jsx-bind-(\d+)="([^"]*)"/g)].map((match) => ({
+		index: Number(match[1]),
+		descriptor: match[2] ?? '',
+	}));
+}
+
+function listPlannedHydrationMarkers(
+	value: unknown,
+	startIndex: number,
+	nested: boolean,
+	bindings: HydrationBindingsApi,
+): PlannedHydrationMarker[] {
+	if (value === undefined || value === null || value === false || value === true) {
+		return [];
+	}
+
+	if (isTemplateResultLike(value)) {
+		if (nested && isCustomElementSubtreeRoot(value.rootLocalName ?? '')) {
+			return [];
+		}
+
+		const plan = bindings.planTemplateHydrationIndices(value, startIndex);
+		const markers: PlannedHydrationMarker[] = [];
+
+		for (const [valueIndex, globalIndex] of plan.attributeIndices) {
+			const part = value.parts[valueIndex];
+
+			if (part?.type === 'attribute') {
+				markers.push({
+					descriptor: bindings.serializeBindingDescriptor(part.kind, part.name),
+					index: globalIndex,
+				});
+			}
+		}
+
+		for (const [valueIndex, childBaseIndex] of plan.childBaseIndices) {
+			markers.push(...listPlannedHydrationMarkers(value.values[valueIndex], childBaseIndex, true, bindings));
+		}
+
+		return markers;
+	}
+
+	if (isIterableRenderable(value)) {
+		let nextIndex = startIndex;
+		const markers: PlannedHydrationMarker[] = [];
+
+		for (const child of value) {
+			markers.push(...listPlannedHydrationMarkers(child, nextIndex, true, bindings));
+			nextIndex += bindings.countHydrationMarkers(child as JsxRenderable);
+		}
+
+		return markers;
+	}
+
+	return [];
+}
+
+function withRegisteredCustomElement(tagName: string, run: () => void): void {
+	class RegisteredHost extends EventTarget {
+		removeAttribute(_name: string) {}
+		setAttribute(_name: string, _value: unknown) {}
+	}
+
+	const previousCustomElementsDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'customElements');
+	const globalWithForceFlag = globalThis as typeof globalThis & Record<PropertyKey, unknown>;
+	const previousForceServerCustomElementRender = globalWithForceFlag[forceServerCustomElementRenderSymbol];
+
+	Object.defineProperty(globalThis, 'customElements', {
+		configurable: true,
+		value: {
+			get(name: string) {
+				return name === tagName ? (RegisteredHost as unknown as CustomElementConstructor) : undefined;
+			},
+		},
+	});
+	globalWithForceFlag[forceServerCustomElementRenderSymbol] = true;
+
+	try {
+		run();
+	} finally {
+		if (previousCustomElementsDescriptor) {
+			Object.defineProperty(globalThis, 'customElements', previousCustomElementsDescriptor);
+		} else {
+			Reflect.deleteProperty(globalThis, 'customElements');
+		}
+
+		if (previousForceServerCustomElementRender === undefined) {
+			delete globalWithForceFlag[forceServerCustomElementRenderSymbol];
+		} else {
+			globalWithForceFlag[forceServerCustomElementRenderSymbol] = previousForceServerCustomElementRender;
+		}
+	}
+}
 
 describe('hydration marker policy', () => {
 	test('events, native-events, and properties are client-only bindings', async () => {
@@ -140,10 +251,11 @@ describe('hydration marker policy integration with SSR output', () => {
 });
 
 describe('template attribute marker index collection', () => {
-	test('planTemplateHydrationIndices matches collectHydrationBindings for iterable roots', async () => {
-		const [{ jsx, jsxs, Fragment }, { collectHydrationBindings, planTemplateHydrationIndices }] = await Promise.all(
-			[loadJsxRuntime(), loadHydrationBindings()],
-		);
+	test('planTemplateHydrationIndices assigns consecutive indexes across iterable roots', async () => {
+		const [{ jsx, jsxs, Fragment }, { planTemplateHydrationIndices }] = await Promise.all([
+			loadJsxRuntime(),
+			loadHydrationBindings(),
+		]);
 
 		const renderFragment = () =>
 			jsxs(Fragment, {
@@ -154,7 +266,6 @@ describe('template attribute marker index collection', () => {
 			});
 
 		const fragment = renderFragment();
-		const bindings = collectHydrationBindings(fragment);
 		const fragmentChildren = expectFragmentChildren(fragment);
 		const firstButton = expectTemplateChild(fragmentChildren[0]);
 		const span = expectTemplateChild(fragmentChildren[1]);
@@ -167,19 +278,14 @@ describe('template attribute marker index collection', () => {
 		const spanIndices = planTemplateHydrationIndices(span, firstButtonIndices.nextIndex);
 		expect(spanIndices.nextIndex).toBe(3);
 		expect(spanIndices.attributeIndices.get(0)).toBe(2);
-
-		expect(bindings.size).toBe(3);
-		expect(bindings.get(0)?.kind).toBe('attr');
-		expect(bindings.get(1)?.kind).toBe('event');
-		expect(bindings.get(2)?.name).toBe('id');
 	});
 
-	test('renderToString hydrate markers match collectHydrationBindings for iterable roots', async () => {
-		const [
-			{ jsx, jsxs, Fragment },
-			{ collectHydrationBindings, resolveHydrationMarkerAttributeName, serializeBindingDescriptor },
-			{ renderToString },
-		] = await Promise.all([loadJsxRuntime(), loadHydrationBindings(), loadServerRender()]);
+	test('renderToString hydrate markers match planTemplateHydrationIndices for iterable roots', async () => {
+		const [{ jsx, jsxs, Fragment }, bindings, { renderToString }] = await Promise.all([
+			loadJsxRuntime(),
+			loadHydrationBindings(),
+			loadServerRender(),
+		]);
 
 		const fragment = jsxs(Fragment, {
 			children: [
@@ -190,28 +296,18 @@ describe('template attribute marker index collection', () => {
 		});
 
 		const html = renderToString(fragment, { mode: 'hydrate' });
-		const bindings = collectHydrationBindings(fragment);
+		const planned = listPlannedHydrationMarkers(fragment, 0, false, bindings);
 
-		expect(bindings.size).toBe(4);
-
-		for (const [index, binding] of bindings) {
-			const markerName = resolveHydrationMarkerAttributeName(index);
-			const descriptor = serializeBindingDescriptor(binding.kind, binding.name);
-			expect(html).toContain(`${markerName}="${descriptor}"`);
-		}
+		expect(listSerializedHydrationMarkers(html)).toEqual(planned);
+		expect(planned).toHaveLength(4);
 	});
 
 	test('renderToString hydrate markers match counter-shaped fragments with subscribable children', async () => {
-		const [
-			{ createSubscribableJsxValue, jsx, jsxs, Fragment },
-			{
-				collectHydrationBindings,
-				planTemplateHydrationIndices,
-				resolveHydrationMarkerAttributeName,
-				serializeBindingDescriptor,
-			},
-			{ renderToString },
-		] = await Promise.all([loadJsxRuntime(), loadHydrationBindings(), loadServerRender()]);
+		const [{ createSubscribableJsxValue, jsx, jsxs, Fragment }, bindings, { renderToString }] = await Promise.all([
+			loadJsxRuntime(),
+			loadHydrationBindings(),
+			loadServerRender(),
+		]);
 
 		const boundCount = createSubscribableJsxValue({
 			getValue: () => 2,
@@ -230,27 +326,23 @@ describe('template attribute marker index collection', () => {
 		const incButton = expectTemplateChild(fragmentChildren[2]);
 
 		const html = renderToString(fragment, { mode: 'hydrate' });
-		const bindings = collectHydrationBindings(fragment);
+		const planned = listPlannedHydrationMarkers(fragment, 0, false, bindings);
 
-		expect(bindings.size).toBe(3);
-		expect(bindings.get(0)?.name).toBe('id');
-		expect(bindings.get(1)?.name).toBe('id');
-		expect(bindings.get(2)?.name).toBe('id');
+		expect(listSerializedHydrationMarkers(html)).toEqual(planned);
+		expect(planned).toEqual([
+			{ descriptor: 'attr:id', index: 0 },
+			{ descriptor: 'attr:id', index: 1 },
+			{ descriptor: 'attr:id', index: 2 },
+		]);
 
-		for (const [index, binding] of bindings) {
-			const markerName = resolveHydrationMarkerAttributeName(index);
-			const descriptor = serializeBindingDescriptor(binding.kind, binding.name);
-			expect(html).toContain(`${markerName}="${descriptor}"`);
-		}
-
-		const decIndices = planTemplateHydrationIndices(decButton, 0);
-		const spanIndices = planTemplateHydrationIndices(metricSpan, decIndices.nextIndex);
-		const incIndices = planTemplateHydrationIndices(incButton, spanIndices.nextIndex);
+		const decIndices = bindings.planTemplateHydrationIndices(decButton, 0);
+		const spanIndices = bindings.planTemplateHydrationIndices(metricSpan, decIndices.nextIndex);
+		const incIndices = bindings.planTemplateHydrationIndices(incButton, spanIndices.nextIndex);
 
 		expect(decIndices.nextIndex).toBe(1);
 		expect(spanIndices.nextIndex).toBe(2);
 		expect(incIndices.nextIndex).toBe(3);
-		expect(incIndices.nextIndex).toBe(bindings.size);
+		expect(incIndices.nextIndex).toBe(planned.length);
 	});
 });
 
@@ -337,5 +429,58 @@ describe('visitHydrationBindingMarkers DOM compatibility', () => {
 			}),
 		).toBe(true);
 		expect(visited).toEqual([`${ATTRIBUTE_BINDING_PREFIX}0`]);
+	});
+});
+
+describe('unregistered custom-element hydration markers', () => {
+	test("An unregistered custom element does not consume the parent's hydration markers", async () => {
+		const [{ jsx, jsxs }, bindings, { renderToString }] = await Promise.all([
+			loadJsxRuntime(),
+			loadHydrationBindings(),
+			loadServerRender(),
+		]);
+
+		withRegisteredCustomElement(REGISTERED_HOST_TAG, () => {
+			const view = jsxs('div', {
+				children: [
+					jsx(REGISTERED_HOST_TAG, { label: 'registered' }),
+					jsx(UNREGISTERED_WIDGET_TAG, {
+						label: 'x',
+						'on:change': () => undefined,
+					}),
+					jsx('button', { 'on:click': () => undefined, children: 'go' }),
+				],
+			});
+			const html = renderToString(view, { mode: 'hydrate' });
+			const planned = listPlannedHydrationMarkers(view, 0, false, bindings);
+
+			expect(html).toBe(HYDRATE_UNREGISTERED_CUSTOM_ELEMENT_SIBLINGS_HTML);
+			expect(listSerializedHydrationMarkers(html)).toEqual(planned);
+		});
+	});
+
+	test('An unregistered custom element in a fragment root does not consume later sibling markers', async () => {
+		const [{ jsx, jsxs, Fragment }, bindings, { renderToString }] = await Promise.all([
+			loadJsxRuntime(),
+			loadHydrationBindings(),
+			loadServerRender(),
+		]);
+
+		const view = jsxs(Fragment, {
+			children: [
+				jsx(UNREGISTERED_WIDGET_TAG, {
+					label: 'x',
+					'on:change': () => undefined,
+				}),
+				jsx('button', { 'on:click': () => undefined, children: 'go' }),
+			],
+		});
+		const html = renderToString(view, { mode: 'hydrate' });
+		const planned = listPlannedHydrationMarkers(view, 0, false, bindings);
+
+		expect(html).toBe(
+			'<third-party-widget></third-party-widget><button data-radiant-jsx-bind-0="event:click">go</button>',
+		);
+		expect(listSerializedHydrationMarkers(html)).toEqual(planned);
 	});
 });

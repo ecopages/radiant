@@ -41,7 +41,7 @@ export function renderRadiantElementHostToString(
 ): string {
 	return withServerRadiantElementSsrRuntime(() => {
 		const service = createRadiantElementSsrService(component);
-		return service.renderHostToString(options, service.getHostAttributes());
+		return service.renderHostToString(options);
 	});
 }
 
@@ -81,6 +81,9 @@ export function renderRadiantElementViewToString(
 	);
 }
 
+/**
+ * @remarks Does not run SSR preparation. Host serialization owns that pass and reads attributes afterwards.
+ */
 export function getRadiantElementHostSsrAttributes(
 	component: RadiantElementServerRenderSsrCapable,
 ): Record<string, string> {
@@ -154,10 +157,9 @@ function serializeNestedCustomElementHost(
 		withServerRadiantElementSsrRuntime(() => {
 			const service = createRadiantElementSsrService(instance);
 			service.applyLightDom(applyChildren);
-			const attributes = service.getHostAttributes();
 			return service.renderHostToString(
 				options,
-				stamp === undefined ? attributes : { ...attributes, [SERVER_RENDERED_HOST_ATTRIBUTE]: stamp },
+				stamp === undefined ? undefined : { [SERVER_RENDERED_HOST_ATTRIBUTE]: stamp },
 			);
 		});
 

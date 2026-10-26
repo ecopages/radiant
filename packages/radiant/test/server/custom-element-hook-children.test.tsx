@@ -83,9 +83,7 @@ describe('a custom render hook and context consumers passed as children of a pro
 
 					const service = createRadiantElementSsrService(instance as object);
 					service.applyLightDom(() => applyChildren?.());
-					return createMarkupNodeLike(
-						service.renderHostToString({ mode: 'hydrate' }, service.getHostAttributes()),
-					);
+					return createMarkupNodeLike(service.renderHostToString({ mode: 'hydrate' }));
 				},
 				() => renderToString(page),
 				{ ownsChildren: true },

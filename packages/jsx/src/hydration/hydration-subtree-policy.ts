@@ -1,14 +1,9 @@
 /**
- * Returns whether a tag name marks the root of a custom-element subtree that
- * parent hydration should not descend into.
- *
- * @remarks Matches the template-root custom-element detection used when collecting
- * JSX hydration bindings with `skipNestedCustomElementRoots`. The custom element
- * hydrates its own content; walking it from the parent would consume markers that
- * were never emitted in that namespace.
- *
- * @param localName Lowercase tag name of the candidate subtree root.
+ * @remarks A hyphenated tag is a custom-element subtree root. Nested roots never
+ * take hydration marker indexes from the parent namespace, registered or not.
+ * An unregistered nested tag serializes as plain markup; a registered host may
+ * fork its own namespace.
  */
-export function shouldSkipHydrationSubtree(localName: string): boolean {
+export function isCustomElementSubtreeRoot(localName: string): boolean {
 	return localName.includes('-');
 }

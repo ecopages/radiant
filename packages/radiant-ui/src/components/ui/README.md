@@ -43,6 +43,8 @@ Token-select hosts (`rui-select`, `rui-combobox`, `rui-listbox`, `rui-checkbox-g
 
 Default `@prop({ type: Array })` serializes attributes as JSON. These hosts pass `transform` (`multiValuePropOptions` / `numberArrayTransform` in `shared/multi-value.ts`) so the attribute stays CSV. Pass `defaultValue: []` (or `[50]` on slider) on each decorator call so classes do not share one array.
 
+`@prop` host attributes default to the kebab-case form of a camelCase property (`mobileBreakpoint` is `mobile-breakpoint`). `Rui*` JSX props remain camelCase; use the kebab-case name in authored HTML. An explicit `attribute` option selects the host attribute name as configured; use a lowercase value for an attribute authored in HTML because HTML normalizes names to lowercase.
+
 ## Light-DOM ownership
 
 Parent JSX owns **Authored Children**. Do not let a custom element `render()` project that content through `<slot>`: catalog composites keep chrome and children in the view, as a View-owned Shell.

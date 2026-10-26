@@ -2,6 +2,10 @@ import { describe, expect, test, vi } from 'vitest';
 import { getCustomElementTagName } from '@ecopages/jsx';
 import { customElement } from '../../src/decorators/custom-element';
 
+function customElementWithRuntimeExtends(name: string) {
+	return Reflect.apply(customElement, undefined, [name, { extends: 'button' }]) as ReturnType<typeof customElement>;
+}
+
 @customElement('my-custom-element')
 class MyCustomElement extends HTMLElement {
 	connectedCallback(): void {
@@ -14,6 +18,29 @@ describe('@customElement', () => {
 		const customElement = document.createElement('my-custom-element') as MyCustomElement;
 		document.body.appendChild(customElement);
 		expect(customElement.innerHTML).toEqual('Hello, world!');
+	});
+
+	test('standard decorator rejects customized built-ins before registration', () => {
+		const tagName = 'x-standard-customized-built-in-test';
+		const decorator = customElementWithRuntimeExtends(tagName);
+		const context = {
+			addInitializer() {},
+		} as unknown as ClassDecoratorContext<CustomElementConstructor>;
+
+		expect(() => decorator(class extends HTMLElement {}, context)).toThrow(
+			/customized built-ins are not supported.*autonomous custom element/i,
+		);
+		expect(customElements.get(tagName)).toBeUndefined();
+	});
+
+	test('legacy decorator rejects customized built-ins before registration', () => {
+		const tagName = 'x-legacy-customized-built-in-test';
+		const decorator = customElementWithRuntimeExtends(tagName);
+
+		expect(() => decorator(class extends HTMLElement {})).toThrow(
+			/customized built-ins are not supported.*autonomous custom element/i,
+		);
+		expect(customElements.get(tagName)).toBeUndefined();
 	});
 
 	test('preserves host metadata for SSR when customElements is unavailable', () => {

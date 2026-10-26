@@ -1,3 +1,7 @@
+import {
+	assertAutonomousCustomElementOptions,
+	type AutonomousCustomElementOptions,
+} from '../assert-autonomous-custom-element-options';
 import { setCustomElementTagName } from '../../core/custom-element-metadata';
 import {
 	applyObservedAttributesFromPropRegistry,
@@ -6,7 +10,9 @@ import {
 	registerReactivePropDefinition,
 } from '../../core/reactive-prop-metadata';
 
-export function customElement(name: string, options?: ElementDefinitionOptions) {
+export function customElement(name: string, options?: AutonomousCustomElementOptions) {
+	assertAutonomousCustomElementOptions(options);
+
 	return function <T extends CustomElementConstructor>(_: T, context: ClassDecoratorContext<T>) {
 		context.addInitializer(function (this: T) {
 			setCustomElementTagName(this, name);

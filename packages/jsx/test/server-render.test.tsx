@@ -52,6 +52,35 @@ describe('Radiant JSX server render', () => {
 		expect(html.indexOf('</script>')).toBe(html.length - '</script>'.length);
 	});
 
+	test('String SSR keeps style text as raw text', async () => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+		const template = jsx('style', { children: '.a > .b { color: red; }' });
+
+		expect(renderToString(template)).toBe('<style>.a > .b { color: red; }</style>');
+	});
+
+	test('String SSR cannot close a style element early', async () => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+		const template = jsx('style', { children: '.a{}</style><script>x</script>' });
+		const html = renderToString(template);
+
+		expect(html).toBe('<style>.a{}<\\/style><script>x</script></style>');
+		expect(html.indexOf('</style>')).toBe(html.length - '</style>'.length);
+	});
+
+	test.each(['script', 'style', 'xmp', 'iframe', 'noembed', 'noframes'] as const)(
+		'String SSR cannot close a %s element early',
+		async (tag) => {
+			const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+			const template = jsx(tag, { children: `.a{}</${tag}><script>x</script>` });
+			const html = renderToString(template);
+			const close = `</${tag}>`;
+
+			expect(html.includes(`<\\/${tag}>`)).toBe(true);
+			expect(html.indexOf(close)).toBe(html.length - close.length);
+		},
+	);
+
 	test('serializes unsafeHtml content without escaping it again', async () => {
 		const [{ jsx, unsafeHtml }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
 		const template = jsx('div', {
@@ -355,38 +384,6 @@ describe('Radiant JSX server render', () => {
 		expect(renderToString(template, { mode: 'plain' })).toBe('<button class="action">Ship</button>');
 		expect(renderToString(template, { mode: 'hydrate' })).toBe(
 			'<button data-radiant-jsx-bind-0="attr:class" class="action" data-radiant-jsx-bind-1="event:click">Ship</button>',
-		);
-	});
-
-	test('continues hydrate binding indexes across renders in one shared SSR scope', async () => {
-		const [{ jsx }, { renderToString, withActiveSsrScopeValue }] = await Promise.all([
-			loadJsxRuntime(),
-			loadModule<typeof import('../src/server.ts')>('../src/server.ts'),
-		]);
-		const sharedScopeKey = Symbol.for('@ecopages/jsx.test.shared-ssr-scope');
-		const sharedScopeState = {};
-
-		const html = withActiveSsrScopeValue(sharedScopeKey, sharedScopeState, () => {
-			const pageHtml = renderToString(
-				jsx('section', {
-					class: 'page',
-					children: 'Page',
-				}),
-				{ mode: 'hydrate' },
-			);
-			const layoutHtml = renderToString(
-				jsx('main', {
-					class: 'layout',
-					children: 'Layout',
-				}),
-				{ mode: 'hydrate' },
-			);
-
-			return `${pageHtml}${layoutHtml}`;
-		});
-
-		expect(html).toBe(
-			'<section data-radiant-jsx-bind-0="attr:class" class="page">Page</section><main data-radiant-jsx-bind-1="attr:class" class="layout">Layout</main>',
 		);
 	});
 

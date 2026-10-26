@@ -1,5 +1,4 @@
 import '../install/install-ssr-runtime';
-import type { JsxRenderable } from '@ecopages/jsx';
 import { createMarkupNodeLike } from '@ecopages/jsx';
 import type { RenderToStringOptions } from '@ecopages/jsx/server';
 import type { SsrSerializableContextProvider } from '../../context/context-provider';
@@ -12,7 +11,6 @@ import { ensureLegacyHostReady } from '../../decorators/legacy/host-readiness';
 import { createServerRenderEnvironment, type ServerRenderEnvironment } from '../shim/light-dom-shim';
 import {
 	getOrCreateRadiantElementSsrRuntime,
-	renderRegisteredRadiantElementHost,
 	renderRegisteredRadiantElementHostToString,
 } from '../radiant-element-ssr';
 import { withRadiantElementSsrRuntime } from '../../core/radiant-element-ssr-registry';
@@ -280,7 +278,6 @@ async function renderResolvedComponent<TComponent extends ServerRenderableCompon
 				normalizedOptions.initialize?.(component);
 
 				const markup = requireRegisteredRadiantElementMarkup(component, renderOptions);
-				const preview = resolveRenderedComponentPreview(component, markup);
 
 				return {
 					markup,
@@ -290,24 +287,11 @@ async function renderResolvedComponent<TComponent extends ServerRenderableCompon
 						generatedAt,
 						tagName,
 					},
-					preview,
+					preview: createMarkupNodeLike(markup),
 				};
 			}),
 		),
 	);
-}
-
-/**
- * Chooses the preview renderable returned by `renderComponent()`.
- *
- * Falls back to the serialized host markup when a generic server-renderable
- * component does not expose a JSX preview surface.
- */
-function resolveRenderedComponentPreview<TComponent extends ServerRenderableComponent>(
-	component: TComponent,
-	markup: string,
-): JsxRenderable {
-	return renderRegisteredRadiantElementHost(component) ?? createMarkupNodeLike(markup);
 }
 
 function prepareRenderedComponentHost<TComponent extends ServerRenderableComponent>(

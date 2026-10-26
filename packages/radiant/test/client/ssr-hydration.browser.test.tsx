@@ -122,6 +122,21 @@ describe('hydrating server-rendered markup', () => {
 		await waitFor(() => expect(element.querySelector('button')?.textContent).toBe('Count 1'));
 	});
 
+	test('a hydrated View-owned Shell keeps its children and has no leftover payload script', async () => {
+		@customElement('shell-card-hydrate-test')
+		class ShellCardHydrate extends RadiantElement {}
+
+		document.body.innerHTML =
+			'<shell-card-hydrate-test data-radiant-ssr><h2>Title</h2><p>Body</p></shell-card-hydrate-test>';
+		const element = document.querySelector('shell-card-hydrate-test') as ShellCardHydrate;
+
+		await settle();
+
+		expect(element.querySelector('h2')?.textContent).toBe('Title');
+		expect(element.querySelector('p')?.textContent).toBe('Body');
+		expect(element.querySelector('script[data-radiant-slot-projection]')).toBeNull();
+	});
+
 	test('hydrates parent bindings that follow a nested host with reactive JSX children', async () => {
 		installRadiantHydrator();
 		const element = mount<HydratedMarkerSlotParent>('marker-slot-parent', 'hydrated-marker-slot-parent-test');

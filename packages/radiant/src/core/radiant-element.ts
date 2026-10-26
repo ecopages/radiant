@@ -141,10 +141,11 @@ export interface IRadiantElement<Bindings extends object = {}> {
 	registerCleanupCallback(callback: () => void): void;
 
 	/**
-	 * Registers a callback to run on each future host connection.
+	 * Registers a callback to run synchronously at the start of each future connection.
 	 *
-	 * The callback is only invoked from `connectedCallback()`. Registering it
-	 * after the host is already connected does not invoke it immediately.
+	 * @remarks
+	 * This is a pre-sync hook and is not invoked immediately when registered on an already connected host. Use
+	 * `onConnected()` for work that depends on adopted attributes or rendered DOM.
 	 */
 	registerConnectedCallback(callback: () => void): void;
 
@@ -412,7 +413,7 @@ export class RadiantElement<Bindings extends object = {}>
 				}
 			}
 
-			this.reactiveHost.flushPostSyncCallbacks();
+			this.reactiveHost.flushPostSync();
 			this.onConnected();
 		});
 	}
@@ -569,7 +570,7 @@ export class RadiantElement<Bindings extends object = {}>
 		this.prepareForSsr();
 
 		const html = requireRadiantElementSsrRuntime().renderView(this, options);
-		this.reactiveHost.flushPostSyncCallbacks();
+		this.reactiveHost.flushPostSync();
 		return html;
 	}
 
@@ -620,16 +621,18 @@ export class RadiantElement<Bindings extends object = {}>
 	 *
 	 * @remarks
 	 * Hosts never connect on the server, so members are observed only for the
-	 * duration of this call: writes made since construction (JSX props) and the
-	 * writes callbacks make in turn run the batched `@onUpdated` callbacks here,
-	 * before and after the SSR preparation callbacks. Then `@bindTo` flushes, so
-	 * the first server render sees finalized fields, props, and authored content.
-	 * `updated()` never runs on the server.
+	 * duration of this call: context consumers resolve first, then writes made
+	 * since construction (JSX props) and the writes callbacks make in turn run
+	 * the batched `@onUpdated` callbacks here, before and after the other SSR
+	 * preparation callbacks. Then `@bindTo` flushes, so the first server render
+	 * sees finalized fields, props, and authored content. `updated()` never runs
+	 * on the server.
 	 */
 	public prepareForSsr(): void {
 		const stopObserving = this.reactiveHost.observeMembers();
 
 		try {
+			runSsrPreparationCallbacks(this, true);
 			this.updateCycle.runCallbacks();
 			runSsrPreparationCallbacks(this);
 			this.updateCycle.runCallbacks();
@@ -637,7 +640,7 @@ export class RadiantElement<Bindings extends object = {}>
 			stopObserving();
 		}
 
-		this.reactiveHost.flushPostSyncCallbacks();
+		this.reactiveHost.flushPostSync();
 	}
 
 	/** Framework plumbing for decorators and SSR adapters; not part of the authoring API. */
@@ -713,11 +716,11 @@ export class RadiantElement<Bindings extends object = {}>
 	}
 
 	/**
-	 * Registers a callback that runs from `connectedCallback()` on future host
-	 * connections.
+	 * Registers a callback to run synchronously at the start of each future connection.
 	 *
-	 * Registering after the host is already connected does not invoke the
-	 * callback immediately.
+	 * @remarks
+	 * This is a pre-sync hook and is not invoked immediately when registered on an already connected host. Use
+	 * `onConnected()` for work that depends on adopted attributes or rendered DOM.
 	 */
 	public registerConnectedCallback(callback: () => void): void {
 		this.reactiveHost.registerConnectedCallback(callback);
@@ -763,8 +766,18 @@ export class RadiantElement<Bindings extends object = {}>
 		);
 	}
 
-	public getSlotProjectionScriptTag(): string | undefined {
-		return this.getOrCreateRenderRuntime().getSlotProjectionScriptTag();
+	/**
+	 * Authored Children keyed by slot name, for SSR to decide whether to emit a slot-projection payload.
+	 *
+	 * @remarks Undefined when this host does not own a render lifecycle. The service emits the payload script
+	 * only when this is set and the resolved view contains a `<slot>`.
+	 */
+	public getProjectedSlotPayload(): Record<string, string[]> | undefined {
+		if (!this.shouldRunRenderLifecycle()) {
+			return undefined;
+		}
+
+		return this.getOrCreateRenderRuntime().getProjectedSlotPayload();
 	}
 
 	public getAuthoredHydrationScriptMarkup(): string | undefined {

@@ -54,6 +54,8 @@ Component entries register their nested custom elements as well as their own hos
 
 ## Using radiant-ui
 
+`Rui*` JSX props remain camelCase. In direct custom-element HTML, camelCase `@prop` names use kebab-case attributes (for example, `mobileBreakpoint` is `mobile-breakpoint`).
+
 ```ts
 import '@ecopages/radiant-ui/themes/default';
 import '@ecopages/radiant-ui/styles.css';

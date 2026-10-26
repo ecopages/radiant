@@ -32,7 +32,12 @@ rui-navigation-menu {
 		@apply rounded-container no-underline;
 	}
 
-	.rui-navigation-menu [data-navigation-trigger][aria-expanded='true'] {
+	/**
+	 * @remarks The `:hover` selector outranks a theme's ghost-button hover rule, so an open trigger keeps its container
+	 * fill and its on-container text under the pointer.
+	 */
+	.rui-navigation-menu [data-navigation-trigger][aria-expanded='true'],
+	.rui-navigation-menu [data-navigation-trigger][aria-expanded='true']:hover:not(:disabled) {
 		@apply bg-primary-container font-medium text-on-primary-container shadow-none;
 		@apply ring-2 ring-inset ring-primary/25;
 	}

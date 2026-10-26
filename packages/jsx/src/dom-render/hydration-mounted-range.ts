@@ -1,5 +1,5 @@
 import { countHydrationMarkers } from '../hydration/hydration-bindings.ts';
-import { shouldSkipHydrationSubtree } from '../hydration/hydration-subtree-policy.ts';
+import { isCustomElementSubtreeRoot } from '../hydration/hydration-subtree-policy.ts';
 import { isKeyedJsxValue } from '../types/renderable-guards.ts';
 import { hydrateTemplateInstance } from './hydration.ts';
 import { takesChildrenValue } from '../factory/jsx-factory.ts';
@@ -79,7 +79,7 @@ function hydrateMountedRangeContentSnapshot(
 
 	if (
 		isTemplateResultLike(nextValue) &&
-		(!shouldSkipHydrationSubtree(nextValue.rootLocalName ?? '') || canAdoptCustomElement(nextValue, existingNodes))
+		(!isCustomElementSubtreeRoot(nextValue.rootLocalName ?? '') || canAdoptCustomElement(nextValue, existingNodes))
 	) {
 		const hydratedTemplateInstance = hydrateTemplateRange(nextValue, existingNodes, rootTarget, bindingBaseIndex);
 
@@ -415,7 +415,7 @@ export function fillsRenderedElement(template: TemplateResultLike): boolean {
 	const localName = template.rootLocalName ?? '';
 
 	return (
-		localName.includes('-') &&
+		isCustomElementSubtreeRoot(localName) &&
 		(!globalThis.customElements?.get(localName) || takesChildrenValue(localName)) &&
 		!!getCompiledTemplate(template).blueprint.content.firstChild?.hasChildNodes()
 	);
