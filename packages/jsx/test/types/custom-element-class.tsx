@@ -77,6 +77,47 @@ const invalidThirdPartyButtonTag = <sl-button variant="danger" />;
 const validNativeButton = <button type="button" disabled />;
 const validUnknownCustomTag = <unlisted-widget arbitraryValue={{ nested: true }} />;
 
+class ReadonlyMembersCard extends HTMLElement {
+	declare readonly [JSX_PROPS]?: CounterCardProps;
+	label!: string;
+	readonly bindings = {};
+	get computed(): string {
+		return '';
+	}
+	set writable(_value: string) {}
+}
+
+const writablePropBindings = <ReadonlyMembersCard label="x" prop:label="y" prop:writable="z" prop:title="t" />;
+
+// @ts-expect-error A readonly field cannot be assigned through prop:*.
+const readonlyFieldBinding = <ReadonlyMembersCard label="x" prop:bindings={{}} />;
+
+// @ts-expect-error A getter without a setter cannot be assigned through prop:*.
+const getterOnlyBinding = <ReadonlyMembersCard label="x" prop:computed="y" />;
+
+// @ts-expect-error A readonly DOM property cannot be assigned through prop:*.
+const readonlyDomBinding = <ReadonlyMembersCard label="x" prop:clientWidth={1} />;
+
+/** A base class that subclasses extend takes its public props as a type parameter, so no subclass redeclares them. */
+class BaseCard<Props extends CounterCardProps = CounterCardProps> extends HTMLElement {
+	declare readonly [JSX_PROPS]?: Props;
+	label!: string;
+}
+
+class SubclassCard extends BaseCard<CounterCardProps & { level: number }> {
+	level!: number;
+}
+
+const validBaseCard = <BaseCard label="x" />;
+
+// @ts-expect-error The base class keeps its own required props.
+const missingBaseLabel = <BaseCard />;
+
+const validSubclassCard = <SubclassCard label="x" level={1} />;
+
+// @ts-expect-error The subclass declaration adds a required prop.
+const missingSubclassLevel = <SubclassCard label="x" />;
+
 const FunctionComponent = ({ count }: { count: number }) => <span>{count}</span>;
 const validFunctionComponent = <FunctionComponent count={1} />;
 
@@ -110,6 +151,14 @@ declare const _validUnknownCustomTag: typeof validUnknownCustomTag;
 declare const _validFunctionComponent: typeof validFunctionComponent;
 declare const _invalidFunctionComponent: typeof invalidFunctionComponent;
 declare const _publicPropsAreInferred: PublicPropsAreInferred;
+declare const _writablePropBindings: typeof writablePropBindings;
+declare const _readonlyFieldBinding: typeof readonlyFieldBinding;
+declare const _getterOnlyBinding: typeof getterOnlyBinding;
+declare const _readonlyDomBinding: typeof readonlyDomBinding;
+declare const _validBaseCard: typeof validBaseCard;
+declare const _missingBaseLabel: typeof missingBaseLabel;
+declare const _validSubclassCard: typeof validSubclassCard;
+declare const _missingSubclassLevel: typeof missingSubclassLevel;
 
 void [
 	_validCounterCard,
@@ -130,4 +179,12 @@ void [
 	_validFunctionComponent,
 	_invalidFunctionComponent,
 	_publicPropsAreInferred,
+	_writablePropBindings,
+	_readonlyFieldBinding,
+	_getterOnlyBinding,
+	_readonlyDomBinding,
+	_validBaseCard,
+	_missingBaseLabel,
+	_validSubclassCard,
+	_missingSubclassLevel,
 ];

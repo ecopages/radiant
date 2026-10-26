@@ -8,10 +8,26 @@ import type {
 
 type Booleanish = boolean | 'true' | 'false';
 type StringKeyOf<Value> = Extract<keyof Value, string>;
+type IsReadonlyKey<Value, Key extends keyof Value> =
+	(<T>() => T extends { [K in Key]: Value[Key] } ? 1 : 2) extends <T>() => T extends {
+		-readonly [K in Key]: Value[Key];
+	}
+		? 1
+		: 2
+		? false
+		: true;
+/**
+ * Names `prop:*` may assign: string keys that are neither methods nor readonly.
+ *
+ * @remarks A getter without a setter is readonly in the instance type. Assigning one throws at runtime, and
+ * assigning a readonly field such as a host's `$` bindings would replace state the element owns.
+ */
 type JsxBindablePropertyName<ElementType extends object> = {
 	[PropertyName in StringKeyOf<ElementType>]: ElementType[PropertyName] extends (...args: any[]) => any
 		? never
-		: PropertyName;
+		: IsReadonlyKey<ElementType, PropertyName> extends true
+			? never
+			: PropertyName;
 }[StringKeyOf<ElementType>];
 type StructuredAttributePrimitive = string | number | boolean | null | undefined;
 type ReactiveAttributeValue<Value extends StructuredAttributePrimitive> =
