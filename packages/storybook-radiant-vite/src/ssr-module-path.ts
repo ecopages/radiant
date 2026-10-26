@@ -57,8 +57,3 @@ export function scriptModuleCandidatesFromViewModule(viewModule: string): string
 export function preferredScriptModuleFromViewModule(viewModule: string): string {
 	return scriptModuleCandidatesFromViewModule(viewModule)[0] ?? viewModule;
 }
-
-/** @deprecated Use {@link scriptModuleCandidatesFromViewModule} or server-side {@link resolveScriptSsrModule}. */
-export function inferScriptModuleFromViewModule(viewModule: string): string {
-	return preferredScriptModuleFromViewModule(viewModule);
-}

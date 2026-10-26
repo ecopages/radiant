@@ -4,8 +4,8 @@ import { describe, expect, test } from 'vitest';
 import {
 	type ContextProvider,
 	consumeContext,
-	contextSelector,
 	createContext,
+	onContextUpdate,
 	provideContext,
 } from '../../src/context';
 import { RadiantElement } from '../../src/core/radiant-element';
@@ -97,7 +97,7 @@ let selectorDeliveries = 0;
 
 @customElement('ssr-once-selector-child')
 class SsrOnceSelectorChild extends RadiantElement {
-	@contextSelector({ context: selectorContext, select: (value) => value.items })
+	@onContextUpdate({ context: selectorContext, select: (value) => value.items })
 	protected onItems(_items: string[]): void {
 		selectorDeliveries += 1;
 	}
@@ -190,7 +190,7 @@ describe('SSR host serialization runs as one pass', () => {
 		);
 	});
 
-	test('a nested @contextSelector method runs once per serialization', async () => {
+	test('a nested @onContextUpdate method runs once per serialization', async () => {
 		expect(customElements.get('ssr-once-selector-child')).toBe(SsrOnceSelectorChild);
 		selectorDeliveries = 0;
 		await renderComponent(SsrOnceSelectorParent);

@@ -102,7 +102,7 @@ The key constraint: `select` only receives the context value — it has no acces
 
 ## For side effects: use @onContextUpdate
 
-When the context change should trigger imperative work rather than a rerender, use [@onContextUpdate](/docs/context/on-context-update) on a method instead.
+When the context change should trigger imperative work rather than a rerender, use [@onContextUpdate](/docs/context/on-context-update) on a method instead. `@contextSelector(...)` decorates fields only: on a method it does not type-check, and it throws a `TypeError` that points to `@onContextUpdate`.
 
 ```typescript
 import { onContextUpdate } from '@ecopages/radiant/context';
