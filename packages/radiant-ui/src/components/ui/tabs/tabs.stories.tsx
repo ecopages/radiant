@@ -2,8 +2,8 @@ import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
 import { isStaticSsrPreview } from '@/lib/storybook-ssr';
 import type { RuiTabsProps } from './tabs.script';
-import { RuiTab, RuiTabList, RuiTabPanel, RuiTabPanels, RuiTabs } from './tabs';
-import { RuiTabs as RuiTabsElement } from './tabs.script';
+import { RuiTabs, RuiTabs as RuiTabsElement } from './index';
+import { RuiTab, RuiTabList, RuiTabPanel, RuiTabPanels } from './tabs';
 
 const tabIcon = (paths: string | readonly string[]) => {
 	const d = Array.isArray(paths) ? paths : [paths];
