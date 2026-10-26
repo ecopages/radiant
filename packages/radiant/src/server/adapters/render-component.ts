@@ -246,6 +246,9 @@ export async function renderComponentWithPreview<TComponent extends ServerRender
 /**
  * Resolves assets and options, then renders one component host.
  * Async I/O stays outside SSR scope; the scoped callback is the sync snapshot only.
+ *
+ * @remarks Consumed context resolves before `initialize`, so the callback can derive state from it, as documented
+ * for server data. `prepareForSsr` resolves it again and finds it already delivered, so the host is notified once.
  */
 async function renderResolvedComponent<TComponent extends ServerRenderableComponent>(
 	normalizedOptions: RenderComponentOptions<TComponent>,
