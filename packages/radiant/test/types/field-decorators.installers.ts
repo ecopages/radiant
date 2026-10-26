@@ -7,7 +7,8 @@
  * decorator assigns a value the user does not supply, so the field may declare any
  * type that value satisfies. The forms each decorator must reject live in
  * `field-decorators.installers.standard.ts`, because legacy mode never sees the
- * field type.
+ * field type. A method target is the exception: both modes reject it, so
+ * {@link RejectedMethodSelector} lives here.
  */
 import { RadiantController } from '../../src/core/radiant-controller';
 import { RadiantElement } from '../../src/core/radiant-element';
@@ -69,4 +70,11 @@ export class ValidControllerInstallers extends RadiantController {
 	@consumeContext(ctxA) c1?: ContextProvider<typeof ctxA>;
 
 	@contextSelector({ context: ctxA, select: (c) => c.count }) x1?: number;
+}
+
+/** `@contextSelector` decorates a field only; a method takes `@onContextUpdate`. */
+export class RejectedMethodSelector extends RadiantElement {
+	// @ts-expect-error a method target is not a field
+	@contextSelector({ context: ctxA, select: (c) => c.count })
+	onCount(_count: number): void {}
 }

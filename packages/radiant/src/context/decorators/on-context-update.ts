@@ -5,7 +5,7 @@ import { contextSelector as legacyContextSelectorMethod } from './legacy/context
 import { contextSelector as standardContextSelectorMethod } from './standard/context-selector';
 import { methodDecoratorBridge } from '../../decorators/bridge';
 
-type ContextUpdateMethod<Selected> = (value: Selected) => unknown;
+export type ContextUpdateMethod<Selected> = (value: Selected) => unknown;
 
 type OnContextUpdateDecorator<Selected> = {
 	<Host extends ContextHostLike, TMethod extends ContextUpdateMethod<Selected>>(
