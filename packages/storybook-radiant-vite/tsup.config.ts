@@ -26,6 +26,7 @@ export default defineConfig({
 		'@storybook/global',
 		'@ecopages/jsx',
 		'@ecopages/jsx/client',
+		'@ecopages/jsx/jsx-runtime',
 		'@ecopages/radiant',
 		'@ecopages/radiant/client/install-hydrator',
 		'@ecopages/radiant/server/install-ssr-runtime',

@@ -4,6 +4,7 @@ import { getTemplateShapeKey } from './template-shape.ts';
 import { forEachNormalizedAttribute } from './attribute-normalize.ts';
 import { shouldUseAttributeBindingByDefaultForElement, shouldUseBooleanAttributeBinding } from './binding-defaults.ts';
 import { isIterableJsxChild, isKeyedJsxValue, resolveReactiveSnapshot } from '../types/renderable-guards.ts';
+import { CUSTOM_ELEMENT_TAG_NAME } from '../custom-element-tag-name.ts';
 import {
 	CUSTOM_ELEMENT_CHILDREN_SYMBOL,
 	KEYED_VALUE_SYMBOL,
@@ -48,11 +49,6 @@ const voidElementNames = new Set([
 
 type ChildSlotMode = 'multiple' | 'single';
 
-declare const radiantCustomElementTagNameType: unique symbol;
-const radiantCustomElementTagName = Symbol.for(
-	'@ecopages/radiant.customElementTagName',
-) as typeof radiantCustomElementTagNameType;
-
 /**
  * Custom-element class constructor accepted as a JSX type.
  *
@@ -76,7 +72,7 @@ function isCustomizedBuiltIn(type: Function): boolean {
 
 function resolveCustomElementTagName(type: Function): string | undefined {
 	const tagName =
-		(type as unknown as { [radiantCustomElementTagName]?: string })[radiantCustomElementTagName] ||
+		(type as CustomElementConstructor & { [CUSTOM_ELEMENT_TAG_NAME]?: string })[CUSTOM_ELEMENT_TAG_NAME] ||
 		globalThis.customElements?.getName?.(type as CustomElementConstructor);
 	if (tagName) {
 		if (isCustomizedBuiltIn(type)) {

@@ -5,8 +5,6 @@ export const ROOT_INNER_ID = 'root-inner';
 
 export const SSR_MOUNT_ID = 'radiant-ssr-mount';
 
-export const CUSTOM_ELEMENT_TAG_NAME = Symbol.for('@ecopages/radiant.customElementTagName');
-
 export type RadiantSsrRequestBody = {
 	kind?: 'host' | 'jsx';
 	/** Hint path for the Radiant `.script` module. Resolved on the server when missing or stale. */

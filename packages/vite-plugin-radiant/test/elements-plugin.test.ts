@@ -15,5 +15,10 @@ describe('radiantElements virtual modules', () => {
 		const assetRegistryId = plugin.resolveId?.('virtual:radiant/ssr-asset-registry');
 		const assetRegistryModule = plugin.load?.(assetRegistryId!);
 		expect(assetRegistryModule).toContain('resolveRadiantSsrStyleAsset');
+
+		const ssrRegistryId = plugin.resolveId?.('virtual:radiant/ssr-client-module-registry');
+		const ssrRegistryModule = plugin.load?.(ssrRegistryId!);
+		expect(ssrRegistryModule).toContain("import { getCustomElementTagName } from '@ecopages/jsx/jsx-runtime';");
+		expect(ssrRegistryModule).toContain('const tagName = component == null ? undefined : getCustomElementTagName(component);');
 	});
 });

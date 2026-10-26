@@ -5,6 +5,8 @@ export type { JSX_PROPS } from './types/index.ts';
 export {
 	Fragment,
 	unsafeHtml,
+	CUSTOM_ELEMENT_TAG_NAME,
+	getCustomElementTagName,
 	createMarkupNodeLike,
 	jsx,
 	jsxDEV,

@@ -828,6 +828,8 @@ Main exports:
 - `isKeyedJsxValue`
 - `isSubscribableJsxValue`
 - `CUSTOM_ELEMENT_CHILDREN_SYMBOL`
+- `CUSTOM_ELEMENT_TAG_NAME`
+- `getCustomElementTagName`
 
 Key types:
 
