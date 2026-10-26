@@ -64,7 +64,7 @@ describe('Radiant JSX server render', () => {
 		const template = jsx('style', { children: '.a{}</style><script>x</script>' });
 		const html = renderToString(template);
 
-		expect(html).toBe('<style>.a{}\\3c /style>\\3c script>x\\3c /script></style>');
+		expect(html).toBe('<style>.a{}<\\/style><script>x</script></style>');
 		expect(html.indexOf('</style>')).toBe(html.length - '</style>'.length);
 	});
 
@@ -73,7 +73,7 @@ describe('Radiant JSX server render', () => {
 		const template = jsxs('style', { children: ['.a{}</', 'style><script>alert(1)</script>'] });
 		const html = renderToString(template);
 
-		expect(html).toBe('<style>.a{}\\3c /style>\\3c script>alert(1)\\3c /script></style>');
+		expect(html).toBe('<style>.a{}<\\/style><script>alert(1)</script></style>');
 		expect(html.indexOf('</style>')).toBe(html.length - '</style>'.length);
 	});
 
@@ -85,14 +85,46 @@ describe('Radiant JSX server render', () => {
 			const html = renderToString(template);
 			const close = `</${tag}>`;
 
-			if (tag === 'style') {
-				expect(html.includes('\\3c /style>')).toBe(true);
-			} else {
-				expect(html.includes(`<\\/${tag}>`)).toBe(true);
-			}
+			expect(html.includes(`<\\/${tag}>`)).toBe(true);
 			expect(html.indexOf(close)).toBe(html.length - close.length);
 		},
 	);
+
+	test.each([
+		['</STYLE>', '<\\/STYLE>'],
+		['</style\t>', '<\\/style\t>'],
+		['</style/>', '<\\/style/>'],
+		['</styles>', '</styles>'],
+	])('String SSR rewrites the style closing sequence %j only', async (input, expected) => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+
+		expect(renderToString(jsx('style', { children: `a${input}` }))).toBe(`<style>a${expected}</style>`);
+	});
+
+	test('String SSR keeps CSS range queries byte-identical', async () => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+		const css = '@media (width < 600px) and (1px <= height <= 9px) { .a::before { content: "\\<" } }';
+
+		expect(renderToString(jsx('style', { children: css }))).toBe(`<style>${css}</style>`);
+	});
+
+	test.each(['svg', 'math'] as const)('String SSR entity-escapes raw-text tags inside %s', async (root) => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+		const html = renderToString(jsx(root, { children: jsx('style', { children: 'a<b>&' }) }));
+
+		expect(html).toBe(`<${root}><style>a&lt;b&gt;&amp;</style></${root}>`);
+	});
+
+	test('String SSR treats foreignObject content as HTML again', async () => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+		const tree = jsx('svg', {
+			children: jsx('foreignObject', { children: jsx('style', { children: '@media (width < 1px) {}' }) }),
+		});
+
+		expect(renderToString(tree)).toBe(
+			'<svg><foreignObject><style>@media (width < 1px) {}</style></foreignObject></svg>',
+		);
+	});
 
 	test.each(['style', 'script', 'xmp'] as const)('String SSR reads %s signal children', async (tag) => {
 		const [{ jsx }, { renderToString }, { state }] = await Promise.all([

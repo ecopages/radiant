@@ -33,6 +33,15 @@ export type SerializeRenderableOptions = {
 	 * owns the hydrate marker namespace.
 	 */
 	nestedInParentHydrationNamespace?: boolean;
+	/**
+	 * True when this value sits inside an `svg` or `math` template, where the browser parses raw-text tags as
+	 * ordinary elements.
+	 *
+	 * @remarks Set by a template whose root is `svg` or `math` and cleared by `foreignObject`, whose children the
+	 * browser parses as HTML again. It follows template roots only: `svg` or `math` written in the static
+	 * strings of a transported template does not set it.
+	 */
+	foreignContent?: boolean;
 	/** Optional custom-element renderer invoked before generic template serialization. */
 	renderCustomElementTemplate?: (template: TemplateResultLike) => string | undefined;
 };
@@ -114,14 +123,20 @@ function serializeTemplateResult(template: TemplateResultLike, options: Serializ
 
 	const nestedCustomElementRoot =
 		options.nestedInParentHydrationNamespace === true && isCustomElementSubtreeRoot(template.rootLocalName ?? '');
+	const rootLocalName = template.rootLocalName?.toLowerCase();
 	const childOptions: SerializeRenderableOptions = {
 		...options,
 		nestedInParentHydrationNamespace: true,
+		foreignContent: isForeignContentChild(rootLocalName, options.foreignContent === true),
 		...(nestedCustomElementRoot ? { mode: 'plain' as const, hydrationBindingState: undefined } : {}),
 	};
-	const rawTextElementName = template.rootLocalName?.toLowerCase();
-	if (rawTextElementName && RAW_TEXT_ELEMENT_NAMES.has(rawTextElementName)) {
-		const rawTextHtml = serializeRawTextTemplate(template, childOptions, rawTextElementName);
+	if (rootLocalName && RAW_TEXT_ELEMENT_NAMES.has(rootLocalName)) {
+		const rawTextHtml = serializeRawTextTemplate(
+			template,
+			childOptions,
+			rootLocalName,
+			options.foreignContent === true,
+		);
 
 		if (rawTextHtml !== undefined) {
 			return rawTextHtml;
@@ -141,10 +156,22 @@ function serializeTemplateResult(template: TemplateResultLike, options: Serializ
 	return html;
 }
 
+function isForeignContentChild(rootLocalName: string | undefined, foreignContent: boolean): boolean {
+	return rootLocalName === 'svg' || rootLocalName === 'math' || (foreignContent && rootLocalName !== 'foreignobject');
+}
+
+/**
+ * Serializes a raw-text element by joining its content, static and dynamic, and escaping the joined text once.
+ *
+ * @remarks Joining first means a closing tag split across children or across static and dynamic content is still
+ * escaped. Returns `undefined` when the template is not shaped like `<tag ...>children</tag>` with child parts
+ * last; the caller then serializes it as ordinary content, which entity-escapes dynamic text.
+ */
 function serializeRawTextTemplate(
 	template: TemplateResultLike,
 	options: SerializeRenderableOptions,
 	elementName: string,
+	foreignContent: boolean,
 ): string | undefined {
 	const childIndexes = template.parts.flatMap((part, index) => (part?.type === 'child' ? [index] : []));
 	const firstChildIndex = childIndexes[0];
@@ -188,7 +215,7 @@ function serializeRawTextTemplate(
 	}
 
 	rawText += closingSuffix.slice(0, closingTagStart);
-	return `${openingAndContentPrefix.slice(0, openingTagEnd + 1)}${escapeRawTextElementText(elementName, rawText)}${closingSuffix.slice(closingTagStart)}`;
+	return `${openingAndContentPrefix.slice(0, openingTagEnd + 1)}${escapeRawTextElementText(elementName, rawText, foreignContent)}${closingSuffix.slice(closingTagStart)}`;
 }
 
 function findRawTextOpeningTagEnd(html: string, elementName: string): number | undefined {
@@ -227,9 +254,17 @@ function findRawTextClosingTagStart(html: string, elementName: string): number |
 	return closingTagStart;
 }
 
-function escapeRawTextElementText(elementName: string, value: string): string {
-	if (elementName === 'style') {
-		return value.replaceAll('<', '\\3c ');
+/**
+ * Escapes the joined text of a raw-text element for the context it is parsed in.
+ *
+ * @remarks In HTML the content is raw text: the parser only looks for `</{tag}` followed by whitespace, `/` or
+ * `>`, so that sequence is the only one rewritten, and CSS such as `@media (width < 600px)` or script such as
+ * `a < b` stays byte-identical. Inside `svg` or `math` the same tags are ordinary elements, so `<` would open a
+ * tag; there the text is entity-escaped, which the parser decodes back to the original characters.
+ */
+function escapeRawTextElementText(elementName: string, value: string, foreignContent: boolean): string {
+	if (foreignContent) {
+		return escapeHtml(value);
 	}
 
 	return value.replace(new RegExp(`</(?=${elementName}[\\s/>])`, 'gi'), '<\\/');

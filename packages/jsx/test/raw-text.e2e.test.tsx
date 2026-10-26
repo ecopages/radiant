@@ -22,7 +22,7 @@ describe('Radiant JSX raw-text elements', () => {
 		const parsed = new DOMParser().parseFromString(html, 'text/html');
 
 		expect(parsed.querySelector('img')).toBeNull();
-		expect(parsed.querySelector('svg style')?.textContent).toBe('.x{fill:red}\\3c img id="pwn" src="x">}');
+		expect(parsed.querySelector('svg style')?.textContent).toBe(css);
 	});
 
 	test('joining style children before escaping prevents a split closing tag', async () => {
@@ -32,7 +32,44 @@ describe('Radiant JSX raw-text elements', () => {
 		container.innerHTML = html;
 
 		expect(container.querySelector('script')).toBeNull();
-		expect(container.querySelector('style')?.textContent).toBe('.a{}\\3c /style>\\3c script>alert(1)\\3c /script>');
+		expect(container.querySelector('style')?.textContent).toBe('.a{}<\\/style><script>alert(1)</script>');
+	});
+
+	test.each(
+		['svg', 'math'].flatMap((root) =>
+			['style', 'script', 'xmp', 'iframe', 'noembed', 'noframes'].map((tag) => [root, tag] as const),
+		),
+	)('%s %s text cannot create elements', async (root, tag) => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+		const text = `<img id="pwn" src="x"></${tag}><b>`;
+		const html = renderToString(jsx(root, { children: jsx(tag, { children: text }) }));
+		const parsed = new DOMParser().parseFromString(html, 'text/html');
+
+		expect(parsed.querySelector('img, b')).toBeNull();
+		expect(parsed.querySelector(`${root} > ${tag}`)?.textContent).toBe(text);
+	});
+
+	test.each([
+		['a max-width range', '@media (width < 100000px) { .probe { color: rgb(255, 0, 0) } }', 'color', null],
+		['a range using <=', '@media (1px <= width <= 100000px) { .probe { color: rgb(255, 0, 0) } }', 'color', null],
+		['an escaped < in a string', '.probe::before { content: "\\<" }', 'content', '::before'],
+	] as const)('style text with %s applies like the raw CSS', async (_name, css, property, pseudo) => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+		const readProbe = (styleHtml: string) => {
+			const host = document.createElement('div');
+			host.innerHTML = `${styleHtml}<p class="probe">x</p>`;
+			document.body.append(host);
+			const value = getComputedStyle(host.querySelector('.probe')!, pseudo).getPropertyValue(property);
+			host.remove();
+			return value;
+		};
+		const html = renderToString(jsx('style', { children: css }));
+		const reference = document.createElement('style');
+		reference.textContent = css;
+
+		expect(html).toBe(reference.outerHTML);
+		expect(readProbe(html)).toBe(readProbe(reference.outerHTML));
+		expect(readProbe(html)).not.toBe(readProbe(''));
 	});
 
 	test.each(['style', 'script', 'xmp'] as const)('keeps %s signal children live', async (tagName) => {

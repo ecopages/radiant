@@ -9,7 +9,7 @@ import { describe, expect, test } from 'vitest';
  *
  * @remarks Seeded JSX trees are rendered both ways and compared as parsed trees (node types, names, attribute
  * values, text), so equivalent spellings (`hidden` vs `hidden=""`) match. `<style>` text may include
- * `&`, `<`, `>` and `</style`; CSS escapes and escaped closing slashes are decoded before comparison.
+ * `&`, `<`, `>` and `</style`; both paths keep it as raw text.
  */
 
 const CASES = 500;
@@ -107,13 +107,7 @@ function describeHtml(html: string): Described {
 
 function describeChildren(parent: Node): Described {
 	return Array.from(parent.childNodes, (child) => {
-		if (child.nodeType !== 1) {
-			const text =
-				parent.nodeType === 1 && (parent as Element).localName === 'style'
-					? describeStyleText(child.textContent ?? '')
-					: child.textContent;
-			return [child.nodeType, text];
-		}
+		if (child.nodeType !== 1) return [child.nodeType, child.textContent];
 		const element = child as Element;
 		return [
 			element.localName,
@@ -121,10 +115,6 @@ function describeChildren(parent: Node): Described {
 			describeChildren(element),
 		];
 	});
-}
-
-function describeStyleText(value: string): string {
-	return value.replaceAll('\\3c ', '<').replaceAll('<\\/', '</');
 }
 
 function renderWithBuilder(value: JsxRenderable): string {
