@@ -78,12 +78,26 @@ Most app code never touches scope directly. Framework adapters are the exception
 
 `renderToString(...)` emits hydration markers by consuming one hydrate binding sequence. Most app code should let the renderer own that sequence implicitly.
 
-If an integration composes one page from multiple sibling `renderToString(...)` calls, those calls must share one binding namespace so the client sees one continuous marker stream for that hydration root.
+If an integration composes one page from multiple sibling `renderToString(...)` calls, those calls must share one binding namespace so the client sees one continuous marker stream for that hydration root. `withActiveSsrScopeValue(...)` does not share that namespace: each hydrate-mode `renderToString(...)` without explicit binding state starts at index 0.
 
 Use `createServerHydrationBindingState()` and `withServerHydrationBindingState(...)` from `@ecopages/jsx/server` when you need that explicit control:
 
 - share one binding state across sibling page, layout, and document-shell renders that belong to the same client-owned root
 - fork a fresh binding state for a nested SSR root, such as an intrinsic custom-element host that hydrates independently
+
+```ts
+import {
+	createServerHydrationBindingState,
+	renderToString,
+	withServerHydrationBindingState,
+} from '@ecopages/jsx/server';
+
+const html = withServerHydrationBindingState(createServerHydrationBindingState(), () => {
+	const page = renderToString(pageView, { mode: 'hydrate' });
+	const shell = renderToString(shellView(page), { mode: 'hydrate' });
+	return shell;
+});
+```
 
 At nested custom-element boundaries, the parent hydration root still owns the custom-element host itself. The nested root starts at the host's rendered internal subtree, not at the host tag.
 
@@ -99,14 +113,13 @@ When framework code needs shared server state beyond hydration binding indexes, 
 Prefer `Symbol.for('@your-package.namespace')` keys so the state survives entrypoint boundaries. Scope is async-local so concurrent renders stay isolated. Await I/O outside the scope when you only need the scoped value during a synchronous render snapshot.
 
 ```ts
-import { renderToString, withActiveSsrScopeValue } from '@ecopages/jsx/server';
+import { getActiveSsrScopeValue, renderToString, withActiveSsrScopeValue } from '@ecopages/jsx/server';
 
 const SHARED_SCOPE_KEY = Symbol.for('@acme/ssr.shared-root');
 
 const html = withActiveSsrScopeValue(SHARED_SCOPE_KEY, { started: true }, () => {
-	const page = renderToString(pageView, { mode: 'hydrate' });
-	const shell = renderToString(shellView(page), { mode: 'hydrate' });
-	return shell;
+	const shared = getActiveSsrScopeValue<{ started: boolean }>(SHARED_SCOPE_KEY);
+	return renderToString(pageView(shared), { mode: 'hydrate' });
 });
 ```
 

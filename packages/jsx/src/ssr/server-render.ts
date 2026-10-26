@@ -147,6 +147,11 @@ function withSsrRenderOverrides<T>(overrides: Partial<SsrRenderContext>, render:
 /**
  * Resolves the hydrate binding state visible to the current `renderToString(...)`
  * call and returns the scope values that should flow into the nested SSR context.
+ *
+ * @remarks A new hydrate root without explicit binding state copies the parent
+ * `scopeValues` map and never writes into it. Sibling roots in the same SSR
+ * scope therefore each start at index 0. {@link withServerHydrationBindingState}
+ * is the only way to share one namespace across sibling roots.
  */
 function getHydrationBindingScope(
 	activeSsrContext: SsrRenderContext | undefined,
@@ -170,7 +175,8 @@ function getHydrationBindingScope(
 	}
 
 	const nextBindingState: ServerHydrationBindingState = { nextBindingIndex: 0 };
-	const scopeValues = activeSsrContext?.scopeValues ?? new Map<symbol, unknown>();
+	const parentScopeValues = activeSsrContext?.scopeValues;
+	const scopeValues = new Map(parentScopeValues);
 
 	scopeValues.set(ACTIVE_HYDRATION_BINDING_STATE_KEY, nextBindingState);
 
