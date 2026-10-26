@@ -72,10 +72,7 @@ export class RadiantElementSsrService {
 			const hostContent = this.renderView(this.host, options);
 			this.host.flushPostSync();
 			const slotPayload = this.host.getProjectedSlotPayload?.();
-			const slotProjectionMarkup =
-				slotPayload !== undefined && this.host.resolveTrackedRenderOutput().containsSlots
-					? createSlotProjectionScriptTag(slotPayload)
-					: '';
+			const slotProjectionMarkup = slotPayload !== undefined ? createSlotProjectionScriptTag(slotPayload) : '';
 			const authoredHydrationMarkup = this.host.getAuthoredHydrationScriptMarkup?.() ?? '';
 			const hydrationScripts = hydrate
 				? this.host

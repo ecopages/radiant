@@ -31,4 +31,18 @@ describe('SSR hydration fixtures', () => {
 		);
 		expect(markup).not.toContain('data-radiant-ssr');
 	});
+
+	test('ships Authored Children when a render-owning host has no slot in its server-time view', () => {
+		const markup = SSR_HYDRATION_CASES['conditional-slot']?.() ?? '';
+		const payload = markup.match(/<script type="application\/json" data-radiant-slot-projection>(.*?)<\/script>/)?.[1];
+
+		expect(payload).toBeDefined();
+		expect(JSON.parse(payload ?? 'null')).toEqual({ '': ['<em>child</em>'] });
+	});
+
+	test('does not ship a slot payload for a View-owned Shell', () => {
+		const markup = SSR_HYDRATION_CASES['view-owned-shell']?.() ?? '';
+
+		expect(markup).not.toContain('data-radiant-slot-projection');
+	});
 });

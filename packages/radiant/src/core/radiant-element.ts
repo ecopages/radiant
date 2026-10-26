@@ -770,7 +770,7 @@ export class RadiantElement<Bindings extends object = {}>
 	 * Authored Children keyed by slot name, for SSR to decide whether to emit a slot-projection payload.
 	 *
 	 * @remarks Undefined when this host does not own a render lifecycle. The service emits the payload script
-	 * only when this is set and the resolved view contains a `<slot>`.
+	 * when this is set, regardless of whether the current server-time view contains a `<slot>`.
 	 */
 	public getProjectedSlotPayload(): Record<string, string[]> | undefined {
 		if (!this.shouldRunRenderLifecycle()) {
