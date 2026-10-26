@@ -5,6 +5,7 @@ import {
 } from '../../core/reactive-prop-core.js';
 import {
 	REACTIVE_PROP_METADATA,
+	attributeNameForProp,
 	type ReactivePropDefinition,
 	registerReactivePropDefinition,
 } from '../../core/reactive-prop-metadata';
@@ -24,12 +25,12 @@ export type ReactivePropHost<P> = {
  * `@customElement` can populate `observedAttributes` before `customElements.define`.
  */
 export function reactiveProp<P = unknown>(propOptions: ReactivePropertyOptions<P>) {
-	const { type, attribute, reflect, defaultValue, bind, transform } = propOptions;
+	const { type, reflect, defaultValue, bind, transform } = propOptions;
 	const hasDefaultValue = 'defaultValue' in propOptions;
 	validateReactivePropertyDefault(type, defaultValue, !!transform?.fromAttribute);
 	return function <T extends ReactivePropHost<P>>(_: undefined, context: ClassFieldDecoratorContext<T, P>) {
 		const propertyName = String(context.name);
-		const attributeKey = attribute ?? propertyName;
+		const attributeKey = attributeNameForProp(propertyName, propOptions);
 		const initializerValueKey = Symbol(`@ecopages/radiant/reactive-prop:${propertyName}:initializer`);
 		const options: ReactivePropertyOptions<unknown> = {
 			type,

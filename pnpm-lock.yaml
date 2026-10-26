@@ -257,7 +257,7 @@ importers:
   packages/radiant:
     dependencies:
       '@ecopages/signals':
-        specifier: workspace:>=0.5.0
+        specifier: workspace:>=0.5.1
         version: link:../signals/dist
     devDependencies:
       '@babel/core':
@@ -476,10 +476,10 @@ importers:
   packages/storybook-radiant-vite:
     dependencies:
       '@ecopages/radiant':
-        specifier: workspace:>=0.5.0
+        specifier: workspace:>=0.5.1
         version: link:../radiant/dist
       '@ecopages/signals':
-        specifier: workspace:>=0.5.0
+        specifier: workspace:>=0.5.1
         version: link:../signals/dist
       '@ecopages/vite-plugin-radiant':
         specifier: workspace:*

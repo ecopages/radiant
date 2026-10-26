@@ -107,7 +107,7 @@
 		color: var(--macos-text);
 	}
 
-	:root .rui-button--ghost:hover:not(:disabled) {
+	:root .rui-button--ghost:hover:not(:disabled, [aria-pressed='true']) {
 		background-color: var(--macos-hover-fill);
 	}
 
@@ -285,8 +285,6 @@
 	:root .rui-menu-button__item[aria-checked='true'],
 	:root .rui-menubar__menu-item[aria-checked='true'],
 	:root .rui-tree__node[aria-selected='true'],
-	:root .rui-calendar__day[aria-selected='true']:not([data-range-middle='true']),
-	:root .rui-calendar__day[aria-selected='true']:not([data-range-middle='true']):hover:not(:disabled),
 	:root .rui-navigation-menu__link-list a[aria-current='page'] {
 		@apply rounded-sm;
 		background-color: var(--macos-selection);
@@ -303,12 +301,72 @@
 		padding-block: 0.1875rem;
 	}
 
+	/**
+	 * Days are circles, as in the macOS date picker: a 28px disc paints hover and selection behind the number, and a
+	 * range is one continuous band of the selection tint through that disc.
+	 *
+	 * @remarks The disc is a `::before` because the day button fills its whole grid column; the band is the button's own
+	 * background, halved with a gradient on the start and end days so it closes at the disc's center.
+	 */
 	:root .rui-calendar__day {
-		@apply h-7 rounded-full;
+		@apply h-7 rounded-none;
+		isolation: isolate;
 	}
 
-	:root .rui-calendar__day[aria-selected='true']:not([data-range-middle='true']) {
-		@apply rounded-full;
+	:root .rui-calendar__day::before {
+		content: '';
+		position: absolute;
+		inset-block: 0;
+		inset-inline: calc(50% - 0.875rem);
+		z-index: -1;
+		border-radius: 9999px;
+	}
+
+	:root .rui-calendar__day:hover:not(:disabled):not([aria-selected='true']) {
+		background-color: transparent;
+	}
+
+	:root .rui-calendar__day:hover:not(:disabled):not([aria-selected='true'])::before {
+		background-color: var(--macos-hover-fill);
+	}
+
+	:root .rui-calendar__day:focus-visible {
+		@apply ring-0;
+	}
+
+	:root .rui-calendar__day:focus-visible::before {
+		@apply ring-[3px] ring-focus-ring/60;
+	}
+
+	:root .rui-calendar__day[aria-selected='true']:not([data-range-middle='true']),
+	:root .rui-calendar__day[aria-selected='true']:not([data-range-middle='true']):hover:not(:disabled) {
+		background-color: transparent;
+		color: var(--macos-selection-text);
+	}
+
+	:root .rui-calendar__day[aria-selected='true']:not([data-range-middle='true'])::before {
+		background-color: var(--macos-selection);
+	}
+
+	:root .rui-calendar__day[data-range-middle='true'],
+	:root .rui-calendar__day[data-range-middle='true']:hover:not(:disabled) {
+		background-color: color-mix(in srgb, var(--macos-selection) 16%, transparent);
+	}
+
+	:root .rui-calendar__day[data-range-start='true']:not([data-range-end='true']) {
+		background-image: linear-gradient(
+			to right,
+			transparent 50%,
+			color-mix(in srgb, var(--macos-selection) 16%, transparent) 50%
+		);
+	}
+
+	:root .rui-calendar__day[data-range-end='true']:not([data-range-start='true']) {
+		background-image: linear-gradient(
+			to left,
+			transparent 50%,
+			color-mix(in srgb, var(--macos-selection) 16%, transparent) 50%
+		);
 	}
 
 	:root .rui-calendar__day[aria-current='date']:not([aria-selected='true']) {
@@ -513,7 +571,7 @@
 	:root rui-tabs[variant='boxed'] .rui-tabs__panel {
 		@apply rounded-md text-on-surface;
 		border: 1px solid color-mix(in srgb, var(--macos-text) 12%, transparent);
-		background-color: color-mix(in srgb, var(--macos-text) 4%, transparent);
+		background-color: var(--macos-surface);
 		padding: var(--rui-tabs-panel-padding);
 		padding-top: calc(var(--rui-tabs-panel-padding) + 0.75rem);
 	}

@@ -32,18 +32,14 @@ export function consumeContext<C extends UnknownContext>(consumedContext: C) {
 		};
 
 		context.addInitializer(function (this: T) {
-			if (
-				bootstrapSsrConsumedContext(
-					this,
-					consumedContext,
-					(provider) => {
-						assignContextProvider(this, provider);
-					},
-					{ emitMounted: true },
-				)
-			) {
-				return;
-			}
+			bootstrapSsrConsumedContext(
+				this,
+				consumedContext,
+				(provider) => {
+					assignContextProvider(this, provider);
+				},
+				{ emitMounted: true },
+			);
 
 			this.registerConnectedCallback(() => {
 				if (initializeConsumedContextForHost(this, { emitMounted: true })) {

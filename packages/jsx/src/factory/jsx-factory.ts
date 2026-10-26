@@ -1,8 +1,10 @@
+import { RAW_TEXT_ELEMENT_NAMES } from './raw-text-element-names.ts';
 import { shouldDelegateEventBinding } from './event-binding-policy.ts';
 import { getTemplateShapeKey } from './template-shape.ts';
 import { forEachNormalizedAttribute } from './attribute-normalize.ts';
 import { shouldUseAttributeBindingByDefaultForElement, shouldUseBooleanAttributeBinding } from './binding-defaults.ts';
 import { isIterableJsxChild, isKeyedJsxValue, resolveReactiveSnapshot } from '../types/renderable-guards.ts';
+import { CUSTOM_ELEMENT_TAG_NAME } from '../custom-element-tag-name.ts';
 import {
 	CUSTOM_ELEMENT_CHILDREN_SYMBOL,
 	KEYED_VALUE_SYMBOL,
@@ -47,11 +49,6 @@ const voidElementNames = new Set([
 
 type ChildSlotMode = 'multiple' | 'single';
 
-declare const radiantCustomElementTagNameType: unique symbol;
-const radiantCustomElementTagName = Symbol.for(
-	'@ecopages/radiant.customElementTagName',
-) as typeof radiantCustomElementTagNameType;
-
 /**
  * Custom-element class constructor accepted as a JSX type.
  *
@@ -75,7 +72,7 @@ function isCustomizedBuiltIn(type: Function): boolean {
 
 function resolveCustomElementTagName(type: Function): string | undefined {
 	const tagName =
-		(type as unknown as { [radiantCustomElementTagName]?: string })[radiantCustomElementTagName] ||
+		(type as CustomElementConstructor & { [CUSTOM_ELEMENT_TAG_NAME]?: string })[CUSTOM_ELEMENT_TAG_NAME] ||
 		globalThis.customElements?.getName?.(type as CustomElementConstructor);
 	if (tagName) {
 		if (isCustomizedBuiltIn(type)) {
@@ -202,8 +199,8 @@ function appendElementChildren(
 	children: JsxRenderable | undefined,
 	childSlotMode: ChildSlotMode,
 ): void {
-	if (type === 'script') {
-		const rawTextContent = renderJsxRenderableToRawText(children);
+	if (RAW_TEXT_ELEMENT_NAMES.has(type)) {
+		const rawTextContent = renderJsxRenderableToRawText(type, children);
 
 		values.push(createMarkupNodeLike(rawTextContent));
 		parts.push({ type: 'child' });
@@ -214,13 +211,13 @@ function appendElementChildren(
 	appendChildren(strings, values, parts, children, childSlotMode);
 }
 
-function renderJsxRenderableToRawText(value: JsxRenderable | undefined): string {
+function renderJsxRenderableToRawText(tagName: string, value: JsxRenderable | undefined): string {
 	if (value === undefined || value === null || value === false || value === true) {
 		return '';
 	}
 
 	if (typeof value === 'string') {
-		return escapeRawTextElementText(value);
+		return escapeRawTextElementText(tagName, value);
 	}
 
 	if (typeof value === 'number' || typeof value === 'bigint') {
@@ -231,24 +228,24 @@ function renderJsxRenderableToRawText(value: JsxRenderable | undefined): string 
 		let rawText = '';
 
 		for (const child of value) {
-			rawText += renderJsxRenderableToRawText(child as JsxRenderable);
+			rawText += renderJsxRenderableToRawText(tagName, child as JsxRenderable);
 		}
 
 		return rawText;
 	}
 
-	return escapeRawTextElementText(String(value));
+	return escapeRawTextElementText(tagName, String(value));
 }
 
 /**
- * Escapes the only sequence that can terminate `<script>` text early.
+ * Escapes the only sequence that can terminate a raw-text element's content early.
  *
- * Inside a raw-text element the parser looks for `</script`, so that is the sole
- * sequence rewritten. Escaping every `<` would corrupt executable content —
- * `if (a < b)` is not a tag — which is why this is deliberately narrow.
+ * @remarks Inside `script` or `style` the parser looks for `</{tag}`, so that is the sole
+ * sequence rewritten. Escaping every `<` would corrupt CSS and executable content —
+ * `.a > .b` and `if (a < b)` are not tags.
  */
-function escapeRawTextElementText(value: string): string {
-	return value.replace(/<\/(?=script[\s/>])/gi, '<\\/');
+function escapeRawTextElementText(tagName: string, value: string): string {
+	return value.replace(new RegExp(`</(?=${tagName}[\\s/>])`, 'gi'), '<\\/');
 }
 
 function appendBinding(

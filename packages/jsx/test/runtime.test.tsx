@@ -1,4 +1,5 @@
 import { describe, expect, test, vi } from 'vitest';
+import { CUSTOM_ELEMENT_TAG_NAME } from '../src/jsx-runtime.ts';
 
 async function loadModule<T>(path: string): Promise<T> {
 	return import(/* @vite-ignore */ path) as Promise<T>;
@@ -27,7 +28,7 @@ describe('Radiant JSX runtime', () => {
 		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
 		const tagName = 'jsx-class-form-counter';
 		class CounterCard {}
-		Object.defineProperty(CounterCard, Symbol.for('@ecopages/radiant.customElementTagName'), { value: tagName });
+		Object.defineProperty(CounterCard, CUSTOM_ELEMENT_TAG_NAME, { value: tagName });
 		const props = {
 			class: 'counter',
 			'attr:data-state': 'ready',

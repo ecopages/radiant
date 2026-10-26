@@ -20,8 +20,8 @@ export type InternalRadiantSsrHost = {
 	getReactiveProperties: () => ReactiveProperty[];
 	getReactivePropDefinitions: () => ReactivePropDefinition[];
 	getPropertyValue: (name: string) => unknown;
-	getSlotProjectionScriptTag?: () => string | undefined;
+	getProjectedSlotPayload?: () => Record<string, string[]> | undefined;
 	resolveTrackedRenderOutput: () => { containsSlots: boolean; value: JsxRenderable };
-	flushPostSyncCallbacks: () => void;
+	flushPostSync: () => void;
 	prepareForSsr: () => void;
 };

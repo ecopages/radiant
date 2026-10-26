@@ -16,6 +16,7 @@ import type {
 	SlotJsxValue,
 } from './types/index.ts';
 
+export { CUSTOM_ELEMENT_TAG_NAME, getCustomElementTagName } from './custom-element-tag-name.ts';
 export {
 	isKeyedJsxValue,
 	isSerializableTemplateResultLike,

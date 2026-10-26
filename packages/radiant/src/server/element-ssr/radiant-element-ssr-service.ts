@@ -1,12 +1,13 @@
 import type { JsxRenderable } from '@ecopages/jsx';
 import { CUSTOM_ELEMENT_CHILDREN_SYMBOL, createMarkupNodeLike } from '@ecopages/jsx';
 import type { RenderToStringOptions } from '@ecopages/jsx/server';
-import { getCustomElementTagName } from '../../core/custom-element-metadata';
+import { getCustomElementTagName } from '@ecopages/jsx';
 import { SERVER_RENDERED_AUTHORED_STAMP, SERVER_RENDERED_HOST_ATTRIBUTE } from '../../core/server-rendered-host';
 import { ensureLegacyHostReady } from '../../decorators/legacy/host-readiness';
 import { assertValidHtmlTagName } from '../../utils/html-names';
 import { withSsrContextProviders } from '../context-ssr';
 import { alignMinimalDomHostTagName } from '../shim/minimal-dom/align-host-tag-name';
+import { createSlotProjectionScriptTag, hasNamedSlotNames } from '../../core/slot-projection-runtime';
 import { composeHostContent } from './host-script-composition';
 import { resolveHostAttributes, stringifyHostAttributes } from './host-attribute-serialization';
 import { toInternalRadiantSsrHost } from './radiant-element-ssr-extractor';
@@ -52,21 +53,45 @@ export class RadiantElementSsrService {
 	}
 
 	public renderHost(): JsxRenderable {
-		this.ensureReady();
-
 		return createMarkupNodeLike(this.renderHostToString({ mode: 'hydrate' }));
 	}
 
-	public renderHostToString(options: RenderToStringOptions = {}, attributes = this.getHostAttributes()): string {
+	/**
+	 * @param attributeOverrides Merged after attributes are read from the prepared host, so a nested children stamp can replace the default host stamp.
+	 * @remarks One pass: align the tag and legacy readiness, prepare, render the view, flush `@bindTo`, then read attributes, the slot-projection payload, and hydration bindings. A later serialization prepares again.
+	 */
+	public renderHostToString(
+		options: RenderToStringOptions = {},
+		attributeOverrides?: Record<string, string>,
+	): string {
 		this.ensureReady();
 		const tagName = this.getTagName();
 		const hydrate = isHydrateMode(options);
 
 		return withSsrContextProviders(this.host.getContextProviders(), () => {
-			const slotProjectionScript = { markup: '' };
-			const content = this.renderHostContent(options, hydrate, slotProjectionScript);
+			const hostContent = this.renderView(this.host, options);
+			this.host.flushPostSync();
+			const slotPayload = this.host.getProjectedSlotPayload?.();
+			const slotProjectionMarkup =
+				slotPayload !== undefined && this.host.resolveTrackedRenderOutput().containsSlots
+					? createSlotProjectionScriptTag(slotPayload)
+					: '';
+			const authoredHydrationMarkup = this.host.getAuthoredHydrationScriptMarkup?.() ?? '';
+			const hydrationScripts = hydrate
+				? this.host
+						.getHydrationBindings()
+						.map((binding) => binding.renderHydrationScriptTag())
+						.filter((markup): markup is string => typeof markup === 'string')
+						.join('')
+				: '';
+			const attributes = {
+				...this.getHostAttributes(),
+				...attributeOverrides,
+			};
 			const stamp =
-				takesChildrenValue(this.host.constructor) && hasNamedSlotContent(slotProjectionScript.markup)
+				takesChildrenValue(this.host.constructor) &&
+				slotProjectionMarkup !== '' &&
+				hasNamedSlotNames(slotPayload ?? {})
 					? SERVER_RENDERED_AUTHORED_STAMP
 					: '';
 			const hostAttributes = hydrate
@@ -75,43 +100,25 @@ export class RadiantElementSsrService {
 						[SERVER_RENDERED_HOST_ATTRIBUTE]: attributes[SERVER_RENDERED_HOST_ATTRIBUTE] ?? stamp,
 					}
 				: attributes;
+			const content = composeHostContent(
+				{
+					hostContent,
+					authoredHydrationMarkup,
+					slotProjectionScript: slotProjectionMarkup,
+					hydrationScripts,
+				},
+				hydrate,
+			);
 
 			return `<${tagName}${stringifyHostAttributes(hostAttributes)}>${content}</${tagName}>`;
 		});
 	}
 
+	/**
+	 * @remarks Does not run SSR preparation. Host serialization owns that pass and reads attributes afterwards.
+	 */
 	public getHostAttributes(): Record<string, string> {
-		this.ensureReady();
 		return resolveHostAttributes(this.host);
-	}
-
-	/** @param slotProjectionScript Receives the slot-projection payload markup, empty when the host has none. */
-	private renderHostContent(
-		options: RenderToStringOptions,
-		hydrate: boolean,
-		slotProjectionScript: { markup: string },
-	): string {
-		const hydrationScripts = hydrate
-			? this.host
-					.getHydrationBindings()
-					.map((binding) => binding.renderHydrationScriptTag())
-					.filter((markup): markup is string => typeof markup === 'string')
-					.join('')
-			: '';
-
-		const hostContent = this.renderView(this.host, options);
-		this.host.flushPostSyncCallbacks();
-		slotProjectionScript.markup = this.host.getSlotProjectionScriptTag?.() ?? '';
-
-		return composeHostContent(
-			{
-				hostContent,
-				authoredHydrationMarkup: this.host.getAuthoredHydrationScriptMarkup?.() ?? '',
-				slotProjectionScript: slotProjectionScript.markup,
-				hydrationScripts,
-			},
-			hydrate,
-		);
 	}
 
 	private getTagName(): string {
@@ -128,23 +135,4 @@ export class RadiantElementSsrService {
 /** @remarks Only a class that takes a Children Value from a view tells Authored Children apart in its stamp. */
 function takesChildrenValue(constructor: object): boolean {
 	return (constructor as { [CUSTOM_ELEMENT_CHILDREN_SYMBOL]?: unknown })[CUSTOM_ELEMENT_CHILDREN_SYMBOL] === true;
-}
-
-/**
- * Whether a slot-projection payload assigns children to a named slot.
- *
- * @remarks Only named-slot children need the Authored Children path on the client: a Children Value renders
- * default-slot children in the same place and keeps their bindings live. The payload is the JSON this service just
- * wrote, keyed by slot name, with `""` for the default slot.
- */
-function hasNamedSlotContent(scriptMarkup: string): boolean {
-	if (scriptMarkup === '') {
-		return false;
-	}
-
-	const payload = JSON.parse(
-		scriptMarkup.slice(scriptMarkup.indexOf('>') + 1, scriptMarkup.lastIndexOf('</')),
-	) as Record<string, unknown>;
-
-	return Object.keys(payload).some((slotName) => slotName !== '');
 }

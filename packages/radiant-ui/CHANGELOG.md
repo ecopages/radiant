@@ -1,5 +1,23 @@
 # @ecopages/radiant-ui
 
+## 0.2.5
+
+### Patch Changes
+
+- [#400](https://github.com/ecopages/radiant/pull/400) [`138e059`](https://github.com/ecopages/radiant/commit/138e0593b3e33026834663deb9661240deff9e44) Thanks [@andeeplus](https://github.com/andeeplus)! - Reject children on views whose element renders its own content. `RuiDateInput`, `RuiCalendar`, `RuiToaster`, `RuiToast`, `RuiToc` and `RuiMeter` accepted children and then dropped them, because the element's first render replaced them. Their props now type `children` as `never`, as do the helpers that forward to them: `RuiDateFieldInput`, `RuiDateFieldCalendar`, `RuiDateRangePickerStartInput`, `RuiDateRangePickerEndInput` and `RuiDateRangePickerCalendar`.
+
+    This is a type-only breaking change: no export is removed or renamed, and nothing changes at runtime. Code that passed children to one of these components now fails to type-check. Those children never rendered, so remove them, or render the content next to the component, for example a hint below `RuiDateInput`.
+
+- [#424](https://github.com/ecopages/radiant/pull/424) [`a806505`](https://github.com/ecopages/radiant/commit/a806505a57bd6f0b36b9eafbb16a61c985f487d0) Thanks [@andeeplus](https://github.com/andeeplus)! - **Breaking (types only): the `rui-meter`, `rui-toc`, `rui-toast`, `rui-toaster`, `rui-date-input` and `rui-calendar` tags reject children.** These tags are rendered by their views and never read children, so a body child is now a type error. To migrate, remove the children, or pass the content through the view's props.
+
+    Also changed: a hydrated element's properties are written once instead of twice, the separator view rejects children like the other views, and the docs and the published typings describe named regions as properties.
+
+- [#398](https://github.com/ecopages/radiant/pull/398) [`a28be28`](https://github.com/ecopages/radiant/commit/a28be2820c65923727be2a93eae6fcb75a06dce7) Thanks [@andeeplus](https://github.com/andeeplus)! - Fix `RuiTooltip` rendering its trigger and tooltip surface twice in the browser. `<rui-tooltip>` no longer overrides `render()`; the view stamps the only shell, so there is one `[data-ref="trigger"]` and one `[role="tooltip"]` that the trigger's `aria-describedby` points at. A bare `<rui-tooltip content="...">` without the `RuiTooltip` view no longer renders a trigger and surface by itself: author them with the `data-ref="trigger"` and `data-ref="tooltip"` light-DOM contract and set `content`, which replaces the surface text.
+- Updated dependencies [[`49fb7bc`](https://github.com/ecopages/radiant/commit/49fb7bc6047677635cb54bca72d1407bc4736024), [`cf99195`](https://github.com/ecopages/radiant/commit/cf99195398fcea80d4fe305f5478635d56fb15a7), [`6c0c391`](https://github.com/ecopages/radiant/commit/6c0c391f9304fda1156f3241c4d3fdbff68d6c50), [`a212331`](https://github.com/ecopages/radiant/commit/a2123318f90aa39d759de50047ba816bb3653532), [`eb9bbde`](https://github.com/ecopages/radiant/commit/eb9bbde483950e544fdc490c4cf0a660a9cd5a28), [`9ee89f9`](https://github.com/ecopages/radiant/commit/9ee89f964fdffc0f7ae3e9a727a02cff3a306115), [`4f73e51`](https://github.com/ecopages/radiant/commit/4f73e51003ad801448614461528930e2e2b5036d), [`7a8d32b`](https://github.com/ecopages/radiant/commit/7a8d32b97e9fb883be3b05c13814d2a45b81d91f), [`78b36b6`](https://github.com/ecopages/radiant/commit/78b36b6ec11f2213136db1d911546139fa0860b3), [`f1bbbf6`](https://github.com/ecopages/radiant/commit/f1bbbf6b8edd833e2b934779857338c5013c83d1), [`a806505`](https://github.com/ecopages/radiant/commit/a806505a57bd6f0b36b9eafbb16a61c985f487d0)]:
+    - @ecopages/radiant@0.5.1
+    - @ecopages/jsx@0.5.1
+    - @ecopages/signals@0.5.1
+
 ## 0.2.4
 
 ### Patch Changes

@@ -1,5 +1,3 @@
-import { SSR_PREPARATION_RUNNING } from '../../core/ssr-preparation';
-
 type RequestUpdateCapable = {
 	requestUpdate(): void;
 };
@@ -14,7 +12,7 @@ export function createContextSelectionDelivery<Value>(
 	const target = host as Record<PropertyKey, unknown>;
 
 	return (value: Value) => {
-		if (target[SSR_PREPARATION_RUNNING] !== true && hasDeliveredValue && Object.is(previousValue, value)) {
+		if (hasDeliveredValue && Object.is(previousValue, value)) {
 			return;
 		}
 

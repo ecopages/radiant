@@ -1,9 +1,22 @@
 import { describe, expect, test } from 'vitest';
 import { jsx } from '../src/jsx-runtime.ts';
 import { createLazyNodeAsyncLocalStorage } from '../src/ssr/lazy-async-local-storage.ts';
-import { getActiveSsrScopeValue, renderToString, withActiveSsrScopeValue } from '../src/server.ts';
+import {
+	createServerHydrationBindingState,
+	getActiveSsrScopeValue,
+	renderToString,
+	withActiveSsrScopeValue,
+	withServerHydrationBindingState,
+} from '../src/server.ts';
 
 const SCOPE_KEY = Symbol.for('@ecopages/jsx.test.ssr-render-scope');
+
+function clickView() {
+	return jsx('button', {
+		'on:click': () => undefined,
+		children: 'go',
+	});
+}
 
 describe('SSR render scope (async-local)', () => {
 	test('createLazyNodeAsyncLocalStorage keeps one module-owned ALS per factory', () => {
@@ -60,31 +73,23 @@ describe('SSR render scope (async-local)', () => {
 		expect(getActiveSsrScopeValue(SCOPE_KEY)).toBeUndefined();
 	});
 
-	test('shares hydrate binding indexes across sibling renderToString calls in one scope', () => {
-		const sharedScopeKey = Symbol.for('@ecopages/jsx.test.shared-ssr-scope');
-		const sharedScopeState = {};
+	test('Independent hydrate roots each start at marker index 0 inside a render scope', () => {
+		const [first, second] = withActiveSsrScopeValue(SCOPE_KEY, { unrelated: true }, () => [
+			renderToString(clickView(), { mode: 'hydrate' }),
+			renderToString(clickView(), { mode: 'hydrate' }),
+		]);
 
-		const html = withActiveSsrScopeValue(sharedScopeKey, sharedScopeState, () => {
-			const pageHtml = renderToString(
-				jsx('section', {
-					class: 'page',
-					children: 'Page',
-				}),
-				{ mode: 'hydrate' },
-			);
-			const layoutHtml = renderToString(
-				jsx('main', {
-					class: 'layout',
-					children: 'Layout',
-				}),
-				{ mode: 'hydrate' },
-			);
+		expect(first).toBe('<button data-radiant-jsx-bind-0="event:click">go</button>');
+		expect(second).toBe('<button data-radiant-jsx-bind-0="event:click">go</button>');
+	});
 
-			return `${pageHtml}${layoutHtml}`;
-		});
+	test('two hydrate roots inside withServerHydrationBindingState share one namespace', () => {
+		const [first, second] = withServerHydrationBindingState(createServerHydrationBindingState(), () => [
+			renderToString(clickView(), { mode: 'hydrate' }),
+			renderToString(clickView(), { mode: 'hydrate' }),
+		]);
 
-		expect(html).toBe(
-			'<section data-radiant-jsx-bind-0="attr:class" class="page">Page</section><main data-radiant-jsx-bind-1="attr:class" class="layout">Layout</main>',
-		);
+		expect(first).toBe('<button data-radiant-jsx-bind-0="event:click">go</button>');
+		expect(second).toBe('<button data-radiant-jsx-bind-1="event:click">go</button>');
 	});
 });

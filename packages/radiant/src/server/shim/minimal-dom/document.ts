@@ -18,6 +18,11 @@ export class MinimalDocument extends MinimalNode {
 		super(MinimalNode.DOCUMENT_NODE);
 	}
 
+	/**
+	 * @remarks A registered custom-element tag still returns a generic minimal element. The class is not
+	 * constructed and its view is not serialized; constructing here would also run when the parser rebuilds
+	 * host HTML. Use JSX for nested hosts that must server-render.
+	 */
 	createElement(tagName: string): HTMLElement {
 		return (tagName.toLowerCase() === 'script'
 			? new MinimalHtmlScriptElement(this as unknown as Document)
