@@ -197,16 +197,16 @@ function hasFaithfulSource(node: MinimalTextNode): boolean {
 }
 
 const SVG_HTML_INTEGRATION_POINTS = new Set(['foreignobject', 'desc', 'title']);
-const MATHML_TEXT_INTEGRATION_POINTS = new Set(['mi', 'mo', 'mn', 'ms', 'mtext']);
 
 /**
  * Namespace the browser parses the children of `node` in.
  *
  * @remarks The minimal DOM has no namespaces, so this follows the tree construction rules from the root: `svg`
- * and `math` enter foreign content, their descendants inherit it, and an HTML integration point (SVG
- * `foreignObject`, `desc`, `title`; MathML `mi`, `mo`, `mn`, `ms`, `mtext`) returns to HTML. Where the rules need
- * more than names (`annotation-xml` with an HTML `encoding`, HTML tags that break out of foreign content) the
- * answer stays foreign, where escaping text is always safe.
+ * and `math` enter foreign content and their descendants inherit it. Only an SVG HTML integration point
+ * (`foreignObject`, `desc`, `title` under `svg`) returns to HTML. Everything under `math` stays foreign, as in
+ * the jsx string serializer: MathML text integration points such as `mi` still create `mglyph` and `malignmark`
+ * as MathML, so treating their children as HTML would let raw text through. The cost is that text in
+ * `math > mi > style` is entity-escaped, which never creates markup but is not decoded as CSS.
  */
 function childContentNamespace(node: Node | null): 'html' | 'svg' | 'math' {
 	if (node?.nodeType !== MinimalNode.ELEMENT_NODE) return 'html';
@@ -216,8 +216,7 @@ function childContentNamespace(node: Node | null): 'html' | 'svg' | 'math' {
 
 	if (namespace === 'html') return localName === 'svg' || localName === 'math' ? localName : 'html';
 
-	const integrationPoints = namespace === 'svg' ? SVG_HTML_INTEGRATION_POINTS : MATHML_TEXT_INTEGRATION_POINTS;
-	return integrationPoints.has(localName) ? 'html' : namespace;
+	return namespace === 'svg' && SVG_HTML_INTEGRATION_POINTS.has(localName) ? 'html' : namespace;
 }
 
 /**
@@ -285,7 +284,19 @@ function serializeChildNodesHtml(parent: Node): string {
 	return escapeRawText(text, parent.localName);
 }
 
+/**
+ * Parses HTML into child nodes of `context`, or of its parent for `insertAdjacentHTML` outside it.
+ *
+ * @remarks A raw-text tag name inside `svg` or `math` is an ordinary element there, so its content is parsed
+ * as markup and character references decode, as in browsers. Its end is still found as for HTML raw text.
+ */
+function parseChildHtml(html: string, context: Node, followsStartTag = false): Node[] {
+	const { localName } = context as Element;
+	const contextTagName = rawTextElementNames.has(localName) && !isHtmlRawTextElement(context) ? '' : localName;
+	return parseHtmlToNodes(html, context.ownerDocument, contextTagName, followsStartTag);
+}
+
 registerMinimalDomHtmlParsers({
-	parseHtmlToNodes,
+	parseChildHtml,
 	serializeChildNodesHtml,
 });

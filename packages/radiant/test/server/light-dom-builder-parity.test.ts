@@ -88,7 +88,8 @@ const NODE_BUILDERS: ReadonlyArray<readonly [number, (random: Random, depth: num
 	[2, (random) => jsx('style', { children: pick(random, STYLE_TEXT_PIECES) })],
 	[3, () => jsx('svg', { viewBox: '0 0 1 1', children: jsx('path', { d: 'M0 0' }) })],
 	[4, (random) => jsx(pick(random, ['svg', 'math']), { children: rawTextElement(random) })],
-	[2, (random) => jsx('svg', { children: jsx('foreignObject', { children: rawTextElement(random) }) })],
+	[1, (random) => jsx('svg', { children: jsx('foreignObject', { children: rawTextElement(random) }) })],
+	[1, (random) => jsx('math', { children: jsx('mi', { children: rawTextElement(random) }) })],
 	[4, (random, depth) => jsx('ul', { children: [jsx('li', { children: children(random, depth + 1) })] })],
 	[34, element],
 ];

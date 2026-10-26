@@ -56,16 +56,42 @@ describe('light-DOM SSR text in foreign content', () => {
 		expect(parse(html).querySelector('foreignObject > style')?.textContent).toBe(css);
 	});
 
-	test('style in math foreignObject is still foreign content', () => {
-		const text = '<img id="pwn" src="x">';
-		const parsed = parse(
-			serializeLightDom(
-				jsx('math', { children: jsx('foreignObject', { children: jsx('style', { children: text }) }) }),
-			),
+	test.each([
+		['math', 'mi', 'mglyph', 'style'],
+		['math', 'mi', 'malignmark', 'xmp'],
+		['math', 'mtext', 'mglyph', 'noframes'],
+		['math', 'foreignObject', 'style'],
+	])('%s > %s > %s text cannot create elements', (...path) => {
+		const tag = path[path.length - 1] as string;
+		const text = `<img id="pwn" src="x"></${tag}><b>`;
+		const tree = path.reduceRight<Parameters<typeof renderServerLightDom>[0]>(
+			(children, name) => jsx(name, { children }),
+			text,
+		);
+		const parsed = parse(serializeLightDom(tree));
+
+		expect(parsed.querySelector('img, b')).toBeNull();
+		expect(parsed.querySelector(path.join(' > '))?.textContent).toBe(text);
+	});
+
+	test('style text under math > mi is escaped like the rest of math', () => {
+		const html = serializeLightDom(
+			jsx('math', { children: jsx('mi', { children: jsx('style', { children: '<img id="pwn" src="x">' }) }) }),
 		);
 
-		expect(parsed.querySelector('img')).toBeNull();
-		expect(parsed.querySelector('math style')?.textContent).toBe(text);
+		expect(html).toBe('<math><mi><style>&lt;img id="pwn" src="x"&gt;</style></mi></math>');
+		expect(parse(html).querySelector('img')).toBeNull();
+	});
+
+	test('parsed style text in svg keeps its meaning when the element changes', () => {
+		const host = minimalDocument.createElement('div');
+		host.innerHTML = '<svg><style>a&amp;b</style></svg>';
+		const style = host.querySelector('style') as HTMLStyleElement;
+		style.append('c');
+		const parsed = parse(host.innerHTML);
+
+		expect(style.textContent).toBe('a&bc');
+		expect(parsed.querySelector('svg > style')?.textContent).toBe('a&bc');
 	});
 });
 
