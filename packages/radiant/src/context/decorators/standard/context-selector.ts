@@ -24,9 +24,7 @@ export function contextSelector<T extends Context<unknown, unknown>, Selected = 
 				requestUpdate,
 			);
 
-			if (bootstrapSsrContextSelection<T, Selected>(this, context, applySelectedContext, select)) {
-				return;
-			}
+			bootstrapSsrContextSelection<T, Selected>(this, context, applySelectedContext, select);
 
 			const connectSelection = () => {
 				return connectContextSelection<T, Selected>(this, context, applySelectedContext, {

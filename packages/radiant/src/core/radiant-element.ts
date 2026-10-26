@@ -621,16 +621,18 @@ export class RadiantElement<Bindings extends object = {}>
 	 *
 	 * @remarks
 	 * Hosts never connect on the server, so members are observed only for the
-	 * duration of this call: writes made since construction (JSX props) and the
-	 * writes callbacks make in turn run the batched `@onUpdated` callbacks here,
-	 * before and after the SSR preparation callbacks. Then `@bindTo` flushes, so
-	 * the first server render sees finalized fields, props, and authored content.
-	 * `updated()` never runs on the server.
+	 * duration of this call: context consumers resolve first, then writes made
+	 * since construction (JSX props) and the writes callbacks make in turn run
+	 * the batched `@onUpdated` callbacks here, before and after the other SSR
+	 * preparation callbacks. Then `@bindTo` flushes, so the first server render
+	 * sees finalized fields, props, and authored content. `updated()` never runs
+	 * on the server.
 	 */
 	public prepareForSsr(): void {
 		const stopObserving = this.reactiveHost.observeMembers();
 
 		try {
+			runSsrPreparationCallbacks(this, true);
 			this.updateCycle.runCallbacks();
 			runSsrPreparationCallbacks(this);
 			this.updateCycle.runCallbacks();

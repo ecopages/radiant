@@ -1,7 +1,8 @@
 type SsrPreparationCallback = () => void;
 
 const SSR_PREPARATION_CALLBACKS = Symbol.for('@ecopages/radiant.ssr-preparation-callbacks');
-export const SSR_PREPARATION_RUNNING = Symbol.for('@ecopages/radiant.ssr-preparation-running');
+
+type SsrCallbackLists = [SsrPreparationCallback[], SsrPreparationCallback[]];
 
 /**
  * Registers instance-local SSR preparation work that should run immediately
@@ -9,43 +10,53 @@ export const SSR_PREPARATION_RUNNING = Symbol.for('@ecopages/radiant.ssr-prepara
  *
  * Decorators use this to defer SSR-only setup until after class fields,
  * reactive props, and authored host content have all been applied.
+ *
+ * @remarks Pass `beforeOnUpdated` for context bootstrap that must run before
+ * `prepareForSsr` flushes `@onUpdated` callbacks from construction.
  */
-export function registerSsrPreparationCallback(host: object, callback: SsrPreparationCallback): void {
-	const target = host as Record<PropertyKey, unknown>;
-	const existingCallbacks = target[SSR_PREPARATION_CALLBACKS];
-
-	if (Array.isArray(existingCallbacks)) {
-		existingCallbacks.push(callback);
-		return;
-	}
-
-	Object.defineProperty(host, SSR_PREPARATION_CALLBACKS, {
-		value: [callback],
-		configurable: true,
-	});
+export function registerSsrPreparationCallback(
+	host: object,
+	callback: SsrPreparationCallback,
+	beforeOnUpdated = false,
+): void {
+	const lists = getCallbackLists(host) ?? createCallbackLists(host);
+	lists[beforeOnUpdated ? 0 : 1].push(callback);
 }
 
 /**
- * Runs all registered SSR preparation callbacks for the provided host.
+ * Runs registered SSR preparation callbacks for the provided host.
  *
  * The callbacks are intentionally retained so repeated SSR serializations stay
  * deterministic after later host mutations.
+ *
+ * @remarks `beforeOnUpdated` runs context bootstrap. The default list runs after
+ * that first `@onUpdated` flush.
  */
-export function runSsrPreparationCallbacks(host: object): void {
-	const target = host as Record<PropertyKey, unknown>;
-	const callbacks = target[SSR_PREPARATION_CALLBACKS];
+export function runSsrPreparationCallbacks(host: object, beforeOnUpdated = false): void {
+	const lists = getCallbackLists(host);
 
-	if (!Array.isArray(callbacks)) {
+	if (!lists) {
 		return;
 	}
 
-	target[SSR_PREPARATION_RUNNING] = true;
-
-	try {
-		for (const callback of callbacks as SsrPreparationCallback[]) {
-			callback();
-		}
-	} finally {
-		delete target[SSR_PREPARATION_RUNNING];
+	for (const callback of lists[beforeOnUpdated ? 0 : 1]) {
+		callback();
 	}
+}
+
+function getCallbackLists(host: object): SsrCallbackLists | undefined {
+	const lists = (host as Record<PropertyKey, unknown>)[SSR_PREPARATION_CALLBACKS];
+
+	if (Array.isArray(lists) && Array.isArray(lists[0])) {
+		return lists as SsrCallbackLists;
+	}
+}
+
+function createCallbackLists(host: object): SsrCallbackLists {
+	const lists: SsrCallbackLists = [[], []];
+	Object.defineProperty(host, SSR_PREPARATION_CALLBACKS, {
+		value: lists,
+		configurable: true,
+	});
+	return lists;
 }
