@@ -45,7 +45,8 @@ type ContextSelectorDecorator<Selected> = {
  *
  * Applied to anything but a field, such as a method, it throws a `TypeError` that names
  * `@onContextUpdate`, the decorator for a method. A legacy decorator call is a method or accessor when it
- * receives a property descriptor.
+ * receives a property descriptor without an `initializer`. Babel's legacy plugin hands a field one with an
+ * `initializer`; TypeScript hands a field none.
  */
 export function contextSelector<T extends Context<unknown, unknown>, Selected = ContextType<T>>(
 	options: ContextSelectorOptions<T, Selected>,
@@ -55,7 +56,7 @@ export function contextSelector<T extends Context<unknown, unknown>, Selected = 
 		nameOrContext: string | ClassFieldDecoratorContext<ContextHostLike, unknown>,
 		descriptor?: PropertyDescriptor,
 	) => {
-		if (descriptor !== undefined || (typeof nameOrContext === 'object' && nameOrContext.kind !== 'field')) {
+		if ((descriptor !== undefined && !('initializer' in descriptor)) || (typeof nameOrContext === 'object' && nameOrContext.kind !== 'field')) {
 			throw new TypeError(
 				'@contextSelector decorates a field only. Use @onContextUpdate to run a method when the context changes.',
 			);
