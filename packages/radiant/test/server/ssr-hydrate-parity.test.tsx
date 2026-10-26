@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import '../../src/server/install-ssr-runtime';
+import { jsx } from '@ecopages/jsx';
+import { renderToString } from '@ecopages/jsx/server';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { registerSsrPreparationCallback } from '../../src/core/ssr-preparation';
 import { customElement } from '../../src/decorators/custom-element';
@@ -38,5 +40,17 @@ describe('SSR hydrate parity (minimal-dom)', () => {
 		expect(html).toContain('data-sync="ready"');
 		expect(html).toContain('parity');
 		expect(html).not.toContain('data-layout');
+	});
+
+	test('resolves registered third-party JSX classes through the SSR registry name', () => {
+		class ThirdPartyCard extends HTMLElement {}
+		const tagName = 'radiant-jsx-server-third-party-card';
+		customElements.define(tagName, ThirdPartyCard);
+		const props = { id: 'server', children: 'Third party' };
+
+		expect(renderToString(jsx(ThirdPartyCard, props))).toBe(renderToString(jsx(tagName, props)));
+		expect(renderToString(jsx(ThirdPartyCard, props))).toBe(
+			'<radiant-jsx-server-third-party-card id="server">Third party</radiant-jsx-server-third-party-card>',
+		);
 	});
 });

@@ -48,6 +48,51 @@ const voidElementNames = new Set([
 
 type ChildSlotMode = 'multiple' | 'single';
 
+declare const radiantCustomElementTagNameType: unique symbol;
+const radiantCustomElementTagName = Symbol.for(
+	'@ecopages/radiant.customElementTagName',
+) as typeof radiantCustomElementTagNameType;
+
+/**
+ * Custom-element class constructor accepted as a JSX type.
+ *
+ * @remarks `any[]` lets classes with different constructor signatures share
+ * the public JSX element type.
+ */
+type JsxClassElement = abstract new (...args: any[]) => Element;
+
+function isCustomizedBuiltIn(type: Function): boolean {
+	let prototype: object | null = Object.getPrototypeOf((type as Function & { prototype: object }).prototype);
+	while (prototype) {
+		const constructor = (prototype as { constructor: Function }).constructor;
+		const name = constructor.name;
+		if (name.startsWith('HTML') && (globalThis as unknown as Record<string, unknown>)[name] === constructor) {
+			return name !== 'HTMLElement';
+		}
+		prototype = Object.getPrototypeOf(prototype);
+	}
+	return false;
+}
+
+function resolveCustomElementTagName(type: Function): string | undefined {
+	const tagName =
+		(type as unknown as { [radiantCustomElementTagName]?: string })[radiantCustomElementTagName] ||
+		globalThis.customElements?.getName?.(type as CustomElementConstructor);
+	if (tagName) {
+		if (isCustomizedBuiltIn(type)) {
+			throw new TypeError('Customized built-ins are unsupported.');
+		}
+
+		return tagName;
+	}
+
+	if (Function.prototype.toString.call(type).startsWith('class')) {
+		throw new TypeError(`Class ${type.name}: use @customElement(...) or customElements.define() before rendering.`);
+	}
+
+	return undefined;
+}
+
 /**
  * Core element factory called by both {@link jsx} and {@link jsxs}.
  *
@@ -61,7 +106,7 @@ type ChildSlotMode = 'multiple' | 'single';
  * parts, unless `childrenAsDom` is set. The class is looked up when the element is created.
  */
 export function createJsxElement<Props extends object>(
-	type: string | JsxFragment | JsxComponent<Props>,
+	type: string | JsxFragment | JsxComponent<Props> | JsxClassElement,
 	props: Props,
 	childSlotMode: ChildSlotMode,
 	childrenAsDom = false,
@@ -69,7 +114,12 @@ export function createJsxElement<Props extends object>(
 	const keyedValue = (props as { key?: unknown }).key;
 
 	if (typeof type === 'function') {
-		return wrapKeyedValue(type(props), keyedValue);
+		const tagName = resolveCustomElementTagName(type);
+		if (!tagName) {
+			return wrapKeyedValue((type as JsxComponent<Props>)(props), keyedValue);
+		}
+
+		return createJsxElement(tagName, props, childSlotMode, childrenAsDom);
 	}
 
 	if (type === fragmentSymbol) {

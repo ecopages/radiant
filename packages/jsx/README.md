@@ -609,30 +609,36 @@ const view = (
 
 ### Custom Elements
 
-When `jsxImportSource` points at `@ecopages/jsx`, custom elements should augment the runtime module instead of the global `JSX` namespace.
+When the custom element class is available, annotate its public JSX props with `JSX_PROPS` and use the class as the JSX element type.
 
 ```tsx
-import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+import type { JSX_PROPS } from '@ecopages/jsx';
 
 type UserCardProps = {
 	name: string;
 	isAdmin: boolean;
 };
 
-declare module '@ecopages/jsx/jsx-runtime' {
-	interface JsxCustomIntrinsicElements {
-		'user-card': JsxCustomElementAttributes<HTMLElement, UserCardProps>;
-	}
+class UserCard extends HTMLElement {
+	declare readonly [JSX_PROPS]?: UserCardProps;
 }
+
+customElements.define('user-card', UserCard);
+
+<UserCard name="Ada" isAdmin={false} />;
 ```
 
 Custom elements default to property bindings for unprefixed names, with a small attribute-default set for obvious HTML semantics: `id`, `class`, `style`, `title`, `role`, `slot`, `part`, `tabindex`, `hidden`, `lang`, `dir`, plus expanded `data-*` and `aria-*`. Use `attr:*` when a non-default name must serialize to markup, and `prop:*` when you want to override the default explicitly. Unregistered tags still type-check; a registered `JsxCustomIntrinsicElements` entry keeps its public `Props` and is not stripped down to generic HTML attributes.
 
-Typing follows the same ergonomic split. Put public unprefixed JSX props on `Props`, and use the element instance type for explicit `prop:*` bindings. `Props` keeps its own required and optional fields, so required public JSX props stay required. That means `items={rows}` is typed from `Props`, while `prop:api={gridApi}` is typed from the custom element class property.
+`JSX_PROPS` declares the public unprefixed props on the element class. `prop:*` bindings are typed from the class instance, and `attr:*` bindings use the DOM attribute value type. Required fields in the declared props remain required.
+
+At runtime, JSX resolves the class to its tag from Radiant's `@customElement(...)` metadata or the registered browser `customElements` registry. The class must be decorated or registered before rendering; an unregistered class throws a `TypeError`.
 
 ```tsx
-<user-grid id="people" class="panel" items={rows} selection={currentRow} attr:status="ready" prop:api={gridApi} />
+<UserGrid id="people" class="panel" items={rows} selection={currentRow} attr:status="ready" prop:api={gridApi} />
 ```
+
+If JSX only uses a tag name and does not import the class, augment the runtime module instead:
 
 ```tsx
 import type { JsxCustomElementAttributes } from '@ecopages/jsx';
@@ -646,13 +652,13 @@ type UserGridProps = {
 	selection?: UserGridRow;
 };
 
-class UserGridElement extends HTMLElement {
-	api?: UserGridApi;
-}
-
 type UserGridApi = {
 	focusRow(id: string): void;
 };
+
+class UserGridElement extends HTMLElement {
+	api?: UserGridApi;
+}
 
 declare module '@ecopages/jsx/jsx-runtime' {
 	interface JsxCustomIntrinsicElements {

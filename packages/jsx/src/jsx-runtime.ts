@@ -8,6 +8,7 @@ import type {
 	JsxIntrinsicAttributes,
 	JsxKey,
 	JsxRenderable,
+	JsxPublicProps,
 	SignalLike,
 	SubscribableJsxValue,
 	SubscribableJsxValueWithAccess,
@@ -38,12 +39,14 @@ export type {
 	JsxComponent,
 	JsxCustomElementAttributes,
 	JsxCustomIntrinsicElements,
+	JsxPublicProps,
 	JsxElementProps,
 	JsxEventHandler,
 	JsxEventListener,
 	JsxEventListenerObject,
 	JsxIntrinsicAttributes,
 	JsxKey,
+	JSX_PROPS,
 	JsxNodeLike,
 	JsxNodeType,
 	JsxBindingObjectValue,
@@ -62,6 +65,15 @@ export type {
 	SubscribableJsxValueWithAccess,
 	TemplateResultLike,
 } from './types/index.ts';
+/**
+ * Custom-element classes accepted directly as JSX types.
+ *
+ * @remarks `any[]` keeps constructors with different argument lists assignable
+ * to the JSX type, while the instance remains constrained to a DOM Element.
+ */
+type JsxClassElement = abstract new (...args: any[]) => Element;
+
+type JsxElementType<Props extends object> = string | JsxFragment | JsxComponent<Props> | JsxClassElement;
 
 type JsxDomIntrinsicAttributes<ElementType extends Element> = JsxIntrinsicAttributes<ElementType> & {
 	[key: string]: unknown;
@@ -101,11 +113,7 @@ function propsWithKey<Props extends object>(props: Props, key?: JsxKey): Props {
  * Creates a JSX element where the `children` slot is treated as a single
  * logical value.
  */
-export function jsx<Props extends object>(
-	type: string | JsxFragment | JsxComponent<Props>,
-	props: Props,
-	key?: JsxKey,
-): JsxRenderable {
+export function jsx<Props extends object>(type: JsxElementType<Props>, props: Props, key?: JsxKey): JsxRenderable {
 	return createJsxElement(type, propsWithKey(props, key), 'single');
 }
 
@@ -113,11 +121,7 @@ export function jsx<Props extends object>(
  * Creates a JSX element where sibling children are emitted as positional child
  * slots.
  */
-export function jsxs<Props extends object>(
-	type: string | JsxFragment | JsxComponent<Props>,
-	props: Props,
-	key?: JsxKey,
-): JsxRenderable {
+export function jsxs<Props extends object>(type: JsxElementType<Props>, props: Props, key?: JsxKey): JsxRenderable {
 	return createJsxElement(type, propsWithKey(props, key), 'multiple');
 }
 
@@ -130,7 +134,7 @@ export function jsxs<Props extends object>(
  * build the same template shape.
  */
 export function jsxDEV<Props extends object>(
-	type: string | JsxFragment | JsxComponent<Props>,
+	type: JsxElementType<Props>,
 	props: Props,
 	key?: JsxKey,
 	isStaticChildren?: boolean,
@@ -143,7 +147,21 @@ export function jsxDEV<Props extends object>(
  */
 export namespace JSX {
 	export type Element = JsxRenderable;
-	export type ElementType = string | JsxFragment | JsxComponent<any>;
+	export type ElementType = string | JsxFragment | JsxComponent<any> | JsxClassElement;
+
+	/**
+	 * Props accepted for an automatic-runtime JSX element.
+	 *
+	 * @remarks Constructors use `any[]` for their arguments so custom-element
+	 * classes with different constructor signatures remain assignable.
+	 */
+	export type LibraryManagedAttributes<Component, Props> = Component extends abstract new (
+		...args: any[]
+	) => infer Instance
+		? Instance extends globalThis.Element
+			? import('./types/index.ts').JsxCustomElementAttributes<Instance, JsxPublicProps<Instance>>
+			: Props
+		: Props;
 
 	export interface ElementChildrenAttribute {
 		children: {};

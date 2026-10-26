@@ -5,6 +5,8 @@ async function loadModule<T>(path: string): Promise<T> {
 }
 
 const loadJsxRuntime = async () => loadModule<typeof import('../src/jsx-runtime.ts')>('../src/jsx-runtime.ts');
+const loadServerRender = async () =>
+	loadModule<typeof import('../src/ssr/server-render.ts')>('../src/ssr/server-render.ts');
 const loadJsxDevRuntime = async () =>
 	loadModule<typeof import('../src/jsx-dev-runtime.ts')>('../src/jsx-dev-runtime.ts');
 const loadDevWarnings = async () =>
@@ -21,6 +23,40 @@ function expectTemplateResultLike(value: unknown): asserts value is import('../s
 }
 
 describe('Radiant JSX runtime', () => {
+	test('custom-element classes lower to the same template and SSR as their tag', async () => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+		const tagName = 'jsx-class-form-counter';
+		class CounterCard {}
+		Object.defineProperty(CounterCard, Symbol.for('@ecopages/radiant.customElementTagName'), { value: tagName });
+		const props = {
+			class: 'counter',
+			'attr:data-state': 'ready',
+			children: jsx('span', { children: 'Count: 2' }),
+		};
+		const classTemplate = jsx(CounterCard as unknown as import('../src/jsx-runtime.ts').JSX.ElementType, props);
+		const tagTemplate = jsx(tagName, props);
+
+		expect(classTemplate).toEqual(tagTemplate);
+		expect(renderToString(classTemplate)).toBe(renderToString(tagTemplate));
+		expect(renderToString(classTemplate, { mode: 'hydrate' })).toBe(
+			renderToString(tagTemplate, { mode: 'hydrate' }),
+		);
+	});
+
+	test('unregistered JSX classes name the class and registration fix', async () => {
+		const [{ jsx }] = await Promise.all([loadJsxRuntime()]);
+
+		class UnregisteredCard {}
+
+		expect(() =>
+			jsx(UnregisteredCard as unknown as import('../src/jsx-runtime.ts').JSX.ElementType, {}),
+		).toThrowError(
+			new TypeError(
+				'Class UnregisteredCard: use @customElement(...) or customElements.define() before rendering.',
+			),
+		);
+	});
+
 	test('SSR treats nullish child content as empty', async () => {
 		const [{ jsx }, { renderToString }] = await Promise.all([
 			loadJsxRuntime(),

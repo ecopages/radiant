@@ -5,6 +5,7 @@ import {
 	HYDRATE_ADJACENT_FIELDS_HTML,
 	HYDRATE_BUTTON_ALPHA_HTML,
 	HYDRATE_CARD_ALPHA_HTML,
+	HYDRATE_CLASS_FORM_ELEMENT_HTML,
 	HYDRATE_FRAGMENT_COUNTER_HTML,
 	HYDRATE_GRADIENT_ICON_HTML,
 	HYDRATE_ITERABLE_ROOT_HTML,
@@ -49,6 +50,18 @@ describe('hydrate HTML fixtures', () => {
 		});
 
 		expect(renderToString(tree, { mode: 'hydrate' })).toBe(HYDRATE_NESTED_SVG_ICON_HTML);
+	});
+
+	test('HYDRATE_CLASS_FORM_ELEMENT_HTML matches the custom-element tag form', () => {
+		const tree = jsx('main', {
+			title: 'server',
+			children: jsx('radiant-jsx-class-form-element', {
+				id: 'card',
+				children: jsx('span', { children: 'inside' }),
+			}),
+		});
+
+		expect(renderToString(tree, { mode: 'hydrate' })).toBe(HYDRATE_CLASS_FORM_ELEMENT_HTML);
 	});
 
 	test('HYDRATE_GRADIENT_ICON_HTML matches renderToString', () => {
