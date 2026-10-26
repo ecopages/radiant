@@ -4,16 +4,64 @@ on:
     push:
         branches:
             - main
+            - next
             # Prerelease line only. Uncomment and set the branch when you `changeset pre enter`
-            # (alpha / beta / rc). Stable publishes stay on main; a PR from next into main ships.
+            # (alpha / beta / rc). It runs the publish job, like main.
             # - release/v1.0.0
     workflow_dispatch:
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
+    # Opens or refreshes the Version Packages PR into next (branch changeset-release/next).
+    # No publish script, so nothing is published from next.
+    version:
+        name: Version
+        if: github.ref_name == 'next'
+        permissions:
+            actions: write
+            contents: write
+            pull-requests: write
+
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout Repo
+              uses: actions/checkout@v5
+              with:
+                  fetch-depth: 0
+
+            - name: Setup pnpm
+              uses: pnpm/action-setup@v6
+
+            - name: Setup Node
+              uses: actions/setup-node@v5
+              with:
+                  node-version: '24'
+                  cache: 'pnpm'
+
+            - name: Install Dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Create or Update the Version Packages PR
+              id: changesets
+              uses: changesets/action@v2
+              with:
+                  github-token: ${{ github.token }}
+                  version-script: pnpm run version-packages
+
+            # A PR opened with GITHUB_TOKEN gets its pull_request CI run held for approval,
+            # so start CI on the PR branch with workflow_dispatch to report the required checks.
+            - name: Run CI on the Version Packages PR
+              if: steps.changesets.outputs.pr-number != ''
+              env:
+                  GH_TOKEN: ${{ github.token }}
+              run: gh workflow run ci.yml --repo "$GITHUB_REPOSITORY" --ref "changeset-release/$GITHUB_REF_NAME"
+
+    # After a release PR from next merges, main has no pending changesets, so this publishes the
+    # versions not yet on npm. A hotfix changeset on main makes it open a Version Packages PR into main instead.
     release:
         name: Release
+        if: github.ref_name == 'main' || startsWith(github.ref_name, 'release/')
         permissions:
             contents: write
             id-token: write
