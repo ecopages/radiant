@@ -1,5 +1,18 @@
 # @ecopages/radiant-themes
 
+## 0.3.0
+
+### Patch Changes
+
+- [#445](https://github.com/ecopages/radiant/pull/445) [`8f08f63`](https://github.com/ecopages/radiant/commit/8f08f63de84be88224d435d4d5752033c60213d1) Thanks [@andeeplus](https://github.com/andeeplus)! - Keep the open navigation menu trigger filled under the pointer in every theme; a theme's ghost-button hover used to replace the fill while the text kept its on-container color, so Windows 95 showed white text on gray. The macOS theme also fills boxed tab panels with the white content surface instead of a gray tint, and keeps pressed ghost buttons filled on hover.
+
+    The Windows 95 theme draws a calendar inside a date popover without its own raised frame, so the popover is one bevel and the calendar title bar sits 3px from it.
+
+    macOS calendar days are circles, and a selected range is one continuous band with a disc on each end instead of a row of separate ovals.
+
+- Updated dependencies [[`af659ff`](https://github.com/ecopages/radiant/commit/af659ff374c7185f6500abb71af22b2ef118dee0), [`1d35d3e`](https://github.com/ecopages/radiant/commit/1d35d3ed090dfbcc2819d03cf6beeae10e9d89ed), [`5e83088`](https://github.com/ecopages/radiant/commit/5e83088ddb39d40a4c4401be77155ae1626e8a20), [`8f08f63`](https://github.com/ecopages/radiant/commit/8f08f63de84be88224d435d4d5752033c60213d1)]:
+    - @ecopages/radiant-ui@0.3.0
+
 ## 0.2.5
 
 ### Patch Changes

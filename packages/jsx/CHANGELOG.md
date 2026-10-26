@@ -1,5 +1,27 @@
 # @ecopages/jsx
 
+## 0.6.0
+
+### Minor Changes
+
+- [#464](https://github.com/ecopages/radiant/pull/464) [`ab9404f`](https://github.com/ecopages/radiant/commit/ab9404ff953a66222c6aa7a472ebf6b9adde7228) Thanks [@andeeplus](https://github.com/andeeplus)! - Use a registered custom-element class directly as a JSX element type (`<UserCard name="Ada" />`). Declare its public props with `declare readonly [JSX_PROPS]?: Props` (`import type { JSX_PROPS } from '@ecopages/jsx'`); a tag listed in `HTMLElementTagNameMap` gets the same props. JSX finds the tag from `@customElement(...)` metadata or `customElements.getName()`, on the server too. Rendering an unregistered class, or one that extends a built-in element other than `HTMLElement`, throws a `TypeError` naming the class. `CUSTOM_ELEMENT_TAG_NAME` and `getCustomElementTagName()` are exported from `@ecopages/jsx`. Existing `JsxCustomIntrinsicElements` augmentations keep working. `getCustomElementTagName()` resolves a class's own `@customElement(...)` tag, else its `customElements` registration (on the server too), so a subclass defined with `customElements.define()` renders, and server-renders, under its own tag instead of its parent's.
+
+- [#483](https://github.com/ecopages/radiant/pull/483) [`76b8c27`](https://github.com/ecopages/radiant/commit/76b8c27e8e73db1b69ed1ba056c10b41232d43b1) Thanks [@andeeplus](https://github.com/andeeplus)! - **Breaking:** `prop:*` bindings type-check only for writable instance properties. Readonly fields and getters without a setter are rejected, since assigning them throws or replaces state the element owns. To migrate, remove the binding or expose a writable property or setter.
+
+### Patch Changes
+
+- [#503](https://github.com/ecopages/radiant/pull/503) [`817a98d`](https://github.com/ecopages/radiant/commit/817a98dd64b93d9fe08c2604b68d76949e61c669) Thanks [@andeeplus](https://github.com/andeeplus)! - Security fix: a custom element placed inside `svg` or `math` no longer lets text in a `style`, `xmp`, `noframes`, `iframe` or other raw-text tag under it create elements in SSR output. Its light DOM and view used to serialize as HTML, so that text was emitted raw, while the browser parses it as foreign content. They now serialize in the namespace the element sits in: the text is entity-escaped, and the browser decodes it back to the same characters. This covers a host's Authored Children, its own `render()`, a Children Value from a parent view, slotted children and nested hosts. Under an SVG `foreignObject`, `desc` or `title`, and anywhere in HTML, CSS such as `@media (width < 600px)` is still emitted unchanged. Plain JSX such as `<svg><desc><style>` now keeps that CSS raw too, as browsers read it. Custom-element render hooks get the namespace as `context.foreignContent`, and `renderToString` and `renderServerLightDom` accept it, so an integration that serializes a host itself can do the same.
+
+- [#473](https://github.com/ecopages/radiant/pull/473) [`a2789eb`](https://github.com/ecopages/radiant/commit/a2789ebb21f5c077fbb393a0fddae89d22d38477) Thanks [@andeeplus](https://github.com/andeeplus)! - **Breaking:** Each hydrate-mode `renderToString(...)` without explicit binding state starts its marker indexes at 0, even inside `withActiveSsrScopeValue(...)`. Integrations that render sibling roots of one hydration root must wrap them in `withServerHydrationBindingState(createServerHydrationBindingState(), () => ...)` so the client sees one continuous marker stream.
+
+- [#475](https://github.com/ecopages/radiant/pull/475) [`a7409b7`](https://github.com/ecopages/radiant/commit/a7409b7b8573d28c656230b5870dee7c6aed0dd3) Thanks [@andeeplus](https://github.com/andeeplus)! - `<script>` children are now text-content parts on the client like other raw-text children, so a signal child stays live. String SSR joins each element's children before escaping. In HTML it rewrites only the element's matching closing-tag sequence, so CSS such as `@media (width < 600px)` stays byte-identical; inside `svg` or `math`, where these tags are ordinary elements, it entity-escapes the text. `RAW_TEXT_ELEMENT_NAMES` is exported from `@ecopages/jsx/server`, which Radiant uses for its server HTML parser.
+
+    A `foreignObject` inside `<math>` keeps its MathML parsing, so raw-text tags under it are entity-escaped; only an SVG `foreignObject` switches back to HTML.
+
+- [#465](https://github.com/ecopages/radiant/pull/465) [`828dd15`](https://github.com/ecopages/radiant/commit/828dd15882a04e81b98e152a4d5dbd78716f5393) Thanks [@andeeplus](https://github.com/andeeplus)! - Keep later siblings' listeners and property bindings aligned when a nested unregistered custom element has bound props or events.
+- Updated dependencies []:
+    - @ecopages/signals@0.6.0
+
 ## 0.5.1
 
 ### Patch Changes
