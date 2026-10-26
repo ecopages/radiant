@@ -1,3 +1,4 @@
+import { isCustomElementSubtreeRoot } from '../hydration/hydration-subtree-policy.ts';
 import { getJsxGlobalSymbol } from './global-symbol.ts';
 import { serializeRenderable } from './serialize-renderable.ts';
 import { createServerRenderedCustomElement as createServerRenderedIntrinsicCustomElement } from './server-rendered-custom-element.ts';
@@ -207,7 +208,7 @@ function renderCustomElementLightDom(value: JsxRenderable): string {
 
 /** Renders a registered custom element template through the active hook or its own host renderer. */
 export function renderIntrinsicCustomElementTemplate(template: TemplateResultLike): string | undefined {
-	if (!template.rootLocalName?.includes('-') || !template.ssrIntrinsicProps) {
+	if (!template.rootLocalName || !isCustomElementSubtreeRoot(template.rootLocalName) || !template.ssrIntrinsicProps) {
 		return undefined;
 	}
 
