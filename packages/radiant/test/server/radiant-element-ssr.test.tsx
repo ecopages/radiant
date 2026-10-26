@@ -549,7 +549,7 @@ describe('RadiantElement SSR', () => {
 		expect(html).not.toContain('data-radiant-slot-projection');
 	});
 
-	test('A host whose view has no slot ships no slot-projection payload', () => {
+	test('A host whose view has no slot still ships Authored Children in the slot-projection payload', () => {
 		@customElement('derived-list')
 		class DerivedList extends RadiantElement {
 			override render() {
@@ -567,7 +567,8 @@ describe('RadiantElement SSR', () => {
 		const html = renderRadiantElementHostToString(element, { mode: 'hydrate' });
 
 		expect(html).toContain('<ul><li>derived</li></ul>');
-		expect(html).not.toContain('data-radiant-slot-projection');
+		expect(html).toContain('data-radiant-slot-projection');
+		expect(html).toContain('\\u003cp>ignored by render\\u003c/p>');
 	});
 
 	test('slot projection payload keeps escaped text escaped', () => {

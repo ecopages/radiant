@@ -52,6 +52,24 @@ export class HydratedSlotCard extends RadiantElement {
 	}
 }
 
+@customElement('conditional-slot-card-hydrate-test')
+export class HydratedConditionalSlotCard extends RadiantElement {
+	@prop({ type: Boolean }) open = false;
+
+	override render() {
+		return this.open ? (
+			<section>
+				<slot />
+			</section>
+		) : (
+			<p>closed</p>
+		);
+	}
+}
+
+@customElement('shell-card-hydrate-test')
+export class HydratedShellCard extends RadiantElement {}
+
 @customElement('hydrated-marker-slot-child-test')
 export class HydratedMarkerSlotChild extends RadiantElement {
 	override render() {
