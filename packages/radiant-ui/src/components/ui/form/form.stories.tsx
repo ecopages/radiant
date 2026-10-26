@@ -36,8 +36,9 @@ import { RuiTextarea } from '../textarea';
 import { findFieldControl, findFieldError, getAriaControlTarget, isNativeTextControl } from './control-protocol';
 import { RuiForm as RuiFormElement } from './form.script';
 import { formContext, type FormContextValue } from './form-context';
-import '../field/field.script';
-import './form.script';
+import { RuiField as RuiFieldScript } from '../field/field.script';
+void RuiFieldScript;
+void RuiFormElement;
 
 /** Story-only alert that demonstrates consuming a parent form's aggregate validation errors. */
 @customElement('rui-form-validation-alert')
@@ -61,8 +62,6 @@ class RuiFormValidationAlert extends RuiAlertElement {
 		this.hidden = Object.keys(context?.errors ?? {}).length === 0;
 	}
 }
-
-
 
 declare global {
 	interface HTMLElementTagNameMap {

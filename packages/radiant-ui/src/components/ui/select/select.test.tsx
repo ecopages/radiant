@@ -12,8 +12,8 @@ import {
 	RuiSelectValue,
 } from './select';
 import { RuiListbox, RuiListboxOption } from '../listbox';
-import type { RuiSelect as RuiSelectElement } from './select.script';
-import './select.script';
+import { RuiSelect as RuiSelectElement } from './select.script';
+void RuiSelectElement;
 
 const OPTIONS = [
 	{ value: 'cat', label: 'Cat' },
@@ -202,6 +202,9 @@ describe('RuiSelect', () => {
 
 		const trigger = host.querySelector('[data-select-trigger]') as HTMLDivElement;
 		const popup = host.querySelector('[data-select-listbox]') as HTMLElement;
+		expect(customElements.get('rui-select')).toBe(RuiSelectElement);
+		expect(trigger).not.toBeNull();
+		expect(popup).not.toBeNull();
 
 		await browserUserEvent.click(trigger);
 		await settled();

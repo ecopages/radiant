@@ -1,6 +1,5 @@
 import type { JsxCustomElementAttributes, JsxRenderable } from '@ecopages/jsx';
-import type { RuiGrid as RuiGridElement, RuiGridProps } from './grid.script';
-import './grid.script';
+import { RuiGrid as RuiGridElement, type RuiGridProps } from './grid.script';
 
 /**
  * Grid view. Pass `rows` for a 2-D data grid, or `children` inside the stamped root surface.
@@ -32,10 +31,10 @@ export function RuiGrid({
 			: children;
 
 	return (
-		<rui-grid {...props} label={label}>
+		<RuiGridElement {...props} label={label}>
 			<div class="rui-grid" data-ref="root" role="grid" aria-label={label || undefined}>
 				{content}
 			</div>
-		</rui-grid>
+		</RuiGridElement>
 	);
 }

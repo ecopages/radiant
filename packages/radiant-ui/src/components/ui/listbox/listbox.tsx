@@ -2,8 +2,7 @@ import type { JsxCustomElementAttributes, JsxElementProps, JsxRenderable } from 
 import { cx } from '@/lib/cx';
 import { RuiIconCheck } from '@/lib/icons';
 import { parseViewValue } from '../shared/multi-value';
-import type { RuiListbox as RuiListboxElement, RuiListboxProps, RuiListboxSelectionMode } from './listbox.script';
-import './listbox.script';
+import { RuiListbox as RuiListboxElement, type RuiListboxProps, type RuiListboxSelectionMode } from './listbox.script';
 
 export type RuiListboxOptionProps = JsxElementProps<HTMLDivElement> & {
 	value: string;
@@ -117,7 +116,7 @@ export function RuiListbox({
 	const selected = new Set(selectedValues);
 
 	return (
-		<rui-listbox
+		<RuiListboxElement
 			{...props}
 			value={selectedValues}
 			embedded={embedded}
@@ -147,6 +146,6 @@ export function RuiListbox({
 						))
 					: children}
 			</ListboxShell>
-		</rui-listbox>
+		</RuiListboxElement>
 	);
 }

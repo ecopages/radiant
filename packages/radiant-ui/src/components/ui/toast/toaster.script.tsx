@@ -28,8 +28,8 @@ import {
 } from './toast-context';
 import { collapsedStackHeight, expandedStackHeight, expandedToastOffset } from './stack-layout';
 import { toastState } from './toast-state';
-import type { RuiToast } from './toast.script';
-import './toast.script';
+import { RuiToast } from './toast.script';
+void RuiToast;
 
 export type RuiToasterProps = {
 	/** Corner / edge placement. Default: `bottom-end`. */
@@ -541,8 +541,6 @@ export class RuiToaster extends RadiantElement {
 		);
 	}
 }
-
-
 
 declare global {
 	interface HTMLElementTagNameMap {

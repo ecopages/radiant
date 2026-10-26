@@ -7,8 +7,7 @@ import { RuiAutocomplete, RuiAutocompleteCollection, RuiAutocompleteEmpty } from
 import { RuiListbox, type RuiListboxOptionData } from '../listbox';
 import { parseViewValue } from '../shared/multi-value';
 import { RuiTagGroup } from '../tag-group';
-import type { RuiCombobox as RuiComboboxElement, RuiComboboxProps } from './combobox.script';
-import './combobox.script';
+import { RuiCombobox as RuiComboboxElement, type RuiComboboxProps } from './combobox.script';
 
 export type RuiComboboxControlProps = JsxElementProps<HTMLDivElement>;
 
@@ -152,7 +151,7 @@ export function RuiCombobox({
 	const isMultiple = props.selectionMode === 'multiple';
 	if (options != null) {
 		return (
-			<rui-combobox {...props} value={selectedValues}>
+			<RuiComboboxElement {...props} value={selectedValues}>
 				<ComboboxShell>
 					<RuiComboboxControl>
 						{isMultiple ? (
@@ -177,13 +176,13 @@ export function RuiCombobox({
 						</RuiAutocomplete>
 					</RuiComboboxListbox>
 				</ComboboxShell>
-			</rui-combobox>
+			</RuiComboboxElement>
 		);
 	}
 
 	return (
-		<rui-combobox {...props} value={selectedValues}>
+		<RuiComboboxElement {...props} value={selectedValues}>
 			<ComboboxShell>{children}</ComboboxShell>
-		</rui-combobox>
+		</RuiComboboxElement>
 	);
 }

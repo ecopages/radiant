@@ -1,7 +1,6 @@
 import type { JsxCustomElementAttributes, JsxElementProps } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
-import type { RuiNavigationMenu as RuiNavigationMenuElement, RuiNavigationMenuProps } from './navigation-menu.script';
-import './navigation-menu.script';
+import { RuiNavigationMenu as RuiNavigationMenuElement, type RuiNavigationMenuProps } from './navigation-menu.script';
 
 import { RuiButton, type RuiButtonControlProps } from '../button/button';
 
@@ -53,11 +52,11 @@ export function RuiNavigationMenu({
 	...props
 }: JsxCustomElementAttributes<RuiNavigationMenuElement, RuiNavigationMenuProps>) {
 	return (
-		<rui-navigation-menu {...props} label={label}>
+		<RuiNavigationMenuElement {...props} label={label}>
 			<nav class="rui-navigation-menu" data-ref="root" aria-label={label || undefined}>
 				{children}
 			</nav>
-		</rui-navigation-menu>
+		</RuiNavigationMenuElement>
 	);
 }
 

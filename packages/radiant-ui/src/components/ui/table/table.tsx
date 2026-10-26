@@ -1,8 +1,7 @@
 import type { JsxCustomElementAttributes, JsxElementProps } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
 import { RuiCheckbox } from '../checkbox';
-import type { RuiTable as RuiTableElement, RuiTableProps } from './table.script';
-import './table.script';
+import { RuiTable as RuiTableElement, type RuiTableProps } from './table.script';
 
 export type RuiTableHeaderProps = JsxElementProps<HTMLDivElement>;
 
@@ -184,7 +183,7 @@ export function RuiTable({
 	...props
 }: JsxCustomElementAttributes<RuiTableElement, RuiTableProps>) {
 	return (
-		<rui-table {...props} value={value} label={label} ariaBusy={ariaBusy} selectionMode={selectionMode}>
+		<RuiTableElement {...props} value={value} label={label} ariaBusy={ariaBusy} selectionMode={selectionMode}>
 			<div
 				class="rui-table"
 				role="grid"
@@ -194,6 +193,6 @@ export function RuiTable({
 			>
 				{children}
 			</div>
-		</rui-table>
+		</RuiTableElement>
 	);
 }

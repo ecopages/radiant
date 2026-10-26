@@ -1,8 +1,7 @@
 import type { JsxCustomElementAttributes } from '@ecopages/jsx';
 import { createNumericRange } from '../shared/numeric-range';
 import { createKnobRing } from './knob-geometry';
-import { KNOB_DEFAULT_VALUE, type RuiKnob as RuiKnobElement, type RuiKnobProps } from './knob.script';
-import './knob.script';
+import { KNOB_DEFAULT_VALUE, RuiKnob as RuiKnobElement, type RuiKnobProps } from './knob.script';
 
 /**
  * Rotary numeric control. Stamps the full `[data-ref]` tree under `[data-ref="root"]`.
@@ -81,7 +80,7 @@ type KnobSurfaceProps = {
 
 function KnobSurface({ props, ring, range, ...knob }: KnobSurfaceProps) {
 	return (
-		<rui-knob
+		<RuiKnobElement
 			{...props}
 			value={knob.value}
 			min={knob.min}
@@ -100,7 +99,7 @@ function KnobSurface({ props, ring, range, ...knob }: KnobSurfaceProps) {
 			style={knob.size ? { '--rui-knob-size': `${knob.size}px` } : undefined}
 		>
 			<KnobBody knob={knob} ring={ring} range={range} />
-		</rui-knob>
+		</RuiKnobElement>
 	);
 }
 

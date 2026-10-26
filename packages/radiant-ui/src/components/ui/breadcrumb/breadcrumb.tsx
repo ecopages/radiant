@@ -1,7 +1,6 @@
 import type { JsxCustomElementAttributes, JsxElementProps } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
-import type { RuiBreadcrumb as RuiBreadcrumbElement, RuiBreadcrumbProps } from './breadcrumb.script';
-import './breadcrumb.script';
+import { RuiBreadcrumb as RuiBreadcrumbElement, type RuiBreadcrumbProps } from './breadcrumb.script';
 
 export type RuiBreadcrumbViewProps = JsxCustomElementAttributes<RuiBreadcrumbElement, RuiBreadcrumbProps>;
 
@@ -16,7 +15,7 @@ export function RuiBreadcrumb({ children, label, separator, ...props }: RuiBread
 	const resolvedLabel = label || 'Breadcrumb';
 	const resolvedSeparator = separator || '/';
 	return (
-		<rui-breadcrumb {...props} label={label} separator={separator}>
+		<RuiBreadcrumbElement {...props} label={label} separator={separator}>
 			<nav
 				class="rui-breadcrumb"
 				aria-label={resolvedLabel}
@@ -24,7 +23,7 @@ export function RuiBreadcrumb({ children, label, separator, ...props }: RuiBread
 			>
 				{children}
 			</nav>
-		</rui-breadcrumb>
+		</RuiBreadcrumbElement>
 	);
 }
 

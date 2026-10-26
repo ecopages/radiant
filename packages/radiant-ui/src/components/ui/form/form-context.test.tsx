@@ -6,8 +6,9 @@ import { RuiForm as RuiFormElement } from './form.script';
 import { formContext, type FormContextValue } from './form-context';
 import { RuiField } from '../field';
 import { RuiInput } from '../input';
-import '../field/field.script';
-import './form.script';
+import { RuiField as RuiFieldScript } from '../field/field.script';
+void RuiFieldScript;
+void RuiFormElement;
 
 async function flushRender(): Promise<void> {
 	await new Promise<void>((resolve) => {

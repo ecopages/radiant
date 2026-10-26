@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { runSsrPreparationCallbacks } from '@ecopages/radiant';
 import { RUI_FIELD_MANAGED_ATTR } from '../form/control-protocol';
-import type { RuiField as RuiFieldElement } from './field.script';
-import './field.script';
+import { RuiField as RuiFieldElement } from './field.script';
+void RuiFieldElement;
 
 async function flushRender(): Promise<void> {
 	await new Promise<void>((resolve) => {

@@ -3,8 +3,7 @@ import { cx } from '@/lib/cx';
 import type { NativeButtonProps } from '@/lib/native-element-props';
 import { RuiSeparator } from '../separator';
 import { renderMenuEntries, type RuiMenuEntry } from '../shared/menu-entry';
-import type { RuiMenubar as RuiMenubarElement, RuiMenubarProps } from './menubar.script';
-import './menubar.script';
+import { RuiMenubar as RuiMenubarElement, type RuiMenubarProps } from './menubar.script';
 
 export type { RuiMenuEntry, RuiMenuItem, RuiMenuSeparator } from '../shared/menu-entry';
 
@@ -135,10 +134,10 @@ export function RuiMenubar({
 			: children;
 
 	return (
-		<rui-menubar {...props} label={label}>
+		<RuiMenubarElement {...props} label={label}>
 			<div class="rui-menubar" data-ref="root" role="menubar" aria-label={label || undefined}>
 				{content}
 			</div>
-		</rui-menubar>
+		</RuiMenubarElement>
 	);
 }

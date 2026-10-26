@@ -1,7 +1,8 @@
 import type { JsxElementProps } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
 import type { NativeButtonProps } from '@/lib/native-element-props';
-import './tabs.script';
+import { RuiTabs as RuiTabsScript } from './tabs.script';
+void RuiTabsScript;
 
 export type RuiTabListProps = JsxElementProps<HTMLDivElement>;
 

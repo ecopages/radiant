@@ -2,14 +2,12 @@ import type { JsxCustomElementAttributes, JsxElementProps, JsxRenderable } from 
 import { cx } from '@/lib/cx';
 import { RuiIconChevronDown } from '@/lib/icons';
 import type { NativeButtonProps } from '@/lib/native-element-props';
-import type {
+import {
 	RuiDisclosureGroup as RuiDisclosureGroupElement,
-	RuiDisclosureGroupProps,
+	type RuiDisclosureGroupProps,
 } from './disclosure-group.script';
-import './disclosure-group.script';
 
-import type { RuiDisclosure as RuiDisclosureElement, RuiDisclosureProps } from './disclosure.script';
-import './disclosure.script';
+import { RuiDisclosure as RuiDisclosureElement, type RuiDisclosureProps } from './disclosure.script';
 
 export type RuiDisclosureIconProps = JsxElementProps<HTMLSpanElement> & {
 	variant?: 'chevron' | 'plus';
@@ -130,21 +128,21 @@ export function RuiDisclosure({
 }: JsxCustomElementAttributes<RuiDisclosureElement, RuiDisclosureProps & RuiDisclosureViewProps>) {
 	if (trigger != null) {
 		return (
-			<rui-disclosure {...props}>
+			<RuiDisclosureElement {...props}>
 				<DisclosureShell>
 					<RuiDisclosureTrigger icon={icon} iconPosition={iconPosition}>
 						{trigger}
 					</RuiDisclosureTrigger>
 					{children != null ? <RuiDisclosurePanel>{children}</RuiDisclosurePanel> : null}
 				</DisclosureShell>
-			</rui-disclosure>
+			</RuiDisclosureElement>
 		);
 	}
 
 	return (
-		<rui-disclosure {...props}>
+		<RuiDisclosureElement {...props}>
 			<DisclosureShell>{children}</DisclosureShell>
-		</rui-disclosure>
+		</RuiDisclosureElement>
 	);
 }
 
@@ -159,10 +157,10 @@ export function RuiDisclosureGroup({
 	...props
 }: JsxCustomElementAttributes<RuiDisclosureGroupElement, RuiDisclosureGroupProps>) {
 	return (
-		<rui-disclosure-group {...props}>
+		<RuiDisclosureGroupElement {...props}>
 			<div class="rui-disclosure-group" data-ref="root">
 				{children}
 			</div>
-		</rui-disclosure-group>
+		</RuiDisclosureGroupElement>
 	);
 }

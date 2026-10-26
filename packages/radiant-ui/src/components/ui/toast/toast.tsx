@@ -1,10 +1,9 @@
 import type { JsxCustomElementAttributes } from '@ecopages/jsx';
-import type { RuiToast as RuiToastElement, RuiToastProps } from './toast.script';
-import './toast.script';
+import { RuiToast as RuiToastElement, type RuiToastProps } from './toast.script';
 
-import type { RuiToaster as RuiToasterElement, RuiToasterProps } from './toaster.script';
-import './toaster.script';
+import { RuiToaster as RuiToasterElement, type RuiToasterProps } from './toaster.script';
 import type { WithoutChildren } from '../../../lib/without-children';
+void RuiToasterElement;
 
 /** The `<rui-toast>` element renders the toast surface, so the view takes no children. */
 export type RuiToastViewProps = WithoutChildren<JsxCustomElementAttributes<RuiToastElement, RuiToastProps>>;
@@ -14,7 +13,7 @@ export type RuiToastViewProps = WithoutChildren<JsxCustomElementAttributes<RuiTo
  * directly only for static/embedded toast chrome.
  */
 export function RuiToast({ toastId, ...props }: RuiToastViewProps) {
-	return <rui-toast {...props} toastId={toastId != null ? String(toastId) : undefined} />;
+	return <RuiToastElement {...props} toastId={toastId != null ? String(toastId) : undefined} />;
 }
 
 /** Props for consumers that still use the former `RuiToaster` view export. */

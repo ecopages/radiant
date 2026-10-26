@@ -1,10 +1,5 @@
 import type { JsxCustomElementAttributes } from '@ecopages/jsx';
-import {
-	CHECKBOX_DEFAULT_VALUE,
-	type RuiCheckbox as RuiCheckboxElement,
-	type RuiCheckboxProps,
-} from './checkbox.script';
-import './checkbox.script';
+import { CHECKBOX_DEFAULT_VALUE, RuiCheckbox as RuiCheckboxElement, type RuiCheckboxProps } from './checkbox.script';
 
 /**
  * Checkbox view. Stamps `[data-ref="input"]` on a native checkbox inside a label row.
@@ -27,7 +22,7 @@ export function RuiCheckbox({
 	...props
 }: JsxCustomElementAttributes<RuiCheckboxElement, RuiCheckboxProps>) {
 	return (
-		<rui-checkbox
+		<RuiCheckboxElement
 			{...props}
 			checked={checked}
 			disabled={disabled}
@@ -52,6 +47,6 @@ export function RuiCheckbox({
 				<span class="rui-checkbox__control" aria-hidden="true"></span>
 				<span class="rui-checkbox__label">{children}</span>
 			</label>
-		</rui-checkbox>
+		</RuiCheckboxElement>
 	);
 }

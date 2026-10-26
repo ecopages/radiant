@@ -1,8 +1,7 @@
 import type { JsxCustomElementAttributes, JsxElementProps, JsxRenderable } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
 import type { NativeInputProps } from '@/lib/native-element-props';
-import type { RuiAutocomplete as RuiAutocompleteElement, RuiAutocompleteProps } from './autocomplete.script';
-import './autocomplete.script';
+import { RuiAutocomplete as RuiAutocompleteElement, type RuiAutocompleteProps } from './autocomplete.script';
 
 export type RuiAutocompleteInputProps = NativeInputProps & {
 	placeholder?: string;
@@ -73,8 +72,8 @@ export function RuiAutocomplete({
 	...props
 }: JsxCustomElementAttributes<RuiAutocompleteElement, RuiAutocompleteProps>) {
 	return (
-		<rui-autocomplete {...props}>
+		<RuiAutocompleteElement {...props}>
 			<AutocompleteShell>{children}</AutocompleteShell>
-		</rui-autocomplete>
+		</RuiAutocompleteElement>
 	);
 }

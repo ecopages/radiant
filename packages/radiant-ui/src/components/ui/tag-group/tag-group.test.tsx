@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { createRoot, type JsxRenderable } from '@ecopages/jsx';
 import { RuiTag, RuiTagGroup, RuiTagList } from './tag-group';
-import type { RuiTagGroup as RuiTagGroupElement } from './tag-group.script';
-import './tag-group.script';
+import { RuiTagGroup as RuiTagGroupElement } from './tag-group.script';
+void RuiTagGroupElement;
 
 function mount(element: JsxRenderable): { host: HTMLElement; cleanup: () => void } {
 	const host = document.createElement('div');
