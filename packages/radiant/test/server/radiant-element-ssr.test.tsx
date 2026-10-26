@@ -158,10 +158,10 @@ describe('RadiantElement SSR', () => {
 		expect(baseHtml).not.toContain('childLabel');
 		expect(baseHtml).not.toContain('siblingLabel');
 		expect(childHtml).toContain('shared="from-base"');
-		expect(childHtml).toContain('childLabel="from-child"');
+		expect(childHtml).toContain('child-label="from-child"');
 		expect(childHtml).not.toContain('siblingLabel');
 		expect(siblingHtml).toContain('shared="from-base"');
-		expect(siblingHtml).toContain('siblingLabel="from-sibling"');
+		expect(siblingHtml).toContain('sibling-label="from-sibling"');
 		expect(siblingHtml).not.toContain('childLabel');
 	});
 

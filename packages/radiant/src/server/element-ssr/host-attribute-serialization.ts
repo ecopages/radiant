@@ -1,5 +1,5 @@
 import { reflectsBooleanAsValue, type ReactiveProperty } from '../../core/reactive-prop-core';
-import type { ReactivePropDefinition } from '../../core/reactive-prop-metadata';
+import { attributeNameForProp, type ReactivePropDefinition } from '../../core/reactive-prop-metadata';
 import { writeAttributeValue, type AttributeTypeConstant } from '../../utils/attribute-utils';
 import { serializeHtmlAttribute } from '../../utils/serialize-html-attribute';
 
@@ -106,7 +106,7 @@ function appendReactivePropDefinitionAttributes(
 	seenAttributes: Set<string>,
 ): void {
 	for (const definition of host.getReactivePropDefinitions()) {
-		const attributeName = definition.options.attribute ?? definition.name;
+		const attributeName = attributeNameForProp(definition.name, definition.options);
 
 		if (seenAttributes.has(attributeName)) {
 			continue;

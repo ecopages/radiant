@@ -226,7 +226,7 @@ function renderInset({ title }: { title: string }) {
 }
 
 /**
- * @remarks Vitest browser viewports are often &lt;768px; `mobileBreakpoint: 0` pins desktop unless a story opts in.
+ * @remarks JSX uses `mobileBreakpoint`; authored `<rui-sidebar>` markup uses `mobile-breakpoint`. Vitest browser viewports are often &lt;768px; `mobileBreakpoint: 0` pins desktop unless a story opts in.
  */
 const meta = {
 	title: 'Components/Sidebar',
