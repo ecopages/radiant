@@ -7,10 +7,7 @@ import { ensureLegacyHostReady } from '../../decorators/legacy/host-readiness';
 import { assertValidHtmlTagName } from '../../utils/html-names';
 import { withSsrContextProviders } from '../context-ssr';
 import { alignMinimalDomHostTagName } from '../shim/minimal-dom/align-host-tag-name';
-import {
-	createSlotProjectionScriptTag,
-	hasNamedSlotNames,
-} from '../../core/slot-projection-runtime';
+import { createSlotProjectionScriptTag, hasNamedSlotNames } from '../../core/slot-projection-runtime';
 import { composeHostContent } from './host-script-composition';
 import { resolveHostAttributes, stringifyHostAttributes } from './host-attribute-serialization';
 import { toInternalRadiantSsrHost } from './radiant-element-ssr-extractor';
