@@ -641,7 +641,7 @@ Custom elements default to property bindings for unprefixed names, with a small 
 
 `prop:*` accepts any writable, non-method instance property. Readonly fields and getters without a setter are rejected, because assigning them throws or replaces state the element owns. Every public field is writable this way, including Radiant `@state` fields: decorators do not change a field's type, so JSX cannot tell `@prop` from `@state`. Mark internal state `protected` or `private` to keep it out of `prop:*`.
 
-A class meant to be extended takes its public props as a type parameter. A subclass passes its wider props instead of redeclaring `JSX_PROPS`, which a `declare` field cannot do under `noImplicitOverride`:
+A subclass can widen the props by redeclaring `declare readonly [JSX_PROPS]?: WiderProps` (no `override`; `declare override` does not compile). A class meant to be extended can instead take its public props as a type parameter:
 
 ```tsx
 class UserCard<Props extends UserCardProps = UserCardProps> extends RadiantElement {
@@ -654,10 +654,10 @@ class AdminCard extends UserCard<UserCardProps & { level: string }> {
 }
 ```
 
-At runtime, JSX resolves the class to its tag from Radiant's `@customElement(...)` metadata or the registered browser `customElements` registry. The class must be decorated or registered before rendering; an unregistered class throws a `TypeError`.
+At runtime, JSX resolves the class to its tag from Radiant's `@customElement(...)` metadata or the registered browser `customElements` registry. The class must be decorated or registered before rendering; an unregistered class throws a `TypeError`. So does a class that extends a built-in element other than `HTMLElement`, because customized built-ins are unsupported.
 
 ```tsx
-<UserGrid id="people" class="panel" items={rows} selection={currentRow} attr:status="ready" prop:api={gridApi} />
+<UserGridElement id="people" class="panel" items={rows} selection={currentRow} attr:status="ready" prop:api={gridApi} />
 ```
 
 If JSX only uses a tag name and does not import the class, declare the tag in the standard DOM map. The tag then uses the public props from the class's `JSX_PROPS` declaration:
@@ -798,12 +798,12 @@ That object is an internal contract between the JSX runtime and the Radiant rend
 
 ### What the package does
 
-| Path                                    | Behavior                                                              |
-| --------------------------------------- | --------------------------------------------------------------------- |
-| Text children                           | Escaped on SSR; mounted as text nodes on the client                   |
-| Text children in text-content elements  | Written as the element's character data; comment anchors are not used |
-| Ordinary attributes                     | Escaped for HTML attribute context (including `"`)                    |
-| Plain `{ nodeType, outerHTML }` objects | Treated as text (escaped / text node), not raw HTML                   |
+| Path                                                       | Behavior                                                              |
+| ---------------------------------------------------------- | --------------------------------------------------------------------- |
+| Text children                                              | Escaped on SSR; mounted as text nodes on the client                   |
+| Text children in `textarea`, `title` and raw-text elements | Written as the element's character data; comment anchors are not used |
+| Ordinary attributes                                        | Escaped for HTML attribute context (including `"`)                    |
+| Plain `{ nodeType, outerHTML }` objects                    | Treated as text (escaped / text node), not raw HTML                   |
 
 ### Trusted paths (author / framework data only)
 
@@ -868,6 +868,8 @@ Key types:
 - `JsxPropsWithChildren`
 - `JsxRenderable`
 - `JsxRoot`
+- `JSX_PROPS` (type-only; import with `import type`)
+- `JsxPublicProps`
 - `SubscribableJsxValue`
 - `TemplateResultLike`
 

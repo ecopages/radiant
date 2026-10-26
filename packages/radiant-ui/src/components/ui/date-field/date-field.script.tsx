@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import {
 	RadiantElement,
 	bindTo,
@@ -79,6 +80,7 @@ export type RuiDateFieldChangeDetail = { value: string };
  */
 @customElement('rui-date-field')
 export class RuiDateField extends RadiantElement {
+	declare readonly [JSX_PROPS]?: RuiDateFieldProps;
 	@prop({ type: String, reflect: true, defaultValue: '' })
 	@bindTo([
 		{ selector: '[data-date-field-input]', attr: 'value' },
@@ -325,5 +327,11 @@ export class RuiDateField extends RadiantElement {
 			event.preventDefault();
 			this.setOpen(false);
 		}
+	}
+}
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-date-field': RuiDateField;
 	}
 }

@@ -35,6 +35,7 @@ Disconnect tears down connection-scoped resources. The same instance can later r
 | `updated(changed)` | After each update cycle, once `@onUpdated` ran and any pending render committed | Work that needs the committed DOM, such as focus or measuring. State written here schedules another cycle. |
 | `updateComplete` | Resolves when no member change or render is pending; rejects when the cycle throws | Tests and callers that must wait for the cycle, including the first connect render. |
 | `@bindTo(...)` | After catch-up and on every write of the named field | Copy the field onto host or descendant attributes, properties, or text. |
+| `createResource(...)` | In the connection microtask, after `@bindTo` and before `onConnected()`; client only | Host-owned async data that should fetch with authored prop values. |
 | `@onUpdated(...)` | Once per update cycle when a watched member changed, before the render commits, including the initial `@prop` sync | Procedures: timers, joined ARIA, derived state, storage. |
 | `requestUpdate()` / `update()` | `requestUpdate()` for render-owning hosts; `update()` on any host | Schedule the update cycle, or run it now. Most components should let reactive JSX bindings schedule this automatically. |
 | `disconnectedCallback()` | When the browser disconnects the element | Tear down resources owned by the connection and call `super.disconnectedCallback()`. |

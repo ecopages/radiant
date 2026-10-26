@@ -7,7 +7,7 @@ order: 5
 
 # Resources
 
-`createResource` ties an async data flow to a host element's lifecycle. On the client, it starts after the host's first-connect attribute sync, so the initial fetch sees authored prop values. It aborts in-flight work on disconnect and resumes from the current source on reconnect.
+`createResource` ties an async data flow to a host element's lifecycle. On the client, it starts in each connect pass after attribute sync, the initial render or hydration and `@bindTo`, just before `onConnected()`, so the first fetch sees authored prop values. It aborts in-flight work on disconnect and resumes from the current source on reconnect.
 
 Server rendering never connects Element Hosts, so it does not start resource fetches. Fetch server data before rendering and pass resolved values through `initialize`, `prepareHost`, or host attributes.
 

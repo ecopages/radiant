@@ -78,13 +78,13 @@ Type safety is a core feature of Radiant. We recommend following these patterns 
 Define a separate type for your component's public properties. This type can be shared between the component script and the JSX template.
 
 ```typescript
+import type { JSX_PROPS } from '@ecopages/jsx';
+
 export type UserCardProps = {
   name?: string;
   avatarUrl?: string;
   isAdmin?: boolean;
 };
-
-import type { JSX_PROPS } from '@ecopages/jsx';
 
 @customElement('user-card')
 export class UserCard extends RadiantElement {
@@ -103,7 +103,7 @@ with `JSX_PROPS`, then use the class as the JSX element type.
 ```tsx
 /** @jsxImportSource @ecopages/jsx */
 
-import type { JSX_PROPS } from '@ecopages/jsx';
+import { UserCard } from './user-card';
 
 <UserCard name="Ada" />;
 ```

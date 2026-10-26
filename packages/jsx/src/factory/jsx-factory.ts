@@ -3,7 +3,7 @@ import { getTemplateShapeKey } from './template-shape.ts';
 import { forEachNormalizedAttribute } from './attribute-normalize.ts';
 import { shouldUseAttributeBindingByDefaultForElement, shouldUseBooleanAttributeBinding } from './binding-defaults.ts';
 import { isIterableJsxChild, isKeyedJsxValue, resolveReactiveSnapshot } from '../types/renderable-guards.ts';
-import { CUSTOM_ELEMENT_TAG_NAME } from '../custom-element-tag-name.ts';
+import { getCustomElementTagName } from '../custom-element-tag-name.ts';
 import {
 	CUSTOM_ELEMENT_CHILDREN_SYMBOL,
 	KEYED_VALUE_SYMBOL,
@@ -56,6 +56,10 @@ type ChildSlotMode = 'multiple' | 'single';
  */
 type JsxClassElement = abstract new (...args: any[]) => Element;
 
+/**
+ * @remarks Walks the prototype chain to the nearest global `HTML*` constructor; any such base other than
+ * `HTMLElement` makes the class a customized built-in.
+ */
 function isCustomizedBuiltIn(type: Function): boolean {
 	let prototype: object | null = Object.getPrototypeOf((type as Function & { prototype: object }).prototype);
 	while (prototype) {
@@ -75,9 +79,7 @@ function isCustomizedBuiltIn(type: Function): boolean {
  * stringifies the function source.
  */
 function resolveCustomElementTagName(type: Function): string | undefined {
-	const tagName =
-		(type as CustomElementConstructor & { [CUSTOM_ELEMENT_TAG_NAME]?: string })[CUSTOM_ELEMENT_TAG_NAME] ||
-		globalThis.customElements?.getName?.(type as CustomElementConstructor);
+	const tagName = getCustomElementTagName(type as CustomElementConstructor);
 	if (tagName) {
 		if (isCustomizedBuiltIn(type)) {
 			throw new TypeError(`Class ${type.name} (<${tagName}>): customized built-ins are unsupported.`);

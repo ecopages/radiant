@@ -299,7 +299,28 @@ class ProgrammaticRenderControllerCard extends RadiantController {
 
 registerController('programmatic-render-controller-card', ProgrammaticRenderControllerCard);
 
+class RenderComponentDefinedSubclass extends RenderComponentCard {}
+
+customElements.define('render-component-defined-subclass-test', RenderComponentDefinedSubclass);
+
+@customElement('render-component-subclass-parent-test')
+class RenderComponentSubclassParent extends RadiantElement {
+	override render() {
+		return <RenderComponentDefinedSubclass />;
+	}
+}
+
 describe('render-component server helpers', () => {
+	test('a subclass registered with customElements.define() renders under its own tag', async () => {
+		const direct = await renderComponentToString(RenderComponentDefinedSubclass);
+		const nested = await renderComponentToString(RenderComponentSubclassParent);
+
+		expect(direct).toMatch(/^<render-component-defined-subclass-test\b/);
+		expect(direct).toContain('Count: 1');
+		expect(nested).toContain('<render-component-defined-subclass-test');
+		expect(nested).not.toContain('<render-component-card-test');
+	});
+
 	test('component SSR activates runtime only for the active render and does not leak JSX hook state', async () => {
 		let runtimeDuringInitialize = getRadiantElementSsrRuntime();
 

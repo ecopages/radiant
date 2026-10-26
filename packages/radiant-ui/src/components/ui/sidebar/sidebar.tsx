@@ -5,8 +5,6 @@ import { cx } from '@/lib/cx';
 import type { NativeButtonProps } from '@/lib/native-element-props';
 import { omitProps } from '@/lib/omit-props';
 import { RuiSidebar as RuiSidebarElement, type RuiSidebarProps } from './sidebar.script';
-import { RuiSidebarTrigger as RuiSidebarTriggerScript } from './sidebar-trigger.script';
-void RuiSidebarTriggerScript;
 
 export { RuiSidebarTrigger, type RuiSidebarTriggerViewProps } from './sidebar-trigger';
 

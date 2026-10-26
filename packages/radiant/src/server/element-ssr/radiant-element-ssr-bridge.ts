@@ -94,7 +94,7 @@ function renderRadiantElementRawViewToString(
 }
 
 /**
- * Returns attributes from the host's prepared server state.
+ * Prepares the host and flushes `@bindTo`, then returns its server attributes.
  */
 export function getRadiantElementHostSsrAttributes(
 	component: RadiantElementServerRenderSsrCapable,

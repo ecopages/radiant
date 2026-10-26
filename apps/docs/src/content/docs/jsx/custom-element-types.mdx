@@ -32,7 +32,7 @@ customElements.define('user-card', UserCard);
 
 `prop:*` accepts any writable, non-method instance property. Readonly fields and getters without a setter are rejected, because assigning them throws or replaces state the element owns. Every public field is writable this way, including Radiant `@state` fields: decorators do not change a field's type, so JSX cannot tell `@prop` from `@state`. Mark internal state `protected` or `private` to keep it out of `prop:*`.
 
-A class meant to be extended takes its public props as a type parameter. A subclass passes its wider props instead of redeclaring `JSX_PROPS`, which a `declare` field cannot do under `noImplicitOverride`:
+A subclass can widen the props by redeclaring `declare readonly [JSX_PROPS]?: WiderProps` (no `override`; `declare override` does not compile). A class meant to be extended can instead take its public props as a type parameter:
 
 ```tsx
 class UserCard<Props extends UserCardProps = UserCardProps> extends RadiantElement {

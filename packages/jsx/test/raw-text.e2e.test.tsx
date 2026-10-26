@@ -25,6 +25,18 @@ describe('Radiant JSX raw-text elements', () => {
 		expect(parsed.querySelector('svg style')?.textContent).toBe(css);
 	});
 
+	test('a foreignObject inside math stays foreign content', async () => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+		const css = '.x{}<img id="pwn" src="x">';
+		const html = renderToString(
+			jsx('math', { children: jsx('foreignObject', { children: jsx('style', { children: css }) }) }),
+		);
+		const parsed = new DOMParser().parseFromString(html, 'text/html');
+
+		expect(parsed.querySelector('img')).toBeNull();
+		expect(parsed.querySelector('math style')?.textContent).toBe(css);
+	});
+
 	test('joining style children before escaping prevents a split closing tag', async () => {
 		const [{ jsxs }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
 		const html = renderToString(jsxs('style', { children: ['.a{}</', 'style><script>alert(1)</script>'] }));

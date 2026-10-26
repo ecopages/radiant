@@ -15,7 +15,6 @@ import {
 	type DialogToggleDetail,
 	isNamedDialogOpen,
 } from './dialog-types';
-void RuiDialog;
 
 export type InstallDialogsOptions = {
 	/** Parent node for the imperative host mount. Default: `document.body`. */
@@ -34,8 +33,8 @@ function resolveDialog(id: string): RuiDialog | null {
 	}
 
 	const byId = document.getElementById(trimmed);
-	if (byId?.localName === 'rui-dialog') {
-		return byId as RuiDialog;
+	if (byId instanceof RuiDialog) {
+		return byId;
 	}
 
 	return null;
@@ -126,7 +125,7 @@ function destroyHostDialog(): void {
 function mountHostDialog(options: DialogHostContent): RuiDialog {
 	destroyHostDialog();
 
-	const dialog = document.createElement('rui-dialog') as RuiDialog;
+	const dialog = document.createElement('rui-dialog');
 	dialog.id = RUI_DIALOG_HOST_ID;
 	dialog.alert = Boolean(options.alert);
 	dialog.label = options.label ?? '';

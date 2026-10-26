@@ -8,6 +8,10 @@ import type {
 
 type Booleanish = boolean | 'true' | 'false';
 type StringKeyOf<Value> = Extract<keyof Value, string>;
+/**
+ * @remarks Compares the property against its `-readonly` copy through generic function types, because plain
+ * assignability ignores the `readonly` modifier.
+ */
 type IsReadonlyKey<Value, Key extends keyof Value> =
 	(<T>() => T extends { [K in Key]: Value[Key] } ? 1 : 2) extends <T>() => T extends {
 		-readonly [K in Key]: Value[Key];

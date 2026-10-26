@@ -29,7 +29,6 @@ import {
 import { collapsedStackHeight, expandedStackHeight, expandedToastOffset } from './stack-layout';
 import { toastState } from './toast-state';
 import { RuiToast } from './toast.script';
-void RuiToast;
 
 export type RuiToasterProps = {
 	/** Corner / edge placement. Default: `bottom-end`. */
@@ -521,7 +520,7 @@ export class RuiToaster extends RadiantElement {
 							toast.duration ?? (toast.variant === 'loading' ? Number.POSITIVE_INFINITY : this.duration);
 
 						return (
-							<rui-toast
+							<RuiToast
 								key={String(toast.id)}
 								prop:toastId={String(toast.id)}
 								prop:title={toast.title}

@@ -10,9 +10,7 @@ import {
 	RuiDateRangePicker as RuiDateRangePickerElement,
 	type RuiDateRangePickerProps,
 } from './date-range-picker.script';
-import { RuiDateInput as RuiDateInputScript } from '../date-input/date-input.script';
 import type { WithoutChildren } from '../../../lib/without-children';
-void RuiDateInputScript;
 
 export type RuiDateRangePickerControlProps = JsxElementProps<HTMLDivElement>;
 

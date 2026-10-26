@@ -53,6 +53,18 @@ describe('Radiant JSX custom-element interop', () => {
 		document.body.innerHTML = '';
 	});
 
+	test('a subclass of a tagged class uses its own tag, not the inherited one', async () => {
+		const [{ jsx }] = await Promise.all([loadJsxRuntime()]);
+		class TaggedBase extends HTMLElement {}
+		Object.defineProperty(TaggedBase, CUSTOM_ELEMENT_TAG_NAME, { value: 'radiant-jsx-tagged-base' });
+		class DefinedSubclass extends TaggedBase {}
+		customElements.define('radiant-jsx-defined-subclass', DefinedSubclass);
+		class UndefinedSubclass extends TaggedBase {}
+
+		expect(jsx(DefinedSubclass, {})).toMatchObject({ rootLocalName: 'radiant-jsx-defined-subclass' });
+		expect(() => jsx(UndefinedSubclass, {})).toThrowError(/UndefinedSubclass/);
+	});
+
 	test('renders a registered class like its tag string and preserves the host', async () => {
 		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');
