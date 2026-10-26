@@ -100,6 +100,17 @@ class PreparedViewBindToHost extends RadiantElement {
 	}
 }
 
+@customElement('prepared-authored-bind-to-test')
+class PreparedAuthoredBindToHost extends RadiantElement {
+	@bindTo({ selector: '[data-bind-target]', attr: 'data-bound' })
+	@state
+	value = 'bound';
+
+	override render() {
+		return <slot />;
+	}
+}
+
 @customElement('server-host-slot-query-card-test')
 class ServerHostSlotQueryCard extends RadiantElement {
 	@querySlot() defaultSlot!: HTMLParagraphElement | null;
@@ -130,7 +141,9 @@ describe('RadiantElement SSR', () => {
 
 		expect(viewHtml).toContain('<p>PREPARED</p>');
 		expect(viewHtml).toContain('<em>PREPARED</em>');
-		expect(viewHtml).not.toContain('data-radiant-ssr');
+		const hydrateViewHtml = renderRadiantElementViewToString(new PreparedViewParent(), { mode: 'hydrate' });
+		expect(hydrateViewHtml).toContain('<p>PREPARED</p>');
+		expect(hydrateViewHtml.startsWith('<prepared-view-parent-test')).toBe(false);
 
 		const host = new PreparedViewParent();
 		const hostHtml = renderRadiantElementHostToString(host, { mode: 'plain' });
@@ -172,6 +185,22 @@ describe('RadiantElement SSR', () => {
 		expect(setAttribute).toHaveBeenCalledTimes(1);
 		expect(html).toContain('data-bound="bound"');
 	});
+
+	for (const [serializer, serialize] of [
+		['view', (host: RadiantElement) => renderRadiantElementViewToString(host)],
+		['host', (host: RadiantElement) => renderRadiantElementHostToString(host)],
+	] as const) {
+		test(`the ${serializer} serializer writes an authored @bindTo target once`, () => {
+			const host = new PreparedAuthoredBindToHost();
+			const target = host.ownerDocument.createElement('i');
+			target.setAttribute('data-bind-target', '');
+			host.append(target);
+			const setAttribute = vi.spyOn(target, 'setAttribute');
+
+			expect(serialize(host)).toContain('data-bound="bound"');
+			expect(setAttribute).toHaveBeenCalledTimes(1);
+		});
+	}
 
 	test('host attribute reading prepares the host once', () => {
 		@customElement('prepared-host-attributes-test')
