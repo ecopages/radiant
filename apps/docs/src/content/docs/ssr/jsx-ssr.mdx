@@ -129,18 +129,20 @@ Prefer `Symbol.for('@your-package.namespace')` keys so scope values survive entr
 /** @jsxImportSource @ecopages/jsx */
 
 import { jsx } from '@ecopages/jsx/jsx-runtime';
-import { renderToString, withActiveSsrScopeValue } from '@ecopages/jsx/server';
+import {
+	createServerHydrationBindingState,
+	renderToString,
+	withServerHydrationBindingState,
+} from '@ecopages/jsx/server';
 
-const SHARED_SCOPE_KEY = Symbol.for('@acme/ssr.shared-root');
-
-const html = withActiveSsrScopeValue(SHARED_SCOPE_KEY, { started: true }, () => {
+const html = withServerHydrationBindingState(createServerHydrationBindingState(), () => {
 	const page = renderToString(jsx('section', { class: 'page', children: 'Page' }), { mode: 'hydrate' });
 	const shell = renderToString(jsx('main', { class: 'layout', children: page }), { mode: 'hydrate' });
 	return shell;
 });
 ```
 
-Hydration binding indexes continue across both `renderToString(...)` calls because they share one active SSR scope.
+Hydration binding indexes continue across both `renderToString(...)` calls because they share one binding state. `withActiveSsrScopeValue(...)` alone does not share it: each hydrate-mode `renderToString(...)` without explicit binding state starts at index 0.
 
 ## Mental Model
 
