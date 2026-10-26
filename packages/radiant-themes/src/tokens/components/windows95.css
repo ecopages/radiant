@@ -272,7 +272,7 @@
 	 * @remarks A calendar in a date popover shares the popover's bevel instead of drawing a second raised frame inside it.
 	 * Its title bar sits 3px from that bevel like a dialog's, and the days keep the popover's inset below it.
 	 */
-	:root .rui-popover[role='dialog']:has(> .rui-calendar) {
+	:root .rui-popover[role='dialog']:has(> rui-calendar, > .rui-calendar) {
 		padding: 0;
 	}
 
