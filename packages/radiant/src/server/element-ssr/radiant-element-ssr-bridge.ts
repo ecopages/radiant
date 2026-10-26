@@ -20,6 +20,7 @@ import type {
 	RadiantElementViewRenderSource,
 } from '../../core/radiant-element-ssr-registry';
 import { withRadiantElementSsrRuntime } from '../../core/radiant-element-ssr-registry';
+import { setDetachedRootNamespace } from '../shim/minimal-dom/html';
 import { SERVER_RENDERED_CHILDREN_STAMP, SERVER_RENDERED_HOST_ATTRIBUTE } from '../../core/server-rendered-host';
 
 let radiantElementSsrRuntime: RadiantElementSsrRuntime | undefined;
@@ -125,12 +126,19 @@ export function resolveRadiantElementRenderBridge(component: object): RadiantEle
  * page around the hosts), the client sees the children only as Authored Children: the host builds them as light-DOM nodes
  * (`renderServerLightDom`, so no value is escaped and parsed back) inside its own context providers, and captures
  * them for its slots, with the slot-projection payload.
+ *
+ * A host the page places inside `svg` or `math` serializes its light DOM and view in that namespace, as the browser
+ * parses them there, so text in a `style` or `xmp` under it is entity-escaped.
  */
 export function withRadiantServerCustomElementRenderBridge<T>(render: () => T): T {
 	return withServerCustomElementRenderHook(
-		({ children, constructor, instance }) => {
+		({ children, constructor, foreignContent, instance }) => {
 			if (!isRadiantElementSsrHost(instance)) {
 				return undefined;
+			}
+
+			if (foreignContent) {
+				setDetachedRootNamespace(instance, foreignContent);
 			}
 
 			if (
@@ -141,17 +149,22 @@ export function withRadiantServerCustomElementRenderBridge<T>(render: () => T): 
 			) {
 				Reflect.set(instance, CUSTOM_ELEMENT_CHILDREN_SYMBOL, jsx(Fragment, { children }));
 				return createMarkupNodeLike(
-					serializeNestedCustomElementHost(instance, () => undefined, SERVER_RENDERED_CHILDREN_STAMP),
+					serializeNestedCustomElementHost(
+						instance,
+						() => undefined,
+						foreignContent,
+						SERVER_RENDERED_CHILDREN_STAMP,
+					),
 				);
 			}
 
 			const applyChildren = () => {
 				if (children === undefined) return;
 				const ownerDocument = (instance.ownerDocument ?? globalThis.document) as Document;
-				instance.replaceChildren(...renderServerLightDom(children, ownerDocument));
+				instance.replaceChildren(...renderServerLightDom(children, ownerDocument, foreignContent));
 			};
 
-			return createMarkupNodeLike(serializeNestedCustomElementHost(instance, applyChildren));
+			return createMarkupNodeLike(serializeNestedCustomElementHost(instance, applyChildren, foreignContent));
 		},
 		render,
 		{ ownsChildren: true },
@@ -161,10 +174,11 @@ export function withRadiantServerCustomElementRenderBridge<T>(render: () => T): 
 function serializeNestedCustomElementHost(
 	instance: RadiantElementServerRenderSsrCapable,
 	applyChildren: () => void,
+	foreignContent: RenderToStringOptions['foreignContent'],
 	stamp?: string,
 ): string {
 	const hydrate = isServerRenderHydrationActive();
-	const options: RenderToStringOptions = { hydrate, mode: hydrate ? 'hydrate' : 'plain' };
+	const options: RenderToStringOptions = { hydrate, mode: hydrate ? 'hydrate' : 'plain', foreignContent };
 	const render = () =>
 		withServerRadiantElementSsrRuntime(() => {
 			const service = createRadiantElementSsrService(instance);

@@ -209,15 +209,34 @@ function hasFaithfulSource(node: MinimalTextNode): boolean {
 	return faithful;
 }
 
+const detachedRootNamespaces = new WeakMap<Node, ContentNamespace>();
+
+/**
+ * Records the namespace a parentless node's markup is inserted in, so its subtree serializes as the browser
+ * will parse it there.
+ *
+ * @remarks A custom-element host is serialized on its own, detached from the page around it. When that page
+ * puts it inside `svg` or `math`, its content is foreign there, so a `style` in its light DOM must be escaped.
+ * The hint is read only while `root` has no parent.
+ */
+export function setDetachedRootNamespace(root: Node, namespace: ContentNamespace): void {
+	detachedRootNamespaces.set(root, namespace);
+}
+
+/** Namespace the browser parses `node` itself in: its parent's content namespace, or a detached root's hint. */
+function namespaceOf(node: Node): ContentNamespace {
+	return node.parentNode ? contentNamespaceOf(node.parentNode) : (detachedRootNamespaces.get(node) ?? 'html');
+}
+
 /**
  * Namespace the browser parses the children of `node` in.
  *
  * @remarks The minimal DOM keeps no namespaces, so this applies {@link childContentNamespace} from the root.
  * Text in `math > mi > style` is therefore entity-escaped: it never creates markup, but it is not read as CSS.
  */
-function contentNamespaceOf(node: Node | null): ContentNamespace {
-	if (node?.nodeType !== MinimalNode.ELEMENT_NODE) return 'html';
-	return childContentNamespace(contentNamespaceOf(node.parentNode), (node as Element).localName);
+function contentNamespaceOf(node: Node): ContentNamespace {
+	if (node.nodeType !== MinimalNode.ELEMENT_NODE) return 'html';
+	return childContentNamespace(namespaceOf(node), (node as Element).localName);
 }
 
 /**
@@ -228,7 +247,7 @@ function isHtmlRawTextElement(node: Node | null): node is Element {
 	return (
 		node?.nodeType === MinimalNode.ELEMENT_NODE &&
 		rawTextElementNames.has((node as Element).localName) &&
-		contentNamespaceOf(node.parentNode) === 'html'
+		namespaceOf(node) === 'html'
 	);
 }
 
@@ -280,7 +299,9 @@ function serializeChildNodesHtml(parent: Node): string {
 	if (!isHtmlRawTextElement(parent)) return children.map(serializeNodeHtml).join('');
 
 	const text = children
-		.map((child) => (child.nodeType === MinimalNode.TEXT_NODE ? (child.textContent ?? '') : serializeNodeHtml(child)))
+		.map((child) =>
+			child.nodeType === MinimalNode.TEXT_NODE ? (child.textContent ?? '') : serializeNodeHtml(child),
+		)
 		.join('');
 	return escapeRawText(text, parent.localName);
 }
@@ -293,7 +314,7 @@ function serializeChildNodesHtml(parent: Node): string {
  */
 function parseChildHtml(html: string, context: Node, followsStartTag = false): Node[] {
 	const { localName } = context as Element;
-	const namespace = contentNamespaceOf(context.parentNode);
+	const namespace = namespaceOf(context);
 	const contextTagName = namespace === 'html' ? localName : '';
 	return parseHtmlToNodes(
 		html,
