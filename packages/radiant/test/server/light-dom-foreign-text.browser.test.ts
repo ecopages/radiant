@@ -95,6 +95,54 @@ describe('light-DOM SSR text in foreign content', () => {
 	});
 });
 
+describe('parsed foreign content after a change', () => {
+	const ICON =
+		'<svg viewBox="0 0 10 10"><style type="text/css"><![CDATA[ .st0{fill:#f00} .st1{stroke:#000} ]]></style><path class="st0"/></svg>';
+
+	function parseMinimal(html: string): HTMLElement {
+		const host = minimalDocument.createElement('div');
+		host.innerHTML = html;
+		return host;
+	}
+
+	test('an untouched CDATA icon emits its style from source', () => {
+		const host = parseMinimal(ICON);
+		host.querySelector('style');
+
+		expect(host.innerHTML).toContain('<style type="text/css"><![CDATA[ .st0{fill:#f00} .st1{stroke:#000} ]]></style>');
+	});
+
+	test('a changed CDATA icon keeps its CSS', () => {
+		const host = parseMinimal(ICON);
+		host.querySelector('style')?.append(' .st2{}');
+		const rendered = document.createElement('div');
+		rendered.innerHTML = host.innerHTML;
+		document.body.append(rendered);
+
+		try {
+			expect(rendered.querySelector('svg > style')?.textContent).toBe(' .st0{fill:#f00} .st1{stroke:#000}  .st2{}');
+			expect(getComputedStyle(rendered.querySelector('path') as Element).fill).toBe('rgb(255, 0, 0)');
+		} finally {
+			rendered.remove();
+		}
+	});
+
+	test.each([
+		['a CDATA section', '<svg><style><![CDATA[ </style><img id="pwn" src="x"> ]]></style></svg>'],
+		['a comment', '<svg><style><!-- </style><img id="pwn" src="x"> --> .a{}</style></svg>'],
+	])('a closing tag inside %s does not end a style in svg', (_name, source) => {
+		const host = parseMinimal(source);
+		host.querySelector('style')?.append('');
+		const expected = parse(source).querySelector('svg > style');
+		const actual = parse(host.innerHTML).querySelector('svg > style');
+
+		expect(host.querySelector('img')).toBeNull();
+		expect(parse(host.innerHTML).querySelector('img')).toBeNull();
+		expect(actual?.textContent).toBe(expected?.textContent);
+		expect(actual?.childNodes.length).toBe(expected?.childNodes.length);
+	});
+});
+
 describe('light-DOM SSR text in HTML raw-text elements', () => {
 	test('style text with a range media query is emitted unchanged', () => {
 		const css = '@media (width < 600px) { p { color: red } }';

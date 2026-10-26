@@ -1,10 +1,14 @@
 import {
+	childContentNamespace,
 	collectTopLevelHtmlFragments,
 	escapableRawTextElementNames,
+	isCdataStart,
 	leadingNewlineElementNames,
 	parseHtmlTagToken,
 	rawTextElementNames,
+	readCdataText,
 	voidElementNames,
+	type ContentNamespace,
 	type ParsedHtmlTag,
 } from '../../html/html-parser';
 import { decodeHtmlAttribute, decodeHtmlText } from '../../../utils/decode-html-entities';
@@ -71,10 +75,17 @@ function readCommentData(fragment: string): string {
  * Parses one markup fragment from {@link collectTopLevelHtmlFragments}.
  *
  * @remarks Text keeps its source HTML next to the decoded value. `<!doctype>` is dropped and other `<!…>` /
- * `<?…>` declarations become comments, as when browsers parse a fragment. Stray close tags are dropped.
+ * `<?…>` declarations become comments, as when browsers parse a fragment. Stray close tags are dropped. In
+ * foreign content a CDATA section is text holding its content as written.
  */
-function parseMarkupFragment(fragment: string, ownerDocument: Document | null): Node[] {
-	const tag = fragment.startsWith('<') ? parseHtmlTagToken(fragment, 0) : undefined;
+function parseMarkupFragment(fragment: string, ownerDocument: Document | null, namespace: ContentNamespace): Node[] {
+	if (isCdataStart(fragment, 0, namespace)) {
+		return [
+			new MinimalTextNode(normalizeNewlines(readCdataText(fragment)), ownerDocument, fragment) as unknown as Node,
+		];
+	}
+
+	const tag = fragment.startsWith('<') ? parseHtmlTagToken(fragment, 0, { namespace }) : undefined;
 
 	switch (tag?.type) {
 		case 'open':
@@ -111,7 +122,7 @@ function parseTextOnlyContent(html: string, contextTagName: string, ownerDocumen
 	return [new MinimalTextNode(value, ownerDocument, html) as unknown as Node];
 }
 
-/** Joins text nodes left adjacent by dropped markup (`</>`, `<!doctype>`), as the HTML parser does. */
+/** Joins text nodes left adjacent by dropped markup (`</>`, `<!doctype>`) or CDATA, as the HTML parser does. */
 function mergeAdjacentText(nodes: Node[], ownerDocument: Document | null): Node[] {
 	const merged: Node[] = [];
 
@@ -137,6 +148,7 @@ function mergeAdjacentText(nodes: Node[], ownerDocument: Document | null): Node[
  *
  * @param followsStartTag True when `html` is an element's source content, directly after its start tag
  * (materializing parsed children); false for `innerHTML` / `insertAdjacentHTML`, which parse a fragment.
+ * @param namespace Namespace the content is parsed in: `svg` or `math` inside foreign content.
  * @remarks Inside raw text (`script`, `style`, …) and escapable raw text (`textarea`, `title`), the content
  * is one text node. A newline directly after a `pre`, `listing` or `textarea` start tag is dropped; fragment
  * parsing keeps it, as in browsers.
@@ -146,13 +158,14 @@ export function parseHtmlToNodes(
 	ownerDocument: Document | null = getInstalledDocumentLike(),
 	contextTagName = '',
 	followsStartTag = false,
+	namespace: ContentNamespace = 'html',
 ): Node[] {
 	const nodes =
 		rawTextElementNames.has(contextTagName) || escapableRawTextElementNames.has(contextTagName)
 			? parseTextOnlyContent(html, contextTagName, ownerDocument)
 			: mergeAdjacentText(
-					collectTopLevelHtmlFragments(html).flatMap((fragment) =>
-						parseMarkupFragment(fragment, ownerDocument),
+					collectTopLevelHtmlFragments(html, namespace).flatMap((fragment) =>
+						parseMarkupFragment(fragment, ownerDocument, namespace),
 					),
 					ownerDocument,
 				);
@@ -196,27 +209,15 @@ function hasFaithfulSource(node: MinimalTextNode): boolean {
 	return faithful;
 }
 
-const SVG_HTML_INTEGRATION_POINTS = new Set(['foreignobject', 'desc', 'title']);
-
 /**
  * Namespace the browser parses the children of `node` in.
  *
- * @remarks The minimal DOM has no namespaces, so this follows the tree construction rules from the root: `svg`
- * and `math` enter foreign content and their descendants inherit it. Only an SVG HTML integration point
- * (`foreignObject`, `desc`, `title` under `svg`) returns to HTML. Everything under `math` stays foreign, as in
- * the jsx string serializer: MathML text integration points such as `mi` still create `mglyph` and `malignmark`
- * as MathML, so treating their children as HTML would let raw text through. The cost is that text in
- * `math > mi > style` is entity-escaped, which never creates markup but is not decoded as CSS.
+ * @remarks The minimal DOM keeps no namespaces, so this applies {@link childContentNamespace} from the root.
+ * Text in `math > mi > style` is therefore entity-escaped: it never creates markup, but it is not read as CSS.
  */
-function childContentNamespace(node: Node | null): 'html' | 'svg' | 'math' {
+function contentNamespaceOf(node: Node | null): ContentNamespace {
 	if (node?.nodeType !== MinimalNode.ELEMENT_NODE) return 'html';
-
-	const { localName } = node as Element;
-	const namespace = childContentNamespace(node.parentNode);
-
-	if (namespace === 'html') return localName === 'svg' || localName === 'math' ? localName : 'html';
-
-	return namespace === 'svg' && SVG_HTML_INTEGRATION_POINTS.has(localName) ? 'html' : namespace;
+	return childContentNamespace(contentNamespaceOf(node.parentNode), (node as Element).localName);
 }
 
 /**
@@ -227,7 +228,7 @@ function isHtmlRawTextElement(node: Node | null): node is Element {
 	return (
 		node?.nodeType === MinimalNode.ELEMENT_NODE &&
 		rawTextElementNames.has((node as Element).localName) &&
-		childContentNamespace(node.parentNode) === 'html'
+		contentNamespaceOf(node.parentNode) === 'html'
 	);
 }
 
@@ -288,12 +289,19 @@ function serializeChildNodesHtml(parent: Node): string {
  * Parses HTML into child nodes of `context`, or of its parent for `insertAdjacentHTML` outside it.
  *
  * @remarks A raw-text tag name inside `svg` or `math` is an ordinary element there, so its content is parsed
- * as markup and character references decode, as in browsers. Its end is still found as for HTML raw text.
+ * as markup, with character references decoded and CDATA sections read as text, as in browsers.
  */
 function parseChildHtml(html: string, context: Node, followsStartTag = false): Node[] {
 	const { localName } = context as Element;
-	const contextTagName = rawTextElementNames.has(localName) && !isHtmlRawTextElement(context) ? '' : localName;
-	return parseHtmlToNodes(html, context.ownerDocument, contextTagName, followsStartTag);
+	const namespace = contentNamespaceOf(context.parentNode);
+	const contextTagName = namespace === 'html' ? localName : '';
+	return parseHtmlToNodes(
+		html,
+		context.ownerDocument,
+		contextTagName,
+		followsStartTag,
+		childContentNamespace(namespace, localName),
+	);
 }
 
 registerMinimalDomHtmlParsers({
