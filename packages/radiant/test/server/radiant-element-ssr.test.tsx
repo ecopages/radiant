@@ -535,6 +535,40 @@ describe('RadiantElement SSR', () => {
 		expect(html).toContain('data-radiant-slot-projection');
 	});
 
+	test('A View-owned Shell ships its children once', () => {
+		@customElement('shell-card')
+		class ShellCard extends RadiantElement {}
+
+		const element = new ShellCard();
+		element.innerHTML = '<h2>Title</h2><p>Body</p>';
+
+		const html = renderRadiantElementHostToString(element, { mode: 'hydrate' });
+
+		expect(html).toContain('<h2>Title</h2><p>Body</p>');
+		expect(html).not.toContain('data-radiant-slot-projection');
+	});
+
+	test('A host whose view has no slot ships no slot-projection payload', () => {
+		@customElement('derived-list')
+		class DerivedList extends RadiantElement {
+			override render() {
+				return (
+					<ul>
+						<li>derived</li>
+					</ul>
+				);
+			}
+		}
+
+		const element = new DerivedList();
+		element.innerHTML = '<p>ignored by render</p>';
+
+		const html = renderRadiantElementHostToString(element, { mode: 'hydrate' });
+
+		expect(html).toContain('<ul><li>derived</li></ul>');
+		expect(html).not.toContain('data-radiant-slot-projection');
+	});
+
 	test('slot projection payload keeps escaped text escaped', () => {
 		@customElement('server-host-slot-escape-test')
 		class ServerHostSlotEscape extends RadiantElement {

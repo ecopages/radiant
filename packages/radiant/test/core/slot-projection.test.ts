@@ -26,12 +26,14 @@ describe('slot projection helpers', () => {
 		const parsed = captureProjectedSlotRenderables(host);
 		const serialized = serializeProjectedSlotRenderables(parsed);
 
-		expect(JSON.parse(serialized!)).toEqual({
+		expect(serialized).toEqual({
 			'': ['<article data-kind="primary"><p>SSR body</p></article>'],
 			footer: ['<p slot="footer">SSR footer</p>'],
 			header: ['<h2 slot="header" data-note="1 > 0">SSR header</h2>'],
 		});
-		expect(serializeProjectedSlotRenderables(deserializeProjectedSlotRenderables(serialized!))).toBe(serialized);
+		expect(
+			serializeProjectedSlotRenderables(deserializeProjectedSlotRenderables(JSON.stringify(serialized))),
+		).toEqual(serialized);
 	});
 
 	test('serializes comment nodes as nothing so their data cannot become payload markup', () => {
@@ -40,7 +42,7 @@ describe('slot projection helpers', () => {
 
 		const serialized = serializeProjectedSlotRenderables(captureProjectedSlotRenderables(host));
 
-		expect(JSON.parse(serialized!)).toEqual({ '': ['kept'] });
+		expect(serialized).toEqual({ '': ['kept'] });
 	});
 
 	test('collects only authored hydration scripts from the host light DOM', () => {

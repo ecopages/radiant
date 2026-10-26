@@ -73,7 +73,7 @@ export function collectAuthoredHydrationScriptMarkup(host: HTMLElement): string 
 
 export function serializeProjectedSlotRenderables(
 	projectedContent: ReadonlyMap<string, readonly JsxRenderable[]>,
-): string | undefined {
+): Record<string, string[]> | undefined {
 	const payload: Record<string, string[]> = {};
 
 	for (const [slotName, renderables] of projectedContent.entries()) {
@@ -86,7 +86,27 @@ export function serializeProjectedSlotRenderables(
 		}
 	}
 
-	return Object.keys(payload).length > 0 ? JSON.stringify(payload) : undefined;
+	return Object.keys(payload).length > 0 ? payload : undefined;
+}
+
+/**
+ * Whether a slot-projection payload assigns children to a named slot.
+ *
+ * @remarks Only named-slot children need the Authored Children path on the client: a Children Value renders
+ * default-slot children in the same place and keeps their bindings live. The payload is keyed by slot name, with
+ * `""` for the default slot.
+ */
+export function hasNamedSlotNames(payload: Record<string, unknown>): boolean {
+	return Object.keys(payload).some((slotName) => slotName !== '');
+}
+
+/** JSON script the client reads to restore Authored Children into `<slot>`. */
+export function createSlotProjectionScriptTag(payload: Record<string, string[]>): string {
+	return `<script type="application/json" ${SLOT_PROJECTION_SCRIPT_ATTRIBUTE}>${escapeScriptText(JSON.stringify(payload))}</script>`;
+}
+
+function escapeScriptText(value: string): string {
+	return value.replace(/</g, '\\u003c');
 }
 
 export function resolveSlotProjection(
