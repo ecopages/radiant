@@ -4,6 +4,7 @@ import {
 	shouldUseAttributeBindingByDefaultForElement,
 	shouldUseBooleanAttributeBinding,
 } from '../factory/binding-defaults.ts';
+import { isCustomElementSubtreeRoot } from '../hydration/hydration-subtree-policy.ts';
 import { resolveReactiveSnapshot } from '../types/renderable-guards.ts';
 import { renderJsxRenderableToString } from './serialize-plain.ts';
 import { serializeRenderable } from './serialize-renderable.ts';
@@ -116,7 +117,7 @@ function resolveServerRenderedCustomElementRender(
 }
 
 function shouldServerRenderCustomElement(type: string): boolean {
-	return type.includes('-');
+	return isCustomElementSubtreeRoot(type);
 }
 
 function isServerRenderableCustomElement(value: unknown): value is ServerRenderableCustomElement {

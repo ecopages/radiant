@@ -8,6 +8,7 @@ import {
 	validateReactivePropertyDefault,
 } from './reactive-prop-core';
 import { REACTIVE_HOST, type ReactiveHostInternals } from './reactive-host';
+import { attributeNameForProp } from './reactive-prop-metadata';
 import type { ReactiveState } from './reactivity-contract';
 
 export type ReactivePropertyStateHost = HTMLElement & {
@@ -82,8 +83,8 @@ export class ReactivePropertyState {
 		defineReactiveAccessor: (propertyName: string, config: ReactiveAccessorDefinition<T>) => void,
 		createReactiveMember: <U>(propertyName: string, initialValue: U) => ReactiveState<U>,
 	): void {
-		const { type, attribute, reflect, defaultValue, transform } = options;
-		const attributeKey = attribute ?? propertyName;
+		const { type, reflect, defaultValue, transform } = options;
+		const attributeKey = attributeNameForProp(propertyName, options);
 		const hasPreUpgradeValue = this.preUpgradePropertyValues.has(propertyName);
 
 		validateReactivePropertyDefault(type, defaultValue, !!transform?.fromAttribute);

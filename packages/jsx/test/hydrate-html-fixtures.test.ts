@@ -24,6 +24,7 @@ import {
 	HYDRATE_ROOT_HOLES_HTML,
 	HYDRATE_ROOT_LIST_HTML,
 	HYDRATE_ROOT_EMPTY_ROWS_HTML,
+	HYDRATE_UNREGISTERED_CUSTOM_ELEMENT_SIBLINGS_HTML,
 	PLAIN_BUTTON_ALPHA_HTML,
 	TRUE_CHILDREN_HTML,
 } from './fixtures/hydrate-html.ts';
@@ -291,6 +292,21 @@ describe('hydrate HTML fixtures', () => {
 		});
 
 		expect(renderToString(tree, { mode: 'hydrate' })).toBe(HYDRATE_ROOT_LIST_HTML);
+	});
+
+	test('HYDRATE_UNREGISTERED_CUSTOM_ELEMENT_SIBLINGS_HTML matches renderToString', () => {
+		const tree = jsxs('div', {
+			children: [
+				jsx('jsx-registered-marker-host', { label: 'registered' }),
+				jsx('third-party-widget', {
+					label: 'x',
+					'on:change': () => undefined,
+				}),
+				jsx('button', { 'on:click': () => undefined, children: 'go' }),
+			],
+		});
+
+		expect(renderToString(tree, { mode: 'hydrate' })).toBe(HYDRATE_UNREGISTERED_CUSTOM_ELEMENT_SIBLINGS_HTML);
 	});
 
 	test('HYDRATE_ROOT_EMPTY_ROWS_HTML matches renderToString', () => {

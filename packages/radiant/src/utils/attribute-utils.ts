@@ -2,6 +2,13 @@ import type { RadiantElement } from '../core/radiant-element';
 
 export type AttributeTypeConstant = typeof Array | typeof Boolean | typeof Number | typeof Object | typeof String;
 
+export function toKebabCaseAttributeName(value: string): string {
+	return value
+		.replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+		.replace(/[_\s]+/g, '-')
+		.toLowerCase();
+}
+
 /**
  * The `type` constants whose parsed value fits a field of type `T`, `null` and `undefined` aside.
  *

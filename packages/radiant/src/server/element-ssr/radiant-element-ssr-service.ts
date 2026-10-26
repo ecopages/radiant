@@ -69,7 +69,7 @@ export class RadiantElementSsrService {
 
 		return withSsrContextProviders(this.host.getContextProviders(), () => {
 			const hostContent = this.renderView(this.host, options);
-			this.host.flushPostSyncCallbacks();
+			this.host.flushPostSync();
 			const slotProjectionMarkup = this.host.getSlotProjectionScriptTag?.() ?? '';
 			const authoredHydrationMarkup = this.host.getAuthoredHydrationScriptMarkup?.() ?? '';
 			const hydrationScripts = hydrate

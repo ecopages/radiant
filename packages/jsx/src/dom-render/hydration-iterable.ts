@@ -4,7 +4,7 @@ import type { JsxRenderable, KeyedJsxValue } from '../types/index.ts';
 import { countHydratedRangeNodes, isEmptyTextNode } from './hydration-planning.ts';
 import { hydrateTemplateInstance, type HydrateTemplateInstanceOptions } from './hydration.ts';
 import { createBoundaryMarker } from './dom-operations.ts';
-import { shouldSkipHydrationSubtree } from '../hydration/hydration-subtree-policy.ts';
+import { isCustomElementSubtreeRoot } from '../hydration/hydration-subtree-policy.ts';
 import { hydrateMountedRangeContent } from './hydration-mounted-range.ts';
 import { disposeMountedRangeContent, disposeTemplateInstance } from './mounted-disposal.ts';
 import { createHydratedRangeRecord, mountedContentFromNodes } from './range-records.ts';
@@ -120,7 +120,7 @@ function isRangedChild(value: unknown): boolean {
 	return (
 		isIterableRenderable(value) ||
 		isEmptyTextNode(value) ||
-		(isTemplateResultLike(value) && shouldSkipHydrationSubtree(value.rootLocalName ?? ''))
+		(isTemplateResultLike(value) && isCustomElementSubtreeRoot(value.rootLocalName ?? ''))
 	);
 }
 

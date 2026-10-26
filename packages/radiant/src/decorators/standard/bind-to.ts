@@ -11,7 +11,7 @@ export function bindTo(targets: readonly CompiledBindToTarget[]) {
 		context.addInitializer(function (this: THost) {
 			const apply = () => applyBindToTargets(this, propertyName, targets);
 			this.registerUpdateCallback(propertyName, apply);
-			this[REACTIVE_HOST].registerPostSyncCallback(apply);
+			this[REACTIVE_HOST].registerPostSync(apply);
 		});
 	};
 }

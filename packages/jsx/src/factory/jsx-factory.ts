@@ -1,3 +1,4 @@
+import { RAW_TEXT_ELEMENT_NAMES } from './raw-text-element-names.ts';
 import { shouldDelegateEventBinding } from './event-binding-policy.ts';
 import { getTemplateShapeKey } from './template-shape.ts';
 import { forEachNormalizedAttribute } from './attribute-normalize.ts';
@@ -152,8 +153,8 @@ function appendElementChildren(
 	children: JsxRenderable | undefined,
 	childSlotMode: ChildSlotMode,
 ): void {
-	if (type === 'script') {
-		const rawTextContent = renderJsxRenderableToRawText(children);
+	if (RAW_TEXT_ELEMENT_NAMES.has(type)) {
+		const rawTextContent = renderJsxRenderableToRawText(type, children);
 
 		values.push(createMarkupNodeLike(rawTextContent));
 		parts.push({ type: 'child' });
@@ -164,13 +165,13 @@ function appendElementChildren(
 	appendChildren(strings, values, parts, children, childSlotMode);
 }
 
-function renderJsxRenderableToRawText(value: JsxRenderable | undefined): string {
+function renderJsxRenderableToRawText(tagName: string, value: JsxRenderable | undefined): string {
 	if (value === undefined || value === null || value === false || value === true) {
 		return '';
 	}
 
 	if (typeof value === 'string') {
-		return escapeRawTextElementText(value);
+		return escapeRawTextElementText(tagName, value);
 	}
 
 	if (typeof value === 'number' || typeof value === 'bigint') {
@@ -181,24 +182,24 @@ function renderJsxRenderableToRawText(value: JsxRenderable | undefined): string 
 		let rawText = '';
 
 		for (const child of value) {
-			rawText += renderJsxRenderableToRawText(child as JsxRenderable);
+			rawText += renderJsxRenderableToRawText(tagName, child as JsxRenderable);
 		}
 
 		return rawText;
 	}
 
-	return escapeRawTextElementText(String(value));
+	return escapeRawTextElementText(tagName, String(value));
 }
 
 /**
- * Escapes the only sequence that can terminate `<script>` text early.
+ * Escapes the only sequence that can terminate a raw-text element's content early.
  *
- * Inside a raw-text element the parser looks for `</script`, so that is the sole
- * sequence rewritten. Escaping every `<` would corrupt executable content —
- * `if (a < b)` is not a tag — which is why this is deliberately narrow.
+ * @remarks Inside `script` or `style` the parser looks for `</{tag}`, so that is the sole
+ * sequence rewritten. Escaping every `<` would corrupt CSS and executable content —
+ * `.a > .b` and `if (a < b)` are not tags.
  */
-function escapeRawTextElementText(value: string): string {
-	return value.replace(/<\/(?=script[\s/>])/gi, '<\\/');
+function escapeRawTextElementText(tagName: string, value: string): string {
+	return value.replace(new RegExp(`</(?=${tagName}[\\s/>])`, 'gi'), '<\\/');
 }
 
 function appendBinding(

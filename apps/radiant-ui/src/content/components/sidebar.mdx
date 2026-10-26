@@ -82,6 +82,8 @@ import '@ecopages/radiant-ui/sidebar';
 `rui-sidebar-trigger` stamps `[data-ref="button"]` and syncs `aria-expanded` / `aria-controls` against the sidebar.
 Each trigger also reflects its controlled sidebar's state, mobile mode, and collapse mode on the trigger host. An explicit `controls` id targets only that `rui-sidebar`; if it does not resolve, the trigger stays unattached and does not toggle a nearby sidebar. Without `controls`, a trigger inside a sidebar uses that ancestor. Placement and glyph styles read only the trigger host and its `placement` attribute, so an attached trigger follows the sidebar's `mobileBreakpoint` rather than the viewport width, including when providers are nested.
 
+For authored HTML, camelCase sidebar properties use kebab-case attributes (`defaultWidth` is `default-width`, and `mobileBreakpoint` is `mobile-breakpoint`). `RuiSidebar` JSX props keep their camelCase names.
+
 Before a trigger attaches (the server-rendered paint), placement styles treat viewports below 768px as mobile and read the sidebar whose pane holds the trigger, else the only sidebar of its nearest provider (child combinators, so nested providers stay independent). Other triggers, such as inset triggers shared by two sidebars in one provider, stay visible until they attach.
 
 ## Collapsible modes
@@ -125,19 +127,19 @@ Rounded corners use `rounded-container`; the docs site header uses `surface`, ma
 | `variant` | `sidebar` · `inset` · `floating` | `sidebar` | Pane treatment. |
 | `side` | `left` · `right` | `left` | Which side the pane sits on. |
 | `collapsible` | `off` · `icon` · `full` | `off` | Collapse behavior. |
-| `defaultWidth` | `number` | | Initial width in px. |
+| `default-width` (`defaultWidth`) | `number` | | Initial width in px. |
 | `width` | `number` | | Controlled width. |
-| `minWidth` / `maxWidth` | `number` | | Width bounds. |
+| `min-width` (`minWidth`) / `max-width` (`maxWidth`) | `number` | | Width bounds. |
 | `resizable` | `boolean` | `false` | Draggable resize handle. |
-| `defaultOpen` | `boolean` | `true` | Initial open state (desktop). |
-| `mobileDefaultOpen` | `boolean` | `false` | Open state on mobile when uncontrolled (mount and when the viewport crosses into mobile). |
+| `default-open` (`defaultOpen`) | `boolean` | `true` | Initial open state (desktop). |
+| `mobile-default-open` (`mobileDefaultOpen`) | `boolean` | `false` | Open state on mobile when uncontrolled (mount and when the viewport crosses into mobile). |
 | `open` | `boolean` | | Controlled open state. Viewport crossings do not override this. |
-| `mobileBreakpoint` | `number` | | Width below which the mobile rail applies. |
+| `mobile-breakpoint` (`mobileBreakpoint`) | `number` | | Width below which the mobile rail applies. |
 | `label` | `string` | `Sidebar` | Accessible name for the `nav` landmark. |
-| `matchActive` | `boolean` | `false` | Highlight the current route in the menu. |
-| `matchMode` | `pathname` · … | `pathname` | Route matching mode. |
-| `scrollActiveOnMount` | `boolean` | `false` | Scroll the active item into view on mount. |
-| `navigationEvents` | `string` | `''` | Custom navigation events to listen for. |
+| `match-active` (`matchActive`) | `boolean` | `false` | Highlight the current route in the menu. |
+| `match-mode` (`matchMode`) | `pathname` · … | `pathname` | Route matching mode. |
+| `scroll-active-on-mount` (`scrollActiveOnMount`) | `boolean` | `false` | Scroll the active item into view on mount. |
+| `navigation-events` (`navigationEvents`) | `string` | `''` | Custom navigation events to listen for. |
 
 ### Light-DOM contract (`<rui-sidebar>`)
 

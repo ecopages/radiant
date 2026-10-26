@@ -5,15 +5,15 @@
  * 1. `serializeRenderable(..., { mode: 'hydrate' })` writes `data-radiant-jsx-bind-N`
  *    attributes through {@link takeNextHydrationMarkerIndex} and
  *    {@link resolveHydrationMarkerAttributeName}.
- * 2. {@link collectHydrationBindings} and {@link planTemplateHydrationIndices}
- *    resolve the same global namespace for nested templates and list children.
+ * 2. {@link planTemplateHydrationIndices} resolves the same global namespace for
+ *    nested templates and list children.
  * 3. `hydrate(...)` walks markers back to live bindings via the template or iterable path.
  *
  * See `packages/jsx/README.md` → "SSR Marker Lifecycle" for the full walkthrough.
  */
 import { isIterableRenderable, isTemplateResultLike } from '../types/renderable-guards.ts';
 import type { JsxRenderable, TemplateResultLike } from '../types/index.ts';
-import { shouldSkipHydrationSubtree } from './hydration-subtree-policy.ts';
+import { isCustomElementSubtreeRoot } from './hydration-subtree-policy.ts';
 import type { BindingKind } from '../types/renderable-types.ts';
 import { materializeIterableChildren } from './iterable-snapshot.ts';
 
@@ -25,8 +25,6 @@ export type HydrationBinding = {
 	kind: BindingKind;
 	/** DOM attribute or property name that should be reconnected. */
 	name: string;
-	/** Original dynamic value that will be rebound during hydration. */
-	value: unknown;
 };
 
 /**
@@ -43,33 +41,6 @@ export type TemplateHydrationIndexPlan = {
 	nextIndex: number;
 };
 
-type CollectHydrationBindingsOptions = {
-	skipNestedCustomElementRoots?: boolean;
-};
-
-/**
- * Walks a JSX value tree and records the hydration bindings in SSR encounter
- * order.
- *
- * The resulting map uses the same binding indexes that `renderToString(...,
- * { mode: 'hydrate' })` writes into the HTML, allowing the DOM hydrator to match
- * serialized markers back to their original values.
- *
- * @param value JSX value to inspect.
- * @returns Ordered binding map keyed by hydration binding index.
- */
-export function collectHydrationBindings(
-	value: JsxRenderable,
-	options: CollectHydrationBindingsOptions = {},
-): Map<number, HydrationBinding> {
-	const bindings = new Map<number, HydrationBinding>();
-	const state = { nextIndex: 0 };
-
-	collectValueBindings(value, bindings, state, options);
-
-	return bindings;
-}
-
 /**
  * Counts the SSR marker indexes that `value` and everything beneath it consume.
  *
@@ -77,10 +48,8 @@ export function collectHydrationBindings(
  * needs the index a later sibling starts at.
  *
  * @remarks
- * A custom-element root is serialized by the SSR render hook, which returns
- * before taking any index. Its whole subtree contributes nothing to the parent's
- * namespace, and counting it would shift every later marker — hence the
- * {@link shouldSkipHydrationSubtree} early return.
+ * A hyphenated template is a custom-element subtree root and contributes
+ * nothing to the parent namespace. Counting it would shift every later marker.
  */
 export function countHydrationMarkers(value: JsxRenderable): number {
 	if (value === undefined || value === null || value === false || value === true) {
@@ -88,7 +57,7 @@ export function countHydrationMarkers(value: JsxRenderable): number {
 	}
 
 	if (isTemplateResultLike(value)) {
-		if (shouldSkipHydrationSubtree(value.rootLocalName ?? '')) {
+		if (isCustomElementSubtreeRoot(value.rootLocalName ?? '')) {
 			return 0;
 		}
 
@@ -237,7 +206,7 @@ export function visitHydrationBindingMarkers(
 			visit(element, attribute);
 		}
 
-		if (!intoCustomElements && element !== target && shouldSkipHydrationSubtree(element.localName)) {
+		if (!intoCustomElements && element !== target && isCustomElementSubtreeRoot(element.localName)) {
 			return;
 		}
 
@@ -295,58 +264,4 @@ function getChildElementAt(children: HTMLCollection, index: number): Element | n
 	}
 
 	return (children as unknown as ArrayLike<Element | null | undefined>)[index] ?? null;
-}
-
-function collectValueBindings(
-	value: JsxRenderable,
-	bindings: Map<number, HydrationBinding>,
-	state: { nextIndex: number },
-	options: CollectHydrationBindingsOptions,
-): void {
-	if (value === undefined || value === null || value === false || value === true) {
-		return;
-	}
-
-	if (isTemplateResultLike(value)) {
-		collectTemplateBindings(value, bindings, state, options);
-		return;
-	}
-
-	if (isIterableRenderable(value)) {
-		for (const child of materializeIterableChildren(value)) {
-			collectValueBindings(child as JsxRenderable, bindings, state, options);
-		}
-	}
-}
-
-function collectTemplateBindings(
-	template: TemplateResultLike,
-	bindings: Map<number, HydrationBinding>,
-	state: { nextIndex: number },
-	options: CollectHydrationBindingsOptions,
-): void {
-	if (options.skipNestedCustomElementRoots && shouldSkipHydrationSubtree(template.rootLocalName ?? '')) {
-		return;
-	}
-
-	const markerIndices = planTemplateHydrationIndices(template, state.nextIndex);
-	state.nextIndex = markerIndices.nextIndex;
-
-	for (const [valueIndex, globalIndex] of markerIndices.attributeIndices) {
-		const part = template.parts[valueIndex];
-
-		if (part?.type === 'attribute') {
-			bindings.set(globalIndex, {
-				kind: part.kind,
-				name: part.name,
-				value: template.values[valueIndex],
-			});
-		}
-	}
-
-	for (let index = 0; index < template.values.length; index += 1) {
-		if (template.parts[index]?.type !== 'attribute') {
-			collectValueBindings(template.values[index] as JsxRenderable, bindings, state, options);
-		}
-	}
 }

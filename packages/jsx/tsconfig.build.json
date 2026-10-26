@@ -12,6 +12,7 @@
 		"./src/index.ts",
 		"./src/server.ts",
 		"./src/client.ts",
+		"./src/raw-text.ts",
 		"./src/jsx-runtime.ts",
 		"./src/jsx-dev-runtime.ts",
 		"./src/dom-render.ts",
