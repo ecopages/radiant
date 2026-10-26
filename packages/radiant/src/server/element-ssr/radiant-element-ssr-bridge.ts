@@ -20,7 +20,8 @@ import type {
 	RadiantElementViewRenderSource,
 } from '../../core/radiant-element-ssr-registry';
 import { withRadiantElementSsrRuntime } from '../../core/radiant-element-ssr-registry';
-import { setDetachedRootNamespace } from '../shim/minimal-dom/html';
+import { serializeNodeInNamespace, setDetachedRootNamespace } from '../shim/minimal-dom/html';
+import { MinimalElement } from '../shim/minimal-dom/nodes';
 import { SERVER_RENDERED_CHILDREN_STAMP, SERVER_RENDERED_HOST_ATTRIBUTE } from '../../core/server-rendered-host';
 
 let radiantElementSsrRuntime: RadiantElementSsrRuntime | undefined;
@@ -86,12 +87,26 @@ function renderRadiantElementRawViewToString(
 	return withServerRadiantElementSsrRuntime(() =>
 		withRadiantServerCustomElementRenderBridge(() =>
 			withActiveSsrScopeValue(RADIANT_VIEW_SCOPE_KEY, true, () => {
-				const renderable = component.resolveTrackedRenderOutput().value;
+				const renderable = component.resolveTrackedRenderOutput(projectForeignSlotContent).value;
 				beforeSerialize();
 				return renderJsxToString(renderable, options);
 			}),
 		),
 	);
+}
+
+/**
+ * Replaces each light-DOM element assigned to a slot inside `svg` or `math` with its markup in that namespace.
+ *
+ * @remarks The element still sits under its host, so its own `outerHTML` spells it for HTML, where a `style` holds raw
+ * text. Other slot content, such as a Children Value, is JSX that the serializer already places in the namespace.
+ */
+function projectForeignSlotContent(content: JsxRenderable, namespace: 'svg' | 'math'): JsxRenderable {
+	if (Array.isArray(content))
+		return content.map((entry: JsxRenderable) => projectForeignSlotContent(entry, namespace));
+	return content instanceof MinimalElement
+		? createMarkupNodeLike(serializeNodeInNamespace(content as unknown as Node, namespace))
+		: content;
 }
 
 /**

@@ -15,6 +15,16 @@ import { HYDRATION_ATTRIBUTE } from './hydration-codec';
 export const DEFAULT_SLOT_NAME = '';
 export const SLOT_PROJECTION_SCRIPT_ATTRIBUTE = 'data-radiant-slot-projection';
 
+type ForeignNamespace = 'svg' | 'math';
+
+/**
+ * Replaces content assigned to a slot that sits inside `svg` or `math`.
+ *
+ * @remarks The server passes one to {@link resolveSlotProjection}: a slotted light-DOM node would otherwise
+ * serialize by its own DOM position, under the host in HTML, while the browser parses it where the view puts it.
+ */
+export type ForeignSlotContentProjector = (content: JsxRenderable, namespace: ForeignNamespace) => JsxRenderable;
+
 type ResolvedSlotProjection = {
 	containsSlots: boolean;
 	value: JsxRenderable;
@@ -109,33 +119,45 @@ function escapeScriptText(value: string): string {
 	return value.replace(/</g, '\\u003c');
 }
 
+/**
+ * Puts the content assigned to each `<slot>` of a view in its place.
+ *
+ * @param projectForeign Called with the content of a slot that sits inside `svg` or `math`, tracked through
+ * templates by the rule of the jsx serializer's `childForeignContent`. Only the server passes it; the client keeps
+ * the assigned nodes as they are.
+ */
 export function resolveSlotProjection(
 	value: JsxRenderable,
 	projectedContent: ReadonlyMap<string, readonly JsxRenderable[]>,
+	projectForeign?: ForeignSlotContentProjector,
 ): ResolvedSlotProjection {
 	let containsSlots = false;
 
-	const resolveValue = (currentValue: JsxRenderable): JsxRenderable => {
+	const resolveValue = (currentValue: JsxRenderable, namespace?: ForeignNamespace): JsxRenderable => {
 		if (isSlotJsxValue(currentValue)) {
 			containsSlots = true;
-			return resolveSlotValue(currentValue, projectedContent, resolveValue);
+			const content = resolveSlotValue(currentValue, projectedContent, (fallback) =>
+				resolveValue(fallback, namespace),
+			);
+			return namespace && projectForeign ? projectForeign(content, namespace) : content;
 		}
 
 		if (isKeyedJsxValue(currentValue)) {
-			return cloneKeyedJsxValue(currentValue, resolveValue(currentValue.value));
+			return cloneKeyedJsxValue(currentValue, resolveValue(currentValue.value, namespace));
 		}
 
 		if (isTemplateResultLike(currentValue)) {
+			const childNamespace = childForeignNamespace(currentValue.rootLocalName?.toLowerCase(), namespace);
 			// Spread rather than enumerate: only `values` is rewritten here, and the
 			// template result carries compile metadata that must survive untouched.
 			return {
 				...currentValue,
-				values: currentValue.values.map((entry) => resolveValue(entry as JsxRenderable)),
+				values: currentValue.values.map((entry) => resolveValue(entry as JsxRenderable, childNamespace)),
 			} satisfies TemplateResultLike;
 		}
 
 		if (isIterableRenderable(currentValue)) {
-			return Array.from(currentValue, (entry) => resolveValue(entry as JsxRenderable));
+			return Array.from(currentValue, (entry) => resolveValue(entry as JsxRenderable, namespace));
 		}
 
 		return currentValue;
@@ -273,6 +295,20 @@ function hasOuterHtml(renderable: JsxRenderable): renderable is JsxNodeLike & { 
 
 function renderOuterHtmlValue(renderable: JsxNodeLike & { outerHTML: unknown }): string | undefined {
 	return typeof renderable.outerHTML === 'string' ? renderable.outerHTML : (renderable.textContent ?? undefined);
+}
+
+/**
+ * @remarks `svg` and `math` enter foreign content. Only an SVG `foreignObject`, `desc` or `title` returns to HTML;
+ * under `math` the same names stay foreign.
+ */
+function childForeignNamespace(
+	localName: string | undefined,
+	namespace?: ForeignNamespace,
+): ForeignNamespace | undefined {
+	if (localName === 'svg' || localName === 'math') return localName;
+	return namespace === 'svg' && (localName === 'foreignobject' || localName === 'desc' || localName === 'title')
+		? undefined
+		: namespace;
 }
 
 function resolveSlotValue(
