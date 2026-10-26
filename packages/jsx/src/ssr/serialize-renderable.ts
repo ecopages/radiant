@@ -42,8 +42,16 @@ export type SerializeRenderableOptions = {
 	 * a transported template does not set it.
 	 */
 	foreignContent?: 'svg' | 'math';
-	/** Optional custom-element renderer invoked before generic template serialization. */
-	renderCustomElementTemplate?: (template: TemplateResultLike) => string | undefined;
+	/**
+	 * Optional custom-element renderer invoked before generic template serialization.
+	 *
+	 * @remarks Receives {@link SerializeRenderableOptions.foreignContent} of the element, so the element's light DOM
+	 * and view serialize in the namespace the browser parses them in.
+	 */
+	renderCustomElementTemplate?: (
+		template: TemplateResultLike,
+		foreignContent: SerializeRenderableOptions['foreignContent'],
+	) => string | undefined;
 };
 
 /**
@@ -114,7 +122,7 @@ export function serializeRenderable(value: JsxRenderable | undefined, options: S
  */
 function serializeTemplateResult(template: TemplateResultLike, options: SerializeRenderableOptions): string {
 	if (options.renderCustomElementTemplate) {
-		const customElementHtml = options.renderCustomElementTemplate(template);
+		const customElementHtml = options.renderCustomElementTemplate(template, options.foreignContent);
 
 		if (customElementHtml !== undefined) {
 			return customElementHtml;
@@ -156,7 +164,8 @@ function serializeTemplateResult(template: TemplateResultLike, options: Serializ
 	return html;
 }
 
-function childForeignContent(
+/** The foreign namespace the children of a `rootLocalName` element sit in, given the one the element sits in. */
+export function childForeignContent(
 	rootLocalName: string | undefined,
 	foreignContent: SerializeRenderableOptions['foreignContent'],
 ): SerializeRenderableOptions['foreignContent'] {

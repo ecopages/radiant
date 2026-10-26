@@ -508,6 +508,7 @@ Raw-text children (`style`, `script`, `xmp`, `iframe`, `noembed`, and `noframes`
 
 - **HTML:** only the element's own closing sequence (`</style`, `</script`, ..., any case, followed by whitespace, `/` or `>`) is rewritten to `<\/name`. Other text stays byte-identical, so CSS such as `@media (width < 600px)` and script such as `a < b` keep their meaning.
 - **Inside `svg` or `math`:** these tags are ordinary elements, so the text is entity-escaped like other text. The parser decodes the entities back to the original characters. `foreignObject` content is HTML again.
+- **Across a custom element:** a registered custom element inside `svg` or `math` keeps that namespace for its content. The render hook gets it as `context.foreignContent` and `renderHostToString` as the `foreignContent` option, and the default children and the fallback markup serialize in it. `renderServerLightDom` takes it as its third argument. A hook that serializes a view itself passes it on with `renderToString(view, { foreignContent })`.
 
 The closing-tag rewrite does not cover the script parser's escaped states: inside `<script>`, the text `<!--<script>` stops the real closing tag from ending the element. When a script carries data, such as a JSON payload, escape every `<` in it as `\u003c`.
 
@@ -596,6 +597,7 @@ Such a hook can apply the children as nodes, not a string, with `renderServerLig
 - **Nested custom elements:** they render through the active hook.
 - **Text-only elements:** `script`, `style`, `textarea` and `title` get their text verbatim.
 - **Markers:** the output carries no hydration markers, matching the plain light-DOM serialization.
+- **Foreign content:** pass the hook context's `foreignContent` as the third argument when the element sits inside `svg` or `math`. Nested custom elements then render, and their markup is parsed, in that namespace.
 
 Reactive values passed to a registered, SSR-capable custom element are resolved to their current snapshot before the instance receives them. Its `renderHostToString(...)` method or server hook can then reflect or consume that snapshot so `data-*`, reflected attributes, and property-backed host state stay aligned in plain and hydrate SSR output.
 

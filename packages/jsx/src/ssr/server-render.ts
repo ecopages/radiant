@@ -33,6 +33,14 @@ export type RenderToStringOptions = {
 	 * - `'hydrate'` emits HTML plus hydration binding markers.
 	 */
 	mode?: RenderToStringMode;
+	/**
+	 * The foreign namespace the output is inserted in, `svg` or `math`, when it is not HTML.
+	 *
+	 * @remarks Raw-text tags (`style`, `script`, `xmp`, ...) are ordinary elements there, so their text is
+	 * entity-escaped. An SVG `foreignObject` in the output returns to HTML. Set it when the output is the content of
+	 * an element inside `svg` or `math`, such as the view of a custom element the browser parses there.
+	 */
+	foreignContent?: 'svg' | 'math';
 };
 
 /**
@@ -50,6 +58,7 @@ export type ServerHydrationBindingState = {
 type RenderContext = {
 	ssr: SsrRenderContext;
 	hydrationBindingState: ServerHydrationBindingState;
+	foreignContent: RenderToStringOptions['foreignContent'];
 };
 
 type HydrationBindingScope = {
@@ -84,6 +93,7 @@ export function renderToString(value: JsxRenderable, options: RenderToStringOpti
 	const context: RenderContext = {
 		ssr,
 		hydrationBindingState: hydrationBindingScope.hydrationBindingState,
+		foreignContent: options.foreignContent,
 	};
 
 	return withActiveSsrRenderContext(ssr, () => renderChild(value, context));
@@ -190,7 +200,8 @@ function renderChild(value: JsxRenderable, context: RenderContext): string {
 	return serializeRenderable(value, {
 		mode: context.ssr.hydrate ? 'hydrate' : 'plain',
 		hydrationBindingState: context.hydrationBindingState,
-		renderCustomElementTemplate: (template) => renderIntrinsicCustomElementTemplate(template),
+		foreignContent: context.foreignContent,
+		renderCustomElementTemplate: renderIntrinsicCustomElementTemplate,
 	});
 }
 
@@ -205,15 +216,26 @@ function renderChild(value: JsxRenderable, context: RenderContext): string {
  * Nested hosts inside the children still render through the custom-element
  * hook, which follows the active hydrate policy with a fresh namespace.
  */
-function renderCustomElementLightDom(value: JsxRenderable): string {
+function renderCustomElementLightDom(
+	value: JsxRenderable,
+	foreignContent?: RenderToStringOptions['foreignContent'],
+): string {
 	return serializeRenderable(value, {
 		mode: 'plain',
-		renderCustomElementTemplate: (template) => renderIntrinsicCustomElementTemplate(template),
+		foreignContent,
+		renderCustomElementTemplate: renderIntrinsicCustomElementTemplate,
 	});
 }
 
-/** Renders a registered custom element template through the active hook or its own host renderer. */
-export function renderIntrinsicCustomElementTemplate(template: TemplateResultLike): string | undefined {
+/**
+ * Renders a registered custom element template through the active hook or its own host renderer.
+ *
+ * @param foreignContent The foreign namespace the element sits in; its light DOM and view serialize in it.
+ */
+export function renderIntrinsicCustomElementTemplate(
+	template: TemplateResultLike,
+	foreignContent?: RenderToStringOptions['foreignContent'],
+): string | undefined {
 	if (!template.rootLocalName || !isCustomElementSubtreeRoot(template.rootLocalName) || !template.ssrIntrinsicProps) {
 		return undefined;
 	}
@@ -221,6 +243,7 @@ export function renderIntrinsicCustomElementTemplate(template: TemplateResultLik
 	const serverRenderedCustomElement = createServerRenderedIntrinsicCustomElement(
 		template.rootLocalName,
 		template.ssrIntrinsicProps,
+		foreignContent,
 	);
 
 	if (!serverRenderedCustomElement) {

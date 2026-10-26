@@ -4,7 +4,7 @@ import {
 	stringifyTextContentValue,
 	TEXT_CONTENT_ELEMENT_NAMES,
 } from '../factory/text-content-value.ts';
-import { getElementNamespace, HTML_NAMESPACE_URI } from '../dom-render/namespaces.ts';
+import { getElementNamespace, HTML_NAMESPACE_URI, SVG_NAMESPACE_URI } from '../dom-render/namespaces.ts';
 import { isClientOnlyBinding } from '../hydration/hydration-marker-policy.ts';
 import {
 	isIterableRenderable,
@@ -16,8 +16,13 @@ import {
 	mayEmitOrParseRawOuterHtml,
 	resolveReactiveSnapshot,
 } from '../types/renderable-guards.ts';
+import { childForeignContent, type SerializeRenderableOptions } from './serialize-renderable.ts';
 import { renderIntrinsicCustomElementTemplate } from './server-render.ts';
 import type { JsxNodeLike, JsxRenderable, TemplatePartDescriptor, TemplateResultLike } from '../types/index.ts';
+
+type ForeignContent = SerializeRenderableOptions['foreignContent'];
+
+const MATHML_NAMESPACE_URI = 'http://www.w3.org/1998/Math/MathML';
 
 const ATTRIBUTE_PART_PREFIX = 'data-radiant-ssr-part-';
 const TEXT_PART_PREFIX = 'data-radiant-ssr-text-';
@@ -60,18 +65,31 @@ const BLUEPRINTS_BY_SHAPE = new Map<string, readonly BlueprintNode[]>();
  * elements render through the active custom-element hook. Output carries no hydration markers: client
  * hydration skips custom-element subtrees. Trusted markup (`unsafeHtml`) and DOM nodes are copied by parsing
  * their HTML, which is what they are.
+ *
+ * @param foreignContent The foreign namespace the nodes are inserted in, `svg` or `math`, when the element that
+ * receives them sits there. Nested custom elements render, and their markup is parsed, in the namespace they
+ * sit in.
  */
-export function renderServerLightDom(value: JsxRenderable | undefined, ownerDocument: Document): Node[] {
+export function renderServerLightDom(
+	value: JsxRenderable | undefined,
+	ownerDocument: Document,
+	foreignContent?: 'svg' | 'math',
+): Node[] {
 	const nodes: Node[] = [];
-	appendRenderable(nodes, value, ownerDocument);
+	appendRenderable(nodes, value, ownerDocument, foreignContent);
 	return nodes;
 }
 
-function appendRenderable(nodes: Node[], value: unknown, ownerDocument: Document): void {
+function appendRenderable(
+	nodes: Node[],
+	value: unknown,
+	ownerDocument: Document,
+	foreignContent: ForeignContent,
+): void {
 	if (value === undefined || value === null || typeof value === 'boolean') return;
-	if (isKeyedJsxValue(value)) return appendRenderable(nodes, value.value, ownerDocument);
-	if (isSubscribableJsxValue(value)) return appendRenderable(nodes, value.getValue(), ownerDocument);
-	if (isSignalLikeValue(value)) return appendRenderable(nodes, value.get(), ownerDocument);
+	if (isKeyedJsxValue(value)) return appendRenderable(nodes, value.value, ownerDocument, foreignContent);
+	if (isSubscribableJsxValue(value)) return appendRenderable(nodes, value.getValue(), ownerDocument, foreignContent);
+	if (isSignalLikeValue(value)) return appendRenderable(nodes, value.get(), ownerDocument, foreignContent);
 
 	if (typeof value === 'string' || typeof value === 'number' || typeof value === 'bigint') {
 		nodes.push(ownerDocument.createTextNode(String(value)));
@@ -79,52 +97,61 @@ function appendRenderable(nodes: Node[], value: unknown, ownerDocument: Document
 	}
 
 	if (isTemplateResultLike(value)) {
-		nodes.push(...renderTemplate(value, ownerDocument));
+		nodes.push(...renderTemplate(value, ownerDocument, foreignContent));
 		return;
 	}
 
 	if (isJsxNodeLike(value)) {
-		nodes.push(...copyNodeLike(value, ownerDocument));
+		nodes.push(...copyNodeLike(value, ownerDocument, foreignContent));
 		return;
 	}
 
 	if (isIterableRenderable(value)) {
-		for (const child of value) appendRenderable(nodes, child, ownerDocument);
+		for (const child of value) appendRenderable(nodes, child, ownerDocument, foreignContent);
 		return;
 	}
 
 	nodes.push(ownerDocument.createTextNode(String(value)));
 }
 
-function renderTemplate(template: TemplateResultLike, ownerDocument: Document): Node[] {
-	const customElementHtml = renderIntrinsicCustomElementTemplate(template);
+function renderTemplate(template: TemplateResultLike, ownerDocument: Document, foreignContent: ForeignContent): Node[] {
+	const customElementHtml = renderIntrinsicCustomElementTemplate(template, foreignContent);
 
 	if (customElementHtml !== undefined) {
-		return parseHtml(customElementHtml, ownerDocument);
+		return parseHtml(customElementHtml, ownerDocument, foreignContent);
 	}
 
-	return instantiate(getBlueprint(template, ownerDocument), template, ownerDocument);
+	return instantiate(getBlueprint(template, ownerDocument), template, ownerDocument, foreignContent);
 }
 
 /**
  * @remarks Mirrors `serializeRenderable`: unbranded `outerHTML` is text, never markup.
  */
-function copyNodeLike(node: JsxNodeLike, ownerDocument: Document): Node[] {
+function copyNodeLike(node: JsxNodeLike, ownerDocument: Document, foreignContent: ForeignContent): Node[] {
 	if (typeof node.outerHTML === 'string') {
 		return mayEmitOrParseRawOuterHtml(node)
-			? parseHtml(node.outerHTML, ownerDocument)
+			? parseHtml(node.outerHTML, ownerDocument, foreignContent)
 			: [ownerDocument.createTextNode(node.outerHTML)];
 	}
 
 	if (node.nodeType !== 3 && Array.isArray(node.childNodes)) {
-		return node.childNodes.flatMap((child) => copyNodeLike(child, ownerDocument));
+		return node.childNodes.flatMap((child) => copyNodeLike(child, ownerDocument, foreignContent));
 	}
 
 	return [ownerDocument.createTextNode(node.textContent ?? '')];
 }
 
-function parseHtml(html: string, ownerDocument: Document): Node[] {
-	const holder = ownerDocument.createElement('template');
+/**
+ * @remarks Inside foreign content the markup is parsed as the content of an `svg` or `math` element, as the
+ * browser parses it there, so a `style` in it is an ordinary element.
+ */
+function parseHtml(html: string, ownerDocument: Document, foreignContent?: ForeignContent): Node[] {
+	const holder = foreignContent
+		? ownerDocument.createElementNS(
+				foreignContent === 'svg' ? SVG_NAMESPACE_URI : MATHML_NAMESPACE_URI,
+				foreignContent,
+			)
+		: ownerDocument.createElement('template');
 	holder.innerHTML = html;
 	const root = (holder as Partial<HTMLTemplateElement>).content ?? holder;
 	return Array.from(root.childNodes);
@@ -242,6 +269,7 @@ function instantiate(
 	blueprint: readonly BlueprintNode[],
 	template: TemplateResultLike,
 	ownerDocument: Document,
+	foreignContent: ForeignContent,
 ): Node[] {
 	return blueprint.flatMap((node): Node[] => {
 		switch (node.type) {
@@ -250,14 +278,23 @@ function instantiate(
 			case 'comment':
 				return [ownerDocument.createComment(node.data)];
 			case 'part':
-				return renderServerLightDom(template.values[node.index] as JsxRenderable, ownerDocument);
+				return renderServerLightDom(
+					template.values[node.index] as JsxRenderable,
+					ownerDocument,
+					foreignContent,
+				);
 			case 'element':
-				return [instantiateElement(node, template, ownerDocument)];
+				return [instantiateElement(node, template, ownerDocument, foreignContent)];
 		}
 	});
 }
 
-function instantiateElement(node: BlueprintElement, template: TemplateResultLike, ownerDocument: Document): Element {
+function instantiateElement(
+	node: BlueprintElement,
+	template: TemplateResultLike,
+	ownerDocument: Document,
+	foreignContent: ForeignContent,
+): Element {
 	const element =
 		node.namespaceURI !== HTML_NAMESPACE_URI && typeof ownerDocument.createElementNS === 'function'
 			? ownerDocument.createElementNS(node.namespaceURI, node.localName)
@@ -273,7 +310,8 @@ function instantiateElement(node: BlueprintElement, template: TemplateResultLike
 		return element;
 	}
 
-	for (const child of instantiate(node.children, template, ownerDocument)) element.appendChild(child);
+	const childNamespace = childForeignContent(node.localName.toLowerCase(), foreignContent);
+	for (const child of instantiate(node.children, template, ownerDocument, childNamespace)) element.appendChild(child);
 	return element;
 }
 
