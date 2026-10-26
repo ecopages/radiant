@@ -2,4 +2,4 @@
 '@ecopages/jsx': patch
 ---
 
-Each hydrate-mode `renderToString(...)` without an explicit binding state now starts its marker indexes at 0, even inside an active SSR scope. Use `withServerHydrationBindingState(...)` when sibling roots should share one namespace.
+**Breaking:** Each hydrate-mode `renderToString(...)` without explicit binding state starts its marker indexes at 0, even inside `withActiveSsrScopeValue(...)`. Integrations that render sibling roots of one hydration root must wrap them in `withServerHydrationBindingState(createServerHydrationBindingState(), () => ...)` so the client sees one continuous marker stream.

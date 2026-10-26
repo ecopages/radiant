@@ -13,6 +13,11 @@ type CustomElementConstructorWithTagName = CustomElementConstructor & {
 	[CUSTOM_ELEMENT_TAG_NAME]?: string;
 };
 
+/**
+ * Reads the tag stored under {@link CUSTOM_ELEMENT_TAG_NAME} by `@customElement(...)`.
+ *
+ * @remarks Does not consult `customElements.getName()`; JSX resolution falls back to it.
+ */
 export function getCustomElementTagName(constructor: CustomElementConstructor): string | undefined {
 	return (constructor as CustomElementConstructorWithTagName)[CUSTOM_ELEMENT_TAG_NAME];
 }

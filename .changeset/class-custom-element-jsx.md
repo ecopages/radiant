@@ -1,6 +1,8 @@
 ---
 '@ecopages/jsx': minor
 '@ecopages/radiant': patch
+'@ecopages/storybook-radiant-vite': patch
+'@ecopages/vite-plugin-radiant': patch
 ---
 
-Allow registered custom-element classes to be used directly in JSX, with public props declared through `JSX_PROPS` and SSR tag lookup supported by the server registry shim.
+Use a registered custom-element class directly as a JSX element type (`<UserCard name="Ada" />`). Declare its public props with `declare readonly [JSX_PROPS]?: Props` (`import type { JSX_PROPS } from '@ecopages/jsx'`); a tag listed in `HTMLElementTagNameMap` gets the same props. JSX finds the tag from `@customElement(...)` metadata or `customElements.getName()`, on the server too. Rendering an unregistered class, or one that extends a built-in element other than `HTMLElement`, throws a `TypeError` naming the class. `CUSTOM_ELEMENT_TAG_NAME` and `getCustomElementTagName()` are exported from `@ecopages/jsx`. Existing `JsxCustomIntrinsicElements` augmentations keep working.

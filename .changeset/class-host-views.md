@@ -2,4 +2,4 @@
 '@ecopages/radiant-ui': patch
 ---
 
-Render Radiant UI's view-owned custom-element hosts through their exported element classes, preserving the host's JSX prop contract and runtime registration.
+Type each catalog tag from its class: `<rui-alert>` and `<RuiAlertElement>` accept the class's public props (`JSX_PROPS` plus its `HTMLElementTagNameMap` entry), and views render their hosts through those classes, which also registers them.

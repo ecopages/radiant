@@ -56,6 +56,10 @@ type ChildSlotMode = 'multiple' | 'single';
  */
 type JsxClassElement = abstract new (...args: any[]) => Element;
 
+/**
+ * @remarks Walks the prototype chain to the nearest global `HTML*` constructor; any such base other than
+ * `HTMLElement` makes the class a customized built-in.
+ */
 function isCustomizedBuiltIn(type: Function): boolean {
 	let prototype: object | null = Object.getPrototypeOf((type as Function & { prototype: object }).prototype);
 	while (prototype) {

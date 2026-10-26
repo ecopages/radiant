@@ -16,7 +16,7 @@ order: 6
 | Path | Behavior |
 | :-- | :-- |
 | Text children | Escaped on SSR; mounted as text nodes on the client |
-| Text children in text-content elements | Written as the element's character data; comment anchors are not used |
+| Text children in `textarea`, `title` and raw-text elements | Written as the element's character data; comment anchors are not used |
 | Ordinary attributes | Escaped for HTML attribute context (including `"`) |
 | Plain `{ nodeType, outerHTML }` objects | Treated as text (escaped / text node), not raw HTML |
 
