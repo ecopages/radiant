@@ -1,4 +1,5 @@
 import type { ReactivePropertyOptions } from './reactive-prop-core';
+import { toKebabCaseAttributeName } from '../utils/attribute-utils';
 
 const REACTIVE_PROP_DEFINITIONS = Symbol.for('@ecopages/radiant.reactivePropDefinitions');
 
@@ -106,8 +107,8 @@ export function ensureObservedAttributes(constructor: CustomElementConstructor, 
 	});
 }
 
-export function attributeNameForProp(propertyName: string, options: ReactivePropertyOptions<unknown>): string {
-	return options.attribute ?? propertyName;
+export function attributeNameForProp<T>(propertyName: string, options: ReactivePropertyOptions<T>): string {
+	return options.attribute ?? toKebabCaseAttributeName(propertyName);
 }
 
 /**

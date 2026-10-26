@@ -8,6 +8,7 @@ import { REACTIVE_HOST } from '../../core/reactive-host';
 import { CONTROLLER_ATTRIBUTE } from '../../controller-registry';
 import { ensureLegacyHostReady } from '../../decorators/legacy/host-readiness';
 import { assertValidHtmlAttributeName, assertValidHtmlTagName } from '../../utils/html-names';
+import { toKebabCaseAttributeName } from '../../utils/attribute-utils';
 import { serializeHtmlAttribute } from '../../utils/serialize-html-attribute';
 import { runWithSsrProviderStack, withSsrContextProviders } from '../context-ssr';
 import { ensureLightDomShim } from '../shim/light-dom-shim';
@@ -237,7 +238,7 @@ function appendRenderedControllerStructuredAttributes(
 	}
 
 	for (const [name, entryValue] of Object.entries(value)) {
-		attributes[`${prefix}-${toKebabCaseRenderedControllerAttribute(name)}`] = entryValue;
+		attributes[`${prefix}-${toKebabCaseAttributeName(name)}`] = entryValue;
 	}
 }
 
@@ -301,13 +302,6 @@ function appendRenderedControllerClassTokens(tokens: string[], value: unknown): 
 
 function isPlainRenderedControllerAttributeObject(value: unknown): value is Record<string, unknown> {
 	return Object.prototype.toString.call(value) === '[object Object]';
-}
-
-function toKebabCaseRenderedControllerAttribute(value: string): string {
-	return value
-		.replace(/([a-z0-9])([A-Z])/g, '$1-$2')
-		.replace(/[_\s]+/g, '-')
-		.toLowerCase();
 }
 
 function renderRenderedControllerHost(

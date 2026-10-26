@@ -4,7 +4,7 @@ import {
 	validateReactivePropertyDefault,
 } from '../../core/reactive-prop-core';
 import type { ReactiveHostLike } from '../../core/reactive-host';
-import { registerReactivePropDefinition } from '../../core/reactive-prop-metadata';
+import { attributeNameForProp, registerReactivePropDefinition } from '../../core/reactive-prop-metadata';
 import { registerLegacyInstanceInitializer, registerLegacyPostConstructionInitializer } from './instance-initializers';
 import { bootstrapReactiveMemberBinding } from './member-bootstrap';
 import type { ReactivePropHost } from '../standard/reactive-prop';
@@ -17,12 +17,12 @@ import type { ReactivePropHost } from '../standard/reactive-prop';
  * decorator while keeping their runtime channels different.
  */
 export function reactiveProp<T = unknown>(propOptions: ReactivePropertyOptions<T>) {
-	const { type, attribute, reflect, defaultValue, bind, transform } = propOptions;
+	const { type, reflect, defaultValue, bind, transform } = propOptions;
 	const hasDefaultValue = 'defaultValue' in propOptions;
 	validateReactivePropertyDefault(type, defaultValue, !!transform?.fromAttribute);
 
 	return (target: ReactivePropHost<T>, propertyName: string) => {
-		const attributeKey = attribute ?? propertyName;
+		const attributeKey = attributeNameForProp(propertyName, propOptions);
 		const options: ReactivePropertyOptions<unknown> = {
 			type,
 			reflect,

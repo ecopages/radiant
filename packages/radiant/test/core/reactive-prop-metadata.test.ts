@@ -1,5 +1,10 @@
 import { describe, expect, test } from 'vitest';
-import { getReactivePropDefinitions, registerReactivePropDefinition } from '../../src/core/reactive-prop-metadata';
+import {
+	applyObservedAttributesFromPropRegistry,
+	attributeNameForProp,
+	getReactivePropDefinitions,
+	registerReactivePropDefinition,
+} from '../../src/core/reactive-prop-metadata';
 
 describe('reactive prop metadata registry', () => {
 	test('does not leak subclass definitions into a related sibling or the base class', () => {
@@ -17,5 +22,22 @@ describe('reactive prop metadata registry', () => {
 			'base',
 			'sibling',
 		]);
+	});
+
+	test('maps camelCase property names to kebab-case attributes unless explicitly overridden', () => {
+		expect(attributeNameForProp('minWidth', { type: Number })).toBe('min-width');
+		expect(attributeNameForProp('isOpen', { type: Boolean, attribute: 'data-Open' })).toBe('data-Open');
+	});
+
+	test('uses the mapped name when preparing observedAttributes from prop metadata', () => {
+		class Host {}
+		const constructor = Host as unknown as CustomElementConstructor;
+
+		registerReactivePropDefinition(constructor, 'minWidth', { type: Number });
+		registerReactivePropDefinition(constructor, 'isOpen', { type: Boolean, attribute: 'data-Open' });
+		applyObservedAttributesFromPropRegistry(constructor);
+
+		expect(Reflect.get(constructor, 'observedAttributes')).toContain('min-width');
+		expect(Reflect.get(constructor, 'observedAttributes')).toContain('data-Open');
 	});
 });
