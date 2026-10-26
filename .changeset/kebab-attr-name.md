@@ -2,4 +2,4 @@
 '@ecopages/radiant': patch
 ---
 
-Use the same kebab-case attribute naming for `@attr` and `@prop`. Consecutive underscores in a property name now collapse into one hyphen; no existing production fields use consecutive underscores.
+`@attr` derives its default attribute name with the same kebab-case rule as `@prop`, so each run of underscores collapses to one hyphen: an `@attr` field `a__b` now maps to `a-b` (was `a--b`). An explicit `source` keeps its name.

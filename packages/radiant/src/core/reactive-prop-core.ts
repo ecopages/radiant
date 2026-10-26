@@ -56,10 +56,9 @@ export type ReactivePropertyOptions<T, C extends AttributeTypeConstant = Attribu
 	type: C;
 	reflect?: boolean;
 	/**
-	 * Name of the attribute associated with the property.
-	 *
-	 * @remarks Defaults to kebab-case conversion of the property name: camelCase and underscores become `-`.
-	 * An explicit attribute name is used as provided.
+	 * @remarks Defaults to the property name in kebab-case: each camelCase boundary becomes a hyphen, each run of
+	 * `_` collapses to one hyphen, and the result is lowercased (`max_Width` and `max__Width` map to `max-width`).
+	 * An explicit name is used as given.
 	 */
 	attribute?: string;
 	/**

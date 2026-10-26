@@ -34,12 +34,20 @@ class AttrReconnectController extends RadiantController<{ state: string | undefi
 @customElement('attr-underscore-name-test')
 class AttrUnderscoreNameElement extends RadiantElement {
 	@attr({ type: Number }) max_Width = 0;
+}
+
+@customElement('attr-double-underscore-name-test')
+class AttrDoubleUnderscoreNameElement extends RadiantElement {
 	@attr({ type: Number }) max__Width = 0;
 }
 
 @customElement('prop-underscore-name-test')
 class PropUnderscoreNameElement extends RadiantElement {
 	@prop({ type: Number, reflect: true }) max_Width = 0;
+}
+
+@customElement('prop-double-underscore-name-test')
+class PropDoubleUnderscoreNameElement extends RadiantElement {
 	@prop({ type: Number, reflect: true }) max__Width = 0;
 }
 
@@ -54,10 +62,17 @@ describe('@attr', () => {
 
 		expect(attrElement.getAttribute('max-width')).toBe('2');
 		expect(propElement.getAttribute('max-width')).toBe('2');
+	});
+
+	test('collapses consecutive underscores to one hyphen, as @prop does', () => {
+		const attrElement = document.createElement('attr-double-underscore-name-test') as AttrDoubleUnderscoreNameElement;
+		const propElement = document.createElement('prop-double-underscore-name-test') as PropDoubleUnderscoreNameElement;
+		document.body.append(attrElement, propElement);
 
 		attrElement.max__Width = 3;
 		propElement.max__Width = 3;
 
+		expect(attrElement.getAttribute('max--width')).toBeNull();
 		expect(attrElement.getAttribute('max-width')).toBe('3');
 		expect(propElement.getAttribute('max-width')).toBe('3');
 	});
