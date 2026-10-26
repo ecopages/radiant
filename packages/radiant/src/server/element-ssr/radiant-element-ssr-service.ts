@@ -100,7 +100,7 @@ export class RadiantElementSsrService {
 			: '';
 
 		const hostContent = this.renderView(this.host, options);
-		this.host.flushPostSyncCallbacks();
+		this.host.flushPostSync();
 		slotProjectionScript.markup = this.host.getSlotProjectionScriptTag?.() ?? '';
 
 		return composeHostContent(

@@ -3,6 +3,7 @@ import { state as createSignalState } from '@ecopages/signals';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { customElement } from '../../src/decorators/custom-element';
+import { prop } from '../../src/decorators/prop';
 import { state } from '../../src/decorators/state';
 import { createResource, type ResourceRequestContext } from '../../src/signals/host-resource';
 
@@ -25,6 +26,8 @@ function createFetcher(delay = 0) {
 let connectFetcher = createFetcher();
 let reconnectFetcher = createFetcher();
 let stateFetcher = createFetcher();
+let sourcedAuthoredCities: string[] = [];
+let unsourcedAuthoredCities: string[] = [];
 
 @customElement('resource-component-connect-test')
 class ResourceComponent extends RadiantElement {
@@ -78,12 +81,48 @@ class ResourceStateSourceComponent extends RadiantElement {
 	}
 }
 
+@customElement('resource-component-authored-prop-test')
+class ResourceAuthoredPropComponent extends RadiantElement {
+	@prop({ type: String, defaultValue: 'default-city' }) city!: string;
+
+	sourcedWeather = createResource(this, {
+		source: (ctx) => ctx.host.city,
+		fetcher: async (city) => {
+			sourcedAuthoredCities.push(city);
+			return `weather:${city}`;
+		},
+	});
+
+	unsourcedWeather = createResource(this, {
+		fetcher: async ({ host }) => {
+			unsourcedAuthoredCities.push(host.city);
+			return `weather:${host.city}`;
+		},
+	});
+}
+
 describe('createResource', () => {
 	beforeEach(() => {
 		document.body.innerHTML = '';
 		connectFetcher = createFetcher();
 		reconnectFetcher = createFetcher();
 		stateFetcher = createFetcher();
+		sourcedAuthoredCities = [];
+		unsourcedAuthoredCities = [];
+	});
+
+	test('fetches sourced and unsourced resources once with authored props', async () => {
+		const element = document.createElement(
+			'resource-component-authored-prop-test',
+		) as ResourceAuthoredPropComponent;
+		element.setAttribute('city', 'rome');
+
+		document.body.appendChild(element);
+
+		await waitFor(() => {
+			expect(sourcedAuthoredCities).toEqual(['rome']);
+			expect(unsourcedAuthoredCities).toEqual(['rome']);
+		});
 	});
 
 	test('starts fetching on connect and rerenders from sourced updates', async () => {
