@@ -60,8 +60,9 @@ export class RadiantElementSsrService {
 		return createMarkupNodeLike(this.renderHostToString({ mode: 'hydrate' }));
 	}
 
+	/** @remarks A host without a render lifecycle returns its `innerHTML` without preparation. */
 	public renderPreparedViewToString(options: RenderToStringOptions = {}): string {
-		return this.renderPreparedView(options, false);
+		return takesChildrenValue(this.host.constructor) ? this.renderView(options) : this.host.getInnerHTML();
 	}
 
 	/**
@@ -72,7 +73,9 @@ export class RadiantElementSsrService {
 		options: RenderToStringOptions = {},
 		attributeOverrides?: Record<string, string>,
 	): string {
-		const hostContent = this.renderPreparedView(options, true);
+		const hostContent = takesChildrenValue(this.host.constructor)
+			? this.renderView(options)
+			: this.prepareWithoutView();
 		const tagName = this.getTagName();
 		const hydrate = isHydrateMode(options);
 
@@ -122,22 +125,17 @@ export class RadiantElementSsrService {
 	 * @remarks Prepares the host and flushes `@bindTo` once before reading its final attributes.
 	 */
 	public getHostAttributes(): Record<string, string> {
-		this.ensureReady();
-		this.host.flushPostSync();
+		this.prepareWithoutView();
 		return this.readHostAttributes();
 	}
 
-	private renderPreparedView(options: RenderToStringOptions, prepareWithoutView: boolean): string {
-		if (!takesChildrenValue(this.host.constructor)) {
-			if (!prepareWithoutView) {
-				return this.host.getInnerHTML();
-			}
+	private prepareWithoutView(): string {
+		this.ensureReady();
+		this.host.flushPostSync();
+		return this.host.getInnerHTML();
+	}
 
-			this.ensureReady();
-			this.host.flushPostSync();
-			return this.host.getInnerHTML();
-		}
-
+	private renderView(options: RenderToStringOptions): string {
 		this.ensureReady();
 		return runWithSsrProviderStack(() =>
 			withSsrContextProviders(this.host.getContextProviders(), () => {

@@ -69,7 +69,7 @@ export function renderRegisteredRadiantElementHostToString(
 }
 
 export function renderRadiantElementViewToString(
-	component: RadiantElementViewRenderSource,
+	component: RadiantElementServerRenderSsrCapable,
 	options: RenderToStringOptions = {},
 ): string {
 	return withServerRadiantElementSsrRuntime(() =>
