@@ -5,6 +5,7 @@ import { resolveHostAutoBind } from './auto-bind';
 import {
 	defaultValueForType,
 	readAttributeValue,
+	toKebabCaseAttributeName,
 	type AttributeTypeConstant,
 	writeAttributeValue,
 } from '../../utils/attribute-utils';
@@ -45,13 +46,6 @@ export type ReactiveAttributeHostLike<Bindings extends object = {}> =
 
 function resolveAttributeTarget(host: ReactiveAttributeHostLike): Element {
 	return resolveHostElement(host);
-}
-
-function toAttributeName(propertyName: string): string {
-	return propertyName
-		.replace(/([a-z0-9])([A-Z])/g, '$1-$2')
-		.replace(/_/g, '-')
-		.toLowerCase();
 }
 
 function resolveAttributeValue<T>(rawValue: string | null, options: AttrOptions<T>): T {
@@ -124,7 +118,7 @@ export function installReactiveAttribute<TBindings extends object, TValue>(
 	}
 
 	const hostRecord = host as unknown as Record<PropertyKey, unknown>;
-	const attributeName = options.source ?? toAttributeName(propertyName);
+	const attributeName = options.source ?? toKebabCaseAttributeName(propertyName);
 	const observerKey = Symbol(`@ecopages/radiant/attr:${propertyName}:observer`);
 	const bind = options.bind ?? resolveHostAutoBind(host);
 
