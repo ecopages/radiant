@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, event, onEvent, onUpdated, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { applyRovingTabindex, focusRovingItem } from '@/lib/roving-tabindex';
@@ -72,6 +73,8 @@ type TreegridCellContext = {
  */
 @customElement('rui-treegrid')
 export class RuiTreegrid extends RadiantElement {
+	declare readonly [JSX_PROPS]?: RuiTreegridProps;
+
 	@prop({ type: String, defaultValue: '' }) label: string;
 	@prop({ type: String, reflect: true, defaultValue: '' }) value: string;
 
@@ -338,5 +341,13 @@ export class RuiTreegrid extends RadiantElement {
 		this.setExpanded(context.row, context.row.getAttribute('aria-expanded') !== 'true');
 		this.syncSelection();
 		return true;
+	}
+}
+
+
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-treegrid': RuiTreegrid;
 	}
 }

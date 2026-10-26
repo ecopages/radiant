@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, event, onEvent, onUpdated, prop, state } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { createRuiIconX } from '@/lib/icons/x';
@@ -73,6 +74,8 @@ export type RuiTagGroupRemoveDetail = { value: string };
  */
 @customElement('rui-tag-group')
 export class RuiTagGroup extends RadiantElement {
+	declare readonly [JSX_PROPS]?: RuiTagGroupProps;
+
 	@prop({ ...multiValuePropOptions, defaultValue: [] })
 	value: string[];
 	@prop({ type: String, defaultValue: '' }) label: string;
@@ -370,5 +373,13 @@ export class RuiTagGroup extends RadiantElement {
 		if (result.handled) {
 			event.preventDefault();
 		}
+	}
+}
+
+
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-tag-group': RuiTagGroup;
 	}
 }

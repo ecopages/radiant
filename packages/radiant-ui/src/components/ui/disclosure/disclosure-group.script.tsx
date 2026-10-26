@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, onEvent, onUpdated, prop } from '@ecopages/radiant';
 import { applyRovingTabindex, navigateRovingTabindex } from '@/lib/roving-tabindex';
 import type { RuiDisclosureToggleDetail } from './disclosure.script';
@@ -41,6 +42,8 @@ export type RuiDisclosureGroupProps = {
  */
 @customElement('rui-disclosure-group')
 export class RuiDisclosureGroup extends RadiantElement {
+	declare readonly [JSX_PROPS]?: RuiDisclosureGroupProps;
+
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) multiple: boolean;
 	@prop({ type: Boolean, reflect: true, attribute: 'animated', defaultValue: false }) animated: boolean;
 
@@ -153,5 +156,13 @@ export class RuiDisclosureGroup extends RadiantElement {
 		}
 
 		event.preventDefault();
+	}
+}
+
+
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-disclosure-group': RuiDisclosureGroup;
 	}
 }

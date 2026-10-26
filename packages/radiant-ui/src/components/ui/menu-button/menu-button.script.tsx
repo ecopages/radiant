@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import {
 	RadiantElement,
 	bindTo,
@@ -76,6 +77,8 @@ const MENU_GAP = 6;
  */
 @customElement('rui-menu-button')
 export class RuiMenuButton extends RadiantElement {
+	declare readonly [JSX_PROPS]?: RuiMenuButtonProps;
+
 	@prop({ type: Boolean, reflect: true, defaultValue: false })
 	@bindTo([
 		{ ref: 'trigger', attr: 'aria-expanded' },
@@ -255,5 +258,13 @@ export class RuiMenuButton extends RadiantElement {
 		const value = item.getAttribute('data-value') || item.textContent?.trim() || '';
 		this.changeEvent.emit({ value });
 		this.setOpen(false, 'trigger');
+	}
+}
+
+
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-menu-button': RuiMenuButton;
 	}
 }

@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import {
 	RadiantElement,
 	bindTo,
@@ -140,6 +141,8 @@ function isHorizontalSide(side: RuiSidebarSide): boolean {
  */
 @customElement('rui-sidebar')
 export class RuiSidebar extends RadiantElement {
+	declare readonly [JSX_PROPS]?: RuiSidebarProps;
+
 	@prop({ type: String, reflect: true, defaultValue: 'sidebar' })
 	@bindTo([{ attr: 'data-variant' }, { ref: 'root', attr: 'data-variant' }, { ref: 'pane', attr: 'data-variant' }])
 	variant: RuiSidebarVariant;
@@ -611,5 +614,13 @@ export class RuiSidebar extends RadiantElement {
 			keyboardEvent.preventDefault();
 			this.toggle();
 		}
+	}
+}
+
+
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-sidebar': RuiSidebar;
 	}
 }

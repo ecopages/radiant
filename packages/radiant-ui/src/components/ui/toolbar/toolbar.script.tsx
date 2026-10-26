@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, onEvent, prop } from '@ecopages/radiant';
 import { queryRovingTabindexItems } from '@/lib/focusable-elements';
 import { applyRovingTabindex, navigateRovingTabindex } from '@/lib/roving-tabindex';
@@ -42,6 +43,8 @@ export type RuiToolbarProps = {
  */
 @customElement('rui-toolbar')
 export class RuiToolbar extends RadiantElement {
+	declare readonly [JSX_PROPS]?: RuiToolbarProps;
+
 	@prop({ type: String, defaultValue: '' }) label: string;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) exclusiveToggles: boolean;
 
@@ -104,5 +107,13 @@ export class RuiToolbar extends RadiantElement {
 		}
 
 		button.setAttribute('aria-pressed', String(!wasPressed));
+	}
+}
+
+
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-toolbar': RuiToolbar;
 	}
 }

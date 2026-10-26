@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import '@ecopages/jsx/jsx-dev-runtime';
-import { createRoot, type JsxRenderable } from '@ecopages/jsx';
+import { createRoot, type JSX_PROPS, type JsxRenderable } from '@ecopages/jsx';
 import { RadiantElement, customElement, state } from '@ecopages/radiant';
 import { RuiButton } from '../button';
 import { RuiDialog, RuiDialogBody, RuiDialogClose, RuiDialogTitle } from '../dialog';
@@ -52,6 +52,8 @@ function collectRangeDriftWarnings() {
 
 @customElement('test-table-range-host')
 class TestTableRangeHost extends RadiantElement {
+	declare readonly [JSX_PROPS]?: Record<string, never>;
+
 	@state rows = ['aloe', 'fern', 'ivy'];
 	@state loading = false;
 	@state busy = false;
@@ -169,8 +171,10 @@ describe('RuiTable range ownership', () => {
 	});
 });
 
-declare module '@ecopages/jsx/jsx-runtime' {
-	interface JsxCustomIntrinsicElements {
-		'test-table-range-host': Record<string, never>;
+
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'test-table-range-host': TestTableRangeHost;
 	}
 }

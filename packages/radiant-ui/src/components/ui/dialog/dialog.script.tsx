@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import {
 	RadiantElement,
 	bindTo,
@@ -80,6 +81,8 @@ export type RuiDialogCloseDetail = {
  */
 @customElement('rui-dialog')
 export class RuiDialog extends RadiantElement {
+	declare readonly [JSX_PROPS]?: RuiDialogProps;
+
 	@prop({ type: Boolean, reflect: true, defaultValue: false })
 	@bindTo({ ref: 'root', bool: 'hidden', invert: true })
 	open: boolean;
@@ -203,5 +206,13 @@ export class RuiDialog extends RadiantElement {
 	@onEvent({ selector: '[data-dialog-close]', type: 'click' })
 	onCloseClick(): void {
 		this.dismiss('dismiss');
+	}
+}
+
+
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-dialog': RuiDialog;
 	}
 }

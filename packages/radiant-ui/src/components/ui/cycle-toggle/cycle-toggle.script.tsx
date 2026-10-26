@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { cycleValue } from '@/lib/cycle-value';
@@ -77,6 +78,8 @@ const BUTTON_SELECTOR = 'button[data-cycle-toggle-button]';
  */
 @customElement('rui-cycle-toggle')
 export class RuiCycleToggle extends RadiantElement {
+	declare readonly [JSX_PROPS]?: RuiCycleToggleProps;
+
 	@prop({ type: String, reflect: true, defaultValue: '' }) value: string;
 	@prop({ type: String, reflect: true, defaultValue: 'filled' }) variant: RuiButtonVariant;
 	@prop({ type: String, reflect: true, defaultValue: 'md' }) size: RuiButtonSize;
@@ -192,5 +195,13 @@ export class RuiCycleToggle extends RadiantElement {
 	@onEvent({ selector: BUTTON_SELECTOR, type: 'click' })
 	onButtonClick(): void {
 		this.cycle();
+	}
+}
+
+
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-cycle-toggle': RuiCycleToggle;
 	}
 }

@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, prop } from '@ecopages/radiant';
 
 export type RuiBreadcrumbProps = {
@@ -29,6 +30,16 @@ export type RuiBreadcrumbProps = {
  */
 @customElement('rui-breadcrumb')
 export class RuiBreadcrumb extends RadiantElement {
+	declare readonly [JSX_PROPS]?: RuiBreadcrumbProps;
+
 	@prop({ type: String, defaultValue: 'Breadcrumb' }) label: string;
 	@prop({ type: String, defaultValue: '/' }) separator: string;
+}
+
+
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-breadcrumb': RuiBreadcrumb;
+	}
 }

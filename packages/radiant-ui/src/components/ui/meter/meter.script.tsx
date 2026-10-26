@@ -1,3 +1,5 @@
+import type { WithoutChildren } from '../../../lib/without-children';
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, onUpdated, prop, state } from '@ecopages/radiant';
 
 export type RuiMeterProps = {
@@ -50,6 +52,8 @@ type RuiMeterBindings = {
  */
 @customElement('rui-meter')
 export class RuiMeter extends RadiantElement<RuiMeterBindings> {
+	declare readonly [JSX_PROPS]?: WithoutChildren<RuiMeterProps>;
+
 	@prop({ type: Number, reflect: true, defaultValue: 0 }) value: number;
 	@prop({ type: Number, defaultValue: 0 }) min: number;
 	@prop({ type: Number, defaultValue: 100 }) max: number;
@@ -87,5 +91,13 @@ export class RuiMeter extends RadiantElement<RuiMeterBindings> {
 				</span>
 			</div>
 		);
+	}
+}
+
+
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-meter': RuiMeter;
 	}
 }

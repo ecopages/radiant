@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, event, onEvent, onUpdated, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { applyRovingTabindex } from '@/lib/roving-tabindex';
@@ -77,6 +78,8 @@ export type RuiTableRowActionDetail = { rowId: string };
  */
 @customElement('rui-table')
 export class RuiTable extends RadiantElement {
+	declare readonly [JSX_PROPS]?: RuiTableProps;
+
 	@prop({ type: String, defaultValue: '' }) label: string;
 	@prop({ type: String, attribute: 'aria-busy', defaultValue: 'false' }) ariaBusy: 'true' | 'false';
 	@prop({ type: String, attribute: 'selection-mode', defaultValue: 'none' }) selectionMode: RuiTableSelectionMode;
@@ -456,5 +459,13 @@ export class RuiTable extends RadiantElement {
 		this.sortColumn = column;
 		this.syncSorting();
 		this.sortChangeEvent.emit({ column, direction: this.sortDirection });
+	}
+}
+
+
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-table': RuiTable;
 	}
 }

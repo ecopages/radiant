@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { bindTo, customElement, event, onEvent, onUpdated, prop, state } from '@ecopages/radiant';
 import { FormAssociatedElement, type FormValue } from '@ecopages/radiant/form-associated-element';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
@@ -97,6 +98,8 @@ export type RuiNumberFieldChangeDetail = { value: number };
  */
 @customElement('rui-number-field')
 export class RuiNumberField extends FormAssociatedElement {
+	declare readonly [JSX_PROPS]?: RuiNumberFieldProps;
+
 	@prop({ type: Number, reflect: true, defaultValue: undefined }) value: number | undefined;
 	@prop({ type: Number, attribute: 'default-value', defaultValue: undefined }) defaultValue: number | undefined;
 
@@ -416,5 +419,13 @@ export class RuiNumberField extends FormAssociatedElement {
 		} else if (event.deltaY > 0) {
 			this.decrement(event);
 		}
+	}
+}
+
+
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-number-field': RuiNumberField;
 	}
 }
