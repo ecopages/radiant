@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { uniqueId } from '@/lib/unique-id';
@@ -96,6 +97,8 @@ export type RuiSelectChangeDetail = { value: string[] };
  */
 @customElement('rui-select')
 export class RuiSelect extends RadiantElement {
+	declare readonly [JSX_PROPS]?: RuiSelectProps;
+
 	@prop({ ...multiValuePropOptions, defaultValue: [] })
 	@bindTo({ selector: '[data-select-clear]', bool: 'hidden', map: (value) => value.length === 0 })
 	value: string[];
@@ -651,5 +654,13 @@ export class RuiSelect extends RadiantElement {
 			return;
 		}
 		this.setOpen(false);
+	}
+}
+
+
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-select': RuiSelect;
 	}
 }

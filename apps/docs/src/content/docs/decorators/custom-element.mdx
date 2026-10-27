@@ -35,31 +35,16 @@ Usage in HTML:
 | Parameter | Type | Required | Description |
 | :-------- | :--- | :------- | :---------- |
 | `tagName` | `string` | Yes | The custom element tag name. |
-| `options` | `ElementDefinitionOptions` | No | Options for element definition (e.g., `extends`). |
+| `options` | Autonomous custom-element options | No | Options for defining an autonomous custom element. |
 
-## Extending Built-in Elements
+## Customized Built-in Elements
 
-You can extend built-in HTML elements by providing the `options` parameter with the `extends` property. Note that you must also extend the corresponding HTML class.
-
-```typescript
-@customElement('fancy-button', { extends: 'button' })
-export class FancyButton extends HTMLButtonElement {
-	connectedCallback() {
-		this.classList.add('fancy');
-	}
-}
-```
-
-Usage in HTML:
-
-```html
-<button is="fancy-button">Click me</button>
-```
+`@customElement` supports autonomous custom elements only. TypeScript excludes `extends` from its options, and passing a defined `extends` value at runtime throws a `TypeError` before registration. Extend `RadiantElement` to create a custom button or another autonomous element.
 
 <RuiAlert variant="warning" layout="banner" class="unstyled">
   <RuiAlertTitle>WARNING</RuiAlertTitle>
   <RuiAlertDescription>
-    <p>Customized built-in elements have limited browser support and are not supported in Safari. See <a href="/docs/getting-started/best-practices">Best Practices</a> for more information.</p>
+    <p>Do not use the <code>is</code> attribute or extend a built-in HTML class with <code>@customElement</code>. See <a href="/docs/getting-started/best-practices">Best Practices</a> for more information.</p>
   </RuiAlertDescription>
 </RuiAlert>
 

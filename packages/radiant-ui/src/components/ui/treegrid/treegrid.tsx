@@ -1,6 +1,5 @@
 import type { JsxCustomElementAttributes, JsxRenderable } from '@ecopages/jsx';
-import type { RuiTreegrid as RuiTreegridElement, RuiTreegridProps } from './treegrid.script';
-import './treegrid.script';
+import { RuiTreegrid as RuiTreegridElement, type RuiTreegridProps } from './treegrid.script';
 
 export type RuiTreegridRow = {
 	id: string;
@@ -92,10 +91,10 @@ export function RuiTreegrid({
 		);
 
 	return (
-		<rui-treegrid {...props} label={label}>
+		<RuiTreegridElement {...props} label={label}>
 			<div class="rui-treegrid" data-ref="root" role="treegrid" aria-label={label || undefined}>
 				{content}
 			</div>
-		</rui-treegrid>
+		</RuiTreegridElement>
 	);
 }

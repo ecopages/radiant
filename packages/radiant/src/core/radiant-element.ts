@@ -19,6 +19,7 @@ import {
 import { EventSubscriptionRegistry } from './event-subscription-registry';
 import { ReactivePropertyState } from './reactive-property-state';
 import { RenderRuntime, type RenderRuntimeHost } from './render-runtime';
+import type { ForeignSlotContentProjector } from './slot-projection-runtime';
 import { UpdateCycle } from './update-cycle';
 import { REACTIVE_HOST, ReactiveHost, type ReactiveHostInternals } from './reactive-host';
 import type { ReactiveState } from './reactivity-contract';
@@ -29,7 +30,6 @@ import {
 	SERVER_RENDERED_CHILDREN_STAMP,
 	SERVER_RENDERED_HOST_ATTRIBUTE,
 } from './server-rendered-host';
-import { getRadiantElementSsrRuntime, type RadiantElementRenderToStringOptions } from './radiant-element-ssr-registry';
 import { RADIANT_ELEMENT_BRAND } from './radiant-element-brand';
 
 export type {
@@ -141,10 +141,11 @@ export interface IRadiantElement<Bindings extends object = {}> {
 	registerCleanupCallback(callback: () => void): void;
 
 	/**
-	 * Registers a callback to run on each future host connection.
+	 * Registers a callback to run synchronously at the start of each future connection.
 	 *
-	 * The callback is only invoked from `connectedCallback()`. Registering it
-	 * after the host is already connected does not invoke it immediately.
+	 * @remarks
+	 * This is a pre-sync hook and is not invoked immediately when registered on an already connected host. Use
+	 * `onConnected()` for work that depends on adopted attributes or rendered DOM.
 	 */
 	registerConnectedCallback(callback: () => void): void;
 
@@ -412,7 +413,8 @@ export class RadiantElement<Bindings extends object = {}>
 				}
 			}
 
-			this.reactiveHost.flushPostSyncCallbacks();
+			this.reactiveHost.flushPostSync();
+			this.reactiveHost.flushConnectSync();
 			this.onConnected();
 		});
 	}
@@ -551,28 +553,6 @@ export class RadiantElement<Bindings extends object = {}>
 		return Reflect.get(this, name);
 	}
 
-	/**
-	 * Serializes the JSX view through the installed server runtime.
-	 *
-	 * @remarks Returns the view only, so it never stamps a host. A caller that writes the host tag itself must add
-	 * `SERVER_RENDERED_HOST_ATTRIBUTE` (`data-radiant-ssr`) to it for `isServerRendered` to be `true` on the client;
-	 * `renderRadiantElementHostToString` does that. Flushes `@bindTo` after `render()` so targets created by a Derived
-	 * Tree exist before serialization. `prepareForSsr` still flushes authored
-	 * light-DOM children that exist before render.
-	 */
-	public renderViewToString(options: RadiantElementRenderToStringOptions = {}): string {
-		if (!this.shouldRunRenderLifecycle()) {
-			return this.innerHTML;
-		}
-
-		ensureLegacyHostReady(this, 'ssr');
-		this.prepareForSsr();
-
-		const html = requireRadiantElementSsrRuntime().renderView(this, options);
-		this.reactiveHost.flushPostSyncCallbacks();
-		return html;
-	}
-
 	public hydrate(): void {
 		if (!this.shouldRunRenderLifecycle() || !this.isConnected) {
 			return;
@@ -620,24 +600,24 @@ export class RadiantElement<Bindings extends object = {}>
 	 *
 	 * @remarks
 	 * Hosts never connect on the server, so members are observed only for the
-	 * duration of this call: writes made since construction (JSX props) and the
-	 * writes callbacks make in turn run the batched `@onUpdated` callbacks here,
-	 * before and after the SSR preparation callbacks. Then `@bindTo` flushes, so
-	 * the first server render sees finalized fields, props, and authored content.
-	 * `updated()` never runs on the server.
+	 * duration of this call: context consumers resolve first, then writes made
+	 * since construction (JSX props) and the writes callbacks make in turn run
+	 * the batched `@onUpdated` callbacks here, before and after the other SSR
+	 * preparation callbacks, so the first server render sees finalized fields,
+	 * props, and authored content. The SSR serializer flushes `@bindTo` after
+	 * rendering its view. `updated()` never runs on the server.
 	 */
 	public prepareForSsr(): void {
 		const stopObserving = this.reactiveHost.observeMembers();
 
 		try {
+			runSsrPreparationCallbacks(this, true);
 			this.updateCycle.runCallbacks();
 			runSsrPreparationCallbacks(this);
 			this.updateCycle.runCallbacks();
 		} finally {
 			stopObserving();
 		}
-
-		this.reactiveHost.flushPostSyncCallbacks();
 	}
 
 	/** Framework plumbing for decorators and SSR adapters; not part of the authoring API. */
@@ -713,11 +693,11 @@ export class RadiantElement<Bindings extends object = {}>
 	}
 
 	/**
-	 * Registers a callback that runs from `connectedCallback()` on future host
-	 * connections.
+	 * Registers a callback to run synchronously at the start of each future connection.
 	 *
-	 * Registering after the host is already connected does not invoke the
-	 * callback immediately.
+	 * @remarks
+	 * This is a pre-sync hook and is not invoked immediately when registered on an already connected host. Use
+	 * `onConnected()` for work that depends on adopted attributes or rendered DOM.
 	 */
 	public registerConnectedCallback(callback: () => void): void {
 		this.reactiveHost.registerConnectedCallback(callback);
@@ -763,16 +743,29 @@ export class RadiantElement<Bindings extends object = {}>
 		);
 	}
 
-	public getSlotProjectionScriptTag(): string | undefined {
-		return this.getOrCreateRenderRuntime().getSlotProjectionScriptTag();
+	/**
+	 * Authored Children keyed by slot name, for SSR to decide whether to emit a slot-projection payload.
+	 *
+	 * @remarks Undefined when this host does not own a render lifecycle. The service emits the payload script
+	 * when this is set, regardless of whether the current server-time view contains a `<slot>`.
+	 */
+	public getProjectedSlotPayload(): Record<string, string[]> | undefined {
+		if (!this.shouldRunRenderLifecycle()) {
+			return undefined;
+		}
+
+		return this.getOrCreateRenderRuntime().getProjectedSlotPayload();
 	}
 
 	public getAuthoredHydrationScriptMarkup(): string | undefined {
 		return this.getOrCreateRenderRuntime().getAuthoredHydrationScriptMarkup();
 	}
 
-	public resolveTrackedRenderOutput(): { containsSlots: boolean; value: JsxRenderable } {
-		return this.getOrCreateRenderRuntime().resolveTrackedRenderOutput();
+	public resolveTrackedRenderOutput(projectForeign?: ForeignSlotContentProjector): {
+		containsSlots: boolean;
+		value: JsxRenderable;
+	} {
+		return this.getOrCreateRenderRuntime().resolveTrackedRenderOutput(projectForeign);
 	}
 
 	private getOrCreateRenderRuntime() {
@@ -802,16 +795,6 @@ function adoptPreUpgradeChildrenValue(element: RadiantElement): void {
 	const value = Reflect.get(element, CUSTOM_ELEMENT_CHILDREN_SYMBOL) as JsxRenderable;
 	Reflect.deleteProperty(element, CUSTOM_ELEMENT_CHILDREN_SYMBOL);
 	element[CUSTOM_ELEMENT_CHILDREN_SYMBOL] = value;
-}
-
-function requireRadiantElementSsrRuntime() {
-	const runtime = getRadiantElementSsrRuntime();
-
-	if (!runtime) {
-		throw new Error('Radiant SSR runtime unavailable. Import `@ecopages/radiant/server/render-component` first.');
-	}
-
-	return runtime;
 }
 
 /**

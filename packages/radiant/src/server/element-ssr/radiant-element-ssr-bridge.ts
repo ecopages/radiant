@@ -20,6 +20,8 @@ import type {
 	RadiantElementViewRenderSource,
 } from '../../core/radiant-element-ssr-registry';
 import { withRadiantElementSsrRuntime } from '../../core/radiant-element-ssr-registry';
+import { serializeNodeInNamespace, setDetachedRootNamespace } from '../shim/minimal-dom/html';
+import { MinimalElement } from '../shim/minimal-dom/nodes';
 import { SERVER_RENDERED_CHILDREN_STAMP, SERVER_RENDERED_HOST_ATTRIBUTE } from '../../core/server-rendered-host';
 
 let radiantElementSsrRuntime: RadiantElementSsrRuntime | undefined;
@@ -31,7 +33,7 @@ let radiantElementSsrRuntime: RadiantElementSsrRuntime | undefined;
 const RADIANT_VIEW_SCOPE_KEY = Symbol.for('@ecopages/radiant.ssr-view');
 
 export function createRadiantElementSsrService(component: object): RadiantElementSsrService {
-	return new RadiantElementSsrService(component, renderRadiantElementViewToString);
+	return new RadiantElementSsrService(component, renderRadiantElementRawViewToString);
 }
 
 /** One host-serialization entry used by adapters and nested JSX custom-element SSR. */
@@ -41,7 +43,7 @@ export function renderRadiantElementHostToString(
 ): string {
 	return withServerRadiantElementSsrRuntime(() => {
 		const service = createRadiantElementSsrService(component);
-		return service.renderHostToString(options, service.getHostAttributes());
+		return service.renderHostToString(options);
 	});
 }
 
@@ -69,18 +71,47 @@ export function renderRegisteredRadiantElementHostToString(
 }
 
 export function renderRadiantElementViewToString(
-	component: RadiantElementViewRenderSource,
+	component: RadiantElementServerRenderSsrCapable,
 	options: RenderToStringOptions = {},
 ): string {
 	return withServerRadiantElementSsrRuntime(() =>
+		createRadiantElementSsrService(component).renderPreparedViewToString(options),
+	);
+}
+
+function renderRadiantElementRawViewToString(
+	component: RadiantElementViewRenderSource,
+	options: RenderToStringOptions,
+	beforeSerialize: () => void,
+): string {
+	return withServerRadiantElementSsrRuntime(() =>
 		withRadiantServerCustomElementRenderBridge(() =>
-			withActiveSsrScopeValue(RADIANT_VIEW_SCOPE_KEY, true, () =>
-				renderJsxToString(component.resolveTrackedRenderOutput().value, options),
-			),
+			withActiveSsrScopeValue(RADIANT_VIEW_SCOPE_KEY, true, () => {
+				const renderable = component.resolveTrackedRenderOutput(projectForeignSlotContent).value;
+				beforeSerialize();
+				return renderJsxToString(renderable, options);
+			}),
 		),
 	);
 }
 
+/**
+ * Replaces each light-DOM element assigned to a slot inside `svg` or `math` with its markup in that namespace.
+ *
+ * @remarks The element still sits under its host, so its own `outerHTML` spells it for HTML, where a `style` holds raw
+ * text. Other slot content, such as a Children Value, is JSX that the serializer already places in the namespace.
+ */
+function projectForeignSlotContent(content: JsxRenderable, namespace: 'svg' | 'math'): JsxRenderable {
+	if (Array.isArray(content))
+		return content.map((entry: JsxRenderable) => projectForeignSlotContent(entry, namespace));
+	return content instanceof MinimalElement
+		? createMarkupNodeLike(serializeNodeInNamespace(content as unknown as Node, namespace))
+		: content;
+}
+
+/**
+ * Prepares the host and flushes `@bindTo`, then returns its server attributes.
+ */
 export function getRadiantElementHostSsrAttributes(
 	component: RadiantElementServerRenderSsrCapable,
 ): Record<string, string> {
@@ -110,12 +141,19 @@ export function resolveRadiantElementRenderBridge(component: object): RadiantEle
  * page around the hosts), the client sees the children only as Authored Children: the host builds them as light-DOM nodes
  * (`renderServerLightDom`, so no value is escaped and parsed back) inside its own context providers, and captures
  * them for its slots, with the slot-projection payload.
+ *
+ * A host the page places inside `svg` or `math` serializes its light DOM and view in that namespace, as the browser
+ * parses them there, so text in a `style` or `xmp` under it is entity-escaped.
  */
 export function withRadiantServerCustomElementRenderBridge<T>(render: () => T): T {
 	return withServerCustomElementRenderHook(
-		({ children, constructor, instance }) => {
+		({ children, constructor, foreignContent, instance }) => {
 			if (!isRadiantElementSsrHost(instance)) {
 				return undefined;
+			}
+
+			if (foreignContent) {
+				setDetachedRootNamespace(instance, foreignContent);
 			}
 
 			if (
@@ -126,17 +164,22 @@ export function withRadiantServerCustomElementRenderBridge<T>(render: () => T): 
 			) {
 				Reflect.set(instance, CUSTOM_ELEMENT_CHILDREN_SYMBOL, jsx(Fragment, { children }));
 				return createMarkupNodeLike(
-					serializeNestedCustomElementHost(instance, () => undefined, SERVER_RENDERED_CHILDREN_STAMP),
+					serializeNestedCustomElementHost(
+						instance,
+						() => undefined,
+						foreignContent,
+						SERVER_RENDERED_CHILDREN_STAMP,
+					),
 				);
 			}
 
 			const applyChildren = () => {
 				if (children === undefined) return;
 				const ownerDocument = (instance.ownerDocument ?? globalThis.document) as Document;
-				instance.replaceChildren(...renderServerLightDom(children, ownerDocument));
+				instance.replaceChildren(...renderServerLightDom(children, ownerDocument, foreignContent));
 			};
 
-			return createMarkupNodeLike(serializeNestedCustomElementHost(instance, applyChildren));
+			return createMarkupNodeLike(serializeNestedCustomElementHost(instance, applyChildren, foreignContent));
 		},
 		render,
 		{ ownsChildren: true },
@@ -146,18 +189,18 @@ export function withRadiantServerCustomElementRenderBridge<T>(render: () => T): 
 function serializeNestedCustomElementHost(
 	instance: RadiantElementServerRenderSsrCapable,
 	applyChildren: () => void,
+	foreignContent: RenderToStringOptions['foreignContent'],
 	stamp?: string,
 ): string {
 	const hydrate = isServerRenderHydrationActive();
-	const options: RenderToStringOptions = { hydrate, mode: hydrate ? 'hydrate' : 'plain' };
+	const options: RenderToStringOptions = { hydrate, mode: hydrate ? 'hydrate' : 'plain', foreignContent };
 	const render = () =>
 		withServerRadiantElementSsrRuntime(() => {
 			const service = createRadiantElementSsrService(instance);
 			service.applyLightDom(applyChildren);
-			const attributes = service.getHostAttributes();
 			return service.renderHostToString(
 				options,
-				stamp === undefined ? attributes : { ...attributes, [SERVER_RENDERED_HOST_ATTRIBUTE]: stamp },
+				stamp === undefined ? undefined : { [SERVER_RENDERED_HOST_ATTRIBUTE]: stamp },
 			);
 		});
 
@@ -170,11 +213,9 @@ export function getOrCreateRadiantElementSsrRuntime(): RadiantElementSsrRuntime 
 	}
 
 	radiantElementSsrRuntime = {
-		getHostAttributes: getRadiantElementHostSsrAttributes,
 		renderHost: renderRadiantElementHost,
 		renderHostToString: renderRadiantElementHostToString,
 		resolveRenderBridge: resolveRadiantElementRenderBridge,
-		renderView: renderRadiantElementViewToString,
 	};
 
 	return radiantElementSsrRuntime;

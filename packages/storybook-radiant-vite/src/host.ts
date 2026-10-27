@@ -1,9 +1,7 @@
 import type { Args } from 'storybook/internal/types';
-import { CUSTOM_ELEMENT_TAG_NAME } from './constants';
+import { getCustomElementTagName } from '@ecopages/jsx/jsx-runtime';
 
-export function getCustomElementTagName(target: CustomElementConstructor): string | undefined {
-	return (target as CustomElementConstructor & { [CUSTOM_ELEMENT_TAG_NAME]?: string })[CUSTOM_ELEMENT_TAG_NAME];
-}
+export { getCustomElementTagName };
 
 export function isCustomElementConstructor(value: unknown): value is CustomElementConstructor {
 	if (typeof value !== 'function') {

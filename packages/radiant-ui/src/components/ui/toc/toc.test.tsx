@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createRoot, type JsxRenderable, type JsxRoot } from '@ecopages/jsx';
-import { RuiToc } from './toc';
+import { RuiToc } from './index';
 
 function mount(element: JsxRenderable): { host: HTMLElement; cleanup: () => void } {
 	const host = document.createElement('div');

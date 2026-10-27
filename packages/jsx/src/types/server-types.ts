@@ -30,6 +30,14 @@ export type ServerCustomElementRenderHookContext = {
 	/** JSX children passed to the element. */
 	children: JsxRenderable | undefined;
 	constructor: CustomElementConstructor;
+	/**
+	 * The foreign namespace the element sits in, `svg` or `math`; undefined in HTML.
+	 *
+	 * @remarks The browser parses the element's content in it, so a hook that serializes the light DOM or view
+	 * itself must too: there, raw-text tags such as `style` are ordinary elements and their text must be
+	 * entity-escaped. Pass it to `renderToString` as `foreignContent`.
+	 */
+	foreignContent?: 'svg' | 'math';
 	hydrate: boolean;
 	instance: HTMLElement;
 	props: Record<string, unknown>;

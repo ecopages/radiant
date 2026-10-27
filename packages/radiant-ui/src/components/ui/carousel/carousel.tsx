@@ -4,14 +4,13 @@ import { cx } from '@/lib/cx';
 import type { NativeButtonProps } from '@/lib/native-element-props';
 import {
 	CAROUSEL_DEFAULTS,
-	type RuiCarousel as RuiCarouselElement,
+	RuiCarousel as RuiCarouselElement,
 	type RuiCarouselControlsVariant,
 	type RuiCarouselProps,
 	type RuiCarouselTransition,
 	resolveCarouselSurface,
 	resolveCarouselTrackMode,
 } from './carousel.script';
-import './carousel.script';
 
 export type RuiCarouselSlideData = { id: string; children: JsxRenderable };
 
@@ -279,7 +278,7 @@ export function RuiCarousel({
 			: children;
 
 	return (
-		<rui-carousel
+		<RuiCarouselElement
 			{...props}
 			label={label}
 			transition={transition}
@@ -305,6 +304,6 @@ export function RuiCarousel({
 			>
 				{slideContent}
 			</CarouselShell>
-		</rui-carousel>
+		</RuiCarouselElement>
 	);
 }

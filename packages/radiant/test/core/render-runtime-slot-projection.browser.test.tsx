@@ -43,4 +43,22 @@ describe('RenderRuntime slot projection', () => {
 		expect(runtime.slotProjectionVersion).toBe(1);
 		host.remove();
 	});
+
+	test('moves the live light-DOM node into a slot inside svg', () => {
+		const text = '<img id="pwn" src="x"><b>b</b>';
+		const host = document.createElement('slot-projection-svg-host') as RenderRuntimeHost;
+		const style = document.createElement('style');
+		style.textContent = text;
+		host.append(style);
+		host.render = () => jsx('svg', { children: jsx('slot', {}) });
+		host.requestUpdate = () => {};
+		document.body.appendChild(host);
+
+		new RenderRuntime(host).render(host);
+
+		expect(host.querySelector('svg style')).toBe(style);
+		expect(style.textContent).toBe(text);
+		expect(host.querySelector('img')).toBeNull();
+		host.remove();
+	});
 });

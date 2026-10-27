@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { createRoot, type JsxRenderable } from '@ecopages/jsx';
 import { RuiListbox, RuiListboxOption } from './listbox';
-import type { RuiListbox as RuiListboxElement } from './listbox.script';
-import './listbox.script';
+import { RuiListbox as RuiListboxElement } from './listbox.script';
+void RuiListboxElement;
 
 function mount(element: JsxRenderable): { host: HTMLElement; cleanup: () => void } {
 	const host = document.createElement('div');

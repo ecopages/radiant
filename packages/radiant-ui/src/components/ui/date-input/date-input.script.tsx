@@ -1,3 +1,5 @@
+import type { WithoutChildren } from '../../../lib/without-children';
+import type { JSX_PROPS } from '@ecopages/jsx';
 import {
 	customElement,
 	event,
@@ -92,6 +94,8 @@ function isIosDevice(): boolean {
  */
 @customElement('rui-date-input')
 export class RuiDateInput extends FormAssociatedElement {
+	declare readonly [JSX_PROPS]?: WithoutChildren<RuiDateInputProps>;
+
 	@prop({ type: String, reflect: true, defaultValue: '' }) value: string;
 	@prop({ type: String, defaultValue: '' }) min: string;
 	@prop({ type: String, defaultValue: '' }) max: string;
@@ -479,5 +483,13 @@ export class RuiDateInput extends FormAssociatedElement {
 				</div>
 			</div>
 		);
+	}
+}
+
+
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-date-input': RuiDateInput;
 	}
 }

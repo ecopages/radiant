@@ -4,9 +4,7 @@ import { coalesceDefined } from '@/lib/coalesce-defined';
 import { cx } from '@/lib/cx';
 import type { NativeButtonProps } from '@/lib/native-element-props';
 import { omitProps } from '@/lib/omit-props';
-import type { RuiSidebar as RuiSidebarElement, RuiSidebarProps } from './sidebar.script';
-import './sidebar.script';
-import './sidebar-trigger.script';
+import { RuiSidebar as RuiSidebarElement, type RuiSidebarProps } from './sidebar.script';
 
 export { RuiSidebarTrigger, type RuiSidebarTriggerViewProps } from './sidebar-trigger';
 
@@ -345,7 +343,7 @@ export type RuiSidebarViewProps = JsxCustomElementAttributes<RuiSidebarElement, 
  */
 export function RuiSidebar({ children, open, label, ...props }: RuiSidebarViewProps) {
 	return (
-		<rui-sidebar {...props} prop:open={open} label={label}>
+		<RuiSidebarElement {...props} prop:open={open} label={label}>
 			<div class="rui-sidebar" data-ref="root">
 				<button
 					data-ref="scrim"
@@ -362,6 +360,6 @@ export function RuiSidebar({ children, open, label, ...props }: RuiSidebarViewPr
 					<span class="rui-sidebar__handle-grip" aria-hidden="true"></span>
 				</div>
 			</div>
-		</rui-sidebar>
+		</RuiSidebarElement>
 	);
 }

@@ -134,7 +134,7 @@ Place the stack at any corner or edge center.
 
 ## Why a custom element?
 
-`<rui-toast>` owns dismiss lifetime bookkeeping (pause on hover / hidden tab, swipe-to-dismiss, and exit animation) which requires DOM state. `<rui-toaster>` owns the stack layout (peek/expand math, per-position filtering). The `RuiToast` / `RuiToaster` JSX helpers are thin passthroughs; the elements render their own composed light-DOM surface.
+`<rui-toast>` owns dismiss lifetime bookkeeping (pause on hover / hidden tab, swipe-to-dismiss, and exit animation) which requires DOM state. `<rui-toaster>` owns the stack layout (peek/expand math, per-position filtering). `RuiToaster` is the `<rui-toaster>` custom-element class; `RuiToasterElement` is an alias. Mount it once at the app root, then drive it with `toast()`. `RuiToast` remains a JSX helper because it converts numeric `toastId` values to strings; use `RuiToastElement` when you need the `<rui-toast>` class.
 
 ## API
 

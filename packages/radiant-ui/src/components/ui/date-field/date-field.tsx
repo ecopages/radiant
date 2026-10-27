@@ -5,9 +5,7 @@ import { RuiIconCalendar } from '@/lib/icons';
 import type { NativeButtonProps } from '@/lib/native-element-props';
 import { RuiCalendar, type RuiCalendarElement, type RuiCalendarProps } from '../calendar';
 import { RuiDateInput, type RuiDateInputElement, type RuiDateInputProps } from '../date-input';
-import type { RuiDateField as RuiDateFieldElement, RuiDateFieldProps } from './date-field.script';
-import './date-field.script';
-import '../date-input/date-input.script';
+import { RuiDateField as RuiDateFieldElement, type RuiDateFieldProps } from './date-field.script';
 import type { WithoutChildren } from '../../../lib/without-children';
 
 export type RuiDateFieldControlProps = JsxElementProps<HTMLDivElement>;
@@ -87,7 +85,7 @@ export function RuiDateField(props: JsxCustomElementAttributes<RuiDateFieldEleme
 	const { children, value, min, max, disabled, readOnly, label, name, locale } = props;
 
 	return (
-		<rui-date-field data-rui-aria-target='[data-date-field-input] [data-ref="root"]' {...props}>
+		<RuiDateFieldElement data-rui-aria-target='[data-date-field-input] [data-ref="root"]' {...props}>
 			{children ?? (
 				<>
 					<RuiDateFieldControl>
@@ -108,6 +106,6 @@ export function RuiDateField(props: JsxCustomElementAttributes<RuiDateFieldEleme
 					</RuiDateFieldPopover>
 				</>
 			)}
-		</rui-date-field>
+		</RuiDateFieldElement>
 	);
 }

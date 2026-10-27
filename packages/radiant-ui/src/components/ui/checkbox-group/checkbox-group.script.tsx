@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { nonEmpty } from '@/lib/non-empty';
@@ -75,6 +76,8 @@ export type RuiCheckboxGroupChangeDetail = {
  */
 @customElement('rui-checkbox-group')
 export class RuiCheckboxGroup extends RadiantElement {
+	declare readonly [JSX_PROPS]?: RuiCheckboxGroupProps;
+
 	@prop({ ...multiValuePropOptions, defaultValue: [] })
 	value: string[];
 	@prop({ type: String, defaultValue: '' }) name: string;
@@ -134,5 +137,13 @@ export class RuiCheckboxGroup extends RadiantElement {
 		return Array.from(this.querySelectorAll('rui-checkbox')).filter(
 			(node): node is RuiCheckbox => node instanceof RuiCheckbox,
 		);
+	}
+}
+
+
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-checkbox-group': RuiCheckboxGroup;
 	}
 }

@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, onEvent, onUpdated, prop } from '@ecopages/radiant';
 import { textContains, type TextFilterSensitivity } from '@/lib/text-filter';
 
@@ -54,6 +55,7 @@ export type RuiAutocompleteProps = {
  */
 @customElement('rui-autocomplete')
 export class RuiAutocomplete extends RadiantElement {
+	declare readonly [JSX_PROPS]?: RuiAutocompleteProps;
 	@prop({ type: String, defaultValue: 'base' }) sensitivity: TextFilterSensitivity;
 	@prop({ type: String, attribute: 'input-value', defaultValue: '' }) inputValue: string;
 
@@ -161,5 +163,11 @@ export class RuiAutocomplete extends RadiantElement {
 	@onEvent({ selector: '[data-autocomplete-input]', type: 'input' })
 	onInput(): void {
 		this.applyFilter();
+	}
+}
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-autocomplete': RuiAutocomplete;
 	}
 }

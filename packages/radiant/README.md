@@ -26,19 +26,21 @@ Application code does not need to import JSX helpers or Signals primitives direc
 
 `RadiantElement` is the structured base class for reactive custom elements.
 
+`@customElement(name, options)` registers autonomous custom elements only. Passing a defined `options.extends` value to define a customized built-in throws a `TypeError` at class definition time, and `extends` is excluded from the TypeScript options type.
+
 - `render()` returns the current JSX view.
 - First connect automatically chooses between hydration and a fresh client render.
 - `update()` runs the update cycle now: batched `@onUpdated` callbacks, the render when the host overrides `render()`, then `updated()`. It works on every host, so it also flushes `@onUpdated` synchronously on hosts without `render()`.
 - `requestUpdate()` schedules that cycle in a microtask and coalesces repeated requests. `updateComplete` resolves when the cycle finishes and rejects when an `@onUpdated` callback, render, or `updated()` in it throws. A failed cycle discards its remaining queued work; a later write starts a fresh cycle.
 - Hosts observe their reactive members only while connected. Changes made before connect or while detached are reported on the next connect, so a shared `@signal` source never keeps a removed host alive. Server rendering never connects hosts; it drains pending `@onUpdated` callbacks during host preparation and never calls `updated()`.
-- `@prop(...)`, `@state`, and `@signal(...)` define reactive members. Pass `transform` on `@prop` to override default converters (`type: Array` is JSON unless you supply `fromAttribute` / `toAttribute`). `fromProperty` normalizes JS/JSX writes. `toAttribute` returning `null` or `''` omits the reflected attribute without changing the assigned property.
+- `@prop(...)`, `@state`, and `@signal(...)` define reactive members. A `@prop` attribute defaults to the kebab-case property name (`minWidth` maps to `min-width`); `@attr` uses the same conversion for its source attribute, with consecutive underscores collapsing to one hyphen. `attribute` on `@prop` and `source` on `@attr` override the default and preserve the explicit name. JSX continues to use the camelCase property. HTML lowercases attribute names, so choose a lowercase explicit name when consumers author it in HTML. Pass `transform` on `@prop` to override default converters (`type: Array` is JSON unless you supply `fromAttribute` / `toAttribute`). `fromProperty` normalizes JS/JSX writes. `toAttribute` returning `null` or `''` omits the reflected attribute without changing the assigned property.
 - The declared field type is the source of truth for `@prop(...)`, `@attr(...)`, `@signal(...)`, `@state`, `@bindTo(...)`, `@query(...)`, `@querySlot(...)`, `@event(...)` and the context decorators: options that carry a value (`defaultValue`, `initial`, `transform`, `converter`, `type`, and `source` on `@signal`) must agree with it, and under standard decorators a mismatch is a compile error on the decorator. `@prop({ type: Number, defaultValue: 0 }) label: string` does not compile, and `@attr({ defaultValue: 'a' }) mode: 'a' | 'b'` does. A single-element `@query(...)` or `@querySlot(...)` field is `T | null` (`T[]` with `all: true`), so guard each use. Write a decorated field with an initializer, `?` or `!`: `declare` and `accessor` fields do not compile. Legacy decorators (`experimentalDecorators: true`) never receive the field type, so none of these checks run there and a callback such as `@bindTo`'s `map` sees `unknown` unless you pass the whole field type, `undefined` included, as a type argument (`@bindTo<number>(...)`, `@bindTo<WritableSignal<number>>(...)` on a `@signal` field). The rules per decorator, the `type` constant and parsers are in [Typing Decorated Fields](https://radiant.ecopages.app/docs/decorators).
 - Reflected properties serialize the current value on each write. A synchronous callback (`@bindTo`, `registerUpdateCallback`) that normalizes the assignment is reflected too.
 - `@bindTo(...)` copies a reactive field onto existing DOM when the host does not own a `render()` tree.
 - `@onUpdated(...)` runs once for members changed in the same batch, before the render commits. If its callback changes a watched member, it can run again in the same cycle until state settles. Use it for procedures and for asking a render-owning host to `update()` / `requestUpdate()` when the view structure must change. `updated()` is for work that needs the committed DOM.
 - `this.bindings.key`, `this.$.key`, and `this.bind('key')` expose stable JSX bindings for reactive members.
 - If `render()` is omitted, the base implementation behaves like `<slot />`, so authored light-DOM children pass through unchanged. Copy fields onto that DOM with `@bindTo(...)`.
-- `onConnected()` runs after every connection, once attribute catch-up and (when `render()` is overridden) the initial hydrate/update have finished. Use it instead of `connectedCallback` + `queueMicrotask(sync)`. It is not `registerConnectedCallback()`, which runs synchronously before catch-up.
+- `registerConnectedCallback()` is a pre-sync hook: it runs synchronously when connection starts, before first-connect attribute catch-up. Use it only for setup that does not read authored property values. `onConnected()` runs after every connection, once attribute catch-up and (when `render()` is overridden) the initial hydrate/update have finished; use it instead of `connectedCallback` + `queueMicrotask(sync)` when work needs the synchronized host.
 - `FormAssociatedElement` extends `RadiantElement` for native form controls. Each concrete subclass inherits the static FACE flag and owns one `ElementInternals`; implement `formValue()` and `restoreFormState()`. Override `formState()` when submission can be `null` before a name is assigned or uses multi-entry `FormData`, so reset keeps the authored value. The first form value sync, normally in the first connect cycle, records that reset state.
 - Literal `<slot>` tags place a render-owning host's children. A view that renders `<x-card>{children}</x-card>` hands a **Children Value** to the host: `<slot />` renders it, named regions are properties (`<x-card header={<h2 />}>` rendered with `{this.header}`), and only the host's renderer touches the nodes. **Authored Children** are captured at first render and assigned by their `slot` attribute. `getSlotElement(...)`, `getSlotElements(...)`, or `@querySlot(...)` read the assigned elements for both. See [Slots](https://radiant.ecopages.app/docs/components/slots).
 
@@ -57,7 +59,7 @@ This counter shows the intended `RadiantElement` style for stable templates: pub
 ```tsx
 /** @jsxImportSource @ecopages/jsx */
 
-import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, prop, state } from '@ecopages/radiant';
 
 type CounterCardBindings = {
@@ -65,12 +67,14 @@ type CounterCardBindings = {
 	label: string;
 };
 
-type CounterCardAttributes = {
+type CounterCardProps = {
 	label?: string;
 };
 
 @customElement('counter-card')
 export class CounterCard extends RadiantElement<CounterCardBindings> {
+	declare readonly [JSX_PROPS]?: CounterCardProps;
+
 	@prop({ type: String, defaultValue: 'Clicks' }) label!: string;
 	@state count = 0;
 
@@ -91,11 +95,7 @@ export class CounterCard extends RadiantElement<CounterCardBindings> {
 	}
 }
 
-declare module '@ecopages/jsx/jsx-runtime' {
-	interface JsxCustomIntrinsicElements {
-		'counter-card': JsxCustomElementAttributes<HTMLElement, CounterCardAttributes>;
-	}
-}
+<CounterCard label="Clicks" />;
 ```
 
 How this works:
@@ -104,7 +104,7 @@ How this works:
 - `@state` is internal mutable state.
 - `this.$.label` and `this.$.count` are cached JSX bindings, so those text positions can update directly when the underlying reactive members change.
 - This example does not call `update()` because the view structure is stable. Only the bound child values change.
-- The JSX intrinsic-element declaration uses a public attribute type that is narrower than the internal binding shape. That is usually the right split.
+- `JSX_PROPS` declares a public type that is narrower than the internal binding shape. That is usually the right split.
 
 If the same type truly represents both internal bindings and public JSX attributes, you can reuse it for both. Otherwise, keep those contracts separate.
 
@@ -156,13 +156,15 @@ Prefer the server pipeline for host HTML:
 - import `@ecopages/radiant/server/install-ssr-runtime` once at server boot (shim + ALS scope adapters)
 - `renderComponent(...)` / `renderComponentToString(...)` from `@ecopages/radiant/server/render-component` for adapters and fragments
 - `renderRadiantElementHostToString(...)` from `@ecopages/radiant/server/radiant-element-ssr` for lower-level host serialization
-- `renderViewToString()` on the element only serializes the JSX view through the installed server runtime
+- `renderRadiantElementViewToString(host, options)` from `@ecopages/radiant/server/radiant-element-ssr` serializes only the JSX view
 
-There is no durable Element Host instance API named `renderHostToString()`.
+There is no durable Element Host instance API named `renderHostToString()`. `renderComponent()` serializes each host once and wraps that markup as `preview`; it does not serialize the host a second time.
 
-`mode: 'hydrate'` adds hydration markers for the component view and stamps each serialized host with a `data-radiant-ssr` attribute. A host reads that stamp once, at first connect, into `isServerRendered`. Use it, not `hasHydrationMarkers`, to tell whether a host's content came from the server: markers exist only where a view has bindings, and JSX children applied to a custom element as light DOM carry none. Plain-mode hosts are not stamped and report `false`, and `renderViewToString` returns the view only, so a caller that writes the host tag itself must add `SERVER_RENDERED_HOST_ATTRIBUTE` (exported from `@ecopages/radiant/server/radiant-element-ssr`). The host removes the stamp once it has read it, as hydration markers are removed, so a connected host no longer carries it. Slot-projection payloads embed the stamp, so a host the client rebuilds from a payload reports `true`. A render-owning host in another host's view keeps its server node, state and focus when that parent hydrates, so it reports `true` too; one the parent's view rebuilds (its tag was defined only after the parent hydrated, or the server markup does not match the view) reports `false`. A page root with no binding of its own can still reconnect after such a nested host has hydrated or rendered itself, even if it updated since, when the page's static markup matches. First-connect hydration is explicit: SSR pages should import `@ecopages/radiant/client/install-hydrator` before loading component modules, or call `installRadiantHydrator()` from `@ecopages/radiant/client/hydrator` before custom elements upgrade. Without that client hydrator gate, SSR hosts fall back to a fresh client render on first connect.
+`mode: 'hydrate'` adds hydration markers for the component view and stamps each serialized host with a `data-radiant-ssr` attribute. A host reads that stamp once, at first connect, into `isServerRendered`. Use it, not `hasHydrationMarkers`, to tell whether a host's content came from the server: markers exist only where a view has bindings, and JSX children applied to a custom element as light DOM carry none. Plain-mode hosts are not stamped and report `false`; `renderRadiantElementViewToString(host, options)` returns the prepared view only, so a caller that writes the host tag itself must add `SERVER_RENDERED_HOST_ATTRIBUTE` (exported from `@ecopages/radiant/server/radiant-element-ssr`). The host removes the stamp once it has read it, as hydration markers are removed, so a connected host no longer carries it. Slot-projection payloads embed the stamp, so a host the client rebuilds from a payload reports `true`. A render-owning host in another host's view keeps its server node, state and focus when that parent hydrates, so it reports `true` too; one the parent's view rebuilds (its tag was defined only after the parent hydrated, or the server markup does not match the view) reports `false`. A page root with no binding of its own can still reconnect after such a nested host has hydrated or rendered itself, even if it updated since, when the page's static markup matches. First-connect hydration is explicit: SSR pages should import `@ecopages/radiant/client/install-hydrator` before loading component modules, or call `installRadiantHydrator()` from `@ecopages/radiant/client/hydrator` before custom elements upgrade. Without that client hydrator gate, SSR hosts fall back to a fresh client render on first connect.
 
 Because Radiant's SSR environment shims `window` and `document`, global checks like `typeof window !== 'undefined'` or `typeof document !== 'undefined'` evaluate to `true` on the server. Guard top-level event listeners on `document` or `window` with `!isServer` from `@ecopages/radiant/is-server` so browser navigation and event listeners do not attach during SSR. This flag follows the package export condition, so it reads `true` under Node even when a DOM shim is installed. Use a DOM capability check for code that depends on specific DOM methods.
+
+`createResource(...)` starts from the Element Host client connect pass, after authored attributes synchronize. SSR serialization never starts resource fetches, regardless of the active package export condition. For server-rendered data, fetch before rendering and provide the value through `initialize`, `prepareHost`, or host attributes.
 
 Server runtime setup, fragment rendering helpers, and SSR-specific import guidance live in [src/server/README.md](src/server/README.md).
 
@@ -312,8 +314,8 @@ These are the documented public import paths exposed by the package.
 | `@ecopages/radiant/server/install-ssr-runtime`    | Side-effect server boot entry: light-DOM shim plus JSX SSR scope adapters                                                                                                           |
 | `@ecopages/radiant/server/install-light-dom-shim` | Side-effect shim install only (prefer `install-ssr-runtime` for full Radiant SSR)                                                                                                   |
 | `@ecopages/radiant/server/light-dom-shim`         | Minimal SSR window and host-preparation helpers                                                                                                                                     |
-| `@ecopages/radiant/server/radiant-element-ssr`    | Lower-level host serialization (`renderRadiantElementHostToString`; see `src/server/README.md` for the full export tiers)                                                           |
-| `@ecopages/radiant/server/render-component`       | Canonical component SSR helpers and shared fragment metadata utilities                                                                                                              |
+| `@ecopages/radiant/server/radiant-element-ssr`    | Lower-level host serialization (`renderRadiantElementHostToString` defaults to plain mode; see `src/server/README.md` for the full export tiers)                                    |
+| `@ecopages/radiant/server/render-component`       | Canonical component SSR helpers; default hydrate mode                                                                                                                               |
 | `@ecopages/radiant/server/render-controller`      | Controller-host SSR helpers and controller-specific host option types                                                                                                               |
 | `@ecopages/radiant/server/project-root`           | Project-root resolution helper for server adapters                                                                                                                                  |
 | `@ecopages/radiant/decorators/attr`               | `@attr(...)`                                                                                                                                                                        |

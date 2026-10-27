@@ -7,13 +7,8 @@ import * as selectors from './selectors';
 type MinimalParentNode = Node & ParentNode;
 
 type HtmlParsers = {
-	parseHtmlToNodes: (
-		html: string,
-		ownerDocument: Document | null,
-		contextTagName?: string,
-		followsStartTag?: boolean,
-	) => Node[];
-	serializeNodeHtml: (node: Node) => string;
+	parseChildHtml: (html: string, context: Node, followsStartTag?: boolean) => Node[];
+	serializeChildNodesHtml: (parent: Node) => string;
 };
 
 let htmlParsers: HtmlParsers | undefined;
@@ -580,7 +575,7 @@ export class MinimalElement extends MinimalNode {
 		const html = this.pendingChildHtml;
 		this.pendingChildHtml = undefined;
 
-		for (const node of ensureHtmlParsers().parseHtmlToNodes(html, this.ownerDocument, this.localName, true)) {
+		for (const node of ensureHtmlParsers().parseChildHtml(html, this as unknown as Node, true)) {
 			this.attachChild(node);
 		}
 	}
@@ -600,7 +595,7 @@ export class MinimalElement extends MinimalNode {
 	}
 
 	private parseChildHtml(html: string): Node[] {
-		return ensureHtmlParsers().parseHtmlToNodes(html, this.ownerDocument, this.localName);
+		return ensureHtmlParsers().parseChildHtml(html, this as unknown as Node);
 	}
 
 	querySelector(selector: string): MinimalHTMLElement | null {
@@ -693,7 +688,7 @@ export class MinimalElement extends MinimalNode {
 	}
 
 	private serializeChildNodes(): string {
-		return this.childNodes.map((child) => ensureHtmlParsers().serializeNodeHtml(child)).join('');
+		return ensureHtmlParsers().serializeChildNodesHtml(this as unknown as Node);
 	}
 
 	set innerHTML(html: string) {
@@ -788,7 +783,7 @@ export class MinimalHTMLElement extends MinimalElement {
 					: position === 'afterend'
 						? (target.childNodes[target.childNodes.indexOf(self) + 1] ?? null)
 						: null;
-		const nodes = ensureHtmlParsers().parseHtmlToNodes(html, this.ownerDocument, target.localName);
+		const nodes = ensureHtmlParsers().parseChildHtml(html, target as unknown as Node);
 
 		for (const node of nodes) {
 			target.insertBefore(node, reference);

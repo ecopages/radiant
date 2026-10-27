@@ -1,6 +1,5 @@
 import type { JsxCustomElementAttributes } from '@ecopages/jsx';
-import type { RuiTooltip as RuiTooltipElement, RuiTooltipProps } from './tooltip.script';
-import './tooltip.script';
+import { RuiTooltip as RuiTooltipElement, type RuiTooltipProps } from './tooltip.script';
 
 /**
  * Tooltip view: stamps trigger wrapper and tooltip surface targets expected by the host.
@@ -15,7 +14,7 @@ export function RuiTooltip({
 	...props
 }: JsxCustomElementAttributes<RuiTooltipElement, RuiTooltipProps>) {
 	return (
-		<rui-tooltip content={content} {...props}>
+		<RuiTooltipElement content={content} {...props}>
 			<span class="rui-tooltip">
 				<span class="rui-tooltip__trigger" data-ref="trigger">
 					{children}
@@ -24,6 +23,6 @@ export function RuiTooltip({
 					{content}
 				</span>
 			</span>
-		</rui-tooltip>
+		</RuiTooltipElement>
 	);
 }

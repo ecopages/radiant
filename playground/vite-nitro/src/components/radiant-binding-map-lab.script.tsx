@@ -1,4 +1,4 @@
-import type { JsxCustomElementAttributes, SubscribableJsxValue } from '@ecopages/jsx';
+import type { JSX_PROPS, SubscribableJsxValue } from '@ecopages/jsx';
 import { RadiantElement, customElement, prop, state } from '@ecopages/radiant';
 import { THEME_CONFIG, type ConfigValue, type ThemeKey } from './radiant-binding-map-lab.templates';
 
@@ -9,6 +9,7 @@ type RadiantBindingMapLabBindings = {
 
 @customElement('radiant-binding-map-lab')
 export class RadiantBindingMapLab extends RadiantElement<RadiantBindingMapLabBindings> {
+	declare readonly [JSX_PROPS]?: Record<never, never>;
 	@state preference: ThemeKey = 'light';
 	@prop({ type: Object, defaultValue: { label: 'Hello' } }) config: ConfigValue = { label: 'Hello' };
 
@@ -72,8 +73,8 @@ export class RadiantBindingMapLab extends RadiantElement<RadiantBindingMapLabBin
 	}
 }
 
-declare module '@ecopages/jsx/jsx-runtime' {
-	interface JsxCustomIntrinsicElements {
-		'radiant-binding-map-lab': JsxCustomElementAttributes<HTMLElement, Record<never, never>>;
+declare global {
+	interface HTMLElementTagNameMap {
+		'radiant-binding-map-lab': RadiantBindingMapLab;
 	}
 }

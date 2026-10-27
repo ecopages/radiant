@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, bound, customElement, event, onEvent, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 
@@ -74,6 +75,8 @@ export type RuiAlertCloseDetail = {
  */
 @customElement('rui-alert')
 export class RuiAlert extends RadiantElement {
+	declare readonly [JSX_PROPS]?: RuiAlertProps;
+
 	@prop({ type: String, reflect: true, defaultValue: 'info' }) variant: RuiAlertVariant;
 	@prop({ type: String, reflect: true, defaultValue: 'inline' }) layout: RuiAlertLayout;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) dismissible: boolean;
@@ -100,5 +103,11 @@ export class RuiAlert extends RadiantElement {
 			return;
 		}
 		this.dismiss();
+	}
+}
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-alert': RuiAlert;
 	}
 }

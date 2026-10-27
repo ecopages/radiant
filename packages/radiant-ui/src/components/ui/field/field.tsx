@@ -1,6 +1,5 @@
 import type { JsxCustomElementAttributes } from '@ecopages/jsx';
-import type { RuiField as RuiFieldElement, RuiFieldProps } from './field.script';
-import './field.script';
+import { RuiField as RuiFieldElement, type RuiFieldProps } from './field.script';
 
 /**
  * Field wrapper. Authors `[data-ref="field"]` (`.rui-field` column) inside `<rui-field>` and passes
@@ -17,7 +16,7 @@ export function RuiField({
 	...props
 }: JsxCustomElementAttributes<RuiFieldElement, RuiFieldProps>) {
 	return (
-		<rui-field
+		<RuiFieldElement
 			{...props}
 			prop:rules={rules}
 			prop:defaultValue={defaultValue}
@@ -29,6 +28,6 @@ export function RuiField({
 			<div class="rui-field" data-ref="field">
 				{children}
 			</div>
-		</rui-field>
+		</RuiFieldElement>
 	);
 }

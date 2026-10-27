@@ -1,12 +1,8 @@
-import type { Method } from '../../types';
 import type { ContextHostLike } from '../context-host';
 import type { Context, ContextType, UnknownContext } from '../types';
-import { contextSelector as legacyContextSelectorMethod } from './legacy/context-selector';
-import { contextSelector as standardContextSelectorMethod } from './standard/context-selector';
 import { contextSelectorField as legacyContextSelectorField } from './legacy/context-selector-field';
 import { contextSelectorField as standardContextSelectorField } from './standard/context-selector-field';
-import { dispatchContextSelectorDecorator, type ContextUpdateMethod } from './standard-legacy-dispatch';
-import type { BoundedFieldDecorator } from '../../decorators/bridge';
+import { fieldDecoratorBridge } from '../../decorators/bridge';
 
 export type ContextSelectorOptions<T extends UnknownContext, Selected = ContextType<T>> = {
 	/** Context token to resolve from ancestor providers. */
@@ -18,57 +14,59 @@ export type ContextSelectorOptions<T extends UnknownContext, Selected = ContextT
 };
 
 /**
+ * `BoundedFieldDecorator<ContextHostLike, unknown, Selected>` with a third legacy parameter.
+ *
  * @remarks
- * The method overloads come first. When no overload matches, TypeScript reports the last one, so a field
- * of the wrong type gets the field decorator's error, which names the field and selected types, instead of
- * `undefined` not matching a method.
+ * TypeScript hands a legacy method decorator its descriptor only when the signature declares a third
+ * parameter, so `descriptor?: undefined` is what makes a method target fail to type-check in legacy mode.
+ * The legacy overload comes first for the same reason as in `BoundedFieldDecorator`.
  */
 type ContextSelectorDecorator<Selected> = {
-	<Host extends ContextHostLike, TMethod extends ContextUpdateMethod<Selected>>(
-		protoOrTarget: TMethod,
-		nameOrContext: ClassMethodDecoratorContext<Host, TMethod>,
+	(protoOrTarget: ContextHostLike, name: string, descriptor?: undefined): void;
+	<THost extends ContextHostLike, V>(
+		target: undefined,
+		context: ClassFieldDecoratorContext<THost, V> & {
+			readonly access: { readonly set: (object: never, value: Selected) => void };
+		},
 	): void;
-	(
-		protoOrTarget: ContextHostLike,
-		nameOrContext: string,
-		descriptor: TypedPropertyDescriptor<ContextUpdateMethod<Selected>>,
-	): TypedPropertyDescriptor<ContextUpdateMethod<Selected>> | void;
-} & BoundedFieldDecorator<ContextHostLike, unknown, Selected>;
+};
 
 /**
- * Subscribes a field or method to the current value, or a selected slice, of a context.
+ * Subscribes a field to the current value, or a selected slice, of a context.
  *
- * **Field form (preferred):** The field holds the latest context value and is
- * updated whenever the provider changes. On `RadiantElement` hosts, each
- * update schedules `requestUpdate()` automatically so `render()` stays in sync.
- *
- * **Method form (deprecated — use `@onContextUpdate`):** The method is called
- * with the new value on each change.
+ * The field holds the latest context value and is updated whenever the provider changes. On
+ * `RadiantElement` hosts, each update schedules `requestUpdate()` automatically so `render()` stays in sync.
  *
  * @remarks
  * `Selected` comes from `select`, or is the context's value without it. The returned decorator takes it
  * through `NoInfer`, so a field without `select` cannot choose `Selected` for itself: under standard
  * decorators the field has to be able to hold the selected value, or it is rejected. It can be optional,
  * which holds `undefined` until the first delivery, or wider than the selection.
+ *
+ * Applied to anything but a field, such as a method, it throws a `TypeError` that names
+ * `@onContextUpdate`, the decorator for a method. A legacy decorator call is a method or accessor when it
+ * receives a property descriptor without an `initializer`. Babel's legacy plugin hands a field one with an
+ * `initializer`; TypeScript hands a field none.
  */
 export function contextSelector<T extends Context<unknown, unknown>, Selected = ContextType<T>>(
 	options: ContextSelectorOptions<T, Selected>,
 ): ContextSelectorDecorator<NoInfer<Selected>> {
 	return (
-		protoOrTarget: ContextHostLike | Method | undefined,
-		nameOrContext:
-			| string
-			| ClassFieldDecoratorContext<ContextHostLike, unknown>
-			| ClassMethodDecoratorContext<ContextHostLike, ContextUpdateMethod<Selected>>,
-		descriptor?: TypedPropertyDescriptor<ContextUpdateMethod<Selected>>,
-	) =>
-		dispatchContextSelectorDecorator(
+		protoOrTarget: ContextHostLike | undefined,
+		nameOrContext: string | ClassFieldDecoratorContext<ContextHostLike, unknown>,
+		descriptor?: PropertyDescriptor,
+	) => {
+		if ((descriptor !== undefined && !('initializer' in descriptor)) || (typeof nameOrContext === 'object' && nameOrContext.kind !== 'field')) {
+			throw new TypeError(
+				'@contextSelector decorates a field only. Use @onContextUpdate to run a method when the context changes.',
+			);
+		}
+
+		fieldDecoratorBridge(
 			standardContextSelectorField(options),
-			standardContextSelectorMethod(options),
 			legacyContextSelectorField(options),
-			legacyContextSelectorMethod(options),
 			protoOrTarget,
 			nameOrContext,
-			descriptor,
 		);
+	};
 }

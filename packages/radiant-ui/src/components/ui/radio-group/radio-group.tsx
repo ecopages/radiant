@@ -1,7 +1,6 @@
 import type { JsxCustomElementAttributes, JsxElementProps, JsxRenderable } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
-import type { RuiRadioGroup as RuiRadioGroupElement, RuiRadioGroupProps } from './radio-group.script';
-import './radio-group.script';
+import { RuiRadioGroup as RuiRadioGroupElement, type RuiRadioGroupProps } from './radio-group.script';
 
 export type RuiRadioOption = {
 	value: string;
@@ -67,7 +66,7 @@ export function RuiRadioGroup({
 	...props
 }: JsxCustomElementAttributes<RuiRadioGroupElement, RuiRadioGroupProps & { options?: RuiRadioOption[] }>) {
 	return (
-		<rui-radio-group {...props}>
+		<RuiRadioGroupElement {...props}>
 			{options == null ? (
 				children
 			) : (
@@ -79,6 +78,6 @@ export function RuiRadioGroup({
 					))}
 				</RuiRadioGroupControl>
 			)}
-		</rui-radio-group>
+		</RuiRadioGroupElement>
 	);
 }

@@ -6,7 +6,7 @@ export function createComponentsModule(componentGlob: string | string[]): string
 }
 
 export function createSsrRegistryModule(componentGlob: string | string[], metadataQuery: string): string {
-	return `const CUSTOM_ELEMENT_TAG_NAME = Symbol.for('@ecopages/radiant.customElementTagName');
+	return `import { getCustomElementTagName } from '@ecopages/jsx/jsx-runtime';
 
 const radiantDomModuleMetadata = import.meta.glob(${serializeGlobPattern(componentGlob)}, {
 	eager: true,
@@ -42,7 +42,7 @@ export async function resolveRadiantSsrClientModuleKey(component) {
 		return cachedModuleKey;
 	}
 
-	const tagName = component?.[CUSTOM_ELEMENT_TAG_NAME];
+	const tagName = component == null ? undefined : getCustomElementTagName(component);
 
 	if (typeof tagName === 'string') {
 		const moduleKey = resolveRadiantSsrClientModuleKeyByTagName(tagName);

@@ -19,6 +19,9 @@ export const HYDRATE_BUTTON_ALPHA_HTML =
 
 export const HYDRATE_CARD_ALPHA_HTML = '<section><p>Count: alpha</p></section>';
 
+export const HYDRATE_CLASS_FORM_ELEMENT_HTML =
+	'<main data-radiant-jsx-bind-0="attr:title" title="server"><radiant-jsx-class-form-element id="card"><span>inside</span></radiant-jsx-class-form-element></main>';
+
 export const PLAIN_BUTTON_ALPHA_HTML = '<button class="action">alpha</button>';
 
 export const HYDRATE_ADJACENT_FIELDS_HTML =
@@ -68,3 +71,6 @@ export const HYDRATE_ROOT_LIST_HTML =
 	'<b data-radiant-jsx-bind-1="attr:class" class="tail">tail</b>';
 
 export const HYDRATE_ROOT_EMPTY_ROWS_HTML = '<h1 data-radiant-jsx-bind-0="attr:class" class="title">Rows</h1>';
+
+export const HYDRATE_UNREGISTERED_CUSTOM_ELEMENT_SIBLINGS_HTML =
+	'<div><jsx-registered-marker-host></jsx-registered-marker-host><third-party-widget></third-party-widget><button data-radiant-jsx-bind-0="event:click">go</button></div>';

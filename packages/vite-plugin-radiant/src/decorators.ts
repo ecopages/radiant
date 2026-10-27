@@ -18,19 +18,29 @@ type ClassPropertyPath = {
 	remove: () => void;
 };
 
+type ClassPath = {
+	node: {
+		body: {
+			body: Array<{ declare?: boolean; type?: string; value?: unknown }>;
+		};
+	};
+};
+
 /**
- * `@babel/plugin-proposal-decorators` requires `declare` fields to already be gone.
- * Erase ambient fields before decorators run — without touching decorated `field!: T`,
- * which full `@babel/plugin-transform-typescript` + `allowDeclareFields` would delete.
+ * `@babel/plugin-proposal-decorators` requires ambient fields to already be gone.
+ * Remove them when entering the class, before its decorator transform can attach an
+ * initializer. Definite fields (`field!: T`) remain untouched.
  */
 function eraseDeclareFieldsWithoutInitializer() {
 	return {
 		name: 'radiant-erase-declare-fields',
 		visitor: {
-			ClassProperty(path: ClassPropertyPath) {
-				if (path.node.declare && path.node.value == null) {
-					path.remove();
-				}
+			Class: {
+				enter(path: ClassPath) {
+					path.node.body.body = path.node.body.body.filter(
+						(element) => !(element.type === 'ClassProperty' && element.declare && element.value == null),
+					);
+				},
 			},
 		},
 	};
@@ -97,7 +107,7 @@ export function createRadiantDecoratorBabelPreset(options: RadiantDecoratorBabel
  * decorator path — no Babel required. Keep this option for TC39 authoring until Oxc ships.
  *
  * Babel only lowers decorators — Oxc still strips TypeScript / JSX.
- * Order: erase bare `declare` → lower decorators → strip leftover `!` / `declare` with init.
+ * Order: erase `declare` fields → lower decorators → strip leftover `!` / `declare` with init.
  *
  * Peer deps: `@rolldown/plugin-babel`, `@babel/core`, `@babel/plugin-proposal-decorators`,
  * `@babel/plugin-syntax-typescript`, and `@babel/plugin-transform-class-properties` when using `'legacy'`

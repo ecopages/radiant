@@ -13,11 +13,17 @@ import { RadiantController } from '../../src/core/radiant-controller';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { attr } from '../../src/decorators/attr';
 import { bindTo } from '../../src/decorators/bind-to';
+import { customElement } from '../../src/decorators/custom-element';
 import { prop } from '../../src/decorators/prop';
 import { signal } from '../../src/decorators/signal';
 import { state } from '../../src/decorators/state';
 
 type Mode = 'a' | 'b';
+
+customElement('valid-custom-element');
+customElement('valid-custom-element-with-options', {});
+// @ts-expect-error customized built-ins are not supported
+customElement('invalid-custom-element', { extends: 'button' });
 
 const count = createState(0);
 

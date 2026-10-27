@@ -17,6 +17,7 @@ export function toInternalRadiantSsrHost(component: object): InternalRadiantSsrH
 
 	return {
 		constructor: component.constructor as CustomElementConstructor,
+		getInnerHTML: () => component.innerHTML,
 		getAttribute: (name) => component.getAttribute(name),
 		getAttributeNames: () => component.getAttributeNames(),
 		getAuthoredHydrationScriptMarkup: () => component.getAuthoredHydrationScriptMarkup(),
@@ -25,9 +26,9 @@ export function toInternalRadiantSsrHost(component: object): InternalRadiantSsrH
 		getReactiveProperties: () => component.getReactiveProperties(),
 		getReactivePropDefinitions: () => getReactivePropDefinitions(component),
 		getPropertyValue: (name) => Reflect.get(component, name),
-		getSlotProjectionScriptTag: () => component.getSlotProjectionScriptTag(),
-		resolveTrackedRenderOutput: () => component.resolveTrackedRenderOutput(),
-		flushPostSyncCallbacks: () => internals.flushPostSyncCallbacks(),
+		getProjectedSlotPayload: () => component.getProjectedSlotPayload(),
+		resolveTrackedRenderOutput: (projectForeign) => component.resolveTrackedRenderOutput(projectForeign),
+		flushPostSync: () => internals.flushPostSync(),
 		prepareForSsr: () => component.prepareForSsr(),
 	};
 }

@@ -37,13 +37,15 @@ const rendered = await renderComponent(MyCard, {
 // rendered.preview — JSX-compatible embed value
 ```
 
+When `ssrContext` supplies a consumed context, `renderComponent` resolves it before `initialize` runs. A `renderController` call inside an active provider context does the same. Use either callback to derive initial host state from the consumed value.
+
 ## Surfaces
 
 | Need | API |
 | --- | --- |
 | Adapter / fragment HTML | `renderComponent` / `renderComponentToString` from `@ecopages/radiant/server/render-component` |
 | Lower-level host string | `renderRadiantElementHostToString` from `@ecopages/radiant/server/radiant-element-ssr` |
-| View-only string | `element.renderViewToString(...)` after a server entry is imported |
+| View-only string | `renderRadiantElementViewToString(element, options)` from `@ecopages/radiant/server/radiant-element-ssr` |
 
 There is no durable Element Host instance API named `renderHostToString()`.
 

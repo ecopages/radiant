@@ -1,3 +1,4 @@
+import { isCustomElementSubtreeRoot } from '../hydration/hydration-subtree-policy.ts';
 import { getJsxGlobalSymbol } from './global-symbol.ts';
 import { serializeRenderable } from './serialize-renderable.ts';
 import { createServerRenderedCustomElement as createServerRenderedIntrinsicCustomElement } from './server-rendered-custom-element.ts';
@@ -32,6 +33,14 @@ export type RenderToStringOptions = {
 	 * - `'hydrate'` emits HTML plus hydration binding markers.
 	 */
 	mode?: RenderToStringMode;
+	/**
+	 * The foreign namespace the output is inserted in, `svg` or `math`, when it is not HTML.
+	 *
+	 * @remarks Raw-text tags (`style`, `script`, `xmp`, ...) are ordinary elements there, so their text is
+	 * entity-escaped. An SVG `foreignObject`, `desc` or `title` in the output returns to HTML. Set it when the output is the content of
+	 * an element inside `svg` or `math`, such as the view of a custom element the browser parses there.
+	 */
+	foreignContent?: 'svg' | 'math';
 };
 
 /**
@@ -49,6 +58,7 @@ export type ServerHydrationBindingState = {
 type RenderContext = {
 	ssr: SsrRenderContext;
 	hydrationBindingState: ServerHydrationBindingState;
+	foreignContent: RenderToStringOptions['foreignContent'];
 };
 
 type HydrationBindingScope = {
@@ -83,6 +93,7 @@ export function renderToString(value: JsxRenderable, options: RenderToStringOpti
 	const context: RenderContext = {
 		ssr,
 		hydrationBindingState: hydrationBindingScope.hydrationBindingState,
+		foreignContent: options.foreignContent,
 	};
 
 	return withActiveSsrRenderContext(ssr, () => renderChild(value, context));
@@ -146,6 +157,11 @@ function withSsrRenderOverrides<T>(overrides: Partial<SsrRenderContext>, render:
 /**
  * Resolves the hydrate binding state visible to the current `renderToString(...)`
  * call and returns the scope values that should flow into the nested SSR context.
+ *
+ * @remarks A new hydrate root without explicit binding state copies the parent
+ * `scopeValues` map and never writes into it. Sibling roots in the same SSR
+ * scope therefore each start at index 0. {@link withServerHydrationBindingState}
+ * is the only way to share one namespace across sibling roots.
  */
 function getHydrationBindingScope(
 	activeSsrContext: SsrRenderContext | undefined,
@@ -169,7 +185,8 @@ function getHydrationBindingScope(
 	}
 
 	const nextBindingState: ServerHydrationBindingState = { nextBindingIndex: 0 };
-	const scopeValues = activeSsrContext?.scopeValues ?? new Map<symbol, unknown>();
+	const parentScopeValues = activeSsrContext?.scopeValues;
+	const scopeValues = new Map(parentScopeValues);
 
 	scopeValues.set(ACTIVE_HYDRATION_BINDING_STATE_KEY, nextBindingState);
 
@@ -183,7 +200,8 @@ function renderChild(value: JsxRenderable, context: RenderContext): string {
 	return serializeRenderable(value, {
 		mode: context.ssr.hydrate ? 'hydrate' : 'plain',
 		hydrationBindingState: context.hydrationBindingState,
-		renderCustomElementTemplate: (template) => renderIntrinsicCustomElementTemplate(template),
+		foreignContent: context.foreignContent,
+		renderCustomElementTemplate: renderIntrinsicCustomElementTemplate,
 	});
 }
 
@@ -198,22 +216,34 @@ function renderChild(value: JsxRenderable, context: RenderContext): string {
  * Nested hosts inside the children still render through the custom-element
  * hook, which follows the active hydrate policy with a fresh namespace.
  */
-function renderCustomElementLightDom(value: JsxRenderable): string {
+function renderCustomElementLightDom(
+	value: JsxRenderable,
+	foreignContent?: RenderToStringOptions['foreignContent'],
+): string {
 	return serializeRenderable(value, {
 		mode: 'plain',
-		renderCustomElementTemplate: (template) => renderIntrinsicCustomElementTemplate(template),
+		foreignContent,
+		renderCustomElementTemplate: renderIntrinsicCustomElementTemplate,
 	});
 }
 
-/** Renders a registered custom element template through the active hook or its own host renderer. */
-export function renderIntrinsicCustomElementTemplate(template: TemplateResultLike): string | undefined {
-	if (!template.rootLocalName?.includes('-') || !template.ssrIntrinsicProps) {
+/**
+ * Renders a registered custom element template through the active hook or its own host renderer.
+ *
+ * @param foreignContent The foreign namespace the element sits in; its light DOM and view serialize in it.
+ */
+export function renderIntrinsicCustomElementTemplate(
+	template: TemplateResultLike,
+	foreignContent?: RenderToStringOptions['foreignContent'],
+): string | undefined {
+	if (!template.rootLocalName || !isCustomElementSubtreeRoot(template.rootLocalName) || !template.ssrIntrinsicProps) {
 		return undefined;
 	}
 
 	const serverRenderedCustomElement = createServerRenderedIntrinsicCustomElement(
 		template.rootLocalName,
 		template.ssrIntrinsicProps,
+		foreignContent,
 	);
 
 	if (!serverRenderedCustomElement) {

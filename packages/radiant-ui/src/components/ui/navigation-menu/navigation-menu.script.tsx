@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, onEvent, prop } from '@ecopages/radiant';
 import { queryRovingTabindexItems } from '@/lib/focusable-elements';
 import { applyRovingTabindex, navigateRovingTabindex } from '@/lib/roving-tabindex';
@@ -91,6 +92,8 @@ const NAVIGATION_MENU_GAP = 8;
  */
 @customElement('rui-navigation-menu')
 export class RuiNavigationMenu extends RadiantElement {
+	declare readonly [JSX_PROPS]?: RuiNavigationMenuProps;
+
 	@prop({ type: String, defaultValue: '' }) label: string;
 	@prop({ type: Boolean, reflect: true, attribute: 'open-on-hover', defaultValue: false }) openOnHover: boolean;
 	@prop({ type: Number, attribute: 'hover-delay', defaultValue: NAVIGATION_MENU_DEFAULT_HOVER_DELAY })
@@ -579,5 +582,13 @@ export class RuiNavigationMenu extends RadiantElement {
 		}
 
 		event.preventDefault();
+	}
+}
+
+
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-navigation-menu': RuiNavigationMenu;
 	}
 }

@@ -3,8 +3,10 @@ import { createRoot, type JsxRenderable } from '@ecopages/jsx';
 import { RuiField } from './field';
 import { RuiLabel } from '../label';
 import { RuiListbox } from '../listbox';
-import './field.script';
-import '../listbox/listbox.script';
+import { RuiField as RuiFieldScript } from './field.script';
+import { RuiListbox as RuiListboxScript } from '../listbox/listbox.script';
+void RuiFieldScript;
+void RuiListboxScript;
 
 function mount(element: JsxRenderable): { host: HTMLElement; cleanup: () => void } {
 	const host = document.createElement('div');

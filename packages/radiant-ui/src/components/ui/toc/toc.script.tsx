@@ -1,3 +1,5 @@
+import type { WithoutChildren } from '../../../lib/without-children';
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, bound, customElement, onUpdated, prop, state } from '@ecopages/radiant';
 import { isServer } from '@ecopages/radiant/is-server';
 import { parseCommaSeparated } from '@/lib/comma-separated';
@@ -71,6 +73,8 @@ type RuiTocBindings = {
  */
 @customElement('rui-toc')
 export class RuiToc extends RadiantElement<RuiTocBindings> {
+	declare readonly [JSX_PROPS]?: WithoutChildren<RuiTocProps>;
+
 	@prop({ type: String, attribute: 'target', defaultValue: '' }) target = '';
 	@prop({ type: String, attribute: 'heading-selector', defaultValue: 'h2,h3' }) headingSelector = 'h2,h3';
 	@prop({ type: String, defaultValue: 'On this page' }) label = 'On this page';
@@ -381,5 +385,13 @@ export class RuiToc extends RadiantElement<RuiTocBindings> {
 				</ul>
 			</nav>
 		);
+	}
+}
+
+
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-toc': RuiToc;
 	}
 }

@@ -1,3 +1,5 @@
+import type { WithoutChildren } from '../../../lib/without-children';
+import type { JSX_PROPS } from '@ecopages/jsx';
 import {
 	RadiantElement,
 	bindTo,
@@ -26,8 +28,7 @@ import {
 } from './toast-context';
 import { collapsedStackHeight, expandedStackHeight, expandedToastOffset } from './stack-layout';
 import { toastState } from './toast-state';
-import type { RuiToast } from './toast.script';
-import './toast.script';
+import { RuiToast } from './toast.script';
 
 export type RuiToasterProps = {
 	/** Corner / edge placement. Default: `bottom-end`. */
@@ -111,6 +112,8 @@ function isInsideToaster(node: EventTarget | null, root: Element): boolean {
  */
 @customElement('rui-toaster')
 export class RuiToaster extends RadiantElement {
+	declare readonly [JSX_PROPS]?: WithoutChildren<RuiToasterProps>;
+
 	@prop({ type: String, reflect: true, defaultValue: DEFAULT_TOAST_POSITION })
 	@bindTo([
 		{ attr: 'data-y-position', map: (position) => splitToastPosition(position).y },
@@ -517,7 +520,7 @@ export class RuiToaster extends RadiantElement {
 							toast.duration ?? (toast.variant === 'loading' ? Number.POSITIVE_INFINITY : this.duration);
 
 						return (
-							<rui-toast
+							<RuiToast
 								key={String(toast.id)}
 								prop:toastId={String(toast.id)}
 								prop:title={toast.title}
@@ -535,5 +538,11 @@ export class RuiToaster extends RadiantElement {
 				</ol>
 			</section>
 		);
+	}
+}
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-toaster': RuiToaster;
 	}
 }

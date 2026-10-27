@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, onEvent, prop } from '@ecopages/radiant';
 import { applyRovingTabindex } from '@/lib/roving-tabindex';
 
@@ -36,6 +37,8 @@ export type RuiGridProps = {
  */
 @customElement('rui-grid')
 export class RuiGrid extends RadiantElement {
+	declare readonly [JSX_PROPS]?: RuiGridProps;
+
 	@prop({ type: String, defaultValue: '' }) label: string;
 
 	protected override onConnected(): void {
@@ -91,5 +94,13 @@ export class RuiGrid extends RadiantElement {
 		const allCells = Array.from(this.querySelectorAll<HTMLElement>('[role="gridcell"]'));
 		applyRovingTabindex(allCells, allCells.indexOf(target));
 		target.focus();
+	}
+}
+
+
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-grid': RuiGrid;
 	}
 }

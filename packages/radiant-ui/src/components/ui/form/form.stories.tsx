@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
-import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { consumeContext, onContextUpdate } from '@ecopages/radiant/context';
 import type { ContextProvider } from '@ecopages/radiant/context';
 import { customElement } from '@ecopages/radiant';
@@ -36,18 +36,15 @@ import { RuiTextarea } from '../textarea';
 import { findFieldControl, findFieldError, getAriaControlTarget, isNativeTextControl } from './control-protocol';
 import { RuiForm as RuiFormElement } from './form.script';
 import { formContext, type FormContextValue } from './form-context';
-import '../field/field.script';
-import './form.script';
-
-declare module '@ecopages/jsx/jsx-runtime' {
-	interface JsxCustomIntrinsicElements {
-		'rui-form-validation-alert': JsxCustomElementAttributes<RuiFormValidationAlert, RuiAlertProps>;
-	}
-}
+import { RuiField as RuiFieldScript } from '../field/field.script';
+void RuiFieldScript;
+void RuiFormElement;
 
 /** Story-only alert that demonstrates consuming a parent form's aggregate validation errors. */
 @customElement('rui-form-validation-alert')
 class RuiFormValidationAlert extends RuiAlertElement {
+	declare readonly [JSX_PROPS]?: RuiAlertProps;
+
 	@consumeContext(formContext)
 	private formContextProvider?: ContextProvider<typeof formContext>;
 
@@ -63,6 +60,12 @@ class RuiFormValidationAlert extends RuiAlertElement {
 
 	private syncVisibility(context: FormContextValue | undefined): void {
 		this.hidden = Object.keys(context?.errors ?? {}).length === 0;
+	}
+}
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-form-validation-alert': RuiFormValidationAlert;
 	}
 }
 

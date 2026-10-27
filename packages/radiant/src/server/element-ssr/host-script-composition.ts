@@ -23,7 +23,7 @@
 
 /** Individual content parts that make up a server-rendered host's inner HTML. */
 export type HostContentParts = {
-	/** The rendered view HTML from `renderViewToString`. */
+	/** The rendered view HTML from `renderRadiantElementViewToString`. */
 	hostContent: string;
 	/** Authored hydration script markup pre-existing on the host, if any. */
 	authoredHydrationMarkup: string;

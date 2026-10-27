@@ -53,21 +53,26 @@ server/
 
 Radiant SSR is **light-DOM only**, like the client render path. The pipeline does not emit declarative shadow roots.
 
-For adapters, fragment responses, and framework integrations, prefer the explicit helpers from `@ecopages/radiant/server/render-component` (for example `renderComponent()` / `renderComponentToString()`). Prefer `render-component` unless you are writing a renderer integration.
+For adapters, fragment responses, and framework integrations, prefer `renderComponent()` / `renderComponentToString()` from `@ecopages/radiant/server/render-component`. Those default to **hydrate** mode (`normalizeRenderOptions`). Lower-level host serialization lives on `@ecopages/radiant/server/radiant-element-ssr`, not as Element Host instance methods:
 
-Lower-level host serialization lives on `@ecopages/radiant/server/radiant-element-ssr`, not as Element Host instance methods:
-
-- **Adapter default:** `renderRadiantElementHostToString`
-- **View-only:** `renderRadiantElementViewToString`. It returns the view without a host tag, so it never stamps; a caller that writes the host tag itself adds `SERVER_RENDERED_HOST_ATTRIBUTE`.
+- **Host to string:** `renderRadiantElementHostToString` — defaults to **plain** mode (`{}` is not hydrate). Pass `{ mode: 'hydrate' }` for the host stamp and hydration scripts.
+- **Host as JSX:** `renderRadiantElementHost` — always hydrate mode.
+- **View-only:** `renderRadiantElementViewToString`. It prepares the host, renders inside its context providers, and flushes `@bindTo` once. It returns the view without a host tag, so it never stamps; a caller that writes the host tag itself adds `SERVER_RENDERED_HOST_ATTRIBUTE`.
 - **JSX / custom-element SSR integration:** `withRadiantServerCustomElementRenderBridge`, `renderRegisteredRadiantElementHost`, `renderRegisteredRadiantElementHostToString`
 - **Host stamp:** `SERVER_RENDERED_HOST_ATTRIBUTE` (`data-radiant-ssr`). Hydrate-mode host serialization writes it on every host: `children` on a host that takes its children as a value from the view around it, `authored` on a render-owning host it rendered with Authored Children that fill a named slot (shipped in its slot-projection payload), and an empty value otherwise. The client host reads and removes it at first connect into `isServerRendered`. Plain mode does not write it.
 - **Advanced / runtime:** `getOrCreateRadiantElementSsrRuntime`, `withServerRadiantElementSsrRuntime`, `createRadiantElementSsrService`, `getRadiantElementHostSsrAttributes`, `resolveRadiantElementRenderBridge`
 
 On the client, the stamp decides how a server-rendered host takes its children. A host stamped `authored` keeps its Authored Children for its lifetime and ignores any Children Value, including the one page-level JSX passes when it hydrates over the host. A host stamped `children` waits for its Children Value and takes it. A host with an empty stamp, such as one a view rendered with no children, or one whose Authored Children only fill its default slot, takes a Children Value a view passes, which renders those children in the same place with live bindings.
 
-When a component renders literal `<slot>` tags over **Authored Children**, host serialization also emits the slot-projection payload needed to reconstruct default and named light-DOM assignments on the client.
+Each host serialization is one pass: align the tag and legacy readiness, apply children, prepare once, render the view, flush `@bindTo`, then read attributes, the slot-projection payload, and hydration bindings from that final state. A later, separate serialization prepares again so changed inputs are honoured. `renderComponent()` builds `preview` by wrapping that markup; it does not serialize the host a second time.
+
+When a render-owning host has **Authored Children**, host serialization emits the slot-projection payload needed to reconstruct default and named light-DOM assignments on the client, even when its current server-time view does not contain a `<slot>`. A View-owned Shell has no render lifecycle, so its children stay in the markup without a payload.
 
 Under `withRadiantServerCustomElementRenderBridge` in hydrate mode, a render-owning host inside another host's view receives a **Children Value**, as it does when the client renders that view. Its own render places it, so it serializes inside its context providers and in its marker namespace, and it emits no slot-projection payload. The client gets that value back only from the parent's view, so the parent host must be defined on the client too. Such a host is stamped `data-radiant-ssr="children"`: on the client it stays inert (no event bindings, no `onConnected()`) until the parent's view hands it its Children Value, then hydrates, so a nested host whose parent never renders on the client stays inert server markup. In plain mode nothing makes the host wait for that value (it is not stamped) and its parent may never render on the client, so the same host takes the Authored Children path below, with the slot-projection payload, and still renders its children when its parent is not defined on the client. Any other host claimed by the bridge, such as one in a page rendered outside every host view, or a host without a `render()` override, receives its JSX children as **Authored Children** in light-DOM nodes (`renderServerLightDom` from `@ecopages/jsx/server`), not as an HTML string to parse. Text and attribute values go straight into the DOM, so they are escaped exactly once, when the host serializes. The children are built inside the host's own context providers, after construction and legacy decorator setup but before `prepareForSsr`. A context consumer passed as a child of a provider host therefore resolves that provider during SSR. It sees values set by construction or decorators (`initialValue`), but not values the provider only sets during preparation.
+
+A host the page places inside `svg` or `math` is serialized on its own, but the browser parses its content in that namespace, where `style`, `xmp` and the other raw-text tags are ordinary elements. The bridge takes the namespace from the hook context (`foreignContent`) and serializes the host's Authored Children, its view and its Children Value in it, so their text is entity-escaped as in the rest of the page. A host under an SVG `foreignObject`, `desc` or `title` is back in HTML, and its CSS stays raw.
+
+A host's own view can put `<slot />` inside `svg` or `math` too. Its Authored Children are light-DOM nodes under the host, in HTML, but the browser parses them where the slot puts them. The view render tracks the namespace of each slot by the same rule (`svg` and `math` enter foreign content; only an SVG `foreignObject`, `desc` or `title` returns to HTML) and emits each element assigned to a foreign slot in that namespace (`serializeNodeInNamespace`), so text in a slotted `style`, `xmp` or `noframes` is entity-escaped. For a host in HTML, a slot in HTML, including one under an SVG `foreignObject`, emits its nodes unchanged. A host inside `svg` whose view is `<foreignObject><slot />` still over-escapes slotted CSS: tracking starts in HTML at the view root, so those nodes keep the host's namespace, and the text differs but creates no elements. The namespace follows template roots only, so a transported template (`toTemplateResultLike`) with `svg` in its static strings is not detected; those strings are trusted author HTML, the same limitation as the jsx `foreignContent` option. The slot-projection payload keeps the HTML spelling, since the client parses it in a `<template>`. It is re-serialized from the nodes rather than echoing the source HTML they were parsed from, so it parses to the same DOM but can be spelled differently: a CDATA section becomes a comment, and a close tag takes the element's `localName`. On the client the live nodes move into the slot as before.
 
 An integration that registers its own hook with `withServerCustomElementRenderHook` instead of using the bridge decides where a host's children are built. By default they are built before the hook runs, outside the host's context providers, so a consumer passed as a child of a provider host renders its fallback state in the server HTML. Register the hook with `{ ownsChildren: true }`, take `applyChildren` from the hook context, and call it inside the host's providers:
 
@@ -77,7 +82,7 @@ withServerCustomElementRenderHook(
 		if (!instance || !resolveRadiantElementRenderBridge(instance)) return undefined;
 		const service = createRadiantElementSsrService(instance);
 		service.applyLightDom(() => applyChildren?.());
-		return createMarkupNodeLike(service.renderHostToString({ mode: 'hydrate' }, service.getHostAttributes()));
+		return createMarkupNodeLike(service.renderHostToString({ mode: 'hydrate' }));
 	},
 	render,
 	{ ownsChildren: true },
@@ -86,13 +91,11 @@ withServerCustomElementRenderHook(
 
 Hosts the hook does not claim still get their children applied as usual. `test/server/custom-element-hook-children.test.tsx` covers both shapes. Without the change the page is still correct after hydration, because a consumer resolves its provider when it connects; the server HTML is what differs.
 
-`RadiantElement.renderViewToString()` remains the narrow host hook that asks the installed server runtime to serialize the JSX view only.
-
 ### Typed Boolean host attributes
 
-Radiant `@prop({ type: Boolean })` values serialize as **value booleans** (`enabled="true"` / `enabled="false"`), including explicit `false`. That is intentional pre-hydration transport so a client upgrade cannot restore a true default before hydration.
+`@prop({ type: Boolean })` follows the rule in [`resolveHostAttributes`](element-ssr/host-attribute-serialization.ts): omit `false` unless the declared default is `true`; otherwise write `"true"` / `"false"`. A true-default prop therefore round-trips explicit `false` through SSR so a client upgrade cannot restore the default before hydration. A false-default prop omits `false` and writes `name="true"` when true. That is not HTML presence (`name` with an empty value).
 
-This is not HTML presence-boolean semantics. A selector like `[enabled]` matches any serialized value, including `"false"`. Prefer `[enabled="true"]` / `[enabled="false"]`, or drive styles from component state attributes/classes (`data-state`, etc.).
+A selector like `[enabled]` matches `"true"` and `"false"`. Prefer `[enabled="true"]` / `[enabled="false"]`, or drive styles from component state attributes/classes (`data-state`, etc.).
 
 Generic JSX `prop:*` bindings remain client-only and do not stringify property values into HTML; use the Radiant SSR host bridge (or a reflected attribute) when pre-hydration state must appear in markup.
 
@@ -109,6 +112,10 @@ The actual JSX serialization pass is still synchronous. Fetch or prepare data
 before calling the render helper, then inject resolved values through
 `initialize`, `prepareHost`, or explicit host attributes. Do not perform async
 work inside `render()`.
+
+`createResource(...)` starts only from the Element Host's client connect pass,
+after authored attributes synchronize. Server serialization never starts
+resource fetches, regardless of the active package export condition.
 
 ## Adapter install (copy-paste)
 
@@ -189,8 +196,8 @@ Other useful server helpers:
 
 - `renderComponentToString()` returns only the host markup string.
 - `renderComponentToPayload()` returns the flat payload shape directly.
-- `renderComponentWithPreview()` returns payload fields plus a JSX-compatible preview value.
-- `ssrContext` injects ambient context values for standalone fragment renders.
+- `renderComponentWithPreview()` returns payload fields plus a JSX-compatible preview that wraps the same markup. In plain mode that preview has no hydration stamp.
+- `ssrContext` injects ambient context values for standalone `renderComponent` renders. Both `renderComponent` and `renderController` resolve consumed contexts before `initialize`; controllers inherit the active provider context. Preparation and `connect()` resolve them again, but a host gets one `connectedContextCallback`, mounted event and context update callback per provider and context value, so a selector returning a fresh object still runs once.
 - `assets` and `resolveAssets(...)` describe runtime scripts, styles, and preload hints through a transport-agnostic metadata model.
 - `prepareHost(...)` is the dedicated host-preparation hook when slot-aware SSR needs authored light-DOM nodes, not just an HTML string.
 - `clientModuleSrc` and `resolveClientModuleSrc(...)` are focused shorthands for one hydration module.
@@ -224,7 +231,7 @@ The shim supports a focused query surface for component lifecycle code that runs
 - `element.parentElement`
 - Node traversal: `childNodes`, `firstChild`, `lastChild`, `nextSibling`, `previousSibling`, `firstElementChild`, `lastElementChild`, `nextElementSibling`, `previousElementSibling`, `childElementCount`
 - Node edits: `append`, `prepend`, `before`, `after`, `replaceWith`, `remove`, `insertBefore`, `replaceChildren`, `insertAdjacentHTML`
-- `document.createElement` / `createElementNS` (no namespaces), `createTextNode`, `createComment`
+- `document.createElement` / `createElementNS` (no namespaces), `createTextNode`, `createComment`. `createElement` of a registered custom-element tag still returns a generic minimal element: the component is not constructed and its view is not serialized. Use JSX for nested hosts that must server-render.
 - `document.querySelector(selector)` / `document.querySelectorAll(selector)`
 - `document.getElementById(id)`
 - `element.style` (`setProperty`, property assignment, serializes to the `style` attribute)
@@ -261,7 +268,9 @@ Parsed elements keep their source HTML. Child nodes are built on first read (`ch
 
 - Character references decode as the spec says, in text and attribute values, from the full WHATWG table (`src/utils/html-entity-table.generated.ts`, regenerated by `scripts/generate-html-entity-table.ts`). That covers legacy references without a semicolon, with the attribute exception (`?a=1&copy=2` stays literal), the Windows-1252 remap for `&#x80;`–`&#x9F;`, and U+FFFD for invalid code points.
 - Parsed text is written back from its source only while that source still means the same thing: it decodes to the node's value, holds no `<`, and does not end in a partial character reference. Otherwise it is escaped from the value, so text moved between parents or merged with appended text cannot turn into markup or new entities.
-- Raw text elements (`script`, `style`, `xmp`, `iframe`, `noembed`, `noframes`) and escapable raw text elements (`textarea`, `title`) hold one text node up to the matching close tag. Markup-like strings inside them are not tags. Raw text is never decoded. When code sets it, the serializer emits it unescaped, with only that element's close tag neutralized.
+- In HTML, raw text elements (`script`, `style`, `xmp`, `iframe`, `noembed`, `noframes`) and escapable raw text elements (`textarea`, `title`) hold one text node up to the matching close tag. Markup-like strings inside them are not tags. Raw text is never decoded. When code sets it, the serializer joins the element's text and emits it unescaped, rewriting only `</tag` followed by whitespace, `/` or `>` (case-insensitive), so CSS such as `@media (width < 600px)` stays byte-identical. Inside `svg` or `math` these tags are ordinary elements, so their text is entity-escaped like any other text. Only `foreignObject`, `desc` and `title` under `svg` return to HTML. Everything under `math` stays foreign, so text in `math > mi > style` is escaped too: it never becomes markup, but it is not read as CSS.
+- A node without a parent is in HTML unless `setDetachedRootNamespace` says otherwise. The bridge sets it on a host that sits inside `svg` or `math`, so the host's light DOM serializes as the browser parses it there; once the node has a parent, the parent decides. `serializeNodeInNamespace` overrides the namespace of one node, whatever its parent, for the duration of one serialization; it serializes the subtree from its nodes, not from the source HTML kept from parsing it, which spells the content for the context it was parsed in.
+- Elements carry no namespace, but the parser tracks foreign content by the same rule. Inside `svg` or `math`, the tags above nest like any element: their content is markup, character references decode, comments are comments, and `<![CDATA[…]]>` is text holding its content as written. A `</style>` inside a CDATA section or comment there does not end the element. In HTML, `<![CDATA[` starts a bogus comment, as in browsers.
 - Comments are comment nodes. `<!-->` and `<!--->` are empty comments. `<?…>`, `<!…>` and `</` followed by a non-letter are bogus comments, while `<!doctype>` and `</>` are dropped. A `<` that cannot start markup (`a < b`) is text.
 - CR and CRLF become LF, and for duplicate attributes the first one wins. Adjacent text left after dropped markup is merged.
 - A newline directly after a `pre`, `listing` or `textarea` start tag is dropped on parse. `innerHTML` assignment is fragment parsing, so it keeps a leading newline, and the `innerHTML` getter adds none, as in browsers. When the element is serialized with its start tag (`outerHTML`, or inside a parent) and its text starts with a newline, one extra newline is written, so the browser's parse yields the same text. Chromium does not write it, so its own round trip loses that newline.
@@ -270,9 +279,8 @@ Parsed elements keep their source HTML. Child nodes are built on first read (`ch
 
 - Self-closing syntax on non-void HTML elements (`<x-card />`) is honored in the tree. Browsers ignore the slash and leave the element open, so the serializer always writes such elements with an explicit close tag.
 - Attribute names are stored as written and are case-sensitive.
-- Elements carry no namespace, so SVG and MathML parse as plain elements.
 - Truncated and malformed markup is not repaired: input that ends inside a tag (`a <b`), a comment closed by `--!>`, and an unterminated `<!--a>` differ from the spec.
-- `<svg><style>` and `<svg><title>` parse as HTML raw text, `noscript` is not raw text, and the script comment-escape states (`<script><!--<script>`) are not followed.
+- HTML tags that break out of foreign content (`<svg><p>`) stay inside it, and `annotation-xml` is foreign whatever its `encoding`. `noscript` is not raw text, and the script comment-escape states (`<script><!--<script>`) are not followed.
 - Unquoted attribute values that contain `/` (`<a href=/path/to>`) are split into several attributes. Serialization is unaffected because the source is kept.
 
 `test/server/minimal-dom-differential.browser.test.ts` runs in Chromium on generated conforming HTML. It applies the same parsing, queries, mutations and `insertAdjacentHTML` calls to the shim and to Chromium, then checks two things:

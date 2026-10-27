@@ -1,5 +1,30 @@
 # @ecopages/radiant-ui
 
+## 0.3.0
+
+### Minor Changes
+
+- [#469](https://github.com/ecopages/radiant/pull/469) [`af659ff`](https://github.com/ecopages/radiant/commit/af659ff374c7185f6500abb71af22b2ef118dee0) Thanks [@andeeplus](https://github.com/andeeplus)! - **Breaking:** `RuiMeter`, `RuiCalendar`, `RuiToaster`, `RuiToc` and `RuiTabs` are now their custom-element classes instead of callable JSX wrappers; `RuiMeterElement`, `RuiCalendarElement`, `RuiToasterElement`, `RuiTocElement` and `RuiTabsElement` remain aliases of the same classes. JSX usage such as `<RuiMeter value={40} />` is unchanged; code that called an export as a function, such as `RuiMeter({ value: 40 })`, must render JSX instead. `RuiToast` and the tab helpers (`RuiTabList`, `RuiTab`, `RuiTabPanels`, `RuiTabPanel`) remain JSX views.
+
+- [#474](https://github.com/ecopages/radiant/pull/474) [`1d35d3e`](https://github.com/ecopages/radiant/commit/1d35d3ed090dfbcc2819d03cf6beeae10e9d89ed) Thanks [@andeeplus](https://github.com/andeeplus)! - **Breaking:** Default camelCase `@prop` attributes to kebab-case (`minWidth` becomes `min-width`) across observed attributes, client updates and SSR. To migrate authored HTML, rename camelCase attributes to kebab-case; JSX property names remain camelCase. Underscores map to hyphens too (`max_width` becomes `max-width`), and `@attr` now collapses runs of underscores the same way (`a__b` becomes `a-b`, was `a--b`). Reflected and server-rendered host attributes use the new names, so update CSS selectors and `getAttribute`/`setAttribute` calls (`[exclusivetoggles]` becomes `[exclusive-toggles]`). An explicit `attribute` option, or `source` on `@attr`, keeps its configured name; choose a lowercase `attribute` value when consumers write it in HTML.
+
+    Radiant UI hosts follow the same rule: authored HTML such as `<rui-sidebar minWidth="200">` becomes `<rui-sidebar min-width="200">`.
+
+### Patch Changes
+
+- [#484](https://github.com/ecopages/radiant/pull/484) [`5e83088`](https://github.com/ecopages/radiant/commit/5e83088ddb39d40a4c4401be77155ae1626e8a20) Thanks [@andeeplus](https://github.com/andeeplus)! - Type each catalog tag from its class: `<rui-alert>` and `<RuiAlertElement>` accept the class's public props (`JSX_PROPS` plus its `HTMLElementTagNameMap` entry), and views render their hosts through those classes, which also registers them.
+
+- [#445](https://github.com/ecopages/radiant/pull/445) [`8f08f63`](https://github.com/ecopages/radiant/commit/8f08f63de84be88224d435d4d5752033c60213d1) Thanks [@andeeplus](https://github.com/andeeplus)! - Keep the open navigation menu trigger filled under the pointer in every theme; a theme's ghost-button hover used to replace the fill while the text kept its on-container color, so Windows 95 showed white text on gray. The macOS theme also fills boxed tab panels with the white content surface instead of a gray tint, and keeps pressed ghost buttons filled on hover.
+
+    The Windows 95 theme draws a calendar inside a date popover without its own raised frame, so the popover is one bevel and the calendar title bar sits 3px from it.
+
+    macOS calendar days are circles, and a selected range is one continuous band with a disc on each end instead of a row of separate ovals.
+
+- Updated dependencies [[`4058bf9`](https://github.com/ecopages/radiant/commit/4058bf9c4a2cf98db9a50938c5ee0fdca7915ffd), [`1d35d3e`](https://github.com/ecopages/radiant/commit/1d35d3ed090dfbcc2819d03cf6beeae10e9d89ed), [`ab9404f`](https://github.com/ecopages/radiant/commit/ab9404ff953a66222c6aa7a472ebf6b9adde7228), [`977785f`](https://github.com/ecopages/radiant/commit/977785fc73b327648642d4eb3a317c6e19b7ffbb), [`817a98d`](https://github.com/ecopages/radiant/commit/817a98dd64b93d9fe08c2604b68d76949e61c669), [`a2789eb`](https://github.com/ecopages/radiant/commit/a2789ebb21f5c077fbb393a0fddae89d22d38477), [`719b466`](https://github.com/ecopages/radiant/commit/719b466308b749d2864b8e184dff1583e8c476dc), [`64010bf`](https://github.com/ecopages/radiant/commit/64010bf58e782ad78439f378d1e6aef9c234e87d), [`9234d6b`](https://github.com/ecopages/radiant/commit/9234d6bef0b29f4081a7b174aff240c3db703864), [`b5d2dad`](https://github.com/ecopages/radiant/commit/b5d2dade53815a474c11cddf7e32d3ea8fb87338), [`df1b225`](https://github.com/ecopages/radiant/commit/df1b2250e54f7245edcebc81e6207d96d226599d), [`f48dc1a`](https://github.com/ecopages/radiant/commit/f48dc1adbd1e43f6bfa3e0aa1ba2f28e3f3f3a4b), [`a7409b7`](https://github.com/ecopages/radiant/commit/a7409b7b8573d28c656230b5870dee7c6aed0dd3), [`828dd15`](https://github.com/ecopages/radiant/commit/828dd15882a04e81b98e152a4d5dbd78716f5393), [`76b8c27`](https://github.com/ecopages/radiant/commit/76b8c27e8e73db1b69ed1ba056c10b41232d43b1)]:
+    - @ecopages/radiant@0.6.0
+    - @ecopages/jsx@0.6.0
+    - @ecopages/signals@0.6.0
+
 ## 0.2.5
 
 ### Patch Changes

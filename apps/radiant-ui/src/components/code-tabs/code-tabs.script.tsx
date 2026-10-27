@@ -1,4 +1,4 @@
-import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { unsafeHtml } from '@ecopages/jsx';
 import { RuiButton } from '@ecopages/radiant-ui/button';
 import { RuiTab, RuiTabList, RuiTabPanel, RuiTabPanels, RuiTabs } from '@ecopages/radiant-ui/tabs';
@@ -46,6 +46,7 @@ function withThemeImport(tab: RadiantCodeTabItem, text: string, specifier: strin
 
 @customElement('radiant-code-tabs')
 export class RadiantCodeTabs extends RadiantElement {
+	declare readonly [JSX_PROPS]?: RadiantCodeTabsProps;
 	@prop({ type: Array }) tabs: RadiantCodeTabItem[] = [];
 	@prop({ type: String }) label = '';
 	@prop({ type: String }) copyLabel = 'Copy code';
@@ -166,8 +167,8 @@ export class RadiantCodeTabs extends RadiantElement {
 	}
 }
 
-declare module '@ecopages/jsx/jsx-runtime' {
-	interface JsxCustomIntrinsicElements {
-		'radiant-code-tabs': JsxCustomElementAttributes<RadiantCodeTabs, RadiantCodeTabsProps>;
+declare global {
+	interface HTMLElementTagNameMap {
+		'radiant-code-tabs': RadiantCodeTabs;
 	}
 }

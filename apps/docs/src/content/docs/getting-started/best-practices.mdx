@@ -78,6 +78,8 @@ Type safety is a core feature of Radiant. We recommend following these patterns 
 Define a separate type for your component's public properties. This type can be shared between the component script and the JSX template.
 
 ```typescript
+import type { JSX_PROPS } from '@ecopages/jsx';
+
 export type UserCardProps = {
   name?: string;
   avatarUrl?: string;
@@ -86,6 +88,7 @@ export type UserCardProps = {
 
 @customElement('user-card')
 export class UserCard extends RadiantElement {
+  declare readonly [JSX_PROPS]?: UserCardProps;
   @prop({ type: String }) name!: string;
   @prop({ type: String }) avatarUrl!: string;
   @prop({ type: Boolean }) isAdmin?: boolean;
@@ -94,18 +97,31 @@ export class UserCard extends RadiantElement {
 
 ### JSX Integration (Ecopages JSX)
 
-To enable type checking for your custom element in JSX templates with
-`jsxImportSource: "@ecopages/jsx"`, augment the Ecopages JSX runtime module.
+With `jsxImportSource: "@ecopages/jsx"`, declare the public props on the class
+with `JSX_PROPS`, then use the class as the JSX element type.
 
-```typescript
-import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+```tsx
+/** @jsxImportSource @ecopages/jsx */
 
-declare module '@ecopages/jsx/jsx-runtime' {
-  interface JsxCustomIntrinsicElements {
-    'user-card': JsxCustomElementAttributes<HTMLElement, UserCardProps>;
-  }
-}
+import { UserCard } from './user-card';
+
+<UserCard name="Ada" />;
 ```
+
+If a view uses the string tag instead, add the class to `HTMLElementTagNameMap`:
+
+```tsx
+declare global {
+	interface HTMLElementTagNameMap {
+		'user-card': UserCard;
+	}
+}
+
+<user-card name="Ada" />;
+```
+
+At runtime, import the class's module so its `@customElement(...)` decorator
+registers the element before rendering.
 
 ### Public Props vs Internal Bindings
 
@@ -122,7 +138,7 @@ not the same.
 ```tsx
 /** @jsxImportSource @ecopages/jsx */
 
-import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, prop, state } from '@ecopages/radiant';
 
 export type UserCardProps = {
@@ -136,6 +152,8 @@ type UserCardBindings = UserCardProps & {
 
 @customElement('user-card')
 export class UserCard extends RadiantElement<UserCardBindings> {
+  declare readonly [JSX_PROPS]?: UserCardProps;
+
   @prop({ type: String, defaultValue: 'Anonymous' }) name!: string;
   @prop({ type: String, defaultValue: '' }) avatarUrl!: string;
   @state isExpanded = false;
@@ -157,11 +175,7 @@ export class UserCard extends RadiantElement<UserCardBindings> {
   }
 }
 
-declare module '@ecopages/jsx/jsx-runtime' {
-  interface JsxCustomIntrinsicElements {
-    'user-card': JsxCustomElementAttributes<HTMLElement, UserCardProps>;
-  }
-}
+<UserCard name="Ada" />;
 ```
 
 In this pattern:
@@ -320,13 +334,13 @@ this.items = [...this.items, 'new item'];
 
 For `RadiantElement<Bindings>`, treat the generic binding shape as an internal reactive surface. When the public JSX API should be smaller, use a dedicated `Props` type and keep internal bindings separate.
 
-### Prefer autonomous elements over customized built-ins
+### Use autonomous custom elements
 
-While Radiant supports extending built-in elements (e.g., `extends: 'button'`), browser support for customized built-in elements is limited.
+The `@customElement` decorator supports autonomous custom elements only. Its options type excludes `extends`, and a defined `extends` value passed at runtime throws a `TypeError` before registration. Use an autonomous element based on `RadiantElement` instead.
 
 <RuiAlert variant="warning" layout="banner" class="unstyled">
   <RuiAlertTitle>WARNING</RuiAlertTitle>
   <RuiAlertDescription>
-    <p>Customized built-in elements have limited browser support and are not supported in Safari. For maximum compatibility, we recommend creating autonomous custom elements.</p>
+    <p>Do not pass <code>extends</code> to <code>@customElement</code> or extend a built-in HTML class for a decorated element.</p>
   </RuiAlertDescription>
 </RuiAlert>

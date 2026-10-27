@@ -6,7 +6,8 @@ import { REACTIVE_HOST } from '../../src/core/reactive-host';
 const PLUMBING = [
 	'notifyUpdate',
 	'getReactiveBinding',
-	'registerPostSyncCallback',
+	'registerPostSync',
+	'registerConnectSync',
 	'registerUpdatedCallback',
 	'registerContextProvider',
 	'registerHydrationBinding',
@@ -14,7 +15,8 @@ const PLUMBING = [
 	'getHydrationBindings',
 	'getSsrContextProviders',
 	'getSsrHydrationBindings',
-	'flushPostSyncCallbacks',
+	'flushPostSync',
+	'flushConnectSync',
 	'registerEventEmitter',
 ];
 

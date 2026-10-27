@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, bindTo, customElement, event, onEvent, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { nonEmpty } from '@/lib/non-empty';
@@ -73,6 +74,8 @@ export type RuiSwitchChangeDetail = {
  */
 @customElement('rui-switch')
 export class RuiSwitch extends RadiantElement {
+	declare readonly [JSX_PROPS]?: RuiSwitchProps;
+
 	@prop({ type: Boolean, reflect: true, defaultValue: false })
 	@bindTo({ ref: 'input', prop: 'checked' })
 	checked: boolean;
@@ -97,5 +100,13 @@ export class RuiSwitch extends RadiantElement {
 		const input = event.target as HTMLInputElement;
 		this.checked = input.checked;
 		this.changeEvent.emit({ checked: this.checked });
+	}
+}
+
+
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-switch': RuiSwitch;
 	}
 }

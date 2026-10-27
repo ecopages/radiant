@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, bindTo, customElement, onEvent, onUpdated, prop, query, state } from '@ecopages/radiant';
 
 export type RuiSidebarTriggerPlacement = 'header' | 'inset';
@@ -76,6 +77,8 @@ export function initialSidebarStateForPlacement(
  */
 @customElement('rui-sidebar-trigger')
 export class RuiSidebarTrigger extends RadiantElement {
+	declare readonly [JSX_PROPS]?: RuiSidebarTriggerProps;
+
 	@prop({ type: String, defaultValue: '' }) controls: string;
 	/** `label` is not a safe reactive attribute name in the DOM; bind via `button-label`. */
 	@prop({ type: String, attribute: 'button-label', defaultValue: SIDEBAR_TRIGGER_DEFAULT_LABEL })
@@ -198,5 +201,13 @@ export class RuiSidebarTrigger extends RadiantElement {
 		if (sidebar && typeof sidebar.toggle === 'function') {
 			sidebar.toggle();
 		}
+	}
+}
+
+
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-sidebar-trigger': RuiSidebarTrigger;
 	}
 }

@@ -3,6 +3,7 @@ import { getTemplateShapeKey } from './template-shape.ts';
 import { forEachNormalizedAttribute } from './attribute-normalize.ts';
 import { shouldUseAttributeBindingByDefaultForElement, shouldUseBooleanAttributeBinding } from './binding-defaults.ts';
 import { isIterableJsxChild, isKeyedJsxValue, resolveReactiveSnapshot } from '../types/renderable-guards.ts';
+import { getCustomElementTagName } from '../custom-element-tag-name.ts';
 import {
 	CUSTOM_ELEMENT_CHILDREN_SYMBOL,
 	KEYED_VALUE_SYMBOL,
@@ -48,6 +49,53 @@ const voidElementNames = new Set([
 type ChildSlotMode = 'multiple' | 'single';
 
 /**
+ * Custom-element class constructor accepted as a JSX type.
+ *
+ * @remarks `any[]` lets classes with different constructor signatures share
+ * the public JSX element type.
+ */
+type JsxClassElement = abstract new (...args: any[]) => Element;
+
+/**
+ * @remarks Walks the prototype chain to the nearest global `HTML*` constructor; any such base other than
+ * `HTMLElement` makes the class a customized built-in.
+ */
+function isCustomizedBuiltIn(type: Function): boolean {
+	let prototype: object | null = Object.getPrototypeOf((type as Function & { prototype: object }).prototype);
+	while (prototype) {
+		const constructor = (prototype as { constructor: Function }).constructor;
+		const name = constructor.name;
+		if (name.startsWith('HTML') && (globalThis as unknown as Record<string, unknown>)[name] === constructor) {
+			return name !== 'HTMLElement';
+		}
+		prototype = Object.getPrototypeOf(prototype);
+	}
+	return false;
+}
+
+/**
+ * @remarks Every function JSX type passes through here on every render. A class constructor's `prototype` is
+ * not writable, unlike a `function` or generator's, and an arrow function has none, so the class check never
+ * stringifies the function source.
+ */
+function resolveCustomElementTagName(type: Function): string | undefined {
+	const tagName = getCustomElementTagName(type as CustomElementConstructor);
+	if (tagName) {
+		if (isCustomizedBuiltIn(type)) {
+			throw new TypeError(`Class ${type.name} (<${tagName}>): customized built-ins are unsupported.`);
+		}
+
+		return tagName;
+	}
+
+	if (Object.getOwnPropertyDescriptor(type, 'prototype')?.writable === false) {
+		throw new TypeError(`Class ${type.name}: use @customElement(...) or customElements.define() before rendering.`);
+	}
+
+	return undefined;
+}
+
+/**
  * Core element factory called by both {@link jsx} and {@link jsxs}.
  *
  * @remarks An element gets child parts only when `props` has a `children` key, which
@@ -60,7 +108,7 @@ type ChildSlotMode = 'multiple' | 'single';
  * parts, unless `childrenAsDom` is set. The class is looked up when the element is created.
  */
 export function createJsxElement<Props extends object>(
-	type: string | JsxFragment | JsxComponent<Props>,
+	type: string | JsxFragment | JsxComponent<Props> | JsxClassElement,
 	props: Props,
 	childSlotMode: ChildSlotMode,
 	childrenAsDom = false,
@@ -68,7 +116,12 @@ export function createJsxElement<Props extends object>(
 	const keyedValue = (props as { key?: unknown }).key;
 
 	if (typeof type === 'function') {
-		return wrapKeyedValue(type(props), keyedValue);
+		const tagName = resolveCustomElementTagName(type);
+		if (!tagName) {
+			return wrapKeyedValue((type as JsxComponent<Props>)(props), keyedValue);
+		}
+
+		return createJsxElement(tagName, props, childSlotMode, childrenAsDom);
 	}
 
 	if (type === fragmentSymbol) {
@@ -107,7 +160,7 @@ export function createJsxElement<Props extends object>(
 	// otherwise assembled identically.
 	if (!voidElementNames.has(type)) {
 		if (hasChildren && !childrenAsValue) {
-			appendElementChildren(strings, values, parts, type, children, childSlotMode);
+			appendChildren(strings, values, parts, children, childSlotMode);
 		}
 		strings[strings.length - 1] += `</${type}>`;
 	}
@@ -142,63 +195,6 @@ export function takesChildrenValue(type: string): boolean {
 			CUSTOM_ELEMENT_CHILDREN_SYMBOL
 		] === true
 	);
-}
-
-function appendElementChildren(
-	strings: string[],
-	values: unknown[],
-	parts: TemplatePartDescriptor[],
-	type: string,
-	children: JsxRenderable | undefined,
-	childSlotMode: ChildSlotMode,
-): void {
-	if (type === 'script') {
-		const rawTextContent = renderJsxRenderableToRawText(children);
-
-		values.push(createMarkupNodeLike(rawTextContent));
-		parts.push({ type: 'child' });
-		strings.push('');
-		return;
-	}
-
-	appendChildren(strings, values, parts, children, childSlotMode);
-}
-
-function renderJsxRenderableToRawText(value: JsxRenderable | undefined): string {
-	if (value === undefined || value === null || value === false || value === true) {
-		return '';
-	}
-
-	if (typeof value === 'string') {
-		return escapeRawTextElementText(value);
-	}
-
-	if (typeof value === 'number' || typeof value === 'bigint') {
-		return String(value);
-	}
-
-	if (isIterableJsxChild(value)) {
-		let rawText = '';
-
-		for (const child of value) {
-			rawText += renderJsxRenderableToRawText(child as JsxRenderable);
-		}
-
-		return rawText;
-	}
-
-	return escapeRawTextElementText(String(value));
-}
-
-/**
- * Escapes the only sequence that can terminate `<script>` text early.
- *
- * Inside a raw-text element the parser looks for `</script`, so that is the sole
- * sequence rewritten. Escaping every `<` would corrupt executable content —
- * `if (a < b)` is not a tag — which is why this is deliberately narrow.
- */
-function escapeRawTextElementText(value: string): string {
-	return value.replace(/<\/(?=script[\s/>])/gi, '<\\/');
 }
 
 function appendBinding(

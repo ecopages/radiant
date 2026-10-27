@@ -7,7 +7,9 @@ order: 5
 
 # Resources
 
-`createResource` ties an async data flow to a host element's lifecycle. It starts observing when the element connects, aborts in-flight work on disconnect, and resumes from the current source on reconnect.
+`createResource` ties an async data flow to a host element's lifecycle. On the client, it starts in each connect pass after attribute sync, the initial render or hydration and `@bindTo`, just before `onConnected()`, so the first fetch sees authored prop values. It aborts in-flight work on disconnect and resumes from the current source on reconnect.
+
+Server rendering never connects Element Hosts, so it does not start resource fetches. Fetch server data before rendering and pass resolved values through `initialize`, `prepareHost`, or host attributes.
 
 ```ts
 import { createResource } from '@ecopages/radiant';
@@ -76,12 +78,12 @@ Returning a falsy value (`false`, `null`, `undefined`) from `source` disables fe
 
 ## Lifecycle
 
-1. **Connect** — the resource starts observing the source (or fetches immediately if no source is set).
+1. **Connect** — after the host's first-connect attribute sync, the resource starts observing the source (or fetches immediately if no source is set).
 2. **Source change** — the previous request is aborted and a new one starts.
 3. **Disconnect** — the in-flight request is aborted. The current state is preserved.
 4. **Reconnect** — the resource resumes from the latest source value.
 
-`createResource` registers these hooks automatically via `registerConnectedCallback` and `registerCleanupCallback`.
+`createResource` wires these lifecycle steps automatically.
 
 ## Related
 

@@ -1,5 +1,5 @@
 import { reflectsBooleanAsValue, type ReactiveProperty } from '../../core/reactive-prop-core';
-import type { ReactivePropDefinition } from '../../core/reactive-prop-metadata';
+import { attributeNameForProp, type ReactivePropDefinition } from '../../core/reactive-prop-metadata';
 import { writeAttributeValue, type AttributeTypeConstant } from '../../utils/attribute-utils';
 import { serializeHtmlAttribute } from '../../utils/serialize-html-attribute';
 
@@ -26,9 +26,9 @@ export type HostAttributeSource = {
  *    These are already-registered reactive properties with established converters.
  *    `undefined` and `null` are omitted. Boolean `false` is omitted unless the
  *    declared default is `true`, in which case `"false"` is emitted so upgrade
- *    can restore explicit false before hydration. True-default booleans use
- *    value semantics (`name="true"` / `name="false"`); false-default booleans
- *    use HTML presence. Do not style true-default props with bare `[name]`.
+ *    can restore explicit false before hydration. When a boolean is written, the
+ *    value is `"true"` or `"false"` — never a valueless HTML presence attribute.
+ *    Do not style those attributes with bare `[name]`.
  *
  * 2. **Reactive prop definitions** — decorator-based definitions. Skipped when the
  *    target attribute name was already emitted by source 1 (dedup via `seenAttributes`).
@@ -71,7 +71,7 @@ export function stringifyHostAttributes(attributes: Record<string, string>): str
 /**
  * Source 1: Reactive properties with established converters.
  *
- * Nullish runtime values are omitted. Boolean `false` is omitted unless the default is `true`.
+ * Nullish runtime values are omitted. Boolean defaults follow {@link resolveHostAttributes}.
  */
 function appendReactivePropertyAttributes(
 	host: HostAttributeSource,
@@ -106,7 +106,7 @@ function appendReactivePropDefinitionAttributes(
 	seenAttributes: Set<string>,
 ): void {
 	for (const definition of host.getReactivePropDefinitions()) {
-		const attributeName = definition.options.attribute ?? definition.name;
+		const attributeName = attributeNameForProp(definition.name, definition.options);
 
 		if (seenAttributes.has(attributeName)) {
 			continue;
@@ -141,9 +141,7 @@ function appendAuthoredAttributes(host: HostAttributeSource, attributes: Record<
 /**
  * Omits values that have no useful host-attribute representation.
  *
- * @remarks False-default booleans follow HTML presence (omit `false`). True-default
- * booleans emit `"false"` so a client upgrade cannot restore the default before
- * hydration. Style those with `[name="true"]` / `[name="false"]`, not bare `[name]`.
+ * @remarks Boolean default handling follows {@link resolveHostAttributes}.
  */
 function shouldOmitReactivePropValue(value: unknown, type: AttributeTypeConstant, defaultValue?: unknown): boolean {
 	if (value === undefined || value === null) {

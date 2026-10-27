@@ -3,10 +3,9 @@ import { cx } from '@/lib/cx';
 import {
 	WINDOW_SPLITTER_MAX,
 	WINDOW_SPLITTER_MIN,
-	type RuiWindowSplitter as RuiWindowSplitterElement,
+	RuiWindowSplitter as RuiWindowSplitterElement,
 	type RuiWindowSplitterProps,
 } from './window-splitter.script';
-import './window-splitter.script';
 
 /**
  * Window splitter view with `primary` and `secondary` pane props.
@@ -29,7 +28,7 @@ export function RuiWindowSplitter({
 	const horizontal = orientation !== 'vertical';
 
 	return (
-		<rui-window-splitter {...props} orientation={orientation}>
+		<RuiWindowSplitterElement {...props} orientation={orientation}>
 			<div
 				class={cx(
 					'rui-window-splitter',
@@ -52,6 +51,6 @@ export function RuiWindowSplitter({
 					{secondary}
 				</div>
 			</div>
-		</rui-window-splitter>
+		</RuiWindowSplitterElement>
 	);
 }

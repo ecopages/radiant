@@ -2,6 +2,7 @@ import type { JsxRenderable } from '@ecopages/jsx';
 import type { ReactiveProperty } from './reactive-prop-core';
 import type { REACTIVE_HOST, ReactiveHostInternals } from './reactive-host';
 import { RADIANT_ELEMENT_BRAND } from './radiant-element-brand';
+import type { ForeignSlotContentProjector } from './slot-projection-runtime';
 
 /**
  * Branded Element Host surface read by the server SSR pipeline.
@@ -11,12 +12,16 @@ import { RADIANT_ELEMENT_BRAND } from './radiant-element-brand';
  */
 export type RadiantElementSsrHostSource = {
 	constructor: Function;
+	innerHTML: string;
 	getAttribute(name: string): string | null;
 	getAttributeNames(): string[];
 	getAuthoredHydrationScriptMarkup(): string | undefined;
 	getReactiveProperties(): ReactiveProperty[];
-	getSlotProjectionScriptTag(): string | undefined;
-	resolveTrackedRenderOutput(): { containsSlots: boolean; value: JsxRenderable };
+	getProjectedSlotPayload(): Record<string, string[]> | undefined;
+	resolveTrackedRenderOutput(projectForeign?: ForeignSlotContentProjector): {
+		containsSlots: boolean;
+		value: JsxRenderable;
+	};
 	prepareForSsr(): void;
 	readonly [REACTIVE_HOST]: ReactiveHostInternals;
 };

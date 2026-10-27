@@ -1,6 +1,9 @@
 import { describe, expect, test } from 'vitest';
 import type { ReactiveProperty } from '../../src/core/reactive-prop-core';
-import { resolveHostAttributes } from '../../src/server/element-ssr/host-attribute-serialization';
+import {
+	resolveHostAttributes,
+	stringifyHostAttributes,
+} from '../../src/server/element-ssr/host-attribute-serialization';
 
 describe('resolveHostAttributes', () => {
 	test('omits attributes when a custom toAttribute returns null', () => {
@@ -59,5 +62,21 @@ describe('resolveHostAttributes', () => {
 		});
 
 		expect(attributes).toEqual({ enabled: 'false' });
+	});
+
+	test('serializes camelCase prop definitions with kebab-case attribute names', () => {
+		const attributes = resolveHostAttributes({
+			getReactiveProperties: () => [],
+			getReactivePropDefinitions: () => [
+				{ name: 'minWidth', options: { type: Number } },
+				{ name: 'isOpen', options: { type: Boolean, attribute: 'data-Open' } },
+			],
+			getPropertyValue: (name) => (name === 'minWidth' ? 300 : true),
+			getAttributeNames: () => [],
+			getAttribute: () => null,
+		});
+
+		expect(attributes).toEqual({ 'min-width': '300', 'data-Open': 'true' });
+		expect(stringifyHostAttributes(attributes)).toBe(' min-width="300" data-Open="true"');
 	});
 });

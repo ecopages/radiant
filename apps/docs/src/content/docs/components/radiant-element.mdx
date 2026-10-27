@@ -120,7 +120,7 @@ Once `render()` is overridden, `RadiantElement` exposes the full host render lif
 - `update()` to run the update cycle now: batched `@onUpdated` callbacks, the current JSX view, then `updated()` (without a `render()` override it still flushes `@onUpdated` and `updated()`)
 - `requestUpdate()` to schedule that cycle in a microtask
 - `updateComplete` to wait until the cycle, including the first connect render, finishes
-- `renderViewToString()` for the rendered view only (requires a Radiant server SSR entry import)
+- `renderRadiantElementViewToString(host, options)` from `@ecopages/radiant/server/radiant-element-ssr` for the prepared view only
 - `hydrate()` when SSR markers exist and the explicit client hydrator is installed
 - light-DOM slot projection through literal `<slot>` tags
 

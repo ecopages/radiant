@@ -97,7 +97,7 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 				this.update();
 			}
 
-			this.reactiveHost.flushPostSyncCallbacks();
+			this.reactiveHost.flushPostSync();
 		});
 	}
 

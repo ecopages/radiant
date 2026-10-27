@@ -1,9 +1,12 @@
 export { createRoot, hasHydrationMarkers, hydrate, render, type JsxRoot } from './dom-render.ts';
 export { CUSTOM_ELEMENT_CHILDREN_SYMBOL } from './types/index.ts';
+export type { JSX_PROPS } from './types/index.ts';
 
 export {
 	Fragment,
 	unsafeHtml,
+	CUSTOM_ELEMENT_TAG_NAME,
+	getCustomElementTagName,
 	createMarkupNodeLike,
 	jsx,
 	jsxDEV,
@@ -29,6 +32,7 @@ export type {
 	JsxComponent,
 	JsxCustomElementAttributes,
 	JsxCustomIntrinsicElements,
+	JsxPublicProps,
 	JsxElementProps,
 	JsxEventHandler,
 	JsxEventListener,

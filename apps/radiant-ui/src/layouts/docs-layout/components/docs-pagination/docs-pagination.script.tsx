@@ -1,4 +1,4 @@
-import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, onEvent, state } from '@ecopages/radiant';
 
 type PaginationLink = {
@@ -29,6 +29,7 @@ function readPaginationPages(): PaginationData['pages'] {
 
 @customElement('radiant-docs-pagination')
 export class RadiantDocsPagination extends RadiantElement {
+	declare readonly [JSX_PROPS]?: {};
 	@state prevLink: PaginationLink | null = null;
 	@state nextLink: PaginationLink | null = null;
 
@@ -89,8 +90,8 @@ export class RadiantDocsPagination extends RadiantElement {
 	}
 }
 
-declare module '@ecopages/jsx/jsx-runtime' {
-	interface JsxCustomIntrinsicElements {
-		'radiant-docs-pagination': JsxCustomElementAttributes<RadiantDocsPagination>;
+declare global {
+	interface HTMLElementTagNameMap {
+		'radiant-docs-pagination': RadiantDocsPagination;
 	}
 }

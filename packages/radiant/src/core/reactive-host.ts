@@ -39,9 +39,11 @@ export const REACTIVE_HOST: unique symbol = Symbol.for('@ecopages/radiant.reacti
 export interface ReactiveHostInternals {
 	readonly ssrRegistry: HostSsrRegistry;
 	notifyUpdate(changedProperty: string, oldValue: unknown, value: unknown): void;
-	registerPostSyncCallback(callback: () => void): void;
+	registerPostSync(callback: () => void): void;
+	registerConnectSync(callback: () => void): void;
 	registerUpdatedCallback(keys: readonly string[], callback: UpdatedCallback): () => void;
-	flushPostSyncCallbacks(): void;
+	flushPostSync(): void;
+	flushConnectSync(): void;
 }
 
 /**
@@ -95,10 +97,12 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	private changeSubscriptions = new Map<string, () => void>();
 	/** Member values captured while unobserved, diffed when observation resumes. */
 	private memberSnapshots = new Map<string, unknown>();
+	private initializingReactiveFields = new Set<string>();
 	private observing = false;
 	private onConnectedCallbacks: (() => void)[] = [];
 	private onDisconnectedCallback: (() => void)[] = [];
 	private postSyncCallbacks: (() => void)[] = [];
+	private connectSyncCallbacks: (() => void)[] = [];
 
 	constructor(
 		private readonly host: Host,
@@ -182,7 +186,7 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	}
 
 	/**
-	 * Registers a callback that should run whenever the host connects.
+	 * Registers work that runs synchronously when the host starts connecting.
 	 */
 	public registerConnectedCallback(callback: () => void): void {
 		this.onConnectedCallbacks.push(callback);
@@ -195,15 +199,30 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	 * Used by `@bindTo` so the first paint can see parent-authored or just-rendered
 	 * `data-ref` nodes. Callbacks persist across disconnect and run again on reconnect.
 	 */
-	public registerPostSyncCallback(callback: () => void): void {
+	public registerPostSync(callback: () => void): void {
 		this.postSyncCallbacks.push(callback);
+	}
+
+	/**
+	 * Registers work for the client connect pass after post-sync callbacks.
+	 *
+	 * @remarks Callbacks remain registered across disconnects. The Element Host's client connect path owns flushing them; SSR preparation and serialization do not.
+	 */
+	public registerConnectSync(callback: () => void): void {
+		this.connectSyncCallbacks.push(callback);
 	}
 
 	/**
 	 * Runs every post-sync callback registered on this host.
 	 */
-	public flushPostSyncCallbacks(): void {
+	public flushPostSync(): void {
 		for (const callback of this.postSyncCallbacks) {
+			callback();
+		}
+	}
+
+	public flushConnectSync(): void {
+		for (const callback of this.connectSyncCallbacks) {
 			callback();
 		}
 	}
@@ -343,7 +362,11 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 		current?.unsubscribe();
 		callbacks.set(update, {
 			signal,
-			unsubscribe: signal.subscribe(() => update()),
+			unsubscribe: signal.subscribe(() => {
+				if (!this.initializingReactiveFields.has(propertyName)) {
+					update();
+				}
+			}),
 		});
 	}
 
@@ -455,14 +478,24 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	 *
 	 * @remarks A member bootstrapped earlier (legacy decorators register it before
 	 * class fields run) adopts `initialValue` as initialization: while members are
-	 * unobserved, the adoption is not reported to the update cycle.
+	 * unobserved, the adoption is not reported to the update cycle or synchronous
+	 * callbacks such as `@bindTo`.
 	 */
 	public createReactiveField<T>(propertyName: string, initialValue: T, options: ReactiveFieldOptions = {}): void {
 		const existing = this.reactiveMembers.get(propertyName) as ReactiveState<T> | undefined;
 		const signal = existing ?? this.createReactiveMember(propertyName, initialValue);
 
 		if (existing && initialValue !== undefined) {
-			signal.set(initialValue);
+			const wasInitializing = this.initializingReactiveFields.has(propertyName);
+			this.initializingReactiveFields.add(propertyName);
+
+			try {
+				signal.set(initialValue);
+			} finally {
+				if (!wasInitializing) {
+					this.initializingReactiveFields.delete(propertyName);
+				}
+			}
 
 			if (!this.observing) {
 				this.memberSnapshots.set(propertyName, signal.get());

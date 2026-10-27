@@ -10,8 +10,11 @@ export type SsrRenderContext = {
 	customElementRenderHook?: ServerCustomElementRenderHook;
 	/** True when {@link customElementRenderHook} applies claimed elements' JSX children itself. */
 	customElementRenderHookOwnsChildren?: boolean;
-	/** Serializes nested custom-element light DOM as plain markup, still server-rendering nested custom elements. */
-	renderChild?: (value: JsxRenderable) => string;
+	/**
+	 * Serializes nested custom-element light DOM as plain markup, still server-rendering nested custom elements.
+	 * `foreignContent` is the foreign namespace the element sits in.
+	 */
+	renderChild?: (value: JsxRenderable, foreignContent?: 'svg' | 'math') => string;
 	scopeValues?: Map<symbol, unknown>;
 };
 
@@ -37,8 +40,9 @@ export function withActiveSsrRenderContext<T>(context: SsrRenderContext, render:
 
 /**
  * Runs work with one additional symbol-keyed value on the active SSR render scope.
- * Prefer {@link withServerHydrationBindingState} for hydrate binding indexes only.
- * Await I/O outside the scope; wrap only the synchronous render snapshot.
+ * Sharing hydrate binding indexes across sibling roots requires
+ * {@link withServerHydrationBindingState}. Await I/O outside the scope; wrap only
+ * the synchronous render snapshot.
  */
 export function withActiveSsrScopeValue<TValue, T>(key: symbol, value: TValue, render: () => T): T {
 	const parentContext = getActiveSsrRenderContext();

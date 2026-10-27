@@ -1,3 +1,5 @@
+import type { WithoutChildren } from '../../../lib/without-children';
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, bindTo, bound, customElement, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import { RuiIconCheck, RuiIconX } from '@/lib/icons';
 import {
@@ -117,6 +119,8 @@ type RuiToastBindings = {
  */
 @customElement('rui-toast')
 export class RuiToast extends RadiantElement<RuiToastBindings> {
+	declare readonly [JSX_PROPS]?: WithoutChildren<RuiToastProps>;
+
 	@prop({ type: String, reflect: true, defaultValue: '' }) toastId: string;
 	@prop({ type: String, defaultValue: '' }) title: string;
 	@prop({ type: String, defaultValue: '' }) description: string;
@@ -522,5 +526,13 @@ export class RuiToast extends RadiantElement<RuiToastBindings> {
 				) : null}
 			</div>
 		);
+	}
+}
+
+
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-toast': RuiToast;
 	}
 }

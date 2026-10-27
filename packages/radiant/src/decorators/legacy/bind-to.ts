@@ -7,7 +7,7 @@ export function bindTo(targets: readonly CompiledBindToTarget[]) {
 		registerLegacyInstanceInitializer(proto, (element) => {
 			const apply = () => applyBindToTargets(element, propertyName, targets);
 			element.registerUpdateCallback(propertyName, apply);
-			element[REACTIVE_HOST].registerPostSyncCallback(apply);
+			element[REACTIVE_HOST].registerPostSync(apply);
 		});
 	};
 }

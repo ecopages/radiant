@@ -1,6 +1,5 @@
 import type { JsxCustomElementAttributes, JsxRenderable } from '@ecopages/jsx';
-import type { RuiTree as RuiTreeElement, RuiTreeProps } from './tree.script';
-import './tree.script';
+import { RuiTree as RuiTreeElement, type RuiTreeProps } from './tree.script';
 
 export type RuiTreeNode = {
 	id: string;
@@ -66,7 +65,7 @@ export function RuiTree({
 	const content = nodes != null ? <TreeNodes nodes={nodes} /> : children;
 
 	return (
-		<rui-tree {...props} label={label}>
+		<RuiTreeElement {...props} label={label}>
 			<ul
 				class="rui-tree"
 				data-ref="root"
@@ -76,6 +75,6 @@ export function RuiTree({
 			>
 				{content}
 			</ul>
-		</rui-tree>
+		</RuiTreeElement>
 	);
 }

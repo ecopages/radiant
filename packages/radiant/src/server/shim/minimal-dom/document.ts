@@ -10,6 +10,7 @@ import * as selectors from './selectors';
 export type MinimalCustomElementRegistry = {
 	define(name: string, constructor: CustomElementConstructor, options?: ElementDefinitionOptions): void;
 	get(name: string): CustomElementConstructor | undefined;
+	getName?(constructor: CustomElementConstructor): string | undefined;
 };
 
 export class MinimalDocument extends MinimalNode {
@@ -17,6 +18,11 @@ export class MinimalDocument extends MinimalNode {
 		super(MinimalNode.DOCUMENT_NODE);
 	}
 
+	/**
+	 * @remarks A registered custom-element tag still returns a generic minimal element. The class is not
+	 * constructed and its view is not serialized; constructing here would also run when the parser rebuilds
+	 * host HTML. Use JSX for nested hosts that must server-render.
+	 */
 	createElement(tagName: string): HTMLElement {
 		return (tagName.toLowerCase() === 'script'
 			? new MinimalHtmlScriptElement(this as unknown as Document)
@@ -53,6 +59,7 @@ export class MinimalDocument extends MinimalNode {
 
 export class MinimalCustomElementsRegistry implements MinimalCustomElementRegistry {
 	private definitions = new Map<string, CustomElementConstructor>();
+	private names = new WeakMap<CustomElementConstructor, string>();
 
 	define(name: string, constructor: CustomElementConstructor): void {
 		if (this.definitions.has(name)) {
@@ -60,9 +67,14 @@ export class MinimalCustomElementsRegistry implements MinimalCustomElementRegist
 		}
 
 		this.definitions.set(name, constructor);
+		this.names.set(constructor, name);
 	}
 
 	get(name: string): CustomElementConstructor | undefined {
 		return this.definitions.get(name);
+	}
+
+	getName(constructor: CustomElementConstructor): string | undefined {
+		return this.names.get(constructor);
 	}
 }

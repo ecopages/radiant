@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import {
 	RadiantElement,
 	bindTo,
@@ -81,6 +82,7 @@ export type RuiDateRangePickerChangeDetail = {
  */
 @customElement('rui-date-range-picker')
 export class RuiDateRangePicker extends RadiantElement {
+	declare readonly [JSX_PROPS]?: RuiDateRangePickerProps;
 	@prop({ type: String, reflect: true, defaultValue: '' })
 	@bindTo({ selector: '[data-range-calendar]', attr: 'value' })
 	value: string;
@@ -362,5 +364,11 @@ export class RuiDateRangePicker extends RadiantElement {
 	})
 	onRootFocusOut(event: FocusEvent): void {
 		this.calendarPopover.handleFocusOut(event, () => this.setOpen(false));
+	}
+}
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-date-range-picker': RuiDateRangePicker;
 	}
 }

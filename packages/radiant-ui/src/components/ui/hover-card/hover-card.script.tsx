@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import {
 	RadiantElement,
 	bindTo,
@@ -100,6 +101,8 @@ const LONG_PRESS_MS = 500;
  */
 @customElement('rui-hover-card')
 export class RuiHoverCard extends RadiantElement {
+	declare readonly [JSX_PROPS]?: RuiHoverCardProps;
+
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) open: boolean;
 	@prop({ type: String, defaultValue: 'bottom-start' }) placement: RuiPlacement;
 	@prop({ type: Number, defaultValue: 600 }) delay: number;
@@ -361,5 +364,13 @@ export class RuiHoverCard extends RadiantElement {
 			clearTimeout(this.longPressTimer);
 			this.longPressTimer = null;
 		}
+	}
+}
+
+
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-hover-card': RuiHoverCard;
 	}
 }

@@ -5,9 +5,11 @@ import { getControllerIdentifier } from '../../core/controller-metadata';
 import { withRadiantElementSsrRuntime } from '../../core/radiant-element-ssr-registry';
 import type { RadiantController } from '../../core/radiant-controller';
 import { REACTIVE_HOST } from '../../core/reactive-host';
+import { runSsrPreparationCallbacks } from '../../core/ssr-preparation';
 import { CONTROLLER_ATTRIBUTE } from '../../controller-registry';
 import { ensureLegacyHostReady } from '../../decorators/legacy/host-readiness';
 import { assertValidHtmlAttributeName, assertValidHtmlTagName } from '../../utils/html-names';
+import { toKebabCaseAttributeName } from '../../utils/attribute-utils';
 import { serializeHtmlAttribute } from '../../utils/serialize-html-attribute';
 import { runWithSsrProviderStack, withSsrContextProviders } from '../context-ssr';
 import { ensureLightDomShim } from '../shim/light-dom-shim';
@@ -133,6 +135,10 @@ export async function renderControllerWithPreview<TController extends RadiantCon
 /**
  * Resolves assets and options, then renders one controller host.
  * Async I/O stays outside SSR scope; the scoped callback is the sync snapshot only.
+ *
+ * @remarks Consumed context resolves before `initialize`, so the callback can derive state from it. It runs in the
+ * SSR lifecycle so a context update callback that requests an update queues no client render; `connect()` then
+ * finds the context already delivered.
  */
 async function renderResolvedController<TController extends RadiantController>(
 	Controller: ServerRenderableControllerConstructor<TController>,
@@ -156,6 +162,7 @@ async function renderResolvedController<TController extends RadiantController>(
 			ensureLegacyHostReady(controller, 'ssr');
 
 			try {
+				controller.runWithSsrLifecycle(() => runSsrPreparationCallbacks(controller, true));
 				options.initialize?.(controller);
 				controller.runWithSsrLifecycle(() => controller.connect());
 				const markup = renderRenderedControllerHost(controller, tagName, renderOptions);
@@ -237,7 +244,7 @@ function appendRenderedControllerStructuredAttributes(
 	}
 
 	for (const [name, entryValue] of Object.entries(value)) {
-		attributes[`${prefix}-${toKebabCaseRenderedControllerAttribute(name)}`] = entryValue;
+		attributes[`${prefix}-${toKebabCaseAttributeName(name)}`] = entryValue;
 	}
 }
 
@@ -301,13 +308,6 @@ function appendRenderedControllerClassTokens(tokens: string[], value: unknown): 
 
 function isPlainRenderedControllerAttributeObject(value: unknown): value is Record<string, unknown> {
 	return Object.prototype.toString.call(value) === '[object Object]';
-}
-
-function toKebabCaseRenderedControllerAttribute(value: string): string {
-	return value
-		.replace(/([a-z0-9])([A-Z])/g, '$1-$2')
-		.replace(/[_\s]+/g, '-')
-		.toLowerCase();
 }
 
 function renderRenderedControllerHost(

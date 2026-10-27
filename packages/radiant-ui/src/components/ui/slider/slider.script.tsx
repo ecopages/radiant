@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { bindTo, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import { FormAssociatedElement, type FormValue } from '@ecopages/radiant/form-associated-element';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
@@ -268,6 +269,8 @@ export function sliderTrackCssVars(values: number[], range: NumericRange): Recor
  */
 @customElement('rui-slider')
 export class RuiSlider extends FormAssociatedElement {
+	declare readonly [JSX_PROPS]?: RuiSliderProps;
+
 	@prop({ type: String, defaultValue: 'single' }) variant: RuiSliderVariant;
 	@prop({ type: String, defaultValue: 'horizontal' }) orientation: RuiSliderOrientation;
 	@prop({ type: Array, reflect: true, defaultValue: [SLIDER_DEFAULT_VALUE], transform: numberArrayTransform })
@@ -722,5 +725,13 @@ export class RuiSlider extends FormAssociatedElement {
 		this.lastEmitted = values.join(',');
 		this.moveThumb(thumb, next);
 		this.commit();
+	}
+}
+
+
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-slider': RuiSlider;
 	}
 }

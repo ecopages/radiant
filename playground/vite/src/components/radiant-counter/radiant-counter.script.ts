@@ -1,3 +1,4 @@
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement } from '@ecopages/radiant/core/radiant-element';
 import { customElement } from '@ecopages/radiant/decorators/custom-element';
 import { onEvent } from '@ecopages/radiant/decorators/on-event';
@@ -16,6 +17,7 @@ type RadiantCounterBindings = RadiantCounterProps & {
 
 @customElement('radiant-counter')
 export class RadiantCounter extends RadiantElement<RadiantCounterBindings> {
+	declare readonly [JSX_PROPS]?: RadiantCounterProps;
 	@prop({ type: Number, reflect: true, defaultValue: 0 }) value!: number;
 	@state lastAction = 'Waiting for input';
 	@query({ ref: 'count' }) countText!: HTMLElement | null;
@@ -43,5 +45,11 @@ export class RadiantCounter extends RadiantElement<RadiantCounterBindings> {
 	@onUpdated('lastAction')
 	updateStatus() {
 		if (this.statusText) this.statusText.textContent = this.lastAction;
+	}
+}
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'radiant-counter': RadiantCounter;
 	}
 }

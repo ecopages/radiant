@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
+import { CUSTOM_ELEMENT_TAG_NAME } from '../src/jsx-runtime.ts';
+import { HYDRATE_CLASS_FORM_ELEMENT_HTML } from './fixtures/hydrate-html.ts';
 
 async function loadModule<T>(path: string): Promise<T> {
 	return import(/* @vite-ignore */ path) as Promise<T>;
@@ -8,6 +10,7 @@ const loadJsxRuntime = async () => loadModule<typeof import('../src/jsx-runtime.
 const loadJsxModule = async () => loadModule<typeof import('../src/index.ts')>('../src/index.ts');
 
 const tagName = 'radiant-jsx-interop-element';
+const classFormTagName = 'radiant-jsx-class-form-element';
 
 type InteropElement = HTMLElement & {
 	camelCaseValue?: unknown;
@@ -39,9 +42,113 @@ class RadiantJsxInteropElement extends HTMLElement {
 
 customElements.define(tagName, RadiantJsxInteropElement);
 
+class ClassFormElement extends HTMLElement {
+	label?: unknown;
+}
+
+customElements.define(classFormTagName, ClassFormElement);
+
 describe('Radiant JSX custom-element interop', () => {
 	beforeEach(() => {
 		document.body.innerHTML = '';
+	});
+
+	test('a subclass of a tagged class uses its own tag, not the inherited one', async () => {
+		const [{ jsx }] = await Promise.all([loadJsxRuntime()]);
+		class TaggedBase extends HTMLElement {}
+		Object.defineProperty(TaggedBase, CUSTOM_ELEMENT_TAG_NAME, { value: 'radiant-jsx-tagged-base' });
+		class DefinedSubclass extends TaggedBase {}
+		customElements.define('radiant-jsx-defined-subclass', DefinedSubclass);
+		class UndefinedSubclass extends TaggedBase {}
+
+		expect(jsx(DefinedSubclass, {})).toMatchObject({ rootLocalName: 'radiant-jsx-defined-subclass' });
+		expect(() => jsx(UndefinedSubclass, {})).toThrowError(/UndefinedSubclass/);
+	});
+
+	test('renders a registered class like its tag string and preserves the host', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const props = { id: 'class-form', label: 'Count', children: jsx('span', { children: '2' }) };
+
+		root.render(jsx(ClassFormElement, props));
+		const host = container.querySelector(classFormTagName);
+		const classFormMarkup = container.innerHTML;
+
+		root.render(jsx(classFormTagName, props));
+
+		expect(container.innerHTML).toBe(classFormMarkup);
+		expect(container.querySelector(classFormTagName)).toBe(host);
+	});
+
+	test('hydrates tag-string server markup with the registered class form', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		container.innerHTML = HYDRATE_CLASS_FORM_ELEMENT_HTML;
+		const main = container.querySelector('main');
+		const host = container.querySelector(classFormTagName);
+
+		createRoot(container).hydrate(
+			jsx('main', {
+				title: 'server',
+				children: jsx(ClassFormElement, {
+					id: 'card',
+					children: jsx('span', { children: 'inside' }),
+				}),
+			}),
+		);
+
+		expect(container.querySelector('main')).toBe(main);
+		expect(container.querySelector(classFormTagName)).toBe(host);
+		expect(container.querySelector('span')?.textContent).toBe('inside');
+	});
+
+	test('uses registered classes in keyed custom-element lists', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const renderList = (values: string[], type: typeof ClassFormElement | string) =>
+			jsx('div', {
+				children: values.map((value) => jsx(type, { key: value, 'attr:data-value': value, children: value })),
+			});
+
+		root.render(renderList(['a', 'b'], ClassFormElement));
+		const [first, second] = container.querySelectorAll(classFormTagName);
+		root.render(renderList(['b', 'a'], ClassFormElement));
+		expect(container.querySelectorAll(classFormTagName)[0]).toBe(second);
+		expect(container.querySelectorAll(classFormTagName)[1]).toBe(first);
+
+		root.render(renderList(['b', 'a'], classFormTagName));
+		expect(container.querySelectorAll(classFormTagName)[0]).toBe(second);
+		expect(container.querySelectorAll(classFormTagName)[1]).toBe(first);
+	});
+
+	test('calls function components without stringifying their source', async () => {
+		const [{ jsx }] = await Promise.all([loadJsxRuntime()]);
+		const Arrow = (props: { text: string }) => jsx('span', { children: props.text });
+		function Declared(props: { text: string }) {
+			return jsx('b', { children: props.text });
+		}
+		const toString = vi.spyOn(Function.prototype, 'toString');
+
+		try {
+			expect(jsx(Arrow, { text: 'a' })).toBeTruthy();
+			expect(jsx(Declared, { text: 'b' })).toBeTruthy();
+			expect(toString).not.toHaveBeenCalled();
+		} finally {
+			toString.mockRestore();
+		}
+	});
+
+	test('rejects customized built-in classes with a supported registration hint', async () => {
+		const [{ jsx }] = await Promise.all([loadJsxRuntime()]);
+		class CustomizedButtonBase extends HTMLButtonElement {}
+		class CustomizedButton extends CustomizedButtonBase {}
+		Object.defineProperty(CustomizedButton, CUSTOM_ELEMENT_TAG_NAME, {
+			value: 'radiant-jsx-customized-button',
+		});
+
+		expect(() => jsx(CustomizedButton, {})).toThrowError(/CustomizedButton .*customized built-ins are unsupported/);
 	});
 
 	test('renders custom elements with light DOM children and shadow DOM slots', async () => {
@@ -134,13 +241,13 @@ describe('Radiant JSX custom-element interop', () => {
 });
 
 const CHILDREN_VALUE: unique symbol = Symbol.for('@ecopages/jsx.custom-element-children');
+let receivedChildrenValues: unknown[] = [];
 
 class ChildrenValueElement extends HTMLElement {
 	static [CHILDREN_VALUE] = true;
-	received: unknown[] = [];
 
 	set [CHILDREN_VALUE](value: unknown) {
-		this.received.push(value);
+		receivedChildrenValues.push(value);
 	}
 }
 
@@ -149,6 +256,24 @@ customElements.define('jsx-children-value-element', ChildrenValueElement);
 describe('custom elements that take their JSX children as a value', () => {
 	beforeEach(() => {
 		document.body.innerHTML = '';
+		receivedChildrenValues = [];
+	});
+
+	test('class-form children reach the same children-as-value host contract', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.body.appendChild(document.createElement('div'));
+		const root = createRoot(container);
+		const children = jsx('b', { children: 'class form' });
+
+		root.render(jsx(ChildrenValueElement, { children }));
+
+		const element = container.querySelector('jsx-children-value-element') as ChildrenValueElement;
+		expect(element.childNodes).toHaveLength(0);
+		expect(receivedChildrenValues.at(-1)).toBe(children);
+
+		root.render(jsx('jsx-children-value-element', { children }));
+		expect(container.querySelector('jsx-children-value-element')).toBe(element);
+		expect(receivedChildrenValues.at(-1)).toBe(children);
 	});
 
 	test('get no DOM children and receive the children again on every render', async () => {
@@ -170,8 +295,8 @@ describe('custom elements that take their JSX children as a value', () => {
 
 		expect(container.querySelector('jsx-children-value-element')).toBe(element);
 		expect(element.childNodes).toHaveLength(0);
-		expect(element.received).toHaveLength(2);
-		expect(element.received[1]).toEqual([expect.objectContaining({ values: ['two'] }), null]);
+		expect(receivedChildrenValues).toHaveLength(2);
+		expect(receivedChildrenValues[1]).toEqual([expect.objectContaining({ values: ['two'] }), null]);
 	});
 
 	test('receive a reactive sole child as the reactive value itself', async () => {
@@ -184,8 +309,7 @@ describe('custom elements that take their JSX children as a value', () => {
 
 		createRoot(container).render(jsx('jsx-children-value-element', { children: label }));
 
-		const element = container.querySelector('jsx-children-value-element') as ChildrenValueElement;
-		expect(element.received).toEqual([label]);
+		expect(receivedChildrenValues).toEqual([label]);
 	});
 
 	test('keep their server node on hydrate, even in a view whose only markers are inside them', async () => {
@@ -200,7 +324,7 @@ describe('custom elements that take their JSX children as a value', () => {
 
 		expect(container.querySelector('jsx-children-value-element')).toBe(serverElement);
 		expect(serverElement.innerHTML).toBe('<p data-radiant-jsx-bind-0="attr:class" class="own"></p>');
-		expect(serverElement.received.at(-1)).toBe(children);
+		expect(receivedChildrenValues.at(-1)).toBe(children);
 	});
 
 	test('render instead of hydrating a root created with DOM children before the tag was defined', async () => {
@@ -238,6 +362,6 @@ describe('custom elements that take their JSX children as a value', () => {
 
 		const element = container.querySelector('jsx-late-children-value-element') as ChildrenValueElement;
 		expect(element.querySelector('b')?.textContent).toBe('one');
-		expect(element.received).toEqual([]);
+		expect(receivedChildrenValues).toEqual([]);
 	});
 });

@@ -78,12 +78,26 @@ Most app code never touches scope directly. Framework adapters are the exception
 
 `renderToString(...)` emits hydration markers by consuming one hydrate binding sequence. Most app code should let the renderer own that sequence implicitly.
 
-If an integration composes one page from multiple sibling `renderToString(...)` calls, those calls must share one binding namespace so the client sees one continuous marker stream for that hydration root.
+If an integration composes one page from multiple sibling `renderToString(...)` calls, those calls must share one binding namespace so the client sees one continuous marker stream for that hydration root. `withActiveSsrScopeValue(...)` does not share that namespace: each hydrate-mode `renderToString(...)` without explicit binding state starts at index 0.
 
 Use `createServerHydrationBindingState()` and `withServerHydrationBindingState(...)` from `@ecopages/jsx/server` when you need that explicit control:
 
 - share one binding state across sibling page, layout, and document-shell renders that belong to the same client-owned root
 - fork a fresh binding state for a nested SSR root, such as an intrinsic custom-element host that hydrates independently
+
+```ts
+import {
+	createServerHydrationBindingState,
+	renderToString,
+	withServerHydrationBindingState,
+} from '@ecopages/jsx/server';
+
+const html = withServerHydrationBindingState(createServerHydrationBindingState(), () => {
+	const page = renderToString(pageView, { mode: 'hydrate' });
+	const shell = renderToString(shellView(page), { mode: 'hydrate' });
+	return shell;
+});
+```
 
 At nested custom-element boundaries, the parent hydration root still owns the custom-element host itself. The nested root starts at the host's rendered internal subtree, not at the host tag.
 
@@ -99,14 +113,13 @@ When framework code needs shared server state beyond hydration binding indexes, 
 Prefer `Symbol.for('@your-package.namespace')` keys so the state survives entrypoint boundaries. Scope is async-local so concurrent renders stay isolated. Await I/O outside the scope when you only need the scoped value during a synchronous render snapshot.
 
 ```ts
-import { renderToString, withActiveSsrScopeValue } from '@ecopages/jsx/server';
+import { getActiveSsrScopeValue, renderToString, withActiveSsrScopeValue } from '@ecopages/jsx/server';
 
 const SHARED_SCOPE_KEY = Symbol.for('@acme/ssr.shared-root');
 
 const html = withActiveSsrScopeValue(SHARED_SCOPE_KEY, { started: true }, () => {
-	const page = renderToString(pageView, { mode: 'hydrate' });
-	const shell = renderToString(shellView(page), { mode: 'hydrate' });
-	return shell;
+	const shared = getActiveSsrScopeValue<{ started: boolean }>(SHARED_SCOPE_KEY);
+	return renderToString(pageView(shared), { mode: 'hydrate' });
 });
 ```
 
@@ -442,7 +455,7 @@ Iterable fragment hydration supports lists of intrinsic template children (for e
 
 Keyed identity is retained for keyed entries even when a list also has unkeyed entries. A mixed keyed/unkeyed list hydrates with keyed and positional ownership, so a later update does not rebuild keyed nodes when an unkeyed sibling changes. Bare reactive children at the fragment root and DOM/script child-count mismatches fall back to a full client render. If an earlier sibling had already subscribed when that fallback happens, that sibling is disposed first. Incomplete recovery inside a single template disposes parts that already subscribed before falling back.
 
-Global SSR marker indexes are shared across both recovery paths via the binding collection helpers in `hydration-bindings.ts`, so fragment children resolve `data-radiant-jsx-bind-*` attributes against the same namespace used by `renderToString(..., { mode: 'hydrate' })`.
+Global SSR marker indexes are shared across both recovery paths via `planTemplateHydrationIndices(...)` in `hydration-bindings.ts`, so fragment children resolve `data-radiant-jsx-bind-*` attributes against the same namespace used by `renderToString(..., { mode: 'hydrate' })`.
 
 List children inside a hydrated range reconnect through the same path as a root template, so a child carrying dynamic content — `<li>{item.name}</li>` — keeps its SSR elements rather than being rebuilt. A child whose template owns several root nodes reconnects too. Both element and text-node identity are preserved, so listeners, focus, and selection survive hydration. `pnpm run bench:hydrate` measures these shapes.
 
@@ -490,6 +503,14 @@ flowchart TD
 **2. Index contract.** `hydration-bindings.ts` owns the marker prefix, descriptor format, index advancement, and DOM walks. Iterable hydration advances `nextBindingIndex` with `countHydrationMarkers(...)` per child. Each recovered child template then calls `planTemplateHydrationIndices(template, bindingBaseIndex)` so fragment siblings stay aligned with the same global namespace.
 
 **3. Recover.** `hydrate(...)` dispatches on root shape as in [Hydration Root Shapes](#hydration-root-shapes). A markerless page root may use a nested element that owns its content through its own client root as its recovery signal when its static markup matches. Failed recovery disposes any parts that already subscribed, then falls back to a full client render.
+
+Raw-text children (`style`, `script`, `xmp`, `iframe`, `noembed`, and `noframes`) are text-content parts on the client, so signal values stay live without comment anchors. String SSR joins their child values before escaping, then escapes the joined text once for the context the browser parses it in:
+
+- **HTML:** only the element's own closing sequence (`</style`, `</script`, ..., any case, followed by whitespace, `/` or `>`) is rewritten to `<\/name`. Other text stays byte-identical, so CSS such as `@media (width < 600px)` and script such as `a < b` keep their meaning.
+- **Inside `svg` or `math`:** these tags are ordinary elements, so the text is entity-escaped like other text. The parser decodes the entities back to the original characters. The content of an SVG `foreignObject`, `desc` or `title` is HTML again; under `math` they stay foreign.
+- **Across a custom element:** a registered custom element inside `svg` or `math` keeps that namespace for its content. The render hook gets it as `context.foreignContent` and `renderHostToString` as the `foreignContent` option, and the default children and the fallback markup serialize in it. `renderServerLightDom` takes it as its third argument. A hook that serializes a view itself passes it on with `renderToString(view, { foreignContent })`.
+
+The closing-tag rewrite does not cover the script parser's escaped states: inside `<script>`, the text `<!--<script>` stops the real closing tag from ending the element. When a script carries data, such as a JSON payload, escape every `<` in it as `\u003c`.
 
 **Counter-shaped fragment example:**
 
@@ -539,11 +560,11 @@ Iterable hydration assigns each child `bindingBaseIndex` by counting prior sibli
 
 Attribute markers cover dynamic attributes and listeners. Subscribable child text such as `{boundCount}` does not use `data-radiant-jsx-bind-*`; template compilation places comment markers around the child range, and iterable hydration reconnects those ranges during `hydrateTemplateInstance(...)`. Children of `textarea`, `title`, `style`, and `script` cannot use comment anchors — Chromium treats those comments as literal text — so compilation uses a locator attribute that is stripped from the blueprint, and hydration reconnects those slots as text-content parts.
 
-Nested custom-element hosts fork a fresh binding namespace during SSR so each host hydrates independently. See `withServerHydrationBindingState(...)` and framework bridges such as Radiant's element SSR hook. JSX children applied to a nested custom element as light DOM are serialized as plain markup without markers; when the server host matches the authored template, parent hydration reconnects that light DOM in place. A hook that hands an element its children as a value (see [Children as a value](#children-as-a-value)) lets the element serialize and hydrate them in its own namespace instead.
+A hyphenated tag is a custom-element subtree root, registered or not. The serializer and the client marker counter share that rule, so a nested custom element's own parts never take indexes from the parent namespace. An unregistered hyphenated tag serializes without parent markers. Nested registered hosts fork a fresh binding namespace during SSR so each host hydrates independently; see `withServerHydrationBindingState(...)` and framework bridges such as Radiant's element SSR hook. JSX children applied to a nested custom element as light DOM are serialized as plain markup without markers; when the server host matches the authored template, parent hydration reconnects that light DOM in place. A hook that hands an element its children as a value (see [Children as a value](#children-as-a-value)) lets the element serialize and hydrate them in its own namespace instead.
 
 ### SSR-Capable Custom Elements
 
-Within the JSX SSR pipeline, any registered intrinsic tag containing `-` is treated as a custom-element candidate.
+Within the JSX SSR pipeline, any intrinsic tag containing `-` is a custom-element subtree root. A registered tag is also an SSR custom-element candidate.
 
 There are three practical outcomes during SSR:
 
@@ -576,6 +597,7 @@ Such a hook can apply the children as nodes, not a string, with `renderServerLig
 - **Nested custom elements:** they render through the active hook.
 - **Text-only elements:** `script`, `style`, `textarea` and `title` get their text verbatim.
 - **Markers:** the output carries no hydration markers, matching the plain light-DOM serialization.
+- **Foreign content:** pass the hook context's `foreignContent` as the third argument when the element sits inside `svg` or `math`. Nested custom elements then render, and their markup is parsed, in that namespace.
 
 Reactive values passed to a registered, SSR-capable custom element are resolved to their current snapshot before the instance receives them. Its `renderHostToString(...)` method or server hook can then reflect or consume that snapshot so `data-*`, reflected attributes, and property-backed host state stay aligned in plain and hydrate SSR output.
 
@@ -596,33 +618,54 @@ const view = (
 
 ### Custom Elements
 
-When `jsxImportSource` points at `@ecopages/jsx`, custom elements should augment the runtime module instead of the global `JSX` namespace.
+When the custom element class is available, annotate its public JSX props with `JSX_PROPS` and use the class as the JSX element type.
 
 ```tsx
-import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+import type { JSX_PROPS } from '@ecopages/jsx';
 
 type UserCardProps = {
 	name: string;
 	isAdmin: boolean;
 };
 
-declare module '@ecopages/jsx/jsx-runtime' {
-	interface JsxCustomIntrinsicElements {
-		'user-card': JsxCustomElementAttributes<HTMLElement, UserCardProps>;
-	}
+class UserCard extends HTMLElement {
+	declare readonly [JSX_PROPS]?: UserCardProps;
+}
+
+customElements.define('user-card', UserCard);
+
+<UserCard name="Ada" isAdmin={false} />;
+```
+
+Custom elements default to property bindings for unprefixed names, with a small attribute-default set for obvious HTML semantics: `id`, `class`, `style`, `title`, `role`, `slot`, `part`, `tabindex`, `hidden`, `lang`, `dir`, plus expanded `data-*` and `aria-*`. Use `attr:*` when a non-default name must serialize to markup, and `prop:*` when you want to override the default explicitly. Unregistered tags still type-check. A custom tag declared in `HTMLElementTagNameMap` gets its public `JSX_PROPS` contract, while tags without that marker retain the open fallback.
+
+`JSX_PROPS` declares the public unprefixed props on the element class. `prop:*` bindings are typed from the class instance, and `attr:*` bindings use the DOM attribute value type. Required fields in the declared props remain required.
+
+`prop:*` accepts any writable, non-method instance property. Readonly fields and getters without a setter are rejected, because assigning them throws or replaces state the element owns. Every public field is writable this way, including Radiant `@state` fields: decorators do not change a field's type, so JSX cannot tell `@prop` from `@state`. Mark internal state `protected` or `private` to keep it out of `prop:*`.
+
+A subclass can widen the props by redeclaring `declare readonly [JSX_PROPS]?: WiderProps` (no `override`; `declare override` does not compile). A class meant to be extended can instead take its public props as a type parameter:
+
+```tsx
+class UserCard<Props extends UserCardProps = UserCardProps> extends RadiantElement {
+	declare readonly [JSX_PROPS]?: Props;
+	@prop({ type: String }) name = '';
+}
+
+class AdminCard extends UserCard<UserCardProps & { level: string }> {
+	@prop({ type: String }) level = '';
 }
 ```
 
-Custom elements default to property bindings for unprefixed names, with a small attribute-default set for obvious HTML semantics: `id`, `class`, `style`, `title`, `role`, `slot`, `part`, `tabindex`, `hidden`, `lang`, `dir`, plus expanded `data-*` and `aria-*`. Use `attr:*` when a non-default name must serialize to markup, and `prop:*` when you want to override the default explicitly. Unregistered tags still type-check; a registered `JsxCustomIntrinsicElements` entry keeps its public `Props` and is not stripped down to generic HTML attributes.
-
-Typing follows the same ergonomic split. Put public unprefixed JSX props on `Props`, and use the element instance type for explicit `prop:*` bindings. `Props` keeps its own required and optional fields, so required public JSX props stay required. That means `items={rows}` is typed from `Props`, while `prop:api={gridApi}` is typed from the custom element class property.
+At runtime, JSX resolves the class to its tag from Radiant's `@customElement(...)` metadata or the registered browser `customElements` registry. The class must be decorated or registered before rendering; an unregistered class throws a `TypeError`. So does a class that extends a built-in element other than `HTMLElement`, because customized built-ins are unsupported.
 
 ```tsx
-<user-grid id="people" class="panel" items={rows} selection={currentRow} attr:status="ready" prop:api={gridApi} />
+<UserGridElement id="people" class="panel" items={rows} selection={currentRow} attr:status="ready" prop:api={gridApi} />
 ```
 
+If JSX only uses a tag name and does not import the class, declare the tag in the standard DOM map. The tag then uses the public props from the class's `JSX_PROPS` declaration:
+
 ```tsx
-import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+import type { JSX_PROPS } from '@ecopages/jsx';
 
 type UserGridRow = {
 	id: string;
@@ -633,19 +676,22 @@ type UserGridProps = {
 	selection?: UserGridRow;
 };
 
-class UserGridElement extends HTMLElement {
-	api?: UserGridApi;
-}
-
 type UserGridApi = {
 	focusRow(id: string): void;
 };
 
-declare module '@ecopages/jsx/jsx-runtime' {
-	interface JsxCustomIntrinsicElements {
-		'user-grid': JsxCustomElementAttributes<UserGridElement, UserGridProps>;
+class UserGridElement extends HTMLElement {
+	declare readonly [JSX_PROPS]?: UserGridProps;
+	api?: UserGridApi;
+}
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'user-grid': UserGridElement;
 	}
 }
+
+customElements.define('user-grid', UserGridElement);
 
 const rows: UserGridRow[] = [{ id: '1' }];
 const currentRow = rows[0];
@@ -655,6 +701,8 @@ const gridApi: UserGridApi = {
 
 <user-grid items={rows} selection={currentRow} prop:api={gridApi} />;
 ```
+
+`JsxCustomIntrinsicElements` remains available as a supported compatibility path for existing module augmentations.
 
 ### Children as a value
 
@@ -752,27 +800,27 @@ That object is an internal contract between the JSX runtime and the Radiant rend
 
 ### What the package does
 
-| Path                                                    | Behavior                                                              |
-| ------------------------------------------------------- | --------------------------------------------------------------------- |
-| Text children                                           | Escaped on SSR; mounted as text nodes on the client                   |
-| Text children in `textarea`, `title`, `style`, `script` | Written as the element's character data; comment anchors are not used |
-| Ordinary attributes                                     | Escaped for HTML attribute context (including `"`)                    |
-| Plain `{ nodeType, outerHTML }` objects                 | Treated as text (escaped / text node), not raw HTML                   |
+| Path                                                       | Behavior                                                              |
+| ---------------------------------------------------------- | --------------------------------------------------------------------- |
+| Text children                                              | Escaped on SSR; mounted as text nodes on the client                   |
+| Text children in `textarea`, `title` and raw-text elements | Written as the element's character data; comment anchors are not used |
+| Ordinary attributes                                        | Escaped for HTML attribute context (including `"`)                    |
+| Plain `{ nodeType, outerHTML }` objects                    | Treated as text (escaped / text node), not raw HTML                   |
 
 ### Trusted paths (author / framework data only)
 
 These surfaces emit or parse raw HTML by design. Pass only content you already trust.
 
-| Surface                                                   | Contract                                                                                                    |
-| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| Compiled JSX / template `strings[]`                       | Static author HTML; emitted raw                                                                             |
-| Transported `{ strings, values }`                         | Only via `toTemplateResultLike(...)`; `strings` are trusted author HTML, dynamic `values` are still escaped |
-| `unsafeHtml(...)` / `createMarkupNodeLike(...)`           | Branded markup; `outerHTML` emitted and parsed raw                                                          |
-| Live `Node` instances                                     | `outerHTML` emitted raw (slot projection / host passthrough)                                                |
-| Custom-element `renderHostToString` / server render hooks | Host HTML is trusted; return branded markup via `createMarkupNodeLike(...)`                                 |
-| `<script>` children                                       | Raw element text; only the `</script` closing sequence is escaped, so executable content stays valid        |
-| `prop:*` (including `prop:innerHTML`)                     | Live property assignment; no sanitization                                                                   |
-| `href` / `src` / `style`                                  | Escaped as attribute text only — no URL-scheme or CSS sanitization                                          |
+| Surface                                                                       | Contract                                                                                                                                                                                                               |
+| ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Compiled JSX / template `strings[]`                                           | Static author HTML; emitted raw                                                                                                                                                                                        |
+| Transported `{ strings, values }`                                             | Only via `toTemplateResultLike(...)`; `strings` are trusted author HTML, dynamic `values` are still escaped                                                                                                            |
+| `unsafeHtml(...)` / `createMarkupNodeLike(...)`                               | Branded markup; `outerHTML` emitted and parsed raw                                                                                                                                                                     |
+| Live `Node` instances                                                         | `outerHTML` emitted raw (slot projection / host passthrough)                                                                                                                                                           |
+| Custom-element `renderHostToString` / server render hooks                     | Host HTML is trusted; return branded markup via `createMarkupNodeLike(...)`                                                                                                                                            |
+| Raw-text children (`script`, `style`, `xmp`, `iframe`, `noembed`, `noframes`) | Joined before SSR escaping; in HTML only the matching `</name` is rewritten, inside `svg` or `math` the text is entity-escaped; `script` content is otherwise trusted, and JSON data in it must escape `<` as `\u003c` |
+| `prop:*` (including `prop:innerHTML`)                                         | Live property assignment; no sanitization                                                                                                                                                                              |
+| `href` / `src` / `style`                                                      | Escaped as attribute text only — no URL-scheme or CSS sanitization                                                                                                                                                     |
 
 ### Trusted markup API
 
@@ -809,6 +857,8 @@ Main exports:
 - `isKeyedJsxValue`
 - `isSubscribableJsxValue`
 - `CUSTOM_ELEMENT_CHILDREN_SYMBOL`
+- `CUSTOM_ELEMENT_TAG_NAME`
+- `getCustomElementTagName`
 
 Key types:
 
@@ -820,6 +870,8 @@ Key types:
 - `JsxPropsWithChildren`
 - `JsxRenderable`
 - `JsxRoot`
+- `JSX_PROPS` (type-only; import with `import type`)
+- `JsxPublicProps`
 - `SubscribableJsxValue`
 - `TemplateResultLike`
 
@@ -831,6 +883,8 @@ Server-only exports from `@ecopages/jsx/server` include:
 - `RenderToStringOptions`
 - `withServerCustomElementRenderHook`
 - `isServerRenderHydrationActive`
+
+`RAW_TEXT_ELEMENT_NAMES` is exported from `@ecopages/jsx/server` for Radiant's server HTML parser.
 
 ## Constraints
 

@@ -1,4 +1,4 @@
-import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, onEvent } from '@ecopages/radiant';
 import { type ContextProvider, consumeContext } from '@ecopages/radiant/context';
 import '@ecopages/radiant-ui/button';
@@ -16,6 +16,7 @@ import type { DocsDemoElement } from './demo.script';
 
 @customElement('radiant-docs-controls')
 export class DocsControlsElement extends RadiantElement {
+	declare readonly [JSX_PROPS]?: { storyId?: string };
 	@consumeContext(docsStoryContext) story?: ContextProvider<typeof docsStoryContext>;
 
 	@onEvent({ selector: 'button[data-docs-arg]', type: 'click', options: { capture: true } })
@@ -129,8 +130,8 @@ export class DocsControlsElement extends RadiantElement {
 	}
 }
 
-declare module '@ecopages/jsx/jsx-runtime' {
-	interface JsxCustomIntrinsicElements {
-		'radiant-docs-controls': JsxCustomElementAttributes<DocsControlsElement> & { storyId?: string };
+declare global {
+	interface HTMLElementTagNameMap {
+		'radiant-docs-controls': DocsControlsElement;
 	}
 }

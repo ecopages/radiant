@@ -26,6 +26,3 @@ export function radiantNitro(): Plugin {
 		},
 	};
 }
-
-/** @deprecated Use {@link radiantNitro}. */
-export const radiantNitroExternals = radiantNitro;

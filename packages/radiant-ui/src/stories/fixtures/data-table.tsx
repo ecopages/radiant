@@ -1,4 +1,4 @@
-import { createSubscribableJsxValue, type JsxCustomElementAttributes, type JsxRenderable } from '@ecopages/jsx';
+import { createSubscribableJsxValue, type JSX_PROPS, type JsxRenderable } from '@ecopages/jsx';
 import { RadiantElement, customElement, debounce, event, onEvent, onUpdated, prop, state } from '@ecopages/radiant';
 import { isServer } from '@ecopages/radiant/is-server';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
@@ -336,6 +336,8 @@ function DataTableDeleteDialog({ itemName, saving }: DataTableDeleteDialogProps)
  */
 @customElement('rui-data-table')
 export class RuiDataTable extends RadiantElement {
+	declare readonly [JSX_PROPS]?: { filters?: TableFilters };
+
 	/** Controlled query state. Replace this object from a parent to refresh the inventory. */
 	@prop({ type: Object, defaultValue: defaultTableFilters }) filters: TableFilters;
 
@@ -691,8 +693,10 @@ export class RuiDataTable extends RadiantElement {
 	}
 }
 
-declare module '@ecopages/jsx/jsx-runtime' {
-	interface JsxCustomIntrinsicElements {
-		'rui-data-table': JsxCustomElementAttributes<RuiDataTable, { filters?: TableFilters }>;
+
+
+declare global {
+	interface HTMLElementTagNameMap {
+		'rui-data-table': RuiDataTable;
 	}
 }

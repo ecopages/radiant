@@ -1,8 +1,6 @@
-import type { JsxCustomElementAttributes, JsxElementProps } from '@ecopages/jsx';
+import type { JsxElementProps } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
 import type { NativeButtonProps } from '@/lib/native-element-props';
-import type { RuiTabs as RuiTabsElement, RuiTabsProps } from './tabs.script';
-import './tabs.script';
 
 export type RuiTabListProps = JsxElementProps<HTMLDivElement>;
 
@@ -96,8 +94,4 @@ export function RuiTabPanel({ id, children, class: className, selected, hidden, 
 			{children}
 		</div>
 	);
-}
-
-export function RuiTabs({ children, ...props }: JsxCustomElementAttributes<RuiTabsElement, RuiTabsProps>) {
-	return <rui-tabs {...props}>{children}</rui-tabs>;
 }

@@ -11,7 +11,7 @@ Its main responsibilities are:
 - `connectedCallback()` decides whether first connect should hydrate or do a fresh client render.
 - `update()` explicitly flushes callbacks and commits a pending render.
 - `hydrate()` is the explicit SSR-to-client entrypoint.
-- `renderViewToString()` is the narrow host hook that asks the installed server runtime to serialize the JSX view (requires a server SSR entry import).
+- Server code serializes a view with `renderRadiantElementViewToString(...)` from `@ecopages/radiant/server/radiant-element-ssr`.
 
 ```mermaid
 flowchart TD
@@ -39,11 +39,10 @@ flowchart TD
     B -->|SSR| Q[Create component instance in server runtime]
     Q --> R[Set props fields and attributes]
     R --> S[Call renderComponent or renderRadiantElementHostToString]
-    S --> T[Server derives tag and host attributes]
-    S --> U[Server serializes render output via JSX renderToString]
-    U --> V[Optional hydration markers when mode is hydrate]
-    T --> X[Compose host HTML string]
-    V --> X
+    S --> Prep[Run prepareForSsr once]
+    Prep --> U[Serialize the view; hydrate mode emits view markers]
+    U --> Attr[Read host attributes and hydration payloads]
+    Attr --> X[Compose host HTML and stamp]
     X --> Y[Send HTML to browser]
     Y --> C
 ```
@@ -60,9 +59,11 @@ Client rendering works like this:
 
 Writes in the same turn share one update cycle. `@onUpdated` runs once for each batch of watched members; if a callback changes one of them, it can run again in the same cycle. A pending render commits, then `updated(changed)` runs. `await updateComplete` waits for that cycle, including the first connect render.
 
+On every client connect, after the update or hydration and post-sync callbacks, the Element Host flushes connect-only callbacks before `onConnected()`. `createResource(...)` uses this client-only phase, so authored prop values are ready before its first fetch and server serialization never starts it.
+
 Hosts observe their members only while connected, snapshotting values on disconnect and reporting what changed on the next connect. Automatic updates run for connected hosts in any DOM. Server rendering never connects hosts: it observes members only while preparing a host, drains pending `@onUpdated` callbacks, and never calls `updated()`. A cycle that throws drops pending member changes and render requests, then rejects `updateComplete`; a later write starts a new cycle. This also stops a self-updater that reaches the 100-round limit.
 
-Decorators and SSR adapters reach host plumbing (post-sync and batched callback registration, the SSR provider and hydration registry, initial update emits) through the `REACTIVE_HOST` symbol, not through public host methods.
+Decorators and SSR adapters reach host plumbing (post-sync, connect-sync and batched callback registration, the SSR provider and hydration registry, initial update emits) through the `REACTIVE_HOST` symbol, not through public host methods.
 
 `render()` describes the view. `update()` runs the cycle that commits it into the host.
 
@@ -83,16 +84,16 @@ SSR works like this:
 
 1. Server code creates the component instance (typically via `renderComponent(...)`).
 2. Server code sets props, fields, or attributes exactly as client code would.
-3. When authored light DOM is needed, a server render environment prepares the host before rendering.
+3. When authored light DOM is needed, a server render environment applies it through `prepareHost` / `authoredContent` before serialization.
 4. Prefer `@ecopages/radiant/server/render-component` for adapters and fragment responses.
-5. The JSX server renderer turns `render()` output into HTML.
-6. When hydration is requested, hydration markers are emitted into the rendered view and the host tag is stamped with `data-radiant-ssr`.
+5. Each host serialization runs `prepareForSsr` once, renders the view, then reads attributes and hydration payloads from that state.
+6. When hydration is requested, the view may include hydration markers and the host tag is stamped with `data-radiant-ssr`.
 7. The browser receives `<my-element ...>...</my-element>` markup.
 8. On first connect, the same component instance logic decides whether to hydrate or do a fresh render.
 
 Radiant renders into the host's light DOM only, on the client and on the server.
 
-`renderRadiantElementViewToString(...)` / `renderViewToString()` serialize only the component view.
+`renderRadiantElementViewToString(...)` serializes only the component view. It prepares the host, enters its context providers, and flushes `@bindTo` once after rendering, like the full host serializer.
 `renderRadiantElementHostToString(...)` from `@ecopages/radiant/server/radiant-element-ssr` / `renderComponent(...)` serialize the full custom-element host together with the view.
 When slot-aware SSR needs authored light DOM, adapters prepare the host through `prepareHost` / `authoredContent` on `renderComponent`.
 
@@ -102,7 +103,7 @@ When slot-aware SSR needs authored light DOM, adapters prepare the host through 
 - `update()` runs the update cycle now and rerenders the host from the current JSX tree when `render()` is overridden.
 - `hydrate()` hydrates SSR markup already present in the host.
 - `isServerRendered` is `true` when the instance was first connected from markup that hydrate-mode SSR produced. Hosts that adopt server-rendered content check it instead of `hasHydrationMarkers`.
-- `renderViewToString()` asks the installed server runtime to serialize the view (server entry must be imported first).
+- `renderRadiantElementViewToString(...)` from `@ecopages/radiant/server/radiant-element-ssr` serializes the view without the host tag.
 
 Host attribute serialization and full host HTML composition live in the server pipeline. They are not Element Host instance APIs.
 

@@ -8,10 +8,30 @@ import type {
 
 type Booleanish = boolean | 'true' | 'false';
 type StringKeyOf<Value> = Extract<keyof Value, string>;
+/**
+ * @remarks Compares the property against its `-readonly` copy through generic function types, because plain
+ * assignability ignores the `readonly` modifier.
+ */
+type IsReadonlyKey<Value, Key extends keyof Value> =
+	(<T>() => T extends { [K in Key]: Value[Key] } ? 1 : 2) extends <T>() => T extends {
+		-readonly [K in Key]: Value[Key];
+	}
+		? 1
+		: 2
+		? false
+		: true;
+/**
+ * Names `prop:*` may assign: string keys that are neither methods nor readonly.
+ *
+ * @remarks A getter without a setter is readonly in the instance type. Assigning one throws at runtime, and
+ * assigning a readonly field such as a host's `$` bindings would replace state the element owns.
+ */
 type JsxBindablePropertyName<ElementType extends object> = {
 	[PropertyName in StringKeyOf<ElementType>]: ElementType[PropertyName] extends (...args: any[]) => any
 		? never
-		: PropertyName;
+		: IsReadonlyKey<ElementType, PropertyName> extends true
+			? never
+			: PropertyName;
 }[StringKeyOf<ElementType>];
 type StructuredAttributePrimitive = string | number | boolean | null | undefined;
 type ReactiveAttributeValue<Value extends StructuredAttributePrimitive> =
@@ -27,6 +47,21 @@ type ReactiveAttributeValue<Value extends StructuredAttributePrimitive> =
 	| SubscribableJsxValue<Extract<Value, null>>
 	| SubscribableJsxValue<Extract<Value, undefined>>
 	| SubscribableJsxValueWithAccess<Extract<Value, JsxBindingSourceValue>>;
+
+/** Symbol key for the public props type declared by a custom-element class. */
+export declare const JSX_PROPS: unique symbol;
+
+/**
+ * Public, unprefixed JSX props declared by a custom-element instance.
+ *
+ * @remarks Classes without a declaration stay open so they accept the same
+ * unprefixed props as an unknown custom-element tag.
+ */
+export type JsxPublicProps<Instance> = Instance extends { readonly [JSX_PROPS]?: infer Props }
+	? NonNullable<Props> extends object
+		? NonNullable<Props>
+		: { [key: string]: unknown }
+	: { [key: string]: unknown };
 
 /**
  * Bivariant event handler type for native DOM events.
@@ -264,6 +299,6 @@ export type JsxCustomElementAttributes<
 > = JsxIntrinsicAttributes<ElementType> & Props;
 
 /**
- * Module-augmentable registry of custom JSX intrinsic elements for the Ecopages JSX runtime.
+ * Compatibility registry for module-augmented custom JSX intrinsic elements.
  */
 export interface JsxCustomIntrinsicElements {}
