@@ -13,3 +13,7 @@ The default Open Graph and Twitter preview is `src/public/assets/images/default-
 `pnpm --filter radiant-docs generate:llms` writes `llms.txt` and one raw-MDX text export per page under `src/public/llms-content/`. The export tree is generator-owned and staged before replacement, so a failed generation preserves the previous complete tree. `ECOPAGES_BASE_URL` is the canonical origin for configuration, generated links, and page metadata.
 
 Server-rendered catalog views do not register their custom elements in the browser. A docs example that uses a behavior host must import its package in a client script. The [controller decorator visualizer](./src/components/controller-decorator-visualizer/README.md) shows this boundary and tests native radio exclusivity after hydration.
+
+## Deployment
+
+The build writes public files to `apps/docs/dist/client` and private server files to `dist/server`. Configure the Cloudflare Pages build output directory as `apps/docs/dist/client` when the repository root is the build root (or `dist/client` when this app is the build root).

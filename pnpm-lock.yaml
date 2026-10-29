@@ -55,29 +55,29 @@ importers:
   apps/docs:
     devDependencies:
       '@ecopages/browser-router':
-        specifier: 0.2.0
-        version: 0.2.0(@ecopages/core@0.2.0(@ecopages/dev-toolbar@0.2.0)(typescript@7.0.2))
+        specifier: 0.6.0
+        version: 0.6.0(@ecopages/core@0.6.0(@ecopages/dev-toolbar@0.6.0(@ecopages/signals@0.6.0))(typescript@7.0.2))
       '@ecopages/content-processor':
-        specifier: 0.2.0
-        version: 0.2.0(@ecopages/core@0.2.0(@ecopages/dev-toolbar@0.2.0)(typescript@7.0.2))(supports-color@7.2.0)(typescript@7.0.2)
+        specifier: 0.6.0
+        version: 0.6.0(@ecopages/core@0.6.0(@ecopages/dev-toolbar@0.6.0(@ecopages/signals@0.6.0))(typescript@7.0.2))(supports-color@7.2.0)(typescript@7.0.2)
       '@ecopages/core':
-        specifier: 0.2.0
-        version: 0.2.0(@ecopages/dev-toolbar@0.2.0)(typescript@7.0.2)
+        specifier: 0.6.0
+        version: 0.6.0(@ecopages/dev-toolbar@0.6.0(@ecopages/signals@0.6.0))(typescript@7.0.2)
       '@ecopages/dev-toolbar':
-        specifier: 0.2.0
-        version: 0.2.0
+        specifier: 0.6.0
+        version: 0.6.0(@ecopages/signals@0.6.0)
       '@ecopages/ecopages-jsx':
-        specifier: 0.2.0
-        version: 0.2.0(@ecopages/core@0.2.0(@ecopages/dev-toolbar@0.2.0)(typescript@7.0.2))(@ecopages/jsx@packages+jsx+dist)(@ecopages/radiant@packages+radiant+dist)(supports-color@7.2.0)(typescript@7.0.2)
+        specifier: 0.6.0
+        version: 0.6.0(@ecopages/core@0.6.0(@ecopages/dev-toolbar@0.6.0(@ecopages/signals@0.6.0))(typescript@7.0.2))(@ecopages/jsx@packages+jsx+dist)(@ecopages/radiant@packages+radiant+dist)(supports-color@7.2.0)(typescript@7.0.2)
       '@ecopages/file-system':
-        specifier: 0.2.0
-        version: 0.2.0
+        specifier: 0.6.0
+        version: 0.6.0
       '@ecopages/jsx':
         specifier: workspace:*
         version: link:../../packages/jsx/dist
       '@ecopages/postcss-processor':
-        specifier: 0.2.0
-        version: 0.2.0(@ecopages/core@0.2.0(@ecopages/dev-toolbar@0.2.0)(typescript@7.0.2))(@tailwindcss/postcss@4.3.3)(tailwindcss@4.3.3)(typescript@7.0.2)
+        specifier: 0.6.0
+        version: 0.6.0(@ecopages/core@0.6.0(@ecopages/dev-toolbar@0.6.0(@ecopages/signals@0.6.0))(typescript@7.0.2))(@tailwindcss/postcss@4.3.3)(tailwindcss@4.3.3)(typescript@7.0.2)
       '@ecopages/radiant':
         specifier: workspace:*
         version: link:../../packages/radiant/dist
@@ -106,8 +106,8 @@ importers:
         specifier: ^24.13.2
         version: 24.13.3
       ecopages:
-        specifier: 0.2.0
-        version: 0.2.0(@ecopages/dev-toolbar@0.2.0)(bun-types@1.4.0)(typescript@7.0.2)
+        specifier: 0.6.0
+        version: 0.6.0(@ecopages/dev-toolbar@0.6.0(@ecopages/signals@0.6.0))(typescript@7.0.2)
       remark-gfm:
         specifier: ^4.0.1
         version: 4.0.1(supports-color@7.2.0)
@@ -136,26 +136,26 @@ importers:
   apps/radiant-ui:
     devDependencies:
       '@ecopages/browser-router':
-        specifier: 0.2.0
-        version: 0.2.0(@ecopages/core@0.2.0(@ecopages/dev-toolbar@0.2.0)(typescript@7.0.2))
+        specifier: 0.6.0
+        version: 0.6.0(@ecopages/core@0.6.0(@ecopages/dev-toolbar@0.6.0(@ecopages/signals@0.6.0))(typescript@7.0.2))
       '@ecopages/content-processor':
-        specifier: 0.2.0
-        version: 0.2.0(@ecopages/core@0.2.0(@ecopages/dev-toolbar@0.2.0)(typescript@7.0.2))(supports-color@7.2.0)(typescript@7.0.2)
+        specifier: 0.6.0
+        version: 0.6.0(@ecopages/core@0.6.0(@ecopages/dev-toolbar@0.6.0(@ecopages/signals@0.6.0))(typescript@7.0.2))(supports-color@7.2.0)(typescript@7.0.2)
       '@ecopages/core':
-        specifier: 0.2.0
-        version: 0.2.0(@ecopages/dev-toolbar@0.2.0)(typescript@7.0.2)
+        specifier: 0.6.0
+        version: 0.6.0(@ecopages/dev-toolbar@0.6.0(@ecopages/signals@0.6.0))(typescript@7.0.2)
       '@ecopages/ecopages-jsx':
-        specifier: 0.2.0
-        version: 0.2.0(@ecopages/core@0.2.0(@ecopages/dev-toolbar@0.2.0)(typescript@7.0.2))(@ecopages/jsx@packages+jsx+dist)(@ecopages/radiant@packages+radiant+dist)(supports-color@7.2.0)(typescript@7.0.2)
+        specifier: 0.6.0
+        version: 0.6.0(@ecopages/core@0.6.0(@ecopages/dev-toolbar@0.6.0(@ecopages/signals@0.6.0))(typescript@7.0.2))(@ecopages/jsx@packages+jsx+dist)(@ecopages/radiant@packages+radiant+dist)(supports-color@7.2.0)(typescript@7.0.2)
       '@ecopages/file-system':
-        specifier: 0.2.0
-        version: 0.2.0
+        specifier: 0.6.0
+        version: 0.6.0
       '@ecopages/jsx':
         specifier: workspace:*
         version: link:../../packages/jsx/dist
       '@ecopages/postcss-processor':
-        specifier: 0.2.0
-        version: 0.2.0(@ecopages/core@0.2.0(@ecopages/dev-toolbar@0.2.0)(typescript@7.0.2))(@tailwindcss/postcss@4.3.3)(tailwindcss@4.3.3)(typescript@7.0.2)
+        specifier: 0.6.0
+        version: 0.6.0(@ecopages/core@0.6.0(@ecopages/dev-toolbar@0.6.0(@ecopages/signals@0.6.0))(typescript@7.0.2))(@tailwindcss/postcss@4.3.3)(tailwindcss@4.3.3)(typescript@7.0.2)
       '@ecopages/radiant':
         specifier: workspace:*
         version: link:../../packages/radiant/dist
@@ -181,8 +181,8 @@ importers:
         specifier: ^4.1.10
         version: 4.1.11(msw@2.15.0(@types/node@24.13.3)(typescript@7.0.2))(playwright@1.62.1)(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))(vitest@4.1.11)
       ecopages:
-        specifier: 0.2.0
-        version: 0.2.0(@ecopages/dev-toolbar@0.2.0)(bun-types@1.4.0)(typescript@7.0.2)
+        specifier: 0.6.0
+        version: 0.6.0(@ecopages/dev-toolbar@0.6.0(@ecopages/signals@0.6.0))(typescript@7.0.2)
       playwright:
         specifier: ^1.62.1
         version: 1.62.1
@@ -910,57 +910,57 @@ packages:
   '@colordx/core@5.8.0':
     resolution: {integrity: sha512-cG0QJAO6VkaRUlIb0zOzX9gfJgs1pjoOL9gZ/PK1kfvBs0GCkADu5oQh6gPxXgQnZ3gV575h+lQRC0NlMDTclA==}
 
-  '@ecopages/browser-router@0.2.0':
-    resolution: {integrity: sha512-WueIbil8eZwozUtyEa4jn3O78aATMuuYxZc7SM0lUWk7wFSWttqe9664h45AlW9O3yBLbXkLQMcJXQJ5Y6gbeQ==}
+  '@ecopages/browser-router@0.6.0':
+    resolution: {integrity: sha512-k0WLsMcwMQ4ARNWpNTwO1AshN7cg1PgCV9xkdUIlIChDSm05NJL45masetDYfxse42hsMA5ytJlGLETaOYdNrQ==}
     peerDependencies:
-      '@ecopages/core': 0.2.0
+      '@ecopages/core': 0.6.0
 
-  '@ecopages/content-processor@0.2.0':
-    resolution: {integrity: sha512-R+/Pv5Ee9zbMPbswJ0ssbh6rWWxT+0k+jpxZ2NgQI32bxHnUNQsYPpmYGgaMtbZQxo5yVIoPENpOpbG7K0snvw==}
+  '@ecopages/content-processor@0.6.0':
+    resolution: {integrity: sha512-NGhpj4obWQlmIK/FpCFrvtaf05/WM2uCC7MSdxK6KUU6T7WHdtrdh84Zjy2B0ZpRVdgU5WWnrzXZGk0ejqRK4A==}
     peerDependencies:
-      '@ecopages/core': 0.2.0
+      '@ecopages/core': 0.6.0
 
-  '@ecopages/core@0.2.0':
-    resolution: {integrity: sha512-jaegNNFuR0Jucn7FXP6bLoMLBCFjyokyOaGDlc1zeQWTMZ3oOdNzfxXpL9I5KkQ9yE5EX0TMYxFNDaNNSwBFhw==}
+  '@ecopages/core@0.6.0':
+    resolution: {integrity: sha512-TDY7YQbd7LxByDox5rZyWJqlVPEvsxyo0Fw9UTHZLItKfxomYqV6WzRMfpYnQT3G33D13gHZ2DSpqPYuuRCQxA==}
     peerDependencies:
-      '@ecopages/dev-toolbar': 0.2.0
+      '@ecopages/dev-toolbar': 0.6.0
     peerDependenciesMeta:
       '@ecopages/dev-toolbar':
         optional: true
 
-  '@ecopages/dev-toolbar@0.2.0':
-    resolution: {integrity: sha512-kcK3bKYhTWb9PyRwfSEtsdFRuBIG4rvkXxsRQOtYF8ZHblq/DVo0AOrF3ckmnhGUp3tUtLVCj4zIvww2eoFHig==}
+  '@ecopages/dev-toolbar@0.6.0':
+    resolution: {integrity: sha512-Kv4nBKQariwcMsuvBKymbE3TV3vokna/fT9VD2lLKNUd+XGIDPil909PIcDBE+IK7mmczhrd726IusOqccIa9w==}
 
-  '@ecopages/ecopages-jsx@0.2.0':
-    resolution: {integrity: sha512-sp2aXuhKZX5F7fFuUI0e5wNzv8ikKkvLGALq+9rxY/CHIJAPtz80FEIaytThK+wtTWV5GYkj/bo8L7M1pwHSWg==}
+  '@ecopages/ecopages-jsx@0.6.0':
+    resolution: {integrity: sha512-NQ5xlFzrPt1FvAlNccEyK1xOpPu455o3OMnQESp3LIIIbnK/2oBu/Pj1CzRcSoU3772SmH2G4oBxsUTJc+fKqw==}
     peerDependencies:
-      '@ecopages/core': 0.2.0
-      '@ecopages/jsx': ^0.3.0-rc.9
-      '@ecopages/radiant': ^0.3.0-rc.9
+      '@ecopages/core': 0.6.0
+      '@ecopages/jsx': ^0.6.0
+      '@ecopages/radiant': ^0.6.0
 
-  '@ecopages/file-system@0.2.0':
-    resolution: {integrity: sha512-FEkOovetvzhiu8NbLy9u+xENjUPHzRAETAmVbBBadk/Byx8nxha5UwD+AU8ls4bat/QFA7Kmr6mIwZ0xMFLqVQ==}
+  '@ecopages/file-system@0.6.0':
+    resolution: {integrity: sha512-QUN6HpbZn6PpIah9+RX8K9rQSUJ9RUGy/2hfME4MCg0Ru8ZOevJRQOCywX30BN4LLPGLM7Xngn5pUh/Xiheoog==}
 
-  '@ecopages/jsx@0.3.0-rc.12':
-    resolution: {integrity: sha512-qhSKBfGeg6D9ppiJdokqXvWXGEqO2nOTaun6t/EsHkukPXhdjL/eHosU9++N6FDLpjkmyUGAVMjoo3zZ1SxNNg==}
+  '@ecopages/jsx@0.6.0':
+    resolution: {integrity: sha512-kFTN6RuRuzQfo3D2cP4j3yy0xwAFSTUFQGEYOKAsB6eLIxX1Op2Cn0DIRTPEBphXsttYPbuWxmxo02UbWilUWA==}
     peerDependencies:
-      '@ecopages/signals': '>=0.3.0-rc.12'
+      '@ecopages/signals': '>=0.6.0'
 
   '@ecopages/logger@0.2.3':
     resolution: {integrity: sha512-Hkt5H9Kzv6y07aiPZPaDkJ6/Bp7+Aen5ZFuI5zQ6ON7PyeuVu1lMiQy9pL+9Wm8yeO3wnMO44Jmph84Cc0X0lQ==}
     peerDependencies:
       typescript: ^5.0.0
 
-  '@ecopages/mdx@0.2.0':
-    resolution: {integrity: sha512-2689NsVRN6KMOC/IX8wB8cmXZJvm+kdhbne0/iU95pw4HagSB5JNtKLTVt77Jf9+atQ34FVI7CuPKgDDfJYPTw==}
+  '@ecopages/mdx@0.6.0':
+    resolution: {integrity: sha512-SnUMswjBf1SNG/9J1YloOS0xANXKvg5M3XDql4CwVqNgj963hRs1B/gFHBw3mff/XgNMLTg8qWU71zI59udBMw==}
     peerDependencies:
-      '@ecopages/core': 0.2.0
+      '@ecopages/core': 0.6.0
       '@mdx-js/mdx': ^3.1.0
 
-  '@ecopages/postcss-processor@0.2.0':
-    resolution: {integrity: sha512-CsTqXwaUd9VYgtUirs8nmxdlUYCSex81gx1+E+5Ct3EgVz0cqLKvpjaxFRIvHonnVppz+GdDMSuWNO6k1KzaSA==}
+  '@ecopages/postcss-processor@0.6.0':
+    resolution: {integrity: sha512-il7gdaSln05hpc+Iup+WTIQrHbOi7sZncGBoctIJU3UkmtW+8RCYNCa+3nvsBB4DmK1aPawWDvetbVidsqMV9g==}
     peerDependencies:
-      '@ecopages/core': 0.2.0
+      '@ecopages/core': 0.6.0
       '@tailwindcss/postcss': '>=4'
       tailwindcss: '>=3'
     peerDependenciesMeta:
@@ -969,18 +969,18 @@ packages:
       tailwindcss:
         optional: true
 
-  '@ecopages/radiant@0.3.0-rc.12':
-    resolution: {integrity: sha512-hjETS6i5Z+bbc2MU0DOjqRdZJL6SBg8FA3/w5E/tyHwFy5Ndq1jMWoXe6U/CcnzepjNGy2RVF0gCfFKpxBKwFw==}
+  '@ecopages/radiant@0.6.0':
+    resolution: {integrity: sha512-D4NOvKZRqWmJcEP9/JYWc5RIXQOsBsiq5/y+Gvjt6p/GbQJWwXNbepnDr83I0RNAk154PRxxzyNxL9f9iLOkiw==}
     peerDependencies:
-      '@ecopages/jsx': '>=0.3.0-rc.12'
+      '@ecopages/jsx': '>=0.6.0'
 
   '@ecopages/scripts-injector@0.1.5':
     resolution: {integrity: sha512-4julGcmVkf4G8asK0/vAZ9o9bIWudEyGk4D/rRF/IE2J4ePT5FgmR8QdzRxD+DElzEnkJTnS7gyX2Dj7JeNtdg==}
     peerDependencies:
       typescript: ^5.0.0
 
-  '@ecopages/signals@0.3.0-rc.12':
-    resolution: {integrity: sha512-jn/yDgIf22ScW8BF/BESTrZ8WQngZyR74eMYUZxeSHucAuIXZJvkyBkSjdKwi1vJWkIcnpFwQW5h33/p7XGsDg==}
+  '@ecopages/signals@0.6.0':
+    resolution: {integrity: sha512-GdYRehANSJbZO/QC7B5XPmevxBxKKjNu4fI+9fwHAskGkn1GUf3qT6RNtr/QrDeKGEXuWnA9CNk6aerg8FadLw==}
 
   '@emnapi/core@1.11.0':
     resolution: {integrity: sha512-l9Oo58x0HOP5znGzVhYW9U3e5wVuA4LAZU2AGezTmkhO1CgQRFDhDg4nneHsu/t3WniXg9QrG2nIXL/ZS8ln8Q==}
@@ -2853,9 +2853,6 @@ packages:
     engines: {node: ^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7}
     hasBin: true
 
-  bun-types@1.4.0:
-    resolution: {integrity: sha512-iIKw23BspnQQYd3prITOBxeUsxBHnwzX6YJfGMuNOZzeNcMmVqzIIVGRm1l69ogaPQmb4wB6BN8mA5bE9YuC5Q==}
-
   bundle-name@4.1.0:
     resolution: {integrity: sha512-tjwM5exMg6BGRI+kNmTntNsvdZS1X8BFYS6tnJ2hdH0kVxM6/eVZ2xy+FqStSWvYmtfFMDLIxurorHwDKfDz5Q==}
     engines: {node: '>=18'}
@@ -2914,10 +2911,6 @@ packages:
   chokidar@4.0.3:
     resolution: {integrity: sha512-Qgzu8kfBvo+cA4962jnP1KkS6Dop5NS6g7R5LFYJr4b8Ub94PPQXUksCw9PvXoeXPRRddRNC5C1JQUR2SMGtnA==}
     engines: {node: '>= 14.16.0'}
-
-  chokidar@5.0.0:
-    resolution: {integrity: sha512-TQMmc3w+5AxjpL8iIiwebF73dRDF4fBIieAqGn9RGCWaEVwQ6Fb2cGe31Yns0RRIzii5goJ1Y7xbMwo1TxMplw==}
-    engines: {node: '>= 20.19.0'}
 
   chromatic@18.7.2:
     resolution: {integrity: sha512-e6YsVD1c97hF2Fz/IxmHiLSK6Di8PV6edc6lKql20Wp5ZUWxluBXC8ZHKgpqJMr6u3vhn708BqOEnZntOgiTOA==}
@@ -3135,12 +3128,11 @@ packages:
   domutils@3.2.2:
     resolution: {integrity: sha512-6kZKyUajlDuqlHKVX1w7gyslj9MPIXzIFiz/rGu35uC1wMi+kMhQwGhl4lt9unC9Vb9INnY9Z3/ZA3+FhASLaw==}
 
-  ecopages@0.2.0:
-    resolution: {integrity: sha512-4nQjne2hxnBJE/aUOskn3Xx+XQkEo0/tV9W1VuUUdlPIPUmtdoTcJ+YwIZdabbYNV8HvV6rycwUbt8gmHNn6xQ==}
+  ecopages@0.6.0:
+    resolution: {integrity: sha512-tF6ZJ3BpLbwa7QKVrrKs34+SVI7tM865Sc8eg+M9yPkdqVpocw/fvHcA6+RREKr/Kzg1z6B6WvPlD0ljybrmSw==}
     engines: {node: '>=24.0.0'}
     hasBin: true
     peerDependencies:
-      bun-types: '*'
       typescript: ^5
 
   electron-to-chromium@1.5.420:
@@ -3688,6 +3680,9 @@ packages:
 
   magic-string@0.30.21:
     resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
+
+  magic-string@1.4.5:
+    resolution: {integrity: sha512-oLLC2+YvQUfAa+vxoufE/yc1icb87M9iXIRqAoR/2EhE/8cb3SF/+Gi0c2By1B+5Vz2e2vQtUvHiu1+63Znh+w==}
 
   magicast@0.5.4:
     resolution: {integrity: sha512-llBEhWm1SacoRwgHUoQJYtwp4PBLF4faQi5TCpIGyGs9n4y5+juI0tDgyKIfpqxckRHaHzouUEph3THklWh03w==}
@@ -4345,10 +4340,6 @@ packages:
   readdirp@4.1.2:
     resolution: {integrity: sha512-GDhwkLfywWL2s6vEjyhri+eXmfH6j1L7JE27WhqLeYzoh/A3DBaYGEj2H/HFZCn/kMfim73FXxEJTw06WtxQwg==}
     engines: {node: '>= 14.18.0'}
-
-  readdirp@5.1.1:
-    resolution: {integrity: sha512-Kko+Y5XQ6fM+Ce3dq3m9YGxnacYZYl9cA1wZjaF3Vbry2L3i1qVg8+CAgNPsXRArPMUMCaOR7oa9Nqntc43JKA==}
-    engines: {node: '>= 20.19.0'}
 
   recast@0.23.21:
     resolution: {integrity: sha512-mFAyJq9vUbSTARLZUvAEf1z3YxlvAwswbmxMx2mPA/MSm4KmpwvwvhsH/NIrZhyOuwD60Lzyw2qh83uCbgTPYw==}
@@ -5270,15 +5261,15 @@ snapshots:
 
   '@colordx/core@5.8.0': {}
 
-  '@ecopages/browser-router@0.2.0(@ecopages/core@0.2.0(@ecopages/dev-toolbar@0.2.0)(typescript@7.0.2))':
+  '@ecopages/browser-router@0.6.0(@ecopages/core@0.6.0(@ecopages/dev-toolbar@0.6.0(@ecopages/signals@0.6.0))(typescript@7.0.2))':
     dependencies:
-      '@ecopages/core': 0.2.0(@ecopages/dev-toolbar@0.2.0)(typescript@7.0.2)
+      '@ecopages/core': 0.6.0(@ecopages/dev-toolbar@0.6.0(@ecopages/signals@0.6.0))(typescript@7.0.2)
       morphdom: 2.7.8
 
-  '@ecopages/content-processor@0.2.0(@ecopages/core@0.2.0(@ecopages/dev-toolbar@0.2.0)(typescript@7.0.2))(supports-color@7.2.0)(typescript@7.0.2)':
+  '@ecopages/content-processor@0.6.0(@ecopages/core@0.6.0(@ecopages/dev-toolbar@0.6.0(@ecopages/signals@0.6.0))(typescript@7.0.2))(supports-color@7.2.0)(typescript@7.0.2)':
     dependencies:
-      '@ecopages/core': 0.2.0(@ecopages/dev-toolbar@0.2.0)(typescript@7.0.2)
-      '@ecopages/file-system': 0.2.0
+      '@ecopages/core': 0.6.0(@ecopages/dev-toolbar@0.6.0(@ecopages/signals@0.6.0))(typescript@7.0.2)
+      '@ecopages/file-system': 0.6.0
       '@ecopages/logger': 0.2.3(typescript@7.0.2)
       remark-frontmatter: 5.0.0(supports-color@7.2.0)
       unified: 11.0.5
@@ -5288,39 +5279,41 @@ snapshots:
       - supports-color
       - typescript
 
-  '@ecopages/core@0.2.0(@ecopages/dev-toolbar@0.2.0)(typescript@7.0.2)':
+  '@ecopages/core@0.6.0(@ecopages/dev-toolbar@0.6.0(@ecopages/signals@0.6.0))(typescript@7.0.2)':
     dependencies:
       '@clack/prompts': 1.7.0
-      '@ecopages/file-system': 0.2.0
+      '@ecopages/file-system': 0.6.0
       '@ecopages/logger': 0.2.3(typescript@7.0.2)
       '@ecopages/scripts-injector': 0.1.5(typescript@7.0.2)
-      '@oxc-project/runtime': 0.141.0
+      '@jridgewell/remapping': 2.3.5
       '@standard-schema/spec': 1.1.0
       '@standard-schema/utils': 0.3.0
-      chokidar: 5.0.0
+      magic-string: 1.4.5
       oxc-parser: 0.141.0
       oxc-resolver: 11.24.2
       rolldown: 1.2.7
       ws: 8.21.3
     optionalDependencies:
-      '@ecopages/dev-toolbar': 0.2.0
+      '@ecopages/dev-toolbar': 0.6.0(@ecopages/signals@0.6.0)
     transitivePeerDependencies:
       - bufferutil
       - typescript
       - utf-8-validate
 
-  '@ecopages/dev-toolbar@0.2.0':
+  '@ecopages/dev-toolbar@0.6.0(@ecopages/signals@0.6.0)':
     dependencies:
-      '@ecopages/jsx': 0.3.0-rc.12(@ecopages/signals@0.3.0-rc.12)
-      '@ecopages/radiant': 0.3.0-rc.12(@ecopages/jsx@0.3.0-rc.12(@ecopages/signals@0.3.0-rc.12))
-      '@ecopages/signals': 0.3.0-rc.12
+      '@ecopages/jsx': 0.6.0(@ecopages/signals@0.6.0)
+      '@ecopages/radiant': 0.6.0(@ecopages/jsx@0.6.0(@ecopages/signals@0.6.0))
       axe-core: 4.13.0
+    transitivePeerDependencies:
+      - '@ecopages/signals'
 
-  '@ecopages/ecopages-jsx@0.2.0(@ecopages/core@0.2.0(@ecopages/dev-toolbar@0.2.0)(typescript@7.0.2))(@ecopages/jsx@packages+jsx+dist)(@ecopages/radiant@packages+radiant+dist)(supports-color@7.2.0)(typescript@7.0.2)':
+  '@ecopages/ecopages-jsx@0.6.0(@ecopages/core@0.6.0(@ecopages/dev-toolbar@0.6.0(@ecopages/signals@0.6.0))(typescript@7.0.2))(@ecopages/jsx@packages+jsx+dist)(@ecopages/radiant@packages+radiant+dist)(supports-color@7.2.0)(typescript@7.0.2)':
     dependencies:
-      '@ecopages/core': 0.2.0(@ecopages/dev-toolbar@0.2.0)(typescript@7.0.2)
+      '@ecopages/core': 0.6.0(@ecopages/dev-toolbar@0.6.0(@ecopages/signals@0.6.0))(typescript@7.0.2)
+      '@ecopages/file-system': 0.6.0
       '@ecopages/jsx': link:packages/jsx/dist
-      '@ecopages/mdx': 0.2.0(@ecopages/core@0.2.0(@ecopages/dev-toolbar@0.2.0)(typescript@7.0.2))(@mdx-js/mdx@3.1.1(supports-color@7.2.0))(typescript@7.0.2)
+      '@ecopages/mdx': 0.6.0(@ecopages/core@0.6.0(@ecopages/dev-toolbar@0.6.0(@ecopages/signals@0.6.0))(typescript@7.0.2))(@mdx-js/mdx@3.1.1(supports-color@7.2.0))(typescript@7.0.2)
       '@ecopages/radiant': link:packages/radiant/dist
       '@mdx-js/mdx': 3.1.1(supports-color@7.2.0)
       vfile: 6.0.3
@@ -5328,19 +5321,20 @@ snapshots:
       - supports-color
       - typescript
 
-  '@ecopages/file-system@0.2.0': {}
+  '@ecopages/file-system@0.6.0': {}
 
-  '@ecopages/jsx@0.3.0-rc.12(@ecopages/signals@0.3.0-rc.12)':
+  '@ecopages/jsx@0.6.0(@ecopages/signals@0.6.0)':
     dependencies:
-      '@ecopages/signals': 0.3.0-rc.12
+      '@ecopages/signals': 0.6.0
 
   '@ecopages/logger@0.2.3(typescript@7.0.2)':
     dependencies:
       typescript: 7.0.2
 
-  '@ecopages/mdx@0.2.0(@ecopages/core@0.2.0(@ecopages/dev-toolbar@0.2.0)(typescript@7.0.2))(@mdx-js/mdx@3.1.1(supports-color@7.2.0))(typescript@7.0.2)':
+  '@ecopages/mdx@0.6.0(@ecopages/core@0.6.0(@ecopages/dev-toolbar@0.6.0(@ecopages/signals@0.6.0))(typescript@7.0.2))(@mdx-js/mdx@3.1.1(supports-color@7.2.0))(typescript@7.0.2)':
     dependencies:
-      '@ecopages/core': 0.2.0(@ecopages/dev-toolbar@0.2.0)(typescript@7.0.2)
+      '@ecopages/core': 0.6.0(@ecopages/dev-toolbar@0.6.0(@ecopages/signals@0.6.0))(typescript@7.0.2)
+      '@ecopages/file-system': 0.6.0
       '@ecopages/logger': 0.2.3(typescript@7.0.2)
       '@mdx-js/mdx': 3.1.1(supports-color@7.2.0)
       source-map: 0.8.0
@@ -5348,10 +5342,10 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
-  '@ecopages/postcss-processor@0.2.0(@ecopages/core@0.2.0(@ecopages/dev-toolbar@0.2.0)(typescript@7.0.2))(@tailwindcss/postcss@4.3.3)(tailwindcss@4.3.3)(typescript@7.0.2)':
+  '@ecopages/postcss-processor@0.6.0(@ecopages/core@0.6.0(@ecopages/dev-toolbar@0.6.0(@ecopages/signals@0.6.0))(typescript@7.0.2))(@tailwindcss/postcss@4.3.3)(tailwindcss@4.3.3)(typescript@7.0.2)':
     dependencies:
-      '@ecopages/core': 0.2.0(@ecopages/dev-toolbar@0.2.0)(typescript@7.0.2)
-      '@ecopages/file-system': 0.2.0
+      '@ecopages/core': 0.6.0(@ecopages/dev-toolbar@0.6.0(@ecopages/signals@0.6.0))(typescript@7.0.2)
+      '@ecopages/file-system': 0.6.0
       '@ecopages/logger': 0.2.3(typescript@7.0.2)
       autoprefixer: 10.5.4(postcss@8.5.28)
       browserslist: 4.28.8
@@ -5365,15 +5359,15 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
-  '@ecopages/radiant@0.3.0-rc.12(@ecopages/jsx@0.3.0-rc.12(@ecopages/signals@0.3.0-rc.12))':
+  '@ecopages/radiant@0.6.0(@ecopages/jsx@0.6.0(@ecopages/signals@0.6.0))':
     dependencies:
-      '@ecopages/jsx': 0.3.0-rc.12(@ecopages/signals@0.3.0-rc.12)
+      '@ecopages/jsx': 0.6.0(@ecopages/signals@0.6.0)
 
   '@ecopages/scripts-injector@0.1.5(typescript@7.0.2)':
     dependencies:
       typescript: 7.0.2
 
-  '@ecopages/signals@0.3.0-rc.12': {}
+  '@ecopages/signals@0.6.0': {}
 
   '@emnapi/core@1.11.0':
     dependencies:
@@ -6722,10 +6716,6 @@ snapshots:
       node-releases: 2.0.54
       update-browserslist-db: 1.3.2(browserslist@4.28.8)
 
-  bun-types@1.4.0:
-    dependencies:
-      '@types/node': 24.13.3
-
   bundle-name@4.1.0:
     dependencies:
       run-applescript: 7.1.0
@@ -6783,10 +6773,6 @@ snapshots:
   chokidar@4.0.3:
     dependencies:
       readdirp: 4.1.2
-
-  chokidar@5.0.0:
-    dependencies:
-      readdirp: 5.1.1
 
   chromatic@18.7.2:
     dependencies:
@@ -6968,12 +6954,12 @@ snapshots:
       domelementtype: 2.3.0
       domhandler: 5.0.3
 
-  ecopages@0.2.0(@ecopages/dev-toolbar@0.2.0)(bun-types@1.4.0)(typescript@7.0.2):
+  ecopages@0.6.0(@ecopages/dev-toolbar@0.6.0(@ecopages/signals@0.6.0))(typescript@7.0.2):
     dependencies:
       '@clack/prompts': 1.7.0
-      '@ecopages/core': 0.2.0(@ecopages/dev-toolbar@0.2.0)(typescript@7.0.2)
+      '@ecopages/core': 0.6.0(@ecopages/dev-toolbar@0.6.0(@ecopages/signals@0.6.0))(typescript@7.0.2)
+      '@ecopages/file-system': 0.6.0
       '@ecopages/logger': 0.2.3(typescript@7.0.2)
-      bun-types: 1.4.0
       giget: 2.0.0
       tsx: 4.23.13
       typescript: 7.0.2
@@ -7535,6 +7521,10 @@ snapshots:
   lz-string@1.5.0: {}
 
   magic-string@0.30.21:
+    dependencies:
+      '@jridgewell/sourcemap-codec': 1.6.0
+
+  magic-string@1.4.5:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.6.0
 
@@ -8534,8 +8524,6 @@ snapshots:
       picomatch: 2.3.2
 
   readdirp@4.1.2: {}
-
-  readdirp@5.1.1: {}
 
   recast@0.23.21:
     dependencies:
