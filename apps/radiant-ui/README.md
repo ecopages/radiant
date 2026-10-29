@@ -142,3 +142,7 @@ pnpm --filter @ecopages/radiant-ui-docs generate:llms
 Runs before `build` and `preview`.
 
 The command writes `llms.txt` and one raw-MDX text export per page under `src/public/llms-content/`. The export tree is generator-owned and staged before replacement, so a failed generation preserves the previous complete tree. `ECOPAGES_BASE_URL` is the canonical origin for configuration, generated links, and page metadata.
+
+## Deployment
+
+The build writes public files to `apps/radiant-ui/dist/client` and private server files to `dist/server`. Configure the Cloudflare Pages build output directory as `apps/radiant-ui/dist/client` when the repository root is the build root (or `dist/client` when this app is the build root).

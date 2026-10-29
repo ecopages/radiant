@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { ConfigBuilder } from '@ecopages/core/config-builder';
+import { defineConfig } from '@ecopages/core/config';
 import { postcssProcessorPlugin } from '@ecopages/postcss-processor/plugin';
 import { tailwindV4Preset } from '@ecopages/postcss-processor/presets/tailwind-v4';
 import { ecopagesJsxPlugin } from '@ecopages/ecopages-jsx';
@@ -10,18 +10,17 @@ import { docsFrontmatterSchema } from './src/content/docs';
 import { configuredSiteOrigin } from './src/lib/docs/site-meta';
 import { devToolbar } from '@ecopages/dev-toolbar/config';
 
-const config = await new ConfigBuilder()
-	.setRootDir(import.meta.dirname)
-	.setBaseUrl(configuredSiteOrigin())
-	.setSitemap({
+export default defineConfig({
+	rootDir: import.meta.dirname,
+	baseUrl: configuredSiteOrigin(),
+	sitemap: {
 		enabled: true,
 		extraUrls: ['/llms.txt', '/skill.txt'],
 		exclude: ['/404', '/500'],
-	})
-	.setIntegrations([
+	},
+	integrations: [
 		ecopagesJsxPlugin({
 			mdx: {
-				enabled: true,
 				...createDocsMdxPlugins({
 					rehypePrettyCode: {
 						theme: {
@@ -32,14 +31,14 @@ const config = await new ConfigBuilder()
 				}),
 			},
 		}),
-	])
-	.setDefaultMetadata({
+	],
+	defaultMetadata: {
 		title: 'Radiant | Docs',
 		description: 'Radiant is a minimalist web component library designed for simplicity and flexibility.',
 		image: '/assets/images/default-og.png',
 		keywords: ['typescript', 'framework', 'static'],
-	})
-	.setProcessors([
+	},
+	processors: [
 		postcssProcessorPlugin(
 			tailwindV4Preset({
 				referencePath: path.resolve(import.meta.dirname, 'src/styles/tailwind.css'),
@@ -57,9 +56,7 @@ const config = await new ConfigBuilder()
 				},
 			},
 		}),
-	])
-	.setAdditionalWatchPaths(['src/data', 'src/content'])
-	.setDevToolbar(devToolbar())
-	.build();
-
-export default config;
+	],
+	additionalWatchPaths: ['src/data', 'src/content'],
+	devToolbar: devToolbar(),
+});

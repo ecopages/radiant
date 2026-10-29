@@ -7,7 +7,7 @@ import { chromium } from 'playwright';
 const scriptDirectory = import.meta.dirname;
 const themesDirectory = path.resolve(scriptDirectory, '../../../packages/radiant-themes/dist/compiled/themes');
 const uiStylesDirectory = path.resolve(scriptDirectory, '../../../packages/radiant-ui/dist/components/ui');
-const defaultThemeStylesheetPath = path.resolve(scriptDirectory, '../dist/assets/styles/tailwind.css');
+const clientDirectory = path.resolve(scriptDirectory, '../dist/client');
 const pickerCssPath = path.resolve(scriptDirectory, '../src/components/theme-palette-picker/theme-palette-picker.css');
 const optionalThemes = [
 	'github',
@@ -141,7 +141,15 @@ test('theme picker text stays AA with persisted themes in runtime stylesheet ord
 	try {
 		const page = await browser.newPage();
 		const pickerCss = await readFile(pickerCssPath, 'utf8');
-		const defaultCss = await readFile(defaultThemeStylesheetPath, 'utf8');
+		const html = await readFile(path.join(clientDirectory, 'index.html'), 'utf8');
+		const stylesheetUrls = [...html.matchAll(/<link[^>]*href="(\/assets\/[^"]+\.css)"[^>]*>/g)].map(
+			(match) => match[1],
+		);
+		const stylesheets = await Promise.all(
+			stylesheetUrls.map((url) => readFile(path.join(clientDirectory, url), 'utf8')),
+		);
+		const defaultCss = stylesheets.find((css) => css.includes('tailwindcss v'));
+		assert.ok(defaultCss, 'Built page includes the compiled Tailwind stylesheet');
 		const uiCss = await Promise.all([
 			readFile(path.join(uiStylesDirectory, 'listbox/listbox.css'), 'utf8'),
 			readFile(path.join(uiStylesDirectory, 'select/select.css'), 'utf8'),
@@ -150,9 +158,10 @@ test('theme picker text stays AA with persisted themes in runtime stylesheet ord
 			readFile(path.join(uiStylesDirectory, 'alert/alert.css'), 'utf8'),
 		]);
 		for (const theme of ['rui-default', ...optionalThemes]) {
-			const themeCssPath =
-				theme === 'rui-default' ? defaultThemeStylesheetPath : path.join(themesDirectory, `${theme}.css`);
-			const themeCss = await readFile(themeCssPath, 'utf8');
+			const themeCss =
+				theme === 'rui-default'
+					? defaultCss
+					: await readFile(path.join(themesDirectory, `${theme}.css`), 'utf8');
 			for (const mode of ['light', 'dark']) {
 				const runtimeOrderCss = `${defaultCss}\n${uiCss.join('\n')}\n${pickerCss}\n${themeCss}`;
 				const rendered = await measureThemeRendering(page, runtimeOrderCss, mode, theme);
