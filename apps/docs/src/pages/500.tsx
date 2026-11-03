@@ -1,10 +1,10 @@
 import { eco } from '@ecopages/core';
 import { DocsLayout } from '@/layouts/docs-layout';
 import { Error500View } from '@/components/error-500-view';
-import type { Error500TemplateProps } from '@ecopages/core';
+import type { ErrorPageTemplateProps } from '@ecopages/core';
 import type { JsxRenderable } from '@ecopages/jsx';
 
-export default eco.page<Error500TemplateProps, JsxRenderable>({
+export default eco.page<ErrorPageTemplateProps, JsxRenderable>({
 	layout: DocsLayout,
 	dependencies: {
 		stylesheets: ['./500.css'],

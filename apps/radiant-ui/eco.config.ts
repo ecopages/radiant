@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { ConfigBuilder } from '@ecopages/core/config-builder';
+import { defineConfig } from '@ecopages/core/config';
 import { ecopagesJsxPlugin } from '@ecopages/ecopages-jsx';
 import { contentProcessorPlugin } from '@ecopages/content-processor/plugin';
 import { postcssProcessorPlugin } from '@ecopages/postcss-processor/plugin';
@@ -8,19 +8,18 @@ import { createDocsMdxPlugins } from './src/mdx/plugins';
 import { componentDocsFrontmatterSchema } from './src/content/components';
 import { configuredSiteOrigin } from './src/lib/docs/site-meta';
 
-const config = await new ConfigBuilder()
-	.setRootDir(import.meta.dirname)
-	.setBaseUrl(configuredSiteOrigin())
-	.setSitemap({
+export default defineConfig({
+	rootDir: import.meta.dirname,
+	baseUrl: configuredSiteOrigin(),
+	sitemap: {
 		enabled: true,
 		extraUrls: ['/llms.txt', '/skill.txt'],
 		exclude: ['/404', '/500'],
-	})
-	.setIntegrations([
+	},
+	integrations: [
 		ecopagesJsxPlugin({
 			extensions: ['.tsx'],
 			mdx: {
-				enabled: true,
 				...createDocsMdxPlugins({
 					rehypePrettyCode: {
 						theme: {
@@ -31,13 +30,13 @@ const config = await new ConfigBuilder()
 				}),
 			},
 		}),
-	])
-	.setDefaultMetadata({
+	],
+	defaultMetadata: {
 		title: 'Radiant UI',
 		description: 'Accessible UI components for the web.',
 		image: '/assets/images/default-og.png',
-	})
-	.setProcessors([
+	},
+	processors: [
 		postcssProcessorPlugin(
 			tailwindV4Preset({
 				referencePath: path.resolve(import.meta.dirname, 'src/styles/tailwind.css'),
@@ -54,7 +53,5 @@ const config = await new ConfigBuilder()
 				},
 			},
 		}),
-	])
-	.build();
-
-export default config;
+	],
+});
