@@ -24,7 +24,7 @@ test.before(async () => {
 	await runCommand('pnpm', ['run', 'build'], docsDirectory);
 	docsPreviewServer = await startServer({
 		command: 'python3',
-		args: ['-m', 'http.server', port, '-d', 'dist', '--bind', host],
+		args: ['-m', 'http.server', port, '-d', 'dist/client', '--bind', host],
 		cwd: docsDirectory,
 		origin,
 	});

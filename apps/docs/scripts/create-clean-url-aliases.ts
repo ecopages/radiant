@@ -1,7 +1,7 @@
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-const distDir = path.resolve(import.meta.dirname, '..', 'dist');
+const distDir = path.resolve(import.meta.dirname, '..', 'dist', 'client');
 
 async function collectHtmlFiles(directory: string): Promise<string[]> {
 	const entries = await readdir(directory, { withFileTypes: true });
