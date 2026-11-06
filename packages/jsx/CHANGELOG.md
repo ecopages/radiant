@@ -1,5 +1,23 @@
 # @ecopages/jsx
 
+## 0.7.0
+
+### Minor Changes
+
+- [#598](https://github.com/ecopages/radiant/pull/598) [`786847b`](https://github.com/ecopages/radiant/commit/786847bf357488d556ae55246d065d3e6bbebc71) Thanks [@andeeplus](https://github.com/andeeplus)! - A boolean on a standard HTML boolean attribute such as `hidden` or `disabled` now binds by presence on every path, on the client and in SSR. Before, a binding whose first value was not a boolean, such as a signal that starts as `undefined`, wrote `hidden="false"` when the value turned `false`, which browsers read as present, so the element stayed hidden; `attr:hidden={false}` did the same. `true` now writes the attribute empty and `false` removes it; a string such as `hidden="until-found"` is written as given, also after the binding held a boolean.
+
+    Add the `bool:` prefix to bind any attribute by presence, such as a custom element's boolean attribute: `<x-panel bool:expanded={isOpen} />` writes `expanded` for `true` and removes it for `false`, `null`, `undefined` or `''`; a non-empty string is written as given.
+
+- [#597](https://github.com/ecopages/radiant/pull/597) [`cabe09e`](https://github.com/ecopages/radiant/commit/cabe09ed8aa153864d40b2f04ac21dfafbfb9428) Thanks [@andeeplus](https://github.com/andeeplus)! - **Breaking:** `className` on a native element is a type error and is no longer rendered. It used to render as a `className` attribute, which browsers ignore, so the element had no class. To migrate, rename `className` to `class`.
+
+    `jsxDEV` from `@ecopages/jsx/jsx-dev-runtime` warns once per tag when a native element gets `className`. A custom element still receives `className` as a property.
+
+### Patch Changes
+
+- [#587](https://github.com/ecopages/radiant/pull/587) [`c05f033`](https://github.com/ecopages/radiant/commit/c05f0330e0ac37d6a48efb06875d68f6f55d1c85) Thanks [@github-actions](https://github.com/apps/github-actions)! - Fix: server rendering no longer drops an attribute whose value is `false`. `aria-expanded={false}`, `data-open={false}` and `attr:wrap={false}` now serialize as `="false"` in `renderToString` and in the light DOM of a server-rendered custom element, as the client already writes them, so the server markup and the hydrated DOM agree. HTML boolean attributes such as `hidden` and `disabled` keep presence and absence, and `null` and `undefined` still remove an attribute.
+- Updated dependencies [[`28baef3`](https://github.com/ecopages/radiant/commit/28baef3940b6a6a5d4993d3909f787c2d3ef07f0)]:
+    - @ecopages/signals@0.7.0
+
 ## 0.6.0
 
 ### Minor Changes
