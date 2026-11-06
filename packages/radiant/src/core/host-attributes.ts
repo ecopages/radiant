@@ -13,12 +13,9 @@ type ConstructorWithHostAttributes = CustomElementConstructor & {
  * @remarks The merged record is an own static property, so a subclass without `hostAttributes` still reads its
  * base class's record through the constructor prototype chain.
  */
-export function setHostAttributes(target: CustomElementConstructor, attributes: HostAttributes | undefined): void {
+export function setHostAttributes(target: ConstructorWithHostAttributes, attributes: HostAttributes | undefined): void {
 	if (attributes) {
-		Object.defineProperty(target, HOST_ATTRIBUTES, {
-			value: { ...(target as ConstructorWithHostAttributes)[HOST_ATTRIBUTES], ...attributes },
-			configurable: true,
-		});
+		target[HOST_ATTRIBUTES] = { ...target[HOST_ATTRIBUTES], ...attributes };
 	}
 }
 
