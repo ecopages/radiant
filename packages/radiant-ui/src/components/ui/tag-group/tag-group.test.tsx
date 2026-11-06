@@ -159,5 +159,27 @@ describe('RuiTagGroup', () => {
 			expect(group.value).toEqual(['imprinted']);
 			cleanup();
 		});
+
+		it('disables the remove control and re-enables it with the group', async () => {
+			const { host, group, cleanup } = await mountDisabled();
+			const button = host.querySelector<HTMLButtonElement>('[data-tag-remove]')!;
+
+			expect(button.disabled).toBe(true);
+
+			group.disabled = false;
+			await settled();
+			expect(button.disabled).toBe(false);
+			cleanup();
+		});
+
+		it.each(['Delete', 'Backspace'])('does not prevent default on %s', async (key) => {
+			const { host, cleanup } = await mountDisabled();
+			const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
+
+			host.querySelector<HTMLElement>('[data-tag]')!.dispatchEvent(event);
+
+			expect(event.defaultPrevented).toBe(false);
+			cleanup();
+		});
 	});
 });
