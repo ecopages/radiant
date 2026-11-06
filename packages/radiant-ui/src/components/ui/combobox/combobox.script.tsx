@@ -1,4 +1,5 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
+import { isResetBy } from '../shared/form-owner';
 import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { textContains } from '@/lib/text-filter';
@@ -301,6 +302,11 @@ export class RuiCombobox extends RadiantElement {
 		return this.querySelector('rui-autocomplete');
 	}
 
+	/**
+	 * @remarks The `typeof` guard covers a nested `rui-autocomplete` that is not
+	 * upgraded yet during the first prop update, when the element exists but its
+	 * class methods are not attached. The inline filter below then stands in.
+	 */
 	private syncAutocompleteFilter(): void {
 		const autocomplete = this.getAutocomplete();
 		if (autocomplete && typeof autocomplete.syncFilter === 'function') {
@@ -426,7 +432,7 @@ export class RuiCombobox extends RadiantElement {
 	 */
 	@onEvent({ document: true, type: 'reset' })
 	onFormReset(event: Event): void {
-		if (event.target instanceof HTMLFormElement && event.target.contains(this)) {
+		if (event.target instanceof HTMLFormElement && isResetBy(event.target, this, this.getInput())) {
 			setTimeout(() => this.syncFilterWhenCleared(), 0);
 		}
 	}

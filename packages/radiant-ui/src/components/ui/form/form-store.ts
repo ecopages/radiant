@@ -116,6 +116,11 @@ export class FormStore<T extends FieldValues = FieldValues> {
 		};
 	}
 
+	/**
+	 * @remarks A present `defaultValue` key always overwrites, including `null`,
+	 * so a default that is removed stops winning on reset. Only
+	 * `collectFieldDefaults` treats `null` as "no default".
+	 */
 	updateFieldOptions(name: string, options: RegisterOptions): void {
 		const field = this.fields.get(name);
 		if (!field) {
@@ -124,7 +129,7 @@ export class FormStore<T extends FieldValues = FieldValues> {
 		if (options.rules !== undefined) {
 			field.rules = options.rules;
 		}
-		if (options.defaultValue !== undefined && options.defaultValue !== null) {
+		if ('defaultValue' in options) {
 			field.defaultValue = options.defaultValue;
 		}
 	}
