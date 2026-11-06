@@ -1,6 +1,6 @@
 ---
 title: "Controller Tooling & HMR"
-description: "How RadiantController registration behaves by default, when to use explicit replacement, and where the current Ecopages JSX integration should move upstream."
+description: "How RadiantController registration behaves by default, when to use explicit replacement, and how to opt in under Vite and under `ecopages dev`, and what a save does to live controllers."
 group: Tools
 order: 1
 ---
@@ -32,7 +32,7 @@ Use these APIs deliberately:
 - `replaceController(identifier, ControllerClass)` replaces the registered class and reconnects matching live hosts
 - `enableControllerReplacementForHmr()` switches decorator-driven registration into replacement mode for the current runtime
 
-Example:
+Vite sets `import.meta.hot` in development, so a Vite app can gate the opt-in on it:
 
 ```ts
 import { enableControllerReplacementForHmr } from '@ecopages/radiant/controller-registry';
@@ -44,69 +44,41 @@ if (import.meta.hot) {
 
 That helper is intentionally named for tooling. It is not meant as normal application setup.
 
-## Current Docs-App Integration
+## Ecopages
 
-In this docs app, the HMR hook currently lives in the shared browser shell:
+Under `ecopages dev`, `import.meta.hot` is never set, so the guard above never fires and controller replacement stays off. Ecopages also exposes no public development flag for browser code, so you gate the call yourself. Import the helper from a browser entry that you only load in development, and call it before the controller modules evaluate:
 
-- [apps/docs/src/layouts/base-layout/base-layout.script.ts](/Users/andeeplus/github/radiant/apps/docs/src/layouts/base-layout/base-layout.script.ts)
+```ts
+import { enableControllerReplacementForHmr } from '@ecopages/radiant/controller-registry';
 
-That script runs on every docs page and enables controller replacement only when `import.meta.hot` exists.
+enableControllerReplacementForHmr();
+```
 
-This is the current best integration point inside the repo because it is:
+Replacement mode only changes what happens when a controller module is evaluated a second time, which happens when Ecopages re-imports a changed module. It does not stop the page from re-rendering:
 
-- global for the docs browser runtime
-- cheap to reason about
-- isolated from production builds
-- independent from individual controller example modules
+- When the saved module is the active page module, Ecopages asks the router to reload the current page. The browser router morphs the body and replaces custom-element hosts, so each host gets `disconnectedCallback` and then `connectedCallback`.
+- That replacement can reset controller state whether controller replacement is on or off.
+
+Treat controller state as disposable during `ecopages dev`.
+
+## Docs-App Integration
+
+This docs app re-exports `enableControllerReplacementForHmr` from [apps/docs/src/utils/radiant-browser-runtime.ts](/Users/andeeplus/github/radiant/apps/docs/src/utils/radiant-browser-runtime.ts), but it does not call it. The shared browser shell does not enable replacement, so docs pages use the default registration contract.
 
 ## Shared Runtime Integration
 
-The long-term integration point is the Ecopages JSX browser-runtime bootstrap, not each application shell.
-
-Today that bootstrap only installs the Radiant hydrator. In practice, that means the docs app still owns the HMR-specific opt-in in its shared browser shell.
-
-The current bootstrap output is:
+The Ecopages JSX browser-runtime bootstrap only installs the Radiant hydrator:
 
 ```ts
 import { installRadiantHydrator } from '@ecopages/radiant/client/hydrator';
 installRadiantHydrator();
 ```
 
-That makes it the natural future integration point for controller HMR too.
-
-## Planned Plugin Port
-
-The clean upstream direction is:
-
-1. Extend the Ecopages JSX runtime bootstrap so it can emit additional Radiant browser setup, not only hydrator installation.
-2. Import `enableControllerReplacementForHmr()` in that same bootstrap source.
-3. Guard it behind the browser HMR runtime so production output keeps the default stable registration contract.
-
-At a high level, the upstream bootstrap would become:
-
-```ts
-import { installRadiantHydrator } from '@ecopages/radiant/client/hydrator';
-import { enableControllerReplacementForHmr } from '@ecopages/radiant/controller-registry';
-
-installRadiantHydrator();
-
-if (import.meta.hot) {
-	enableControllerReplacementForHmr();
-}
-```
+It does not import `enableControllerReplacementForHmr()`. An application that wants replacement under `ecopages dev` adds the call itself, as in the Ecopages section above.
 
 ## Design Debt To Keep Visible
 
-There is one real piece of design debt here:
-
-- the global browser bootstrap currently belongs to the JSX plugin, while controller registration belongs to the Radiant runtime
-
-That split is reasonable, but it means controller HMR currently needs an app-level bridge until the plugin grows a better browser bootstrap extension point.
-
-So the current state is intentionally transitional:
-
-- app shell today
-- plugin bootstrap later
+The global browser bootstrap belongs to the JSX plugin, while controller registration belongs to the Radiant runtime. Until the bootstrap has an extension point for Radiant setup, each application owns its development-only opt-in.
 
 That is better than making `@controller(...)` mutating by default.
 
@@ -116,7 +88,7 @@ Use this rule:
 
 - application runtime: keep default registration semantics
 - tooling and HMR: opt into explicit replacement
-- framework integration: move the opt-in to the highest shared browser bootstrap you control
+- framework integration: call the opt-in from the highest development-only browser entry you control
 
 For this repo today, that highest shared bootstrap is the base layout script.
 

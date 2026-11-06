@@ -19,7 +19,8 @@
 		"**/*.css",
 		"**/*.script.ts",
 		"**/*.script.tsx",
-		"**/index.js"
+		"**/index.js",
+		"**/chunks/*.js"
 	],
 	"scripts": {
 		"build:framework": "pnpm --filter @ecopages/vite-plugin-radiant build:lib && pnpm --filter @ecopages/storybook-radiant-vite build",

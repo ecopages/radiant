@@ -11,6 +11,7 @@ import {
 	writeFileSync,
 } from 'node:fs';
 import { createRequire } from 'node:module';
+import { build } from 'esbuild';
 import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 import { dirname, join, resolve } from 'node:path';
@@ -188,4 +189,28 @@ test('compiled radiant-ui.css declares every semantic --color-* alias on :root',
 	assert.ok(aliases.length > 50, 'expected the semantic alias list to be read from source');
 	const missing = aliases.filter((alias) => !new RegExp(`${alias}\\s*:`).test(rootBlocks));
 	assert.deepEqual(missing, []);
+});
+
+test('a consumer bundle keeps the registrations in shared chunks', async () => {
+	const packageRoot = fileURLToPath(new URL('..', import.meta.url));
+	const result = await build({
+		stdin: { contents: `import '@ecopages/radiant-ui/checkbox-group';`, resolveDir: packageRoot },
+		bundle: true,
+		write: false,
+		format: 'esm',
+		treeShaking: true,
+		external: [
+			'@ecopages/jsx',
+			'@ecopages/jsx/*',
+			'@ecopages/radiant',
+			'@ecopages/radiant/*',
+			'@ecopages/signals',
+			'@ecopages/signals/*',
+			'*.css',
+		],
+	});
+	const output = result.outputFiles[0].text;
+
+	assert.ok(output.includes('"rui-checkbox-group"'), 'rui-checkbox-group registration was tree-shaken away');
+	assert.ok(output.includes('"rui-checkbox"'), 'rui-checkbox registration was tree-shaken away');
 });

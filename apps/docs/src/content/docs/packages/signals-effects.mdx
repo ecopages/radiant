@@ -42,7 +42,7 @@ count.set(1);
 stopWatching();
 ```
 
-`watch(...)` is built on top of a computed signal plus an effect, so it inherits computed equality behavior and effect scheduling.
+`watch(...)` is built on top of a computed signal plus an effect, so it inherits computed equality behavior and effect scheduling. It notifies on change, not per flush: a set followed by a set-back before the scheduler runs does not notify.
 
 ## Scheduling
 

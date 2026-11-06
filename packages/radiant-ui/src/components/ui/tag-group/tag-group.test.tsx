@@ -116,4 +116,70 @@ describe('RuiTagGroup', () => {
 		expect((host.querySelector('[data-tag-list]:not([data-rui-managed-list])') as HTMLElement).hidden).toBe(true);
 		cleanup();
 	});
+
+	describe('when disabled', () => {
+		async function mountDisabled() {
+			const mounted = mount(
+				<RuiTagGroup value={['imprinted']} disabled>
+					<RuiTagList>
+						<RuiTag value="imprinted" label="Imprinted">
+							Imprinted
+						</RuiTag>
+					</RuiTagList>
+				</RuiTagGroup>,
+			);
+			await settled();
+			const group = mounted.host.querySelector('rui-tag-group') as RuiTagGroupElement;
+			const events: string[] = [];
+			group.addEventListener('rui-remove', () => events.push('rui-remove'));
+			group.addEventListener('rui-change', () => events.push('rui-change'));
+			return { ...mounted, group, events };
+		}
+
+		it('does not remove a tag when the remove control is clicked', async () => {
+			const { host, group, events, cleanup } = await mountDisabled();
+
+			host.querySelector<HTMLElement>('[data-tag-remove]')!.click();
+			await settled();
+
+			expect(events).toEqual([]);
+			expect(group.value).toEqual(['imprinted']);
+			cleanup();
+		});
+
+		it.each(['Delete', 'Backspace'])('does not remove a tag on %s', async (key) => {
+			const { host, group, events, cleanup } = await mountDisabled();
+
+			host.querySelector<HTMLElement>('[data-tag]')!.dispatchEvent(
+				new KeyboardEvent('keydown', { key, bubbles: true }),
+			);
+			await settled();
+
+			expect(events).toEqual([]);
+			expect(group.value).toEqual(['imprinted']);
+			cleanup();
+		});
+
+		it('disables the remove control and re-enables it with the group', async () => {
+			const { host, group, cleanup } = await mountDisabled();
+			const button = host.querySelector<HTMLButtonElement>('[data-tag-remove]')!;
+
+			expect(button.disabled).toBe(true);
+
+			group.disabled = false;
+			await settled();
+			expect(button.disabled).toBe(false);
+			cleanup();
+		});
+
+		it.each(['Delete', 'Backspace'])('does not prevent default on %s', async (key) => {
+			const { host, cleanup } = await mountDisabled();
+			const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
+
+			host.querySelector<HTMLElement>('[data-tag]')!.dispatchEvent(event);
+
+			expect(event.defaultPrevented).toBe(false);
+			cleanup();
+		});
+	});
 });
