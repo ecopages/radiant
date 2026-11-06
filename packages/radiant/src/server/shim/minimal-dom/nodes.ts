@@ -357,6 +357,16 @@ const FOCUSABLE_TAGS = new Set(['button', 'input', 'select', 'textarea', 'summar
 /** Tags whose `disabled` property reflects the `disabled` attribute. */
 const DISABLED_TAGS = new Set(['button', 'input', 'select', 'textarea', 'fieldset', 'optgroup', 'option', 'link']);
 
+/**
+ * @remarks Browsers lowercase attribute names on HTML elements, so `setAttribute('tabIndex', ...)` and the
+ * `tabIndex` property share one `tabindex` attribute. The minimal DOM has no namespaces, so it cannot lowercase
+ * every name without breaking SVG attributes such as `viewBox`; `tabIndex`, the JSX prop spelling that collides
+ * with a reflected property, is mapped explicitly.
+ */
+function canonicalAttributeName(name: string): string {
+	return name === 'tabIndex' ? 'tabindex' : name;
+}
+
 class MinimalClassList {
 	constructor(private readonly element: MinimalElement) {}
 
@@ -655,11 +665,11 @@ export class MinimalElement extends MinimalNode {
 	}
 
 	hasAttribute(name: string): boolean {
-		return this.#attributeStore.has(name);
+		return this.#attributeStore.has(canonicalAttributeName(name));
 	}
 
 	getAttribute(name: string): string | null {
-		return this.#attributeStore.get(name) ?? null;
+		return this.#attributeStore.get(canonicalAttributeName(name)) ?? null;
 	}
 
 	getAttributeNames(): string[] {
@@ -667,7 +677,7 @@ export class MinimalElement extends MinimalNode {
 	}
 
 	setAttribute(name: string, value: unknown): void {
-		this.#attributeStore.set(name, String(value));
+		this.#attributeStore.set(canonicalAttributeName(name), String(value));
 		this.invalidateOpenTag();
 	}
 
@@ -684,7 +694,7 @@ export class MinimalElement extends MinimalNode {
 	}
 
 	removeAttribute(name: string): void {
-		this.#attributeStore.delete(name);
+		this.#attributeStore.delete(canonicalAttributeName(name));
 		this.invalidateOpenTag();
 	}
 

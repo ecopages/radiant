@@ -54,6 +54,14 @@ describe('minimal DOM reflected properties', () => {
 		expect(node.tabIndex).toBe(2);
 	});
 
+	test('the tabIndex attribute spelling shares the tabindex attribute with the property', () => {
+		const node = el('button');
+		node.setAttribute('tabIndex', '0');
+		node.tabIndex = -1;
+		expect(node.outerHTML).toBe('<button tabindex="-1"></button>');
+		expect(node.getAttribute('tabIndex')).toBe('-1');
+	});
+
 	test('type reflects on tags that define it and defaults like the DOM', () => {
 		const button = el('button');
 		expect(button.type).toBe('submit');
