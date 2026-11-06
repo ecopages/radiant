@@ -188,7 +188,7 @@ describe('minimal DOM reflected properties', () => {
 	});
 
 	test('aria string properties and role reflect, and null removes them', () => {
-		const node = el('div') as unknown as Record<string, string | null> & MinimalHTMLElement;
+		const node = el('div');
 		expect(node.ariaLabel).toBeNull();
 		node.ariaLabel = 'Close';
 		node.ariaAutoComplete = 'list';

@@ -357,7 +357,7 @@ const REFLECTION_CASES: { tag: string; property: string; value: string | null }[
 ];
 
 describe('minimal DOM property setters match Chromium', () => {
-	test.each(REFLECTION_CASES)('$tag.$property = $value', ({ tag, property, value }) => {
+	test.each(REFLECTION_CASES)('$property on $tag = $value', ({ tag, property, value }) => {
 		const minimal = new MinimalHTMLElement(tag, null) as unknown as Record<string, unknown> & DomElement;
 		const expected = document.createElement(tag) as unknown as Record<string, unknown> & DomElement;
 		if (value === null) {
@@ -373,7 +373,7 @@ describe('minimal DOM property setters match Chromium', () => {
 	test('option value falls back to its text', () => {
 		const minimal = new MinimalHTMLElement('option', null) as unknown as { value: string; textContent: string };
 		const expected = document.createElement('option');
-		minimal.textContent = expected.textContent = ' Free \n plan ';
+		minimal.textContent = expected.textContent = ' Free \n plan\u00a0';
 		expect(minimal.value).toBe(expected.value);
 	});
 });
