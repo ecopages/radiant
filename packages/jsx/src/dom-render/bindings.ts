@@ -98,8 +98,9 @@ function applyBooleanBinding(
 	value: unknown,
 	livePart: LiveAttributePart | undefined,
 ): void {
-	if (value) element.setAttribute(name, '');
-	else element.removeAttribute(name);
+	const text = resolveAttributeText(name, value, true);
+	if (text === undefined) element.removeAttribute(name);
+	else element.setAttribute(name, text);
 	updatePreviousValue(livePart, value);
 }
 

@@ -318,7 +318,7 @@ function serializeTemplatePart(
 
 	const text = resolveAttributeText(part.name, value, part.kind === 'bool');
 	if (text === undefined) return hydrationMarker;
-	return part.kind === 'bool'
+	return part.kind === 'bool' && text === ''
 		? `${hydrationMarker} ${part.name}`
 		: `${hydrationMarker} ${part.name}="${escapeAttribute(text)}"`;
 }

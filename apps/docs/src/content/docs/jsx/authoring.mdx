@@ -106,7 +106,7 @@ That JSX emits `data-state="ready"`, `data-max-load="3"`, and `aria-live="polite
 
 ### Boolean attributes
 
-Names such as `disabled`, `hidden`, `checked`, `readonly`, `selected`, and the rest of the standard HTML boolean attribute set bind by presence. A boolean value writes the attribute empty for `true` and removes it for `false`, whatever the prefix (`attr:hidden={false}` included) and whatever the binding's first value, so these attributes are never written as `"false"`. A string such as `hidden="until-found"` is written as given.
+Names such as `disabled`, `hidden`, `checked`, `readonly`, `selected`, and the rest of the standard HTML boolean attribute set bind by presence. A boolean value writes the attribute empty for `true` and removes it for `false`, with or without `attr:` and whatever the binding's first value, so these attributes are never written as `"false"`. A string such as `hidden="until-found"` is written as given.
 
 For a boolean attribute outside that set, use `bool:`:
 

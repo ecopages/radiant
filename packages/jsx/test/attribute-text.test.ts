@@ -17,10 +17,17 @@ describe('resolveAttributeText', () => {
 		expect(resolveAttributeText('STYLE', 'color: red')).toBe('color: red');
 	});
 
-	test('presence yields an empty string for truthy values and skips falsy ones', () => {
+	test('presence yields an empty string for truthy values, writes a string as given and skips falsy ones', () => {
 		expect(resolveAttributeText('hidden', true, true)).toBe('');
-		expect(resolveAttributeText('hidden', 'yes', true)).toBe('');
+		expect(resolveAttributeText('hidden', 1, true)).toBe('');
+		expect(resolveAttributeText('hidden', 'until-found', true)).toBe('until-found');
 		expect(resolveAttributeText('hidden', false, true)).toBeUndefined();
 		expect(resolveAttributeText('hidden', 0, true)).toBeUndefined();
+	});
+
+	test('a boolean on a standard boolean attribute binds by presence without the presence flag', () => {
+		expect(resolveAttributeText('hidden', false)).toBeUndefined();
+		expect(resolveAttributeText('hidden', true)).toBe('');
+		expect(resolveAttributeText('aria-hidden', false)).toBe('false');
 	});
 });

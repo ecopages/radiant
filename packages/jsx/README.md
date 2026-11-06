@@ -638,9 +638,9 @@ customElements.define('user-card', UserCard);
 <UserCard name="Ada" isAdmin={false} />;
 ```
 
-Custom elements default to property bindings for unprefixed names, with a small attribute-default set for obvious HTML semantics: `id`, `class`, `style`, `title`, `role`, `slot`, `part`, `tabindex`, `hidden`, `lang`, `dir`, plus expanded `data-*` and `aria-*`. Use `attr:*` when a non-default name must serialize to markup, and `prop:*` when you want to override the default explicitly. Unregistered tags still type-check. A custom tag declared in `HTMLElementTagNameMap` gets its public `JSX_PROPS` contract, while tags without that marker retain the open fallback.
+Custom elements default to property bindings for unprefixed names, with a small attribute-default set for obvious HTML semantics: `id`, `class`, `style`, `title`, `role`, `slot`, `part`, `tabindex`, `hidden`, `lang`, `dir`, plus expanded `data-*` and `aria-*`. Use `attr:*` when a non-default name must serialize to markup, `bool:*` for a boolean attribute that should be present or absent rather than `"true"` / `"false"`, and `prop:*` when you want to override the default explicitly. Unregistered tags still type-check. A custom tag declared in `HTMLElementTagNameMap` gets its public `JSX_PROPS` contract, while tags without that marker retain the open fallback.
 
-`JSX_PROPS` declares the public unprefixed props on the element class. `prop:*` bindings are typed from the class instance, and `attr:*` bindings use the DOM attribute value type. Required fields in the declared props remain required.
+`JSX_PROPS` declares the public unprefixed props on the element class. `prop:*` bindings are typed from the class instance, `attr:*` bindings use the DOM attribute value type, and `bool:*` bindings take `boolean | null | undefined`. Required fields in the declared props remain required.
 
 `prop:*` accepts any writable, non-method instance property. Readonly fields and getters without a setter are rejected, because assigning them throws or replaces state the element owns. Every public field is writable this way, including Radiant `@state` fields: decorators do not change a field's type, so JSX cannot tell `@prop` from `@state`. Mark internal state `protected` or `private` to keep it out of `prop:*`.
 
