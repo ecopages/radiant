@@ -314,7 +314,6 @@ export class MinimalCommentNode extends MinimalNode {
 const TYPE_TAGS = new Set([
 	'button',
 	'input',
-	'select',
 	'a',
 	'link',
 	'script',
@@ -326,9 +325,37 @@ const TYPE_TAGS = new Set([
 	'embed',
 	'object',
 ]);
-const DEFAULT_TYPES: Record<string, string> = { button: 'submit', input: 'text' };
+const BUTTON_TYPES = new Set(['button', 'submit', 'reset']);
+const INPUT_TYPES = new Set([
+	'button',
+	'checkbox',
+	'color',
+	'date',
+	'datetime-local',
+	'email',
+	'file',
+	'hidden',
+	'image',
+	'month',
+	'number',
+	'password',
+	'radio',
+	'range',
+	'reset',
+	'search',
+	'submit',
+	'tel',
+	'text',
+	'time',
+	'url',
+	'week',
+]);
+/** Read-only `type` that is the tag name itself. */
+const TAG_NAME_TYPES = new Set(['textarea', 'fieldset', 'output']);
+/** Tags that take focus by default, so `tabIndex` reads 0 rather than -1. */
+const FOCUSABLE_TAGS = new Set(['button', 'input', 'select', 'textarea', 'summary', 'iframe']);
 /** Tags whose `disabled` property reflects the `disabled` attribute. */
-const DISABLED_TAGS = new Set(['button', 'input', 'select', 'textarea', 'fieldset', 'optgroup', 'option']);
+const DISABLED_TAGS = new Set(['button', 'input', 'select', 'textarea', 'fieldset', 'optgroup', 'option', 'link']);
 
 class MinimalClassList {
 	constructor(private readonly element: MinimalElement) {}
@@ -472,36 +499,67 @@ export class MinimalElement extends MinimalNode {
 		this.setAttribute('dir', value);
 	}
 
-	get hidden(): boolean {
-		return this.hasAttribute('hidden');
+	/**
+	 * @remarks Returns `'until-found'` when the attribute has that value, as browsers do; any other present value reads as `true`.
+	 */
+	get hidden(): boolean | string {
+		const value = this.getAttribute('hidden');
+		if (value === null) return false;
+		return value.toLowerCase() === 'until-found' ? 'until-found' : true;
 	}
 
-	set hidden(value: boolean) {
+	set hidden(value: boolean | string) {
+		if (typeof value === 'string' && value.toLowerCase() === 'until-found') {
+			this.setAttribute('hidden', 'until-found');
+			return;
+		}
 		this.toggleAttribute('hidden', Boolean(value));
 	}
 
+	/**
+	 * @remarks Unset reads 0 on tags that are focusable by default (`a` only with `href`), otherwise -1. The
+	 * setter converts like WebIDL, so a non-numeric value becomes 0.
+	 */
 	get tabIndex(): number {
 		const parsed = Number.parseInt(this.getAttribute('tabindex') ?? '', 10);
-		return Number.isNaN(parsed) ? -1 : parsed;
+		if (!Number.isNaN(parsed)) return parsed;
+		const focusable = FOCUSABLE_TAGS.has(this.localName) || (this.localName === 'a' && this.hasAttribute('href'));
+		return focusable ? 0 : -1;
 	}
 
 	set tabIndex(value: number) {
-		this.setAttribute('tabindex', Math.trunc(Number(value)));
+		this.setAttribute('tabindex', Math.trunc(Number(value)) || 0);
 	}
 
 	/**
-	 * @remarks Reflected only on the tags where the DOM defines `type` (see {@link TYPE_TAGS}). Elsewhere an
-	 * assignment stays a plain value that never serializes, as in a browser.
+	 * @remarks Reflected only on the tags where the DOM defines `type` (see {@link TYPE_TAGS}). `input` and
+	 * `button` read the lowercased value and fall back to their default for an invalid one. `select`, `textarea`,
+	 * `fieldset` and `output` have a read-only `type` that assignment ignores. Elsewhere an assignment stays a
+	 * plain value that never serializes, as in a browser.
 	 */
 	get type(): string {
-		if (!TYPE_TAGS.has(this.localName)) {
+		const tag = this.localName;
+		if (tag === 'select') return this.hasAttribute('multiple') ? 'select-multiple' : 'select-one';
+		if (TAG_NAME_TYPES.has(tag)) return tag;
+		if (!TYPE_TAGS.has(tag)) {
 			return String(this.#plainProps.get('type') ?? '');
 		}
-		return this.getAttribute('type') ?? DEFAULT_TYPES[this.localName] ?? '';
+		const value = this.getAttribute('type');
+		if (tag === 'input') {
+			const lower = value?.toLowerCase() ?? '';
+			return INPUT_TYPES.has(lower) ? lower : 'text';
+		}
+		if (tag === 'button') {
+			const lower = value?.toLowerCase() ?? '';
+			return BUTTON_TYPES.has(lower) ? lower : 'submit';
+		}
+		return value ?? '';
 	}
 
 	set type(value: string) {
-		if (!TYPE_TAGS.has(this.localName)) {
+		const tag = this.localName;
+		if (tag === 'select' || TAG_NAME_TYPES.has(tag)) return;
+		if (!TYPE_TAGS.has(tag)) {
 			this.#plainProps.set('type', value);
 			return;
 		}

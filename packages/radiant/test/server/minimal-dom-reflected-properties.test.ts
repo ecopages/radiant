@@ -22,7 +22,7 @@ describe('minimal DOM reflected properties', () => {
 	test('className reads a parsed class attribute', () => {
 		const host = el();
 		host.innerHTML = '<p class="x y"></p>';
-		expect((host.childNodes[0] as MinimalHTMLElement).className).toBe('x y');
+		expect((host.childNodes[0] as unknown as MinimalHTMLElement).className).toBe('x y');
 	});
 
 	test.each(['title', 'lang', 'dir'] as const)('%s reflects as a string attribute', (name) => {
@@ -93,5 +93,62 @@ describe('minimal DOM reflected properties', () => {
 		button.id = 'tab-0';
 		container.replaceChildren(button as never);
 		expect(container.innerHTML).toBe('<button type="button" class="rui-carousel__indicator" id="tab-0"></button>');
+	});
+
+	test('select, textarea, fieldset and output expose a read-only type', () => {
+		const select = el('select');
+		expect(select.type).toBe('select-one');
+		select.setAttribute('multiple', '');
+		expect(select.type).toBe('select-multiple');
+		select.type = 'x';
+		expect(select.hasAttribute('type')).toBe(false);
+		for (const tag of ['textarea', 'fieldset', 'output']) {
+			expect(el(tag).type).toBe(tag);
+		}
+	});
+
+	test('type lowercases and falls back on an invalid value', () => {
+		const input = el('input');
+		input.type = 'CheckBox';
+		expect(input.type).toBe('checkbox');
+		input.type = 'bogus';
+		expect(input.type).toBe('text');
+		const button = el('button');
+		button.type = 'RESET';
+		expect(button.type).toBe('reset');
+		button.type = 'bogus';
+		expect(button.type).toBe('submit');
+	});
+
+	test('tabIndex defaults by tag and converts like WebIDL', () => {
+		for (const tag of ['button', 'input', 'select', 'textarea', 'summary', 'iframe']) {
+			expect(el(tag).tabIndex).toBe(0);
+		}
+		expect(el('div').tabIndex).toBe(-1);
+		const anchor = el('a');
+		expect(anchor.tabIndex).toBe(-1);
+		anchor.setAttribute('href', '/');
+		expect(anchor.tabIndex).toBe(0);
+		const node = el();
+		node.tabIndex = Number.NaN;
+		expect(node.getAttribute('tabindex')).toBe('0');
+		node.tabIndex = 'abc' as unknown as number;
+		expect(node.getAttribute('tabindex')).toBe('0');
+	});
+
+	test('disabled reflects on link', () => {
+		const link = el('link');
+		link.disabled = true;
+		expect(link.outerHTML).toBe('<link disabled>');
+	});
+
+	test('hidden keeps until-found', () => {
+		const node = el();
+		node.hidden = 'until-found';
+		expect(node.getAttribute('hidden')).toBe('until-found');
+		expect(node.hidden).toBe('until-found');
+		node.hidden = true;
+		expect(node.hidden).toBe(true);
+		expect(node.getAttribute('hidden')).toBe('');
 	});
 });
