@@ -417,6 +417,35 @@ describe('Radiant JSX server render', () => {
 		);
 	});
 
+	test('serializes false on attribute bindings as the string "false" and keeps boolean attributes absent', async () => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+		const template = jsx('li', {
+			'aria-expanded': false,
+			'aria-hidden': false,
+			data: { open: false },
+			hidden: false,
+			children: 'Branch',
+		});
+
+		expect(renderToString(template, { mode: 'plain' })).toBe(
+			'<li aria-expanded="false" aria-hidden="false" data-open="false">Branch</li>',
+		);
+		expect(renderToString(template, { mode: 'hydrate' })).toContain('aria-expanded="false"');
+	});
+
+	test('serializes false aria and data attributes on a custom element', async () => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+		const template = jsx('demo-card', {
+			'aria-busy': false,
+			'data-active': false,
+			'attr:wrap': false,
+		});
+
+		expect(renderToString(template, { mode: 'plain' })).toBe(
+			'<demo-card aria-busy="false" data-active="false" wrap="false"></demo-card>',
+		);
+	});
+
 	test('omits nullish bindings from SSR attribute output', async () => {
 		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
 		const template = jsx('button', {
