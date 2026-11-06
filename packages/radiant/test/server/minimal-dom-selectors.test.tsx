@@ -49,6 +49,32 @@ describe('minimal-dom selectors', () => {
 		expect(() => element.querySelector(':focus')).toThrow(SyntaxError);
 	});
 
+	test.each([
+		'p:first-child',
+		'li:first-child',
+		'a:hover',
+		'p::before',
+		'div:not(.a)',
+		'.item:first-child',
+		'a:nth-child(2)',
+	])('throws SyntaxError for the pseudo in %s, adjacent to a tag or not', (selector) => {
+		const host = new MinimalHTMLElement('div');
+		host.innerHTML = '<ul><li class="item"><a href="/">x</a></li></ul>';
+
+		expect(() => host.querySelector(selector)).toThrow(SyntaxError);
+		expect(() => host.querySelector(selector)).toThrow(selector);
+		expect(() => host.matches(selector)).toThrow(SyntaxError);
+	});
+
+	test('still matches a namespaced tag name', () => {
+		const host = new MinimalHTMLElement('div');
+		host.innerHTML = '<svg:rect class="r"></svg:rect><p></p>';
+
+		expect(host.querySelector('svg:rect')).toBe(host.childNodes[0]);
+		expect(host.querySelector('svg:rect.r')).toBe(host.childNodes[0]);
+		expect(host.querySelector('p')).toBe(host.childNodes[1]);
+	});
+
 	test('closest walks ancestors including self', () => {
 		const root = new MinimalHTMLElement('rui-disclosure-group');
 		const child = new MinimalHTMLElement('rui-disclosure');
