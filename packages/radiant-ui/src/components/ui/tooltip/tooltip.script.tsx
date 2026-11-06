@@ -1,5 +1,5 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
-import { RadiantElement, bindTo, bound, customElement, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
+import { RadiantElement, bindTo, customElement, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import { findFirstFocusableCandidate } from '@/lib/focusable-elements';
 import { uniqueId } from '@/lib/unique-id';
 import { applyFloatingPosition, attachFloating } from '../shared/floating-position';
@@ -46,8 +46,7 @@ const TOOLTIP_GAP = 8;
  *
  * Event wiring:
  * - Bubbling events (`focusin` / `focusout`, document `keydown`) use `@onEvent`.
- * - `pointerenter` / `pointerleave` are bound directly on the host — they do not
- *   bubble, so `@onEvent` delegation cannot see them on the trigger.
+ * - `pointerenter` / `pointerleave` do not bubble, so they use `@onEvent({ host: true })`.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/tooltip/
  *
@@ -90,22 +89,14 @@ export class RuiTooltip extends RadiantElement {
 	private describedEl: HTMLElement | null = null;
 	private cleanupFloating: (() => void) | null = null;
 
-	/**
-	 * Pointer enter/leave must be host listeners: those events do not bubble, and
-	 * `@onEvent` only supports delegated (bubbling) listeners.
-	 */
 	override connectedCallback(): void {
 		super.connectedCallback();
-		this.addEventListener('pointerenter', this.onPointerEnter);
-		this.addEventListener('pointerleave', this.onPointerLeave);
 		queueMicrotask(() => this.wireTrigger());
 	}
 
 	override disconnectedCallback(): void {
 		this.clearTimers();
 		this.teardownFloating();
-		this.removeEventListener('pointerenter', this.onPointerEnter);
-		this.removeEventListener('pointerleave', this.onPointerLeave);
 		this.describedEl?.removeAttribute('aria-describedby');
 		super.disconnectedCallback();
 	}
@@ -194,18 +185,16 @@ export class RuiTooltip extends RadiantElement {
 		this.scheduleHide();
 	}
 
-	@bound
+	@onEvent({ host: true, type: 'pointerenter' })
 	onPointerEnter(): void {
 		this.scheduleShow();
 	}
 
-	@bound
+	@onEvent({ host: true, type: 'pointerleave' })
 	onPointerLeave(): void {
 		this.scheduleHide();
 	}
 }
-
-
 
 declare global {
 	interface HTMLElementTagNameMap {
