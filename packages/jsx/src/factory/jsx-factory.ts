@@ -236,6 +236,9 @@ type AttributePartDescriptor = Extract<TemplatePartDescriptor, { type: 'attribut
 const BINDING_PARTS = new Map<string, AttributePartDescriptor>();
 const MAX_BINDING_PARTS = 2048;
 
+/** Descriptors that are shared, and so can key a node of the shape tree. */
+const SHARED_PARTS = new WeakSet<TemplatePartDescriptor>();
+
 function getBindingPart(elementName: string, name: string, value: unknown): AttributePartDescriptor {
 	const isBoolean = typeof resolveReactiveSnapshot(value) === 'boolean';
 	const cacheKey = `${elementName.includes('-') ? 'c' : 'n'}${isBoolean ? 'b' : 'v'}${name}`;
@@ -243,7 +246,10 @@ function getBindingPart(elementName: string, name: string, value: unknown): Attr
 
 	if (!part) {
 		part = Object.freeze(resolveBindingPart(elementName, name, value));
-		if (BINDING_PARTS.size < MAX_BINDING_PARTS) BINDING_PARTS.set(cacheKey, part);
+		if (BINDING_PARTS.size < MAX_BINDING_PARTS) {
+			BINDING_PARTS.set(cacheKey, part);
+			SHARED_PARTS.add(part);
+		}
 	}
 
 	return part;
@@ -378,6 +384,8 @@ function toChildSlot(child: JsxRenderable | undefined): unknown {
 
 const CHILD_PART: TemplatePartDescriptor = Object.freeze({ type: 'child' });
 const CHILDREN_PART: AttributePartDescriptor = Object.freeze({ kind: 'children', name: 'children', type: 'attribute' });
+SHARED_PARTS.add(CHILD_PART);
+SHARED_PARTS.add(CHILDREN_PART);
 
 type ShapeNode = {
 	readonly key: string;
@@ -399,8 +407,9 @@ let shapeNodeCount = 0;
  * collide.
  *
  * The tree stops growing at {@link MAX_SHAPE_NODES} nodes, so shapes built from data cannot grow it without bound on
- * a server. Past the cap, the rest of the key is built as a string in the same format, so equal shapes still get
- * equal keys.
+ * a server. Past the cap, or at a descriptor that is not shared (created past {@link MAX_BINDING_PARTS}), the rest
+ * of the key is built as a string in the same format, so equal shapes still get equal keys and no node is added
+ * that a later lookup could not match.
  */
 function getFactoryShapeKey(type: string, parts: readonly TemplatePartDescriptor[]): string {
 	let node: ShapeNode | undefined = SHAPE_ROOTS.get(type);
@@ -417,7 +426,8 @@ function getFactoryShapeKey(type: string, parts: readonly TemplatePartDescriptor
 		let child: ShapeNode | undefined = node.next?.get(part);
 
 		if (!child) {
-			if (shapeNodeCount >= MAX_SHAPE_NODES) return appendShapeTokens(node.key, parts, index);
+			if (shapeNodeCount >= MAX_SHAPE_NODES || !SHARED_PARTS.has(part))
+				return appendShapeTokens(node.key, parts, index);
 			child = { key: `${node.key}\u0002${describeShapePart(part)}` };
 			(node.next ??= new Map()).set(part, child);
 			shapeNodeCount += 1;

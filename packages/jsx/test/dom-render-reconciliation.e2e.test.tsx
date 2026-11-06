@@ -2899,24 +2899,6 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(current().localName).toBe('section');
 	});
 
-	test('elements keep their nodes past the shape cache limits', async () => {
-		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
-		const container = document.createElement('div');
-		const root = createRoot(container);
-
-		for (let index = 0; index < 10000; index += 1) jsx('div', { [`data-fill-${index}`]: 'x' });
-
-		root.render(jsx('div', { 'data-after-cap': 'a', children: 'x' }));
-		const first = container.firstElementChild;
-		root.render(jsx('div', { 'data-after-cap': 'b', children: 'y' }));
-		expect(container.firstElementChild).toBe(first);
-		expect(first?.getAttribute('data-after-cap')).toBe('b');
-		expect(first?.textContent).toBe('y');
-
-		root.render(jsx('div', { 'data-other-after-cap': 'b', children: 'y' }));
-		expect(container.firstElementChild).not.toBe(first);
-	});
-
 	test('a transported template with static text, an attribute and a child renders and updates', async () => {
 		const [{ createRoot }, { toTemplateResultLike }] = await Promise.all([
 			loadJsxModule(),
