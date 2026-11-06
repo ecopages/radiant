@@ -15,6 +15,14 @@ import { resolveContextHydrationHost, type ContextHostLike } from './context-hos
 type ContextProviderOptions<T extends UnknownContext> = {
 	context: UnknownContext;
 	hydrationKey?: string;
+	/**
+	 * The value the provider starts with.
+	 *
+	 * @remarks
+	 * Each provider takes its own shallow copy of a plain object or an array, so
+	 * hosts that share one options object do not see each other's writes to the
+	 * top level. Nested objects and class instances are shared, not cloned.
+	 */
 	initialValue?: T['__context__'];
 	hydrate?: AttributeTypeConstant;
 	serialize?: (value: ContextType<T>) => unknown;
@@ -115,7 +123,7 @@ export class ContextProvider<T extends Context<unknown, unknown>>
 		this.hydrate = options.hydrate;
 		this.serialize = options.serialize;
 		this.pendingHostHydration = Boolean(options.hydrate);
-		this.value = options.initialValue as ContextType<T>;
+		this.value = this.copyInitialValue(options.initialValue) as ContextType<T>;
 		this.tryHydrateFromHost();
 
 		this.registerEvents();
@@ -288,6 +296,15 @@ export class ContextProvider<T extends Context<unknown, unknown>>
 		}
 
 		return parsedHydrationValue;
+	}
+
+	private copyInitialValue(value: unknown): unknown {
+		if (Array.isArray(value)) return [...value];
+		if (this.isObject(value)) {
+			const prototype = Object.getPrototypeOf(value);
+			if (prototype === Object.prototype || prototype === null) return { ...value };
+		}
+		return value;
 	}
 
 	private isObject(value: unknown): value is Record<string, unknown> {
