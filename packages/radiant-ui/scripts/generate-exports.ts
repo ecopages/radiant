@@ -17,6 +17,7 @@ const ROOT = path.resolve(import.meta.dirname, '..');
 const UI_DIR = path.join(ROOT, 'src', 'components', 'ui');
 const PACKAGE_JSON_PATH = path.join(ROOT, 'package.json');
 const BARREL_PATH = path.join(ROOT, 'src', 'index.ts');
+const SEMANTIC_CSS_PATH = path.join(ROOT, 'src', 'styles', 'tokens', 'semantic.css');
 const STYLES_CSS_PATH = path.join(ROOT, 'src', 'styles', 'styles.css');
 const STYLE_DEPENDENCIES_PATH = path.join(ROOT, 'src', 'styles', 'style-dependencies.json');
 const COMPONENT_IMPORT_PATTERN = /import\s+(?:type\s+)?\{([\s\S]*?)\}\s+from\s+'(\.\.\/[^']+)'/g;
@@ -151,6 +152,27 @@ function buildStylesEntry(components: string[]): string {
 	return imports.join('\n');
 }
 
+/**
+ * Rewrites the `:where(:root, .dark)` block of `semantic.css` from the `--color-*`
+ * aliases of its `@theme inline` block, so each alias is declared once by hand.
+ *
+ * @remarks `@theme inline` omits the aliases from compiled `:root`, and a nested `.dark`
+ * must re-resolve them against its own palette, so the second block cannot be dropped.
+ */
+function buildSemanticAliasBlock(source: string): string {
+	const theme = /@theme inline \{([\s\S]*?)\n\}/.exec(source);
+	if (!theme) {
+		throw new Error('semantic.css: @theme inline block not found');
+	}
+	const aliases = theme[1].match(/^\s*--color-[\w-]+:[^;]+;/gm) ?? [];
+	const declarations = aliases.map((alias) => `\t${alias.trim()}`).join('\n');
+	const block = `:where(:root, .dark) {\n${declarations}\n}`;
+	if (!/:where\(:root, \.dark\) \{[\s\S]*?\n\}/.test(source)) {
+		throw new Error('semantic.css: :where(:root, .dark) block not found');
+	}
+	return source.replace(/:where\(:root, \.dark\) \{[\s\S]*?\n\}/, () => block);
+}
+
 function renderedComponentName(bindings: string, viewSource: string): string | undefined {
 	const componentNames = bindings.match(/\bRui[A-Z]\w*/g) ?? [];
 	return componentNames.find((componentName) => new RegExp(`<${componentName}(?:\\s|/|>)`).test(viewSource));
@@ -242,6 +264,7 @@ writeFileSync(PACKAGE_JSON_PATH, `${JSON.stringify(packageJson, null, '\t')}\n`)
 
 writeFileSync(BARREL_PATH, buildBarrel(components));
 writeFileSync(STYLES_CSS_PATH, buildStylesEntry(components));
+writeFileSync(SEMANTIC_CSS_PATH, buildSemanticAliasBlock(readFileSync(SEMANTIC_CSS_PATH, 'utf8')));
 writeFileSync(
 	STYLE_DEPENDENCIES_PATH,
 	`${JSON.stringify({ components: buildStyleDependencyManifest(components) }, null, '\t')}\n`,

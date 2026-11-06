@@ -108,4 +108,27 @@ describe('RuiDateField popup focus', () => {
 		expect(popover.hidden).toBe(true);
 		expect(document.activeElement).toBe(focusedSegment);
 	});
+
+	it('moves the focused day with ArrowDown and pages months with PageDown and PageUp', async () => {
+		const host = mount();
+		await settled();
+		const toggle = host.querySelector('[data-date-field-trigger]') as HTMLButtonElement;
+
+		await userEvent.click(toggle);
+		await settled();
+		const focusedIso = () => document.activeElement?.getAttribute('data-iso');
+		expect(focusedIso()).toBe('2026-08-07');
+
+		await userEvent.keyboard('{ArrowDown}');
+		await settled();
+		expect(focusedIso()).toBe('2026-08-14');
+
+		await userEvent.keyboard('{PageDown}');
+		await settled();
+		expect(focusedIso()).toBe('2026-09-14');
+
+		await userEvent.keyboard('{PageUp}');
+		await settled();
+		expect(focusedIso()).toBe('2026-08-14');
+	});
 });

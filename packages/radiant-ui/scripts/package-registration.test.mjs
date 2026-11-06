@@ -191,6 +191,16 @@ test('compiled radiant-ui.css declares every semantic --color-* alias on :root',
 	assert.deepEqual(missing, []);
 });
 
+test('semantic.css declares the :root/.dark alias block from its @theme inline block', () => {
+	const source = readFileSync(new URL('../src/styles/tokens/semantic.css', import.meta.url), 'utf8');
+	const declarations = (block) => block.match(/--color-[\w-]+:[^;]+;/g)?.map((d) => d.replace(/\s+/g, ' '));
+	const theme = declarations(/@theme inline \{([\s\S]*?)\n\}/.exec(source)?.[1] ?? '');
+	const roots = declarations(/:where\(:root, \.dark\) \{([\s\S]*?)\n\}/.exec(source)?.[1] ?? '');
+
+	assert.ok(theme?.length > 50);
+	assert.deepEqual(roots, theme, 'run `pnpm --filter @ecopages/radiant-ui generate:exports`');
+});
+
 test('a consumer bundle keeps the registrations in shared chunks', async () => {
 	const packageRoot = fileURLToPath(new URL('..', import.meta.url));
 	const result = await build({
