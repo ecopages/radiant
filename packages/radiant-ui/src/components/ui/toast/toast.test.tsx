@@ -41,6 +41,12 @@ function toastElements(host: ParentNode): HTMLElement[] {
 	return [...host.querySelectorAll('rui-toast')] as HTMLElement[];
 }
 
+async function expectAnnouncement(host: ParentNode, text: string): Promise<void> {
+	await vi.waitFor(() => {
+		expect(host.querySelector('.rui-toaster-announcer')?.textContent).toBe(text);
+	});
+}
+
 describe('rui-toaster', () => {
 	afterEach(() => {
 		toast.dismiss();
@@ -70,7 +76,7 @@ describe('rui-toaster', () => {
 		const title = host.querySelector('rui-toast [data-title]');
 		expect(title?.textContent).toContain('Profile saved');
 		expect(host.querySelector('.rui-toaster-announcer')?.getAttribute('aria-live')).toBe('polite');
-		expect(host.querySelector('.rui-toaster-announcer')?.textContent).toBe('Profile saved');
+		await expectAnnouncement(host, 'Profile saved');
 	});
 
 	function watchAnnouncer(host: ParentNode): string[] {
@@ -90,12 +96,11 @@ describe('rui-toaster', () => {
 		const seen = watchAnnouncer(host);
 
 		toast('Saved');
-		await settled();
+		await expectAnnouncement(host, 'Saved');
 		toast('Saved');
-		await settled();
+		await vi.waitFor(() => expect(seen.filter((text) => text === 'Saved')).toHaveLength(2));
 
-		expect(seen.filter((text) => text === 'Saved')).toHaveLength(2);
-		expect(seen).toContain('');
+		expect(seen).toEqual(['Saved', '', 'Saved']);
 	});
 
 	it('announces toasts created in the same tick together', async () => {
@@ -104,9 +109,46 @@ describe('rui-toaster', () => {
 
 		toast('First saved');
 		toast.success('Second saved');
+
+		await expectAnnouncement(host, 'First saved. Second saved');
+	});
+
+	it('does not double the period when joining announcements', async () => {
+		const { host } = mount(<RuiToaster />);
 		await settled();
 
-		expect(host.querySelector('.rui-toaster-announcer')?.textContent).toBe('First saved. Second saved');
+		toast('Saved.', { description: 'All good' });
+		toast('Synced!');
+
+		await expectAnnouncement(host, 'Saved. All good. Synced!');
+	});
+
+	it('announces a toast updated in place, as toast.promise does', async () => {
+		const { host } = mount(<RuiToaster />);
+		await settled();
+		let resolve: (value: string) => void = () => {};
+
+		toast.promise(new Promise<string>((done) => (resolve = done)), {
+			loading: 'Saving',
+			success: (name) => `${name} saved`,
+			error: 'Save failed',
+		});
+		await expectAnnouncement(host, 'Saving');
+		resolve('Profile');
+
+		await expectAnnouncement(host, 'Profile saved');
+	});
+
+	it('announces a toast shown again with the same id', async () => {
+		const { host } = mount(<RuiToaster />);
+		await settled();
+		const seen = watchAnnouncer(host);
+
+		toast('Saved', { id: 'save' });
+		await expectAnnouncement(host, 'Saved');
+		toast('Saved', { id: 'save' });
+
+		await vi.waitFor(() => expect(seen.filter((text) => text === 'Saved')).toHaveLength(2));
 	});
 
 	it('announces the supplied announcement text instead of the title', async () => {
@@ -114,9 +156,8 @@ describe('rui-toaster', () => {
 		await settled();
 
 		toast('Saved', { announcement: 'Your profile was saved' });
-		await settled();
 
-		expect(host.querySelector('.rui-toaster-announcer')?.textContent).toBe('Your profile was saved');
+		await expectAnnouncement(host, 'Your profile was saved');
 	});
 
 	it('names the close button from aria.closeLabel and defaults to Close toast', async () => {
@@ -151,7 +192,7 @@ describe('rui-toaster', () => {
 		expect(success.getAttribute('role')).toBe('status');
 		expect(success.getAttribute('aria-live')).toBe('off');
 		expect(error.closest('[aria-live="polite"]')).toBeNull();
-		expect(host.querySelector('.rui-toaster-announcer')?.textContent).toBe('Profile saved');
+		await expectAnnouncement(host, 'Profile saved');
 	});
 
 	it('dismisses all toasts', async () => {
