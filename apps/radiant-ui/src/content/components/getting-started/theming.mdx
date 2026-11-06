@@ -121,5 +121,7 @@ Define semantic color roles in a stylesheet loaded after the base theme. Compone
 }
 ```
 
-Dark mode changes theme colors and semantic role mappings. Toggle light/dark mode in the docs header to inspect every
+Dark mode changes theme colors and semantic role mappings. Every theme switches to dark when an ancestor has the
+`dark` class, usually `<html class="dark">`; it does not follow `prefers-color-scheme` by itself, so set the class from
+the user's preference in the app. A `.dark` section inside a light page restyles the components inside it. Toggle light/dark mode in the docs header to inspect every
 theme in both schemes. See [Tokens](/docs/getting-started/tokens) for the semantic roles and scales.

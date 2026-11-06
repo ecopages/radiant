@@ -10,8 +10,9 @@ Read only the module relevant to your task:
 
 | Module | URL | Read when |
 | --- | --- | --- |
-| Composition | [/skill/reference/composition.md](/skill/reference/composition.md) | Views vs hosts, light-DOM targets, attribute forwarding |
-| Theming | [/skill/reference/theming.md](/skill/reference/theming.md) | Token packs, semantic roles, dark mode |
+| Composition | [/skill/reference/composition.md](/skill/reference/composition.md) | Views vs hosts, named regions, childless views, light-DOM targets, attribute forwarding, ARIA |
+| Forms | [/skill/reference/forms.md](/skill/reference/forms.md) | `RuiField` / `RuiForm`, `rui-change`, multi-value `value`, form-associated controls |
+| Theming | [/skill/reference/theming.md](/skill/reference/theming.md) | Radiant Default and Radiant Themes, dark mode, token packs, semantic roles vs palette steps, selective stylesheets |
 
 Host authoring (`RadiantElement`, `RadiantController`, `@prop`, bindings, SSR) lives in the Radiant skill pack:
 

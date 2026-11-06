@@ -40,7 +40,7 @@ import { RuiDateInput } from '@ecopages/radiant-ui/date-input';
 
 ## Derived tree
 
-`<rui-date-input>` `render()`s the segment group. Do not stamp `[data-date-segment]` yourself. Date Field and Date Range Picker nest this host and copy `name` onto it.
+`<rui-date-input>` `render()`s the segment group. Do not stamp `[data-date-segment]` yourself, and do not pass children: `RuiDateInput` types them as `never`. Render a hint next to the component instead. Date Field and Date Range Picker nest this host and copy `name` onto it.
 
 ## Locale order
 
