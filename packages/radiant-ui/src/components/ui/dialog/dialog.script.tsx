@@ -180,9 +180,9 @@ export class RuiDialog extends RadiantElement {
 			return [];
 		}
 		if (this.alert) {
-			const actions = Array.from(this.dialogTarget.querySelectorAll<HTMLElement>('[data-dialog-actions]')).flatMap(
-				(row) => queryFocusableCandidates(row),
-			);
+			const actions = Array.from(
+				this.dialogTarget.querySelectorAll<HTMLElement>('[data-dialog-actions]'),
+			).flatMap((row) => queryFocusableCandidates(row));
 			if (actions.length) {
 				return actions;
 			}
@@ -211,10 +211,12 @@ export class RuiDialog extends RadiantElement {
 			return;
 		}
 
-		if (event.key !== 'Tab') {
-			return;
+		if (event.key === 'Tab') {
+			this.trapTab(event);
 		}
+	}
 
+	private trapTab(event: KeyboardEvent): void {
 		const active = document.activeElement as HTMLElement | null;
 		if (!active || !this.dialogTarget?.contains(active)) {
 			return;
@@ -252,8 +254,6 @@ export class RuiDialog extends RadiantElement {
 		this.dismiss('dismiss');
 	}
 }
-
-
 
 declare global {
 	interface HTMLElementTagNameMap {
