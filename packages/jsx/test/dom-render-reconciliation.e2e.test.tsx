@@ -2918,6 +2918,53 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(paragraph.outerHTML).toBe('<p title="welcome">Hello Grace!</p>');
 	});
 
+	test('a prop: binding reaches the element setter exactly once when rows hold a signal child', async () => {
+		const [{ jsx, jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		let setterCalls = 0;
+		class CountingRow extends HTMLElement {
+			set rowId(_value: number) {
+				setterCalls += 1;
+			}
+		}
+		customElements.define('counting-row-prop', CountingRow);
+		const label = (text: string) => ({ get: () => text, subscribe: () => () => undefined });
+		const container = document.createElement('div');
+		document.body.append(container);
+		const root = createRoot(container);
+
+		root.render(
+			jsx('div', {
+				children: Array.from({ length: 50 }, (_, index) =>
+					jsxs('counting-row-prop', { key: index, 'prop:rowId': index, children: [label(`row ${index}`)] }),
+				),
+			}),
+		);
+
+		expect(container.querySelectorAll('counting-row-prop')).toHaveLength(50);
+		expect(container.textContent).toContain('row 49');
+		expect(setterCalls).toBe(50);
+		root.unmount();
+		container.remove();
+	});
+
+	test('creating JSX inside a computed does not subscribe it to attribute signals', async () => {
+		const [{ jsx }, { computed, state }] = await Promise.all([loadJsxRuntime(), import('@ecopages/signals')]);
+		const className = state('a');
+		const title = state('t');
+		let runs = 0;
+		const row = computed(() => {
+			runs += 1;
+			return jsx('tr', { 'attr:class': className, title, 'data-x': className });
+		});
+
+		row.get();
+		className.set('b');
+		title.set('u');
+		row.get();
+
+		expect(runs).toBe(1);
+	});
+
 	test('signal-like attribute values patch attributes without rerendering the parent tree', async () => {
 		const [{ jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');

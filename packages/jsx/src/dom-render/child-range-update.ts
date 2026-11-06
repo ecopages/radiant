@@ -486,6 +486,14 @@ function removeRangeRecord(record: MountedRangeRecord): void {
 	record.end.remove();
 }
 
+/**
+ * Mounts a signal-like child source and keeps the range in sync with it.
+ *
+ * @remarks Only the source's own content is flushed here, through a local queue per value. The caller's
+ * `deferredProperties` are left to whoever created that queue, which flushes them once the DOM is in place: flushing
+ * them here too re-applied every queued property once per signal child, so a list whose rows each hold one was
+ * quadratic.
+ */
 export function mountReactiveChildSource(
 	startMarker: Text,
 	endMarker: Text,
@@ -525,7 +533,6 @@ export function mountReactiveChildSource(
 	});
 
 	applyValue(readReactiveChildSourceValue(source));
-	flushDeferredProperties(deferredProperties);
 
 	return mountedSubscription;
 }
