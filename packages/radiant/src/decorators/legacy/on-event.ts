@@ -1,5 +1,6 @@
 import { createEventListener, type EventListenerHost } from '../../helpers/create-event-listener';
 import type { OnEventConfig } from '../on-event';
+import type { Method } from '../../types';
 import { registerLegacyInstanceInitializer } from './instance-initializers';
 
 /**
@@ -15,13 +16,16 @@ import { registerLegacyInstanceInitializer } from './instance-initializers';
  * @param eventConfig.ref The data-ref attribute of the target element.
  * @param eventConfig.type The type of the event to listen for.
  * @param eventConfig.options Optional. An options object that specifies characteristics about the event listener.
+ * @remarks Legacy decorators apply bottom-up, so a `@bound` below this one hands over an accessor descriptor
+ * with no `value`; the method is then read through its getter on each instance.
  */
 export function onEvent(eventConfig: OnEventConfig) {
 	return (proto: EventListenerHost, _: string, descriptor: PropertyDescriptor) => {
-		const originalMethod = descriptor.value;
+		const { value, get } = descriptor;
 
 		registerLegacyInstanceInitializer(proto, (element) => {
-			createEventListener(element, eventConfig, originalMethod.bind(element));
+			const method = (value ?? get?.call(element)) as Method;
+			createEventListener(element, eventConfig, method.bind(element));
 		});
 
 		return descriptor;
