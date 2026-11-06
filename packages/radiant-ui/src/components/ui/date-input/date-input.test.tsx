@@ -447,8 +447,8 @@ describe('RuiDateInput styles', () => {
 		await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
 		const host = container.querySelector('rui-date-input') as HTMLElement;
-		host.style.setProperty('--color-border', 'rgb(100, 100, 100)');
-		host.style.setProperty('--color-background', 'rgb(250, 250, 252)');
+		host.style.setProperty('--border', 'rgb(100, 100, 100)');
+		host.style.setProperty('--background', 'rgb(250, 250, 252)');
 		const styles = getComputedStyle(host);
 		expect(styles.borderTopWidth).toBe('1px');
 		expect(styles.borderTopStyle).toBe('solid');
