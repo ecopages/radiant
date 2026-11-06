@@ -325,6 +325,76 @@ const TYPE_TAGS = new Set([
 	'embed',
 	'object',
 ]);
+/** Tags whose `name` property reflects the `name` attribute. */
+const NAME_TAGS = new Set([
+	'a',
+	'button',
+	'details',
+	'embed',
+	'fieldset',
+	'form',
+	'iframe',
+	'img',
+	'input',
+	'map',
+	'meta',
+	'object',
+	'output',
+	'param',
+	'select',
+	'slot',
+	'textarea',
+]);
+/** Tags whose `href` property reflects the `href` attribute. */
+const HREF_TAGS = new Set(['a', 'area', 'base', 'link']);
+/** Tags whose `value` property reflects the `value` attribute (`input` does not, as in a browser). */
+const VALUE_TAGS = new Set(['button', 'option']);
+/** Element-wide ARIA reflections, as `[property, attribute]`; `role` is reflected alongside them. */
+const ARIA_REFLECTIONS = [
+	'ariaAtomic',
+	'ariaAutoComplete',
+	'ariaBusy',
+	'ariaChecked',
+	'ariaColCount',
+	'ariaColIndex',
+	'ariaColSpan',
+	'ariaCurrent',
+	'ariaDescription',
+	'ariaDisabled',
+	'ariaExpanded',
+	'ariaHasPopup',
+	'ariaHidden',
+	'ariaInvalid',
+	'ariaKeyShortcuts',
+	'ariaLabel',
+	'ariaLevel',
+	'ariaLive',
+	'ariaModal',
+	'ariaMultiLine',
+	'ariaMultiSelectable',
+	'ariaOrientation',
+	'ariaPlaceholder',
+	'ariaPosInSet',
+	'ariaPressed',
+	'ariaReadOnly',
+	'ariaRelevant',
+	'ariaRequired',
+	'ariaRoleDescription',
+	'ariaRowCount',
+	'ariaRowIndex',
+	'ariaRowSpan',
+	'ariaSelected',
+	'ariaSetSize',
+	'ariaSort',
+	'ariaValueMax',
+	'ariaValueMin',
+	'ariaValueNow',
+	'ariaValueText',
+	'role',
+].map((property): [string, string] => [
+	property,
+	property === 'role' ? 'role' : `aria-${property.slice(4).toLowerCase()}`,
+]);
 const BUTTON_TYPES = new Set(['button', 'submit', 'reset']);
 const INPUT_TYPES = new Set([
 	'button',
@@ -443,7 +513,7 @@ export class MinimalElement extends MinimalNode {
 	 * yield `[name, value]` tuples and crash on `.name.startsWith(...)`.
 	 */
 	#attributeStore = new Map<string, string>();
-	/** Values assigned to `type` / `disabled` on tags that do not reflect them. */
+	/** Values assigned to `type`, `disabled`, `name`, `href` and `value` on tags that do not reflect them. */
 	#plainProps = new Map<string, unknown>();
 	private classListValue?: MinimalClassList;
 	private datasetValue?: DOMStringMap;
@@ -593,6 +663,63 @@ export class MinimalElement extends MinimalNode {
 			return;
 		}
 		this.toggleAttribute('disabled', Boolean(value));
+	}
+
+	/** @remarks Reflected only on the tags in {@link NAME_TAGS}; elsewhere a plain value, as in a browser. */
+	get name(): string {
+		if (!NAME_TAGS.has(this.localName)) return this.#plainProps.get('name') as string;
+		return this.getAttribute('name') ?? '';
+	}
+
+	set name(value: string) {
+		if (!NAME_TAGS.has(this.localName)) {
+			this.#plainProps.set('name', value);
+			return;
+		}
+		this.setAttribute('name', value);
+	}
+
+	/**
+	 * @remarks Reflected only on the tags in {@link HREF_TAGS}. Reads the attribute as written; a browser
+	 * resolves it against the document URL, which the server has no base for.
+	 */
+	get href(): string {
+		if (!HREF_TAGS.has(this.localName)) return this.#plainProps.get('href') as string;
+		return this.getAttribute('href') ?? '';
+	}
+
+	set href(value: string) {
+		if (!HREF_TAGS.has(this.localName)) {
+			this.#plainProps.set('href', value);
+			return;
+		}
+		this.setAttribute('href', value);
+	}
+
+	get slot(): string {
+		return this.getAttribute('slot') ?? '';
+	}
+
+	set slot(value: string) {
+		this.setAttribute('slot', value);
+	}
+
+	/**
+	 * @remarks Reflected only on `button` and `option`. An `option` without a `value` attribute reads its text.
+	 * `input.value` is not reflected in browsers either and stays a plain value, as does every other tag.
+	 */
+	get value(): string {
+		const tag = this.localName;
+		if (!VALUE_TAGS.has(tag)) return this.#plainProps.get('value') as string;
+		return this.getAttribute('value') ?? (tag === 'option' ? this.textContent.trim().replace(/\s+/g, ' ') : '');
+	}
+
+	set value(value: string) {
+		if (!VALUE_TAGS.has(this.localName)) {
+			this.#plainProps.set('value', value);
+			return;
+		}
+		this.setAttribute('value', value);
 	}
 
 	get classList(): DOMTokenList {
@@ -928,6 +1055,23 @@ export class MinimalCustomEvent<T = unknown> extends MinimalEvent {
 		super(type, eventInitDict);
 		this.detail = eventInitDict.detail as T;
 	}
+}
+
+for (const [property, attribute] of ARIA_REFLECTIONS) {
+	Object.defineProperty(MinimalElement.prototype, property, {
+		configurable: true,
+		enumerable: true,
+		get(this: MinimalElement): string | null {
+			return this.getAttribute(attribute);
+		},
+		set(this: MinimalElement, value: unknown) {
+			if (value === null || value === undefined) {
+				this.removeAttribute(attribute);
+				return;
+			}
+			this.setAttribute(attribute, value);
+		},
+	});
 }
 
 export class MinimalHTMLElement extends MinimalElement {

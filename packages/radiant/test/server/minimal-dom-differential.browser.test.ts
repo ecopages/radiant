@@ -326,6 +326,58 @@ function assertEquivalent({ seed, html, minimal, expected }: Case): void {
 	).toEqual(describeSerializableTree(minimal));
 }
 
+/**
+ * @remarks Property setters, applied to a fresh element of each tag in both DOMs, must serialize the same
+ * attribute set. `href` is compared by attribute only, as a browser resolves its getter against the page URL.
+ */
+const REFLECTION_CASES: { tag: string; property: string; value: string | null }[] = [
+	...['a', 'button', 'input', 'select', 'textarea', 'form', 'fieldset', 'iframe', 'img', 'slot', 'div'].map(
+		(tag) => ({
+			tag,
+			property: 'name',
+			value: 'plan',
+		}),
+	),
+	...['a', 'link', 'area', 'base', 'div'].map((tag) => ({ tag, property: 'href', value: '/x' })),
+	...['div', 'span', 'slot'].map((tag) => ({ tag, property: 'slot', value: 'icon' })),
+	...['option', 'button', 'input', 'div'].map((tag) => ({ tag, property: 'value', value: 'v' })),
+	...[
+		['ariaLabel', 'Close'],
+		['ariaAutoComplete', 'list'],
+		['ariaHasPopup', 'menu'],
+		['ariaKeyShortcuts', 'k'],
+		['ariaRoleDescription', 'x'],
+		['ariaValueNow', '3'],
+		['ariaExpanded', 'true'],
+		['ariaChecked', 'mixed'],
+		['ariaLevel', '2'],
+		['role', 'button'],
+	].map(([property, value]) => ({ tag: 'div', property, value: value as string })),
+	{ tag: 'div', property: 'ariaLabel', value: null },
+];
+
+describe('minimal DOM property setters match Chromium', () => {
+	test.each(REFLECTION_CASES)('$tag.$property = $value', ({ tag, property, value }) => {
+		const minimal = new MinimalHTMLElement(tag, null) as unknown as Record<string, unknown> & DomElement;
+		const expected = document.createElement(tag) as unknown as Record<string, unknown> & DomElement;
+		if (value === null) {
+			minimal.setAttribute('aria-label', 'seed');
+			expected.setAttribute('aria-label', 'seed');
+		}
+		minimal[property] = value;
+		expected[property] = value;
+		expect(attributesOf(minimal)).toEqual(attributesOf(expected));
+		if (property !== 'href') expect(minimal[property]).toEqual(expected[property]);
+	});
+
+	test('option value falls back to its text', () => {
+		const minimal = new MinimalHTMLElement('option', null) as unknown as { value: string; textContent: string };
+		const expected = document.createElement('option');
+		minimal.textContent = expected.textContent = ' Free \n plan ';
+		expect(minimal.value).toBe(expected.value);
+	});
+});
+
 describe('minimal DOM matches Chromium', () => {
 	const variants = [
 		{ name: 'parse and serialize', mutate: false, query: false },
