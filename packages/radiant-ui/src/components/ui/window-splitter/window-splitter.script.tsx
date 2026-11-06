@@ -85,7 +85,7 @@ function isHorizontalSplit(orientation: string): boolean {
 export class RuiWindowSplitter extends RadiantElement {
 	declare readonly [JSX_PROPS]?: RuiWindowSplitterProps;
 
-	@prop({ type: Number, reflect: true, defaultValue: 50 })
+	@prop({ type: Number, reflect: true, defaultValue: WINDOW_SPLITTER_DEFAULT })
 	@bindTo({ ref: 'separator', attr: 'aria-valuenow' })
 	value: number;
 
