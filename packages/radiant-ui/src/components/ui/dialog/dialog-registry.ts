@@ -94,7 +94,7 @@ function createActions(actions: DialogAction[]): HTMLElement {
 /**
  * Imperative twin of `DialogShell` in `dialog.tsx` (root / backdrop / surface).
  *
- * @remarks Edit both together. Unlike the view — which seeds SSR visibility
+ * @remarks Edit both together; `dialog-registry-parity.test.tsx` compares the two. Unlike the view — which seeds SSR visibility
  * from the `open` prop — the registry mounts with `open = true` and lets the
  * controller's `syncOpenState()` manage `hidden` from connect onward.
  */
