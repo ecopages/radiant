@@ -20,6 +20,7 @@ export default mergeConfig(
 		},
 		test: {
 			name: 'node',
+			globalSetup: ['./test/build/dist-global-setup.ts'],
 			environment: 'node',
 			testTimeout: 15_000,
 			include: ['test/**/*.test.{ts,tsx}'],

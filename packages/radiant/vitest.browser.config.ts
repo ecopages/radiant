@@ -26,6 +26,7 @@ export default mergeConfig(
 		},
 		test: {
 			name: 'browser',
+			globalSetup: ['./test/build/dist-global-setup.ts'],
 			include: ['test/**/*.browser.test.{ts,tsx}'],
 			browser: {
 				enabled: true,
