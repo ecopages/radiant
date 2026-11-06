@@ -15,7 +15,8 @@ import {
 	type CarouselWindowParams,
 } from './carousel-window';
 
-export type RuiCarouselTransition = 'none' | 'slide' | 'fade';
+const CAROUSEL_TRANSITIONS = ['none', 'slide', 'fade'] as const;
+export type RuiCarouselTransition = (typeof CAROUSEL_TRANSITIONS)[number];
 
 /** Where default prev/next chrome is laid out. `toolbar` places controls below the slide; `overlay` pins them to the slide edges. */
 export type RuiCarouselControlsVariant = 'toolbar' | 'overlay';
@@ -189,7 +190,19 @@ export class RuiCarousel extends RadiantElement {
 		this.syncAriaLive();
 	}
 
+	/**
+	 * @remarks Hover pause listens on the host: `pointerenter` / `pointerleave` do not
+	 * bubble, so a delegated `@onEvent` never receives them.
+	 */
+	override connectedCallback(): void {
+		super.connectedCallback();
+		this.addEventListener('pointerenter', this.onRootPointerEnter);
+		this.addEventListener('pointerleave', this.onRootPointerLeave);
+	}
+
 	override disconnectedCallback(): void {
+		this.removeEventListener('pointerenter', this.onRootPointerEnter);
+		this.removeEventListener('pointerleave', this.onRootPointerLeave);
 		this.autoplayController.stop();
 		super.disconnectedCallback();
 	}
@@ -301,6 +314,8 @@ export class RuiCarousel extends RadiantElement {
 		const root = this.rootTarget;
 		if (root) {
 			root.setAttribute('data-carousel-track', this.trackMode());
+			root.classList.remove(...CAROUSEL_TRANSITIONS.map((transition) => `rui-carousel--${transition}`));
+			root.classList.add(`rui-carousel--${this.transition}`);
 		}
 
 		const track = this.trackTarget;
@@ -569,19 +584,17 @@ export class RuiCarousel extends RadiantElement {
 		indicators[this.index]?.focus();
 	}
 
-	@onEvent({ ref: 'root', type: 'pointerenter' })
-	onRootPointerEnter(event: PointerEvent): void {
+	private readonly onRootPointerEnter = (event: PointerEvent): void => {
 		if (this.autoplay && event.pointerType === 'mouse') {
 			this.autoplayController.stop();
 		}
-	}
+	};
 
-	@onEvent({ ref: 'root', type: 'pointerleave' })
-	onRootPointerLeave(event: PointerEvent): void {
+	private readonly onRootPointerLeave = (event: PointerEvent): void => {
 		if (this.autoplay && !this.paused && event.pointerType === 'mouse') {
 			this.syncAutoplay();
 		}
-	}
+	};
 
 	@onEvent({ ref: 'root', type: 'focusin' })
 	onRootFocusIn(): void {
@@ -622,8 +635,6 @@ export class RuiCarousel extends RadiantElement {
 		this.swipe.onPointerCancel(event);
 	}
 }
-
-
 
 declare global {
 	interface HTMLElementTagNameMap {
