@@ -103,7 +103,7 @@ Override roles at the theme layer, not in component CSS.
 | `[data-tag]` | yes | `id` if missing, `role="listitem"`, `aria-selected`, roving `tabIndex` | `data-value`, `data-label`, `hidden`, `aria-disabled` |
 | `[data-value]` | per tag | — | selection identity; fallback trimmed text |
 | `[data-label]` | per tag | — | remove accessible name; fallback trimmed text |
-| `[data-tag-remove]` | no | `type="button"`, `tabIndex="-1"`, `aria-label` | presence |
+| `[data-tag-remove]` | no | `type="button"`, `tabIndex="-1"`, `aria-label`, `disabled` (group `disabled` or tag `aria-disabled`) | presence |
 | `[data-ref="root"]` | for `setItems()` | — | wrapper around the list |
 
 Do not set `role`, `aria-selected`, or `tabIndex` on tags. Nested hosts: none.
@@ -156,4 +156,5 @@ Public BEM classes on the composed light-DOM surface (documented via `@cssclass`
 
 - Each tag exposes its label text to screen readers.
 - Remove buttons have accessible names indicating which tag will be removed (`Remove {label}`).
+- A tag with `aria-disabled="true"` (`disabled` on `RuiTag`) is skipped by arrow keys and cannot be selected or removed: its remove control is disabled, and Delete and Backspace do nothing. After changing `aria-disabled` in place, call `resync()`.
 - The group has an accessible name via `label` when not described by surrounding text.

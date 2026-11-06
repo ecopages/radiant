@@ -207,8 +207,10 @@ describe('RuiTagGroup', () => {
 
 		it('does not remove the tag when its remove control is clicked', async () => {
 			const { group, tamed, events, cleanup } = await mountWithDisabledTag();
+			const remove = tamed.querySelector<HTMLButtonElement>('[data-tag-remove]')!;
+			expect(remove.disabled).toBe(true);
 
-			tamed.querySelector<HTMLElement>('[data-tag-remove]')!.click();
+			remove.click();
 			await settled();
 
 			expect(events).toEqual([]);
