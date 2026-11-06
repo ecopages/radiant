@@ -51,11 +51,27 @@ export const SLIDER_DEFAULT_RANGE_MAX = 75;
 export const SLIDER_DEFAULT_MAX = 100;
 
 /**
+ * Rounds `value` down or up to the nearest step tick inside the range bounds.
+ *
+ * @remarks `range.clamp` rounds to the nearest tick, which can land inside the
+ * `minDistance` gap. The tolerance absorbs binary noise so a value already on a
+ * tick is kept.
+ */
+function snapToStep(range: NumericRange, value: number, direction: 'down' | 'up'): number {
+	const ticks = (value - range.lowerBound) / range.step;
+	const rounded = Math.abs(ticks - Math.round(ticks)) < 1e-9 ? Math.round(ticks) : Math[direction === 'down' ? 'floor' : 'ceil'](ticks);
+	return range.clamp(range.lowerBound + rounded * range.step);
+}
+
+/**
  * Clamps a range pair to the bounds and to `minDistance`.
  *
  * @remarks The active thumb is held `minDistance` away from the other thumb
  * before any swap, so Home and End stop at the gap instead of jumping across
- * the other thumb. With a gap of 0 crossed thumbs still swap. Without `active`
+ * the other thumb. The held position rounds away from the other thumb (the
+ * minimum thumb down, the maximum thumb up) so a step that does not divide the
+ * gap never leaves the thumbs closer than `minDistance`. With a gap of 0 crossed
+ * thumbs still swap. Without `active`
  * (the view path) the upper thumb moves to restore the gap.
  */
 export function constrainSliderPair(
@@ -69,9 +85,9 @@ export function constrainSliderPair(
 	let nextLow = range.clamp(low);
 	let nextHigh = range.clamp(high);
 	if (gap > 0 && active === 'min') {
-		nextLow = range.clamp(Math.min(nextLow, nextHigh - gap));
+		nextLow = Math.min(nextLow, snapToStep(range, nextHigh - gap, 'down'));
 	} else if (gap > 0 && active === 'max') {
-		nextHigh = range.clamp(Math.max(nextHigh, nextLow + gap));
+		nextHigh = Math.max(nextHigh, snapToStep(range, nextLow + gap, 'up'));
 	}
 	if (nextLow > nextHigh) {
 		[nextLow, nextHigh] = [nextHigh, nextLow];
@@ -79,9 +95,9 @@ export function constrainSliderPair(
 
 	if (nextHigh - nextLow < gap) {
 		if (active === 'min') {
-			nextLow = range.clamp(nextHigh - gap);
+			nextLow = snapToStep(range, nextHigh - gap, 'down');
 		} else {
-			nextHigh = range.clamp(nextLow + gap);
+			nextHigh = snapToStep(range, nextLow + gap, 'up');
 		}
 	}
 
