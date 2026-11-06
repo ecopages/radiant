@@ -60,9 +60,10 @@ const LONG_PRESS_MS = 500;
  * avatars, buttons). It is not an APG tooltip: the panel does not use
  * `role="tooltip"` and may receive pointer and keyboard focus while open.
  *
- * Preview timing uses a shared warmup/cooldown model shared with `rui-tooltip`: the first
- * preview waits for `delay`, then subsequent previews open immediately until the post-close
- * cooldown elapses. Touch pointers open on long press.
+ * Preview timing uses a warmup/cooldown model shared by every hover card on the page (module
+ * state in `shared/preview-timing`): the first preview waits for `delay`, then subsequent
+ * previews open immediately until the post-close cooldown elapses. `rui-tooltip` does not
+ * take part; it always waits for its own `delay`. Touch pointers open on long press.
  *
  * ## Light-DOM contract
  *
