@@ -126,6 +126,7 @@ export const WithCalendar: Story = {
 			const rangeStart = monthDayIso(3);
 			const rangeEnd = monthDayIso(14);
 			await userEvent.click(calendarDayButton(canvasElement, rangeStart));
+			await userEvent.hover(calendarDayButton(canvasElement, rangeEnd));
 			await userEvent.click(calendarDayButton(canvasElement, rangeEnd));
 			await waitFor(() => {
 				expect(host.getAttribute('value')).toBe(`${rangeStart}/${rangeEnd}`);

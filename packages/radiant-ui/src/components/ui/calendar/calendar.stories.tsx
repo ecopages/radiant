@@ -96,6 +96,7 @@ export const RangeSelection: Story = {
 
 		await step('selects a start and end date', async () => {
 			await userEvent.click(calendarDayButton(canvasElement, rangeStart));
+			await userEvent.hover(calendarDayButton(canvasElement, rangeEnd));
 			await userEvent.click(calendarDayButton(canvasElement, rangeEnd));
 			await expect(host).toHaveAttribute('value', `${rangeStart}/${rangeEnd}`);
 		});

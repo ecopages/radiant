@@ -422,9 +422,17 @@ export class RuiCalendar extends RadiantElement {
 		this.selectIso(iso);
 	}
 
-	@onEvent({ selector: '[data-calendar-day]', type: 'pointerenter' })
-	onDayPointerEnter(event: Event): void {
+	/**
+	 * @remarks `pointerenter` / `pointerleave` do not bubble to the host, so the preview uses the
+	 * bubbling `pointerover` / `pointerout` pair and checks `relatedTarget` to ignore moves between
+	 * descendants of the same day cell or grid.
+	 */
+	@onEvent({ selector: '[data-calendar-day]', type: 'pointerover' })
+	onDayPointerOver(event: PointerEvent): void {
 		const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-calendar-day]');
+		if (button && event.relatedTarget instanceof Node && button.contains(event.relatedTarget)) {
+			return;
+		}
 		const iso = button?.getAttribute('data-iso');
 		if (!iso || button?.disabled) {
 			return;
@@ -432,8 +440,12 @@ export class RuiCalendar extends RadiantElement {
 		this.previewRange(iso);
 	}
 
-	@onEvent({ selector: '[data-calendar-grid]', type: 'pointerleave' })
-	onGridPointerLeave(): void {
+	@onEvent({ selector: '[data-calendar-grid]', type: 'pointerout' })
+	onGridPointerOut(event: PointerEvent): void {
+		const grid = (event.target as HTMLElement).closest('[data-calendar-grid]');
+		if (grid && event.relatedTarget instanceof Node && grid.contains(event.relatedTarget)) {
+			return;
+		}
 		this.clearRangePreview();
 	}
 
@@ -585,8 +597,6 @@ export class RuiCalendar extends RadiantElement {
 		);
 	}
 }
-
-
 
 declare global {
 	interface HTMLElementTagNameMap {
