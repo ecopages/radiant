@@ -98,7 +98,7 @@ type DialogShellProps = {
  *
  * @remarks Mirrored by `createDialogSurface` in `dialog-registry.ts`, which
  * rebuilds this structure imperatively for the programmatic host dialog. Edit
- * both together. Visibility differs by design: the view seeds SSR state with
+ * both together; `dialog-registry-parity.test.tsx` compares the two. Visibility differs by design: the view seeds SSR state with
  * `hidden={open ? undefined : true}`, while the registry relies on
  * `open = true` plus the controller's `syncOpenState()` on connect.
  */
