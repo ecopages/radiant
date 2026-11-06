@@ -1,5 +1,12 @@
 # @ecopages/radiant-themes
 
+## 0.3.1
+
+### Patch Changes
+
+- Updated dependencies [[`0877ec5`](https://github.com/ecopages/radiant/commit/0877ec5a738d7bc9addbb59da2880c10f134be2b), [`26dbfe5`](https://github.com/ecopages/radiant/commit/26dbfe523af7230f95998e99869d8680fd820726), [`dfc9317`](https://github.com/ecopages/radiant/commit/dfc93175c2b794e5a7867cbf34d47dc7bf8cbd15), [`399bb68`](https://github.com/ecopages/radiant/commit/399bb68facb18896f7d4b2c104e280cc8c443a2a), [`48a9e27`](https://github.com/ecopages/radiant/commit/48a9e271ebf26745d88e5acd3e5b3c3b49297a3a), [`b42042d`](https://github.com/ecopages/radiant/commit/b42042dfe959759cd9ad27d2399d326d1c78297c), [`93a35d0`](https://github.com/ecopages/radiant/commit/93a35d0944f35ffd132fd2b337af8021a8842085), [`0c555a6`](https://github.com/ecopages/radiant/commit/0c555a6120961b88380b275ca76a8f18c9eddd71), [`bf2eb5f`](https://github.com/ecopages/radiant/commit/bf2eb5f718d082fbc5c21d10ddc1b22cfdb5796f), [`fe20f16`](https://github.com/ecopages/radiant/commit/fe20f166f19fb8374993ff70a3b388c7fded021e), [`f59e06a`](https://github.com/ecopages/radiant/commit/f59e06a891eaa8e8daef8fca8ac6ad6494889e07), [`506ace3`](https://github.com/ecopages/radiant/commit/506ace361a42f6df767f6d30c9f9d287df8db84b), [`c51327f`](https://github.com/ecopages/radiant/commit/c51327fa3d18f03a51527ed90c6c9671845ee487), [`6c2c8c2`](https://github.com/ecopages/radiant/commit/6c2c8c23d59fe0b83e56fad75aab03b76a2777a7), [`e653858`](https://github.com/ecopages/radiant/commit/e6538588a1c5672394e0d2ce40683ae9553f5bc0), [`73ff9f6`](https://github.com/ecopages/radiant/commit/73ff9f666001d8307c80ea7dbaa8691292b1b45f), [`f7d50d2`](https://github.com/ecopages/radiant/commit/f7d50d299619c7609c6aae12e1571f9ec2621af9), [`a56ca9a`](https://github.com/ecopages/radiant/commit/a56ca9a06b8cfb84d68de276022a3356704eadce), [`770593e`](https://github.com/ecopages/radiant/commit/770593ed18759acc5248b8e41cc3ee19e3954cd1), [`0002ba5`](https://github.com/ecopages/radiant/commit/0002ba5e08e5e4c6735097d942892c9fba9d0d60), [`79f2a05`](https://github.com/ecopages/radiant/commit/79f2a057696a0ac6637cb3899f6235edf0eafd66), [`4a9ee57`](https://github.com/ecopages/radiant/commit/4a9ee571580bbfccdff5b88d695e8efa74377030), [`6e256fc`](https://github.com/ecopages/radiant/commit/6e256fcb188bf665b84a04c1daf1c1a95634f110)]:
+    - @ecopages/radiant-ui@0.3.1
+
 ## 0.3.0
 
 ### Patch Changes
