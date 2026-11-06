@@ -106,4 +106,10 @@ describe('constrainSliderPair', () => {
 		expect(constrainSliderPair(range, 255, 200, 0, 'min')).toEqual([200, 255]);
 		expect(constrainSliderPair(range, 10, 0, 0, 'max')).toEqual([0, 10]);
 	});
+
+	it('rounds the held thumb away from the other thumb when the step does not divide the gap', () => {
+		const stepped = createNumericRange(0, 50, 5);
+		expect(constrainSliderPair(stepped, 50, 50, 7, 'min')).toEqual([40, 50]);
+		expect(constrainSliderPair(stepped, 0, 0, 7, 'max')).toEqual([0, 10]);
+	});
 });
