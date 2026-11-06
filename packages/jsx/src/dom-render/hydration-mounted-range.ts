@@ -48,8 +48,7 @@ export function hydrateMountedRangeContent(
 
 	if (isReactiveChildSource(nextValue)) {
 		return mountReactiveChildSource(
-			startMarker,
-			endMarker,
+			{ end: endMarker, start: startMarker },
 			nextValue,
 			mountedContentFromNodes(existingNodes),
 			rootTarget,
@@ -112,7 +111,13 @@ function hydrateMountedRangeContentSnapshot(
 	}
 
 	return flushWithDeferredProperties((deferredProperties) =>
-		updateRangeContent(startMarker, endMarker, nextValue, bootstrapMounted, rootTarget, deferredProperties),
+		updateRangeContent(
+			{ end: endMarker, start: startMarker },
+			nextValue,
+			bootstrapMounted,
+			rootTarget,
+			deferredProperties,
+		),
 	);
 }
 

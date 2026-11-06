@@ -184,10 +184,10 @@ export function createLiveTemplateParts(
 		}
 
 		liveParts.push({
-			endMarker,
+			end: endMarker,
 			index: part.index,
 			mounted: { kind: 'empty' },
-			startMarker,
+			start: startMarker,
 			type: 'child',
 		});
 	}

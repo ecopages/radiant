@@ -108,17 +108,31 @@ export type LiveAttributePart = {
 };
 
 /**
- * Runtime state for a dynamic child slot bounded by two empty text nodes.
+ * Bounds of a child slot's content: the nodes strictly between `start` and `end` in their parent.
  *
- * The `startMarker` and `endMarker` text nodes delimit the exclusive range owned by this
- * part. `mounted` tracks the structural shape of the current content so subsequent updates
- * can reconcile in place rather than replacing the whole range.
+ * @remarks A missing `start` means the content begins at the parent's first child, and a missing `end` that it runs
+ * to the parent's last child. The parent is read from whichever bound exists, so a slot follows its markers when a
+ * fragment is inserted into the page; `owner` names the parent when neither exists, which is only valid for a slot
+ * that is its element's only child.
+ */
+export type ChildRange = {
+	readonly end: ChildNode | null;
+	readonly owner?: ParentNode;
+	readonly start: ChildNode | null;
+};
+
+/**
+ * Runtime state for a dynamic child slot.
+ *
+ * `start` and `end` bound the content as a {@link ChildRange}. `mounted` tracks the structural shape of the current
+ * content so subsequent updates can reconcile in place rather than replacing the whole range.
  */
 export type LiveChildPart = {
-	endMarker: Text;
+	end: ChildNode | null;
 	index: number;
 	mounted: MountedRangeContent;
-	startMarker: Text;
+	owner?: ParentNode;
+	start: ChildNode | null;
 	type: 'child';
 };
 

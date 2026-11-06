@@ -65,14 +65,7 @@ export function createTemplateInstanceUpdate(
 				continue;
 			}
 
-			part.mounted = updateRangeContent(
-				part.startMarker,
-				part.endMarker,
-				values[part.index],
-				part.mounted,
-				rootTarget,
-				deferredProperties,
-			);
+			part.mounted = updateRangeContent(part, values[part.index], part.mounted, rootTarget, deferredProperties);
 		}
 
 		updateLiveTextContentParts(parts, values);
