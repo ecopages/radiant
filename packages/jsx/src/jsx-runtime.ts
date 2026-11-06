@@ -77,10 +77,15 @@ type JsxClassElement = abstract new (...args: any[]) => Element;
 
 type JsxElementType<Props extends object> = string | JsxFragment | JsxComponent<Props> | JsxClassElement;
 
+type JsxOpenIntrinsicAttributes<ElementType extends Element> = JsxIntrinsicAttributes<ElementType> & {
+	[key: string]: unknown;
+};
+
 /**
- * @remarks `className` is typed `never` beside the open index: it is not an HTML attribute, and JSX skips it on a
- * native element. Declared with the index signature, the `never` survives the intersection with the catch-all
- * below, so every intrinsic tag rejects it, custom elements included; use `class`.
+ * @remarks `className` is typed `never` on native tags: it is not an HTML attribute, and JSX skips it there. It must
+ * sit in the same object type as the open index, or TypeScript resolves it through the index and accepts any value.
+ * Custom elements keep it, since it binds to their `className` property, so the catch-all for unknown tags uses
+ * {@link JsxOpenIntrinsicAttributes}.
  */
 type JsxDomIntrinsicAttributes<ElementType extends Element> = JsxIntrinsicAttributes<ElementType> & {
 	className?: never;
@@ -194,7 +199,7 @@ export namespace JSX {
 	 */
 	export type IntrinsicElements = JsxDomIntrinsicElements &
 		JsxCustomIntrinsicElements & {
-			[elementName: string]: JsxDomIntrinsicAttributes<globalThis.Element>;
+			[elementName: string]: JsxOpenIntrinsicAttributes<globalThis.Element>;
 		};
 }
 

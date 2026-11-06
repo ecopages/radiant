@@ -115,8 +115,13 @@ describe('Radiant JSX runtime', () => {
 			expect(renderToString(jsx('div', { className: 'card', id: 'a' }))).toBe('<div id="a"></div>');
 			expect(warnSpy).toHaveBeenCalledTimes(1);
 			expect(String(warnSpy.mock.calls[0]?.[0])).toContain('Skipped className on <div>');
-			expect(renderToString(jsx('demo-card', { className: 'card' }))).toBe('<demo-card></demo-card>');
+			jsx('div', { className: 'other' });
 			expect(warnSpy).toHaveBeenCalledTimes(1);
+			jsx('span', { className: 'card' });
+			expect(warnSpy).toHaveBeenCalledTimes(2);
+			expect(String(warnSpy.mock.calls[1]?.[0])).toContain('Skipped className on <span>');
+			jsx('demo-card', { className: 'card' });
+			expect(warnSpy).toHaveBeenCalledTimes(2);
 		} finally {
 			resetRuntimeWarningsForTests();
 			setDevWarningsEnabled(undefined);
