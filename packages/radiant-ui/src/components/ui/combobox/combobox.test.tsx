@@ -69,6 +69,30 @@ describe('RuiCombobox', () => {
 		cleanup();
 	});
 
+	it('shows every option again after a native form reset clears the typed filter', async () => {
+		const { host, cleanup } = mount(
+			<form>
+				<RuiCombobox options={OPTIONS} placeholder="Country" />
+			</form>,
+		);
+		await settled();
+
+		const form = host.querySelector('form') as HTMLFormElement;
+		const input = host.querySelector('[data-combobox-input]') as HTMLInputElement;
+		const options = Array.from(host.querySelectorAll('[data-combobox-listbox] [role="option"]')) as HTMLElement[];
+
+		await userEvent.type(input, 'ita');
+		await settled();
+		expect(options.filter((option) => !option.hidden)).toHaveLength(1);
+
+		form.reset();
+		await settled();
+
+		expect(input.value).toBe('');
+		expect(options.every((option) => !option.hidden)).toBe(true);
+		cleanup();
+	});
+
 	it('opens on the next Tab after selecting closes the listbox with the input focused', async () => {
 		const { host, cleanup } = mount(
 			<>
