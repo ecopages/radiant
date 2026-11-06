@@ -310,6 +310,143 @@ export class MinimalCommentNode extends MinimalNode {
 	}
 }
 
+/** Tags whose `type` property reflects the `type` attribute. */
+const TYPE_TAGS = new Set([
+	'button',
+	'input',
+	'a',
+	'link',
+	'script',
+	'source',
+	'style',
+	'ol',
+	'ul',
+	'li',
+	'embed',
+	'object',
+]);
+/** Tags whose `name` property reflects the `name` attribute. */
+const NAME_TAGS = new Set([
+	'a',
+	'button',
+	'details',
+	'embed',
+	'fieldset',
+	'form',
+	'iframe',
+	'img',
+	'input',
+	'map',
+	'meta',
+	'object',
+	'output',
+	'param',
+	'select',
+	'slot',
+	'textarea',
+]);
+/** Tags whose `href` property reflects the `href` attribute. */
+const HREF_TAGS = new Set(['a', 'area', 'base', 'link']);
+/** Tags whose `value` property reflects the `value` attribute (`input` does not, as in a browser). */
+const VALUE_TAGS = new Set(['button', 'option']);
+/** `ARIAMixin` properties that reflect a string attribute; the element-reference ones (`ariaControlsElements`, ...) do not. */
+type AriaStringProperty = {
+	[K in keyof ARIAMixin]: ARIAMixin[K] extends string | null ? K : never;
+}[keyof ARIAMixin];
+/** Element-wide ARIA reflections, defined on `MinimalElement.prototype` below; `role` maps to `role`, the rest to `aria-*`. */
+const ARIA_PROPERTIES = [
+	'ariaAtomic',
+	'ariaAutoComplete',
+	'ariaBrailleLabel',
+	'ariaBrailleRoleDescription',
+	'ariaBusy',
+	'ariaChecked',
+	'ariaColCount',
+	'ariaColIndex',
+	'ariaColIndexText',
+	'ariaColSpan',
+	'ariaCurrent',
+	'ariaDescription',
+	'ariaDisabled',
+	'ariaExpanded',
+	'ariaHasPopup',
+	'ariaHidden',
+	'ariaInvalid',
+	'ariaKeyShortcuts',
+	'ariaLabel',
+	'ariaLevel',
+	'ariaLive',
+	'ariaModal',
+	'ariaMultiLine',
+	'ariaMultiSelectable',
+	'ariaOrientation',
+	'ariaPlaceholder',
+	'ariaPosInSet',
+	'ariaPressed',
+	'ariaReadOnly',
+	'ariaRelevant',
+	'ariaRequired',
+	'ariaRoleDescription',
+	'ariaRowCount',
+	'ariaRowIndex',
+	'ariaRowIndexText',
+	'ariaRowSpan',
+	'ariaSelected',
+	'ariaSetSize',
+	'ariaSort',
+	'ariaValueMax',
+	'ariaValueMin',
+	'ariaValueNow',
+	'ariaValueText',
+	'role',
+] as const satisfies readonly AriaStringProperty[];
+/** @remarks ASCII whitespace only, as the HTML spec strips it for `option.text`; JS `trim` and `\s` also take NBSP. */
+function collapseAsciiWhitespace(text: string): string {
+	return text.replace(/[\t\n\f\r ]+/g, ' ').replace(/^ | $/g, '');
+}
+
+const BUTTON_TYPES = new Set(['button', 'submit', 'reset']);
+const INPUT_TYPES = new Set([
+	'button',
+	'checkbox',
+	'color',
+	'date',
+	'datetime-local',
+	'email',
+	'file',
+	'hidden',
+	'image',
+	'month',
+	'number',
+	'password',
+	'radio',
+	'range',
+	'reset',
+	'search',
+	'submit',
+	'tel',
+	'text',
+	'time',
+	'url',
+	'week',
+]);
+/** Read-only `type` that is the tag name itself. */
+const TAG_NAME_TYPES = new Set(['textarea', 'fieldset', 'output']);
+/** Tags that take focus by default, so `tabIndex` reads 0 rather than -1. */
+const FOCUSABLE_TAGS = new Set(['button', 'input', 'select', 'textarea', 'summary', 'iframe']);
+/** Tags whose `disabled` property reflects the `disabled` attribute. */
+const DISABLED_TAGS = new Set(['button', 'input', 'select', 'textarea', 'fieldset', 'optgroup', 'option', 'link']);
+
+/**
+ * @remarks Browsers lowercase attribute names on HTML elements, so `setAttribute('tabIndex', ...)` and the
+ * `tabIndex` property share one `tabindex` attribute. The minimal DOM has no namespaces, so it cannot lowercase
+ * every name without breaking SVG attributes such as `viewBox`; `tabIndex`, the JSX prop spelling that collides
+ * with a reflected property, is mapped explicitly.
+ */
+function canonicalAttributeName(name: string): string {
+	return name === 'tabIndex' ? 'tabindex' : name;
+}
+
 class MinimalClassList {
 	constructor(private readonly element: MinimalElement) {}
 
@@ -377,6 +514,10 @@ class MinimalClassList {
 	}
 }
 
+/** Types the `aria*` and `role` accessors that the loop after the class defines on its prototype. */
+// oxlint-disable-next-line no-unsafe-declaration-merging -- each merged member is a prototype accessor defined from ARIA_PROPERTIES
+export interface MinimalElement extends Pick<ARIAMixin, (typeof ARIA_PROPERTIES)[number]> {}
+
 export class MinimalElement extends MinimalNode {
 	/**
 	 * @remarks
@@ -386,6 +527,8 @@ export class MinimalElement extends MinimalNode {
 	 * yield `[name, value]` tuples and crash on `.name.startsWith(...)`.
 	 */
 	#attributeStore = new Map<string, string>();
+	/** Values assigned to `type`, `disabled`, `name`, `href` and `value` on tags that do not reflect them. */
+	#plainProps = new Map<string, unknown>();
 	private classListValue?: MinimalClassList;
 	private datasetValue?: DOMStringMap;
 	private styleValue?: CSSStyleDeclaration;
@@ -416,6 +559,181 @@ export class MinimalElement extends MinimalNode {
 		}
 
 		this.setAttribute('id', value);
+	}
+
+	get className(): string {
+		return this.getAttribute('class') ?? '';
+	}
+
+	set className(value: string) {
+		this.setAttribute('class', value);
+	}
+
+	get title(): string {
+		return this.getAttribute('title') ?? '';
+	}
+
+	set title(value: string) {
+		this.setAttribute('title', value);
+	}
+
+	get lang(): string {
+		return this.getAttribute('lang') ?? '';
+	}
+
+	set lang(value: string) {
+		this.setAttribute('lang', value);
+	}
+
+	get dir(): string {
+		return this.getAttribute('dir') ?? '';
+	}
+
+	set dir(value: string) {
+		this.setAttribute('dir', value);
+	}
+
+	/**
+	 * @remarks Returns `'until-found'` when the attribute has that value, as browsers do; any other present value reads as `true`.
+	 */
+	get hidden(): boolean | string {
+		const value = this.getAttribute('hidden');
+		if (value === null) return false;
+		return value.toLowerCase() === 'until-found' ? 'until-found' : true;
+	}
+
+	set hidden(value: boolean | string) {
+		if (typeof value === 'string' && value.toLowerCase() === 'until-found') {
+			this.setAttribute('hidden', 'until-found');
+			return;
+		}
+		this.toggleAttribute('hidden', Boolean(value));
+	}
+
+	/**
+	 * @remarks Unset reads 0 on tags that are focusable by default (`a` only with `href`), otherwise -1. The
+	 * setter converts like WebIDL, so a non-numeric value becomes 0.
+	 */
+	get tabIndex(): number {
+		const parsed = Number.parseInt(this.getAttribute('tabindex') ?? '', 10);
+		if (!Number.isNaN(parsed)) return parsed;
+		const focusable = FOCUSABLE_TAGS.has(this.localName) || (this.localName === 'a' && this.hasAttribute('href'));
+		return focusable ? 0 : -1;
+	}
+
+	set tabIndex(value: number) {
+		this.setAttribute('tabindex', Math.trunc(Number(value)) || 0);
+	}
+
+	/**
+	 * @remarks Reflected only on the tags where the DOM defines `type` (see {@link TYPE_TAGS}). `input` and
+	 * `button` read the lowercased value and fall back to their default for an invalid one. `select`, `textarea`,
+	 * `fieldset` and `output` have a read-only `type` that assignment ignores. Elsewhere an assignment stays a
+	 * plain value that never serializes, as in a browser.
+	 */
+	get type(): string {
+		const tag = this.localName;
+		if (tag === 'select') return this.hasAttribute('multiple') ? 'select-multiple' : 'select-one';
+		if (TAG_NAME_TYPES.has(tag)) return tag;
+		if (!TYPE_TAGS.has(tag)) {
+			return String(this.#plainProps.get('type') ?? '');
+		}
+		const value = this.getAttribute('type');
+		if (tag === 'input') {
+			const lower = value?.toLowerCase() ?? '';
+			return INPUT_TYPES.has(lower) ? lower : 'text';
+		}
+		if (tag === 'button') {
+			const lower = value?.toLowerCase() ?? '';
+			return BUTTON_TYPES.has(lower) ? lower : 'submit';
+		}
+		return value ?? '';
+	}
+
+	set type(value: string) {
+		const tag = this.localName;
+		if (tag === 'select' || TAG_NAME_TYPES.has(tag)) return;
+		if (!TYPE_TAGS.has(tag)) {
+			this.#plainProps.set('type', value);
+			return;
+		}
+		this.setAttribute('type', value);
+	}
+
+	/**
+	 * @remarks Reflected only on the form controls in {@link DISABLED_TAGS}; elsewhere a plain value, as in a
+	 * browser.
+	 */
+	get disabled(): boolean {
+		if (!DISABLED_TAGS.has(this.localName)) {
+			return Boolean(this.#plainProps.get('disabled'));
+		}
+		return this.hasAttribute('disabled');
+	}
+
+	set disabled(value: boolean) {
+		if (!DISABLED_TAGS.has(this.localName)) {
+			this.#plainProps.set('disabled', value);
+			return;
+		}
+		this.toggleAttribute('disabled', Boolean(value));
+	}
+
+	/** @remarks Reflected only on the tags in {@link NAME_TAGS}; elsewhere a plain value, as in a browser. */
+	get name(): string {
+		if (!NAME_TAGS.has(this.localName)) return this.#plainProps.get('name') as string;
+		return this.getAttribute('name') ?? '';
+	}
+
+	set name(value: string) {
+		if (!NAME_TAGS.has(this.localName)) {
+			this.#plainProps.set('name', value);
+			return;
+		}
+		this.setAttribute('name', value);
+	}
+
+	/**
+	 * @remarks Reflected only on the tags in {@link HREF_TAGS}. Reads the attribute as written; a browser
+	 * resolves it against the document URL, which the server has no base for.
+	 */
+	get href(): string {
+		if (!HREF_TAGS.has(this.localName)) return this.#plainProps.get('href') as string;
+		return this.getAttribute('href') ?? '';
+	}
+
+	set href(value: string) {
+		if (!HREF_TAGS.has(this.localName)) {
+			this.#plainProps.set('href', value);
+			return;
+		}
+		this.setAttribute('href', value);
+	}
+
+	get slot(): string {
+		return this.getAttribute('slot') ?? '';
+	}
+
+	set slot(value: string) {
+		this.setAttribute('slot', value);
+	}
+
+	/**
+	 * @remarks Reflected only on `button` and `option`. An `option` without a `value` attribute reads its text with whitespace collapsed.
+	 * `input.value` is not reflected in browsers either and stays a plain value, as does every other tag.
+	 */
+	get value(): string {
+		const tag = this.localName;
+		if (!VALUE_TAGS.has(tag)) return this.#plainProps.get('value') as string;
+		return this.getAttribute('value') ?? (tag === 'option' ? collapseAsciiWhitespace(this.textContent) : '');
+	}
+
+	set value(value: string) {
+		if (!VALUE_TAGS.has(this.localName)) {
+			this.#plainProps.set('value', value);
+			return;
+		}
+		this.setAttribute('value', value);
 	}
 
 	get classList(): DOMTokenList {
@@ -488,11 +806,11 @@ export class MinimalElement extends MinimalNode {
 	}
 
 	hasAttribute(name: string): boolean {
-		return this.#attributeStore.has(name);
+		return this.#attributeStore.has(canonicalAttributeName(name));
 	}
 
 	getAttribute(name: string): string | null {
-		return this.#attributeStore.get(name) ?? null;
+		return this.#attributeStore.get(canonicalAttributeName(name)) ?? null;
 	}
 
 	getAttributeNames(): string[] {
@@ -500,7 +818,7 @@ export class MinimalElement extends MinimalNode {
 	}
 
 	setAttribute(name: string, value: unknown): void {
-		this.#attributeStore.set(name, String(value));
+		this.#attributeStore.set(canonicalAttributeName(name), String(value));
 		this.invalidateOpenTag();
 	}
 
@@ -517,7 +835,7 @@ export class MinimalElement extends MinimalNode {
 	}
 
 	removeAttribute(name: string): void {
-		this.#attributeStore.delete(name);
+		this.#attributeStore.delete(canonicalAttributeName(name));
 		this.invalidateOpenTag();
 	}
 
@@ -751,6 +1069,24 @@ export class MinimalCustomEvent<T = unknown> extends MinimalEvent {
 		super(type, eventInitDict);
 		this.detail = eventInitDict.detail as T;
 	}
+}
+
+for (const property of ARIA_PROPERTIES) {
+	const attribute = property === 'role' ? 'role' : `aria-${property.slice(4).toLowerCase()}`;
+	Object.defineProperty(MinimalElement.prototype, property, {
+		configurable: true,
+		enumerable: true,
+		get(this: MinimalElement): string | null {
+			return this.getAttribute(attribute);
+		},
+		set(this: MinimalElement, value: unknown) {
+			if (value === null || value === undefined) {
+				this.removeAttribute(attribute);
+				return;
+			}
+			this.setAttribute(attribute, value);
+		},
+	});
 }
 
 export class MinimalHTMLElement extends MinimalElement {

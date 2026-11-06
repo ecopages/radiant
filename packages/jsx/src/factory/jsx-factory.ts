@@ -197,6 +197,11 @@ export function takesChildrenValue(type: string): boolean {
 	);
 }
 
+/**
+ * @remarks `className` on a native element is skipped: it is not an HTML attribute, and writing it would leave the
+ * element without its class. `jsxDEV` from `@ecopages/jsx/jsx-dev-runtime` warns about it. A custom element keeps it
+ * as a property binding.
+ */
 function appendBinding(
 	strings: string[],
 	values: unknown[],
@@ -209,6 +214,10 @@ function appendBinding(
 		return;
 	}
 
+	if (name === 'className' && !elementName.includes('-')) {
+		return;
+	}
+
 	parts.push(resolveBindingPart(elementName, name, value));
 	values.push(value);
 	strings.push('');
@@ -217,7 +226,7 @@ function appendBinding(
 /**
  * Resolves an authored prop name to the binding kind and attribute name it denotes.
  *
- * Explicit prefixes (`on-native:`, `on:`, `prop:`, `attr:`) select a kind directly.
+ * Explicit prefixes (`on-native:`, `on:`, `prop:`, `attr:`, `bool:`) select a kind directly.
  * Unprefixed names fall back to per-element defaults: boolean attributes bind by
  * presence, custom elements bind by property unless the name is a known attribute.
  *
@@ -249,6 +258,10 @@ function resolveBindingPart(
 
 	if (name.startsWith('attr:')) {
 		return { kind: 'attr', name: name.slice(5), type: 'attribute' };
+	}
+
+	if (name.startsWith('bool:')) {
+		return { kind: 'bool', name: name.slice(5), type: 'attribute' };
 	}
 
 	if (typeof resolveReactiveSnapshot(value) === 'boolean' && shouldUseBooleanAttributeBinding(name)) {

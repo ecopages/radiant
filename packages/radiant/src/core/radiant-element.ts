@@ -23,6 +23,7 @@ import type { ForeignSlotContentProjector } from './slot-projection-runtime';
 import { UpdateCycle } from './update-cycle';
 import { REACTIVE_HOST, ReactiveHost, type ReactiveHostInternals } from './reactive-host';
 import type { ReactiveState } from './reactivity-contract';
+import { applyHostAttributes } from './host-attributes';
 import { runSsrPreparationCallbacks } from './ssr-preparation';
 import { isRadiantHydratorInstalled } from './radiant-hydrator-state';
 import {
@@ -349,12 +350,15 @@ export class RadiantElement<Bindings extends object = {}>
 	 * is deferred one microtask so a subclass `connectedCallback` that runs after
 	 * `super()` has finished before any `@onUpdated` from catch-up can fire.
 	 *
+	 * Each connect first writes the `hostAttributes` declared with `@customElement` that the host lacks.
+	 *
 	 * The update cycle stays blocked until that microtask: it runs the batched
 	 * `@onUpdated` callbacks for everything adopted, renders or hydrates, flushes
 	 * `@bindTo`, calls `onConnected()`, and finishes with `updated(changed)`.
 	 */
 	connectedCallback() {
 		ensureLegacyHostReady(this, 'connect');
+		applyHostAttributes(this);
 		const isReconnectDuringPendingFirstConnect = this.isFirstConnectPending;
 
 		const isFirstConnect = !this.elementReady;
@@ -605,12 +609,14 @@ export class RadiantElement<Bindings extends object = {}>
 	 * the batched `@onUpdated` callbacks here, before and after the other SSR
 	 * preparation callbacks, so the first server render sees finalized fields,
 	 * props, and authored content. The SSR serializer flushes `@bindTo` after
-	 * rendering its view. `updated()` never runs on the server.
+	 * rendering its view. `updated()` never runs on the server. The `hostAttributes` declared with
+	 * `@customElement` that the host lacks are written first.
 	 */
 	public prepareForSsr(): void {
 		const stopObserving = this.reactiveHost.observeMembers();
 
 		try {
+			applyHostAttributes(this);
 			runSsrPreparationCallbacks(this, true);
 			this.updateCycle.runCallbacks();
 			runSsrPreparationCallbacks(this);

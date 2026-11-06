@@ -35,9 +35,18 @@ function createNode(entry: StylesheetEntry): HTMLElement {
  * Cleanup is not done here. {@link clearStylesheetsDecorator} runs for every story and clears
  * first, so several of these compose without clobbering each other, and switching to a story
  * that never calls this decorator still drops the previous skin.
+ *
+ * The SSR story path also runs story decorators on the server, where Radiant's minimal document
+ * has no `head`, so without one this only renders the story. The static SSR preview links a `?url`
+ * stylesheet the story module imports from the module graph, and the hydrated preview runs this
+ * decorator again in the browser. The check is on `document.head`, not `isServer`: Storybook's
+ * Vite SSR resolves `@ecopages/radiant/is-server` to its browser build.
  */
 export function withStylesheets(entries: StylesheetEntry[]): Decorator {
 	return (Story) => {
+		if (!globalThis.document?.head) {
+			return Story();
+		}
 		for (const entry of entries) {
 			document.head.appendChild(createNode(entry));
 		}

@@ -417,6 +417,75 @@ describe('Radiant JSX server render', () => {
 		);
 	});
 
+	test('serializes false on attribute bindings as the string "false" and keeps boolean attributes absent', async () => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+		const template = jsx('li', {
+			'aria-expanded': false,
+			'aria-hidden': false,
+			data: { open: false },
+			hidden: false,
+			children: 'Branch',
+		});
+
+		expect(renderToString(template, { mode: 'plain' })).toBe(
+			'<li aria-expanded="false" aria-hidden="false" data-open="false">Branch</li>',
+		);
+		expect(renderToString(template, { mode: 'hydrate' })).toContain('aria-expanded="false"');
+	});
+
+	test('serializes false aria and data attributes on a custom element', async () => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+		const template = jsx('demo-card', {
+			'aria-busy': false,
+			'data-active': false,
+			'attr:wrap': false,
+		});
+
+		expect(renderToString(template, { mode: 'plain' })).toBe(
+			'<demo-card aria-busy="false" data-active="false" wrap="false"></demo-card>',
+		);
+	});
+
+	test('binds a boolean attribute by presence under attr: and keeps a string value', async () => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+
+		expect(renderToString(jsx('div', { 'attr:hidden': false }))).toBe('<div></div>');
+		expect(renderToString(jsx('div', { 'attr:hidden': true }))).toBe('<div hidden=""></div>');
+		expect(renderToString(jsx('div', { hidden: 'until-found' }))).toBe('<div hidden="until-found"></div>');
+	});
+
+	test('binds any attribute by presence with bool: on native and custom elements', async () => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+
+		expect(renderToString(jsx('input', { 'bool:webkitdirectory': true }))).toBe('<input webkitdirectory>');
+		expect(renderToString(jsx('input', { 'bool:webkitdirectory': false }))).toBe('<input>');
+		expect(renderToString(jsx('demo-panel', { 'bool:expanded': true }))).toBe('<demo-panel expanded></demo-panel>');
+		expect(renderToString(jsx('demo-panel', { 'bool:expanded': false }))).toBe('<demo-panel></demo-panel>');
+		expect(renderToString(jsx('demo-panel', { 'bool:expanded': true }), { mode: 'hydrate' })).toBe(
+			'<demo-panel data-radiant-jsx-bind-0="bool:expanded" expanded></demo-panel>',
+		);
+	});
+
+	test('serializes attr:name false on a native element in plain and hydrate modes', async () => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+		const template = jsx('div', { 'attr:aria-pressed': false });
+
+		expect(renderToString(template, { mode: 'plain' })).toBe('<div aria-pressed="false"></div>');
+		expect(renderToString(template, { mode: 'hydrate' })).toBe(
+			'<div data-radiant-jsx-bind-0="attr:aria-pressed" aria-pressed="false"></div>',
+		);
+	});
+
+	test('treats nomodule and shadow root flags as boolean attributes', async () => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+
+		expect(renderToString(jsx('script', { nomodule: false, src: 'a.js' }))).toBe('<script src="a.js"></script>');
+		expect(renderToString(jsx('script', { nomodule: true, src: 'a.js' }))).toBe(
+			'<script nomodule src="a.js"></script>',
+		);
+		expect(renderToString(jsx('video', { disableremoteplayback: false }))).toBe('<video></video>');
+	});
+
 	test('omits nullish bindings from SSR attribute output', async () => {
 		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
 		const template = jsx('button', {
@@ -615,6 +684,67 @@ describe('Radiant JSX server render', () => {
 		expect(html).toContain('data-status="loading"');
 		expect(html).toContain('disabled');
 		expect(html).toContain('Fetch');
+	});
+
+	test('a registered SSR custom element gets bool: as attribute and property, and attr:hidden false removes hidden', async () => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+
+		class PanelServerElement extends EventTarget {
+			private attributes = new Map<string, string>();
+			expanded = false;
+			hidden = false;
+
+			setAttribute(name: string, value: unknown) {
+				this.attributes.set(name, String(value));
+			}
+
+			removeAttribute(name: string) {
+				this.attributes.delete(name);
+			}
+
+			renderHostToString() {
+				const attributes = [...this.attributes].map(([name, value]) => ` ${name}="${value}"`).join('');
+				return `<demo-panel${attributes}>${this.expanded ? 'open' : 'closed'}</demo-panel>`;
+			}
+		}
+
+		const previousCustomElementsDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'customElements');
+		const globalScope = globalThis as typeof globalThis & Record<PropertyKey, unknown>;
+		const previousForceServerCustomElementRender = globalScope[forceServerCustomElementRenderSymbol];
+
+		Object.defineProperty(globalThis, 'customElements', {
+			configurable: true,
+			value: {
+				get(name: string) {
+					return name === 'demo-panel'
+						? (PanelServerElement as unknown as CustomElementConstructor)
+						: undefined;
+				},
+			},
+		});
+		globalScope[forceServerCustomElementRenderSymbol] = true;
+
+		try {
+			expect(renderToString(jsx('demo-panel', { 'bool:expanded': true }))).toBe(
+				'<demo-panel expanded="">open</demo-panel>',
+			);
+			expect(renderToString(jsx('demo-panel', { 'bool:expanded': false }))).toBe(
+				'<demo-panel>closed</demo-panel>',
+			);
+			expect(renderToString(jsx('demo-panel', { 'attr:hidden': false }))).toBe('<demo-panel>closed</demo-panel>');
+		} finally {
+			if (previousCustomElementsDescriptor) {
+				Object.defineProperty(globalThis, 'customElements', previousCustomElementsDescriptor);
+			} else {
+				Reflect.deleteProperty(globalThis, 'customElements');
+			}
+
+			if (previousForceServerCustomElementRender === undefined) {
+				delete globalScope[forceServerCustomElementRenderSymbol];
+			} else {
+				globalScope[forceServerCustomElementRenderSymbol] = previousForceServerCustomElementRender;
+			}
+		}
 	});
 
 	test('serializes registered SSR-capable custom elements from plain intrinsic tags', async () => {

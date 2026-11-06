@@ -12,6 +12,8 @@ export const SSR_SMOKE_STORY_IDS = [
 	'components-dialog--default',
 	'components-combobox--default',
 	'components-toast--default',
+	'components-meter--default',
+	'components-select--with-tag-group',
 ] as const;
 
 /**

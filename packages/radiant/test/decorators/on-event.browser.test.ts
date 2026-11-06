@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { customElement } from '../../src/decorators/custom-element';
+import { bound } from '../../src/decorators/bound';
 import { onEvent } from '../../src/decorators/on-event';
 
 describe('onEvent', () => {
@@ -22,6 +23,30 @@ describe('onEvent', () => {
 		document.body.appendChild(element);
 		window.dispatchEvent(new Event('click'));
 		expect(element.received).toBeTruthy();
+	});
+
+	it('fires a host listener for non-bubbling pointerenter and stops after disconnect', () => {
+		@customElement('host-on-event-listener')
+		class HostEventListener extends RadiantElement {
+			count = 0;
+			@onEvent({ host: true, type: 'pointerenter' })
+			entered() {
+				this.count++;
+			}
+		}
+
+		const element = document.createElement('host-on-event-listener') as HostEventListener;
+		document.body.appendChild(element);
+		element.dispatchEvent(new Event('pointerenter'));
+		expect(element.count).toBe(1);
+
+		element.remove();
+		element.dispatchEvent(new Event('pointerenter'));
+		expect(element.count).toBe(1);
+
+		document.body.appendChild(element);
+		element.dispatchEvent(new Event('pointerenter'));
+		expect(element.count).toBe(2);
 	});
 
 	it('should add event listener to document when document is true in eventConfig', () => {
@@ -168,5 +193,71 @@ describe('onEvent', () => {
 		button.click();
 
 		expect(element.clickCount).toBe(2);
+	});
+	it('runs a handler that is also @bound once, with the host as this, when @onEvent is above @bound', () => {
+		@customElement('on-event-above-bound')
+		class OnEventAboveBound extends RadiantElement {
+			receivers: unknown[] = [];
+			@onEvent({ host: true, type: 'pointerenter' })
+			@bound
+			entered() {
+				this.receivers.push(this);
+			}
+		}
+
+		const element = document.createElement('on-event-above-bound') as OnEventAboveBound;
+		document.body.appendChild(element);
+		element.dispatchEvent(new Event('pointerenter'));
+
+		expect(element.receivers).toEqual([element]);
+		const detached = element.entered;
+		detached();
+		expect(element.receivers).toEqual([element, element]);
+	});
+
+	it('runs a handler that is also @bound once, with the host as this, when @bound is above @onEvent', () => {
+		@customElement('bound-above-on-event')
+		class BoundAboveOnEvent extends RadiantElement {
+			receivers: unknown[] = [];
+			@bound
+			@onEvent({ host: true, type: 'pointerenter' })
+			entered() {
+				this.receivers.push(this);
+			}
+		}
+
+		const element = document.createElement('bound-above-on-event') as BoundAboveOnEvent;
+		document.body.appendChild(element);
+		element.dispatchEvent(new Event('pointerenter'));
+
+		expect(element.receivers).toEqual([element]);
+		const detached = element.entered;
+		detached();
+		expect(element.receivers).toEqual([element, element]);
+	});
+
+	it('keeps a subclass override of a @bound @onEvent handler callable on the host', () => {
+		@customElement('on-event-bound-base')
+		class OnEventBoundBase extends RadiantElement {
+			calls: string[] = [];
+			@onEvent({ host: true, type: 'pointerenter' })
+			@bound
+			entered() {
+				this.calls.push('base');
+			}
+		}
+
+		@customElement('on-event-bound-override')
+		class OnEventBoundOverride extends OnEventBoundBase {
+			override entered() {
+				this.calls.push('override');
+			}
+		}
+
+		const element = document.createElement('on-event-bound-override') as OnEventBoundOverride;
+		document.body.appendChild(element);
+		element.entered();
+
+		expect(element.calls).toEqual(['override']);
 	});
 });

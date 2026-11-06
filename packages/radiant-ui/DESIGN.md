@@ -35,6 +35,8 @@ Components must **never** reference palette steps (e.g. `--color-havelock-blue-8
 - Theme role maps assign plain roles (`--primary`, …) on `:root` / `.dark`.
 - `@theme` block maps those roles to tree-shakable Tailwind color utilities (`bg-primary`, `text-on-surface`, …).
 - There is no separate `semantic.dark.css`.
+- Dark applies to any `.dark` scope, not only `html`: `semantic.css` registers the `--color-*` aliases with `@theme inline` (utilities read the role token, e.g. `var(--primary)`, where they are used) and declares them again under `:where(:root, .dark)` so `var(--color-*)` readers resolve on a light page and inside a nested `.dark`. `generate:exports` (part of `build:lib`) writes that second block from the `@theme inline` one; edit only `@theme inline` and commit the regenerated block. Override roles (`--primary`), not `--color-*`.
+- App-level aliases declared with a plain `@theme` (such as `--color-background-accent` and `--color-muted` in the docs and radiant-ui apps) resolve once at `:root`, so they do not follow a nested `.dark`; those apps switch theme with `data-theme` on the root. Declare an app alias with `@theme inline` and redeclare it under `:where(:root, .dark)` if it must follow a nested section.
 
 Dark remaps **colors only** (including `--color-overlay`). Spacing, radius, elevation, typography, and motion stay mode-independent unless a theme explicitly documents otherwise.
 
@@ -173,7 +175,7 @@ JS may write a public knob when a **prop** owns that value (`gap` on `rui-toaste
 
 1. Decide tier: pack (Tier 1), semantic role (Tier 2), or system (Tier 3).
 2. Add or extend the pack file. Color scales → `:root`. Expose via `@theme` only when Tailwind utilities are required (spacing/radius bridges, semantic roles).
-3. For new **color** roles: add preset remaps + the `@theme` bridge in `semantic.css`.
+3. For new **color** roles: add preset remaps + the `@theme inline` bridge in `semantic.css`, then run `generate:exports`.
 4. Document the role in this file if it is part of the public contract.
 
 ## Adding an optional theme

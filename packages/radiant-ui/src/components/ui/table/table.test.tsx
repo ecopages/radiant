@@ -110,3 +110,49 @@ describe('RuiTable selection checkboxes', () => {
 		cleanup();
 	});
 });
+
+describe('RuiTable single selection with Space', () => {
+	afterEach(() => {
+		document.body.innerHTML = '';
+	});
+
+	it('deselects the selected row when Space is pressed on it', async () => {
+		const { host, cleanup } = mount(
+			<RuiTable label="Plants" selectionMode="single">
+				<RuiTableHeader>
+					<RuiTableColumn id="name" isRowHeader>
+						Plant
+					</RuiTableColumn>
+				</RuiTableHeader>
+				<RuiTableBody>
+					<RuiTableRow id="r1">
+						<RuiTableCell isRowHeader>Aloe</RuiTableCell>
+					</RuiTableRow>
+					<RuiTableRow id="r2">
+						<RuiTableCell isRowHeader>Fern</RuiTableCell>
+					</RuiTableRow>
+				</RuiTableBody>
+			</RuiTable>,
+		);
+		await settled();
+
+		const table = host.querySelector('rui-table') as RuiTableElement;
+		const changes: string[][] = [];
+		table.addEventListener('rui-change', (event) => changes.push((event as CustomEvent).detail.value));
+		const cell = host.querySelector<HTMLElement>('[data-table-row="r1"] [data-table-cell]')!;
+		const space = () => cell.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+
+		space();
+		await settled();
+		expect(table.value).toEqual(['r1']);
+		expect(host.querySelector('[data-table-row="r1"]')?.getAttribute('aria-selected')).toBe('true');
+
+		space();
+		await settled();
+		expect(table.value).toEqual([]);
+		expect(host.querySelector('[data-table-row="r1"]')?.getAttribute('aria-selected')).toBe('false');
+		expect(changes).toEqual([['r1'], []]);
+
+		cleanup();
+	});
+});

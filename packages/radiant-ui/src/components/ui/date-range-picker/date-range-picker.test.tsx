@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { createRoot } from '@ecopages/jsx';
 import { typeIsoIntoDateInput } from '@sb/date-input-typing';
 import { userEvent } from 'storybook/test';
+import { userEvent as browserUser } from 'vitest/browser';
 import { RuiDateRangePicker } from './date-range-picker';
 import { RuiDateRangePicker as RuiDateRangePickerScript } from './date-range-picker.script';
 import { RuiDateInput as RuiDateInputScript } from '../date-input/date-input.script';
@@ -50,6 +51,33 @@ describe('RuiDateRangePicker draft range', () => {
 		expect(picker.value).toBe('2026-08-07/2026-08-14');
 		expect(new FormData(form).get('start')).toBe('2026-08-07');
 		expect(new FormData(form).get('end')).toBe('2026-08-14');
+		host.remove();
+	});
+
+	it('emits the sorted start and end that agree with value', async () => {
+		const host = document.createElement('div');
+		document.body.append(host);
+		createRoot(host).render(<RuiDateRangePicker value="2026-08-01/2026-08-14" locale="en-US" />);
+
+		await customElements.whenDefined('rui-date-range-picker');
+		await customElements.whenDefined('rui-date-input');
+		await flushFirstConnect();
+		await flushRender();
+
+		const picker = host.querySelector('rui-date-range-picker') as HTMLElement;
+		const start = host.querySelector('[data-range-start]') as HTMLElement & { value: string };
+		const details: Array<{ value: string; start: string; end: string }> = [];
+		picker.addEventListener('rui-change', (event) => {
+			if (event.target === picker) details.push((event as CustomEvent).detail);
+		});
+
+		start.value = '2026-09-01';
+		start.dispatchEvent(
+			new CustomEvent('rui-change', { bubbles: true, composed: true, detail: { value: '2026-09-01' } }),
+		);
+		await flushRender();
+
+		expect(details).toEqual([{ value: '2026-08-14/2026-09-01', start: '2026-08-14', end: '2026-09-01' }]);
 		host.remove();
 	});
 
@@ -136,5 +164,60 @@ describe('RuiDateRangePicker draft range', () => {
 		expect(start.querySelector('[data-date-segment][data-placeholder="true"]')).toBeNull();
 		expect(picker.getAttribute('value') ?? '').toBe('');
 		expect(start.value).toBe('2026-08-07');
+	});
+});
+
+describe('RuiDateRangePicker popup focus', () => {
+	it('returns focus to the toggle when Escape closes the popup', async () => {
+		const host = document.createElement('div');
+		document.body.append(host);
+		createRoot(host).render(<RuiDateRangePicker value="2026-08-07/2026-08-14" locale="en-US" />);
+		await customElements.whenDefined('rui-date-range-picker');
+		await customElements.whenDefined('rui-calendar');
+		await flushFirstConnect();
+		await flushRender();
+
+		const toggle = host.querySelector('[data-range-trigger]') as HTMLButtonElement;
+		const popover = host.querySelector('[data-range-popover]') as HTMLElement;
+		await browserUser.click(toggle);
+		await flushRender();
+		await browserUser.keyboard('{ArrowDown}');
+		expect(popover.hidden).toBe(false);
+
+		await browserUser.keyboard('{Escape}');
+		await flushRender();
+		expect(popover.hidden).toBe(true);
+		expect(document.activeElement).toBe(toggle);
+		host.remove();
+	});
+
+	it('leaves focus where an outside click put it', async () => {
+		const host = document.createElement('div');
+		document.body.append(host);
+		createRoot(host).render(
+			<>
+				<button type="button" id="elsewhere">
+					Elsewhere
+				</button>
+				<RuiDateRangePicker value="2026-08-07/2026-08-14" locale="en-US" />
+			</>,
+		);
+		await customElements.whenDefined('rui-date-range-picker');
+		await customElements.whenDefined('rui-calendar');
+		await flushFirstConnect();
+		await flushRender();
+
+		const toggle = host.querySelector('[data-range-trigger]') as HTMLButtonElement;
+		const popover = host.querySelector('[data-range-popover]') as HTMLElement;
+		const elsewhere = host.querySelector('#elsewhere') as HTMLButtonElement;
+		await browserUser.click(toggle);
+		await flushRender();
+		expect(popover.hidden).toBe(false);
+
+		await browserUser.click(elsewhere);
+		await flushRender();
+		expect(popover.hidden).toBe(true);
+		expect(document.activeElement).toBe(elsewhere);
+		host.remove();
 	});
 });

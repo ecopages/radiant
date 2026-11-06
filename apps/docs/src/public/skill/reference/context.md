@@ -14,14 +14,16 @@ Import all context APIs from `@ecopages/radiant/context`, not `@ecopages/radiant
 - `createContext(...)` — typed context token
 - `@provideContext(...)` — attach a provider to a host
 - `@consumeContext(...)` — inject the nearest matching provider object onto a field
-- `@contextSelector(...)` — bind a **field** to the whole value or a slice; auto-rerenders `RadiantElement` hosts
+- `@contextSelector(...)` — bind a **field** to the whole value or a slice; auto-rerenders `RadiantElement` hosts. On a method it throws: use `@onContextUpdate`.
 - `@onContextUpdate(...)` — run a **method** on change; imperative side effects only
 
 ## Provide vs consume
 
-Provide on a host that owns shared descendant state (theme, auth, cart, stores). Use `hydrate` and `serialize` when SSR must restore provider state on the client.
+Provide on a host that owns shared descendant state (theme, auth, cart, stores). Use `hydrate` and `serialize` when SSR must restore provider state on the client. Each provider takes a shallow copy of a plain-object or array `initialValue`, so hosts of one class do not share it; nested values are still shared.
 
-`@consumeContext(...)` when the host needs the provider object (`getContext()` / `setContext(...)`). Those later `getContext()` reads are snapshots — not reactive by themselves.
+`@consumeContext(...)` when the host needs the provider object (`getContext()` / `setContext(...)`). Those later `getContext()` reads are snapshots — not reactive by themselves. `setContext` merges a plain object one level deep and replaces any other value (array, string, number, boolean, `null`).
+
+During SSR, consumed context is resolved after construction, before `initialize` and `@onUpdated`. Constructors and field initializers do not see it: read it in `initialize`, `@onUpdated` or `render()`.
 
 `@contextSelector(...)` when the host should render from the current context value. The field holds the selected value; render-owning hosts rerender automatically. Read `this.myField` in `render()` — no empty method body, no `this.update()`.
 

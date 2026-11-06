@@ -1,5 +1,16 @@
 # @ecopages/storybook-radiant-vite
 
+## 0.2.1
+
+### Patch Changes
+
+- [#589](https://github.com/ecopages/radiant/pull/589) [`cfc3762`](https://github.com/ecopages/radiant/commit/cfc3762102af8191c640b793d9ffd130a45b6031) Thanks [@andeeplus](https://github.com/andeeplus)! - Render SSR stories whose `meta.component` is a custom-element constructor and that have no `render`. The server and the hydrated preview rendered such a story by calling the class as a function, which threw `Class constructor ... cannot be invoked without 'new'`; they now render its host element with the story args, as the client render does.
+- Updated dependencies [[`786847b`](https://github.com/ecopages/radiant/commit/786847bf357488d556ae55246d065d3e6bbebc71), [`cabe09e`](https://github.com/ecopages/radiant/commit/cabe09ed8aa153864d40b2f04ac21dfafbfb9428), [`1f83249`](https://github.com/ecopages/radiant/commit/1f832490e487ef0f775a939d3f084b33902c9c39), [`c51327f`](https://github.com/ecopages/radiant/commit/c51327fa3d18f03a51527ed90c6c9671845ee487), [`bdd45b5`](https://github.com/ecopages/radiant/commit/bdd45b53ef136b0af26e30cd41357960f61dd32e), [`29500e8`](https://github.com/ecopages/radiant/commit/29500e818f8295e3496a408f326df48fb4f7067a), [`7455450`](https://github.com/ecopages/radiant/commit/7455450bcd1207303991cd74e8ad69c67873032d), [`df5747b`](https://github.com/ecopages/radiant/commit/df5747ba1ed3d69ac7a0aa59cd9085647ad97b65), [`77d430e`](https://github.com/ecopages/radiant/commit/77d430e864a4570b2b9c0af242fbc0de449e4094), [`985768c`](https://github.com/ecopages/radiant/commit/985768c652634565ffc5f2611e9b2b923085457f), [`61c48dc`](https://github.com/ecopages/radiant/commit/61c48dc4641d2a65414f931995ab33460963f242), [`27d5705`](https://github.com/ecopages/radiant/commit/27d57053c4a0124b867025bc6894bc1ee63c42f4), [`c05f033`](https://github.com/ecopages/radiant/commit/c05f0330e0ac37d6a48efb06875d68f6f55d1c85), [`28baef3`](https://github.com/ecopages/radiant/commit/28baef3940b6a6a5d4993d3909f787c2d3ef07f0)]:
+    - @ecopages/jsx@0.7.0
+    - @ecopages/radiant@0.7.0
+    - @ecopages/signals@0.7.0
+    - @ecopages/vite-plugin-radiant@0.2.1
+
 ## 0.2.0
 
 ### Patch Changes

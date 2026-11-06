@@ -56,6 +56,10 @@ function getNonBubblingReplacement(type: string): string | undefined {
 			return 'mouseover or pointerover';
 		case 'mouseleave':
 			return 'mouseout or pointerout';
+		case 'pointerenter':
+			return 'pointerover, or `{ host: true }` for the host itself';
+		case 'pointerleave':
+			return 'pointerout, or `{ host: true }` for the host itself';
 		default:
 			return undefined;
 	}
@@ -95,32 +99,32 @@ type BaseOnEventConfig = {
 	options?: AddEventListenerOptions;
 };
 
+type EventTargetKeys = {
+	selector: string;
+	ref: string;
+	host: true;
+	window: true;
+	document: true;
+	mediaQuery: string;
+};
+
+/** Exactly one target key from {@link EventTargetKeys}; the others are typed `never`. */
+type OneEventTarget = {
+	[Key in keyof EventTargetKeys]: Pick<EventTargetKeys, Key> & {
+		[Other in Exclude<keyof EventTargetKeys, Key>]?: never;
+	};
+}[keyof EventTargetKeys];
+
 /**
  * Configuration for `@onEvent` / `createEventListener`.
  *
  * @remarks
- * `selector` / `ref` delegate on the host in the bubble phase, so the `type`
- * must bubble (see {@link DelegatedEventType}). `window`, `document`, and
- * `mediaQuery` attach directly and accept any event name.
+ * Takes exactly one target. `selector` / `ref` delegate on the host in the bubble phase, so the
+ * `type` must bubble (see {@link DelegatedEventType}). `host`, `window`, `document`, and
+ * `mediaQuery` attach directly and accept any event name, so `host: true` is the form for
+ * non-bubbling events such as `pointerenter` on the Element Host itself.
  */
-export type OnEventConfig = BaseOnEventConfig &
-	(
-		| {
-				selector: string;
-		  }
-		| {
-				ref: string;
-		  }
-		| {
-				window: true;
-		  }
-		| {
-				document: true;
-		  }
-		| {
-				mediaQuery: string;
-		  }
-	);
+export type OnEventConfig = BaseOnEventConfig & OneEventTarget;
 
 type EventListenerLifecycleHost = {
 	registerConnectedCallback(callback: () => void): void;
@@ -202,16 +206,18 @@ function attachConfiguredListeners(
 	config: OnEventConfig,
 	listener: EventListener,
 ): void {
-	if ('window' in config) attachNativeListener(cleanups, 'window', window, config, listener);
-	if ('document' in config) attachNativeListener(cleanups, 'document', document, config, listener);
-	if ('mediaQuery' in config) attachMediaQueryListener(cleanups, config, listener);
-	if ('selector' in config || 'ref' in config) attachDelegatedListeners(cleanups, hostElement, config, listener);
+	if (config.host) attachNativeListener(cleanups, 'host', hostElement, config, listener);
+	if (config.window) attachNativeListener(cleanups, 'window', window, config, listener);
+	if (config.document) attachNativeListener(cleanups, 'document', document, config, listener);
+	if (config.mediaQuery !== undefined) attachMediaQueryListener(cleanups, config.mediaQuery, config, listener);
+	if (config.selector !== undefined || config.ref !== undefined)
+		attachDelegatedListeners(cleanups, hostElement, config, listener);
 }
 
 function attachNativeListener(
 	cleanups: Map<EventListenerScope, () => void>,
-	key: 'document' | 'window',
-	target: Window | Document,
+	key: 'document' | 'host' | 'window',
+	target: Window | Document | Element,
 	config: OnEventConfig,
 	listener: EventListener,
 ): void {
@@ -222,17 +228,12 @@ function attachNativeListener(
 
 function attachMediaQueryListener(
 	cleanups: Map<EventListenerScope, () => void>,
+	mediaQuery: string,
 	config: OnEventConfig,
 	listener: EventListener,
 ): void {
-	if (
-		!('mediaQuery' in config) ||
-		cleanups.has('media') ||
-		typeof window === 'undefined' ||
-		typeof window.matchMedia !== 'function'
-	)
-		return;
-	const mediaQueryList = window.matchMedia(config.mediaQuery);
+	if (cleanups.has('media') || typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+	const mediaQueryList = window.matchMedia(mediaQuery);
 	mediaQueryList.addEventListener(config.type, listener, config.options);
 	cleanups.set('media', () => mediaQueryList.removeEventListener(config.type, listener, config.options));
 }
@@ -243,10 +244,10 @@ function attachDelegatedListeners(
 	config: OnEventConfig,
 	listener: EventListener,
 ): void {
-	if (!('selector' in config || 'ref' in config)) return;
-	const selector = 'selector' in config ? config.selector : `[data-ref='${CSS.escape(config.ref)}']`;
+	const selector = config.selector ?? (config.ref === undefined ? undefined : `[data-ref='${CSS.escape(config.ref)}']`);
+	if (selector === undefined) return;
 	if (!cleanups.has('delegated'))
 		cleanups.set('delegated', addDelegatedListener(hostElement, config, selector, listener));
 }
 
-type EventListenerScope = 'delegated' | 'document' | 'media' | 'window';
+type EventListenerScope = 'delegated' | 'document' | 'host' | 'media' | 'window';

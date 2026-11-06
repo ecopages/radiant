@@ -54,7 +54,7 @@ export type RuiSidebarProps = {
 	resizable?: boolean;
 	/** Hide on viewports below this width. Default: `768`. */
 	mobileBreakpoint?: number;
-	/** Accessible name announced by the pane landmark and triggers. Default: `Sidebar`. */
+	/** Accessible name of the `complementary` landmark (the host), also used by the resize handle label. Default: `Sidebar`. */
 	label?: string;
 	/**
 	 * When `true`, syncs `rui-sidebar__menu-button--active` and `aria-current="page"`
@@ -113,8 +113,8 @@ function isHorizontalSide(side: RuiSidebarSide): boolean {
  * Required:
  * - `[data-ref="root"]` — inner shell. Host mirrors `data-state`, `data-collapsible`,
  *   `data-variant`, `data-side`, and `data-mobile` on the shell and the host.
- * - `[data-ref="pane"]` — pane landmark. Host sets `aria-label`, `inert`, and
- *   `data-side` / `data-variant`.
+ * - `[data-ref="pane"]` — pane container (no role; the landmark is the host). Host sets `inert`
+ *   and `data-side` / `data-variant`.
  *
  * Optional:
  * - `[data-ref="scrim"]` — mobile overlay dismiss control. Host toggles `hidden`.
@@ -123,7 +123,8 @@ function isHorizontalSide(side: RuiSidebarSide): boolean {
  * - `[data-ref="menu-button"]` — menu links. When `matchActive` is set, host
  *   toggles `rui-sidebar__menu-button--active` and `aria-current="page"`.
  *
- * Host-owned on `<rui-sidebar>`: `role="complementary"`, `aria-label`, `data-state`,
+ * Host-owned on `<rui-sidebar>`: `role="complementary"` (kept when authored, and in server output),
+ * `aria-label`, `data-state`,
  * `data-collapsible`, `data-variant`, `data-side`, `data-mobile`, `data-pane-width`.
  *
  * Do not set `inert` on the pane or `aria-expanded` on the handle — the host owns those.
@@ -139,7 +140,7 @@ function isHorizontalSide(side: RuiSidebarSide): boolean {
  * @remarks
  * Public methods: `toggle()`, `syncActiveLinks()`. BEM classes live on the view helpers.
  */
-@customElement('rui-sidebar')
+@customElement('rui-sidebar', { hostAttributes: { role: 'complementary' } })
 export class RuiSidebar extends RadiantElement {
 	declare readonly [JSX_PROPS]?: RuiSidebarProps;
 
@@ -162,7 +163,7 @@ export class RuiSidebar extends RadiantElement {
 	@prop({ type: Boolean, attribute: 'open' }) open: boolean | undefined;
 	@prop({ type: Number, defaultValue: SIDEBAR_MOBILE_BREAKPOINT_PX }) mobileBreakpoint: number;
 	@prop({ type: String, defaultValue: 'Sidebar' })
-	@bindTo([{ attr: 'aria-label' }, { ref: 'pane', attr: 'aria-label' }])
+	@bindTo({ attr: 'aria-label' })
 	label: string;
 	@prop({ type: Boolean, reflect: true, attribute: 'match-active' }) matchActive = false;
 	@prop({ type: String, defaultValue: 'pathname' }) matchMode: RuiSidebarMatchMode;
@@ -220,8 +221,6 @@ export class RuiSidebar extends RadiantElement {
 		super.connectedCallback();
 
 		this.ensureWidthInitialized();
-
-		this.setAttribute('role', 'complementary');
 		this.attachNavigationListeners();
 	}
 
@@ -616,8 +615,6 @@ export class RuiSidebar extends RadiantElement {
 		}
 	}
 }
-
-
 
 declare global {
 	interface HTMLElementTagNameMap {

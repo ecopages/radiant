@@ -4,6 +4,7 @@
 
 - Plain reads
 - Bindings
+- Attribute rules
 - Existing DOM (`@bindTo`)
 - Derived bindings
 - Class and style
@@ -35,6 +36,14 @@ Prefer bindings for:
 - `prop:*` bindings `prop:value={this.$.draft}`
 
 Do not treat bindings as raw values. If logic needs a boolean, string, or number, use the plain property.
+
+## Attribute rules
+
+- A boolean on a standard HTML boolean attribute (`hidden`, `disabled`, `checked`, `open`, ...) binds by presence, with or without `attr:`: `true` writes it empty, `false` removes it. It is never written as `"false"`. A non-empty string such as `hidden="until-found"` is written as given.
+- Any other attribute writes `false` as `"false"` (`aria-expanded`, `data-open`). `null` and `undefined` remove it.
+- `bool:name` binds any attribute by presence, such as a custom element's boolean attribute: `<x-panel bool:expanded={this.$.open} />`. It takes `boolean | null | undefined`.
+- `attr:name` forces a string attribute and `prop:name` forces a property, for example on a custom element.
+- Write `class`, never `className`: on a native element `className` is a type error and is not rendered.
 
 ## Existing DOM (`@bindTo`)
 

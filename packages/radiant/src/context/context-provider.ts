@@ -15,6 +15,14 @@ import { resolveContextHydrationHost, type ContextHostLike } from './context-hos
 type ContextProviderOptions<T extends UnknownContext> = {
 	context: UnknownContext;
 	hydrationKey?: string;
+	/**
+	 * The value the provider starts with.
+	 *
+	 * @remarks
+	 * Each provider takes its own shallow copy of a plain object or an array, so
+	 * hosts that share one options object do not see each other's writes to the
+	 * top level. Nested objects and class instances are shared, not cloned.
+	 */
 	initialValue?: T['__context__'];
 	hydrate?: AttributeTypeConstant;
 	serialize?: (value: ContextType<T>) => unknown;
@@ -26,6 +34,26 @@ type ActiveContextSubscription<T extends UnknownContext> = {
 	unsubscribe: () => void;
 	active: boolean;
 };
+
+/**
+ * Merges `update` over `base` one level deep into a new object.
+ *
+ * @remarks A key present in `update` replaces the same key in `base` outright, so a nested object is
+ * overwritten, not merged. Used for `setContext` and for merging a hydration payload over the initial value.
+ */
+function mergeShallow(
+	base: Record<string, unknown> | undefined,
+	update: Record<string, unknown>,
+): Record<string, unknown> {
+	return { ...base, ...update };
+}
+
+/**
+ * The argument accepted by `setContext`: a partial for an object value, the full value otherwise.
+ *
+ * @remarks `Partial` alone would make array elements optional, so arrays and primitives are passed through.
+ */
+export type ContextUpdate<V> = V extends readonly unknown[] ? V : V extends object ? Partial<V> : V;
 
 export interface SsrSerializableContextProvider extends SsrSerializableHydrationBinding {
 	/** Returns the current context payload that should be visible to descendants. */
@@ -42,12 +70,15 @@ export interface SsrSerializableContextProvider extends SsrSerializableHydration
  */
 export interface IContextProvider<T extends Context<unknown, unknown>> {
 	/**
-	 * Sets the context with the provided update and invokes the optional callback function.
+	 * Updates the context and invokes the optional callback function.
 	 *
-	 * @param update - The partial update to be applied to the context.
+	 * @remarks A plain object update over a plain object value is merged one level deep. Any other update
+	 * (array, primitive, `null`, or an object/non-object mismatch) replaces the value.
+	 *
+	 * @param update - A partial update for an object context, or the new value for any other context.
 	 * @param callback - An optional callback function that receives the updated context.
 	 */
-	setContext: (update: Partial<ContextType<T>>, callback?: (context: ContextType<T>) => void) => void;
+	setContext: (update: ContextUpdate<ContextType<T>>, callback?: (context: ContextType<T>) => void) => void;
 
 	/**
 	 * Gets the current context.
@@ -115,31 +146,31 @@ export class ContextProvider<T extends Context<unknown, unknown>>
 		this.hydrate = options.hydrate;
 		this.serialize = options.serialize;
 		this.pendingHostHydration = Boolean(options.hydrate);
-		this.value = options.initialValue as ContextType<T>;
+		this.value = this.copyInitialValue(options.initialValue) as ContextType<T>;
 		this.tryHydrateFromHost();
 
 		this.registerEvents();
 		this.host.dispatchEvent(new ContextOnMountEvent(this.context));
 	}
 
-	setContext = (update: Partial<ContextType<T>>, callback?: (context: ContextType<T>) => void) => {
+	/**
+	 * @remarks A plain object update over a plain object (or `undefined`) value is merged one level deep.
+	 * In every other case (array, primitive, `null`, or an object/non-object mismatch) `update` replaces the value.
+	 */
+	setContext = (update: ContextUpdate<ContextType<T>>, callback?: (context: ContextType<T>) => void) => {
 		this.tryHydrateFromHost();
 		this.pendingHostHydration = false;
 
-		if (typeof this.value === 'undefined' && this.isObject(update)) {
-			const oldContext = this.value;
-			this.value = { ...update } as ContextType<T>;
-			if (callback) callback(this.value);
-			this.notifySubscribers(this.value, oldContext);
-			return;
+		const oldContext = this.isObject(this.value) ? { ...this.value } : this.value;
+
+		if (this.isObject(update) && (this.isObject(this.value) || typeof this.value === 'undefined')) {
+			this.value = mergeShallow(this.value, update) as ContextType<T>;
+		} else {
+			this.value = update as ContextType<T>;
 		}
 
-		if (this.isObject(this.value) && this.isObject(update)) {
-			const oldContext = { ...this.value };
-			this.value = { ...this.value, ...update };
-			if (callback) callback(this.value);
-			this.notifySubscribers(this.value, oldContext);
-		}
+		if (callback) callback(this.value);
+		this.notifySubscribers(this.value, oldContext);
 	};
 
 	getContext = () => {
@@ -281,13 +312,19 @@ export class ContextProvider<T extends Context<unknown, unknown>>
 			this.isObject(parsedHydrationValue) &&
 			(this.isObject(this.value) || typeof this.value === 'undefined')
 		) {
-			return {
-				...(this.value ?? {}),
-				...parsedHydrationValue,
-			} as ContextType<T>;
+			return mergeShallow(this.value, parsedHydrationValue) as ContextType<T>;
 		}
 
 		return parsedHydrationValue;
+	}
+
+	private copyInitialValue(value: unknown): unknown {
+		if (Array.isArray(value)) return [...value];
+		if (this.isObject(value)) {
+			const prototype = Object.getPrototypeOf(value);
+			if (prototype === Object.prototype || prototype === null) return { ...value };
+		}
+		return value;
 	}
 
 	private isObject(value: unknown): value is Record<string, unknown> {

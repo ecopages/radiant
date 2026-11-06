@@ -295,10 +295,24 @@ export function setControllerRegistrationStrategy(strategy: ControllerRegistrati
 	controllerRegistryState.controllerRegistrationStrategy = strategy;
 }
 
+/**
+ * Sets the controller registration strategy to `'replace'`, so a controller module evaluated a second time
+ * replaces the registered controller and live runtimes pick up the new class.
+ *
+ * @remarks The strategy is process-global: it applies to every later decorator-driven registration in the
+ * current JavaScript realm, not to one root or runtime. Ecopages dev does not call it, so an Ecopages author
+ * opts in from a browser entry loaded only in development, before the controller modules evaluate.
+ */
 export function enableControllerReplacementForHmr(): void {
 	setControllerRegistrationStrategy('replace');
 }
 
+/**
+ * Restores the default `'keep-current'` registration strategy, where a second registration of an identifier
+ * keeps the first controller.
+ *
+ * @remarks Process-global, like {@link enableControllerReplacementForHmr}; Ecopages dev does not call it.
+ */
 export function disableControllerReplacementForHmr(): void {
 	setControllerRegistrationStrategy('keep-current');
 }

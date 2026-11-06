@@ -28,6 +28,16 @@ export const WINDOW_SPLITTER_MIN = 20;
 /** Maximum primary pane size as a percentage. */
 export const WINDOW_SPLITTER_MAX = 80;
 
+const WINDOW_SPLITTER_DEFAULT = 50;
+
+/**
+ * @remarks Non-finite input (for example `value="abc"`) falls back to {@link WINDOW_SPLITTER_DEFAULT}.
+ */
+function clampSplitterValue(value: number): number {
+	const finite = Number.isFinite(value) ? value : WINDOW_SPLITTER_DEFAULT;
+	return Math.min(WINDOW_SPLITTER_MAX, Math.max(WINDOW_SPLITTER_MIN, finite));
+}
+
 function isHorizontalSplit(orientation: string): boolean {
 	return orientation !== 'vertical';
 }
@@ -75,7 +85,7 @@ function isHorizontalSplit(orientation: string): boolean {
 export class RuiWindowSplitter extends RadiantElement {
 	declare readonly [JSX_PROPS]?: RuiWindowSplitterProps;
 
-	@prop({ type: Number, reflect: true, defaultValue: 50 })
+	@prop({ type: Number, reflect: true, defaultValue: WINDOW_SPLITTER_DEFAULT })
 	@bindTo({ ref: 'separator', attr: 'aria-valuenow' })
 	value: number;
 
@@ -100,6 +110,7 @@ export class RuiWindowSplitter extends RadiantElement {
 	private dragging = false;
 
 	protected override onConnected(): void {
+		this.clampValue();
 		this.syncSeparatorPresentation();
 		this.applySize();
 	}
@@ -112,8 +123,27 @@ export class RuiWindowSplitter extends RadiantElement {
 
 	@onUpdated(['value', 'orientation'])
 	onPropsUpdated(): void {
+		if (this.clampValue()) {
+			return;
+		}
 		this.syncSeparatorPresentation();
 		this.applySize();
+	}
+
+	/**
+	 * Writes the clamped value back so the property, the reflected attribute and
+	 * `aria-valuenow` agree.
+	 *
+	 * @remarks Returns true when it rewrote `value`. That write triggers `onPropsUpdated`
+	 * again with an in-range value, which does the sync, so there is no update loop.
+	 */
+	private clampValue(): boolean {
+		const clamped = clampSplitterValue(this.value);
+		if (clamped === this.value) {
+			return false;
+		}
+		this.value = clamped;
+		return true;
 	}
 
 	private syncSeparatorPresentation(): void {
@@ -129,7 +159,7 @@ export class RuiWindowSplitter extends RadiantElement {
 
 	private applySize(): void {
 		if (!this.primaryTarget) return;
-		const size = `${Math.min(WINDOW_SPLITTER_MAX, Math.max(WINDOW_SPLITTER_MIN, this.value))}%`;
+		const size = `${clampSplitterValue(this.value)}%`;
 		if (this.orientation === 'vertical') {
 			this.primaryTarget.style.height = size;
 			this.primaryTarget.style.width = '';
@@ -145,10 +175,10 @@ export class RuiWindowSplitter extends RadiantElement {
 		const horizontal = isHorizontalSplit(this.orientation);
 		if ((horizontal && event.key === 'ArrowLeft') || (!horizontal && event.key === 'ArrowUp')) {
 			event.preventDefault();
-			this.updateValue(Math.max(WINDOW_SPLITTER_MIN, this.value - delta));
+			this.updateValue(clampSplitterValue(this.value - delta));
 		} else if ((horizontal && event.key === 'ArrowRight') || (!horizontal && event.key === 'ArrowDown')) {
 			event.preventDefault();
-			this.updateValue(Math.min(WINDOW_SPLITTER_MAX, this.value + delta));
+			this.updateValue(clampSplitterValue(this.value + delta));
 		} else if (event.key === 'Home') {
 			event.preventDefault();
 			this.updateValue(WINDOW_SPLITTER_MIN);
@@ -177,19 +207,9 @@ export class RuiWindowSplitter extends RadiantElement {
 		if (!this.dragging) return;
 		const rect = this.getBoundingClientRect();
 		if (this.orientation === 'vertical') {
-			this.updateValue(
-				Math.min(
-					WINDOW_SPLITTER_MAX,
-					Math.max(WINDOW_SPLITTER_MIN, ((event.clientY - rect.top) / rect.height) * 100),
-				),
-			);
+			this.updateValue(clampSplitterValue(((event.clientY - rect.top) / rect.height) * 100));
 		} else {
-			this.updateValue(
-				Math.min(
-					WINDOW_SPLITTER_MAX,
-					Math.max(WINDOW_SPLITTER_MIN, ((event.clientX - rect.left) / rect.width) * 100),
-				),
-			);
+			this.updateValue(clampSplitterValue(((event.clientX - rect.left) / rect.width) * 100));
 		}
 	}
 
@@ -200,8 +220,6 @@ export class RuiWindowSplitter extends RadiantElement {
 		document.removeEventListener('pointerup', this.onPointerUp);
 	}
 }
-
-
 
 declare global {
 	interface HTMLElementTagNameMap {

@@ -45,7 +45,7 @@ import { RuiCalendar } from '@ecopages/radiant-ui/calendar';
 
 ## Derived tree
 
-`<rui-calendar>` is a **Derived Tree** host: it `render()`s the month grid from `value`, `min`, `max`, and `selection-mode`. You do not stamp `data-calendar-*` targets yourself. Parent hosts (`rui-date-field`, `rui-date-range-picker`) embed `<rui-calendar>` and query `[data-calendar-day]` inside it when opening a popup.
+`<rui-calendar>` is a **Derived Tree** host: it `render()`s the month grid from `value`, `min`, `max`, and `selection-mode`. You do not stamp `data-calendar-*` targets yourself, and `RuiCalendar` children are a type error. Parent hosts (`rui-date-field`, `rui-date-range-picker`) embed `<rui-calendar>` and query `[data-calendar-day]` inside it when opening a popup.
 
 ## Selection modes
 

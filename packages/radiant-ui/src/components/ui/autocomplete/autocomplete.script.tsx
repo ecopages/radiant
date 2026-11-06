@@ -1,4 +1,5 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
+import { isResetBy } from '../shared/form-owner';
 import { RadiantElement, customElement, onEvent, onUpdated, prop } from '@ecopages/radiant';
 import { textContains, type TextFilterSensitivity } from '@/lib/text-filter';
 
@@ -158,6 +159,17 @@ export class RuiAutocomplete extends RadiantElement {
 	@onUpdated(['sensitivity', 'inputValue'])
 	onPropsUpdated(): void {
 		this.applyFilter();
+	}
+
+	/**
+	 * @remarks A native reset rewrites the input text without an `input` event. The
+	 * reset event fires before the controls are restored, hence the timeout.
+	 */
+	@onEvent({ document: true, type: 'reset' })
+	onFormReset(event: Event): void {
+		if (event.target instanceof HTMLFormElement && isResetBy(event.target, this, this.getInput())) {
+			setTimeout(() => this.applyFilter(), 0);
+		}
 	}
 
 	@onEvent({ selector: '[data-autocomplete-input]', type: 'input' })

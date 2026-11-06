@@ -27,6 +27,7 @@ export default mergeConfig(
 		test: {
 			name: 'browser',
 			include: ['test/**/*.browser.test.{ts,tsx}'],
+			exclude: ['test/build/**'],
 			browser: {
 				enabled: true,
 				headless: true,

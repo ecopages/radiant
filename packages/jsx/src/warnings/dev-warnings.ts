@@ -6,6 +6,7 @@ export const HYDRATION_MALFORMED_BINDING_DESCRIPTOR_WARNING = 2;
 export const HYDRATION_MISSING_BINDING_WARNING = 3;
 export const DOM_RANGE_ANCHOR_DRIFT_WARNING = 4;
 export const DETACHED_INSERTION_POINT_WARNING = 5;
+export const CLASS_NAME_ATTRIBUTE_WARNING = 6;
 
 const issuedRuntimeWarnings = new Set<string>();
 
@@ -14,7 +15,8 @@ type DevWarningKind =
 	| typeof HYDRATION_MALFORMED_BINDING_DESCRIPTOR_WARNING
 	| typeof HYDRATION_MISSING_BINDING_WARNING
 	| typeof DOM_RANGE_ANCHOR_DRIFT_WARNING
-	| typeof DETACHED_INSERTION_POINT_WARNING;
+	| typeof DETACHED_INSERTION_POINT_WARNING
+	| typeof CLASS_NAME_ATTRIBUTE_WARNING;
 
 type DevWarningFormatter = (kind: DevWarningKind, detail?: string) => string;
 

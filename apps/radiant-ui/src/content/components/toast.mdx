@@ -127,8 +127,11 @@ Place the stack at any corner or edge center.
 
 ## Accessibility
 
-- Toasts use `role="status"` for polite announcements that do not interrupt current tasks; the toaster wraps the stack in an `aria-live="polite"` region.
-- Error toasts use `role="alert"` semantics for immediate attention.
+- Error toasts use `role="alert"` with `aria-live="assertive"` and `aria-atomic="true"`. The stack has no live attribute, so an alert is never nested inside a polite region.
+- Other variants use `role="status"` with `aria-live="off"`. The toaster announces them through a visually hidden `aria-live="polite"` region that sits beside the stack. It clears the region and sets the new text about 100 ms later, so a repeated message ("Saved", "Saved") and a toast updated in place (the same `id`, as `toast.promise()` does) announce again, and toasts shown within that gap are announced together.
+- A toast already on screen that turns into an error (a rejected `toast.promise()`) is announced from a second, `aria-live="assertive"` region beside the stack, because switching an existing toast to `role="alert"` is not reliably announced. A new error toast is left to its own alert role.
+- Pass `announcement` when the title does not read well on its own; it replaces the title and description in the live region.
+- Screen-reader behavior has not been verified yet with NVDA and Firefox, JAWS and Chrome, or VoiceOver and Safari.
 - Do not rely on toasts alone for critical errors; pair with inline field errors when appropriate.
 - The stack region is focusable (`tabindex="-1"`) so keyboard users can inspect messages; close controls are labeled buttons.
 
@@ -144,12 +147,14 @@ The `toast()` callable and its variants accept `(title, options?)` where `option
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `id` | `string \| number` | auto | Dismiss a specific toast by id. |
+| `id` | `string \| number` | auto | Dismiss a specific toast by id, or update it in place. |
+| `announcement` | `string` | title and description | Plain text read by the polite live region. Not used for `error` toasts, which announce themselves. |
 | `description` | `string` | | Supporting detail under the title. |
 | `duration` | `number` | `4000` | Lifetime in ms; `Infinity` keeps it until dismissed. |
 | `action` | `{ label, onClick }` | | Render an action button. |
 | `dismissible` | `boolean` | `true` | Allow close button / swipe-to-dismiss. |
 | `closeButton` | `boolean` | toaster default | Show the corner close control. |
+| `closeLabel` | `string` | `Close toast` | Accessible name of the close control. |
 | `position` | `ToastPosition` | toaster default | Per-toast placement override. |
 
 ### `<rui-toaster>` attributes
@@ -167,7 +172,7 @@ The `toast()` callable and its variants accept `(title, options?)` where `option
 
 ### Derived tree
 
-`<rui-toaster>` and `<rui-toast>` are **Derived Tree** hosts: the toaster `render()`s `[data-ref="list"]` and `rui-toast` children; each toast `render()`s `[data-ref="toast"]`, `[data-toast-close]`, and `[data-toast-action]`. Use the imperative `toast()` API — do not author these targets by hand.
+`<rui-toaster>` and `<rui-toast>` are **Derived Tree** hosts: the toaster `render()`s `[data-ref="list"]` and `rui-toast` children; each toast `render()`s `[data-ref="toast"]`, `[data-toast-close]`, and `[data-toast-action]`. Use the imperative `toast()` API — do not author these targets by hand. `RuiToaster` and `RuiToast` children are a type error.
 
 The toaster queries `[data-ref="list"]` and `[data-ref="toast"]` for layout math.
 
@@ -184,6 +189,7 @@ Rendered by the toaster; listed for completeness. Documented via `@attr` on `Rui
 | `duration` | `number` | `4000` | Lifetime before auto-dismiss. |
 | `dismissible` | `boolean` | `true` | Allow close / swipe. |
 | `close-button` | `boolean` | `false` | Corner close control. |
+| `close-label` | `string` | `Close toast` | Accessible name of the close control. |
 | `action-label` | `string` | `''` | Action button text. |
 | `position` | `ToastPosition` | `bottom-end` | Placement; mirrors the toaster. |
 | `marked-delete` | `boolean` | `false` | Marks for animated exit. |
@@ -206,7 +212,7 @@ Public BEM classes on the composed light-DOM surface (documented via `@cssclass`
 | --- | --- |
 | `.rui-toaster-region` | Announcement region wrapper (`display: contents`). |
 | `.rui-toaster` | The `<ol>` stack list. |
-| `.rui-toast` | Toast surface (`role="status"`). |
+| `.rui-toast` | Toast surface (`role="status"`; `role="alert"` for the `error` variant). |
 | `.rui-toast--info` | Info tone. |
 | `.rui-toast--success` | Success tone. |
 | `.rui-toast--warning` | Warning tone. |

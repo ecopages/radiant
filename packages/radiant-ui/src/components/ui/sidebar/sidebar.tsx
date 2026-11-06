@@ -336,8 +336,8 @@ export function RuiSidebarInset({ children, class: className, ...props }: RuiSid
 export type RuiSidebarViewProps = JsxCustomElementAttributes<RuiSidebarElement, RuiSidebarProps & { id: string }>;
 
 /**
- * Sidebar view. Stamps `[data-ref="root"]`, `[data-ref="pane"]`, optional
- * `[data-ref="scrim"]` and `[data-ref="handle"]`.
+ * Sidebar view. Stamps `[data-ref="root"]`, `[data-ref="pane"]`, optional `[data-ref="scrim"]` and
+ * `[data-ref="handle"]`. The host declares `role="complementary"` itself, so it reaches server output without the view.
  *
  * @cssclass rui-sidebar - Pane surface.
  */
@@ -353,7 +353,7 @@ export function RuiSidebar({ children, open, label, ...props }: RuiSidebarViewPr
 					aria-label="Close sidebar"
 					hidden
 				></button>
-				<div data-ref="pane" class="rui-sidebar__pane" aria-label={label}>
+				<div data-ref="pane" class="rui-sidebar__pane">
 					{children}
 				</div>
 				<div data-ref="handle" class="rui-sidebar__handle" role="separator" tabindex={0} hidden>

@@ -40,9 +40,25 @@ See [Typing Decorated Fields](/docs/decorators) for the field type.
 | Option | Type | Description |
 | :-- | :-- | :-- |
 | `context` | `Context` | The typed context token to provide |
-| `initialValue` | `T` | Initial provider value |
+| `initialValue` | `T` | Initial provider value. Each provider shallow-copies a plain object or array; nested values are shared |
 | `hydrate` | `String \| Number \| Boolean \| Object \| Array` | Serializes and restores provider state during SSR hydration |
 | `serialize` | `(value: T) => unknown` | Projects the live context into an SSR-safe hydration payload |
+
+## Updating Context
+
+`provider.setContext(update)` merges `update` over the current object value one level deep. A top-level key in `update` replaces that key outright, so a nested object is overwritten, not merged: to change one field inside it, pass the whole nested object.
+
+```typescript
+// context: { user: { name: 'Ada', age: 36 }, theme: 'light' }
+provider.setContext({ user: { ...provider.getContext().user, name: 'Grace' } });
+```
+
+When the current value or `update` is not a plain object (an array, string, number, boolean or `null`), `update` replaces the value instead. Subscribers and the callback still run.
+
+```typescript
+// context: ['a']
+provider.setContext(['a', 'b']);
+```
 
 ## SSR Hydration
 
@@ -79,7 +95,7 @@ export const loggedThemeContext = createContext<LoggedThemeContext>(Symbol('logg
 provider!: ContextProvider<typeof loggedThemeContext>;
 ```
 
-When `hydrate: Object` is active, the parsed payload merges back into `initialValue`, so omitted client-only members keep their defaults.
+When `hydrate: Object` is active, the parsed payload merges back into `initialValue` one level deep, so omitted client-only members keep their defaults.
 
 When Radiant owns SSR for the host, prefer `renderComponent(...)` so hydration scripts are emitted as raw markup. Those SSR helpers live under `@ecopages/radiant/server/*`. Avoid placing JSON strings directly inside `<script>` children in JSX, because they will be HTML-escaped before the browser parses them.
 

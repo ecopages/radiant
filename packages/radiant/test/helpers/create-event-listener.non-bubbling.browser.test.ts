@@ -54,4 +54,24 @@ describe('createEventListener non-bubbling delegation warning', () => {
 
 		expect(warn).not.toHaveBeenCalled();
 	});
+
+	test('warns for a delegated pointerenter and points at the host option', () => {
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+		const host = mountBlurListenerHost();
+
+		createEventListener(host, { selector: '[data-input]', type: 'pointerenter' }, () => {});
+
+		expect(warn).toHaveBeenCalledTimes(1);
+		expect(warn.mock.calls[0]?.[0]).toContain('"pointerenter"');
+		expect(warn.mock.calls[0]?.[0]).toContain('host: true');
+	});
+
+	test('stays silent for a host-bound pointerenter', () => {
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+		const host = mountBlurListenerHost();
+
+		createEventListener(host, { host: true, type: 'pointerleave' }, () => {});
+
+		expect(warn).not.toHaveBeenCalled();
+	});
 });

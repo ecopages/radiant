@@ -68,10 +68,12 @@ export class ReactivePropertyState {
 
 	/**
 	 * @remarks
-	 * A pre-upgrade own-property assignment is the initial signal value. Non-reflected
-	 * attributes are consumed and dropped so a later `attributeChangedCallback` cannot
-	 * fight the property. Reflected attributes stay until {@link completeInitialSync}
-	 * so an empty `defaultValue` cannot strip an authored `value="ts"`.
+	 * A pre-upgrade own-property assignment is the initial signal value. An authored
+	 * attribute stays on the host whether or not the property reflects: `reflect`
+	 * only controls writing property changes back, so a non-reflected attribute is
+	 * read at upgrade and never rewritten or kept in sync afterwards. Reflected
+	 * attributes are only rewritten at {@link completeInitialSync} so an empty
+	 * `defaultValue` cannot strip an authored `value="ts"`.
 	 *
 	 * Without an attribute, an omitted `defaultValue` falls back to the type default
 	 * (`0`, `''`, `null`; booleans stay `undefined`), while an explicit
@@ -100,10 +102,6 @@ export class ReactivePropertyState {
 		propertyMapping.defaultValue = defaultValue;
 		const initialValue = this.resolveInitialValue(propertyName, options, attributeKey, propertyMapping.converter);
 		propertyMapping.initialValue = initialValue;
-
-		if (!reflect && this.host.hasAttribute(attributeKey)) {
-			this.host.removeAttribute(attributeKey);
-		}
 
 		if (hasPreUpgradeValue && Object.prototype.hasOwnProperty.call(this.host, propertyName)) {
 			Reflect.deleteProperty(this.host, propertyName);

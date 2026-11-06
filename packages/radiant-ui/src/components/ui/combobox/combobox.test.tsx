@@ -69,6 +69,30 @@ describe('RuiCombobox', () => {
 		cleanup();
 	});
 
+	it('shows every option again after a native form reset clears the typed filter', async () => {
+		const { host, cleanup } = mount(
+			<form>
+				<RuiCombobox options={OPTIONS} placeholder="Country" />
+			</form>,
+		);
+		await settled();
+
+		const form = host.querySelector('form') as HTMLFormElement;
+		const input = host.querySelector('[data-combobox-input]') as HTMLInputElement;
+		const options = Array.from(host.querySelectorAll('[data-combobox-listbox] [role="option"]')) as HTMLElement[];
+
+		await userEvent.type(input, 'ita');
+		await settled();
+		expect(options.filter((option) => !option.hidden)).toHaveLength(1);
+
+		form.reset();
+		await settled();
+
+		expect(input.value).toBe('');
+		expect(options.every((option) => !option.hidden)).toBe(true);
+		cleanup();
+	});
+
 	it('opens on the next Tab after selecting closes the listbox with the input focused', async () => {
 		const { host, cleanup } = mount(
 			<>
@@ -97,6 +121,70 @@ describe('RuiCombobox', () => {
 		await settled();
 		expect(document.activeElement).toBe(input);
 		expect(popup.hidden).toBe(false);
+		cleanup();
+	});
+
+	it('points the input and trigger aria-controls at the listbox id', async () => {
+		const { host, cleanup } = mount(<RuiCombobox options={OPTIONS} placeholder="Country" />);
+		await settled();
+
+		const input = host.querySelector('[data-combobox-input]') as HTMLInputElement;
+		const trigger = host.querySelector('[data-combobox-trigger]') as HTMLButtonElement;
+		const listbox = host.querySelector('[role="listbox"]') as HTMLElement;
+		expect(listbox.id).not.toBe('');
+		listbox.id = 'preset-listbox-id';
+		trigger.click();
+		await settled();
+		(host.querySelector('[role="option"]') as HTMLElement).click();
+		await settled();
+		expect(input.getAttribute('aria-controls')).toBe(listbox.id);
+		expect(trigger.getAttribute('aria-controls')).toBe(listbox.id);
+		expect(document.getElementById(input.getAttribute('aria-controls') as string)).toBe(listbox);
+		cleanup();
+	});
+
+	it('clears the value on Escape when the closed input text was erased', async () => {
+		const { host, cleanup } = mount(<RuiCombobox value="de" options={OPTIONS} placeholder="Country" />);
+		await settled();
+
+		const input = host.querySelector('[data-combobox-input]') as HTMLInputElement;
+		const popup = host.querySelector('[data-combobox-listbox]') as HTMLElement;
+		const combobox = host.querySelector('rui-combobox') as RuiComboboxElement;
+		const changes: unknown[] = [];
+		combobox.addEventListener('rui-change', (event) => changes.push((event as CustomEvent).detail));
+
+		await userEvent.click(input);
+		await userEvent.clear(input);
+		await settled();
+		for (let i = 0; i < 3 && !popup.hidden; i++) {
+			await userEvent.keyboard('{Escape}');
+			await settled();
+		}
+		expect(popup.hidden).toBe(true);
+		expect(input.value).toBe('');
+		expect(combobox.value).toEqual(['de']);
+
+		await userEvent.keyboard('{Escape}');
+		await settled();
+		expect(combobox.value).toEqual([]);
+		expect(changes.at(-1)).toEqual({ value: [] });
+		cleanup();
+	});
+
+	it('keeps chips when Escape runs on a closed multiple-mode combobox with empty text', async () => {
+		const { host, cleanup } = mount(
+			<RuiCombobox selectionMode="multiple" value="de,it" options={OPTIONS} placeholder="Countries" />,
+		);
+		await settled();
+
+		const input = host.querySelector('[data-combobox-input]') as HTMLInputElement;
+		const combobox = host.querySelector('rui-combobox') as RuiComboboxElement;
+		const before = [...combobox.value];
+		expect(before.length).toBeGreaterThan(0);
+		input.focus();
+		await userEvent.keyboard('{Escape}');
+		await settled();
+		expect(combobox.value).toEqual(before);
 		cleanup();
 	});
 });

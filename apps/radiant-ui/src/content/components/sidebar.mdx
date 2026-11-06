@@ -112,7 +112,7 @@ Rounded corners use `rounded-container`; the docs site header uses `surface`, ma
 
 ## Accessibility
 
-- The sidebar renders as a `nav` landmark with `label` as its accessible name.
+- The sidebar renders as a `complementary` landmark with `label` as its accessible name, in server output too. A `role` you author on `<rui-sidebar>` is kept.
 - Collapsed icon-only mode preserves accessible names on menu buttons.
 - The trigger button exposes whether the sidebar is expanded or collapsed.
 
@@ -135,7 +135,7 @@ Rounded corners use `rounded-container`; the docs site header uses `surface`, ma
 | `mobile-default-open` (`mobileDefaultOpen`) | `boolean` | `false` | Open state on mobile when uncontrolled (mount and when the viewport crosses into mobile). |
 | `open` | `boolean` | | Controlled open state. Viewport crossings do not override this. |
 | `mobile-breakpoint` (`mobileBreakpoint`) | `number` | | Width below which the mobile rail applies. |
-| `label` | `string` | `Sidebar` | Accessible name for the `nav` landmark. |
+| `label` | `string` | `Sidebar` | Accessible name for the `complementary` landmark. |
 | `match-active` (`matchActive`) | `boolean` | `false` | Highlight the current route in the menu. |
 | `match-mode` (`matchMode`) | `pathname` · … | `pathname` | Route matching mode. |
 | `scroll-active-on-mount` (`scrollActiveOnMount`) | `boolean` | `false` | Scroll the active item into view on mount. |
@@ -146,7 +146,7 @@ Rounded corners use `rounded-container`; the docs site header uses `surface`, ma
 | Target | Required | Host writes | Author owns |
 | --- | --- | --- | --- |
 | `[data-ref="root"]` | yes | `data-state`, `data-collapsible`, … | inner shell |
-| `[data-ref="pane"]` | yes | `aria-label`, `inert` | pane content |
+| `[data-ref="pane"]` | yes | `inert` | pane content |
 | `[data-ref="scrim"]` | no | `hidden` | mobile overlay button |
 | `[data-ref="handle"]` | no | `hidden`, `aria-valuenow`, … | resize handle |
 | `[data-ref="menu-button"]` | no | `aria-current`, active class | menu links |

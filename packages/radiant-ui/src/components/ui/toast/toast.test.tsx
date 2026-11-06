@@ -8,18 +8,18 @@ import { RuiToaster as RuiToasterScript } from './toaster.script';
 void RuiToast;
 void RuiToasterScript;
 
-function mount(element: JsxRenderable): { host: HTMLElement; cleanup: () => void } {
+const cleanups: Array<() => void> = [];
+
+function mount(element: JsxRenderable): { host: HTMLElement } {
 	const host = document.createElement('div');
 	document.body.appendChild(host);
 	const root: JsxRoot = createRoot(host);
 	root.render(element);
-	return {
-		host,
-		cleanup: () => {
-			root.unmount();
-			host.remove();
-		},
-	};
+	cleanups.push(() => {
+		root.unmount();
+		host.remove();
+	});
+	return { host };
 }
 
 async function settled(): Promise<void> {
@@ -41,11 +41,18 @@ function toastElements(host: ParentNode): HTMLElement[] {
 	return [...host.querySelectorAll('rui-toast')] as HTMLElement[];
 }
 
+async function expectAnnouncement(host: ParentNode, text: string): Promise<void> {
+	await vi.waitFor(() => {
+		expect(host.querySelector('.rui-toaster-announcer')?.textContent).toBe(text);
+	});
+}
+
 describe('rui-toaster', () => {
 	afterEach(() => {
 		toast.dismiss();
 		toast.clear();
 		resetToastDeadlines();
+		for (const cleanup of cleanups.splice(0)) cleanup();
 	});
 
 	it('exports every supported toast position in display order', () => {
@@ -60,7 +67,7 @@ describe('rui-toaster', () => {
 	});
 
 	it('renders a toast from the imperative API', async () => {
-		const { host, cleanup } = mount(<RuiToaster position="bottom-end" closeButton />);
+		const { host } = mount(<RuiToaster position="bottom-end" closeButton />);
 		await settled();
 
 		toast.success('Profile saved');
@@ -68,13 +75,160 @@ describe('rui-toaster', () => {
 
 		const title = host.querySelector('rui-toast [data-title]');
 		expect(title?.textContent).toContain('Profile saved');
-		expect(host.querySelector('.rui-toaster-region')?.getAttribute('aria-live')).toBe('polite');
+		expect(host.querySelector('.rui-toaster-announcer')?.getAttribute('aria-live')).toBe('polite');
+		await expectAnnouncement(host, 'Profile saved');
+	});
 
-		cleanup();
+	function watchAnnouncer(host: ParentNode): string[] {
+		const announcer = host.querySelector('.rui-toaster-announcer') as HTMLElement;
+		const seen: string[] = [];
+		new MutationObserver(() => seen.push(announcer.textContent ?? '')).observe(announcer, {
+			childList: true,
+			characterData: true,
+			subtree: true,
+		});
+		return seen;
+	}
+
+	it('announces an identical message again by clearing the live region first', async () => {
+		const { host } = mount(<RuiToaster />);
+		await settled();
+		const seen = watchAnnouncer(host);
+
+		toast('Saved');
+		await expectAnnouncement(host, 'Saved');
+		toast('Saved');
+		await vi.waitFor(() => expect(seen.filter((text) => text === 'Saved')).toHaveLength(2));
+
+		expect(seen).toEqual(['Saved', '', 'Saved']);
+	});
+
+	it('announces toasts created in the same tick together', async () => {
+		const { host } = mount(<RuiToaster />);
+		await settled();
+
+		toast('First saved');
+		toast.success('Second saved');
+
+		await expectAnnouncement(host, 'First saved. Second saved');
+	});
+
+	it('does not double the period when joining announcements', async () => {
+		const { host } = mount(<RuiToaster />);
+		await settled();
+
+		toast('Saved.', { description: 'All good' });
+		toast('Synced!');
+
+		await expectAnnouncement(host, 'Saved. All good. Synced!');
+	});
+
+	it('announces a toast updated in place, as toast.promise does', async () => {
+		const { host } = mount(<RuiToaster />);
+		await settled();
+		let resolve: (value: string) => void = () => {};
+
+		toast.promise(new Promise<string>((done) => (resolve = done)), {
+			loading: 'Saving',
+			success: (name) => `${name} saved`,
+			error: 'Save failed',
+		});
+		await expectAnnouncement(host, 'Saving');
+		resolve('Profile');
+
+		await expectAnnouncement(host, 'Profile saved');
+	});
+
+	it('announces a toast updated in place to error from the assertive region', async () => {
+		const { host } = mount(<RuiToaster />);
+		await settled();
+		let reject: (reason: unknown) => void = () => {};
+
+		toast.promise(new Promise<string>((_, fail) => (reject = fail)), {
+			loading: 'Saving',
+			success: 'Saved',
+			error: 'Save failed',
+		});
+		await expectAnnouncement(host, 'Saving');
+		reject(new Error('offline'));
+
+		await vi.waitFor(() => {
+			expect(host.querySelector('.rui-toaster-announcer[data-assertive]')?.textContent).toBe('Save failed');
+		});
+		expect(host.querySelector('.rui-toaster-announcer[data-assertive]')?.getAttribute('aria-live')).toBe(
+			'assertive',
+		);
+	});
+
+	it('leaves a new error toast to its own alert role', async () => {
+		const { host } = mount(<RuiToaster />);
+		await settled();
+
+		toast.error('Sync failed');
+		toast('Profile saved');
+		await expectAnnouncement(host, 'Profile saved');
+
+		expect(host.querySelector('.rui-toaster-announcer[data-assertive]')?.textContent).toBe('');
+	});
+
+	it('announces a toast shown again with the same id', async () => {
+		const { host } = mount(<RuiToaster />);
+		await settled();
+		const seen = watchAnnouncer(host);
+
+		toast('Saved', { id: 'save' });
+		await expectAnnouncement(host, 'Saved');
+		toast('Saved', { id: 'save' });
+
+		await vi.waitFor(() => expect(seen.filter((text) => text === 'Saved')).toHaveLength(2));
+	});
+
+	it('announces the supplied announcement text instead of the title', async () => {
+		const { host } = mount(<RuiToaster />);
+		await settled();
+
+		toast('Saved', { announcement: 'Your profile was saved' });
+
+		await expectAnnouncement(host, 'Your profile was saved');
+	});
+
+	it('names the close button from closeLabel and defaults to Close toast', async () => {
+		const { host } = mount(<RuiToaster closeButton />);
+		await settled();
+
+		toast('Default label');
+		toast('Custom label', { closeLabel: 'Fermer' });
+		await settledToasts(host);
+
+		const labels = [...host.querySelectorAll('[data-toast-close]')].map((b) => b.getAttribute('aria-label'));
+		expect(labels.sort()).toEqual(['Close toast', 'Fermer']);
+	});
+
+	it('renders an error toast as an assertive alert and other variants as status', async () => {
+		const { host } = mount(<RuiToaster position="bottom-end" />);
+		await settled();
+
+		toast.error('Save failed');
+		toast.success('Profile saved');
+		await settledToasts(host);
+
+		const surfaceOf = (text: string) =>
+			toastElements(host)
+				.find((element) => element.textContent?.includes(text))
+				?.querySelector('[data-ref="toast"]') as HTMLElement;
+		const error = surfaceOf('Save failed');
+		expect(error.getAttribute('role')).toBe('alert');
+		expect(error.getAttribute('aria-live')).toBe('assertive');
+		expect(error.getAttribute('aria-atomic')).toBe('true');
+		const success = surfaceOf('Profile saved');
+		expect(success.getAttribute('role')).toBe('status');
+		expect(success.getAttribute('aria-live')).toBe('off');
+		expect(error.closest('[aria-live="polite"]')).toBeNull();
+		await expectAnnouncement(host, 'Profile saved');
 	});
 
 	it('dismisses all toasts', async () => {
-		const { host, cleanup } = mount(<RuiToaster />);
+		const { host } = mount(<RuiToaster />);
 		await settled();
 
 		toast('One');
@@ -87,7 +241,6 @@ describe('rui-toaster', () => {
 		await settled();
 
 		expect(host.querySelectorAll('rui-toast').length).toBe(0);
-		cleanup();
 	});
 
 	it('positions against a container selector instead of the viewport', async () => {
@@ -109,7 +262,7 @@ describe('rui-toaster', () => {
 	});
 
 	it('limits mounted toasts to visibleToasts and keeps the newest', async () => {
-		const { host, cleanup } = mount(<RuiToaster visibleToasts={3} position="bottom-end" duration={60_000} />);
+		const { host } = mount(<RuiToaster visibleToasts={3} position="bottom-end" duration={60_000} />);
 		await settled();
 
 		toast('A');
@@ -121,12 +274,10 @@ describe('rui-toaster', () => {
 
 		const titles = toastElements(host).map((el) => el.querySelector('[data-title]')?.textContent);
 		expect(titles).toEqual(['D', 'C', 'B']);
-
-		cleanup();
 	});
 
 	it('auto-dismisses after duration when not hovered', async () => {
-		const { host, cleanup } = mount(<RuiToaster position="bottom-end" duration={400} />);
+		const { host } = mount(<RuiToaster position="bottom-end" duration={400} />);
 		await settled();
 
 		toast('Will expire');
@@ -137,11 +288,10 @@ describe('rui-toaster', () => {
 		await settled();
 
 		expect(host.querySelectorAll('rui-toast').length).toBe(0);
-		cleanup();
 	});
 
 	it('auto-dismisses stacked toasts without resetting sibling timers', async () => {
-		const { host, cleanup } = mount(<RuiToaster position="bottom-end" duration={500} />);
+		const { host } = mount(<RuiToaster position="bottom-end" duration={500} />);
 		await settled();
 
 		toast('First');
@@ -153,11 +303,10 @@ describe('rui-toaster', () => {
 		await settled();
 
 		expect(host.querySelectorAll('rui-toast').length).toBe(0);
-		cleanup();
 	});
 
 	it('keeps lifetime running when expand prop is true', async () => {
-		const { host, cleanup } = mount(<RuiToaster expand position="bottom-end" duration={400} />);
+		const { host } = mount(<RuiToaster expand position="bottom-end" duration={400} />);
 		await settled();
 
 		toast('Expanded still expires');
@@ -168,11 +317,10 @@ describe('rui-toaster', () => {
 		await settled();
 
 		expect(host.querySelectorAll('rui-toast').length).toBe(0);
-		cleanup();
 	});
 
 	it('preserves toast element identity when a newer toast is prepended', async () => {
-		const { host, cleanup } = mount(<RuiToaster position="bottom-end" duration={60_000} />);
+		const { host } = mount(<RuiToaster position="bottom-end" duration={60_000} />);
 		await settled();
 
 		toast('First');
@@ -192,12 +340,10 @@ describe('rui-toaster', () => {
 		expect(els[0]?.toastId).not.toBe(firstId);
 		expect(els[0]?.dataset.front).toBe('true');
 		expect(first!.dataset.front).toBe('false');
-
-		cleanup();
 	});
 
 	it('resumes leftover lifetime after a remount instead of restarting duration', async () => {
-		const { host, cleanup } = mount(<RuiToaster position="bottom-end" duration={800} />);
+		const { host } = mount(<RuiToaster position="bottom-end" duration={800} />);
 		await settled();
 
 		toast('Remount me');
@@ -215,11 +361,10 @@ describe('rui-toaster', () => {
 		await settled();
 
 		expect(host.querySelectorAll('rui-toast').length).toBe(0);
-		cleanup();
 	});
 
 	it('keeps collapsed peeks to three', async () => {
-		const { host, cleanup } = mount(
+		const { host } = mount(
 			<RuiToaster expand={false} visibleToasts={6} gap={TOAST_GAP} position="bottom-end" duration={60_000} />,
 		);
 		await settled();
@@ -241,12 +386,10 @@ describe('rui-toaster', () => {
 
 		const frontHeight = Number.parseFloat(els[0]?.style.height || '0');
 		expect(list.style.height).toBe(`${collapsedStackHeight(frontHeight, TOAST_COLLAPSED_PEEK, TOAST_GAP)}px`);
-
-		cleanup();
 	});
 
 	it('reveals every mounted toast when expanded', async () => {
-		const { host, cleanup } = mount(
+		const { host } = mount(
 			<RuiToaster expand visibleToasts={5} gap={TOAST_GAP} position="bottom-end" duration={60_000} />,
 		);
 		await settled();
@@ -262,12 +405,10 @@ describe('rui-toaster', () => {
 		expect(els.length).toBe(5);
 		expect(els.every((el) => el.dataset.visible === 'true')).toBe(true);
 		expect(toaster.dataset.expanded).toBe('true');
-
-		cleanup();
 	});
 
 	it('expands mixed-height toasts with cumulative offsets', async () => {
-		const { host, cleanup } = mount(<RuiToaster expand gap={TOAST_GAP} position="bottom-end" duration={60_000} />);
+		const { host } = mount(<RuiToaster expand gap={TOAST_GAP} position="bottom-end" duration={60_000} />);
 		await settled();
 
 		toast('Short');
@@ -299,12 +440,10 @@ describe('rui-toaster', () => {
 			expect(el.style.getPropertyValue('--rui-toast-offset')).toBe(`${expectedOffset}px`);
 			expect(el.style.getPropertyValue('--rui-toast-y')).toBe(`translateY(${-expectedOffset}px)`);
 		}
-
-		cleanup();
 	});
 
 	it('pauses lifetime on hover and resumes leftover time after leave', async () => {
-		const { host, cleanup } = mount(<RuiToaster position="bottom-end" duration={600} />);
+		const { host } = mount(<RuiToaster position="bottom-end" duration={600} />);
 		await settled();
 
 		toast('Held on hover');
@@ -334,7 +473,5 @@ describe('rui-toaster', () => {
 		await new Promise((resolve) => setTimeout(resolve, 700));
 		await settled();
 		expect(host.querySelectorAll('rui-toast').length).toBe(0);
-
-		cleanup();
 	});
 });

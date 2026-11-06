@@ -56,19 +56,19 @@ importers:
     devDependencies:
       '@ecopages/browser-router':
         specifier: 0.6.1
-        version: 0.6.1(@ecopages/core@0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@0.6.0))(typescript@7.0.2))
+        version: 0.6.1(@ecopages/core@0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@packages+signals+dist))(typescript@7.0.2))
       '@ecopages/content-processor':
         specifier: 0.6.1
-        version: 0.6.1(@ecopages/core@0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@0.6.0))(typescript@7.0.2))(supports-color@7.2.0)(typescript@7.0.2)
+        version: 0.6.1(@ecopages/core@0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@packages+signals+dist))(typescript@7.0.2))(supports-color@7.2.0)(typescript@7.0.2)
       '@ecopages/core':
         specifier: 0.6.1
-        version: 0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@0.6.0))(typescript@7.0.2)
+        version: 0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@packages+signals+dist))(typescript@7.0.2)
       '@ecopages/dev-toolbar':
         specifier: 0.6.1
-        version: 0.6.1(@ecopages/signals@0.6.0)
+        version: 0.6.1(@ecopages/signals@packages+signals+dist)
       '@ecopages/ecopages-jsx':
         specifier: 0.6.1
-        version: 0.6.1(@ecopages/core@0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@0.6.0))(typescript@7.0.2))(@ecopages/jsx@packages+jsx+dist)(@ecopages/radiant@packages+radiant+dist)(supports-color@7.2.0)(typescript@7.0.2)
+        version: 0.6.1(@ecopages/core@0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@packages+signals+dist))(typescript@7.0.2))(@ecopages/jsx@packages+jsx+dist)(@ecopages/radiant@packages+radiant+dist)(supports-color@7.2.0)(typescript@7.0.2)
       '@ecopages/file-system':
         specifier: 0.6.1
         version: 0.6.1
@@ -77,7 +77,7 @@ importers:
         version: link:../../packages/jsx/dist
       '@ecopages/postcss-processor':
         specifier: 0.6.1
-        version: 0.6.1(@ecopages/core@0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@0.6.0))(typescript@7.0.2))(@tailwindcss/postcss@4.3.3)(tailwindcss@4.3.3)(typescript@7.0.2)
+        version: 0.6.1(@ecopages/core@0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@packages+signals+dist))(typescript@7.0.2))(@tailwindcss/postcss@4.3.3)(tailwindcss@4.3.3)(typescript@7.0.2)
       '@ecopages/radiant':
         specifier: workspace:*
         version: link:../../packages/radiant/dist
@@ -87,6 +87,9 @@ importers:
       '@ecopages/scripts-injector':
         specifier: ^0.1.5
         version: 0.1.5(typescript@7.0.2)
+      '@ecopages/signals':
+        specifier: workspace:*
+        version: link:../../packages/signals/dist
       '@mdx-js/esbuild':
         specifier: ^3.1.1
         version: 3.1.1(esbuild@0.28.2)(supports-color@7.2.0)
@@ -107,7 +110,7 @@ importers:
         version: 24.13.3
       ecopages:
         specifier: 0.6.1
-        version: 0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@0.6.0))(typescript@7.0.2)
+        version: 0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@packages+signals+dist))(typescript@7.0.2)
       remark-gfm:
         specifier: ^4.0.1
         version: 4.0.1(supports-color@7.2.0)
@@ -137,16 +140,16 @@ importers:
     devDependencies:
       '@ecopages/browser-router':
         specifier: 0.6.1
-        version: 0.6.1(@ecopages/core@0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@0.6.0))(typescript@7.0.2))
+        version: 0.6.1(@ecopages/core@0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@packages+signals+dist))(typescript@7.0.2))
       '@ecopages/content-processor':
         specifier: 0.6.1
-        version: 0.6.1(@ecopages/core@0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@0.6.0))(typescript@7.0.2))(supports-color@7.2.0)(typescript@7.0.2)
+        version: 0.6.1(@ecopages/core@0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@packages+signals+dist))(typescript@7.0.2))(supports-color@7.2.0)(typescript@7.0.2)
       '@ecopages/core':
         specifier: 0.6.1
-        version: 0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@0.6.0))(typescript@7.0.2)
+        version: 0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@packages+signals+dist))(typescript@7.0.2)
       '@ecopages/ecopages-jsx':
         specifier: 0.6.1
-        version: 0.6.1(@ecopages/core@0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@0.6.0))(typescript@7.0.2))(@ecopages/jsx@packages+jsx+dist)(@ecopages/radiant@packages+radiant+dist)(supports-color@7.2.0)(typescript@7.0.2)
+        version: 0.6.1(@ecopages/core@0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@packages+signals+dist))(typescript@7.0.2))(@ecopages/jsx@packages+jsx+dist)(@ecopages/radiant@packages+radiant+dist)(supports-color@7.2.0)(typescript@7.0.2)
       '@ecopages/file-system':
         specifier: 0.6.1
         version: 0.6.1
@@ -155,7 +158,7 @@ importers:
         version: link:../../packages/jsx/dist
       '@ecopages/postcss-processor':
         specifier: 0.6.1
-        version: 0.6.1(@ecopages/core@0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@0.6.0))(typescript@7.0.2))(@tailwindcss/postcss@4.3.3)(tailwindcss@4.3.3)(typescript@7.0.2)
+        version: 0.6.1(@ecopages/core@0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@packages+signals+dist))(typescript@7.0.2))(@tailwindcss/postcss@4.3.3)(tailwindcss@4.3.3)(typescript@7.0.2)
       '@ecopages/radiant':
         specifier: workspace:*
         version: link:../../packages/radiant/dist
@@ -165,6 +168,9 @@ importers:
       '@ecopages/radiant-ui':
         specifier: workspace:*
         version: link:../../packages/radiant-ui
+      '@ecopages/signals':
+        specifier: workspace:*
+        version: link:../../packages/signals/dist
       '@rehype-pretty/transformers':
         specifier: ^0.13.2
         version: 0.13.2
@@ -182,7 +188,7 @@ importers:
         version: 4.1.11(msw@2.15.0(@types/node@24.13.3)(typescript@7.0.2))(playwright@1.62.1)(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))(vitest@4.1.11)
       ecopages:
         specifier: 0.6.1
-        version: 0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@0.6.0))(typescript@7.0.2)
+        version: 0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@packages+signals+dist))(typescript@7.0.2)
       playwright:
         specifier: ^1.62.1
         version: 1.62.1
@@ -257,7 +263,7 @@ importers:
   packages/radiant:
     dependencies:
       '@ecopages/signals':
-        specifier: workspace:>=0.6.0
+        specifier: workspace:>=0.7.0
         version: link:../signals/dist
     devDependencies:
       '@babel/core':
@@ -476,10 +482,10 @@ importers:
   packages/storybook-radiant-vite:
     dependencies:
       '@ecopages/radiant':
-        specifier: workspace:>=0.6.0
+        specifier: workspace:>=0.7.0
         version: link:../radiant/dist
       '@ecopages/signals':
-        specifier: workspace:>=0.6.0
+        specifier: workspace:>=0.7.0
         version: link:../signals/dist
       '@ecopages/vite-plugin-radiant':
         specifier: workspace:*
@@ -978,9 +984,6 @@ packages:
     resolution: {integrity: sha512-4julGcmVkf4G8asK0/vAZ9o9bIWudEyGk4D/rRF/IE2J4ePT5FgmR8QdzRxD+DElzEnkJTnS7gyX2Dj7JeNtdg==}
     peerDependencies:
       typescript: ^5.0.0
-
-  '@ecopages/signals@0.6.0':
-    resolution: {integrity: sha512-GdYRehANSJbZO/QC7B5XPmevxBxKKjNu4fI+9fwHAskGkn1GUf3qT6RNtr/QrDeKGEXuWnA9CNk6aerg8FadLw==}
 
   '@emnapi/core@1.11.0':
     resolution: {integrity: sha512-l9Oo58x0HOP5znGzVhYW9U3e5wVuA4LAZU2AGezTmkhO1CgQRFDhDg4nneHsu/t3WniXg9QrG2nIXL/ZS8ln8Q==}
@@ -5261,14 +5264,14 @@ snapshots:
 
   '@colordx/core@5.8.0': {}
 
-  '@ecopages/browser-router@0.6.1(@ecopages/core@0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@0.6.0))(typescript@7.0.2))':
+  '@ecopages/browser-router@0.6.1(@ecopages/core@0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@packages+signals+dist))(typescript@7.0.2))':
     dependencies:
-      '@ecopages/core': 0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@0.6.0))(typescript@7.0.2)
+      '@ecopages/core': 0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@packages+signals+dist))(typescript@7.0.2)
       morphdom: 2.7.8
 
-  '@ecopages/content-processor@0.6.1(@ecopages/core@0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@0.6.0))(typescript@7.0.2))(supports-color@7.2.0)(typescript@7.0.2)':
+  '@ecopages/content-processor@0.6.1(@ecopages/core@0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@packages+signals+dist))(typescript@7.0.2))(supports-color@7.2.0)(typescript@7.0.2)':
     dependencies:
-      '@ecopages/core': 0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@0.6.0))(typescript@7.0.2)
+      '@ecopages/core': 0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@packages+signals+dist))(typescript@7.0.2)
       '@ecopages/file-system': 0.6.1
       '@ecopages/logger': 0.2.3(typescript@7.0.2)
       remark-frontmatter: 5.0.0(supports-color@7.2.0)
@@ -5279,7 +5282,7 @@ snapshots:
       - supports-color
       - typescript
 
-  '@ecopages/core@0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@0.6.0))(typescript@7.0.2)':
+  '@ecopages/core@0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@packages+signals+dist))(typescript@7.0.2)':
     dependencies:
       '@clack/prompts': 1.7.0
       '@ecopages/file-system': 0.6.1
@@ -5294,26 +5297,26 @@ snapshots:
       rolldown: 1.2.7
       ws: 8.21.3
     optionalDependencies:
-      '@ecopages/dev-toolbar': 0.6.1(@ecopages/signals@0.6.0)
+      '@ecopages/dev-toolbar': 0.6.1(@ecopages/signals@packages+signals+dist)
     transitivePeerDependencies:
       - bufferutil
       - typescript
       - utf-8-validate
 
-  '@ecopages/dev-toolbar@0.6.1(@ecopages/signals@0.6.0)':
+  '@ecopages/dev-toolbar@0.6.1(@ecopages/signals@packages+signals+dist)':
     dependencies:
-      '@ecopages/jsx': 0.6.0(@ecopages/signals@0.6.0)
-      '@ecopages/radiant': 0.6.0(@ecopages/jsx@0.6.0(@ecopages/signals@0.6.0))
+      '@ecopages/jsx': 0.6.0(@ecopages/signals@packages+signals+dist)
+      '@ecopages/radiant': 0.6.0(@ecopages/jsx@0.6.0(@ecopages/signals@packages+signals+dist))
       axe-core: 4.13.0
     transitivePeerDependencies:
       - '@ecopages/signals'
 
-  '@ecopages/ecopages-jsx@0.6.1(@ecopages/core@0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@0.6.0))(typescript@7.0.2))(@ecopages/jsx@packages+jsx+dist)(@ecopages/radiant@packages+radiant+dist)(supports-color@7.2.0)(typescript@7.0.2)':
+  '@ecopages/ecopages-jsx@0.6.1(@ecopages/core@0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@packages+signals+dist))(typescript@7.0.2))(@ecopages/jsx@packages+jsx+dist)(@ecopages/radiant@packages+radiant+dist)(supports-color@7.2.0)(typescript@7.0.2)':
     dependencies:
-      '@ecopages/core': 0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@0.6.0))(typescript@7.0.2)
+      '@ecopages/core': 0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@packages+signals+dist))(typescript@7.0.2)
       '@ecopages/file-system': 0.6.1
       '@ecopages/jsx': link:packages/jsx/dist
-      '@ecopages/mdx': 0.6.1(@ecopages/core@0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@0.6.0))(typescript@7.0.2))(@mdx-js/mdx@3.1.1(supports-color@7.2.0))(typescript@7.0.2)
+      '@ecopages/mdx': 0.6.1(@ecopages/core@0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@packages+signals+dist))(typescript@7.0.2))(@mdx-js/mdx@3.1.1(supports-color@7.2.0))(typescript@7.0.2)
       '@ecopages/radiant': link:packages/radiant/dist
       '@mdx-js/mdx': 3.1.1(supports-color@7.2.0)
       vfile: 6.0.3
@@ -5323,17 +5326,17 @@ snapshots:
 
   '@ecopages/file-system@0.6.1': {}
 
-  '@ecopages/jsx@0.6.0(@ecopages/signals@0.6.0)':
+  '@ecopages/jsx@0.6.0(@ecopages/signals@packages+signals+dist)':
     dependencies:
-      '@ecopages/signals': 0.6.0
+      '@ecopages/signals': link:packages/signals/dist
 
   '@ecopages/logger@0.2.3(typescript@7.0.2)':
     dependencies:
       typescript: 7.0.2
 
-  '@ecopages/mdx@0.6.1(@ecopages/core@0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@0.6.0))(typescript@7.0.2))(@mdx-js/mdx@3.1.1(supports-color@7.2.0))(typescript@7.0.2)':
+  '@ecopages/mdx@0.6.1(@ecopages/core@0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@packages+signals+dist))(typescript@7.0.2))(@mdx-js/mdx@3.1.1(supports-color@7.2.0))(typescript@7.0.2)':
     dependencies:
-      '@ecopages/core': 0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@0.6.0))(typescript@7.0.2)
+      '@ecopages/core': 0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@packages+signals+dist))(typescript@7.0.2)
       '@ecopages/file-system': 0.6.1
       '@ecopages/logger': 0.2.3(typescript@7.0.2)
       '@mdx-js/mdx': 3.1.1(supports-color@7.2.0)
@@ -5342,9 +5345,9 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
-  '@ecopages/postcss-processor@0.6.1(@ecopages/core@0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@0.6.0))(typescript@7.0.2))(@tailwindcss/postcss@4.3.3)(tailwindcss@4.3.3)(typescript@7.0.2)':
+  '@ecopages/postcss-processor@0.6.1(@ecopages/core@0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@packages+signals+dist))(typescript@7.0.2))(@tailwindcss/postcss@4.3.3)(tailwindcss@4.3.3)(typescript@7.0.2)':
     dependencies:
-      '@ecopages/core': 0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@0.6.0))(typescript@7.0.2)
+      '@ecopages/core': 0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@packages+signals+dist))(typescript@7.0.2)
       '@ecopages/file-system': 0.6.1
       '@ecopages/logger': 0.2.3(typescript@7.0.2)
       autoprefixer: 10.5.4(postcss@8.5.28)
@@ -5359,15 +5362,13 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
-  '@ecopages/radiant@0.6.0(@ecopages/jsx@0.6.0(@ecopages/signals@0.6.0))':
+  '@ecopages/radiant@0.6.0(@ecopages/jsx@0.6.0(@ecopages/signals@packages+signals+dist))':
     dependencies:
-      '@ecopages/jsx': 0.6.0(@ecopages/signals@0.6.0)
+      '@ecopages/jsx': 0.6.0(@ecopages/signals@packages+signals+dist)
 
   '@ecopages/scripts-injector@0.1.5(typescript@7.0.2)':
     dependencies:
       typescript: 7.0.2
-
-  '@ecopages/signals@0.6.0': {}
 
   '@emnapi/core@1.11.0':
     dependencies:
@@ -6954,10 +6955,10 @@ snapshots:
       domelementtype: 2.3.0
       domhandler: 5.0.3
 
-  ecopages@0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@0.6.0))(typescript@7.0.2):
+  ecopages@0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@packages+signals+dist))(typescript@7.0.2):
     dependencies:
       '@clack/prompts': 1.7.0
-      '@ecopages/core': 0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@0.6.0))(typescript@7.0.2)
+      '@ecopages/core': 0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@packages+signals+dist))(typescript@7.0.2)
       '@ecopages/file-system': 0.6.1
       '@ecopages/logger': 0.2.3(typescript@7.0.2)
       giget: 2.0.0

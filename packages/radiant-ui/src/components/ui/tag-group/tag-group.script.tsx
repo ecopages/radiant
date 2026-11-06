@@ -49,7 +49,8 @@ export type RuiTagGroupRemoveDetail = { value: string };
  * - `[data-ref="root"]` — wrapper required only when calling `setItems()`.
  *
  * Author `hidden` or `aria-disabled="true"` on a tag to exclude it from keyboard
- * movement; `aria-disabled` also blocks selection. Do not set `role`,
+ * movement; `aria-disabled` also blocks selection and removal (the remove control is
+ * disabled, and Delete / Backspace do nothing). Do not set `role`,
  * `aria-selected`, or `tabIndex` on tags — the host owns those.
  *
  * Nested hosts: none. Parent hosts (`rui-select`) query `rui-tag-group` by tag name.
@@ -185,13 +186,14 @@ export class RuiTagGroup extends RadiantElement {
 			if (removeButton) {
 				removeButton.type = 'button';
 				removeButton.tabIndex = -1;
+				removeButton.disabled = this.disabled || this.isTagDisabled(tag);
 				removeButton.setAttribute('aria-label', `Remove ${this.getTagLabel(tag)}`);
 			}
 		});
 	}
 
 	private selectTag(tag: HTMLElement): void {
-		if (this.disabled || this.embedded || tag.getAttribute('aria-disabled') === 'true') {
+		if (this.disabled || this.embedded || this.isTagDisabled(tag)) {
 			return;
 		}
 
@@ -213,7 +215,14 @@ export class RuiTagGroup extends RadiantElement {
 		this.changeEvent.emit({ value: this.value });
 	}
 
+	private isTagDisabled(tag: HTMLElement): boolean {
+		return tag.getAttribute('aria-disabled') === 'true';
+	}
+
 	private removeTag(tag: HTMLElement): void {
+		if (this.disabled || this.isTagDisabled(tag)) {
+			return;
+		}
 		const tagValue = this.getTagValue(tag);
 		const selected = new Set(this.getSelectedValues());
 		selected.delete(tagValue);
@@ -357,7 +366,7 @@ export class RuiTagGroup extends RadiantElement {
 
 		if (event.key === 'Backspace' || event.key === 'Delete') {
 			const removeButton = current.querySelector('[data-tag-remove]');
-			if (removeButton) {
+			if (removeButton && !this.disabled && !this.isTagDisabled(current)) {
 				event.preventDefault();
 				this.removeTag(current);
 			}
@@ -375,8 +384,6 @@ export class RuiTagGroup extends RadiantElement {
 		}
 	}
 }
-
-
 
 declare global {
 	interface HTMLElementTagNameMap {

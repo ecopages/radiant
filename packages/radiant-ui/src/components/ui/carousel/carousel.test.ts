@@ -1,13 +1,14 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { userEvent } from 'vitest/browser';
 import { RuiCarousel } from './carousel.script';
 
-async function mountCarousel(slidesPerView = 3, autoplay = false): Promise<RuiCarousel> {
+async function mountCarousel(slidesPerView = 3, autoplay = false, interval = 60000): Promise<RuiCarousel> {
 	const host = new RuiCarousel();
 	host.setAttribute('slides-per-view', String(slidesPerView));
 	host.setAttribute('show-indicators', '');
-	host.setAttribute('interval', '60000');
+	host.setAttribute('interval', String(interval));
 	if (autoplay) host.setAttribute('autoplay', '');
-	host.innerHTML = `<section data-ref="root"><div data-ref="viewport"><div data-ref="track">${Array.from({ length: 5 }, (_, i) => `<div data-slide="${i}">${i}</div>`).join('')}</div></div><div data-ref="indicators"></div></section>`;
+	host.innerHTML = `<section class="rui-carousel rui-carousel--none rui-carousel--controls-toolbar" data-ref="root"><div data-ref="viewport"><div data-ref="track">${Array.from({ length: 5 }, (_, i) => `<div data-slide="${i}">${i}</div>`).join('')}</div></div><div data-ref="indicators"></div></section>`;
 	document.body.append(host);
 	await new Promise((resolve) => setTimeout(resolve, 0));
 	return host;
@@ -64,9 +65,101 @@ describe('carousel live region', () => {
 			const viewport = host.querySelector('[data-ref="viewport"]');
 			expect(viewport?.getAttribute('aria-live')).toBe('off');
 			if (action === 'focus') host.onRootFocusIn();
-			if (action === 'hover') host.onRootPointerEnter(new PointerEvent('pointerenter', { pointerType: 'mouse' }));
+			if (action === 'hover') host.dispatchEvent(new PointerEvent('pointerenter', { pointerType: 'mouse' }));
 			if (action === 'navigation') host.next();
 			expect(viewport?.getAttribute('aria-live')).toBe('polite');
 		},
 	);
+});
+
+describe('carousel pointer isolation', () => {
+	it('mounts rotating after an earlier carousel was hovered', async () => {
+		const first = await mountCarousel(1, true);
+		await userEvent.hover(first);
+		document.body.replaceChildren();
+		await userEvent.unhover(document.body);
+		const next = await mountCarousel(1, true);
+		expect(next.querySelector('[data-ref="viewport"]')?.getAttribute('aria-live')).toBe('off');
+	});
+});
+
+describe('carousel autoplay pause sources', () => {
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
+	const mouse = (type: 'pointerenter' | 'pointerleave') => new PointerEvent(type, { pointerType: 'mouse' });
+
+	async function mountFake(): Promise<RuiCarousel> {
+		vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+		return mountCarousel(1, true, 20);
+	}
+
+	it('pauses while the mouse is over the carousel and resumes on leave', async () => {
+		const host = await mountFake();
+		host.dispatchEvent(mouse('pointerenter'));
+		const held = host.index;
+		vi.advanceTimersByTime(25);
+		expect(host.index).toBe(held);
+
+		host.dispatchEvent(mouse('pointerleave'));
+		vi.advanceTimersByTime(25);
+		expect(host.index).not.toBe(held);
+	});
+
+	it('stays paused when the mouse leaves while focus is still inside', async () => {
+		const host = await mountFake();
+		host.onRootFocusIn();
+		host.dispatchEvent(mouse('pointerenter'));
+		host.dispatchEvent(mouse('pointerleave'));
+		const held = host.index;
+		vi.advanceTimersByTime(25);
+		expect(host.index).toBe(held);
+	});
+
+	it('stays paused when focus leaves while the mouse is still over', async () => {
+		const host = await mountFake();
+		host.dispatchEvent(mouse('pointerenter'));
+		host.onRootFocusIn();
+		host.onRootFocusOut(new FocusEvent('focusout', { relatedTarget: null }));
+		const held = host.index;
+		vi.advanceTimersByTime(25);
+		expect(host.index).toBe(held);
+	});
+});
+
+describe('carousel transition class', () => {
+	it('swaps the animation class when transition changes', async () => {
+		const host = await mountCarousel(1);
+		const root = host.querySelector<HTMLElement>('[data-ref="root"]')!;
+		host.transition = 'fade';
+		await host.updateComplete;
+		expect(root.classList.contains('rui-carousel--fade')).toBe(true);
+		expect(root.classList.contains('rui-carousel--none')).toBe(false);
+		expect(root.classList.contains('rui-carousel--controls-toolbar')).toBe(true);
+		host.transition = 'slide';
+		await host.updateComplete;
+		expect(root.classList.contains('rui-carousel--slide')).toBe(true);
+		expect(root.classList.contains('rui-carousel--fade')).toBe(false);
+	});
+});
+
+describe('carousel transition validation', () => {
+	it('adds no class for an invalid transition', async () => {
+		const host = await mountCarousel(1);
+		const root = host.querySelector<HTMLElement>('[data-ref="root"]')!;
+		host.transition = 'wobble' as never;
+		await host.updateComplete;
+		expect([...root.classList].some((name) => name.includes('wobble'))).toBe(false);
+		expect(root.classList.contains('rui-carousel--none')).toBe(false);
+	});
+
+	it('applies the transition class with zero slides', async () => {
+		const host = new RuiCarousel();
+		host.setAttribute('transition', 'fade');
+		host.innerHTML = '<section class="rui-carousel" data-ref="root"><div data-ref="viewport"><div data-ref="track"></div></div></section>';
+		document.body.append(host);
+		await new Promise((resolve) => setTimeout(resolve, 0));
+		expect(host.querySelector('[data-ref="root"]')!.classList.contains('rui-carousel--fade')).toBe(true);
+	});
 });

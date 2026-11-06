@@ -11,9 +11,10 @@ import {
 	writeFileSync,
 } from 'node:fs';
 import { createRequire } from 'node:module';
+import { build } from 'esbuild';
 import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
-import { dirname, join, resolve } from 'node:path';
+import path, { dirname, join, resolve } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
@@ -173,4 +174,65 @@ assert.ok(html.includes('>Open navigation') || html.includes('aria-label="Open n
 	);
 
 	assert.equal(result.status, 0, result.stderr || result.stdout);
+});
+
+test('compiled radiant-ui.css declares every semantic --color-* alias on :root', () => {
+	const root = new URL('..', import.meta.url);
+	const source = readFileSync(new URL('src/styles/tokens/semantic.css', root), 'utf8');
+	const compiled = readFileSync(new URL('dist/styles/radiant-ui.css', root), 'utf8');
+	const aliases = [...new Set(source.match(/--color-[\w-]+(?=:)/g))];
+	const rootBlocks = [...compiled.matchAll(/(^|\n)([^{}\n@][^{}]*)\{([^{}]*)\}/g)]
+		.filter((block) => /:root/.test(block[2]))
+		.map((block) => block[3])
+		.join('\n');
+
+	assert.ok(aliases.length > 50, 'expected the semantic alias list to be read from source');
+	const missing = aliases.filter((alias) => !new RegExp(`${alias}\\s*:`).test(rootBlocks));
+	assert.deepEqual(missing, []);
+});
+
+test('semantic.css declares the :root/.dark alias block from its @theme inline block', () => {
+	const source = readFileSync(new URL('../src/styles/tokens/semantic.css', import.meta.url), 'utf8');
+	const declarations = (block) => block.match(/--color-[\w-]+:[^;]+;/g)?.map((d) => d.replace(/\s+/g, ' '));
+	const theme = declarations(/@theme inline \{([\s\S]*?)\n\}/.exec(source)?.[1] ?? '');
+	const roots = declarations(/:where\(:root, \.dark\) \{([\s\S]*?)\n\}/.exec(source)?.[1] ?? '');
+
+	assert.ok(theme?.length > 50);
+	assert.deepEqual(roots, theme, 'run `pnpm --filter @ecopages/radiant-ui generate:exports`');
+});
+
+test('a consumer bundle keeps the registrations in shared chunks', async () => {
+	const packageRoot = fileURLToPath(new URL('..', import.meta.url));
+	const result = await build({
+		stdin: { contents: `import '@ecopages/radiant-ui/checkbox-group';`, resolveDir: packageRoot },
+		bundle: true,
+		write: false,
+		format: 'esm',
+		treeShaking: true,
+		external: [
+			'@ecopages/jsx',
+			'@ecopages/jsx/*',
+			'@ecopages/radiant',
+			'@ecopages/radiant/*',
+			'@ecopages/signals',
+			'@ecopages/signals/*',
+			'*.css',
+		],
+	});
+	const output = result.outputFiles[0].text;
+
+	assert.ok(output.includes('"rui-checkbox-group"'), 'rui-checkbox-group registration was tree-shaken away');
+	assert.ok(output.includes('"rui-checkbox"'), 'rui-checkbox registration was tree-shaken away');
+});
+
+test('every dist/chunks file matches a sideEffects glob', () => {
+	const packageJson = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+	const chunks = readdirSync(new URL('../dist/chunks/', import.meta.url)).filter((file) => file.endsWith('.js'));
+	const globs = packageJson.sideEffects.map((glob) => path.posix.normalize(glob));
+
+	assert.ok(chunks.length > 0, 'expected dist/chunks to hold the shared chunks');
+	const unmatched = chunks.filter(
+		(file) => !globs.some((glob) => path.posix.matchesGlob(`dist/chunks/${file}`, glob)),
+	);
+	assert.deepEqual(unmatched, []);
 });

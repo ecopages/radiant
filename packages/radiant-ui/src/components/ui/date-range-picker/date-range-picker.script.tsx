@@ -11,10 +11,10 @@ import {
 	state,
 } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
-import { isIsoInRange, parseIsoRange, serializeIsoRange } from '@/lib/intl-date';
+import { isIsoInRange, normalizeRange, parseIsoRange, serializeIsoRange } from '@/lib/intl-date';
 import type { RuiCalendarChangeDetail } from '../calendar/calendar.script';
 import { CalendarPopoverBehavior } from '../shared/calendar-popover-behavior';
-import { effectiveVisibleMonths, listenMobileLayoutViewport } from '@/lib/viewport/mobile-layout';
+import { effectiveVisibleMonths } from '@/lib/viewport/mobile-layout';
 
 export type RuiDateRangePickerProps = {
 	value?: string;
@@ -78,7 +78,7 @@ export type RuiDateRangePickerChangeDetail = {
  * @attr {string} start-name - Form field name on the nested start `rui-date-input`. Default: `''`.
  * @attr {string} end-name - Form field name on the nested end `rui-date-input`. Default: `''`.
  * @attr {number} visible-months - Month grids shown in the range calendar popover (adapts to 1 on screens under 640px). Default: `2`.
- * @fires rui-change - Emitted when a valid range is committed, or when a committed range is cleared; detail carries `value`, `start`, and `end`.
+ * @fires rui-change - Emitted when a valid range is committed, or when a committed range is cleared; detail carries `value` and the sorted `start` and `end` (start is never after end).
  */
 @customElement('rui-date-range-picker')
 export class RuiDateRangePicker extends RadiantElement {
@@ -150,17 +150,14 @@ export class RuiDateRangePicker extends RadiantElement {
 		getOpen: () => this.open,
 		getCalendar: () => this.getCalendar(),
 		getFocusIso: () => parseIsoRange(this.isoValue)?.start,
+		getToggle: () => this.getToggle(),
+		setOpenState: (next) => {
+			this.open = next;
+		},
+		onLayoutChange: () => this.syncCalendar(),
 	});
-	private disposeMobileLayoutListener: (() => void) | null = null;
 
 	@query({ ref: 'popover' }) popoverTarget: HTMLElement | null;
-
-	private readonly onMediaChange = (): void => {
-		this.syncCalendar();
-		if (this.open) {
-			this.calendarPopover.syncPopover();
-		}
-	};
 
 	private get isoValue(): string {
 		return this.value ?? '';
@@ -214,13 +211,14 @@ export class RuiDateRangePicker extends RadiantElement {
 			return;
 		}
 
-		const serialized = start && end ? serializeIsoRange({ start, end }) : '';
+		const sorted = start && end ? normalizeRange(start, end) : null;
+		const serialized = serializeIsoRange(sorted);
 		if (serialized === this.isoValue) {
 			return;
 		}
 
 		this.value = serialized;
-		this.changeEvent.emit({ value: serialized, start, end });
+		this.changeEvent.emit({ value: serialized, start: sorted?.start ?? start, end: sorted?.end ?? end });
 	}
 
 	private commitFromInputs(): void {
@@ -231,16 +229,6 @@ export class RuiDateRangePicker extends RadiantElement {
 			return;
 		}
 		this.commitRange('', '');
-	}
-
-	private setOpen(next: boolean): void {
-		this.open = next;
-		queueMicrotask(() => {
-			this.calendarPopover.syncPopover();
-			if (next) {
-				this.calendarPopover.focusCalendarDay();
-			}
-		});
 	}
 
 	private syncToggle(): void {
@@ -265,17 +253,15 @@ export class RuiDateRangePicker extends RadiantElement {
 		this.projectCompleteRangeOntoInputs();
 		this.syncToggle();
 		this.syncCalendar();
-		this.setOpen(false);
+		this.calendarPopover.setOpen(false);
 	}
 
 	protected override onConnected(): void {
-		this.disposeMobileLayoutListener = listenMobileLayoutViewport(this.onMediaChange);
+		this.calendarPopover.connect();
 		this.initialize();
 	}
 
 	override disconnectedCallback(): void {
-		this.disposeMobileLayoutListener?.();
-		this.disposeMobileLayoutListener = null;
 		this.calendarPopover.destroy();
 		super.disconnectedCallback();
 	}
@@ -324,7 +310,7 @@ export class RuiDateRangePicker extends RadiantElement {
 		if (this.disabled || this.readOnly) {
 			return;
 		}
-		this.setOpen(!this.open);
+		this.calendarPopover.setOpen(!this.open);
 	}
 
 	@onEvent({ selector: '[data-range-popover]', type: 'mousedown' })
@@ -344,7 +330,7 @@ export class RuiDateRangePicker extends RadiantElement {
 			return;
 		}
 		this.commitRange(detail.start, detail.end);
-		this.setOpen(false);
+		this.calendarPopover.closeAndRestoreFocus();
 	}
 
 	@onEvent({
@@ -354,7 +340,13 @@ export class RuiDateRangePicker extends RadiantElement {
 	onRootKeydown(event: KeyboardEvent): void {
 		if (event.key === 'Escape' && this.open) {
 			event.preventDefault();
-			this.setOpen(false);
+			const insidePopover =
+				event.target instanceof Node && this.querySelector('[data-range-popover]')?.contains(event.target);
+			if (insidePopover) {
+				this.calendarPopover.closeAndRestoreFocus();
+			} else {
+				this.calendarPopover.setOpen(false);
+			}
 		}
 	}
 
@@ -363,7 +355,7 @@ export class RuiDateRangePicker extends RadiantElement {
 		type: 'focusout',
 	})
 	onRootFocusOut(event: FocusEvent): void {
-		this.calendarPopover.handleFocusOut(event, () => this.setOpen(false));
+		this.calendarPopover.handleFocusOut(event, () => this.calendarPopover.setOpen(false));
 	}
 }
 
