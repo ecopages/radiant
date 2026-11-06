@@ -10,8 +10,8 @@ Radiant UI ships one accessible default theme, Radiant Default. Components consu
 
 ## Radiant Themes
 
-Optional complete themes are published from `@ecopages/radiant-themes`, a separate package that needs
-`@ecopages/radiant-ui` 0.3.0 or later: GitHub, Cloudflare, VS Code, Vercel, Material Design, High Contrast, Windows 95,
+Optional complete themes are published from `@ecopages/radiant-themes`, a separate package installed next to a
+matching `@ecopages/radiant-ui` (its peer range names the minimum): GitHub, Cloudflare, VS Code, Vercel, Material Design, High Contrast, Windows 95,
 Mac OS Classic, and macOS. Each owns its shape, spacing, typography, semantic colors, and component styling. Import one
 theme in place of `themes/default`, never both.
 
