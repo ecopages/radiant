@@ -1,4 +1,6 @@
 import type { JsxRenderable } from '@ecopages/jsx';
+import { jsx } from '@ecopages/jsx/jsx-runtime';
+import { isCustomElementConstructor } from './host';
 
 type SsrStoryDefinition = {
 	component?: unknown;
@@ -34,12 +36,18 @@ export function composeStoryRender(
 	);
 }
 
+/**
+ * @remarks A story without `render` falls back to `meta.component`. A custom-element constructor
+ * there is rendered as its host element with the args as props, the JSX form of the client default
+ * render; calling the class as a function would throw.
+ */
 function resolveStoryRender(
 	meta: SsrStoryDefinition | undefined,
 	story: SsrStoryDefinition | undefined,
 	storyExport: string | undefined,
 ): (args: Record<string, unknown>) => JsxRenderable {
 	const render = story?.render ?? meta?.render ?? meta?.component;
+	if (isCustomElementConstructor(render)) return (args) => jsx(render, args);
 	if (typeof render !== 'function')
 		throw new Error(`Story "${storyExport ?? 'default'}" does not provide a JSX render function.`);
 	return render as (args: Record<string, unknown>) => JsxRenderable;

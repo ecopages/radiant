@@ -314,6 +314,7 @@ There is **no** `initialize` callback. SSR goes over HTTP; only serializable `ar
 | Feature                                                      | SSR support                                                                                                              |
 | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
 | `meta.render` / story `render` / `component` as JSX function | Yes (`composeStoryRender`)                                                                                               |
+| `component` as custom-element constructor, without `render`  | Yes: renders the host element with the story args                                                                        |
 | CSF `decorators` that wrap `() => JsxRenderable`             | Yes (reversed apply)                                                                                                     |
 | Stage helpers inside `render`                                | Preferred for composition stories                                                                                        |
 | `args` via stamped story module                              | Yes                                                                                                                      |
