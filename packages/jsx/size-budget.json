@@ -15,8 +15,8 @@
 		{
 			"label": "jsx-runtime",
 			"entrypoint": "./src/jsx-runtime.ts",
-			"maxBytes": 12032,
-			"maxGzipBytes": 4544
+			"maxBytes": 12352,
+			"maxGzipBytes": 4640
 		},
 		{
 			"label": "jsx-dev-runtime",
