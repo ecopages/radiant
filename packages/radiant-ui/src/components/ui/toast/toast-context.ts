@@ -24,11 +24,18 @@ export type ToastId = string | number;
 
 export type ToastOptions = {
 	id?: ToastId;
+	/**
+	 * Plain text for the polite live region, used instead of `title` and `description`.
+	 * Error toasts are `role="alert"` and are not announced from the live region.
+	 */
+	announcement?: string;
 	description?: string;
 	duration?: number;
 	action?: ToastAction;
 	dismissible?: boolean;
 	closeButton?: boolean;
+	/** Accessible name of the close button. Default: `Close toast`. */
+	closeLabel?: string;
 	position?: ToastPosition;
 };
 
@@ -36,11 +43,13 @@ export type ToastRecord = {
 	id: ToastId;
 	title: string;
 	description?: string;
+	announcement?: string;
 	variant: ToastVariant;
 	duration?: number;
 	action?: ToastAction;
 	dismissible: boolean;
 	closeButton?: boolean;
+	closeLabel?: string;
 	position?: ToastPosition;
 	/** Marks the toast for animated exit; toaster removes after exit. */
 	delete?: boolean;
@@ -57,6 +66,7 @@ export type PromiseToastMessages<T> = {
 	duration?: number;
 	action?: ToastAction;
 	closeButton?: boolean;
+	closeLabel?: string;
 	position?: ToastPosition;
 };
 

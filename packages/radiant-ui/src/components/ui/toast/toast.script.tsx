@@ -68,6 +68,8 @@ export type RuiToastProps = {
 	duration?: number;
 	dismissible?: boolean;
 	closeButton?: boolean;
+	/** Accessible name of the close button. Default: `Close toast`. */
+	closeLabel?: string;
 	actionLabel?: string;
 	position?: ToastPosition;
 	/** When true, plays the exit animation then removes the toast. */
@@ -107,6 +109,7 @@ type RuiToastBindings = {
  * @attr {number} duration - Lifetime in ms before auto-dismiss. Default: `4000`.
  * @attr {boolean} dismissible - Allow close button / swipe-to-dismiss. Default: `true`.
  * @attr {boolean} close-button - Render the corner close control. Default: `false`.
+ * @attr {string} close-label - Accessible name of the close control. Default: `Close toast`.
  * @attr {string} action-label - Text for the optional action button. Default: `''`.
  * @attr {string} position - Placement; mirrors the toaster's position. Default: `bottom-end`.
  * @attr {boolean} marked-delete - Marks the toast for animated exit. Default: `false`.
@@ -133,6 +136,7 @@ export class RuiToast extends RadiantElement<RuiToastBindings> {
 	@bindTo({ attr: 'data-dismissible' })
 	dismissible: boolean;
 	@prop({ type: Boolean, defaultValue: false }) closeButton: boolean;
+	@prop({ type: String, defaultValue: 'Close toast' }) closeLabel: string;
 	@prop({ type: String, defaultValue: '' }) actionLabel: string;
 	@prop({ type: String, defaultValue: DEFAULT_TOAST_POSITION })
 	@bindTo([
@@ -506,7 +510,7 @@ export class RuiToast extends RadiantElement<RuiToastBindings> {
 				data-ref="toast"
 			>
 				{this.closeButton && variant !== 'loading' ? (
-					<button type="button" class="rui-toast__close" data-toast-close aria-label="Close toast">
+					<button type="button" class="rui-toast__close" data-toast-close aria-label={this.closeLabel}>
 						<RuiIconX />
 					</button>
 				) : null}
@@ -538,8 +542,6 @@ export class RuiToast extends RadiantElement<RuiToastBindings> {
 		);
 	}
 }
-
-
 
 declare global {
 	interface HTMLElementTagNameMap {

@@ -23,6 +23,7 @@ export function RuiTagList({ children, class: className, ...props }: RuiTagListP
 export type RuiTagProps = JsxElementProps<HTMLSpanElement> & {
 	value?: string;
 	label?: string;
+	/** Stamps `aria-disabled` and disables the remove control: the tag is skipped by arrow keys and cannot be selected or removed. */
 	disabled?: boolean;
 };
 
@@ -50,7 +51,7 @@ export function RuiTag({ value, label, children, class: className, disabled, ari
 			aria-disabled={disabled ? 'true' : undefined}
 		>
 			{children}
-			<RuiTagRemove />
+			<RuiTagRemove disabled={disabled} />
 		</span>
 	);
 }

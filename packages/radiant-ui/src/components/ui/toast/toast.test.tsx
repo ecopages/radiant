@@ -41,6 +41,12 @@ function toastElements(host: ParentNode): HTMLElement[] {
 	return [...host.querySelectorAll('rui-toast')] as HTMLElement[];
 }
 
+async function expectAnnouncement(host: ParentNode, text: string): Promise<void> {
+	await vi.waitFor(() => {
+		expect(host.querySelector('.rui-toaster-announcer')?.textContent).toBe(text);
+	});
+}
+
 describe('rui-toaster', () => {
 	afterEach(() => {
 		toast.dismiss();
@@ -70,7 +76,132 @@ describe('rui-toaster', () => {
 		const title = host.querySelector('rui-toast [data-title]');
 		expect(title?.textContent).toContain('Profile saved');
 		expect(host.querySelector('.rui-toaster-announcer')?.getAttribute('aria-live')).toBe('polite');
-		expect(host.querySelector('.rui-toaster-announcer')?.textContent).toBe('Profile saved');
+		await expectAnnouncement(host, 'Profile saved');
+	});
+
+	function watchAnnouncer(host: ParentNode): string[] {
+		const announcer = host.querySelector('.rui-toaster-announcer') as HTMLElement;
+		const seen: string[] = [];
+		new MutationObserver(() => seen.push(announcer.textContent ?? '')).observe(announcer, {
+			childList: true,
+			characterData: true,
+			subtree: true,
+		});
+		return seen;
+	}
+
+	it('announces an identical message again by clearing the live region first', async () => {
+		const { host } = mount(<RuiToaster />);
+		await settled();
+		const seen = watchAnnouncer(host);
+
+		toast('Saved');
+		await expectAnnouncement(host, 'Saved');
+		toast('Saved');
+		await vi.waitFor(() => expect(seen.filter((text) => text === 'Saved')).toHaveLength(2));
+
+		expect(seen).toEqual(['Saved', '', 'Saved']);
+	});
+
+	it('announces toasts created in the same tick together', async () => {
+		const { host } = mount(<RuiToaster />);
+		await settled();
+
+		toast('First saved');
+		toast.success('Second saved');
+
+		await expectAnnouncement(host, 'First saved. Second saved');
+	});
+
+	it('does not double the period when joining announcements', async () => {
+		const { host } = mount(<RuiToaster />);
+		await settled();
+
+		toast('Saved.', { description: 'All good' });
+		toast('Synced!');
+
+		await expectAnnouncement(host, 'Saved. All good. Synced!');
+	});
+
+	it('announces a toast updated in place, as toast.promise does', async () => {
+		const { host } = mount(<RuiToaster />);
+		await settled();
+		let resolve: (value: string) => void = () => {};
+
+		toast.promise(new Promise<string>((done) => (resolve = done)), {
+			loading: 'Saving',
+			success: (name) => `${name} saved`,
+			error: 'Save failed',
+		});
+		await expectAnnouncement(host, 'Saving');
+		resolve('Profile');
+
+		await expectAnnouncement(host, 'Profile saved');
+	});
+
+	it('announces a toast updated in place to error from the assertive region', async () => {
+		const { host } = mount(<RuiToaster />);
+		await settled();
+		let reject: (reason: unknown) => void = () => {};
+
+		toast.promise(new Promise<string>((_, fail) => (reject = fail)), {
+			loading: 'Saving',
+			success: 'Saved',
+			error: 'Save failed',
+		});
+		await expectAnnouncement(host, 'Saving');
+		reject(new Error('offline'));
+
+		await vi.waitFor(() => {
+			expect(host.querySelector('.rui-toaster-announcer[data-assertive]')?.textContent).toBe('Save failed');
+		});
+		expect(host.querySelector('.rui-toaster-announcer[data-assertive]')?.getAttribute('aria-live')).toBe(
+			'assertive',
+		);
+	});
+
+	it('leaves a new error toast to its own alert role', async () => {
+		const { host } = mount(<RuiToaster />);
+		await settled();
+
+		toast.error('Sync failed');
+		toast('Profile saved');
+		await expectAnnouncement(host, 'Profile saved');
+
+		expect(host.querySelector('.rui-toaster-announcer[data-assertive]')?.textContent).toBe('');
+	});
+
+	it('announces a toast shown again with the same id', async () => {
+		const { host } = mount(<RuiToaster />);
+		await settled();
+		const seen = watchAnnouncer(host);
+
+		toast('Saved', { id: 'save' });
+		await expectAnnouncement(host, 'Saved');
+		toast('Saved', { id: 'save' });
+
+		await vi.waitFor(() => expect(seen.filter((text) => text === 'Saved')).toHaveLength(2));
+	});
+
+	it('announces the supplied announcement text instead of the title', async () => {
+		const { host } = mount(<RuiToaster />);
+		await settled();
+
+		toast('Saved', { announcement: 'Your profile was saved' });
+
+		await expectAnnouncement(host, 'Your profile was saved');
+	});
+
+	it('names the close button from closeLabel and defaults to Close toast', async () => {
+		const { host } = mount(<RuiToaster closeButton />);
+		await settled();
+
+		toast('Default label');
+		toast('Custom label', { closeLabel: 'Fermer' });
+		await settledToasts(host);
+
+		const labels = [...host.querySelectorAll('[data-toast-close]')].map((b) => b.getAttribute('aria-label'));
+		expect(labels.sort()).toEqual(['Close toast', 'Fermer']);
 	});
 
 	it('renders an error toast as an assertive alert and other variants as status', async () => {
@@ -93,7 +224,7 @@ describe('rui-toaster', () => {
 		expect(success.getAttribute('role')).toBe('status');
 		expect(success.getAttribute('aria-live')).toBe('off');
 		expect(error.closest('[aria-live="polite"]')).toBeNull();
-		expect(host.querySelector('.rui-toaster-announcer')?.textContent).toBe('Profile saved');
+		await expectAnnouncement(host, 'Profile saved');
 	});
 
 	it('dismisses all toasts', async () => {
