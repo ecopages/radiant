@@ -349,7 +349,7 @@ Most code should use normal JavaScript values for empty output and removal seman
 Use this rule of thumb:
 
 - `null`, `undefined`, and `false` render no child content
-- `null` and `undefined` remove normal attributes
+- `null` and `undefined` remove normal attributes; `false` on a normal attribute such as `aria-expanded` or `data-open` is written as `"false"`, on the server and on the client
 - `false` removes boolean attributes such as `hidden` or `disabled`
 - `null` removes delegated and native event handlers by omitting the next listener
 - an existing deferred property binding can be cleared by writing `undefined`; a plain `undefined` part is omitted during normalization
