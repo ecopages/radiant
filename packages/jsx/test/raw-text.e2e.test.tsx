@@ -291,4 +291,16 @@ describe('custom elements inside foreign content', () => {
 		expect(probe?.querySelector('style')?.textContent).toBe(injected);
 		expect(probe?.querySelector('img')).toBeNull();
 	});
+
+	test('light-DOM nodes keep false on attribute bindings and leave boolean attributes absent', async () => {
+		const [{ jsx }, { renderServerLightDom }] = await Promise.all([loadJsxRuntime(), loadLightDom()]);
+		const [item] = renderServerLightDom(
+			jsx('li', { 'aria-expanded': false, data: { open: false }, hidden: false }),
+			document,
+		) as Element[];
+
+		expect(item?.getAttribute('aria-expanded')).toBe('false');
+		expect(item?.getAttribute('data-open')).toBe('false');
+		expect(item?.hasAttribute('hidden')).toBe(false);
+	});
 });

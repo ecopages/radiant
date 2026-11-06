@@ -329,7 +329,7 @@ function applyAttributePart(element: Element, part: TemplatePartDescriptor | und
 		return;
 	}
 
-	if (value === undefined || value === null || value === false) return;
+	if (value === undefined || value === null) return;
 
 	element.setAttribute(
 		part.name,
