@@ -113,11 +113,13 @@ export class RuiDialog extends RadiantElement {
 	}
 
 	@bound
-	@onUpdated(['open', 'label'])
+	@onUpdated(['open', 'label', 'alert'])
 	syncOpenState(): void {
 		if (!this.dialogTarget) {
 			return;
 		}
+
+		this.dialogTarget.setAttribute('role', this.alert ? 'alertdialog' : 'dialog');
 
 		if (this.titleTarget?.textContent?.trim()) {
 			this.titleTarget.id = this.titleId;
@@ -149,8 +151,27 @@ export class RuiDialog extends RadiantElement {
 		(focusable[0] ?? this.dialogTarget)?.focus();
 	}
 
+	/**
+	 * Focusable elements in the tab loop.
+	 *
+	 * @remarks
+	 * With `alert`, the loop is limited to `[data-dialog-actions]` so the user must answer the
+	 * prompt. An alert dialog with no focusable action falls back to the whole surface rather
+	 * than trapping focus on nothing.
+	 */
 	private getFocusable(): HTMLElement[] {
-		return this.dialogTarget ? queryFocusableCandidates(this.dialogTarget) : [];
+		if (!this.dialogTarget) {
+			return [];
+		}
+		if (this.alert) {
+			const actions = Array.from(this.dialogTarget.querySelectorAll<HTMLElement>('[data-dialog-actions]')).flatMap(
+				(row) => queryFocusableCandidates(row),
+			);
+			if (actions.length) {
+				return actions;
+			}
+		}
+		return queryFocusableCandidates(this.dialogTarget);
 	}
 
 	private dismiss(reason: RuiDialogCloseDetail['reason']): void {
@@ -189,7 +210,10 @@ export class RuiDialog extends RadiantElement {
 		const last = focusable[focusable.length - 1];
 		const active = document.activeElement as HTMLElement | null;
 
-		if (event.shiftKey && active === first) {
+		if (!active || !focusable.includes(active)) {
+			event.preventDefault();
+			(event.shiftKey ? last : first).focus();
+		} else if (event.shiftKey && active === first) {
 			event.preventDefault();
 			last.focus();
 		} else if (!event.shiftKey && active === last) {
