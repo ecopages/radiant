@@ -13,11 +13,13 @@ export function forEachNormalizedAttribute(
 	append: (name: string, value: unknown) => void,
 ): void {
 	const classValue = normalizeMergedClassValue(attributes.class, attributes.classes);
-	const directAttributeNames = new Set<string>();
+	let directAttributeNames: Set<string> | undefined;
 
-	for (const name in attributes) {
-		if ((name.startsWith('aria-') || name.startsWith('data-')) && attributes[name] !== undefined) {
-			directAttributeNames.add(name);
+	if (attributes.data !== undefined || attributes.aria !== undefined) {
+		for (const name in attributes) {
+			if ((name.startsWith('aria-') || name.startsWith('data-')) && attributes[name] !== undefined) {
+				(directAttributeNames ??= new Set()).add(name);
+			}
 		}
 	}
 
@@ -33,7 +35,7 @@ export function forEachNormalizedAttribute(
 
 		if (name === 'data' || name === 'aria') {
 			appendStructuredAttributes(name, value, (attributeName, attributeValue) => {
-				if (!directAttributeNames.has(attributeName)) {
+				if (!directAttributeNames?.has(attributeName)) {
 					append(attributeName, attributeValue);
 				}
 			});
@@ -63,7 +65,15 @@ function appendStructuredAttributes(
 	}
 }
 
+/**
+ * @remarks A plain non-empty `class` string with no `classes` is returned as it is, skipping the token list: it is
+ * the common case, and joining one token gives the same string.
+ */
 function normalizeMergedClassValue(classValue: unknown, classesValue: unknown): unknown {
+	if (classesValue === undefined && typeof classValue === 'string') {
+		return classValue === '' ? undefined : classValue;
+	}
+
 	const tokens: string[] = [];
 	appendClassTokens(tokens, classValue);
 	appendClassTokens(tokens, classesValue);
