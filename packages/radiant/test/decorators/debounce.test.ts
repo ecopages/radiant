@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest';
+import { bound } from '../../src/decorators/bound';
 import { debounce } from '../../src/decorators/debounce';
 
 describe('@debounce', () => {
@@ -39,5 +40,44 @@ describe('@debounce', () => {
 
 		expect(first.callCount).toBe(1);
 		expect(second.callCount).toBe(1);
+	});
+	test('decorator above @bound debounces a bound method', async () => {
+		class Test {
+			receivers: unknown[] = [];
+
+			@debounce(5)
+			@bound
+			method(): void {
+				this.receivers.push(this);
+			}
+		}
+
+		const test = new Test();
+		const detached = test.method;
+		detached();
+		detached();
+		await new Promise((resolve) => setTimeout(resolve, 10));
+
+		expect(test.receivers).toEqual([test]);
+	});
+
+	test('decorator below @bound debounces a bound method', async () => {
+		class Test {
+			receivers: unknown[] = [];
+
+			@bound
+			@debounce(5)
+			method(): void {
+				this.receivers.push(this);
+			}
+		}
+
+		const test = new Test();
+		const detached = test.method;
+		detached();
+		detached();
+		await new Promise((resolve) => setTimeout(resolve, 10));
+
+		expect(test.receivers).toEqual([test]);
 	});
 });

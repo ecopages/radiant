@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { customElement } from '../../src/decorators/custom-element';
+import { bound } from '../../src/decorators/bound';
 import { onEvent } from '../../src/decorators/on-event';
 
 describe('onEvent', () => {
@@ -192,5 +193,46 @@ describe('onEvent', () => {
 		button.click();
 
 		expect(element.clickCount).toBe(2);
+	});
+	it('runs a handler that is also @bound once, with the host as this, when @onEvent is above @bound', () => {
+		@customElement('on-event-above-bound')
+		class OnEventAboveBound extends RadiantElement {
+			receivers: unknown[] = [];
+			@onEvent({ host: true, type: 'pointerenter' })
+			@bound
+			entered() {
+				this.receivers.push(this);
+			}
+		}
+
+		const element = document.createElement('on-event-above-bound') as OnEventAboveBound;
+		document.body.appendChild(element);
+		element.dispatchEvent(new Event('pointerenter'));
+
+		expect(element.receivers).toEqual([element]);
+		const detached = element.entered;
+		detached();
+		expect(element.receivers).toEqual([element, element]);
+	});
+
+	it('runs a handler that is also @bound once, with the host as this, when @bound is above @onEvent', () => {
+		@customElement('bound-above-on-event')
+		class BoundAboveOnEvent extends RadiantElement {
+			receivers: unknown[] = [];
+			@bound
+			@onEvent({ host: true, type: 'pointerenter' })
+			entered() {
+				this.receivers.push(this);
+			}
+		}
+
+		const element = document.createElement('bound-above-on-event') as BoundAboveOnEvent;
+		document.body.appendChild(element);
+		element.dispatchEvent(new Event('pointerenter'));
+
+		expect(element.receivers).toEqual([element]);
+		const detached = element.entered;
+		detached();
+		expect(element.receivers).toEqual([element, element]);
 	});
 });
