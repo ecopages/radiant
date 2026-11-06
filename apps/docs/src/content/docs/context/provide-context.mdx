@@ -40,7 +40,7 @@ See [Typing Decorated Fields](/docs/decorators) for the field type.
 | Option | Type | Description |
 | :-- | :-- | :-- |
 | `context` | `Context` | The typed context token to provide |
-| `initialValue` | `T` | Initial provider value |
+| `initialValue` | `T` | Initial provider value. Each provider shallow-copies a plain object or array; nested values are shared |
 | `hydrate` | `String \| Number \| Boolean \| Object \| Array` | Serializes and restores provider state during SSR hydration |
 | `serialize` | `(value: T) => unknown` | Projects the live context into an SSR-safe hydration payload |
 
