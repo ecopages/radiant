@@ -3042,6 +3042,41 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		}
 	});
 
+	test('keyed single-element rows keep their nodes and handle content that changes shape or becomes a mixed list', async () => {
+		const [{ jsx, jsxs, Fragment }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const render = (children: unknown[]) => root.render(jsx('ul', { children }));
+		const html = () => container.querySelector('ul')!.innerHTML;
+		const row = (key: number, label: string) => jsx('li', { key, children: label });
+
+		render([row(1, 'a'), row(2, 'b'), row(3, 'c')]);
+		const [first, second, third] = [...container.querySelectorAll('li')];
+		expect(html()).toBe('<li>a</li><li>b</li><li>c</li>');
+
+		render([row(3, 'c2'), row(1, 'a'), row(2, 'b')]);
+		expect(html()).toBe('<li>c2</li><li>a</li><li>b</li>');
+		expect([...container.querySelectorAll('li')]).toEqual([third, first, second]);
+
+		render([
+			row(3, 'c2'),
+			jsx('b', { key: 1, children: 'x' }),
+			jsxs(Fragment, { key: 2, children: [jsx('i', { children: 'y' }), jsx('i', { children: 'z' })] }),
+		]);
+		expect(html()).toBe('<li>c2</li><b>x</b><i>y</i><i>z</i>');
+		expect(container.querySelector('li')).toBe(third);
+
+		render([row(3, 'c3'), 'loose text', row(4, 'd')]);
+		expect(html()).toBe('<li>c3</li>loose text<li>d</li>');
+		expect(container.querySelector('li')).toBe(third);
+
+		render([row(4, 'd'), row(3, 'c3')]);
+		expect(html()).toBe('<li>d</li><li>c3</li>');
+
+		render([]);
+		expect(html()).toBe('');
+	});
+
 	test('signal-like attribute values patch attributes without rerendering the parent tree', async () => {
 		const [{ jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');
