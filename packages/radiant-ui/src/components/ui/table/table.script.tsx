@@ -301,7 +301,7 @@ export class RuiTable extends RadiantElement {
 		}
 
 		if (this.selectionMode === 'single') {
-			this.setSelectedIds([rowId]);
+			this.setSelectedIds(toggle && this.selectedIds().includes(rowId) ? [] : [rowId]);
 			return;
 		}
 
