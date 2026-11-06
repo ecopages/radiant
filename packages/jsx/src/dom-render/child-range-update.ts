@@ -219,6 +219,10 @@ function replaceMountedRangeWithNodes(
 	return { kind: 'nodes', nodes };
 }
 
+/**
+ * @remarks Walks the children from last to first, so each record is placed before the one that follows it. A new
+ * record is created at that insertion point, where it belongs, so creating or appending rows moves no nodes.
+ */
 function updateKeyedChildren(
 	startMarker: Text,
 	endMarker: Text,
@@ -241,7 +245,7 @@ function updateKeyedChildren(
 	}
 
 	const nextKeys = new Set<JsxKey>();
-	let insertionPoint: Node = endMarker;
+	let insertionPoint: ChildNode = endMarker;
 
 	for (let index = children.length - 1; index >= 0; index -= 1) {
 		const child = children[index];
@@ -255,7 +259,7 @@ function updateKeyedChildren(
 		let record = keyedState.records.get(child.key);
 
 		if (!record) {
-			record = createRangeRecord(endMarker);
+			record = createRangeRecord(insertionPoint);
 			keyedState.records.set(child.key, record);
 		}
 

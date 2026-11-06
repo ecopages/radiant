@@ -2734,6 +2734,28 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(element?.hasAttribute('inert')).toBe(false);
 	});
 
+	test('keyed rows keep their nodes and order when new keys are prepended, interleaved and appended', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const view = (keys: number[]) =>
+			jsx('ul', { children: keys.map((key) => jsx('li', { key, children: String(key) })) });
+		const items = () => [...container.querySelectorAll('li')];
+
+		root.render(view([3, 5]));
+		const [three, five] = items();
+
+		root.render(view([1, 2, 3, 4, 5, 6]));
+		expect(items().map((item) => item.textContent)).toEqual(['1', '2', '3', '4', '5', '6']);
+		expect(items()[2]).toBe(three);
+		expect(items()[4]).toBe(five);
+
+		root.render(view([6, 0, 5, 3]));
+		expect(items().map((item) => item.textContent)).toEqual(['6', '0', '5', '3']);
+		expect(items()[2]).toBe(five);
+		expect(items()[3]).toBe(three);
+	});
+
 	test('signal-like attribute values patch attributes without rerendering the parent tree', async () => {
 		const [{ jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');
