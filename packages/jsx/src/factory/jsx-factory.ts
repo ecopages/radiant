@@ -239,8 +239,13 @@ const MAX_BINDING_PARTS = 2048;
 /** Descriptors that are shared, and so can key a node of the shape tree. */
 const SHARED_PARTS = new WeakSet<TemplatePartDescriptor>();
 
+/**
+ * @remarks Reads the value's snapshot only for a standard boolean attribute, where it decides the binding kind.
+ * Reading a signal calls its `get()`, which subscribes any computed that is creating this JSX, so reading it for
+ * every attribute re-ran a computed list whenever a row's class or label changed.
+ */
 function getBindingPart(elementName: string, name: string, value: unknown): AttributePartDescriptor {
-	const isBoolean = typeof resolveReactiveSnapshot(value) === 'boolean';
+	const isBoolean = shouldUseBooleanAttributeBinding(name) && typeof resolveReactiveSnapshot(value) === 'boolean';
 	const cacheKey = `${elementName.includes('-') ? 'c' : 'n'}${isBoolean ? 'b' : 'v'}${name}`;
 	let part = BINDING_PARTS.get(cacheKey);
 
@@ -296,7 +301,7 @@ function resolveBindingPart(
 		return { kind: 'bool', name: name.slice(5), type: 'attribute' };
 	}
 
-	if (typeof resolveReactiveSnapshot(value) === 'boolean' && shouldUseBooleanAttributeBinding(name)) {
+	if (shouldUseBooleanAttributeBinding(name) && typeof resolveReactiveSnapshot(value) === 'boolean') {
 		return { kind: 'bool', name, type: 'attribute' };
 	}
 
