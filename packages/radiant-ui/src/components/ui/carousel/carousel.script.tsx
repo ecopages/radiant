@@ -169,6 +169,14 @@ export class RuiCarousel extends RadiantElement {
 	@query({ ref: 'viewport' }) viewportTarget: HTMLElement | null;
 
 	private paused = false;
+	/**
+	 * Pointer and focus pause independently of each other.
+	 *
+	 * @remarks Both gate `canAutoplayRotate()`, so releasing one while the other
+	 * still holds keeps rotation stopped on any `syncAutoplay()`.
+	 */
+	private hovered = false;
+	private focusWithin = false;
 	private readonly uid = uniqueId('rui-carousel');
 	/** User explicitly resumed rotation (e.g. via rotation control) despite reduced motion. */
 	private userOverrideReducedMotion = false;
@@ -300,7 +308,26 @@ export class RuiCarousel extends RadiantElement {
 		});
 	}
 
+	/**
+	 * @remarks Runs before the empty-slides early return so an empty carousel
+	 * still carries its transition class. An unknown `transition` value clears
+	 * the class instead of adding `rui-carousel--<junk>`.
+	 */
+	private syncTransitionClass(): void {
+		const root = this.rootTarget;
+		if (!root) {
+			return;
+		}
+
+		root.classList.remove(...CAROUSEL_TRANSITIONS.map((transition) => `rui-carousel--${transition}`));
+		if ((CAROUSEL_TRANSITIONS as readonly string[]).includes(this.transition)) {
+			root.classList.add(`rui-carousel--${this.transition}`);
+		}
+	}
+
 	private sync(): void {
+		this.syncTransitionClass();
+
 		const slides = this.getSlides();
 		if (!slides.length) {
 			return;
@@ -311,12 +338,7 @@ export class RuiCarousel extends RadiantElement {
 			this.index = next.index;
 		}
 
-		const root = this.rootTarget;
-		if (root) {
-			root.setAttribute('data-carousel-track', this.trackMode());
-			root.classList.remove(...CAROUSEL_TRANSITIONS.map((transition) => `rui-carousel--${transition}`));
-			root.classList.add(`rui-carousel--${this.transition}`);
-		}
+		this.rootTarget?.setAttribute('data-carousel-track', this.trackMode());
 
 		const track = this.trackTarget;
 		if (track) {
@@ -424,7 +446,7 @@ export class RuiCarousel extends RadiantElement {
 	}
 
 	private canAutoplayRotate(): boolean {
-		if (!this.autoplay || this.paused) {
+		if (!this.autoplay || this.paused || this.hovered || this.focusWithin) {
 			return false;
 		}
 
@@ -585,22 +607,23 @@ export class RuiCarousel extends RadiantElement {
 	}
 
 	private readonly onRootPointerEnter = (event: PointerEvent): void => {
-		if (this.autoplay && event.pointerType === 'mouse') {
-			this.autoplayController.stop();
+		if (event.pointerType === 'mouse') {
+			this.hovered = true;
+			this.syncAutoplay();
 		}
 	};
 
 	private readonly onRootPointerLeave = (event: PointerEvent): void => {
-		if (this.autoplay && !this.paused && event.pointerType === 'mouse') {
+		if (event.pointerType === 'mouse') {
+			this.hovered = false;
 			this.syncAutoplay();
 		}
 	};
 
 	@onEvent({ ref: 'root', type: 'focusin' })
 	onRootFocusIn(): void {
-		if (this.autoplay) {
-			this.autoplayController.stop();
-		}
+		this.focusWithin = true;
+		this.syncAutoplay();
 	}
 
 	@onEvent({ ref: 'root', type: 'focusout' })
@@ -610,9 +633,8 @@ export class RuiCarousel extends RadiantElement {
 			return;
 		}
 
-		if (this.autoplay && !this.paused) {
-			this.syncAutoplay();
-		}
+		this.focusWithin = false;
+		this.syncAutoplay();
 	}
 
 	@onEvent({ ref: 'viewport', type: 'pointerdown' })
