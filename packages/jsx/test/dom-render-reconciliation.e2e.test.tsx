@@ -2596,6 +2596,130 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(mutations.find((mutation) => mutation.type === 'characterData')?.oldValue).toBe('3');
 	});
 
+	test('a boolean attribute whose signal starts undefined is absent for false and present for true', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const subscribers = new Set<(value: boolean | undefined) => void>();
+		let hidden: boolean | undefined;
+		const hiddenSignal = {
+			get: () => hidden,
+			subscribe: (notify: (value: boolean | undefined) => void) => {
+				subscribers.add(notify);
+				return () => {
+					subscribers.delete(notify);
+				};
+			},
+		};
+		const setHidden = (value: boolean) => {
+			hidden = value;
+			for (const notify of subscribers) notify(value);
+		};
+
+		createRoot(container).render(jsx('div', { hidden: hiddenSignal, children: 'x' }));
+		const element = container.querySelector('div');
+		expect(element?.hasAttribute('hidden')).toBe(false);
+
+		setHidden(false);
+		expect(element?.hasAttribute('hidden')).toBe(false);
+
+		setHidden(true);
+		expect(element?.getAttribute('hidden')).toBe('');
+	});
+
+	test('attr: on a boolean attribute and bool: on any attribute bind by presence', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const view = (value: boolean) =>
+			jsx('div', {
+				children: [jsx('span', { 'attr:hidden': value }), jsx('demo-panel', { 'bool:expanded': value })],
+			});
+
+		root.render(view(false));
+		expect(container.querySelector('span')?.hasAttribute('hidden')).toBe(false);
+		expect(container.querySelector('demo-panel')?.hasAttribute('expanded')).toBe(false);
+
+		root.render(view(true));
+		expect(container.querySelector('span')?.getAttribute('hidden')).toBe('');
+		expect(container.querySelector('demo-panel')?.getAttribute('expanded')).toBe('');
+	});
+
+	test('a boolean attribute writes a later string as given and null under bool: removes the attribute', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const subscribers = new Set<(value: boolean | string | null) => void>();
+		let value: boolean | string | null = true;
+		const signal = {
+			get: () => value,
+			subscribe: (notify: (next: boolean | string | null) => void) => {
+				subscribers.add(notify);
+				return () => {
+					subscribers.delete(notify);
+				};
+			},
+		};
+		const set = (next: boolean | string | null) => {
+			value = next;
+			for (const notify of subscribers) notify(next);
+		};
+		const container = document.createElement('div');
+
+		createRoot(container).render(
+			jsx('div', {
+				children: [jsx('section', { hidden: signal }), jsx('demo-panel', { 'bool:expanded': signal })],
+			}),
+		);
+		const section = container.querySelector('section');
+		const panel = container.querySelector('demo-panel');
+		expect(section?.getAttribute('hidden')).toBe('');
+
+		set('until-found');
+		expect(section?.getAttribute('hidden')).toBe('until-found');
+
+		set(false);
+		expect(section?.hasAttribute('hidden')).toBe(false);
+
+		set(true);
+		expect(panel?.getAttribute('expanded')).toBe('');
+
+		set(null);
+		expect(panel?.hasAttribute('expanded')).toBe(false);
+	});
+
+	test('hydrates a bool: binding and keeps toggling it by presence', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const subscribers = new Set<(value: boolean | null) => void>();
+		let inert: boolean | null = true;
+		const inertSignal = {
+			get: () => inert,
+			subscribe: (notify: (value: boolean | null) => void) => {
+				subscribers.add(notify);
+				return () => {
+					subscribers.delete(notify);
+				};
+			},
+		};
+		const set = (next: boolean | null) => {
+			inert = next;
+			for (const notify of subscribers) notify(next);
+		};
+		const container = document.createElement('div');
+		container.innerHTML = '<div data-radiant-jsx-bind-0="bool:inert" inert>x</div>';
+		const element = container.querySelector('div');
+
+		createRoot(container).hydrate(jsx('div', { 'bool:inert': inertSignal, children: 'x' }));
+		expect(container.querySelector('div')).toBe(element);
+		expect(element?.getAttribute('inert')).toBe('');
+
+		set(false);
+		expect(element?.hasAttribute('inert')).toBe(false);
+
+		set(true);
+		expect(element?.getAttribute('inert')).toBe('');
+
+		set(null);
+		expect(element?.hasAttribute('inert')).toBe(false);
+	});
+
 	test('signal-like attribute values patch attributes without rerendering the parent tree', async () => {
 		const [{ jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');

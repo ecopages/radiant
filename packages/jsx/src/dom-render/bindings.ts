@@ -1,4 +1,4 @@
-import { serializeStyleSnapshot } from '../factory/attribute-normalize.ts';
+import { resolveAttributeText } from '../factory/attribute-normalize.ts';
 import { attachEventBindingListener, detachEventBindingListener, isEventListenerObject } from './event-delegation.ts';
 import { getElementAttributeValue, removeElementAttribute, setElementAttributeValue } from './namespaces.ts';
 import { resolveReactiveSnapshot } from './runtime-helpers.ts';
@@ -78,15 +78,14 @@ function applyAttributeBinding(
 	value: unknown,
 	livePart: LiveAttributePart | undefined,
 ): void {
-	if (value === undefined || value === null) {
+	const nextValue = resolveAttributeText(name, value);
+	if (nextValue === undefined) {
 		removeElementAttribute(element, name);
 		updatePreviousValue(livePart, value);
 		return;
 	}
 
-	const isStyleBinding = name.toLowerCase() === 'style';
-	const nextValue = isStyleBinding ? serializeStyleSnapshot(value) : String(value);
-	const cachedValue = isStyleBinding ? nextValue : value;
+	const cachedValue = name.toLowerCase() === 'style' ? nextValue : value;
 	if (!livePart || livePart.previousValue !== cachedValue || getElementAttributeValue(element, name) !== nextValue) {
 		setElementAttributeValue(element, name, nextValue);
 	}
@@ -99,8 +98,9 @@ function applyBooleanBinding(
 	value: unknown,
 	livePart: LiveAttributePart | undefined,
 ): void {
-	if (value) element.setAttribute(name, '');
-	else element.removeAttribute(name);
+	const text = resolveAttributeText(name, value, true);
+	if (text === undefined) element.removeAttribute(name);
+	else element.setAttribute(name, text);
 	updatePreviousValue(livePart, value);
 }
 

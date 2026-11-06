@@ -154,10 +154,20 @@ function applyServerCustomElementAttribute(
 	name: string,
 	value: unknown,
 ): void {
-	const normalizedName = name.startsWith('attr:') ? name.slice(5) : name;
+	const normalizedName = name.startsWith('attr:') || name.startsWith('bool:') ? name.slice(5) : name;
 	const resolvedValue = resolveReactiveSnapshot(value);
 
 	if (isServerCustomElementEventBinding(name)) {
+		return;
+	}
+
+	if (name.startsWith('bool:')) {
+		syncServerCustomElementProperty(
+			element,
+			normalizedName,
+			resolveAttributeText(normalizedName, resolvedValue, true) !== undefined,
+		);
+		applyServerBooleanAttribute(element, normalizedName, resolvedValue);
 		return;
 	}
 
@@ -195,7 +205,7 @@ function shouldUseServerCustomElementAttributeBinding(name: string, normalizedNa
 	return name.startsWith('attr:') || shouldUseAttributeBindingByDefaultForElement('custom-element', normalizedName);
 }
 
-function applyServerBooleanAttribute(element: HTMLElement, name: string, value: boolean): void {
+function applyServerBooleanAttribute(element: HTMLElement, name: string, value: unknown): void {
 	const text = resolveAttributeText(name, value, true);
 	if (text === undefined) {
 		element.removeAttribute?.(name);
