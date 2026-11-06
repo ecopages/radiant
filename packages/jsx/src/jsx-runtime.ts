@@ -77,7 +77,13 @@ type JsxClassElement = abstract new (...args: any[]) => Element;
 
 type JsxElementType<Props extends object> = string | JsxFragment | JsxComponent<Props> | JsxClassElement;
 
+/**
+ * @remarks `className` is typed `never` beside the open index: it is not an HTML attribute, and JSX skips it on a
+ * native element. Declared with the index signature, the `never` survives the intersection with the catch-all
+ * below, so every intrinsic tag rejects it, custom elements included; use `class`.
+ */
 type JsxDomIntrinsicAttributes<ElementType extends Element> = JsxIntrinsicAttributes<ElementType> & {
+	className?: never;
 	[key: string]: unknown;
 };
 

@@ -32,7 +32,7 @@ The package surface is intentionally split by use case:
 - primary DOM event bindings with `on:*`
 - explicit native escape-hatch bindings with `on-native:*`
 - explicit property bindings with `prop:*`
-- boolean, `data`, `aria`, `class`, `className`, `classes`, and `style` normalization
+- boolean, `data`, `aria`, `class`, `classes`, and `style` normalization (`className` is a type error and is skipped on native elements; use `class`)
 - direct DOM mounting with `createRoot(...)`
 - HTML string rendering with `renderToString(...)`
 - hydration markers and DOM hydration helpers

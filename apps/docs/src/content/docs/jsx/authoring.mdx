@@ -78,6 +78,8 @@ The runtime normalizes the most common authoring patterns before anything reache
 
 `class` and `classes` merge into one token list. At runtime each accepts a string, number, array (nested), or an object map where a truthy value includes the key, and `null`, `undefined`, and booleans contribute nothing. The types are narrower: `class` is a `string`, and `classes` takes the other forms, so pass conditional, array and object values through `classes`.
 
+`className` is not an HTML attribute. It is a type error on every intrinsic tag, and on a native element JSX skips it with a development warning instead of writing an attribute browsers ignore. Use `class`.
+
 ```tsx
 <section
 	class="panel"

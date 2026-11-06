@@ -97,6 +97,33 @@ describe('Radiant JSX runtime', () => {
 		}
 	});
 
+	test('className on a native element is skipped by the production runtime', async () => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+
+		expect(renderToString(jsx('div', { className: 'card', id: 'a' }))).toBe('<div id="a"></div>');
+	});
+
+	test('jsxDEV warns once per native tag about className, and not for a custom element', async () => {
+		const [{ renderToString }, { jsxDEV: jsx, resetRuntimeWarningsForTests, setDevWarningsEnabled }] =
+			await Promise.all([loadServerRender(), loadJsxDevRuntime()]);
+		const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+		resetRuntimeWarningsForTests();
+		setDevWarningsEnabled(true);
+
+		try {
+			expect(renderToString(jsx('div', { className: 'card', id: 'a' }))).toBe('<div id="a"></div>');
+			expect(warnSpy).toHaveBeenCalledTimes(1);
+			expect(String(warnSpy.mock.calls[0]?.[0])).toContain('Skipped className on <div>');
+			expect(renderToString(jsx('demo-card', { className: 'card' }))).toBe('<demo-card></demo-card>');
+			expect(warnSpy).toHaveBeenCalledTimes(1);
+		} finally {
+			resetRuntimeWarningsForTests();
+			setDevWarningsEnabled(undefined);
+			warnSpy.mockRestore();
+		}
+	});
+
 	test('jsx returns a renderer-agnostic template result for intrinsic elements', async () => {
 		const [{ jsx }] = await Promise.all([loadJsxRuntime()]);
 		const result = jsx('div', {
