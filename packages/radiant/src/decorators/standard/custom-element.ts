@@ -3,6 +3,7 @@ import {
 	type AutonomousCustomElementOptions,
 } from '../assert-autonomous-custom-element-options';
 import { setCustomElementTagName } from '../../core/custom-element-metadata';
+import { setHostAttributes } from '../../core/host-attributes';
 import {
 	applyObservedAttributesFromPropRegistry,
 	REACTIVE_PROP_METADATA,
@@ -16,6 +17,7 @@ export function customElement(name: string, options?: AutonomousCustomElementOpt
 	return function <T extends CustomElementConstructor>(_: T, context: ClassDecoratorContext<T>) {
 		context.addInitializer(function (this: T) {
 			setCustomElementTagName(this, name);
+			setHostAttributes(this, options?.hostAttributes);
 
 			const metadata = context.metadata as Record<symbol, ReactivePropDefinition[]> | null;
 			const definitions = metadata?.[REACTIVE_PROP_METADATA] ?? [];

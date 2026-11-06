@@ -133,6 +133,31 @@ class ServerHostSlotQueryCard extends RadiantElement {
 	}
 }
 
+@customElement('ssr-host-attributes-test', { hostAttributes: { role: 'complementary' } })
+class SsrHostAttributes extends RadiantElement {
+	override render() {
+		return <p>pane</p>;
+	}
+}
+
+describe('RadiantElement SSR hostAttributes', () => {
+	test('serializes the declared attributes without connecting the host', () => {
+		const html = renderRadiantElementHostToString(new SsrHostAttributes(), { mode: 'hydrate' });
+
+		expect(html.match(/<ssr-host-attributes-test[^>]*>/)?.[0]).toContain('role="complementary"');
+	});
+
+	test('keeps an attribute the author wrote', () => {
+		const host = new SsrHostAttributes();
+		host.setAttribute('role', 'region');
+
+		const html = renderRadiantElementHostToString(host);
+
+		expect(html.match(/<ssr-host-attributes-test[^>]*>/)?.[0]).toContain('role="region"');
+		expect(html).not.toContain('complementary');
+	});
+});
+
 describe('RadiantElement SSR', () => {
 	test('the view serializer prepares the host and renders inside its provider scope', () => {
 		expect(customElements.get('prepared-view-context-child-test')).toBe(PreparedViewContextChild);
