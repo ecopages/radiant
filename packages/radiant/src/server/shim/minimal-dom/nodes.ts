@@ -349,14 +349,21 @@ const NAME_TAGS = new Set([
 const HREF_TAGS = new Set(['a', 'area', 'base', 'link']);
 /** Tags whose `value` property reflects the `value` attribute (`input` does not, as in a browser). */
 const VALUE_TAGS = new Set(['button', 'option']);
-/** Element-wide ARIA reflections, as `[property, attribute]`; `role` is reflected alongside them. */
-const ARIA_REFLECTIONS = [
+/** `ARIAMixin` properties that reflect a string attribute; the element-reference ones (`ariaControlsElements`, ...) do not. */
+type AriaStringProperty = {
+	[K in keyof ARIAMixin]: ARIAMixin[K] extends string | null ? K : never;
+}[keyof ARIAMixin];
+/** Element-wide ARIA reflections, defined on `MinimalElement.prototype` below; `role` maps to `role`, the rest to `aria-*`. */
+const ARIA_PROPERTIES = [
 	'ariaAtomic',
 	'ariaAutoComplete',
+	'ariaBrailleLabel',
+	'ariaBrailleRoleDescription',
 	'ariaBusy',
 	'ariaChecked',
 	'ariaColCount',
 	'ariaColIndex',
+	'ariaColIndexText',
 	'ariaColSpan',
 	'ariaCurrent',
 	'ariaDescription',
@@ -382,6 +389,7 @@ const ARIA_REFLECTIONS = [
 	'ariaRoleDescription',
 	'ariaRowCount',
 	'ariaRowIndex',
+	'ariaRowIndexText',
 	'ariaRowSpan',
 	'ariaSelected',
 	'ariaSetSize',
@@ -391,10 +399,12 @@ const ARIA_REFLECTIONS = [
 	'ariaValueNow',
 	'ariaValueText',
 	'role',
-].map((property): [string, string] => [
-	property,
-	property === 'role' ? 'role' : `aria-${property.slice(4).toLowerCase()}`,
-]);
+] as const satisfies readonly AriaStringProperty[];
+/** @remarks ASCII whitespace only, as the HTML spec strips it for `option.text`; JS `trim` and `\s` also take NBSP. */
+function collapseAsciiWhitespace(text: string): string {
+	return text.replace(/[\t\n\f\r ]+/g, ' ').replace(/^ | $/g, '');
+}
+
 const BUTTON_TYPES = new Set(['button', 'submit', 'reset']);
 const INPUT_TYPES = new Set([
 	'button',
@@ -503,6 +513,10 @@ class MinimalClassList {
 		this.element.setAttribute('class', tokens.join(' '));
 	}
 }
+
+/** Types the `aria*` and `role` accessors that the loop after the class defines on its prototype. */
+// oxlint-disable-next-line no-unsafe-declaration-merging -- each merged member is a prototype accessor defined from ARIA_PROPERTIES
+export interface MinimalElement extends Pick<ARIAMixin, (typeof ARIA_PROPERTIES)[number]> {}
 
 export class MinimalElement extends MinimalNode {
 	/**
@@ -705,13 +719,13 @@ export class MinimalElement extends MinimalNode {
 	}
 
 	/**
-	 * @remarks Reflected only on `button` and `option`. An `option` without a `value` attribute reads its text.
+	 * @remarks Reflected only on `button` and `option`. An `option` without a `value` attribute reads its text with whitespace collapsed.
 	 * `input.value` is not reflected in browsers either and stays a plain value, as does every other tag.
 	 */
 	get value(): string {
 		const tag = this.localName;
 		if (!VALUE_TAGS.has(tag)) return this.#plainProps.get('value') as string;
-		return this.getAttribute('value') ?? (tag === 'option' ? this.textContent.trim().replace(/\s+/g, ' ') : '');
+		return this.getAttribute('value') ?? (tag === 'option' ? collapseAsciiWhitespace(this.textContent) : '');
 	}
 
 	set value(value: string) {
@@ -1057,7 +1071,8 @@ export class MinimalCustomEvent<T = unknown> extends MinimalEvent {
 	}
 }
 
-for (const [property, attribute] of ARIA_REFLECTIONS) {
+for (const property of ARIA_PROPERTIES) {
+	const attribute = property === 'role' ? 'role' : `aria-${property.slice(4).toLowerCase()}`;
 	Object.defineProperty(MinimalElement.prototype, property, {
 		configurable: true,
 		enumerable: true,
