@@ -106,6 +106,9 @@
  * declared here for direct `var(--color-*)` readers. Declaring them on
  * `:root` and `.dark` makes every alias exist on a light page and re-resolve
  * against the dark palette inside a nested `.dark` section.
+ *
+ * Generated from the `@theme inline` block above by `scripts/generate-exports.ts`
+ * (run as part of `build:lib`); edit the aliases there, not here.
  */
 :where(:root, .dark) {
 	--color-transparent: transparent;
