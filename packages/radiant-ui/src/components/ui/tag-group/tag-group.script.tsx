@@ -214,6 +214,9 @@ export class RuiTagGroup extends RadiantElement {
 	}
 
 	private removeTag(tag: HTMLElement): void {
+		if (this.disabled) {
+			return;
+		}
 		const tagValue = this.getTagValue(tag);
 		const selected = new Set(this.getSelectedValues());
 		selected.delete(tagValue);
