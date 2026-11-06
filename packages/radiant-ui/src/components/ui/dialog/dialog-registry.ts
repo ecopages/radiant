@@ -74,6 +74,7 @@ function createBody(body: string): HTMLElement {
 function createActions(actions: DialogAction[]): HTMLElement {
 	const row = document.createElement('div');
 	row.className = 'rui-dialog__actions';
+	row.setAttribute('data-dialog-actions', '');
 
 	for (const action of actions) {
 		const button = document.createElement('button');

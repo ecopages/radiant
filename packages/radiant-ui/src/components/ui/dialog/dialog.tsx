@@ -48,7 +48,7 @@ export type RuiDialogActionsProps = JsxElementProps<HTMLDivElement>;
  */
 export function RuiDialogActions({ children, class: className, ...props }: RuiDialogActionsProps) {
 	return (
-		<div {...props} class={cx('rui-dialog__actions', className)}>
+		<div {...props} data-dialog-actions class={cx('rui-dialog__actions', className)}>
 			{children}
 		</div>
 	);
@@ -61,13 +61,15 @@ export type RuiDialogCloseProps = NativeButtonProps;
  *
  * @cssclass rui-dialog__close - Dismiss button; dispatches `data-dialog-close` click.
  *
- * @remarks Stamps `[data-dialog-close]` and `data-ref="close"`.
+ * @remarks Stamps `[data-dialog-close]` and `data-ref="close"`. The default `Close` label applies only
+ * to the icon-only button; a button with children is named by its own text.
  */
 export function RuiDialogClose({ children, class: className, aria, ...props }: RuiDialogCloseProps) {
+	const iconOnly = children == null;
 	return (
 		<button
 			{...props}
-			aria={withDefaultAriaLabel(aria, 'Close')}
+			aria={iconOnly ? withDefaultAriaLabel(aria, 'Close') : aria}
 			type="button"
 			data-dialog-close
 			data-ref="close"
