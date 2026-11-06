@@ -68,4 +68,44 @@ describe('RuiDateField popup focus', () => {
 		expect(popover.hidden).toBe(true);
 		expect(document.activeElement).toBe(elsewhere);
 	});
+
+	it('returns focus to the toggle after a day is selected', async () => {
+		const host = mount();
+		await settled();
+		const toggle = host.querySelector('[data-date-field-trigger]') as HTMLButtonElement;
+		const popover = host.querySelector('[data-date-field-popover]') as HTMLElement;
+
+		await userEvent.click(toggle);
+		await settled();
+		const day = popover.querySelector(
+			'[data-calendar-day]:not(:disabled):not([data-iso="2026-08-07"])',
+		) as HTMLElement;
+		day.click();
+		await settled();
+		expect(popover.hidden).toBe(true);
+		expect(document.activeElement).toBe(toggle);
+	});
+
+	it('keeps focus in the segment input when Escape closes the popup', async () => {
+		const host = mount();
+		await settled();
+		const toggle = host.querySelector('[data-date-field-trigger]') as HTMLButtonElement;
+		const popover = host.querySelector('[data-date-field-popover]') as HTMLElement;
+		const segment = host.querySelector(
+			'[data-date-field-input] [contenteditable], [data-date-field-input] input, [data-date-field-input] [tabindex]',
+		) as HTMLElement;
+
+		await userEvent.click(toggle);
+		await settled();
+		segment.focus();
+		await settled();
+		const focusedSegment = document.activeElement;
+		expect(host.querySelector('[data-date-field-input]')?.contains(focusedSegment)).toBe(true);
+		(document.activeElement as HTMLElement).dispatchEvent(
+			new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
+		);
+		await settled();
+		expect(popover.hidden).toBe(true);
+		expect(document.activeElement).toBe(focusedSegment);
+	});
 });

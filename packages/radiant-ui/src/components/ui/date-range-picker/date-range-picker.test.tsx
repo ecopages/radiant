@@ -163,4 +163,34 @@ describe('RuiDateRangePicker popup focus', () => {
 		expect(document.activeElement).toBe(toggle);
 		host.remove();
 	});
+
+	it('leaves focus where an outside click put it', async () => {
+		const host = document.createElement('div');
+		document.body.append(host);
+		createRoot(host).render(
+			<>
+				<button type="button" id="elsewhere">
+					Elsewhere
+				</button>
+				<RuiDateRangePicker value="2026-08-07/2026-08-14" locale="en-US" />
+			</>,
+		);
+		await customElements.whenDefined('rui-date-range-picker');
+		await customElements.whenDefined('rui-calendar');
+		await flushFirstConnect();
+		await flushRender();
+
+		const toggle = host.querySelector('[data-range-trigger]') as HTMLButtonElement;
+		const popover = host.querySelector('[data-range-popover]') as HTMLElement;
+		const elsewhere = host.querySelector('#elsewhere') as HTMLButtonElement;
+		await browserUser.click(toggle);
+		await flushRender();
+		expect(popover.hidden).toBe(false);
+
+		await browserUser.click(elsewhere);
+		await flushRender();
+		expect(popover.hidden).toBe(true);
+		expect(document.activeElement).toBe(elsewhere);
+		host.remove();
+	});
 });

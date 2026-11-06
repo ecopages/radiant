@@ -366,7 +366,12 @@ export class RuiDateRangePicker extends RadiantElement {
 	onRootKeydown(event: KeyboardEvent): void {
 		if (event.key === 'Escape' && this.open) {
 			event.preventDefault();
-			this.closeAndRestoreFocus();
+			const insidePopover = event.target instanceof Node && this.querySelector('[data-range-popover]')?.contains(event.target);
+			if (insidePopover) {
+				this.closeAndRestoreFocus();
+			} else {
+				this.setOpen(false);
+			}
 		}
 	}
 

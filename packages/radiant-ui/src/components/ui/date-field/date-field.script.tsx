@@ -337,7 +337,12 @@ export class RuiDateField extends RadiantElement {
 	onRootKeydown(event: KeyboardEvent): void {
 		if (event.key === 'Escape' && this.open) {
 			event.preventDefault();
-			this.closeAndRestoreFocus();
+			const insidePopover = event.target instanceof Node && this.querySelector('[data-date-field-popover]')?.contains(event.target);
+			if (insidePopover) {
+				this.closeAndRestoreFocus();
+			} else {
+				this.setOpen(false);
+			}
 		}
 	}
 }
