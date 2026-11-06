@@ -316,7 +316,7 @@ function serializeTemplatePart(
 
 	if (isClientOnlyBinding(part.kind)) return hydrationMarker;
 	if (part.kind === 'bool') return value ? `${hydrationMarker} ${part.name}` : hydrationMarker;
-	if (value === undefined || value === null || value === false) return hydrationMarker;
+	if (value === undefined || value === null) return hydrationMarker;
 
 	const attributeValue = part.name.toLowerCase() === 'style' ? serializeStyleSnapshot(value) : String(value);
 	return `${hydrationMarker} ${part.name}="${escapeAttribute(attributeValue)}"`;

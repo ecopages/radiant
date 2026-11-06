@@ -11,6 +11,8 @@ const htmlBooleanAttributes = new Set([
 	'controls',
 	'default',
 	'defer',
+	'disablepictureinpicture',
+	'disableremoteplayback',
 	'disabled',
 	'formnovalidate',
 	'hidden',
@@ -20,6 +22,7 @@ const htmlBooleanAttributes = new Set([
 	'loop',
 	'multiple',
 	'muted',
+	'nomodule',
 	'novalidate',
 	'open',
 	'playsinline',
@@ -27,6 +30,9 @@ const htmlBooleanAttributes = new Set([
 	'required',
 	'reversed',
 	'selected',
+	'shadowrootclonable',
+	'shadowrootdelegatesfocus',
+	'shadowrootserializable',
 ]);
 
 /**
