@@ -7,11 +7,11 @@
 	},
 	"exclude": ["dist", "node_modules"],
 	"include": [
+		"./test/types/class-name.tsx",
 		"./test/types/custom-element-class.tsx",
 		"./test/types/custom-element-intrinsics.ts",
 		"./test/types/custom-element-prop-bindings.ts",
 		"./test/types/host-props.ts",
-		"./test/types/style-value.ts",
-		"./test/types/class-name.tsx"
+		"./test/types/style-value.ts"
 	]
 }

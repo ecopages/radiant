@@ -458,6 +458,20 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(container.querySelector(booleanPropertyTagName)).toBe(host);
 	});
 
+	test('className is skipped on a native element and set as a property on a custom element', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+
+		createRoot(container).render(
+			jsx('div', { children: [jsx('section', { className: 'card' }), jsx('demo-card', { className: 'card' })] }),
+		);
+
+		const section = container.querySelector('section');
+		expect(section?.hasAttribute('classname')).toBe(false);
+		expect(section?.getAttribute('class')).toBeNull();
+		expect(container.querySelector('demo-card')?.className).toBe('card');
+	});
+
 	test('hydrates a fragment with a conditional hole and keeps its sibling when the hole fills', async () => {
 		const [{ Fragment, jsx, jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');
@@ -2594,20 +2608,6 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(mutations.filter((mutation) => mutation.type === 'childList')).toHaveLength(0);
 		expect(mutations.filter((mutation) => mutation.type === 'characterData')).toHaveLength(1);
 		expect(mutations.find((mutation) => mutation.type === 'characterData')?.oldValue).toBe('3');
-	});
-
-	test('className is skipped on a native element and set as a property on a custom element', async () => {
-		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
-		const container = document.createElement('div');
-
-		createRoot(container).render(
-			jsx('div', { children: [jsx('section', { className: 'card' }), jsx('demo-card', { className: 'card' })] }),
-		);
-
-		const section = container.querySelector('section');
-		expect(section?.hasAttribute('classname')).toBe(false);
-		expect(section?.getAttribute('class')).toBeNull();
-		expect(container.querySelector('demo-card')?.className).toBe('card');
 	});
 
 	test('signal-like attribute values patch attributes without rerendering the parent tree', async () => {
