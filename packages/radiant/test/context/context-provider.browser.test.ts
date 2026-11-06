@@ -97,3 +97,40 @@ describe('ContextProvider notification', () => {
 		expect(received).toEqual(['a', 'b', 'a', 'b', 'c']);
 	});
 });
+
+describe('ContextProvider initialValue', () => {
+	test('gives each provider its own copy of an object initialValue', () => {
+		const context = createContext<{ mutations: number }>(Symbol('initial-value-copy'));
+		const options = { context, initialValue: { mutations: 0 } };
+		const one = new ContextProvider<typeof context>(
+			document.createElement('div') as unknown as ContextHostLike,
+			options,
+		);
+		const two = new ContextProvider<typeof context>(
+			document.createElement('div') as unknown as ContextHostLike,
+			options,
+		);
+
+		one.getContext().mutations = 5;
+
+		expect(two.getContext().mutations).toBe(0);
+		expect(options.initialValue.mutations).toBe(0);
+	});
+
+	test('gives each provider its own copy of an array initialValue', () => {
+		const context = createContext<number[]>(Symbol('initial-value-array'));
+		const options = { context, initialValue: [1] };
+		const one = new ContextProvider<typeof context>(
+			document.createElement('div') as unknown as ContextHostLike,
+			options,
+		);
+		const two = new ContextProvider<typeof context>(
+			document.createElement('div') as unknown as ContextHostLike,
+			options,
+		);
+
+		one.getContext().push(2);
+
+		expect(two.getContext()).toEqual([1]);
+	});
+});
