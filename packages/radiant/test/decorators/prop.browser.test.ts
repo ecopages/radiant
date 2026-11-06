@@ -43,6 +43,37 @@ describe('@prop', () => {
 
 			expect(customElement.name).toEqual('Zoe');
 		});
+
+		test('keeps an authored attribute on a non-reflected prop and does not write it back', async () => {
+			document.body.innerHTML = '<my-reactive-string name="Rex"></my-reactive-string>';
+			const customElement = document.body.firstElementChild as MyReactiveString;
+
+			await Promise.resolve();
+
+			expect(customElement.name).toEqual('Rex');
+			expect(customElement.getAttribute('name')).toBe('Rex');
+
+			customElement.changeName('Fido');
+
+			expect(customElement.name).toEqual('Fido');
+			expect(customElement.getAttribute('name')).toBe('Rex');
+		});
+
+		test('a pre-upgrade property assignment wins over the authored attribute that stays', async () => {
+			document.body.innerHTML = '<my-late-string name="Rex"></my-late-string>';
+			const host = document.body.firstElementChild as HTMLElement & { name?: string };
+			host.name = 'Fido';
+
+			@customElement('my-late-string')
+			class MyLateString extends RadiantElement {
+				@prop({ type: String }) name: string;
+			}
+
+			await Promise.resolve();
+
+			expect((host as unknown as MyLateString).name).toBe('Fido');
+			expect(host.getAttribute('name')).toBe('Rex');
+		});
 	});
 
 	describe('number', () => {
