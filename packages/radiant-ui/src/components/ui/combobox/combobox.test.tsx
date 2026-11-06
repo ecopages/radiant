@@ -146,4 +146,21 @@ describe('RuiCombobox', () => {
 		expect(changes.at(-1)).toEqual({ value: [] });
 		cleanup();
 	});
+
+	it('keeps chips when Escape runs on a closed multiple-mode combobox with empty text', async () => {
+		const { host, cleanup } = mount(
+			<RuiCombobox selectionMode="multiple" value="de,it" options={OPTIONS} placeholder="Countries" />,
+		);
+		await settled();
+
+		const input = host.querySelector('[data-combobox-input]') as HTMLInputElement;
+		const combobox = host.querySelector('rui-combobox') as RuiComboboxElement;
+		const before = [...combobox.value];
+		expect(before.length).toBeGreaterThan(0);
+		input.focus();
+		await userEvent.keyboard('{Escape}');
+		await settled();
+		expect(combobox.value).toEqual(before);
+		cleanup();
+	});
 });
