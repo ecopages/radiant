@@ -140,6 +140,19 @@ jobs:
             - name: Run Radiant UI tests
               run: pnpm --filter @ecopages/radiant-ui test:all
 
+            # build:lib runs generate:exports, which rewrites tracked sources (exports, index.ts,
+            # styles.css, the colour-alias block in semantic.css). The build then passes on a stale
+            # checkout, so fail here when the regenerated output was not committed.
+            - name: Check generated files are committed
+              run: |
+                  if [ -n "$(git status --porcelain)" ]; then
+                    echo '::error::Generated radiant-ui files are not committed. Changed files:'
+                    git status --porcelain
+                    git diff
+                    echo 'Fix: run `pnpm --filter @ecopages/radiant-ui build:lib` and commit the result.'
+                    exit 1
+                  fi
+
     radiant-ui-ssr-smoke:
         name: radiant-ui Storybook SSR smoke
         runs-on: ubuntu-latest

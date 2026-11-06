@@ -23,6 +23,7 @@
 		"@ecopages/radiant": "workspace:*",
 		"@ecopages/radiant-ui": "workspace:*",
 		"@ecopages/radiant-themes": "workspace:*",
+		"@ecopages/signals": "workspace:*",
 		"@rehype-pretty/transformers": "^0.13.2",
 		"@types/hast": "^3.0.4",
 		"@types/node": "^24.13.2",
