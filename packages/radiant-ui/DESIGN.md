@@ -35,7 +35,8 @@ Components must **never** reference palette steps (e.g. `--color-havelock-blue-8
 - Theme role maps assign plain roles (`--primary`, …) on `:root` / `.dark`.
 - `@theme` block maps those roles to tree-shakable Tailwind color utilities (`bg-primary`, `text-on-surface`, …).
 - There is no separate `semantic.dark.css`.
-- Dark applies to any `.dark` scope, not only `html`: `semantic.css` registers the `--color-*` aliases with `@theme inline` and redeclares them under `:where(.dark)`, so a nested `.dark` section restyles utilities and direct `var(--color-*)` readers.
+- Dark applies to any `.dark` scope, not only `html`: `semantic.css` registers the `--color-*` aliases with `@theme inline` (utilities read the role token, e.g. `var(--primary)`, where they are used) and declares them again under `:where(:root, .dark)` so `var(--color-*)` readers resolve on a light page and inside a nested `.dark`. Override roles (`--primary`), not `--color-*`.
+- App-level aliases declared with a plain `@theme` (such as `--color-background-accent` and `--color-muted` in the docs and radiant-ui apps) resolve once at `:root`, so they do not follow a nested `.dark`; those apps switch theme with `data-theme` on the root. Declare an app alias with `@theme inline` and redeclare it under `:where(:root, .dark)` if it must follow a nested section.
 
 Dark remaps **colors only** (including `--color-overlay`). Spacing, radius, elevation, typography, and motion stay mode-independent unless a theme explicitly documents otherwise.
 

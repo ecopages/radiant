@@ -102,11 +102,13 @@
 }
 
 /**
- * Direct `var(--color-*)` readers resolve the alias on the element that declares
- * it. The alias is declared on `:root` by `@theme`, so it is redeclared in the
- * dark scope to pick up the dark palette in a nested `.dark` section.
+ * `@theme inline` omits these aliases from the compiled `:root`, so they are
+ * declared here for direct `var(--color-*)` readers. Declaring them on
+ * `:root` and `.dark` makes every alias exist on a light page and re-resolve
+ * against the dark palette inside a nested `.dark` section.
  */
-:where(.dark) {
+:where(:root, .dark) {
+	--color-transparent: transparent;
 	--color-gray-50: var(--gray-50);
 	--color-gray-100: var(--gray-100);
 	--color-gray-200: var(--gray-200);

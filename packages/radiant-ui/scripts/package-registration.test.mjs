@@ -174,3 +174,18 @@ assert.ok(html.includes('>Open navigation') || html.includes('aria-label="Open n
 
 	assert.equal(result.status, 0, result.stderr || result.stdout);
 });
+
+test('compiled radiant-ui.css declares every semantic --color-* alias on :root', () => {
+	const root = new URL('..', import.meta.url);
+	const source = readFileSync(new URL('src/styles/tokens/semantic.css', root), 'utf8');
+	const compiled = readFileSync(new URL('dist/styles/radiant-ui.css', root), 'utf8');
+	const aliases = [...new Set(source.match(/--color-[\w-]+(?=:)/g))];
+	const rootBlocks = [...compiled.matchAll(/(^|\n)([^{}\n@][^{}]*)\{([^{}]*)\}/g)]
+		.filter((block) => /:root/.test(block[2]))
+		.map((block) => block[3])
+		.join('\n');
+
+	assert.ok(aliases.length > 50, 'expected the semantic alias list to be read from source');
+	const missing = aliases.filter((alias) => !new RegExp(`${alias}\\s*:`).test(rootBlocks));
+	assert.deepEqual(missing, []);
+});
