@@ -16,7 +16,7 @@ export type CalendarPopoverBehaviorConfig = {
 };
 
 /**
- * Shared popover positioning and dismissal for calendar-backed date pickers.
+ * Shared popover open state, positioning, dismissal and focus for calendar-backed date pickers.
  *
  * @remarks Date-field and date-range-picker keep value commit and selection mode local.
  */
@@ -30,7 +30,7 @@ export class CalendarPopoverBehavior {
 		this.config = config;
 	}
 
-	/** Starts listening for mobile layout changes. */
+	/** Starts listening for mobile layout changes until `destroy()`; call it on every connection. */
 	connect(): void {
 		this.disposeMobileLayoutListener?.();
 		this.disposeMobileLayoutListener = listenMobileLayoutViewport(() => {
