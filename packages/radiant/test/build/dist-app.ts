@@ -1,39 +1,12 @@
-import { readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import * as esbuild from 'esbuild';
 import type { BrowserCommand } from 'vitest/node';
+import { assertFreshDist } from './dist-freshness';
 
 const packageRoot = path.resolve(import.meta.dirname, '../..');
 
 /** The built package, as `publishConfig.directory` publishes it. */
 export const distRoot = path.join(packageRoot, 'dist');
-
-/**
- * Throws when `dist` is missing or older than any source file, so a test never passes against a stale build.
- */
-export function assertFreshDist(): void {
-	let builtAt: number;
-
-	try {
-		builtAt = statSync(path.join(distRoot, 'index.js')).mtimeMs;
-	} catch {
-		throw new Error('packages/radiant/dist is missing: build it first (pnpm build:all)');
-	}
-
-	const sources = [
-		path.join(packageRoot, 'build.ts'),
-		...readdirSync(path.join(packageRoot, 'src'), { recursive: true, encoding: 'utf8' })
-			.filter((file) => /\.tsx?$/.test(file))
-			.map((file) => path.join(packageRoot, 'src', file)),
-	];
-	const newer = sources.find((file) => statSync(file).mtimeMs > builtAt);
-
-	if (newer) {
-		throw new Error(
-			`packages/radiant/dist is older than ${path.relative(packageRoot, newer)}: rebuild it (pnpm build:all)`,
-		);
-	}
-}
 
 /**
  * A consumer app that renders a render-owning host from a JSX view: `mountFrame` passes a child marked
