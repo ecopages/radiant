@@ -310,6 +310,26 @@ export class MinimalCommentNode extends MinimalNode {
 	}
 }
 
+/** Tags whose `type` property reflects the `type` attribute. */
+const TYPE_TAGS = new Set([
+	'button',
+	'input',
+	'select',
+	'a',
+	'link',
+	'script',
+	'source',
+	'style',
+	'ol',
+	'ul',
+	'li',
+	'embed',
+	'object',
+]);
+const DEFAULT_TYPES: Record<string, string> = { button: 'submit', input: 'text' };
+/** Tags whose `disabled` property reflects the `disabled` attribute. */
+const DISABLED_TAGS = new Set(['button', 'input', 'select', 'textarea', 'fieldset', 'optgroup', 'option']);
+
 class MinimalClassList {
 	constructor(private readonly element: MinimalElement) {}
 
@@ -386,6 +406,8 @@ export class MinimalElement extends MinimalNode {
 	 * yield `[name, value]` tuples and crash on `.name.startsWith(...)`.
 	 */
 	#attributeStore = new Map<string, string>();
+	/** Values assigned to `type` / `disabled` on tags that do not reflect them. */
+	#plainProps = new Map<string, unknown>();
 	private classListValue?: MinimalClassList;
 	private datasetValue?: DOMStringMap;
 	private styleValue?: CSSStyleDeclaration;
@@ -416,6 +438,93 @@ export class MinimalElement extends MinimalNode {
 		}
 
 		this.setAttribute('id', value);
+	}
+
+	get className(): string {
+		return this.getAttribute('class') ?? '';
+	}
+
+	set className(value: string) {
+		this.setAttribute('class', value);
+	}
+
+	get title(): string {
+		return this.getAttribute('title') ?? '';
+	}
+
+	set title(value: string) {
+		this.setAttribute('title', value);
+	}
+
+	get lang(): string {
+		return this.getAttribute('lang') ?? '';
+	}
+
+	set lang(value: string) {
+		this.setAttribute('lang', value);
+	}
+
+	get dir(): string {
+		return this.getAttribute('dir') ?? '';
+	}
+
+	set dir(value: string) {
+		this.setAttribute('dir', value);
+	}
+
+	get hidden(): boolean {
+		return this.hasAttribute('hidden');
+	}
+
+	set hidden(value: boolean) {
+		this.toggleAttribute('hidden', Boolean(value));
+	}
+
+	get tabIndex(): number {
+		const parsed = Number.parseInt(this.getAttribute('tabindex') ?? '', 10);
+		return Number.isNaN(parsed) ? -1 : parsed;
+	}
+
+	set tabIndex(value: number) {
+		this.setAttribute('tabindex', Math.trunc(Number(value)));
+	}
+
+	/**
+	 * @remarks Reflected only on the tags where the DOM defines `type` (see {@link TYPE_TAGS}). Elsewhere an
+	 * assignment stays a plain value that never serializes, as in a browser.
+	 */
+	get type(): string {
+		if (!TYPE_TAGS.has(this.localName)) {
+			return String(this.#plainProps.get('type') ?? '');
+		}
+		return this.getAttribute('type') ?? DEFAULT_TYPES[this.localName] ?? '';
+	}
+
+	set type(value: string) {
+		if (!TYPE_TAGS.has(this.localName)) {
+			this.#plainProps.set('type', value);
+			return;
+		}
+		this.setAttribute('type', value);
+	}
+
+	/**
+	 * @remarks Reflected only on the form controls in {@link DISABLED_TAGS}; elsewhere a plain value, as in a
+	 * browser.
+	 */
+	get disabled(): boolean {
+		if (!DISABLED_TAGS.has(this.localName)) {
+			return Boolean(this.#plainProps.get('disabled'));
+		}
+		return this.hasAttribute('disabled');
+	}
+
+	set disabled(value: boolean) {
+		if (!DISABLED_TAGS.has(this.localName)) {
+			this.#plainProps.set('disabled', value);
+			return;
+		}
+		this.toggleAttribute('disabled', Boolean(value));
 	}
 
 	get classList(): DOMTokenList {

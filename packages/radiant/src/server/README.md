@@ -235,10 +235,13 @@ The shim supports a focused query surface for component lifecycle code that runs
 - `document.querySelector(selector)` / `document.querySelectorAll(selector)`
 - `document.getElementById(id)`
 - `element.style` (`setProperty`, property assignment, serializes to the `style` attribute)
+- Reflected properties: assigning `className`, `title`, `lang`, `dir`, `hidden`, `tabIndex`, `type` or `disabled` writes the matching attribute (`class`, `title`, `lang`, `dir`, `hidden`, `tabindex`, `type`, `disabled`), so SSR HTML keeps it. See **Reflected properties** below.
 - `element.children` (non-live snapshot array of element children; unlike browser `HTMLCollection`)
 - `element.focus()` / `element.blur()` (no-op during SSR)
 - `element.getBoundingClientRect()` / `element.getClientRects()` (zero-sized rects; no layout)
 - `requestAnimationFrame` / `cancelAnimationFrame` (no-op during SSR; callbacks are not invoked)
+
+**Reflected properties:** string properties (`className`, `title`, `lang`, `dir`, `type`) set the attribute, boolean ones (`hidden`, `disabled`) set or remove it as presence, and `tabIndex` writes a truncated integer (reads `-1` when unset). `className` and `classList` share the `class` attribute. `type` reflects only on `button`, `input`, `select`, `a`, `link`, `script`, `source`, `style`, `ol`, `ul`, `li`, `embed` and `object`, and `disabled` only on `button`, `input`, `select`, `textarea`, `fieldset`, `optgroup` and `option`; on other tags an assignment is a plain value that does not serialize, as in a browser. Other reflected properties (`href`, `value`, `checked`, `name`, `ariaLabel`, `slot`) are not reflected; use `setAttribute`.
 
 **`children` semantics:** `element.children` returns a fresh array snapshot of current element children. It is not a live `HTMLCollection`. Holding a reference after DOM mutations does not update the cached array; re-read `element.children` after changes.
 
