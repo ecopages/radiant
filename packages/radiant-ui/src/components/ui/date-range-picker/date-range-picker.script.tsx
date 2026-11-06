@@ -11,7 +11,7 @@ import {
 	state,
 } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
-import { isIsoInRange, parseIsoRange, serializeIsoRange } from '@/lib/intl-date';
+import { isIsoInRange, normalizeRange, parseIsoRange, serializeIsoRange } from '@/lib/intl-date';
 import type { RuiCalendarChangeDetail } from '../calendar/calendar.script';
 import { CalendarPopoverBehavior } from '../shared/calendar-popover-behavior';
 import { effectiveVisibleMonths, listenMobileLayoutViewport } from '@/lib/viewport/mobile-layout';
@@ -78,7 +78,7 @@ export type RuiDateRangePickerChangeDetail = {
  * @attr {string} start-name - Form field name on the nested start `rui-date-input`. Default: `''`.
  * @attr {string} end-name - Form field name on the nested end `rui-date-input`. Default: `''`.
  * @attr {number} visible-months - Month grids shown in the range calendar popover (adapts to 1 on screens under 640px). Default: `2`.
- * @fires rui-change - Emitted when a valid range is committed, or when a committed range is cleared; detail carries `value`, `start`, and `end`.
+ * @fires rui-change - Emitted when a valid range is committed, or when a committed range is cleared; detail carries `value` and the sorted `start` and `end` (start is never after end).
  */
 @customElement('rui-date-range-picker')
 export class RuiDateRangePicker extends RadiantElement {
@@ -214,13 +214,14 @@ export class RuiDateRangePicker extends RadiantElement {
 			return;
 		}
 
-		const serialized = start && end ? serializeIsoRange({ start, end }) : '';
+		const sorted = start && end ? normalizeRange(start, end) : null;
+		const serialized = serializeIsoRange(sorted);
 		if (serialized === this.isoValue) {
 			return;
 		}
 
 		this.value = serialized;
-		this.changeEvent.emit({ value: serialized, start, end });
+		this.changeEvent.emit({ value: serialized, start: sorted?.start ?? start, end: sorted?.end ?? end });
 	}
 
 	private commitFromInputs(): void {
