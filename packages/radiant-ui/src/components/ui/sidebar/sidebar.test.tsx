@@ -103,6 +103,23 @@ function mountMobileSidebar(props: {
 	return { host, sidebar, cleanup };
 }
 
+describe('RuiSidebar landmark name', () => {
+	it('names the complementary landmark and leaves the roleless pane unlabelled', async () => {
+		const { host, cleanup } = mountDesktopSidebar(
+			<RuiSidebar id="filters-sidebar" mobileBreakpoint={0} label="Filters">
+				<span>Body</span>
+			</RuiSidebar>,
+		);
+		await settled();
+
+		const landmark = host.querySelector('[role="complementary"]') as HTMLElement;
+		expect(landmark.getAttribute('aria-label')).toBe('Filters');
+		expect(host.querySelector('[data-ref="pane"]')?.hasAttribute('aria-label')).toBe(false);
+
+		cleanup();
+	});
+});
+
 describe('RuiSidebar composition', () => {
 	it('renders header, content, footer, and groups', async () => {
 		const { host, cleanup } = mountDesktopSidebar(
