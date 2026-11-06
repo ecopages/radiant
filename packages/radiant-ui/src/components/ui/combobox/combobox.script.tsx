@@ -228,7 +228,7 @@ export class RuiCombobox extends RadiantElement {
 		input.setAttribute('aria-haspopup', 'listbox');
 		input.setAttribute('aria-autocomplete', 'list');
 		input.setAttribute('aria-expanded', String(this.open));
-		input.setAttribute('aria-controls', this.listboxId);
+		input.setAttribute('aria-controls', listbox.id);
 		listbox.setAttribute('aria-label', this.getAccessibleName());
 		this.collection.syncMultiselectable(listbox);
 
@@ -548,7 +548,7 @@ export class RuiCombobox extends RadiantElement {
 			},
 			onEscapeWhenClosed: () => {
 				const input = this.getInput();
-				if (input && input.value) {
+				if (input && (input.value || (!this.isMultiple() && this.value.length > 0))) {
 					input.value = '';
 					this.value = [];
 					this.changeEvent.emit({ value: [] });

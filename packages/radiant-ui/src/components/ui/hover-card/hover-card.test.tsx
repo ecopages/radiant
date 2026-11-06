@@ -122,6 +122,80 @@ describe('RuiHoverCard', () => {
 		cleanup();
 	});
 
+	it('stays closed after Escape on a pointer-opened card, even with a warmed-up delay', async () => {
+		const { host, cleanup } = mount(
+			<RuiHoverCard delay={600} closeDelay={0}>
+				<RuiHoverCardTrigger>
+					<button type="button">Trigger</button>
+				</RuiHoverCardTrigger>
+				<RuiHoverCardContent>Preview</RuiHoverCardContent>
+			</RuiHoverCard>,
+		);
+		await settled();
+
+		const card = getCard(host);
+		const content = getContent(host);
+		const trigger = getTriggerButton(host);
+		const events: boolean[] = [];
+		card.addEventListener('rui-open-change', (event) => events.push((event as CustomEvent).detail.open));
+
+		card.setOpen(true);
+		await settled();
+		expect(document.activeElement).not.toBe(trigger);
+
+		document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+		await new Promise((resolve) => setTimeout(resolve, 30));
+		await settled();
+
+		expect(document.activeElement).toBe(trigger);
+		expect(content.hidden).toBe(true);
+		expect(events).toEqual([true, false]);
+
+		trigger.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+		await new Promise((resolve) => setTimeout(resolve, 30));
+		await settled();
+		expect(content.hidden).toBe(true);
+		expect(events).toEqual([true, false]);
+
+		trigger.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+		trigger.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+		await settled();
+		expect(content.hidden).toBe(false);
+
+		cleanup();
+	});
+
+	it('keeps the card open when the pointer moves from the trigger onto the card', async () => {
+		const { host, cleanup } = mount(
+			<RuiHoverCard delay={0} closeDelay={60}>
+				<RuiHoverCardTrigger>
+					<button type="button">Trigger</button>
+				</RuiHoverCardTrigger>
+				<RuiHoverCardContent>Preview</RuiHoverCardContent>
+			</RuiHoverCard>,
+		);
+		await settled();
+
+		const card = getCard(host);
+		const content = getContent(host);
+		const events: boolean[] = [];
+		card.addEventListener('rui-open-change', (event) => events.push((event as CustomEvent).detail.open));
+
+		card.dispatchEvent(new PointerEvent('pointerenter', { bubbles: true, pointerType: 'mouse' }));
+		await settled();
+		expect(content.hidden).toBe(false);
+
+		card.dispatchEvent(new PointerEvent('pointerleave', { bubbles: true, pointerType: 'mouse' }));
+		content.dispatchEvent(new PointerEvent('pointerenter', { bubbles: false, pointerType: 'mouse' }));
+		await new Promise((resolve) => setTimeout(resolve, 120));
+		await settled();
+
+		expect(content.hidden).toBe(false);
+		expect(events).toEqual([true]);
+
+		cleanup();
+	});
+
 	it('respects open delay before showing', async () => {
 		const { host, cleanup } = mount(
 			<RuiHoverCard delay={50} closeDelay={0}>

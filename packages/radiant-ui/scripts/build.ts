@@ -2,11 +2,12 @@
  * Builds the radiant-ui library into `dist/`.
  *
  * Bundles the public TypeScript entries and every `src/components/ui/<name>/index.ts`
- * as browser-targeted ESM with `@ecopages/*` external.
+ * as browser-targeted ESM with `@ecopages/*` external. Modules imported by more than
+ * one entry are emitted once into `dist/chunks/`.
  *
  * Run with: pnpm run build:files
  */
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { transformAsync } from '@babel/core';
 import decorators from '@babel/plugin-proposal-decorators';
@@ -80,12 +81,14 @@ function standardDecoratorTransform(): esbuild.Plugin {
 }
 
 try {
+	rmSync(path.join(DIST, 'chunks'), { recursive: true, force: true });
 	await esbuild.build({
 		absWorkingDir: ROOT,
 		alias: {
 			'@': SRC,
 		},
 		bundle: true,
+		chunkNames: 'chunks/[name]-[hash]',
 		entryPoints: [
 			path.join(SRC, 'index.ts'),
 			path.join(SRC, 'aria.ts'),
@@ -103,6 +106,7 @@ try {
 		platform: 'browser',
 		plugins: [standardDecoratorTransform()],
 		sourcemap: true,
+		splitting: true,
 	});
 } catch (error) {
 	console.error('[radiant-ui]', error);
