@@ -63,4 +63,38 @@ describe('FormStore', () => {
 			expect(setValue).toHaveBeenLastCalledWith(1);
 		});
 	});
+
+	describe('register', () => {
+		function makeField(name: string) {
+			let current: unknown;
+			return { name, getValue: () => current, setValue: vi.fn((next: unknown) => (current = next)) };
+		}
+
+		it('keeps the form default when the field registers with a null default', () => {
+			const store = new FormStore<{ qty: number | null }>({ mode: 'onSubmit', defaultValues: { qty: 1 } });
+			const field = makeField('qty');
+			store.register({ ...field, defaultValue: null });
+
+			expect(store.getValues().qty).toBe(1);
+			expect(field.setValue).toHaveBeenLastCalledWith(1);
+		});
+
+		it('does not seed null into the store for a field with no default', () => {
+			const store = new FormStore<{ qty: number | null }>({ mode: 'onSubmit' });
+			const field = makeField('qty');
+			store.register({ ...field, defaultValue: null });
+
+			expect(field.setValue).toHaveBeenLastCalledWith(undefined);
+		});
+
+		it('picks up a form default set after the field registered', () => {
+			const store = new FormStore<{ qty: number | null }>({ mode: 'onSubmit' });
+			const field = makeField('qty');
+			store.register({ ...field, defaultValue: null });
+			store.updateOptions({ mode: 'onSubmit', defaultValues: { qty: 1 } });
+			store.reset();
+
+			expect(store.getValues().qty).toBe(1);
+		});
+	});
 });
