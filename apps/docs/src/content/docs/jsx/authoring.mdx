@@ -86,6 +86,8 @@ The runtime normalizes the most common authoring patterns before anything reache
 />
 ```
 
+`className` is not an HTML attribute. On a native element it is a type error, and JSX skips it instead of writing an attribute browsers ignore; `jsxDEV` from `@ecopages/jsx/jsx-dev-runtime` warns once per tag. Use `class`. A custom element still receives `className` as a property.
+
 ### `style`
 
 An object stylesheet is serialized to a kebab-case CSS declaration string. Null and empty declarations are dropped. Reactive style values are passed through untouched so the renderer can keep tracking them.

@@ -32,7 +32,7 @@ The package surface is intentionally split by use case:
 - primary DOM event bindings with `on:*`
 - explicit native escape-hatch bindings with `on-native:*`
 - explicit property bindings with `prop:*`
-- boolean, `data`, `aria`, `class`, `className`, `classes`, and `style` normalization
+- boolean, `data`, `aria`, `class`, `classes`, and `style` normalization (`className` is a type error and is skipped on native elements; use `class`)
 - direct DOM mounting with `createRoot(...)`
 - HTML string rendering with `renderToString(...)`
 - hydration markers and DOM hydration helpers
@@ -64,7 +64,7 @@ Choose the narrowest entrypoint that matches the environment you are writing for
 | `@ecopages/jsx/client`          | browser entry files and DOM-only helpers                                  | JSX primitives, DOM mounting, hydration, and shared renderable types                                              |
 | `@ecopages/jsx/server`          | SSR adapters, Node or Bun HTML rendering, and custom server-element hooks | `renderToString(...)`, custom-element render hooks, SSR render scope helpers, and hydration binding scope helpers |
 | `@ecopages/jsx/jsx-runtime`     | automatic JSX runtime wiring                                              | `jsx`, `jsxs`, `Fragment`, and runtime JSX types                                                                  |
-| `@ecopages/jsx/jsx-dev-runtime` | dev-mode automatic JSX runtime wiring                                     | development runtime alias for toolchains that emit `jsxDEV(...)`                                                  |
+| `@ecopages/jsx/jsx-dev-runtime` | dev-mode automatic JSX runtime wiring                                     | `jsxDEV(...)` for development toolchains, plus development-only warnings such as `className` on a native element  |
 
 If a module is environment-specific, prefer the subpath import even when the root barrel would also work. That keeps browser-only and server-only code obvious at the import site.
 
@@ -398,7 +398,7 @@ To drive a textarea from application state, pass a new child string when that st
 
 ## Dev Warnings
 
-The runtime warnings are intentionally defensive around hydration markers and renderer-owned DOM anchors because those failures are otherwise silent and hard to debug.
+The runtime warnings are intentionally defensive around hydration markers and renderer-owned DOM anchors because those failures are otherwise silent and hard to debug. `jsxDEV` from `@ecopages/jsx/jsx-dev-runtime` also warns once per tag when a native element gets `className`, which JSX skips; use `class`.
 
 They are already off in production by default. In development, you can force them on or off globally:
 
@@ -876,7 +876,7 @@ Key types:
 - `SubscribableJsxValue`
 - `TemplateResultLike`
 
-The automatic development runtime also exports `jsxDEV` from `@ecopages/jsx/jsx-dev-runtime`. It passes static children (the ones the production transform hands to `jsxs`) to `jsxs`, so development and production builds give the same template shape.
+The automatic development runtime also exports `jsxDEV` from `@ecopages/jsx/jsx-dev-runtime`. It passes static children (the ones the production transform hands to `jsxs`) to `jsxs`, so development and production builds give the same template shape, and it warns about `className` on a native element. The `jsxDEV` from `@ecopages/jsx/jsx-runtime` and the package root does not warn.
 
 Server-only exports from `@ecopages/jsx/server` include:
 

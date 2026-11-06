@@ -1,4 +1,5 @@
 import {
+	CLASS_NAME_ATTRIBUTE_WARNING,
 	DEV_WARNINGS_ENABLED_SYMBOL,
 	DOM_RANGE_ANCHOR_DRIFT_WARNING,
 	DETACHED_INSERTION_POINT_WARNING,
@@ -51,6 +52,9 @@ export function installDefaultDevWarningFormatter(): void {
 
 			case DETACHED_INSERTION_POINT_WARNING:
 				return DETACHED_INSERTION_POINT_WARNING_MESSAGE;
+
+			case CLASS_NAME_ATTRIBUTE_WARNING:
+				return `Skipped className on <${detail ?? 'element'}>: it is not an HTML attribute. Use class.`;
 
 			default:
 				return '';

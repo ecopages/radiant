@@ -197,6 +197,11 @@ export function takesChildrenValue(type: string): boolean {
 	);
 }
 
+/**
+ * @remarks `className` on a native element is skipped: it is not an HTML attribute, and writing it would leave the
+ * element without its class. `jsxDEV` from `@ecopages/jsx/jsx-dev-runtime` warns about it. A custom element keeps it
+ * as a property binding.
+ */
 function appendBinding(
 	strings: string[],
 	values: unknown[],
@@ -206,6 +211,10 @@ function appendBinding(
 	value: unknown,
 ): void {
 	if (value === undefined) {
+		return;
+	}
+
+	if (name === 'className' && !elementName.includes('-')) {
 		return;
 	}
 
