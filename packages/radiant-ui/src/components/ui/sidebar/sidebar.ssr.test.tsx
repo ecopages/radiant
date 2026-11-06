@@ -73,3 +73,20 @@ describe('RuiSidebar SSR navigation listeners', () => {
 		).toHaveLength(0);
 	});
 });
+
+describe('RuiSidebar SSR landmark', () => {
+	it('names the complementary landmark before hydration', () => {
+		const html = withRadiantServerCustomElementRenderBridge(() =>
+			renderToString(
+				<RuiSidebar id="filters" label="Filters">
+					<span>Body</span>
+				</RuiSidebar>,
+			),
+		);
+
+		const host = html.match(/<rui-sidebar(?!-)[^>]*>/)?.[0] ?? '';
+		expect(host).toContain('role="complementary"');
+		expect(host).toContain('aria-label="Filters"');
+		expect(html).not.toMatch(/data-ref="pane"[^>]*aria-label/);
+	});
+});
