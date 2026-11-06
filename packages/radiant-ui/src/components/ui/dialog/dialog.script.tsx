@@ -98,6 +98,7 @@ export class RuiDialog extends RadiantElement {
 	closeEvent: EventEmitter<RuiDialogCloseDetail>;
 
 	private previouslyFocused: HTMLElement | null = null;
+	private lastOpen = false;
 	private readonly uid = uniqueId('rui-dialog');
 
 	private get titleId(): string {
@@ -112,14 +113,24 @@ export class RuiDialog extends RadiantElement {
 		this.syncOpenState();
 	}
 
+	@onUpdated('alert')
+	syncRole(): void {
+		this.dialogTarget?.setAttribute('role', this.alert ? 'alertdialog' : 'dialog');
+	}
+
+	/**
+	 * @remarks
+	 * Focus is captured and restored only when `open` actually changes; a `label` update while
+	 * open must not overwrite `previouslyFocused` with an element inside the dialog.
+	 */
 	@bound
-	@onUpdated(['open', 'label', 'alert'])
+	@onUpdated(['open', 'label'])
 	syncOpenState(): void {
 		if (!this.dialogTarget) {
 			return;
 		}
 
-		this.dialogTarget.setAttribute('role', this.alert ? 'alertdialog' : 'dialog');
+		this.syncRole();
 
 		if (this.titleTarget?.textContent?.trim()) {
 			this.titleTarget.id = this.titleId;
@@ -136,6 +147,11 @@ export class RuiDialog extends RadiantElement {
 		} else {
 			this.dialogTarget.removeAttribute('aria-describedby');
 		}
+
+		if (this.open === this.lastOpen) {
+			return;
+		}
+		this.lastOpen = this.open;
 
 		if (this.open) {
 			this.previouslyFocused = document.activeElement as HTMLElement | null;
@@ -199,6 +215,11 @@ export class RuiDialog extends RadiantElement {
 			return;
 		}
 
+		const active = document.activeElement as HTMLElement | null;
+		if (!active || !this.dialogTarget?.contains(active)) {
+			return;
+		}
+
 		const focusable = this.getFocusable();
 		if (!focusable.length) {
 			event.preventDefault();
@@ -208,9 +229,8 @@ export class RuiDialog extends RadiantElement {
 
 		const first = focusable[0];
 		const last = focusable[focusable.length - 1];
-		const active = document.activeElement as HTMLElement | null;
 
-		if (!active || !focusable.includes(active)) {
+		if (this.alert && !focusable.includes(active)) {
 			event.preventDefault();
 			(event.shiftKey ? last : first).focus();
 		} else if (event.shiftKey && active === first) {

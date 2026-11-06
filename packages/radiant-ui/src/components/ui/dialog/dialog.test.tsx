@@ -89,6 +89,97 @@ describe('RuiDialog host alert', () => {
 	});
 });
 
+describe('RuiDialog focus handling', () => {
+	afterEach(() => {
+		document.body.innerHTML = '';
+	});
+
+	it('restores focus to the opener after alert toggled while open', async () => {
+		const host = mount(
+			<>
+				<button type="button" id="opener">
+					Open
+				</button>
+				<RuiDialog label="Delete">
+					<RuiDialogActions>
+						<RuiDialogClose>Cancel</RuiDialogClose>
+					</RuiDialogActions>
+				</RuiDialog>
+			</>,
+		);
+		await settled();
+		const opener = host.querySelector('#opener') as HTMLButtonElement;
+		const dialog = host.querySelector('rui-dialog') as DialogEl;
+		opener.focus();
+		dialog.open = true;
+		await settled();
+		dialog.alert = true;
+		await settled();
+		dialog.open = false;
+		await settled();
+		expect(document.activeElement).toBe(opener);
+	});
+
+	it('does not pull focus between two open dialogs', async () => {
+		const host = mount(
+			<>
+				<RuiDialog open label="A">
+					<RuiDialogActions>
+						<button type="button" id="a1">
+							a1
+						</button>
+					</RuiDialogActions>
+				</RuiDialog>
+				<RuiDialog open label="B">
+					<RuiDialogActions>
+						<button type="button" id="b1">
+							b1
+						</button>
+						<button type="button" id="b2">
+							b2
+						</button>
+					</RuiDialogActions>
+				</RuiDialog>
+			</>,
+		);
+		await settled();
+		(host.querySelector('#b1') as HTMLElement).focus();
+		await userEvent.tab();
+		expect(document.activeElement).toBe(host.querySelector('#b2'));
+	});
+
+	it('keeps natural Tab order from the surface in a non-alert dialog', async () => {
+		const host = mount(
+			<RuiDialog open label="Plain">
+				<button type="button" id="p1">
+					p1
+				</button>
+			</RuiDialog>,
+		);
+		await settled();
+		(host.querySelector('[data-ref="dialog"]') as HTMLElement).focus();
+		await userEvent.tab();
+		expect(document.activeElement).toBe(host.querySelector('#p1'));
+	});
+
+	it('falls back to the whole surface when an alert dialog has no actions', async () => {
+		const host = mount(
+			<RuiDialog open alert label="Bare">
+				<button type="button" id="x1">
+					x1
+				</button>
+				<button type="button" id="x2">
+					x2
+				</button>
+			</RuiDialog>,
+		);
+		await settled();
+		(host.querySelector('#x2') as HTMLElement).focus();
+		await userEvent.tab();
+		expect(document.activeElement).toBe(host.querySelector('#x1'));
+	});
+});
+
 describe('RuiDialogClose label', () => {
 	afterEach(() => {
 		document.body.innerHTML = '';
@@ -106,6 +197,14 @@ describe('RuiDialogClose label', () => {
 		const host = mount(<RuiDialogClose />);
 		await settled();
 		expect((host.querySelector('button') as HTMLButtonElement).getAttribute('aria-label')).toBe('Close');
+	});
+
+	it('treats false and empty children as icon-only', async () => {
+		const host = mount(<RuiDialogClose>{false}</RuiDialogClose>);
+		await settled();
+		const button = host.querySelector('button') as HTMLButtonElement;
+		expect(button.getAttribute('aria-label')).toBe('Close');
+		expect(button.querySelector('svg')).not.toBeNull();
 	});
 
 	it('keeps an explicit aria label', async () => {
