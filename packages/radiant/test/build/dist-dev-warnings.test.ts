@@ -3,7 +3,8 @@ import path from 'node:path';
 import { runInNewContext } from 'node:vm';
 import * as esbuild from 'esbuild';
 import { beforeAll, describe, expect, test } from 'vitest';
-import { assertFreshDist, distRoot } from './dist-app';
+import { distRoot } from './dist-app';
+import { assertFreshDist } from './dist-freshness';
 
 const DELEGATED_FOCUS_WARNING = 'Delegated @onEvent listens on the host in the bubble phase, so "focus"';
 const PEER_PACKAGES = ['@ecopages/jsx', '@ecopages/jsx/*', '@ecopages/signals', '@ecopages/signals/*'];

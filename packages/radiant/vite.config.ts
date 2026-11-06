@@ -23,7 +23,7 @@ export default mergeConfig(
 			environment: 'node',
 			testTimeout: 15_000,
 			include: ['test/**/*.test.{ts,tsx}'],
-			exclude: ['test/**/*.browser.test.{ts,tsx}', 'test/**/*.e2e.test.{ts,tsx}'],
+			exclude: ['test/**/*.browser.test.{ts,tsx}', 'test/**/*.e2e.test.{ts,tsx}', 'test/build/**'],
 		},
 	}),
 );
