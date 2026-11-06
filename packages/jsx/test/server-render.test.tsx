@@ -446,6 +446,26 @@ describe('Radiant JSX server render', () => {
 		);
 	});
 
+	test('binds a boolean attribute by presence under attr: and keeps a string value', async () => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+
+		expect(renderToString(jsx('div', { 'attr:hidden': false }))).toBe('<div></div>');
+		expect(renderToString(jsx('div', { 'attr:hidden': true }))).toBe('<div hidden=""></div>');
+		expect(renderToString(jsx('div', { hidden: 'until-found' }))).toBe('<div hidden="until-found"></div>');
+	});
+
+	test('binds any attribute by presence with bool: on native and custom elements', async () => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+
+		expect(renderToString(jsx('input', { 'bool:webkitdirectory': true }))).toBe('<input webkitdirectory>');
+		expect(renderToString(jsx('input', { 'bool:webkitdirectory': false }))).toBe('<input>');
+		expect(renderToString(jsx('demo-panel', { 'bool:expanded': true }))).toBe('<demo-panel expanded></demo-panel>');
+		expect(renderToString(jsx('demo-panel', { 'bool:expanded': false }))).toBe('<demo-panel></demo-panel>');
+		expect(renderToString(jsx('demo-panel', { 'bool:expanded': true }), { mode: 'hydrate' })).toBe(
+			'<demo-panel data-radiant-jsx-bind-0="bool:expanded" expanded></demo-panel>',
+		);
+	});
+
 	test('serializes attr:name false on a native element in plain and hydrate modes', async () => {
 		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
 		const template = jsx('div', { 'attr:aria-pressed': false });

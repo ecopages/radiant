@@ -64,6 +64,7 @@ Unprefixed names follow element-aware defaults. Prefixes make intent explicit:
 | :-- | :-- | :-- |
 | (none) | attribute for HTML elements; attribute or property for custom elements | normal authoring |
 | `attr:` | attribute serialization | force markup serialization for a custom-element prop |
+| `bool:` | attribute by presence | a boolean attribute outside the HTML set, such as a custom element's `expanded` |
 | `prop:` | element property assignment | non-string values (objects, functions, DOM nodes) |
 | `on:` | delegated-or-direct event | normal event authoring |
 | `on-native:` | direct `addEventListener(...)` | exact element-level listener semantics |
@@ -105,7 +106,15 @@ That JSX emits `data-state="ready"`, `data-max-load="3"`, and `aria-live="polite
 
 ### Boolean attributes
 
-Names such as `disabled`, `hidden`, `checked`, `readonly`, `selected`, and the rest of the standard HTML boolean attribute set keep boolean-attribute binding semantics when written without a prefix. `false` removes them; see the Empty Values And Removal section of [JSX Overview](/docs/jsx/overview).
+Names such as `disabled`, `hidden`, `checked`, `readonly`, `selected`, and the rest of the standard HTML boolean attribute set bind by presence. A boolean value writes the attribute empty for `true` and removes it for `false`, whatever the prefix (`attr:hidden={false}` included) and whatever the binding's first value, so these attributes are never written as `"false"`. A string such as `hidden="until-found"` is written as given.
+
+For a boolean attribute outside that set, use `bool:`:
+
+```tsx
+<x-panel bool:expanded={isOpen} />
+```
+
+`bool:expanded` renders `expanded` while `isOpen` is `true` and removes it when `isOpen` is `false`, `null` or `undefined`. `attr:expanded={false}` would write `expanded="false"`, which an element that checks for the attribute reads as present. See the Empty Values And Removal section of [JSX Overview](/docs/jsx/overview).
 
 ## Child Values
 

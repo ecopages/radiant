@@ -217,7 +217,7 @@ function appendBinding(
 /**
  * Resolves an authored prop name to the binding kind and attribute name it denotes.
  *
- * Explicit prefixes (`on-native:`, `on:`, `prop:`, `attr:`) select a kind directly.
+ * Explicit prefixes (`on-native:`, `on:`, `prop:`, `attr:`, `bool:`) select a kind directly.
  * Unprefixed names fall back to per-element defaults: boolean attributes bind by
  * presence, custom elements bind by property unless the name is a known attribute.
  *
@@ -249,6 +249,10 @@ function resolveBindingPart(
 
 	if (name.startsWith('attr:')) {
 		return { kind: 'attr', name: name.slice(5), type: 'attribute' };
+	}
+
+	if (name.startsWith('bool:')) {
+		return { kind: 'bool', name: name.slice(5), type: 'attribute' };
 	}
 
 	if (typeof resolveReactiveSnapshot(value) === 'boolean' && shouldUseBooleanAttributeBinding(name)) {

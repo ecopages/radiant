@@ -2596,6 +2596,54 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(mutations.find((mutation) => mutation.type === 'characterData')?.oldValue).toBe('3');
 	});
 
+	test('a boolean attribute whose signal starts undefined is absent for false and present for true', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const subscribers = new Set<(value: boolean | undefined) => void>();
+		let hidden: boolean | undefined;
+		const hiddenSignal = {
+			get: () => hidden,
+			subscribe: (notify: (value: boolean | undefined) => void) => {
+				subscribers.add(notify);
+				return () => {
+					subscribers.delete(notify);
+				};
+			},
+		};
+		const setHidden = (value: boolean) => {
+			hidden = value;
+			for (const notify of subscribers) notify(value);
+		};
+
+		createRoot(container).render(jsx('div', { hidden: hiddenSignal, children: 'x' }));
+		const element = container.querySelector('div');
+		expect(element?.hasAttribute('hidden')).toBe(false);
+
+		setHidden(false);
+		expect(element?.hasAttribute('hidden')).toBe(false);
+
+		setHidden(true);
+		expect(element?.getAttribute('hidden')).toBe('');
+	});
+
+	test('attr: on a boolean attribute and bool: on any attribute bind by presence', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const view = (value: boolean) =>
+			jsx('div', {
+				children: [jsx('span', { 'attr:hidden': value }), jsx('demo-panel', { 'bool:expanded': value })],
+			});
+
+		root.render(view(false));
+		expect(container.querySelector('span')?.hasAttribute('hidden')).toBe(false);
+		expect(container.querySelector('demo-panel')?.hasAttribute('expanded')).toBe(false);
+
+		root.render(view(true));
+		expect(container.querySelector('span')?.getAttribute('hidden')).toBe('');
+		expect(container.querySelector('demo-panel')?.getAttribute('expanded')).toBe('');
+	});
+
 	test('signal-like attribute values patch attributes without rerendering the parent tree', async () => {
 		const [{ jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');

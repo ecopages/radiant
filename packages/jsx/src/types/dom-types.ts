@@ -115,6 +115,8 @@ type JsxPropertyBindings<ElementType extends object> = {
 
 type JsxAttributeBindings = {
 	[AttributeName in `attr:${string}`]?: ReactiveAttributeValue<StructuredAttributePrimitive>;
+} & {
+	[AttributeName in `bool:${string}`]?: ReactiveAttributeValue<boolean | null | undefined>;
 };
 
 /*
