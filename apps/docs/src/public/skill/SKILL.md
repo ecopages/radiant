@@ -57,7 +57,7 @@ Three paint paths. They are not interchangeable:
 - `this.$.count` / `this.bindings.count` / `this.bind('count')` — JSX binding; patches a leaf the host's own `render()` / `hydrate()` created
 - `@bindTo(...)` — copy a `@prop` / `@state` / `@signal` field onto existing DOM (the host, or a `ref` / `selector` descendant). Sit it on the field. Do not `@query` a node only to write into it.
 
-Use a **plain read** when the value shapes render logic (branches, comparisons, list shape, slot fallback, `class` / `style` composition, handlers). Use a **JSX binding** for leaf text, whole attribute values, boolean attrs, and `prop:*` in `render()`. Use **`@bindTo`** for the same leaf writes when the host does not own that DOM. Never use a JSX binding as a raw value in control flow. `@onUpdated` is a procedure (focus, timers, joined ARIA), not a paint API.
+Use a **plain read** when the value shapes render logic (branches, comparisons, list shape, slot fallback, `class` / `style` composition, handlers). Use a **JSX binding** for leaf text, whole attribute values, boolean attrs (`hidden={this.$.closed}`, or `bool:name` for a non-standard one), and `prop:*` in `render()`. Use **`@bindTo`** for the same leaf writes when the host does not own that DOM. Never use a JSX binding as a raw value in control flow. `@onUpdated` is a procedure (focus, timers, joined ARIA), not a paint API.
 
 ```tsx
 <article class={this.isExpanded ? 'user-card user-card--expanded' : 'user-card'} data={{ state: this.$.isExpanded }}>
@@ -81,7 +81,7 @@ Read only the modules relevant to the task. Each file is one level deep from thi
 
 | Module                                                     | Read when                                                                                                                   |
 | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| [reference/reactive-model.md](reference/reactive-model.md) | Bindings vs plain reads vs `@bindTo`, derived `.map`, class/style                                                           |
+| [reference/reactive-model.md](reference/reactive-model.md) | Bindings vs plain reads vs `@bindTo`, attribute rules (`bool:`, `false`, `class`), derived `.map`, class/style              |
 | [reference/hosts.md](reference/hosts.md)                   | Element vs controller, public props vs internal bindings types, children and named regions                                  |
 | [reference/decorators.md](reference/decorators.md)         | `@prop` / `@attr` / `@state` / `@signal`, field types, `@bindTo`, `@query`, `@onEvent`, `@onUpdated`, `@bound`, `@debounce` |
 | [reference/context.md](reference/context.md)               | Provide/consume, `@contextSelector` vs `@onContextUpdate`, context field types                                              |

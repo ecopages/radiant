@@ -43,11 +43,11 @@ Rui views expose a declared DOM surface. Forwarded to that surface:
 - `on:*` / `on-native:*` events
 - direct `aria-*` / `data-*`
 - structured `aria={{ ... }}` / `data={{ ... }}`
-- `attr:` / `prop:` bindings
+- `attr:` / `prop:` / `bool:` bindings
 
 Direct kebab-case attributes win when both forms name the same value, and a direct `null` suppresses the structured value. Coordinator views document exceptions: `RuiAlert` forwards surface props to its inner `role="alert"` element.
 
-Compose `class` with `cx` from `@ecopages/radiant-ui/cx`.
+Compose `class` with `cx` from `@ecopages/radiant-ui/cx`. Write `class`, not `className`: on a native element `className` is a type error and is not rendered.
 
 ## Accessible-name defaults
 
