@@ -75,6 +75,6 @@ Node SSR installs a lightweight DOM shim, not a full browser. Component code tha
 
 **Supported:** tag, `#id`, `.class`, `[attr]`, `[attr="value"]`, descendant and child combinators, comma-separated lists.
 
-**Unsupported:** pseudo-classes (`:not`, `:has`, …), sibling combinators, shadow-root queries. Unsupported selectors throw `SyntaxError`.
+**Unsupported:** pseudo-classes (`:not`, `:has`, …), sibling combinators, shadow-root queries. Most unsupported selectors throw `SyntaxError`: a leading pseudo-class such as `:not(...)`, a pseudo-class after a class or attribute (`.card:hover`), sibling combinators (`+`, `~`), and malformed attribute selectors. A pseudo-class or pseudo-element written straight after a tag name, such as `p:first-child`, `a:hover` or `p::before`, does not throw: the shim reads the whole `p:first-child` as a tag name, so the query returns no match. Do not rely on either outcome; query with tags, ids, classes and attributes.
 
 Author light DOM with `authoredContent` / `prepareHost` before the first server render when lifecycle code needs to query slotted or projected nodes. See the package server README for the full supported surface.
