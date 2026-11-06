@@ -73,6 +73,29 @@ describe('rui-toaster', () => {
 		cleanup();
 	});
 
+	it('renders an error toast as an assertive alert and other variants as status', async () => {
+		const { host, cleanup } = mount(<RuiToaster position="bottom-end" />);
+		await settled();
+
+		toast.error('Save failed');
+		toast.success('Profile saved');
+		await settledToasts(host);
+
+		const surfaceOf = (text: string) =>
+			toastElements(host)
+				.find((element) => element.textContent?.includes(text))
+				?.querySelector('[data-ref="toast"]') as HTMLElement;
+		const error = surfaceOf('Save failed');
+		expect(error.getAttribute('role')).toBe('alert');
+		expect(error.getAttribute('aria-live')).toBe('assertive');
+		expect(error.getAttribute('aria-atomic')).toBe('true');
+		const success = surfaceOf('Profile saved');
+		expect(success.getAttribute('role')).toBe('status');
+		expect(success.getAttribute('aria-live')).toBe('off');
+
+		cleanup();
+	});
+
 	it('dismisses all toasts', async () => {
 		const { host, cleanup } = mount(<RuiToaster />);
 		await settled();
