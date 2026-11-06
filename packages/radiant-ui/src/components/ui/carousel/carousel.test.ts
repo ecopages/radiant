@@ -65,7 +65,7 @@ describe('carousel live region', () => {
 			const viewport = host.querySelector('[data-ref="viewport"]');
 			expect(viewport?.getAttribute('aria-live')).toBe('off');
 			if (action === 'focus') host.onRootFocusIn();
-			if (action === 'hover') host.onRootPointerEnter(new PointerEvent('pointerenter', { pointerType: 'mouse' }));
+			if (action === 'hover') host.dispatchEvent(new PointerEvent('pointerenter', { pointerType: 'mouse' }));
 			if (action === 'navigation') host.next();
 			expect(viewport?.getAttribute('aria-live')).toBe('polite');
 		},
