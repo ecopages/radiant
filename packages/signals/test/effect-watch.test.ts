@@ -140,6 +140,40 @@ describe('watch', () => {
 		expect(notify).toHaveBeenCalledWith({ nextValue: 2, previousValue: 1 });
 	});
 
+	test('does not notify when a set is followed by a set-back in one tick', async () => {
+		const count = new State(1);
+		const notify = vi.fn();
+		const dispose = watch(() => count.get(), notify);
+
+		count.set(2);
+		count.set(1);
+		await flushMicrotask();
+
+		expect(notify).not.toHaveBeenCalled();
+
+		count.set(3);
+		await flushMicrotask();
+		dispose();
+
+		expect(notify).toHaveBeenCalledTimes(1);
+		expect(notify).toHaveBeenCalledWith(3, 1);
+	});
+
+	test('honours a custom equals when a value is set back in one tick', async () => {
+		const count = new State(1);
+		const notify = vi.fn();
+		const dispose = watch(() => count.get(), notify, {
+			equals: (previousValue, nextValue) => previousValue % 10 === nextValue % 10,
+		});
+
+		count.set(2);
+		count.set(11);
+		await flushMicrotask();
+		dispose();
+
+		expect(notify).not.toHaveBeenCalled();
+	});
+
 	test('immediate mode invokes the callback during the first run', () => {
 		const count = new State(1);
 		const notify = vi.fn();
