@@ -24,6 +24,30 @@ describe('onEvent', () => {
 		expect(element.received).toBeTruthy();
 	});
 
+	it('fires a host listener for non-bubbling pointerenter and stops after disconnect', () => {
+		@customElement('host-on-event-listener')
+		class HostEventListener extends RadiantElement {
+			count = 0;
+			@onEvent({ host: true, type: 'pointerenter' })
+			entered() {
+				this.count++;
+			}
+		}
+
+		const element = document.createElement('host-on-event-listener') as HostEventListener;
+		document.body.appendChild(element);
+		element.dispatchEvent(new Event('pointerenter'));
+		expect(element.count).toBe(1);
+
+		element.remove();
+		element.dispatchEvent(new Event('pointerenter'));
+		expect(element.count).toBe(1);
+
+		document.body.appendChild(element);
+		element.dispatchEvent(new Event('pointerenter'));
+		expect(element.count).toBe(2);
+	});
+
 	it('should add event listener to document when document is true in eventConfig', () => {
 		@customElement('document-on-event-listener')
 		class DocumentEventLister extends RadiantElement {
