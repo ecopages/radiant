@@ -103,8 +103,8 @@ export function createNodesFromJsxNodeLike(value: JsxNodeLike): Node[] {
 }
 
 /**
- * Inserts `nodes` into the DOM immediately before `referenceNode` using a single
- * `DocumentFragment` so that the insertion triggers at most one layout.
+ * Inserts `nodes` into the DOM immediately before `referenceNode`, several nodes through a single
+ * `DocumentFragment` so that the insertion triggers at most one layout, and a single node directly.
  *
  * No-ops when `nodes` is empty.
  *
@@ -136,6 +136,11 @@ export function insertNodesBefore(referenceNode: Node, nodes: readonly Node[]): 
 			});
 			return;
 		}
+	}
+
+	if (nodes.length === 1) {
+		referenceNode.parentNode.insertBefore(nodes[0]!, referenceNode);
+		return;
 	}
 
 	const fragment = document.createDocumentFragment();
