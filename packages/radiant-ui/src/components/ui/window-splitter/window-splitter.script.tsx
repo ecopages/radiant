@@ -28,8 +28,14 @@ export const WINDOW_SPLITTER_MIN = 20;
 /** Maximum primary pane size as a percentage. */
 export const WINDOW_SPLITTER_MAX = 80;
 
+const WINDOW_SPLITTER_DEFAULT = 50;
+
+/**
+ * @remarks Non-finite input (for example `value="abc"`) falls back to {@link WINDOW_SPLITTER_DEFAULT}.
+ */
 function clampSplitterValue(value: number): number {
-	return Math.min(WINDOW_SPLITTER_MAX, Math.max(WINDOW_SPLITTER_MIN, value));
+	const finite = Number.isFinite(value) ? value : WINDOW_SPLITTER_DEFAULT;
+	return Math.min(WINDOW_SPLITTER_MAX, Math.max(WINDOW_SPLITTER_MIN, finite));
 }
 
 function isHorizontalSplit(orientation: string): boolean {
@@ -133,7 +139,7 @@ export class RuiWindowSplitter extends RadiantElement {
 	 */
 	private clampValue(): boolean {
 		const clamped = clampSplitterValue(this.value);
-		if (clamped === this.value || Number.isNaN(clamped)) {
+		if (clamped === this.value) {
 			return false;
 		}
 		this.value = clamped;
@@ -169,10 +175,10 @@ export class RuiWindowSplitter extends RadiantElement {
 		const horizontal = isHorizontalSplit(this.orientation);
 		if ((horizontal && event.key === 'ArrowLeft') || (!horizontal && event.key === 'ArrowUp')) {
 			event.preventDefault();
-			this.updateValue(Math.max(WINDOW_SPLITTER_MIN, this.value - delta));
+			this.updateValue(clampSplitterValue(this.value - delta));
 		} else if ((horizontal && event.key === 'ArrowRight') || (!horizontal && event.key === 'ArrowDown')) {
 			event.preventDefault();
-			this.updateValue(Math.min(WINDOW_SPLITTER_MAX, this.value + delta));
+			this.updateValue(clampSplitterValue(this.value + delta));
 		} else if (event.key === 'Home') {
 			event.preventDefault();
 			this.updateValue(WINDOW_SPLITTER_MIN);
@@ -201,19 +207,9 @@ export class RuiWindowSplitter extends RadiantElement {
 		if (!this.dragging) return;
 		const rect = this.getBoundingClientRect();
 		if (this.orientation === 'vertical') {
-			this.updateValue(
-				Math.min(
-					WINDOW_SPLITTER_MAX,
-					Math.max(WINDOW_SPLITTER_MIN, ((event.clientY - rect.top) / rect.height) * 100),
-				),
-			);
+			this.updateValue(clampSplitterValue(((event.clientY - rect.top) / rect.height) * 100));
 		} else {
-			this.updateValue(
-				Math.min(
-					WINDOW_SPLITTER_MAX,
-					Math.max(WINDOW_SPLITTER_MIN, ((event.clientX - rect.left) / rect.width) * 100),
-				),
-			);
+			this.updateValue(clampSplitterValue(((event.clientX - rect.left) / rect.width) * 100));
 		}
 	}
 
@@ -224,8 +220,6 @@ export class RuiWindowSplitter extends RadiantElement {
 		document.removeEventListener('pointerup', this.onPointerUp);
 	}
 }
-
-
 
 declare global {
 	interface HTMLElementTagNameMap {
