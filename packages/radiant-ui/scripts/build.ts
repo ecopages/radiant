@@ -2,7 +2,8 @@
  * Builds the radiant-ui library into `dist/`.
  *
  * Bundles the public TypeScript entries and every `src/components/ui/<name>/index.ts`
- * as browser-targeted ESM with `@ecopages/*` external.
+ * as browser-targeted ESM with `@ecopages/*` external. Modules imported by more than
+ * one entry are emitted once into `dist/chunks/`.
  *
  * Run with: pnpm run build:files
  */
@@ -86,6 +87,7 @@ try {
 			'@': SRC,
 		},
 		bundle: true,
+		chunkNames: 'chunks/[name]-[hash]',
 		entryPoints: [
 			path.join(SRC, 'index.ts'),
 			path.join(SRC, 'aria.ts'),
@@ -103,6 +105,7 @@ try {
 		platform: 'browser',
 		plugins: [standardDecoratorTransform()],
 		sourcemap: true,
+		splitting: true,
 	});
 } catch (error) {
 	console.error('[radiant-ui]', error);

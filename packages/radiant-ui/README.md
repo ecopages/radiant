@@ -50,6 +50,8 @@ pnpm run build:lib       # generate exports + build JS/types + compile CSS
 
 Published CSS under `dist/` is **already compiled** (Tailwind `@apply` resolved). Theme and token values remain CSS custom properties so apps can swap themes at runtime. The package does not minify CSS. Published declaration imports are rewritten to package-relative paths during `build:lib`, and `test:package` rejects unresolved source aliases.
 
+Entries are code-split: a module imported by several entries, such as the field control protocol or a component class, is emitted once into `dist/chunks/` and listed in `sideEffects`. This keeps module state, like the `registerFieldControl` registry, and `instanceof` checks between entries on one copy. Chunk names are content hashes and change between builds, so import only the documented entries. `src/built-package/*.test.ts` import `dist/` and need `build:files` first: a bare `pnpm test` fails until `dist/` exists, and `test:all` builds it.
+
 Component entries register their nested custom elements as well as their own host. The package's `sideEffects` list preserves source `*.script.ts` / `*.script.tsx` registration modules during the library build and built `index.js` entries during consumer bundling. Removing those source side effects can leave nested Derived Trees as empty tags during SSR. `build:lib` runs `test:package` against isolated imports of the built date compositions and sidebar trigger to verify registration and server-rendered markup.
 
 ## Using radiant-ui
