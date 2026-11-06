@@ -1,13 +1,14 @@
 import { afterEach, describe, expect, it } from 'vitest';
+import { userEvent } from 'storybook/test';
 import { RuiCarousel } from './carousel.script';
 
-async function mountCarousel(slidesPerView = 3, autoplay = false): Promise<RuiCarousel> {
+async function mountCarousel(slidesPerView = 3, autoplay = false, interval = 60000): Promise<RuiCarousel> {
 	const host = new RuiCarousel();
 	host.setAttribute('slides-per-view', String(slidesPerView));
 	host.setAttribute('show-indicators', '');
-	host.setAttribute('interval', '60000');
+	host.setAttribute('interval', String(interval));
 	if (autoplay) host.setAttribute('autoplay', '');
-	host.innerHTML = `<section data-ref="root"><div data-ref="viewport"><div data-ref="track">${Array.from({ length: 5 }, (_, i) => `<div data-slide="${i}">${i}</div>`).join('')}</div></div><div data-ref="indicators"></div></section>`;
+	host.innerHTML = `<section class="rui-carousel rui-carousel--none rui-carousel--controls-toolbar" data-ref="root"><div data-ref="viewport"><div data-ref="track">${Array.from({ length: 5 }, (_, i) => `<div data-slide="${i}">${i}</div>`).join('')}</div></div><div data-ref="indicators"></div></section>`;
 	document.body.append(host);
 	await new Promise((resolve) => setTimeout(resolve, 0));
 	return host;
@@ -69,4 +70,37 @@ describe('carousel live region', () => {
 			expect(viewport?.getAttribute('aria-live')).toBe('polite');
 		},
 	);
+});
+
+describe('carousel autoplay hover', () => {
+	it('pauses while the mouse is over the carousel and resumes on leave', async () => {
+		const host = await mountCarousel(1, true, 20);
+		const root = host.querySelector<HTMLElement>('[data-ref="root"]')!;
+		const tick = () => new Promise((resolve) => setTimeout(resolve, 70));
+
+		await userEvent.hover(root);
+		const held = host.index;
+		await tick();
+		expect(host.index).toBe(held);
+
+		await userEvent.unhover(root);
+		await tick();
+		expect(host.index).not.toBe(held);
+	});
+});
+
+describe('carousel transition class', () => {
+	it('swaps the animation class when transition changes', async () => {
+		const host = await mountCarousel(1);
+		const root = host.querySelector<HTMLElement>('[data-ref="root"]')!;
+		host.transition = 'fade';
+		await host.updateComplete;
+		expect(root.classList.contains('rui-carousel--fade')).toBe(true);
+		expect(root.classList.contains('rui-carousel--none')).toBe(false);
+		expect(root.classList.contains('rui-carousel--controls-toolbar')).toBe(true);
+		host.transition = 'slide';
+		await host.updateComplete;
+		expect(root.classList.contains('rui-carousel--slide')).toBe(true);
+		expect(root.classList.contains('rui-carousel--fade')).toBe(false);
+	});
 });
