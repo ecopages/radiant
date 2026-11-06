@@ -417,6 +417,55 @@ describe('Radiant JSX server render', () => {
 		);
 	});
 
+	test('serializes false on attribute bindings as the string "false" and keeps boolean attributes absent', async () => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+		const template = jsx('li', {
+			'aria-expanded': false,
+			'aria-hidden': false,
+			data: { open: false },
+			hidden: false,
+			children: 'Branch',
+		});
+
+		expect(renderToString(template, { mode: 'plain' })).toBe(
+			'<li aria-expanded="false" aria-hidden="false" data-open="false">Branch</li>',
+		);
+		expect(renderToString(template, { mode: 'hydrate' })).toContain('aria-expanded="false"');
+	});
+
+	test('serializes false aria and data attributes on a custom element', async () => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+		const template = jsx('demo-card', {
+			'aria-busy': false,
+			'data-active': false,
+			'attr:wrap': false,
+		});
+
+		expect(renderToString(template, { mode: 'plain' })).toBe(
+			'<demo-card aria-busy="false" data-active="false" wrap="false"></demo-card>',
+		);
+	});
+
+	test('serializes attr:name false on a native element in plain and hydrate modes', async () => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+		const template = jsx('div', { 'attr:aria-pressed': false });
+
+		expect(renderToString(template, { mode: 'plain' })).toBe('<div aria-pressed="false"></div>');
+		expect(renderToString(template, { mode: 'hydrate' })).toBe(
+			'<div data-radiant-jsx-bind-0="attr:aria-pressed" aria-pressed="false"></div>',
+		);
+	});
+
+	test('treats nomodule and shadow root flags as boolean attributes', async () => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+
+		expect(renderToString(jsx('script', { nomodule: false, src: 'a.js' }))).toBe('<script src="a.js"></script>');
+		expect(renderToString(jsx('script', { nomodule: true, src: 'a.js' }))).toBe(
+			'<script nomodule src="a.js"></script>',
+		);
+		expect(renderToString(jsx('video', { disableremoteplayback: false }))).toBe('<video></video>');
+	});
+
 	test('omits nullish bindings from SSR attribute output', async () => {
 		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
 		const template = jsx('button', {
