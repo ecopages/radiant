@@ -132,6 +132,19 @@ export class RuiToaster extends RadiantElement {
 
 	@state toasts: ToastRecord[] = [];
 
+	/**
+	 * Text of the newest non-error toast, rendered into a polite live region that is a sibling of
+	 * the stack.
+	 *
+	 * @remarks
+	 * Error toasts are `role="alert"` and announce themselves, so they must not sit inside a polite
+	 * live region (NVDA and JAWS can announce a nested alert twice). The stack itself therefore has
+	 * no live attribute and the other variants are announced from this region instead.
+	 */
+	@state announcement = '';
+
+	private readonly announcedIds = new Set<string>();
+
 	private expanded = false;
 	private interacting = false;
 	private unsubscribe: (() => void) | null = null;
@@ -148,6 +161,7 @@ export class RuiToaster extends RadiantElement {
 		this.syncContainer();
 		this.unsubscribe = toastState.subscribe((toasts) => {
 			this.toasts = toasts;
+			this.announceNewToasts(toasts);
 			if (toasts.length === 0) {
 				this.resetLayoutState();
 			}
@@ -203,6 +217,20 @@ export class RuiToaster extends RadiantElement {
 	@onEvent({ selector: 'rui-toast', type: 'rui-toast-mounted' })
 	onToastMounted(): void {
 		this.scheduleLayoutSync();
+	}
+
+	private announceNewToasts(toasts: ToastRecord[]): void {
+		const live = new Set(toasts.map((toast) => String(toast.id)));
+		for (const id of this.announcedIds) {
+			if (!live.has(id)) this.announcedIds.delete(id);
+		}
+		for (const toast of [...toasts].reverse()) {
+			const id = String(toast.id);
+			if (this.announcedIds.has(id) || toast.delete) continue;
+			this.announcedIds.add(id);
+			if (toast.variant === 'error' || typeof toast.title !== 'string') continue;
+			this.announcement = toast.description ? `${toast.title}. ${toast.description}` : toast.title;
+		}
 	}
 
 	private filteredToasts(): ToastRecord[] {
@@ -502,11 +530,11 @@ export class RuiToaster extends RadiantElement {
 			<section
 				class="rui-toaster-region"
 				aria-label="Notifications"
-				aria-live="polite"
-				aria-relevant="additions text"
-				aria-atomic="false"
 				tabIndex={-1}
 			>
+				<div class="rui-toaster-announcer" aria-live="polite" aria-atomic="true">
+					{this.announcement}
+				</div>
 				<ol
 					class="rui-toaster"
 					data-ref="list"

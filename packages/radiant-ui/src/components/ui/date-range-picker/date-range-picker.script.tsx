@@ -233,6 +233,18 @@ export class RuiDateRangePicker extends RadiantElement {
 		this.commitRange('', '');
 	}
 
+	/**
+	 * Closes the popup and returns focus to the toggle.
+	 *
+	 * @remarks
+	 * Only for dismissals the user makes from inside the popup (Escape, day selection).
+	 * Focus-out and outside-click call `setOpen(false)` directly so they never steal focus.
+	 */
+	private closeAndRestoreFocus(): void {
+		this.setOpen(false);
+		this.getToggle()?.focus();
+	}
+
 	private setOpen(next: boolean): void {
 		this.open = next;
 		queueMicrotask(() => {
@@ -344,7 +356,7 @@ export class RuiDateRangePicker extends RadiantElement {
 			return;
 		}
 		this.commitRange(detail.start, detail.end);
-		this.setOpen(false);
+		this.closeAndRestoreFocus();
 	}
 
 	@onEvent({
@@ -354,7 +366,12 @@ export class RuiDateRangePicker extends RadiantElement {
 	onRootKeydown(event: KeyboardEvent): void {
 		if (event.key === 'Escape' && this.open) {
 			event.preventDefault();
-			this.setOpen(false);
+			const insidePopover = event.target instanceof Node && this.querySelector('[data-range-popover]')?.contains(event.target);
+			if (insidePopover) {
+				this.closeAndRestoreFocus();
+			} else {
+				this.setOpen(false);
+			}
 		}
 	}
 
