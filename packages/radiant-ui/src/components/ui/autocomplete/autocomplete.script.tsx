@@ -1,4 +1,5 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
+import { isResetBy } from '../shared/form-owner';
 import { RadiantElement, customElement, onEvent, onUpdated, prop } from '@ecopages/radiant';
 import { textContains, type TextFilterSensitivity } from '@/lib/text-filter';
 
@@ -166,7 +167,7 @@ export class RuiAutocomplete extends RadiantElement {
 	 */
 	@onEvent({ document: true, type: 'reset' })
 	onFormReset(event: Event): void {
-		if (event.target instanceof HTMLFormElement && event.target.contains(this)) {
+		if (event.target instanceof HTMLFormElement && isResetBy(event.target, this, this.getInput())) {
 			setTimeout(() => this.applyFilter(), 0);
 		}
 	}

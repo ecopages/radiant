@@ -50,5 +50,17 @@ describe('FormStore', () => {
 
 			expect(store.getValues().qty).toBe(3);
 		});
+
+		it('stops using a field default that was later removed', () => {
+			const store = new FormStore<{ qty: number | null }>({ mode: 'onSubmit', defaultValues: { qty: 1 } });
+			const setValue = registerField(store, 3);
+			store.updateFieldOptions('qty', { defaultValue: null });
+			store.setValue('qty', 5);
+
+			store.reset();
+
+			expect(store.getValues().qty).toBe(1);
+			expect(setValue).toHaveBeenLastCalledWith(1);
+		});
 	});
 });
