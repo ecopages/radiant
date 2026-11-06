@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { createRoot } from '@ecopages/jsx';
+import { userEvent } from 'storybook/test';
 import { RuiCheckbox } from '../checkbox';
 import { RuiCheckbox as RuiCheckboxElement } from '../checkbox/checkbox.script';
 import { RuiCheckboxGroup, RuiCheckboxGroupControl } from './checkbox-group';
@@ -19,7 +20,7 @@ describe('RuiCheckboxGroup programmatic writes', () => {
 		document.body.innerHTML = '';
 	});
 
-	it('ignores a programmatic checked write on a child until the group value changes', async () => {
+	it('ignores a programmatic checked write on a child until the group value overwrites it', async () => {
 		const host = document.createElement('div');
 		document.body.append(host);
 		createRoot(host).render(
@@ -42,9 +43,33 @@ describe('RuiCheckboxGroup programmatic writes', () => {
 		expect(group.value).toEqual(['news']);
 		expect(changes).toEqual([]);
 
-		group.value = ['news', 'travel'];
+		group.value = [];
 		await settled();
-		expect(news.checked).toBe(true);
-		expect(travel.checked).toBe(true);
+		expect(news.checked).toBe(false);
+		expect(travel.checked).toBe(false);
+	});
+
+	it('folds a programmatic checked write into value on the next user toggle', async () => {
+		const host = document.createElement('div');
+		document.body.append(host);
+		createRoot(host).render(
+			<RuiCheckboxGroup value={['news']} name="topics" label="Topics">
+				<RuiCheckboxGroupControl>
+					<RuiCheckbox value="news">News</RuiCheckbox>
+					<RuiCheckbox value="travel">Travel</RuiCheckbox>
+					<RuiCheckbox value="food">Food</RuiCheckbox>
+				</RuiCheckboxGroupControl>
+			</RuiCheckboxGroup>,
+		);
+		await settled();
+
+		const group = host.querySelector('rui-checkbox-group') as RuiCheckboxGroupElement;
+		const [, travel, food] = [...host.querySelectorAll('rui-checkbox')] as RuiCheckboxElement[];
+
+		travel.checked = true;
+		await settled();
+		await userEvent.click(food.querySelector('input') as HTMLInputElement);
+		await settled();
+		expect(group.value).toEqual(['news', 'travel', 'food']);
 	});
 });
