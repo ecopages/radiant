@@ -11,7 +11,7 @@ import {
 	state,
 } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
-import { effectiveVisibleMonths, listenMobileLayoutViewport } from '@/lib/viewport/mobile-layout';
+import { effectiveVisibleMonths } from '@/lib/viewport/mobile-layout';
 import { uniqueId } from '@/lib/unique-id';
 import type { RuiCalendarChangeDetail } from '../calendar/calendar.script';
 import type { RuiDateInputChangeDetail } from '../date-input/date-input.script';
@@ -141,17 +141,14 @@ export class RuiDateField extends RadiantElement {
 		getOpen: () => this.open,
 		getCalendar: () => this.getCalendar(),
 		getFocusIso: () => this.isoValue || undefined,
+		getToggle: () => this.getToggle(),
+		setOpenState: (next) => {
+			this.open = next;
+		},
+		onLayoutChange: () => this.syncCalendar(),
 	});
-	private disposeMobileLayoutListener: (() => void) | null = null;
 
 	@query({ ref: 'popover' }) popoverTarget: HTMLElement | null;
-
-	private readonly onMediaChange = (): void => {
-		this.syncCalendar();
-		if (this.open) {
-			this.calendarPopover.syncPopover();
-		}
-	};
 
 	private get isoValue(): string {
 		return this.value ?? '';
@@ -221,39 +218,15 @@ export class RuiDateField extends RadiantElement {
 		this.syncInput();
 		this.syncToggle();
 		this.syncCalendar();
-		this.setOpen(false);
-	}
-
-	/**
-	 * Closes the popup and returns focus to the toggle.
-	 *
-	 * @remarks
-	 * Only for dismissals the user makes from inside the popup (Escape, day selection).
-	 * Focus-out and outside-click call `setOpen(false)` directly so they never steal focus.
-	 */
-	private closeAndRestoreFocus(): void {
-		this.setOpen(false);
-		this.getToggle()?.focus();
-	}
-
-	private setOpen(next: boolean): void {
-		this.open = next;
-		queueMicrotask(() => {
-			this.calendarPopover.syncPopover();
-			if (next) {
-				this.calendarPopover.focusCalendarDay();
-			}
-		});
+		this.calendarPopover.setOpen(false);
 	}
 
 	protected override onConnected(): void {
-		this.disposeMobileLayoutListener = listenMobileLayoutViewport(this.onMediaChange);
+		this.calendarPopover.connect();
 		this.initialize();
 	}
 
 	override disconnectedCallback(): void {
-		this.disposeMobileLayoutListener?.();
-		this.disposeMobileLayoutListener = null;
 		this.calendarPopover.destroy();
 		super.disconnectedCallback();
 	}
@@ -294,7 +267,7 @@ export class RuiDateField extends RadiantElement {
 		type: 'focusout',
 	})
 	onRootFocusOut(event: FocusEvent): void {
-		this.calendarPopover.handleFocusOut(event, () => this.setOpen(false));
+		this.calendarPopover.handleFocusOut(event, () => this.calendarPopover.setOpen(false));
 	}
 
 	@onEvent({ ref: 'trigger', type: 'pointerdown' })
@@ -307,7 +280,7 @@ export class RuiDateField extends RadiantElement {
 		if (this.disabled || this.readOnly) {
 			return;
 		}
-		this.setOpen(!this.open);
+		this.calendarPopover.setOpen(!this.open);
 	}
 
 	@onEvent({ selector: '[data-date-field-popover]', type: 'mousedown' })
@@ -327,7 +300,7 @@ export class RuiDateField extends RadiantElement {
 			return;
 		}
 		this.commitValue(detail.value);
-		this.closeAndRestoreFocus();
+		this.calendarPopover.closeAndRestoreFocus();
 	}
 
 	@onEvent({
@@ -337,11 +310,12 @@ export class RuiDateField extends RadiantElement {
 	onRootKeydown(event: KeyboardEvent): void {
 		if (event.key === 'Escape' && this.open) {
 			event.preventDefault();
-			const insidePopover = event.target instanceof Node && this.querySelector('[data-date-field-popover]')?.contains(event.target);
+			const insidePopover =
+				event.target instanceof Node && this.querySelector('[data-date-field-popover]')?.contains(event.target);
 			if (insidePopover) {
-				this.closeAndRestoreFocus();
+				this.calendarPopover.closeAndRestoreFocus();
 			} else {
-				this.setOpen(false);
+				this.calendarPopover.setOpen(false);
 			}
 		}
 	}

@@ -1,3 +1,4 @@
+import { listenMobileLayoutViewport } from '@/lib/viewport/mobile-layout';
 import { PopoverController, shouldDismissPopoverFocus } from './popover-controller';
 
 export type CalendarPopoverBehaviorConfig = {
@@ -7,6 +8,11 @@ export type CalendarPopoverBehaviorConfig = {
 	getOpen: () => boolean;
 	getCalendar: () => HTMLElement | null;
 	getFocusIso: () => string | undefined;
+	getToggle: () => HTMLElement | null;
+	/** Writes the host's `open` state. */
+	setOpenState: (next: boolean) => void;
+	/** Called when the mobile layout viewport changes, before the open popover is repositioned. */
+	onLayoutChange: () => void;
 };
 
 /**
@@ -18,12 +24,51 @@ export class CalendarPopoverBehavior {
 	private readonly config: CalendarPopoverBehaviorConfig;
 	private popoverController: PopoverController | null = null;
 	private suppressPopoverDismiss = false;
+	private disposeMobileLayoutListener: (() => void) | null = null;
 
 	constructor(config: CalendarPopoverBehaviorConfig) {
 		this.config = config;
 	}
 
+	/** Starts listening for mobile layout changes. */
+	connect(): void {
+		this.disposeMobileLayoutListener?.();
+		this.disposeMobileLayoutListener = listenMobileLayoutViewport(() => {
+			this.config.onLayoutChange();
+			if (this.config.getOpen()) {
+				this.syncPopover();
+			}
+		});
+	}
+
+	/**
+	 * Opens or closes the popup and, on open, focuses the calendar day.
+	 */
+	setOpen(next: boolean): void {
+		this.config.setOpenState(next);
+		queueMicrotask(() => {
+			this.syncPopover();
+			if (next) {
+				this.focusCalendarDay();
+			}
+		});
+	}
+
+	/**
+	 * Closes the popup and returns focus to the toggle.
+	 *
+	 * @remarks
+	 * Only for dismissals the user makes from inside the popup (Escape, day selection).
+	 * Focus-out and outside-click call `setOpen(false)` directly so they never steal focus.
+	 */
+	closeAndRestoreFocus(): void {
+		this.setOpen(false);
+		this.config.getToggle()?.focus();
+	}
+
 	destroy(): void {
+		this.disposeMobileLayoutListener?.();
+		this.disposeMobileLayoutListener = null;
 		this.popoverController?.destroy();
 		this.popoverController = null;
 	}
