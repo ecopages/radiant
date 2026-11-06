@@ -62,9 +62,11 @@ export function getCompiledTemplate(template: TemplateResultLike): CompiledTempl
 	const blueprint = document.createElement('template');
 	blueprint.innerHTML = htmlParts.join('');
 
+	const parts = collectTemplateParts(blueprint.content, bindings, textContentBindingIndices);
 	const compiledTemplate = {
 		blueprint,
-		parts: collectTemplateParts(blueprint.content, bindings, textContentBindingIndices),
+		clientContent: createClientContent(blueprint.content, parts),
+		parts,
 	};
 
 	TEMPLATE_CACHE_BY_SHAPE.set(template.shapeKey, compiledTemplate);
@@ -99,7 +101,35 @@ export function normalizeTemplateFragmentNamespaces(
 	);
 }
 
-/** Resolves blueprint part metadata into live DOM references for a freshly cloned fragment. */
+/** Copies `content` with attribute markers removed and child comment markers replaced by empty text markers. */
+function createClientContent(content: DocumentFragment, parts: readonly TemplatePart[]): DocumentFragment {
+	const clientContent = content.cloneNode(true) as DocumentFragment;
+
+	for (const part of parts) {
+		if (part.type === 'attribute') {
+			const element = getNodeAtPath(clientContent, part.path);
+			if (element instanceof Element) element.removeAttribute(part.markerName);
+			continue;
+		}
+
+		if (part.type === 'child') {
+			(getNodeAtPath(clientContent, part.startPath) as ChildNode | undefined)?.replaceWith(
+				createBoundaryMarker(),
+			);
+			(getNodeAtPath(clientContent, part.endPath) as ChildNode | undefined)?.replaceWith(createBoundaryMarker());
+		}
+	}
+
+	return clientContent;
+}
+
+/**
+ * Resolves blueprint part metadata into live DOM references for a freshly cloned fragment.
+ *
+ * @remarks Accepts a clone of either {@link CompiledTemplate.blueprint} or {@link CompiledTemplate.clientContent}:
+ * a child part's comment markers are replaced with text markers, and text markers already in place are used as
+ * they are. Removing an attribute marker that is already gone is a no-op.
+ */
 export function createLiveTemplateParts(
 	fragment: DocumentFragment,
 	parts: readonly TemplatePart[],
@@ -146,15 +176,12 @@ export function createLiveTemplateParts(
 
 		const startNode = getNodeAtPath(fragment, part.startPath);
 		const endNode = getNodeAtPath(fragment, part.endPath);
+		const startMarker = toLiveBoundaryMarker(startNode);
+		const endMarker = toLiveBoundaryMarker(endNode);
 
-		if (!(startNode instanceof Comment) || !(endNode instanceof Comment)) {
+		if (!startMarker || !endMarker) {
 			continue;
 		}
-
-		const startMarker = createBoundaryMarker();
-		const endMarker = createBoundaryMarker();
-		startNode.replaceWith(startMarker);
-		endNode.replaceWith(endMarker);
 
 		liveParts.push({
 			endMarker,
@@ -166,6 +193,15 @@ export function createLiveTemplateParts(
 	}
 
 	return liveParts;
+}
+
+function toLiveBoundaryMarker(node: Node | undefined): Text | undefined {
+	if (node instanceof Text) return node;
+	if (!(node instanceof Comment)) return undefined;
+
+	const marker = createBoundaryMarker();
+	node.replaceWith(marker);
+	return marker;
 }
 
 function collectTemplateParts(

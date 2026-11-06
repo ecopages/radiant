@@ -25,7 +25,7 @@ export function createTemplateInstance(
 	contextParent: Node | null = rootTarget,
 ): TemplateInstance {
 	const compiledTemplate = getCompiledTemplate(template);
-	const fragment = compiledTemplate.blueprint.content.cloneNode(true) as DocumentFragment;
+	const fragment = compiledTemplate.clientContent.cloneNode(true) as DocumentFragment;
 	normalizeTemplateFragmentNamespaces(fragment, contextParent, template.rootLocalName);
 	const parts = createLiveTemplateParts(fragment, compiledTemplate.parts, rootTarget);
 	const rootNodes = Array.from(fragment.childNodes);
