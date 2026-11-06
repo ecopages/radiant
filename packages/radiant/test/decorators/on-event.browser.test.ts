@@ -235,4 +235,29 @@ describe('onEvent', () => {
 		detached();
 		expect(element.receivers).toEqual([element, element]);
 	});
+
+	it('keeps a subclass override of a @bound @onEvent handler callable on the host', () => {
+		@customElement('on-event-bound-base')
+		class OnEventBoundBase extends RadiantElement {
+			calls: string[] = [];
+			@onEvent({ host: true, type: 'pointerenter' })
+			@bound
+			entered() {
+				this.calls.push('base');
+			}
+		}
+
+		@customElement('on-event-bound-override')
+		class OnEventBoundOverride extends OnEventBoundBase {
+			override entered() {
+				this.calls.push('override');
+			}
+		}
+
+		const element = document.createElement('on-event-bound-override') as OnEventBoundOverride;
+		document.body.appendChild(element);
+		element.entered();
+
+		expect(element.calls).toEqual(['override']);
+	});
 });
