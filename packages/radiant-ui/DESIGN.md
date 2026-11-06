@@ -35,6 +35,7 @@ Components must **never** reference palette steps (e.g. `--color-havelock-blue-8
 - Theme role maps assign plain roles (`--primary`, …) on `:root` / `.dark`.
 - `@theme` block maps those roles to tree-shakable Tailwind color utilities (`bg-primary`, `text-on-surface`, …).
 - There is no separate `semantic.dark.css`.
+- Dark applies to any `.dark` scope, not only `html`: `semantic.css` registers the `--color-*` aliases with `@theme inline` and redeclares them under `:where(.dark)`, so a nested `.dark` section restyles utilities and direct `var(--color-*)` readers.
 
 Dark remaps **colors only** (including `--color-overlay`). Spacing, radius, elevation, typography, and motion stay mode-independent unless a theme explicitly documents otherwise.
 
