@@ -1,7 +1,7 @@
 import path from 'node:path';
 import * as esbuild from 'esbuild';
 import type { BrowserCommand } from 'vitest/node';
-import { assertFreshDist } from './dist-freshness';
+import { assertFreshDist } from './dist-freshness.js';
 
 const packageRoot = path.resolve(import.meta.dirname, '../..');
 

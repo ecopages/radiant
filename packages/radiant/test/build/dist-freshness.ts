@@ -9,6 +9,12 @@ const stampFile = path.join(packageRoot, 'node_modules/.cache/dist-source-hash')
 /** The narrow command that rebuilds the dist the build tests read. */
 export const REBUILD_COMMAND = 'pnpm --filter @ecopages/radiant build:lib';
 
+function listTypeScriptFiles(directory: string): string[] {
+	return readdirSync(path.join(packageRoot, directory), { recursive: true, encoding: 'utf8' })
+		.filter((file) => /\.tsx?$/.test(file))
+		.map((file) => path.join(directory, file));
+}
+
 /**
  * Hashes the files `build:lib` reads from this package, by content.
  *
@@ -19,10 +25,10 @@ export function hashDistSources(): string {
 	const files = [
 		'build.ts',
 		'package.json',
+		'tsconfig.json',
 		'tsconfig.build.json',
-		...readdirSync(path.join(packageRoot, 'src'), { recursive: true, encoding: 'utf8' })
-			.filter((file) => /\.tsx?$/.test(file))
-			.map((file) => path.join('src', file)),
+		...listTypeScriptFiles('scripts'),
+		...listTypeScriptFiles('src'),
 	].sort();
 	const hash = createHash('sha256');
 
