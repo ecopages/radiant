@@ -129,8 +129,10 @@ function isInsideToaster(node: EventTarget | null, root: Element): boolean {
  * Non-error toasts are announced through a polite live region that is cleared and, after a short
  * gap, set again: repeated messages announce again, a toast updated in place (same `id`, as
  * `toast.promise` does) announces its new text, and toasts created during the gap are announced
- * together. A toast can pass `announcement` (plain text) to override what is read, and
- * `aria.closeLabel` to rename its close button (default `Close toast`). Not yet verified with
+ * together. A toast already on screen that turns into an `error` (a rejected `toast.promise`) is
+ * announced from a sibling assertive region, because switching an existing node to `role="alert"`
+ * is not reliably announced. A toast can pass `announcement` (plain text) to override what is read, and
+ * `closeLabel` to rename its close button (default `Close toast`). Not yet verified with
  * screen readers: NVDA with Firefox, JAWS with Chrome, VoiceOver with Safari.
  */
 @customElement('rui-toaster')
@@ -166,12 +168,18 @@ export class RuiToaster extends RadiantElement {
 	 */
 	@state announcement = '';
 
+	/** Text of toasts updated in place to `error`, rendered into an assertive live region. */
+	@state alertAnnouncement = '';
+
 	/**
 	 * @remarks Keyed by record object: `toastState.create` replaces the record whenever a toast is
 	 * shown, including an update in place by `id`, while other publishes keep the same objects.
 	 */
 	private readonly announcedRecords = new WeakSet<ToastRecord>();
 	private pendingAnnouncements: string[] = [];
+	private pendingAlerts: string[] = [];
+	/** Ids of the toasts on screen at the previous publish, to tell an update in place from a new toast. */
+	private shownIds = new Set<string>();
 	private announcementTimer: ReturnType<typeof setTimeout> | null = null;
 
 	private expanded = false;
@@ -213,6 +221,7 @@ export class RuiToaster extends RadiantElement {
 		if (this.announcementTimer != null) clearTimeout(this.announcementTimer);
 		this.announcementTimer = null;
 		this.pendingAnnouncements = [];
+		this.pendingAlerts = [];
 		this.resetLayoutState();
 		super.disconnectedCallback();
 	}
@@ -232,12 +241,12 @@ export class RuiToaster extends RadiantElement {
 			id: detail.id,
 			description: detail.description,
 			announcement: detail.announcement,
-			aria: detail.aria,
 			variant: detail.variant,
 			duration: detail.duration,
 			action: detail.action,
 			dismissible: detail.dismissible,
 			closeButton: detail.closeButton,
+			closeLabel: detail.closeLabel,
 			position: detail.position,
 		});
 	}
@@ -261,23 +270,32 @@ export class RuiToaster extends RadiantElement {
 	 * Screen readers announce a live region only when its text changes, so the region is cleared
 	 * first and set again after {@link ANNOUNCEMENT_GAP_MS}: repeated messages ("Saved", "Saved")
 	 * announce again, and toasts shown before the flush are joined into one announcement instead
-	 * of the last one overwriting the rest. A toast may supply `announcement` as plain text; error
-	 * toasts are skipped because `role="alert"` announces them.
+	 * of the last one overwriting the rest. A toast may supply `announcement` as plain text. A new
+	 * error toast is skipped because its `role="alert"` announces it on insertion; an error that
+	 * replaces a toast already on screen goes to the assertive region instead.
 	 */
 	private announceNewToasts(toasts: ToastRecord[]): void {
 		for (const toast of [...toasts].reverse()) {
 			if (this.announcedRecords.has(toast) || toast.delete) continue;
 			this.announcedRecords.add(toast);
-			if (toast.variant === 'error') continue;
 			const text = toast.announcement ?? this.toastText(toast);
-			if (text) this.pendingAnnouncements.push(text);
+			if (!text) continue;
+			if (toast.variant !== 'error') this.pendingAnnouncements.push(text);
+			else if (this.shownIds.has(String(toast.id))) this.pendingAlerts.push(text);
 		}
-		if (this.pendingAnnouncements.length === 0 || this.announcementTimer != null) return;
-		this.announcement = '';
+		this.shownIds = new Set(toasts.filter((toast) => !toast.delete).map((toast) => String(toast.id)));
+		if (this.announcementTimer != null) return;
+		const polite = this.pendingAnnouncements.length > 0;
+		const assertive = this.pendingAlerts.length > 0;
+		if (!polite && !assertive) return;
+		if (polite) this.announcement = '';
+		if (assertive) this.alertAnnouncement = '';
 		this.announcementTimer = setTimeout(() => {
 			this.announcementTimer = null;
-			this.announcement = joinSentences(this.pendingAnnouncements);
+			if (this.pendingAnnouncements.length > 0) this.announcement = joinSentences(this.pendingAnnouncements);
+			if (this.pendingAlerts.length > 0) this.alertAnnouncement = joinSentences(this.pendingAlerts);
 			this.pendingAnnouncements = [];
+			this.pendingAlerts = [];
 		}, ANNOUNCEMENT_GAP_MS);
 	}
 
@@ -585,6 +603,9 @@ export class RuiToaster extends RadiantElement {
 				<div class="rui-toaster-announcer" aria-live="polite" aria-atomic="true">
 					{this.announcement}
 				</div>
+				<div class="rui-toaster-announcer" data-assertive aria-live="assertive" aria-atomic="true">
+					{this.alertAnnouncement}
+				</div>
 				<ol
 					class="rui-toaster"
 					data-ref="list"
@@ -607,7 +628,7 @@ export class RuiToaster extends RadiantElement {
 								prop:duration={duration}
 								prop:dismissible={toast.dismissible}
 								prop:closeButton={toast.closeButton ?? this.closeButton}
-								prop:closeLabel={toast.aria?.closeLabel ?? 'Close toast'}
+								prop:closeLabel={toast.closeLabel ?? 'Close toast'}
 								prop:actionLabel={toast.action?.label ?? ''}
 								prop:position={toast.position ?? this.position}
 								prop:markedDelete={Boolean(toast.delete)}

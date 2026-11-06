@@ -22,12 +22,6 @@ export type ToastAction = {
 
 export type ToastId = string | number;
 
-/** Accessible-name overrides for the controls a toast renders. */
-export type ToastAria = {
-	/** Accessible name of the close button. Default: `Close toast`. */
-	closeLabel?: string;
-};
-
 export type ToastOptions = {
 	id?: ToastId;
 	/**
@@ -35,12 +29,13 @@ export type ToastOptions = {
 	 * Error toasts are `role="alert"` and are not announced from the live region.
 	 */
 	announcement?: string;
-	aria?: ToastAria;
 	description?: string;
 	duration?: number;
 	action?: ToastAction;
 	dismissible?: boolean;
 	closeButton?: boolean;
+	/** Accessible name of the close button. Default: `Close toast`. */
+	closeLabel?: string;
 	position?: ToastPosition;
 };
 
@@ -49,12 +44,12 @@ export type ToastRecord = {
 	title: string;
 	description?: string;
 	announcement?: string;
-	aria?: ToastAria;
 	variant: ToastVariant;
 	duration?: number;
 	action?: ToastAction;
 	dismissible: boolean;
 	closeButton?: boolean;
+	closeLabel?: string;
 	position?: ToastPosition;
 	/** Marks the toast for animated exit; toaster removes after exit. */
 	delete?: boolean;
@@ -71,6 +66,7 @@ export type PromiseToastMessages<T> = {
 	duration?: number;
 	action?: ToastAction;
 	closeButton?: boolean;
+	closeLabel?: string;
 	position?: ToastPosition;
 };
 
