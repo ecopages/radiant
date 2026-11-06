@@ -48,7 +48,7 @@ export type RuiDialogActionsProps = JsxElementProps<HTMLDivElement>;
  */
 export function RuiDialogActions({ children, class: className, ...props }: RuiDialogActionsProps) {
 	return (
-		<div {...props} class={cx('rui-dialog__actions', className)}>
+		<div {...props} data-dialog-actions class={cx('rui-dialog__actions', className)}>
 			{children}
 		</div>
 	);
@@ -56,24 +56,33 @@ export function RuiDialogActions({ children, class: className, ...props }: RuiDi
 
 export type RuiDialogCloseProps = NativeButtonProps;
 
+function hasRenderableChildren(children: JsxRenderable | undefined): boolean {
+	if (Array.isArray(children)) {
+		return children.some((child) => hasRenderableChildren(child as JsxRenderable));
+	}
+	return children != null && children !== false && children !== true && children !== '';
+}
+
 /**
  * Close control for the dialog surface.
  *
  * @cssclass rui-dialog__close - Dismiss button; dispatches `data-dialog-close` click.
  *
- * @remarks Stamps `[data-dialog-close]` and `data-ref="close"`.
+ * @remarks Stamps `[data-dialog-close]` and `data-ref="close"`. The default `Close` label applies only
+ * to the icon-only button; a button with children is named by its own text.
  */
 export function RuiDialogClose({ children, class: className, aria, ...props }: RuiDialogCloseProps) {
+	const iconOnly = !hasRenderableChildren(children);
 	return (
 		<button
 			{...props}
-			aria={withDefaultAriaLabel(aria, 'Close')}
+			aria={iconOnly ? withDefaultAriaLabel(aria, 'Close') : aria}
 			type="button"
 			data-dialog-close
 			data-ref="close"
 			class={cx('rui-dialog__close', className)}
 		>
-			{children ?? <RuiIconX />}
+			{iconOnly ? <RuiIconX /> : children}
 		</button>
 	);
 }

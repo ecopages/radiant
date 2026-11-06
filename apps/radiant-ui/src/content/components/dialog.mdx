@@ -79,7 +79,7 @@ BEM classes are presentation-only. Set `alert` on the host for `role="alertdialo
 
 ## Alert dialogs
 
-<p>Set `alert` to `true` for destructive confirmations. Alert dialogs limit tab order to the dialog actions.</p>
+<p>Set `alert` to `true` for destructive confirmations. Alert dialogs limit tab order to the controls inside `RuiDialogActions`, and toggling `alert` updates the role and the tab loop live. `RuiDialogClose` is labelled `Close` only when it renders the icon; with children, the text is its name.</p>
 
 <Canvas of={Alert} meta={DialogMeta} />
 
