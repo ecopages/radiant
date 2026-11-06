@@ -43,6 +43,8 @@ class ToastState {
 			id,
 			title,
 			description: options.description,
+			announcement: options.announcement,
+			aria: options.aria,
 			variant: options.variant ?? 'default',
 			duration: options.duration,
 			action: options.action,

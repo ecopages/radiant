@@ -109,6 +109,12 @@ function isInsideToaster(node: EventTarget | null, root: Element): boolean {
  * `container` switches the host from `position: fixed` to absolute inside a
  * matched root — used by docs canvas demos so toasts render inside the preview.
  * Document-level events: `rui-toast-show`, `rui-toast-dismiss`.
+ *
+ * Non-error toasts are announced through a polite live region that is cleared and set again on
+ * the next microtask: repeated messages announce again, and toasts created in the same tick are
+ * announced together. A toast can pass `announcement` (plain text) to override what is read, and
+ * `aria.closeLabel` to rename its close button (default `Close toast`). Not yet verified with
+ * screen readers: NVDA with Firefox, JAWS with Chrome, VoiceOver with Safari.
  */
 @customElement('rui-toaster')
 export class RuiToaster extends RadiantElement {
@@ -133,7 +139,7 @@ export class RuiToaster extends RadiantElement {
 	@state toasts: ToastRecord[] = [];
 
 	/**
-	 * Text of the newest non-error toast, rendered into a polite live region that is a sibling of
+	 * Text of the non-error toasts created in the latest tick, rendered into a polite live region that is a sibling of
 	 * the stack.
 	 *
 	 * @remarks
@@ -144,6 +150,8 @@ export class RuiToaster extends RadiantElement {
 	@state announcement = '';
 
 	private readonly announcedIds = new Set<string>();
+	private pendingAnnouncements: string[] = [];
+	private announcementFlushQueued = false;
 
 	private expanded = false;
 	private interacting = false;
@@ -199,6 +207,8 @@ export class RuiToaster extends RadiantElement {
 		toastState.create(detail.title, {
 			id: detail.id,
 			description: detail.description,
+			announcement: detail.announcement,
+			aria: detail.aria,
 			variant: detail.variant,
 			duration: detail.duration,
 			action: detail.action,
@@ -219,6 +229,16 @@ export class RuiToaster extends RadiantElement {
 		this.scheduleLayoutSync();
 	}
 
+	/**
+	 * Queues the text of every toast not yet announced and flushes them as one announcement.
+	 *
+	 * @remarks
+	 * Screen readers announce a live region only when its text changes, so the region is cleared
+	 * first and set again on the next microtask: repeated messages ("Saved", "Saved") announce
+	 * again, and toasts created in the same tick are joined into a single announcement instead of
+	 * the last one overwriting the rest. A toast may supply `announcement` as plain text; error
+	 * toasts are skipped because `role="alert"` announces them.
+	 */
 	private announceNewToasts(toasts: ToastRecord[]): void {
 		const live = new Set(toasts.map((toast) => String(toast.id)));
 		for (const id of this.announcedIds) {
@@ -228,9 +248,24 @@ export class RuiToaster extends RadiantElement {
 			const id = String(toast.id);
 			if (this.announcedIds.has(id) || toast.delete) continue;
 			this.announcedIds.add(id);
-			if (toast.variant === 'error' || typeof toast.title !== 'string') continue;
-			this.announcement = toast.description ? `${toast.title}. ${toast.description}` : toast.title;
+			if (toast.variant === 'error') continue;
+			const text =
+				toast.announcement ??
+				(typeof toast.title === 'string'
+					? toast.description
+						? `${toast.title}. ${toast.description}`
+						: toast.title
+					: '');
+			if (text) this.pendingAnnouncements.push(text);
 		}
+		if (this.pendingAnnouncements.length === 0 || this.announcementFlushQueued) return;
+		this.announcementFlushQueued = true;
+		this.announcement = '';
+		queueMicrotask(() => {
+			this.announcementFlushQueued = false;
+			this.announcement = this.pendingAnnouncements.join('. ');
+			this.pendingAnnouncements = [];
+		});
 	}
 
 	private filteredToasts(): ToastRecord[] {
@@ -527,11 +562,7 @@ export class RuiToaster extends RadiantElement {
 		const filtered = this.filteredToasts();
 
 		return (
-			<section
-				class="rui-toaster-region"
-				aria-label="Notifications"
-				tabIndex={-1}
-			>
+			<section class="rui-toaster-region" aria-label="Notifications" tabIndex={-1}>
 				<div class="rui-toaster-announcer" aria-live="polite" aria-atomic="true">
 					{this.announcement}
 				</div>
@@ -557,6 +588,7 @@ export class RuiToaster extends RadiantElement {
 								prop:duration={duration}
 								prop:dismissible={toast.dismissible}
 								prop:closeButton={toast.closeButton ?? this.closeButton}
+								prop:closeLabel={toast.aria?.closeLabel ?? 'Close toast'}
 								prop:actionLabel={toast.action?.label ?? ''}
 								prop:position={toast.position ?? this.position}
 								prop:markedDelete={Boolean(toast.delete)}

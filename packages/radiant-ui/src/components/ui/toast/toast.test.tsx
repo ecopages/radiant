@@ -73,6 +73,64 @@ describe('rui-toaster', () => {
 		expect(host.querySelector('.rui-toaster-announcer')?.textContent).toBe('Profile saved');
 	});
 
+	function watchAnnouncer(host: ParentNode): string[] {
+		const announcer = host.querySelector('.rui-toaster-announcer') as HTMLElement;
+		const seen: string[] = [];
+		new MutationObserver(() => seen.push(announcer.textContent ?? '')).observe(announcer, {
+			childList: true,
+			characterData: true,
+			subtree: true,
+		});
+		return seen;
+	}
+
+	it('announces an identical message again by clearing the live region first', async () => {
+		const { host } = mount(<RuiToaster />);
+		await settled();
+		const seen = watchAnnouncer(host);
+
+		toast('Saved');
+		await settled();
+		toast('Saved');
+		await settled();
+
+		expect(seen.filter((text) => text === 'Saved')).toHaveLength(2);
+		expect(seen).toContain('');
+	});
+
+	it('announces toasts created in the same tick together', async () => {
+		const { host } = mount(<RuiToaster />);
+		await settled();
+
+		toast('First saved');
+		toast.success('Second saved');
+		await settled();
+
+		expect(host.querySelector('.rui-toaster-announcer')?.textContent).toBe('First saved. Second saved');
+	});
+
+	it('announces the supplied announcement text instead of the title', async () => {
+		const { host } = mount(<RuiToaster />);
+		await settled();
+
+		toast('Saved', { announcement: 'Your profile was saved' });
+		await settled();
+
+		expect(host.querySelector('.rui-toaster-announcer')?.textContent).toBe('Your profile was saved');
+	});
+
+	it('names the close button from aria.closeLabel and defaults to Close toast', async () => {
+		const { host } = mount(<RuiToaster closeButton />);
+		await settled();
+
+		toast('Default label');
+		toast('Custom label', { aria: { closeLabel: 'Fermer' } });
+		await settledToasts(host);
+
+		const labels = [...host.querySelectorAll('[data-toast-close]')].map((b) => b.getAttribute('aria-label'));
+		expect(labels.sort()).toEqual(['Close toast', 'Fermer']);
+	});
+
 	it('renders an error toast as an assertive alert and other variants as status', async () => {
 		const { host } = mount(<RuiToaster position="bottom-end" />);
 		await settled();
