@@ -52,4 +52,32 @@ describe('RuiCalendar range hover preview', () => {
 
 		await vi.waitFor(() => expect(previewedDays(container)).toEqual([]));
 	});
+
+	it('keeps the hovered and focused day cells in the document while previewing', async () => {
+		const container = await mountRangeCalendar();
+
+		await userEvent.click(dayButton(container, START));
+		const focused = dayButton(container, START);
+		focused.focus();
+		const hovered = dayButton(container, END);
+		await userEvent.hover(hovered);
+		await vi.waitFor(() => expect(previewedDays(container).length).toBeGreaterThan(0));
+
+		expect(hovered.isConnected).toBe(true);
+		expect(document.activeElement).toBe(focused);
+	});
+
+	it('commits the range when the hovered day is pressed', async () => {
+		const container = await mountRangeCalendar();
+		const host = container.querySelector('rui-calendar') as HTMLElement;
+
+		await userEvent.click(dayButton(container, START));
+		const end = dayButton(container, END);
+		await userEvent.hover(end);
+		end.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+		end.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
+		end.click();
+
+		await vi.waitFor(() => expect(host.getAttribute('value')).toBe(`${START}/${END}`));
+	});
 });
