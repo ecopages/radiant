@@ -129,6 +129,21 @@ describe('Radiant JSX raw-text elements', () => {
 		root.unmount();
 		expect(subscribers).toBe(0);
 	});
+
+	test('light-DOM nodes keep false on attribute bindings and leave boolean attributes absent', async () => {
+		const [{ jsx }, { renderServerLightDom }] = await Promise.all([
+			loadJsxRuntime(),
+			loadModule<typeof import('../src/ssr/server-light-dom.ts')>('../src/ssr/server-light-dom.ts'),
+		]);
+		const [item] = renderServerLightDom(
+			jsx('li', { 'aria-expanded': false, data: { open: false }, hidden: false }),
+			document,
+		) as Element[];
+
+		expect(item?.getAttribute('aria-expanded')).toBe('false');
+		expect(item?.getAttribute('data-open')).toBe('false');
+		expect(item?.hasAttribute('hidden')).toBe(false);
+	});
 });
 
 describe('custom elements inside foreign content', () => {
