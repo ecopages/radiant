@@ -127,8 +127,9 @@ Place the stack at any corner or edge center.
 
 ## Accessibility
 
-- Toasts use `role="status"` for polite announcements that do not interrupt current tasks; the toaster wraps the stack in an `aria-live="polite"` region.
-- Error toasts use `role="alert"` semantics for immediate attention.
+- Error toasts use `role="alert"` with `aria-live="assertive"` and `aria-atomic="true"`. The stack has no live attribute, so an alert is never nested inside a polite region.
+- Other variants use `role="status"` with `aria-live="off"`. The toaster announces the newest one through a visually hidden `aria-live="polite"` region that sits beside the stack.
+- Screen-reader behavior (single announcement in NVDA, JAWS, VoiceOver) has not been verified yet.
 - Do not rely on toasts alone for critical errors; pair with inline field errors when appropriate.
 - The stack region is focusable (`tabindex="-1"`) so keyboard users can inspect messages; close controls are labeled buttons.
 
@@ -206,7 +207,7 @@ Public BEM classes on the composed light-DOM surface (documented via `@cssclass`
 | --- | --- |
 | `.rui-toaster-region` | Announcement region wrapper (`display: contents`). |
 | `.rui-toaster` | The `<ol>` stack list. |
-| `.rui-toast` | Toast surface (`role="status"`). |
+| `.rui-toast` | Toast surface (`role="status"`; `role="alert"` for the `error` variant). |
 | `.rui-toast--info` | Info tone. |
 | `.rui-toast--success` | Success tone. |
 | `.rui-toast--warning` | Warning tone. |
