@@ -76,7 +76,7 @@ export default defineConfig({
 				extends: true,
 				test: {
 					name: 'ssr',
-					include: ['src/**/*.ssr.test.{ts,tsx}'],
+					include: ['src/**/*.ssr.test.{ts,tsx}', '.storybook/**/*.ssr.test.{ts,tsx}'],
 					environment: 'node',
 				},
 			},
