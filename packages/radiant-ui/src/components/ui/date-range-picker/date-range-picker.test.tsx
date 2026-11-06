@@ -54,6 +54,33 @@ describe('RuiDateRangePicker draft range', () => {
 		host.remove();
 	});
 
+	it('emits the sorted start and end that agree with value', async () => {
+		const host = document.createElement('div');
+		document.body.append(host);
+		createRoot(host).render(<RuiDateRangePicker value="2026-08-01/2026-08-14" locale="en-US" />);
+
+		await customElements.whenDefined('rui-date-range-picker');
+		await customElements.whenDefined('rui-date-input');
+		await flushFirstConnect();
+		await flushRender();
+
+		const picker = host.querySelector('rui-date-range-picker') as HTMLElement;
+		const start = host.querySelector('[data-range-start]') as HTMLElement & { value: string };
+		const details: Array<{ value: string; start: string; end: string }> = [];
+		picker.addEventListener('rui-change', (event) => {
+			if (event.target === picker) details.push((event as CustomEvent).detail);
+		});
+
+		start.value = '2026-09-01';
+		start.dispatchEvent(
+			new CustomEvent('rui-change', { bubbles: true, composed: true, detail: { value: '2026-09-01' } }),
+		);
+		await flushRender();
+
+		expect(details).toEqual([{ value: '2026-08-14/2026-09-01', start: '2026-08-14', end: '2026-09-01' }]);
+		host.remove();
+	});
+
 	it('keeps a completed start date while the end is still empty', async () => {
 		const host = document.createElement('div');
 		document.body.append(host);
