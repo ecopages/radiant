@@ -1,4 +1,4 @@
-import { serializeStyleSnapshot } from '../factory/attribute-normalize.ts';
+import { resolveAttributeText } from '../factory/attribute-normalize.ts';
 import {
 	endsWithTextContentOpenTag,
 	stringifyTextContentValue,
@@ -324,15 +324,6 @@ function applyAttributePart(element: Element, part: TemplatePartDescriptor | und
 
 	const value = resolveReactiveSnapshot(rawValue);
 
-	if (part.kind === 'bool') {
-		if (value) element.setAttribute(part.name, '');
-		return;
-	}
-
-	if (value === undefined || value === null) return;
-
-	element.setAttribute(
-		part.name,
-		part.name.toLowerCase() === 'style' ? serializeStyleSnapshot(value) : String(value),
-	);
+	const text = resolveAttributeText(part.name, value, part.kind === 'bool');
+	if (text !== undefined) element.setAttribute(part.name, text);
 }

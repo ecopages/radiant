@@ -239,12 +239,20 @@ function parseAttributePart(selector: string, index: number): { nextIndex: numbe
 	};
 }
 
+/**
+ * @remarks A colon after a tag name always starts a pseudo-class or pseudo-element, which throws. A namespaced
+ * tag such as `svg:rect` is written with an escaped colon, `svg\\:rect`, as in a browser, where `svg:rect` is a
+ * tag followed by the unknown pseudo-class `:rect` and throws too.
+ */
 function parseTagPart(selector: string, index: number): { nextIndex: number; part?: SelectorPart } {
-	const match = /^([A-Za-z][A-Za-z0-9_:-]*|\*)/.exec(selector.slice(index));
+	const match = /^(?:[A-Za-z](?:[A-Za-z0-9_-]|\\:)*|\*)/.exec(selector.slice(index));
 	if (!match) throwUnsupported(selector);
-	return match[1] === '*'
-		? { nextIndex: index + match[0].length }
-		: { nextIndex: index + match[0].length, part: { type: 'tag', value: match[1]!.toLowerCase() } };
+	return match[0] === '*'
+		? { nextIndex: index + 1 }
+		: {
+				nextIndex: index + match[0].length,
+				part: { type: 'tag', value: match[0].replaceAll('\\:', ':').toLowerCase() },
+			};
 }
 
 function throwUnsupported(selector: string): never {

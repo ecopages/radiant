@@ -325,6 +325,86 @@ const TYPE_TAGS = new Set([
 	'embed',
 	'object',
 ]);
+/** Tags whose `name` property reflects the `name` attribute. */
+const NAME_TAGS = new Set([
+	'a',
+	'button',
+	'details',
+	'embed',
+	'fieldset',
+	'form',
+	'iframe',
+	'img',
+	'input',
+	'map',
+	'meta',
+	'object',
+	'output',
+	'param',
+	'select',
+	'slot',
+	'textarea',
+]);
+/** Tags whose `href` property reflects the `href` attribute. */
+const HREF_TAGS = new Set(['a', 'area', 'base', 'link']);
+/** Tags whose `value` property reflects the `value` attribute (`input` does not, as in a browser). */
+const VALUE_TAGS = new Set(['button', 'option']);
+/** `ARIAMixin` properties that reflect a string attribute; the element-reference ones (`ariaControlsElements`, ...) do not. */
+type AriaStringProperty = {
+	[K in keyof ARIAMixin]: ARIAMixin[K] extends string | null ? K : never;
+}[keyof ARIAMixin];
+/** Element-wide ARIA reflections, defined on `MinimalElement.prototype` below; `role` maps to `role`, the rest to `aria-*`. */
+const ARIA_PROPERTIES = [
+	'ariaAtomic',
+	'ariaAutoComplete',
+	'ariaBrailleLabel',
+	'ariaBrailleRoleDescription',
+	'ariaBusy',
+	'ariaChecked',
+	'ariaColCount',
+	'ariaColIndex',
+	'ariaColIndexText',
+	'ariaColSpan',
+	'ariaCurrent',
+	'ariaDescription',
+	'ariaDisabled',
+	'ariaExpanded',
+	'ariaHasPopup',
+	'ariaHidden',
+	'ariaInvalid',
+	'ariaKeyShortcuts',
+	'ariaLabel',
+	'ariaLevel',
+	'ariaLive',
+	'ariaModal',
+	'ariaMultiLine',
+	'ariaMultiSelectable',
+	'ariaOrientation',
+	'ariaPlaceholder',
+	'ariaPosInSet',
+	'ariaPressed',
+	'ariaReadOnly',
+	'ariaRelevant',
+	'ariaRequired',
+	'ariaRoleDescription',
+	'ariaRowCount',
+	'ariaRowIndex',
+	'ariaRowIndexText',
+	'ariaRowSpan',
+	'ariaSelected',
+	'ariaSetSize',
+	'ariaSort',
+	'ariaValueMax',
+	'ariaValueMin',
+	'ariaValueNow',
+	'ariaValueText',
+	'role',
+] as const satisfies readonly AriaStringProperty[];
+/** @remarks ASCII whitespace only, as the HTML spec strips it for `option.text`; JS `trim` and `\s` also take NBSP. */
+function collapseAsciiWhitespace(text: string): string {
+	return text.replace(/[\t\n\f\r ]+/g, ' ').replace(/^ | $/g, '');
+}
+
 const BUTTON_TYPES = new Set(['button', 'submit', 'reset']);
 const INPUT_TYPES = new Set([
 	'button',
@@ -434,6 +514,10 @@ class MinimalClassList {
 	}
 }
 
+/** Types the `aria*` and `role` accessors that the loop after the class defines on its prototype. */
+// oxlint-disable-next-line no-unsafe-declaration-merging -- each merged member is a prototype accessor defined from ARIA_PROPERTIES
+export interface MinimalElement extends Pick<ARIAMixin, (typeof ARIA_PROPERTIES)[number]> {}
+
 export class MinimalElement extends MinimalNode {
 	/**
 	 * @remarks
@@ -443,7 +527,7 @@ export class MinimalElement extends MinimalNode {
 	 * yield `[name, value]` tuples and crash on `.name.startsWith(...)`.
 	 */
 	#attributeStore = new Map<string, string>();
-	/** Values assigned to `type` / `disabled` on tags that do not reflect them. */
+	/** Values assigned to `type`, `disabled`, `name`, `href` and `value` on tags that do not reflect them. */
 	#plainProps = new Map<string, unknown>();
 	private classListValue?: MinimalClassList;
 	private datasetValue?: DOMStringMap;
@@ -593,6 +677,63 @@ export class MinimalElement extends MinimalNode {
 			return;
 		}
 		this.toggleAttribute('disabled', Boolean(value));
+	}
+
+	/** @remarks Reflected only on the tags in {@link NAME_TAGS}; elsewhere a plain value, as in a browser. */
+	get name(): string {
+		if (!NAME_TAGS.has(this.localName)) return this.#plainProps.get('name') as string;
+		return this.getAttribute('name') ?? '';
+	}
+
+	set name(value: string) {
+		if (!NAME_TAGS.has(this.localName)) {
+			this.#plainProps.set('name', value);
+			return;
+		}
+		this.setAttribute('name', value);
+	}
+
+	/**
+	 * @remarks Reflected only on the tags in {@link HREF_TAGS}. Reads the attribute as written; a browser
+	 * resolves it against the document URL, which the server has no base for.
+	 */
+	get href(): string {
+		if (!HREF_TAGS.has(this.localName)) return this.#plainProps.get('href') as string;
+		return this.getAttribute('href') ?? '';
+	}
+
+	set href(value: string) {
+		if (!HREF_TAGS.has(this.localName)) {
+			this.#plainProps.set('href', value);
+			return;
+		}
+		this.setAttribute('href', value);
+	}
+
+	get slot(): string {
+		return this.getAttribute('slot') ?? '';
+	}
+
+	set slot(value: string) {
+		this.setAttribute('slot', value);
+	}
+
+	/**
+	 * @remarks Reflected only on `button` and `option`. An `option` without a `value` attribute reads its text with whitespace collapsed.
+	 * `input.value` is not reflected in browsers either and stays a plain value, as does every other tag.
+	 */
+	get value(): string {
+		const tag = this.localName;
+		if (!VALUE_TAGS.has(tag)) return this.#plainProps.get('value') as string;
+		return this.getAttribute('value') ?? (tag === 'option' ? collapseAsciiWhitespace(this.textContent) : '');
+	}
+
+	set value(value: string) {
+		if (!VALUE_TAGS.has(this.localName)) {
+			this.#plainProps.set('value', value);
+			return;
+		}
+		this.setAttribute('value', value);
 	}
 
 	get classList(): DOMTokenList {
@@ -928,6 +1069,24 @@ export class MinimalCustomEvent<T = unknown> extends MinimalEvent {
 		super(type, eventInitDict);
 		this.detail = eventInitDict.detail as T;
 	}
+}
+
+for (const property of ARIA_PROPERTIES) {
+	const attribute = property === 'role' ? 'role' : `aria-${property.slice(4).toLowerCase()}`;
+	Object.defineProperty(MinimalElement.prototype, property, {
+		configurable: true,
+		enumerable: true,
+		get(this: MinimalElement): string | null {
+			return this.getAttribute(attribute);
+		},
+		set(this: MinimalElement, value: unknown) {
+			if (value === null || value === undefined) {
+				this.removeAttribute(attribute);
+				return;
+			}
+			this.setAttribute(attribute, value);
+		},
+	});
 }
 
 export class MinimalHTMLElement extends MinimalElement {
