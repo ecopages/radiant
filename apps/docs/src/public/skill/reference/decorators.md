@@ -12,13 +12,13 @@
 
 ## Host definition
 
-- `@customElement(...)` — register the custom-element class; once per host class
+- `@customElement(tag, options?)` — register the custom-element class; once per host class. `hostAttributes` gives every instance fixed attributes (`{ role: 'complementary' }`): written during server preparation and at the start of every connect, before `onConnected()`, and an attribute the author wrote is kept. Use `@bindTo` for attributes that depend on state. The `extends` option throws: hosts are autonomous elements.
 - `@controller(...)` — register a controller identifier for `data-controller="..."` attachment; once per controller class
 
 ## Reactive data
 
-- `@prop(...)` — public custom-element API: attribute conversion, reflection, optional bindings. Pass `transform` to override default converters (`type: Array` is JSON). `fromProperty` normalizes JS/JSX writes; `toAttribute` returning `null` or `''` omits the reflected attribute.
-- `@attr(...)` — a field bound to a host attribute, read from and written to it; `source` names the attribute. Use it for `data-*` / `aria-*` configuration on a controller or an HTML-authored host, and `@prop` for a custom element's property API.
+- `@prop(...)` — public custom-element API: attribute conversion, reflection, optional bindings. The attribute is the kebab-case property name (`minWidth` is `min-width`, `max_width` is `max-width`); `attribute` sets another name, kept as written, so make it lowercase when authors write it in HTML. An authored attribute is read at upgrade and stays on the host; `reflect: true` only adds writing property changes back to it. Pass `transform` to override default converters (`type: Array` is JSON). `fromProperty` normalizes JS/JSX writes; `toAttribute` returning `null` or `''` omits the reflected attribute.
+- `@attr(...)` — a field bound to a host attribute, read from and written to it; `source` names the attribute; it defaults to the kebab-case field name, as for `@prop`. Use it for `data-*` / `aria-*` configuration on a controller or an HTML-authored host, and `@prop` for a custom element's property API.
 - `@state` — internal mutable UI state
 - `@signal` or `@signal(options)` — signal-backed host state / signal interop
 
@@ -75,7 +75,7 @@ Avoid updating the same watched property inside its own `@onUpdated(...)` unless
 ## DOM queries
 
 - `@query(...)` — rendered descendants by `data-ref` or selector, on a `RadiantElement` or a `RadiantController`
-- `@querySlot(...)` — slot-assigned elements of a render-owning `RadiantElement` (for children a JSX view passes, the default slot's rendered top-level elements); options `name` (default slot when omitted), `all`, and `cache` (cached by default, refreshed when the projection changes)
+- `@querySlot(...)` — slot-assigned elements of a render-owning `RadiantElement` (for children a JSX view passes, the top-level elements they rendered to, and nothing for a named slot); options `name` (default slot when omitted), `all`, and `cache` (cached by default, refreshed when the projection changes)
 
 `@query` options: `ref` or `selector`; `all` for `T[]`; `cache` (default `false`: each read queries the DOM). Prefer `ref` over broad selectors. Field types and null-safe use: see [Field types](#field-types).
 
@@ -86,9 +86,9 @@ Use `@query` for a live element handle (focus, observers, third-party APIs). If 
 - `@onEvent(...)` — declarative event subscription (lifecycle-owned)
 - `@event(...)` — typed custom-event emitter for host-to-parent communication, on a `RadiantElement`
 
-`@onEvent` takes a `type` and exactly one target: `{ ref }`, `{ selector }`, `{ window: true }`, `{ document: true }` or `{ mediaQuery }`. `options` passes `AddEventListenerOptions`.
+`@onEvent` takes a `type` and exactly one target: `{ ref }`, `{ selector }`, `{ host: true }`, `{ window: true }`, `{ document: true }` or `{ mediaQuery }`. Combining targets is a type error. `options` passes `AddEventListenerOptions`.
 
-Delegation requires bubbling. `focus` / `blur` will not work — use `focusin` / `focusout`. Prefer `ref` for internal wiring; `selector` only when delegation is intentional; `window` / `document` only for truly global sources.
+Delegation (`ref`, `selector`) requires bubbling. `focus` / `blur` will not work — use `focusin` / `focusout`, or pass `options: { capture: true }`. For a non-bubbling event on the host itself, such as `pointerenter` / `pointerleave`, use `host: true`, which listens on the Element Host (on a controller, its attached element) and does nothing on the server. Prefer `ref` for internal wiring; `selector` only when delegation is intentional; `window` / `document` only for truly global sources.
 
 ## Callback utilities
 

@@ -83,7 +83,7 @@ import '@ecopages/radiant-ui/styles.css';
 import '@ecopages/radiant-ui';
 ```
 
-Convenience bundle (default theme + core primitives):
+Base bundle (Tailwind, shared utilities and the default theme; component styles still come from `styles.css`):
 
 ```ts
 import '@ecopages/radiant-ui/radiant-ui.css';
