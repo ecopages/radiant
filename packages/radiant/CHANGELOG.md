@@ -1,5 +1,32 @@
 # @ecopages/radiant
 
+## 0.7.0
+
+### Minor Changes
+
+- [#586](https://github.com/ecopages/radiant/pull/586) [`2f69f74`](https://github.com/ecopages/radiant/commit/2f69f74a860e2ad7d8b3d95990274684d6c38e57) Thanks [@andeeplus](https://github.com/andeeplus)! - Add `hostAttributes` to `@customElement` options. A `RadiantElement` host gets those fixed attributes, such as `{ role: 'complementary' }`, during server preparation, so they reach server output, and at the start of every connect, before `onConnected()`. An attribute the author wrote is kept.
+
+- [#578](https://github.com/ecopages/radiant/pull/578) [`164c06b`](https://github.com/ecopages/radiant/commit/164c06ba137a004b0ec3637c00f62839032c49f7) Thanks [@andeeplus](https://github.com/andeeplus)! - `@onEvent` accepts `host: true` to listen on the Element Host itself, which makes non-bubbling events such as `pointerenter` and `pointerleave` usable. The dev warning for delegated non-bubbling events now covers `pointerenter` and `pointerleave`. `OnEventConfig` now takes exactly one target: a config that combines targets, such as `host` with `selector`, is a type error instead of attaching both listeners.
+
+### Patch Changes
+
+- [#535](https://github.com/ecopages/radiant/pull/535) [`af913be`](https://github.com/ecopages/radiant/commit/af913bedb5bc09e977877e7e553002fb0e59f421) Thanks [@andeeplus](https://github.com/andeeplus)! - Fix: `@provideContext` hosts of one class no longer share a single `initialValue` object. Each provider now takes a shallow copy of a plain object or array, so writing to one host's `getContext()` does not change another's. Nested values are still shared.
+
+- [#536](https://github.com/ecopages/radiant/pull/536) [`68d1865`](https://github.com/ecopages/radiant/commit/68d1865936d7863026ba3893fb21acea17cbac65) Thanks [@andeeplus](https://github.com/andeeplus)! - Fix: a `@prop` without `reflect: true` no longer removes its authored attribute when the element upgrades. `reflect` now only controls writing property changes back; markup such as `<creature-card name="Rex">` keeps `name` after upgrade. The attribute is read once at upgrade and is not kept in sync by later property writes. Code that relied on the attribute disappearing, such as `:not([name])` selectors or `getAttributeNames()` checks, will now see it.
+
+- [#586](https://github.com/ecopages/radiant/pull/586) [`14fc554`](https://github.com/ecopages/radiant/commit/14fc554be99c8caf446e34b6b2e785fac3d966eb) Thanks [@andeeplus](https://github.com/andeeplus)! - Accept `@bound` below `@onEvent` or `@debounce` under legacy decorators. `@onEvent` no longer throws when the host initializes, and `@debounce` no longer throws when the class is defined; the handler and the debounced method stay bound to the host.
+
+- [#585](https://github.com/ecopages/radiant/pull/585) [`836f8d9`](https://github.com/ecopages/radiant/commit/836f8d9f7d2bc7cee7568b12aac7c4ce3b037467) Thanks [@andeeplus](https://github.com/andeeplus)! - The server selector engine throws a `SyntaxError` for a pseudo-class or pseudo-element written after a tag name (`p:first-child`, `a:hover`, `p::before`) instead of silently matching nothing. As in a browser, a namespaced tag is written with an escaped colon (`svg\:rect`); `svg:rect` now throws.
+
+- [#533](https://github.com/ecopages/radiant/pull/533) [`74e8333`](https://github.com/ecopages/radiant/commit/74e83337666276b655f1914914a7e2a39f20d79c) Thanks [@andeeplus](https://github.com/andeeplus)! - Reflect `className`, `title`, `lang`, `dir`, `hidden`, `tabIndex`, `type` and `disabled` set as properties on the server DOM into attributes, so SSR HTML keeps what a browser would serialize. `type` and `disabled` reflect only on the tags that define them.
+
+- [#575](https://github.com/ecopages/radiant/pull/575) [`ef4ae44`](https://github.com/ecopages/radiant/commit/ef4ae445e5c7c90f71c711dc97255c23ef44da36) Thanks [@andeeplus](https://github.com/andeeplus)! - `setContext` now replaces an array, string, number, boolean or `null` context value instead of silently ignoring the call, notifying subscribers and running the callback. Plain objects keep the one-level merge.
+
+- [#585](https://github.com/ecopages/radiant/pull/585) [`56a9c22`](https://github.com/ecopages/radiant/commit/56a9c22420204eb6eb4e1e977e2510231b25221d) Thanks [@andeeplus](https://github.com/andeeplus)! - The server DOM shim reflects `name`, `href`, `slot`, `role`, the `aria*` string properties and `option`/`button` `value` as attributes, so values set as properties during SSR (such as the radio group name) reach the server HTML.
+- Updated dependencies [[`9e10642`](https://github.com/ecopages/radiant/commit/9e106425a7b9911bdae941f42fc5e4acc40beeaf), [`59413fa`](https://github.com/ecopages/radiant/commit/59413fa6b2c6a08cb92adfd2fd444c3ba3ea146d)]:
+    - @ecopages/jsx@0.7.0
+    - @ecopages/signals@0.7.0
+
 ## 0.6.0
 
 ### Minor Changes

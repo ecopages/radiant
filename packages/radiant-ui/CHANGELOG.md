@@ -1,5 +1,59 @@
 # @ecopages/radiant-ui
 
+## 0.3.1
+
+### Patch Changes
+
+- [#551](https://github.com/ecopages/radiant/pull/551) [`a88dd8d`](https://github.com/ecopages/radiant/commit/a88dd8d53a7dbcb2712efdcf7a85d4d55fd36e9b) Thanks [@andeeplus](https://github.com/andeeplus)! - Correct the hover card documentation: the warmup and cooldown are shared between hover cards only, and `rui-tooltip` keeps its own `delay`.
+
+- [#578](https://github.com/ecopages/radiant/pull/578) [`ed2c0e6`](https://github.com/ecopages/radiant/commit/ed2c0e670f3ad3c282d0be79168c82d231aad542) Thanks [@andeeplus](https://github.com/andeeplus)! - `rui-calendar` and `rui-date-range-picker` now preview the range while hovering a day after the start is chosen, and clear the preview when the pointer leaves the grid.
+
+- [#543](https://github.com/ecopages/radiant/pull/543) [`060f6f4`](https://github.com/ecopages/radiant/commit/060f6f4391f0c902bc5f676093f5fa07b39ad81d) Thanks [@andeeplus](https://github.com/andeeplus)! - `rui-carousel` autoplay now pauses on mouse hover, and changing `transition` after load swaps the `rui-carousel--*` animation class.
+
+- [#538](https://github.com/ecopages/radiant/pull/538) [`b746410`](https://github.com/ecopages/radiant/commit/b7464103bc6aa4f851146944d46b8fbc84318bcc) Thanks [@andeeplus](https://github.com/andeeplus)! - Combobox: the input `aria-controls` now names the live listbox id, and Escape on a closed combobox clears a committed value even when the input text was erased.
+
+- [#540](https://github.com/ecopages/radiant/pull/540) [`2ac1aed`](https://github.com/ecopages/radiant/commit/2ac1aed193acc184c3f76788060707ff38ce4b0f) Thanks [@andeeplus](https://github.com/andeeplus)! - Date field and date range picker: Escape and completing a selection return focus to the calendar button instead of dropping it to the page body. Outside clicks still leave focus where they land.
+
+- [#542](https://github.com/ecopages/radiant/pull/542) [`a5ba176`](https://github.com/ecopages/radiant/commit/a5ba1764cf7817d3d5b2ae6f972fb89c6f442e75) Thanks [@andeeplus](https://github.com/andeeplus)! - Dialog: the host `alert` prop now drives `role` (`alertdialog` or `dialog`) and limits the tab loop to the actions, live. `RuiDialogClose` keeps its visible text as its accessible name and applies the `Close` label only to the icon-only button.
+
+- [#544](https://github.com/ecopages/radiant/pull/544) [`1484d65`](https://github.com/ecopages/radiant/commit/1484d65ea15e0e6429126dc690e602f3fdbae8a4) Thanks [@andeeplus](https://github.com/andeeplus)! - Toast: the `error` variant now renders with `role="alert"`, `aria-live="assertive"` and `aria-atomic="true"`, as the docs state. Other variants keep `role="status"`.
+
+- [#549](https://github.com/ecopages/radiant/pull/549) [`4db66c3`](https://github.com/ecopages/radiant/commit/4db66c31468bc02c125c5d61d49eff9e4f23a1bf) Thanks [@andeeplus](https://github.com/andeeplus)! - `rui-form` reset keeps the form `defaultValues` for fields that declare no default of their own, and `rui-combobox` and `rui-autocomplete` show every option again after a native form reset clears the typed text.
+
+- [#579](https://github.com/ecopages/radiant/pull/579) [`d6c0f12`](https://github.com/ecopages/radiant/commit/d6c0f124386d70e73fa2fcb0a6f44957312a0fca) Thanks [@andeeplus](https://github.com/andeeplus)! - The form store applies one rule for field defaults: `null` and `undefined` both mean "no default" when registering, updating options and resetting.
+
+- [#578](https://github.com/ecopages/radiant/pull/578) [`637f890`](https://github.com/ecopages/radiant/commit/637f890bf45a0bc16825d23a6169d8defc25f41f) Thanks [@andeeplus](https://github.com/andeeplus)! - `rui-tooltip`, `rui-hover-card` and `rui-carousel` bind their host pointer listeners through `@onEvent({ host: true })`. Behaviour is unchanged.
+
+- [#545](https://github.com/ecopages/radiant/pull/545) [`15d2ba8`](https://github.com/ecopages/radiant/commit/15d2ba8e7f36036450158b9de22e501f65ba7822) Thanks [@andeeplus](https://github.com/andeeplus)! - Hover card: moving the pointer from the trigger onto the card now keeps it open instead of closing it after `closeDelay`, and Escape dismisses the card for good instead of reopening it when focus returns to the trigger.
+
+- [#550](https://github.com/ecopages/radiant/pull/550) [`dfd2f59`](https://github.com/ecopages/radiant/commit/dfd2f59c0966aac9bc05928475f97426510046b1) Thanks [@andeeplus](https://github.com/andeeplus)! - A nested `.dark` section on a light page now restyles kit components: the semantic color utilities read the role tokens (`--primary`, `--surface`, ...) directly where they are used, and the `--color-*` aliases are declared on `:root` and `.dark`, so they exist on a light page and follow a nested dark scope. Themes and apps should override the roles (`--primary`), not the `--color-*` aliases.
+
+- [#586](https://github.com/ecopages/radiant/pull/586) [`2f69f74`](https://github.com/ecopages/radiant/commit/2f69f74a860e2ad7d8b3d95990274684d6c38e57) Thanks [@andeeplus](https://github.com/andeeplus)! - Declare the fixed host roles of `rui-sidebar` (`complementary`) and `rui-toast` (`listitem`) with `hostAttributes`. A `<rui-sidebar>` authored without its view now has its landmark role in server output, and a `role` authored on either host is kept instead of overwritten.
+
+- [#539](https://github.com/ecopages/radiant/pull/539) [`f3da2d2`](https://github.com/ecopages/radiant/commit/f3da2d2b88c4838f69eed9a8e94a3d7bc24348b8) Thanks [@andeeplus](https://github.com/andeeplus)! - `rui-date-range-picker` now emits `start` and `end` in `rui-change` sorted the same way as `value`, so a handler never stores an inverted range.
+
+- [#534](https://github.com/ecopages/radiant/pull/534) [`af5bc82`](https://github.com/ecopages/radiant/commit/af5bc82dc65dd96f9e7ca9b279812b3e3c5a3076) Thanks [@andeeplus](https://github.com/andeeplus)! - Fix `registerFieldControl` not reaching `rui-field`, and `rui-checkbox-group` ignoring its checkboxes when the checkbox entry is imported first. Entries now share code through `dist/chunks/`; chunk file names are content hashes and must not be imported; use only the documented entries.
+
+- [#579](https://github.com/ecopages/radiant/pull/579) [`753fd1a`](https://github.com/ecopages/radiant/commit/753fd1affe10fb64525a9d8e2a734771631ba2c3) Thanks [@andeeplus](https://github.com/andeeplus)! - `rui-sidebar` puts its `label` only on the `complementary` landmark (the host); the roleless pane no longer carries an ignored `aria-label`. The `RuiSidebar` view stamps `role="complementary"` so server-rendered markup has a named landmark before hydration.
+
+- [#541](https://github.com/ecopages/radiant/pull/541) [`d08c888`](https://github.com/ecopages/radiant/commit/d08c888cb357b822b7141d89bf69493c1f10249e) Thanks [@andeeplus](https://github.com/andeeplus)! - `rui-slider` range thumbs now stop at `minDistance` on Home and End instead of jumping across the other thumb, and the held thumb rounds away from the other one so a step that does not divide `minDistance` never leaves them closer than the gap. Pointer drag also stops at the gap now instead of swapping the thumbs.
+
+- [#579](https://github.com/ecopages/radiant/pull/579) [`95bd029`](https://github.com/ecopages/radiant/commit/95bd029d69dede3bf0349b66e6afaba7412cfc1b) Thanks [@andeeplus](https://github.com/andeeplus)! - `rui-window-splitter` falls back to 50 when `value` is not a number instead of writing `NaN` to `aria-valuenow` and the pane size.
+
+- [#547](https://github.com/ecopages/radiant/pull/547) [`a7de91c`](https://github.com/ecopages/radiant/commit/a7de91cf1c572571497964abc18bc37a311c33ce) Thanks [@andeeplus](https://github.com/andeeplus)! - Table: in `selection-mode="single"`, Space on the selected row now deselects it and emits `rui-change` with an empty value, as it does in `multiple` mode. Clicking a cell still only selects.
+
+- [#579](https://github.com/ecopages/radiant/pull/579) [`e0edd9c`](https://github.com/ecopages/radiant/commit/e0edd9c5e90a214b2a96f597015221f5aeee8e18) Thanks [@andeeplus](https://github.com/andeeplus)! - An `aria-disabled` tag in `rui-tag-group` cannot be removed: its remove control is disabled (also in the server-rendered `RuiTag`), and Delete and Backspace neither remove it nor prevent default.
+
+- [#548](https://github.com/ecopages/radiant/pull/548) [`7620740`](https://github.com/ecopages/radiant/commit/7620740e6a6f6491d4f1ea941deb18223c0101e7) Thanks [@andeeplus](https://github.com/andeeplus)! - Tag group: a `disabled` group no longer removes tags. The remove control, Delete and Backspace are now no-ops and emit neither `rui-remove` nor `rui-change`, as the docs state.
+
+- [#579](https://github.com/ecopages/radiant/pull/579) [`9e0e162`](https://github.com/ecopages/radiant/commit/9e0e1621bc4fb914627773ba54dc658ba6267162) Thanks [@andeeplus](https://github.com/andeeplus)! - `rui-toaster` clears its live region and sets the new text after a short gap, so repeated toasts, toasts updated in place (such as `toast.promise()` resolving) and toasts shown together are announced; a toast that turns into an error in place is announced from an assertive region. A toast accepts `announcement` (plain announcement text) and `closeLabel` (close button name, default `Close toast`); `rui-toast` takes `close-label`.
+
+- [#546](https://github.com/ecopages/radiant/pull/546) [`945bf3c`](https://github.com/ecopages/radiant/commit/945bf3c3858e6074acc3d3306e910e91d424def2) Thanks [@andeeplus](https://github.com/andeeplus)! - Window splitter: a written `value` outside 20-80 is now clamped, so the property, the reflected `value` attribute and `aria-valuenow` all hold the clamped value instead of exceeding `aria-valuemax`.
+- Updated dependencies [[`af913be`](https://github.com/ecopages/radiant/commit/af913bedb5bc09e977877e7e553002fb0e59f421), [`2f69f74`](https://github.com/ecopages/radiant/commit/2f69f74a860e2ad7d8b3d95990274684d6c38e57), [`68d1865`](https://github.com/ecopages/radiant/commit/68d1865936d7863026ba3893fb21acea17cbac65), [`14fc554`](https://github.com/ecopages/radiant/commit/14fc554be99c8caf446e34b6b2e785fac3d966eb), [`164c06b`](https://github.com/ecopages/radiant/commit/164c06ba137a004b0ec3637c00f62839032c49f7), [`836f8d9`](https://github.com/ecopages/radiant/commit/836f8d9f7d2bc7cee7568b12aac7c4ce3b037467), [`74e8333`](https://github.com/ecopages/radiant/commit/74e83337666276b655f1914914a7e2a39f20d79c), [`ef4ae44`](https://github.com/ecopages/radiant/commit/ef4ae445e5c7c90f71c711dc97255c23ef44da36), [`56a9c22`](https://github.com/ecopages/radiant/commit/56a9c22420204eb6eb4e1e977e2510231b25221d), [`9e10642`](https://github.com/ecopages/radiant/commit/9e106425a7b9911bdae941f42fc5e4acc40beeaf), [`59413fa`](https://github.com/ecopages/radiant/commit/59413fa6b2c6a08cb92adfd2fd444c3ba3ea146d)]:
+    - @ecopages/radiant@0.7.0
+    - @ecopages/jsx@0.7.0
+    - @ecopages/signals@0.7.0
+
 ## 0.3.0
 
 ### Minor Changes

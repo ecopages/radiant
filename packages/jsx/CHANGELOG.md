@@ -1,5 +1,13 @@
 # @ecopages/jsx
 
+## 0.7.0
+
+### Patch Changes
+
+- [#532](https://github.com/ecopages/radiant/pull/532) [`9e10642`](https://github.com/ecopages/radiant/commit/9e106425a7b9911bdae941f42fc5e4acc40beeaf) Thanks [@andeeplus](https://github.com/andeeplus)! - Fix: server rendering no longer drops an attribute whose value is `false`. `aria-expanded={false}`, `data-open={false}` and `attr:wrap={false}` now serialize as `="false"` in `renderToString` and in the light DOM of a server-rendered custom element, as the client already writes them, so the server markup and the hydrated DOM agree. HTML boolean attributes such as `hidden` and `disabled` keep presence and absence, and `null` and `undefined` still remove an attribute.
+- Updated dependencies [[`59413fa`](https://github.com/ecopages/radiant/commit/59413fa6b2c6a08cb92adfd2fd444c3ba3ea146d)]:
+    - @ecopages/signals@0.7.0
+
 ## 0.6.0
 
 ### Minor Changes
