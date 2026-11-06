@@ -132,8 +132,8 @@ export function serializeStyleSnapshot(value: unknown): string {
  *
  * @param name Attribute name; `style` values go through {@link serializeStyleSnapshot}.
  * @param value Resolved (non-reactive) value.
- * @param presence Treat the attribute as boolean: a string is written as given, any other truthy value yields `''`
- * (present), and a falsy one `undefined`.
+ * @param presence Treat the attribute as boolean: a non-empty string is written as given, any other truthy value
+ * yields `''` (present), and a falsy one, `''` included, `undefined`.
  *
  * @remarks A boolean value on a standard HTML boolean attribute (`hidden`, `disabled`, ...) also binds by presence,
  * whatever the binding kind, so a binding whose first value was not a boolean, or `attr:hidden={false}`, never
@@ -143,7 +143,7 @@ export function serializeStyleSnapshot(value: unknown): string {
  * binding kind rather than the value, so callers decide that before calling.
  */
 export function resolveAttributeText(name: string, value: unknown, presence = false): string | undefined {
-	if (presence && typeof value === 'string') return value;
+	if (presence && typeof value === 'string' && value !== '') return value;
 	if (presence || (typeof value === 'boolean' && shouldUseBooleanAttributeBinding(name)))
 		return value ? '' : undefined;
 	if (value === undefined || value === null) return undefined;

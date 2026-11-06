@@ -17,10 +17,11 @@ describe('resolveAttributeText', () => {
 		expect(resolveAttributeText('STYLE', 'color: red')).toBe('color: red');
 	});
 
-	test('presence yields an empty string for truthy values, writes a string as given and skips falsy ones', () => {
+	test('presence yields an empty string for truthy values, writes a non-empty string as given and skips falsy ones', () => {
 		expect(resolveAttributeText('hidden', true, true)).toBe('');
 		expect(resolveAttributeText('hidden', 1, true)).toBe('');
 		expect(resolveAttributeText('hidden', 'until-found', true)).toBe('until-found');
+		expect(resolveAttributeText('hidden', '', true)).toBeUndefined();
 		expect(resolveAttributeText('hidden', false, true)).toBeUndefined();
 		expect(resolveAttributeText('hidden', 0, true)).toBeUndefined();
 	});

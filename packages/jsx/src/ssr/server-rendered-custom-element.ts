@@ -162,7 +162,11 @@ function applyServerCustomElementAttribute(
 	}
 
 	if (name.startsWith('bool:')) {
-		syncServerCustomElementProperty(element, normalizedName, Boolean(resolvedValue));
+		syncServerCustomElementProperty(
+			element,
+			normalizedName,
+			resolveAttributeText(normalizedName, resolvedValue, true) !== undefined,
+		);
 		applyServerBooleanAttribute(element, normalizedName, resolvedValue);
 		return;
 	}
