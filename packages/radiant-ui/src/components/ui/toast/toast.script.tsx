@@ -109,6 +109,7 @@ type RuiToastBindings = {
  * @attr {number} duration - Lifetime in ms before auto-dismiss. Default: `4000`.
  * @attr {boolean} dismissible - Allow close button / swipe-to-dismiss. Default: `true`.
  * @attr {boolean} close-button - Render the corner close control. Default: `false`.
+ * @attr {string} close-label - Accessible name of the close control. Default: `Close toast`.
  * @attr {string} action-label - Text for the optional action button. Default: `''`.
  * @attr {string} position - Placement; mirrors the toaster's position. Default: `bottom-end`.
  * @attr {boolean} marked-delete - Marks the toast for animated exit. Default: `false`.

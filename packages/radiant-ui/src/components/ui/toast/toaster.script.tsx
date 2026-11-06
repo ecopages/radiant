@@ -30,6 +30,22 @@ import { collapsedStackHeight, expandedStackHeight, expandedToastOffset } from '
 import { toastState } from './toast-state';
 import { RuiToast } from './toast.script';
 
+/**
+ * Time the live region stays empty before the next announcement is written.
+ *
+ * @remarks Browsers update the accessibility tree after a task, so clearing and refilling the
+ * region in one task (or one microtask apart) looks like no change and repeats are dropped. A
+ * gap long enough for an accessibility tree update makes the refill a real text change.
+ */
+const ANNOUNCEMENT_GAP_MS = 100;
+
+/** Joins announcement parts into sentences without doubling terminal punctuation. */
+function joinSentences(parts: string[]): string {
+	return parts
+		.map((part, index) => (index === parts.length - 1 || /[.!?]$/.test(part) ? part : `${part}.`))
+		.join(' ');
+}
+
 export type RuiToasterProps = {
 	/** Corner / edge placement. Default: `bottom-end`. */
 	position?: ToastPosition;
@@ -110,9 +126,10 @@ function isInsideToaster(node: EventTarget | null, root: Element): boolean {
  * matched root — used by docs canvas demos so toasts render inside the preview.
  * Document-level events: `rui-toast-show`, `rui-toast-dismiss`.
  *
- * Non-error toasts are announced through a polite live region that is cleared and set again on
- * the next microtask: repeated messages announce again, and toasts created in the same tick are
- * announced together. A toast can pass `announcement` (plain text) to override what is read, and
+ * Non-error toasts are announced through a polite live region that is cleared and, after a short
+ * gap, set again: repeated messages announce again, a toast updated in place (same `id`, as
+ * `toast.promise` does) announces its new text, and toasts created during the gap are announced
+ * together. A toast can pass `announcement` (plain text) to override what is read, and
  * `aria.closeLabel` to rename its close button (default `Close toast`). Not yet verified with
  * screen readers: NVDA with Firefox, JAWS with Chrome, VoiceOver with Safari.
  */
@@ -139,8 +156,8 @@ export class RuiToaster extends RadiantElement {
 	@state toasts: ToastRecord[] = [];
 
 	/**
-	 * Text of the non-error toasts created in the latest tick, rendered into a polite live region that is a sibling of
-	 * the stack.
+	 * Text of the non-error toasts created since the last announcement, rendered into a polite live
+	 * region that is a sibling of the stack.
 	 *
 	 * @remarks
 	 * Error toasts are `role="alert"` and announce themselves, so they must not sit inside a polite
@@ -149,9 +166,13 @@ export class RuiToaster extends RadiantElement {
 	 */
 	@state announcement = '';
 
-	private readonly announcedIds = new Set<string>();
+	/**
+	 * @remarks Keyed by record object: `toastState.create` replaces the record whenever a toast is
+	 * shown, including an update in place by `id`, while other publishes keep the same objects.
+	 */
+	private readonly announcedRecords = new WeakSet<ToastRecord>();
 	private pendingAnnouncements: string[] = [];
-	private announcementFlushQueued = false;
+	private announcementTimer: ReturnType<typeof setTimeout> | null = null;
 
 	private expanded = false;
 	private interacting = false;
@@ -189,6 +210,9 @@ export class RuiToaster extends RadiantElement {
 		document.removeEventListener('pointerup', this.onPointerUp);
 		document.removeEventListener('pointercancel', this.onPointerUp);
 		if (this.layoutFrame != null) cancelAnimationFrame(this.layoutFrame);
+		if (this.announcementTimer != null) clearTimeout(this.announcementTimer);
+		this.announcementTimer = null;
+		this.pendingAnnouncements = [];
 		this.resetLayoutState();
 		super.disconnectedCallback();
 	}
@@ -230,42 +254,37 @@ export class RuiToaster extends RadiantElement {
 	}
 
 	/**
-	 * Queues the text of every toast not yet announced and flushes them as one announcement.
+	 * Queues the text of every toast shown since the last publish and flushes them as one
+	 * announcement.
 	 *
 	 * @remarks
 	 * Screen readers announce a live region only when its text changes, so the region is cleared
-	 * first and set again on the next microtask: repeated messages ("Saved", "Saved") announce
-	 * again, and toasts created in the same tick are joined into a single announcement instead of
-	 * the last one overwriting the rest. A toast may supply `announcement` as plain text; error
+	 * first and set again after {@link ANNOUNCEMENT_GAP_MS}: repeated messages ("Saved", "Saved")
+	 * announce again, and toasts shown before the flush are joined into one announcement instead
+	 * of the last one overwriting the rest. A toast may supply `announcement` as plain text; error
 	 * toasts are skipped because `role="alert"` announces them.
 	 */
 	private announceNewToasts(toasts: ToastRecord[]): void {
-		const live = new Set(toasts.map((toast) => String(toast.id)));
-		for (const id of this.announcedIds) {
-			if (!live.has(id)) this.announcedIds.delete(id);
-		}
 		for (const toast of [...toasts].reverse()) {
-			const id = String(toast.id);
-			if (this.announcedIds.has(id) || toast.delete) continue;
-			this.announcedIds.add(id);
+			if (this.announcedRecords.has(toast) || toast.delete) continue;
+			this.announcedRecords.add(toast);
 			if (toast.variant === 'error') continue;
-			const text =
-				toast.announcement ??
-				(typeof toast.title === 'string'
-					? toast.description
-						? `${toast.title}. ${toast.description}`
-						: toast.title
-					: '');
+			const text = toast.announcement ?? this.toastText(toast);
 			if (text) this.pendingAnnouncements.push(text);
 		}
-		if (this.pendingAnnouncements.length === 0 || this.announcementFlushQueued) return;
-		this.announcementFlushQueued = true;
+		if (this.pendingAnnouncements.length === 0 || this.announcementTimer != null) return;
 		this.announcement = '';
-		queueMicrotask(() => {
-			this.announcementFlushQueued = false;
-			this.announcement = this.pendingAnnouncements.join('. ');
+		this.announcementTimer = setTimeout(() => {
+			this.announcementTimer = null;
+			this.announcement = joinSentences(this.pendingAnnouncements);
 			this.pendingAnnouncements = [];
-		});
+		}, ANNOUNCEMENT_GAP_MS);
+	}
+
+	/** @remarks A title that is not a string (JSX passed at runtime) yields no text; use `announcement`. */
+	private toastText(toast: ToastRecord): string {
+		if (typeof toast.title !== 'string') return '';
+		return toast.description ? joinSentences([toast.title, toast.description]) : toast.title;
 	}
 
 	private filteredToasts(): ToastRecord[] {
