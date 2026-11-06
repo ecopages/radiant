@@ -13,8 +13,9 @@ export type { DelegatedEventType, OnEventConfig };
  * Note: Selector- and ref-based listeners use event delegation, which means they rely on
  * event bubbling. Therefore, they will not work with events that do not bubble, such as
  * `focus`, `blur`, `load`, `unload`, `scroll`, etc. For focus and blur events, consider
- * using `focusin` and `focusout` which are similar but do bubble. `window`, `document`, and
- * `mediaQuery` targets attach directly instead of delegating.
+ * using `focusin` and `focusout` which are similar but do bubble. `host`, `window`, `document`,
+ * and `mediaQuery` targets attach directly instead of delegating; use `host: true` for
+ * non-bubbling events on the Element Host itself, such as `pointerenter` and `pointerleave`.
  *
  * @param options {@link OnEventConfig} The event configuration.
  */
