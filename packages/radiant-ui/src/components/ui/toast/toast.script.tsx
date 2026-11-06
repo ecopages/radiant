@@ -493,8 +493,17 @@ export class RuiToast extends RadiantElement<RuiToastBindings> {
 		const icon = this.iconForVariant();
 		const showIcon = variant !== 'default';
 
+		const isError = variant === 'error';
+
 		return (
-			<div ref="toast" class={`rui-toast rui-toast--${variant}`} role="status" aria-live="off" data-ref="toast">
+			<div
+				ref="toast"
+				class={`rui-toast rui-toast--${variant}`}
+				role={isError ? 'alert' : 'status'}
+				aria-live={isError ? 'assertive' : 'off'}
+				aria-atomic={isError ? 'true' : undefined}
+				data-ref="toast"
+			>
 				{this.closeButton && variant !== 'loading' ? (
 					<button type="button" class="rui-toast__close" data-toast-close aria-label="Close toast">
 						<RuiIconX />
