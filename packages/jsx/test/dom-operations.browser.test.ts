@@ -95,6 +95,17 @@ describe('clearRangeBetween', () => {
 		expect(end.nextSibling?.textContent).toBe('tail');
 	});
 
+	test('removes nothing when the end marker comes before the start marker', () => {
+		const parent = document.createElement('div');
+		const start = document.createTextNode('');
+		const end = document.createTextNode('');
+		parent.append(end, document.createElement('b'), start, document.createElement('i'), 'tail');
+
+		clearRangeBetween(start, end);
+
+		expect(parent.childNodes).toHaveLength(5);
+	});
+
 	test('renders, replaces and clears a keyed list without creating a DOM Range', () => {
 		const createRange = vi.spyOn(document, 'createRange');
 		const container = document.createElement('div');

@@ -17,16 +17,27 @@ import type { JsxNodeLike } from '../types/index.ts';
  *
  * @remarks Removes the nodes one by one rather than through a DOM `Range`. Browsers keep every `Range` live until
  * garbage collection and update each one on every DOM mutation, so a `Range` per call made a list render quadratic.
+ * It first walks to `endMarker`: when `endMarker` does not follow `startMarker` (markers moved by outside code), it
+ * warns and removes nothing, as a collapsed `Range` did.
  */
 export function clearRangeBetween(startMarker: Text, endMarker: Text): void {
 	const parentNode = startMarker.parentNode;
 
 	if (parentNode && parentNode === endMarker.parentNode) {
 		let node = startMarker.nextSibling;
-		while (node && node !== endMarker) {
-			const next = node.nextSibling;
-			parentNode.removeChild(node);
-			node = next;
+		while (node && node !== endMarker) node = node.nextSibling;
+
+		if (node !== endMarker) {
+			warnRuntime(DOM_RANGE_ANCHOR_DRIFT_WARNING, 'clearRangeBetween', {
+				code: 'dom-range-anchor-drift:clear',
+			});
+			return;
+		}
+
+		for (let current = startMarker.nextSibling; current !== endMarker;) {
+			const next: ChildNode | null = current!.nextSibling;
+			parentNode.removeChild(current!);
+			current = next;
 		}
 		return;
 	}

@@ -2848,6 +2848,94 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect([...container.querySelectorAll('li')].map((item) => item.textContent)).toEqual(['a', 'b']);
 	});
 
+	test('creating and appending keyed rows removes no nodes', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const view = (keys: number[]) =>
+			jsx('ul', { children: keys.map((key) => jsx('li', { key, children: String(key) })) });
+
+		root.render(view([]));
+		const list = container.querySelector('ul')!;
+		const observer = new MutationObserver(() => undefined);
+		observer.observe(list, { childList: true, subtree: true });
+
+		root.render(view([1, 2, 3]));
+		root.render(view([1, 2, 3, 4, 5, 6]));
+		const removed = observer.takeRecords().reduce((count, record) => count + record.removedNodes.length, 0);
+		observer.disconnect();
+
+		expect([...list.querySelectorAll('li')].map((item) => item.textContent)).toEqual([
+			'1',
+			'2',
+			'3',
+			'4',
+			'5',
+			'6',
+		]);
+		expect(removed).toBe(0);
+	});
+
+	test('an element keeps its node while only its values change, and remounts when its shape changes', async () => {
+		const [{ jsx, jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const current = () => container.firstElementChild!;
+
+		root.render(jsx('div', { id: 'a', hidden: false, children: 'x' }));
+		const first = current();
+		root.render(jsx('div', { id: 'b', hidden: true, children: 'y' }));
+		expect(current()).toBe(first);
+		expect(current().id).toBe('b');
+
+		root.render(jsx('div', { title: 'b', children: 'y' }));
+		expect(current()).not.toBe(first);
+		const withTitle = current();
+		root.render(jsxs('div', { title: 'b', children: ['y', 'z'] }));
+		expect(current()).not.toBe(withTitle);
+		const withTwoChildren = current();
+		root.render(jsxs('section', { title: 'b', children: ['y', 'z'] }));
+		expect(current()).not.toBe(withTwoChildren);
+		expect(current().localName).toBe('section');
+	});
+
+	test('elements keep their nodes past the shape cache limits', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+
+		for (let index = 0; index < 10000; index += 1) jsx('div', { [`data-fill-${index}`]: 'x' });
+
+		root.render(jsx('div', { 'data-after-cap': 'a', children: 'x' }));
+		const first = container.firstElementChild;
+		root.render(jsx('div', { 'data-after-cap': 'b', children: 'y' }));
+		expect(container.firstElementChild).toBe(first);
+		expect(first?.getAttribute('data-after-cap')).toBe('b');
+		expect(first?.textContent).toBe('y');
+
+		root.render(jsx('div', { 'data-other-after-cap': 'b', children: 'y' }));
+		expect(container.firstElementChild).not.toBe(first);
+	});
+
+	test('a transported template with static text, an attribute and a child renders and updates', async () => {
+		const [{ createRoot }, { toTemplateResultLike }] = await Promise.all([
+			loadJsxModule(),
+			loadModule<typeof import('../src/types/renderable-guards.ts')>('../src/types/renderable-guards.ts'),
+		]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const view = (title: string, name: string) =>
+			toTemplateResultLike({ strings: ['<p title=', '>Hello ', '!</p>'], values: [title, name] });
+
+		root.render(view('greeting', 'Ada'));
+		const paragraph = container.querySelector('p')!;
+		expect(paragraph.outerHTML).toBe('<p title="greeting">Hello Ada!</p>');
+
+		root.render(view('welcome', 'Grace'));
+		expect(container.querySelector('p')).toBe(paragraph);
+		expect(paragraph.outerHTML).toBe('<p title="welcome">Hello Grace!</p>');
+	});
+
 	test('signal-like attribute values patch attributes without rerendering the parent tree', async () => {
 		const [{ jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');

@@ -229,10 +229,12 @@ type AttributePartDescriptor = Extract<TemplatePartDescriptor, { type: 'attribut
  *
  * @remarks A descriptor depends only on the authored name, whether the element is a custom element, and whether the
  * value is a boolean (see {@link resolveBindingPart}), so one frozen object serves every render. Sharing them keeps
- * {@link getFactoryShapeKey} on identity lookups. The map grows with the distinct names an app binds, like the
- * compiled template cache grows with its shapes.
+ * {@link getFactoryShapeKey} on identity lookups. The map stops growing at {@link MAX_BINDING_PARTS}: names that come
+ * from data, such as the keys of a `data` object, would otherwise grow it for as long as a server runs. Past the cap a
+ * descriptor is created per use and the shape key is built as a string.
  */
 const BINDING_PARTS = new Map<string, AttributePartDescriptor>();
+const MAX_BINDING_PARTS = 2048;
 
 function getBindingPart(elementName: string, name: string, value: unknown): AttributePartDescriptor {
 	const isBoolean = typeof resolveReactiveSnapshot(value) === 'boolean';
@@ -241,7 +243,7 @@ function getBindingPart(elementName: string, name: string, value: unknown): Attr
 
 	if (!part) {
 		part = Object.freeze(resolveBindingPart(elementName, name, value));
-		BINDING_PARTS.set(cacheKey, part);
+		if (BINDING_PARTS.size < MAX_BINDING_PARTS) BINDING_PARTS.set(cacheKey, part);
 	}
 
 	return part;
@@ -384,6 +386,8 @@ type ShapeNode = {
 
 /** Shape keys of factory templates, as a tree from the tag through each shared part descriptor. */
 const SHAPE_ROOTS = new Map<string, ShapeNode>();
+const MAX_SHAPE_NODES = 8192;
+let shapeNodeCount = 0;
 
 /**
  * Returns the shape key of a template built by the factory.
@@ -393,28 +397,45 @@ const SHAPE_ROOTS = new Map<string, ShapeNode>();
  * keyed by the shared descriptors finds the key without building a string per render. Keys start with `\u0001`,
  * which the strings-based `getTemplateShapeKey` keys of transported templates never do, so the two never
  * collide.
+ *
+ * The tree stops growing at {@link MAX_SHAPE_NODES} nodes, so shapes built from data cannot grow it without bound on
+ * a server. Past the cap, the rest of the key is built as a string in the same format, so equal shapes still get
+ * equal keys.
  */
 function getFactoryShapeKey(type: string, parts: readonly TemplatePartDescriptor[]): string {
 	let node: ShapeNode | undefined = SHAPE_ROOTS.get(type);
 
 	if (!node) {
 		node = { key: `\u0001${type}` };
+		if (shapeNodeCount >= MAX_SHAPE_NODES) return appendShapeTokens(node.key, parts, 0);
 		SHAPE_ROOTS.set(type, node);
+		shapeNodeCount += 1;
 	}
 
-	for (const part of parts) {
-		const next: Map<TemplatePartDescriptor, ShapeNode> = (node.next ??= new Map());
-		let child: ShapeNode | undefined = next.get(part);
+	for (let index = 0; index < parts.length; index += 1) {
+		const part = parts[index]!;
+		let child: ShapeNode | undefined = node.next?.get(part);
 
 		if (!child) {
-			child = { key: `${node.key}\u0002${part.type === 'child' ? 'c' : `${part.kind}:${part.name}`}` };
-			next.set(part, child);
+			if (shapeNodeCount >= MAX_SHAPE_NODES) return appendShapeTokens(node.key, parts, index);
+			child = { key: `${node.key}\u0002${describeShapePart(part)}` };
+			(node.next ??= new Map()).set(part, child);
+			shapeNodeCount += 1;
 		}
 
 		node = child;
 	}
 
 	return node.key;
+}
+
+function describeShapePart(part: TemplatePartDescriptor): string {
+	return part.type === 'child' ? 'c' : `${part.kind}:${part.name}`;
+}
+
+function appendShapeTokens(key: string, parts: readonly TemplatePartDescriptor[], start: number): string {
+	for (let index = start; index < parts.length; index += 1) key += `\u0002${describeShapePart(parts[index]!)}`;
+	return key;
 }
 
 function createTemplateResult(
