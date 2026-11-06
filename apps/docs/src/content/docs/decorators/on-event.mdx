@@ -28,7 +28,7 @@ export class ClickCounter extends RadiantElement {
 
 ## Parameters
 
-The decorator accepts a configuration object. You must provide a target and an event type.
+The decorator accepts a configuration object with exactly one target and an event type. A config with two targets, such as `host` and `selector`, is a type error.
 
 ### Target Selection (Choose one)
 
@@ -85,7 +85,7 @@ handleKeyDown(event: KeyboardEvent) {
 
 ### Host Events
 
-`host: true` attaches directly to the Element Host with the same connect and cleanup lifecycle as `window` and `document`, and does nothing on the server. It is the supported form for non-bubbling events on the host.
+`host: true` attaches directly to the Element Host with the same connect and cleanup lifecycle as `window` and `document`, and does nothing on the server. On a `RadiantController` it listens on the element the controller is attached to. It is the supported form for non-bubbling events on the host.
 
 ```typescript
 @onEvent({ host: true, type: 'pointerenter' })
