@@ -14,7 +14,7 @@ import { createRequire } from 'node:module';
 import { build } from 'esbuild';
 import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
-import { dirname, join, resolve } from 'node:path';
+import path, { dirname, join, resolve } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
@@ -213,4 +213,16 @@ test('a consumer bundle keeps the registrations in shared chunks', async () => {
 
 	assert.ok(output.includes('"rui-checkbox-group"'), 'rui-checkbox-group registration was tree-shaken away');
 	assert.ok(output.includes('"rui-checkbox"'), 'rui-checkbox registration was tree-shaken away');
+});
+
+test('every dist/chunks file matches a sideEffects glob', () => {
+	const packageJson = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+	const chunks = readdirSync(new URL('../dist/chunks/', import.meta.url)).filter((file) => file.endsWith('.js'));
+	const globs = packageJson.sideEffects.map((glob) => path.posix.normalize(glob));
+
+	assert.ok(chunks.length > 0, 'expected dist/chunks to hold the shared chunks');
+	const unmatched = chunks.filter(
+		(file) => !globs.some((glob) => path.posix.matchesGlob(`dist/chunks/${file}`, glob)),
+	);
+	assert.deepEqual(unmatched, []);
 });

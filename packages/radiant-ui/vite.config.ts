@@ -47,8 +47,23 @@ export default defineConfig({
 				test: {
 					name: 'unit',
 					include: ['src/**/*.test.{ts,tsx}'],
-					exclude: ['src/**/*.ssr.test.{ts,tsx}'],
+					exclude: ['src/**/*.ssr.test.{ts,tsx}', 'src/built-package/**'],
 					setupFiles: ['.storybook/vitest.unit.setup.ts'],
+					browser: {
+						enabled: true,
+						headless: true,
+						provider: playwright({}),
+						instances: [{ browser: 'chromium' }],
+					},
+				},
+			},
+			{
+				extends: true,
+				test: {
+					name: 'built-package',
+					include: ['src/built-package/**/*.test.{ts,tsx}'],
+					globalSetup: ['.storybook/built-package.global-setup.ts'],
+					setupFiles: ['.storybook/vitest.unit.setup.ts', '.storybook/built-package.setup.ts'],
 					browser: {
 						enabled: true,
 						headless: true,
