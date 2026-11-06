@@ -28,6 +28,10 @@ export const WINDOW_SPLITTER_MIN = 20;
 /** Maximum primary pane size as a percentage. */
 export const WINDOW_SPLITTER_MAX = 80;
 
+function clampSplitterValue(value: number): number {
+	return Math.min(WINDOW_SPLITTER_MAX, Math.max(WINDOW_SPLITTER_MIN, value));
+}
+
 function isHorizontalSplit(orientation: string): boolean {
 	return orientation !== 'vertical';
 }
@@ -100,6 +104,7 @@ export class RuiWindowSplitter extends RadiantElement {
 	private dragging = false;
 
 	protected override onConnected(): void {
+		this.clampValue();
 		this.syncSeparatorPresentation();
 		this.applySize();
 	}
@@ -112,8 +117,27 @@ export class RuiWindowSplitter extends RadiantElement {
 
 	@onUpdated(['value', 'orientation'])
 	onPropsUpdated(): void {
+		if (this.clampValue()) {
+			return;
+		}
 		this.syncSeparatorPresentation();
 		this.applySize();
+	}
+
+	/**
+	 * Writes the clamped value back so the property, the reflected attribute and
+	 * `aria-valuenow` agree.
+	 *
+	 * @remarks Returns true when it rewrote `value`. That write triggers `onPropsUpdated`
+	 * again with an in-range value, which does the sync, so there is no update loop.
+	 */
+	private clampValue(): boolean {
+		const clamped = clampSplitterValue(this.value);
+		if (clamped === this.value || Number.isNaN(clamped)) {
+			return false;
+		}
+		this.value = clamped;
+		return true;
 	}
 
 	private syncSeparatorPresentation(): void {
@@ -129,7 +153,7 @@ export class RuiWindowSplitter extends RadiantElement {
 
 	private applySize(): void {
 		if (!this.primaryTarget) return;
-		const size = `${Math.min(WINDOW_SPLITTER_MAX, Math.max(WINDOW_SPLITTER_MIN, this.value))}%`;
+		const size = `${clampSplitterValue(this.value)}%`;
 		if (this.orientation === 'vertical') {
 			this.primaryTarget.style.height = size;
 			this.primaryTarget.style.width = '';
