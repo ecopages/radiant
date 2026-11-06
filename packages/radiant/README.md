@@ -28,6 +28,8 @@ Application code does not need to import JSX helpers or Signals primitives direc
 
 `@customElement(name, options)` registers autonomous custom elements only. Passing a defined `options.extends` value to define a customized built-in throws a `TypeError` at class definition time, and `extends` is excluded from the TypeScript options type.
 
+`options.hostAttributes` gives a `RadiantElement` host fixed attributes, such as `{ role: 'complementary' }`. Server rendering writes them while it prepares the host, so they reach server output, and the client writes them at the start of every connect, before `onConnected()`. An attribute already on the host is never overwritten. A subclass inherits them and overrides them by name. State-dependent attributes stay with `@bindTo` and `@onUpdated`.
+
 - `render()` returns the current JSX view.
 - First connect automatically chooses between hydration and a fresh client render.
 - `update()` runs the update cycle now: batched `@onUpdated` callbacks, the render when the host overrides `render()`, then `updated()`. It works on every host, so it also flushes `@onUpdated` synchronously on hosts without `render()`.

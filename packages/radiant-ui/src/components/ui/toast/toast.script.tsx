@@ -121,7 +121,7 @@ type RuiToastBindings = {
  * hidden tab, swipe-to-dismiss). Stack motion uses host-written `--rui-toast-y`,
  * `--rui-toast-z`, and `--rui-toast-swipe-*` (not theming knobs).
  */
-@customElement('rui-toast')
+@customElement('rui-toast', { hostAttributes: { role: 'listitem' } })
 export class RuiToast extends RadiantElement<RuiToastBindings> {
 	declare readonly [JSX_PROPS]?: WithoutChildren<RuiToastProps>;
 
@@ -469,7 +469,6 @@ export class RuiToast extends RadiantElement<RuiToastBindings> {
 	}
 
 	private syncDomState(): void {
-		this.setAttribute('role', 'listitem');
 		this.dataset.mounted = String(this.mounted);
 		this.dataset.removed = String(this.removed);
 		this.dataset.swiping = String(this.swiping);
