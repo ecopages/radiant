@@ -56,6 +56,10 @@ function getNonBubblingReplacement(type: string): string | undefined {
 			return 'mouseover or pointerover';
 		case 'mouseleave':
 			return 'mouseout or pointerout';
+		case 'pointerenter':
+			return 'pointerover, or `{ host: true }` for the host itself';
+		case 'pointerleave':
+			return 'pointerout, or `{ host: true }` for the host itself';
 		default:
 			return undefined;
 	}
@@ -100,8 +104,9 @@ type BaseOnEventConfig = {
  *
  * @remarks
  * `selector` / `ref` delegate on the host in the bubble phase, so the `type`
- * must bubble (see {@link DelegatedEventType}). `window`, `document`, and
- * `mediaQuery` attach directly and accept any event name.
+ * must bubble (see {@link DelegatedEventType}). `host`, `window`, `document`, and
+ * `mediaQuery` attach directly and accept any event name, so `host: true` is the
+ * form for non-bubbling events such as `pointerenter` on the Element Host itself.
  */
 export type OnEventConfig = BaseOnEventConfig &
 	(
@@ -110,6 +115,9 @@ export type OnEventConfig = BaseOnEventConfig &
 		  }
 		| {
 				ref: string;
+		  }
+		| {
+				host: true;
 		  }
 		| {
 				window: true;
@@ -202,6 +210,7 @@ function attachConfiguredListeners(
 	config: OnEventConfig,
 	listener: EventListener,
 ): void {
+	if ('host' in config) attachNativeListener(cleanups, 'host', hostElement, config, listener);
 	if ('window' in config) attachNativeListener(cleanups, 'window', window, config, listener);
 	if ('document' in config) attachNativeListener(cleanups, 'document', document, config, listener);
 	if ('mediaQuery' in config) attachMediaQueryListener(cleanups, config, listener);
@@ -210,8 +219,8 @@ function attachConfiguredListeners(
 
 function attachNativeListener(
 	cleanups: Map<EventListenerScope, () => void>,
-	key: 'document' | 'window',
-	target: Window | Document,
+	key: 'document' | 'host' | 'window',
+	target: Window | Document | Element,
 	config: OnEventConfig,
 	listener: EventListener,
 ): void {
@@ -249,4 +258,4 @@ function attachDelegatedListeners(
 		cleanups.set('delegated', addDelegatedListener(hostElement, config, selector, listener));
 }
 
-type EventListenerScope = 'delegated' | 'document' | 'media' | 'window';
+type EventListenerScope = 'delegated' | 'document' | 'host' | 'media' | 'window';
