@@ -1,3 +1,4 @@
+import { DOM_RANGE_ANCHOR_DRIFT_WARNING, warnRuntime } from '../warnings/dev-warnings.ts';
 import { clearRangeBetween, insertNodesBefore } from './dom-operations.ts';
 import type { ChildRange } from './types.ts';
 
@@ -12,7 +13,7 @@ export function getRangeFirstNode(range: ChildRange): ChildNode | null {
 	return first === range.end ? null : first;
 }
 
-/** Removes a range's content and keeps its bounds. */
+/** Removes a range's content and keeps its bounds; warns and removes nothing when its markers left the DOM. */
 export function clearRange(range: ChildRange): void {
 	if (range.start && range.end) {
 		clearRangeBetween(range.start, range.end);
@@ -22,6 +23,9 @@ export function clearRange(range: ChildRange): void {
 	const parent = getRangeParent(range);
 
 	if (!parent) {
+		if (range.start || range.end) {
+			warnRuntime(DOM_RANGE_ANCHOR_DRIFT_WARNING, 'clearRangeBetween', { code: 'dom-range-anchor-drift:clear' });
+		}
 		return;
 	}
 

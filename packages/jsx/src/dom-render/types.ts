@@ -75,6 +75,23 @@ export type TextContentTemplatePart = {
 export type TemplatePart = AttributeTemplatePart | ChildTemplatePart | TextContentTemplatePart;
 
 /**
+ * Child slot metadata for {@link CompiledTemplate.clientContent}, where a slot may have no marker on either side.
+ *
+ * @remarks A `null` path means that bound is the parent's first or last child (see {@link ChildRange}); `ownerPath`
+ * locates the parent when both are `null`.
+ */
+export type ClientChildTemplatePart = {
+	endPath: number[] | null;
+	index: number;
+	ownerPath: number[] | null;
+	startPath: number[] | null;
+	type: 'child';
+};
+
+/** Part metadata for {@link CompiledTemplate.clientContent}. */
+export type ClientTemplatePart = AttributeTemplatePart | ClientChildTemplatePart | TextContentTemplatePart;
+
+/**
  * Runtime state for a dynamic attribute binding attached to a live DOM element.
  *
  * Caches the previous value so identity-stable updates (events, properties) can skip
@@ -161,13 +178,16 @@ export type ReactiveAttributeSource = ReactiveChildSource;
 export type CompiledTemplate = {
 	blueprint: HTMLTemplateElement;
 	/**
-	 * The blueprint's content with its attribute markers removed and its child comment markers already replaced by
-	 * empty text markers, for client mounts to clone.
+	 * The blueprint's content prepared for client mounts to clone: attribute markers removed, and child comment
+	 * markers replaced by as few text markers as the slots need.
 	 *
-	 * @remarks Hydration keeps reading {@link CompiledTemplate.blueprint}, which keeps the comments. Each comment is
-	 * replaced by exactly one node, so the part paths hold for both.
+	 * @remarks In an element whose children are only child slots, adjacent slots share one marker and the first and
+	 * last slots use the element's edges, so one slot needs no marker at all. Anywhere else each comment becomes one
+	 * text marker. Hydration keeps reading {@link CompiledTemplate.blueprint}, which keeps the comments.
 	 */
 	clientContent: DocumentFragment;
+	/** Part metadata located in {@link CompiledTemplate.clientContent}. */
+	clientParts: readonly ClientTemplatePart[];
 	parts: readonly TemplatePart[];
 };
 
