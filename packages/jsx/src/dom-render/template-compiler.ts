@@ -211,90 +211,51 @@ function readSlotOnlyChildren(
 	return ordered;
 }
 
-/**
- * Resolves blueprint part metadata into live DOM references for a freshly cloned fragment.
- *
- * @remarks Accepts a clone of either {@link CompiledTemplate.blueprint} or {@link CompiledTemplate.clientContent}:
- * a child part's comment markers are replaced with text markers, and text markers already in place are used as
- * they are. Removing an attribute marker that is already gone is a no-op.
- */
+/** Resolves {@link CompiledTemplate.clientParts} into live DOM references for a fresh clone of `clientContent`. */
 export function createLiveTemplateParts(
 	fragment: DocumentFragment,
-	parts: readonly (TemplatePart | ClientTemplatePart)[],
+	parts: readonly ClientTemplatePart[],
 	rootTarget: HTMLElement,
 ): LiveTemplatePart[] {
 	const liveParts: LiveTemplatePart[] = [];
 
 	for (const part of parts) {
-		if (part.type === 'attribute') {
-			const targetNode = getNodeAtPath(fragment, part.path);
+		if (part.type === 'child') {
+			const start = part.startPath ? getNodeAtPath(fragment, part.startPath) : null;
+			const end = part.endPath ? getNodeAtPath(fragment, part.endPath) : null;
+			const owner = part.ownerPath ? getNodeAtPath(fragment, part.ownerPath) : null;
 
-			if (!(targetNode instanceof Element)) {
-				continue;
-			}
+			if (start === undefined || end === undefined || (!start && !end && !(owner instanceof Element))) continue;
 
-			targetNode.removeAttribute(part.markerName);
 			liveParts.push({
-				binding: part.binding,
-				element: targetNode,
+				end: end as ChildNode | null,
 				index: part.index,
-				rootTarget,
-				subscriptionSerial: 0,
-				type: 'attribute',
+				mounted: { kind: 'empty' },
+				...(owner instanceof Element ? { owner } : {}),
+				start: start as ChildNode | null,
+				type: 'child',
 			});
 			continue;
 		}
 
-		if (part.type === 'text-content') {
-			const targetNode = getNodeAtPath(fragment, part.path);
+		const element = getNodeAtPath(fragment, part.path);
+		if (!(element instanceof Element)) continue;
 
-			if (!(targetNode instanceof Element)) {
-				continue;
-			}
-
-			liveParts.push({
-				committedText: '',
-				element: targetNode,
-				index: part.index,
-				subscriptionSerial: 0,
-				type: 'text-content',
-			});
-			continue;
-		}
-
-		const startMarker = part.startPath ? toLiveBoundaryMarker(getNodeAtPath(fragment, part.startPath)) : null;
-		const endMarker = part.endPath ? toLiveBoundaryMarker(getNodeAtPath(fragment, part.endPath)) : null;
-		const ownerPath = 'ownerPath' in part ? part.ownerPath : null;
-		const owner = ownerPath ? getNodeAtPath(fragment, ownerPath) : undefined;
-
-		if (
-			startMarker === undefined ||
-			endMarker === undefined ||
-			(!startMarker && !endMarker && !(owner instanceof Element))
-		) {
-			continue;
-		}
-
-		liveParts.push({
-			end: endMarker,
-			index: part.index,
-			mounted: { kind: 'empty' },
-			...(owner instanceof Element && !startMarker && !endMarker ? { owner } : {}),
-			start: startMarker,
-			type: 'child',
-		});
+		liveParts.push(
+			part.type === 'attribute'
+				? {
+						binding: part.binding,
+						element,
+						index: part.index,
+						rootTarget,
+						subscriptionSerial: 0,
+						type: 'attribute',
+					}
+				: { committedText: '', element, index: part.index, subscriptionSerial: 0, type: 'text-content' },
+		);
 	}
 
 	return liveParts;
-}
-
-function toLiveBoundaryMarker(node: Node | undefined): Text | undefined {
-	if (node instanceof Text) return node;
-	if (!(node instanceof Comment)) return undefined;
-
-	const marker = createBoundaryMarker();
-	node.replaceWith(marker);
-	return marker;
 }
 
 function collectTemplateParts(
