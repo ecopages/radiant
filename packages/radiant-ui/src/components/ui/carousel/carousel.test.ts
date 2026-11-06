@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { userEvent } from 'vitest/browser';
 import { RuiCarousel } from './carousel.script';
 
 async function mountCarousel(slidesPerView = 3, autoplay = false, interval = 60000): Promise<RuiCarousel> {
@@ -69,6 +70,17 @@ describe('carousel live region', () => {
 			expect(viewport?.getAttribute('aria-live')).toBe('polite');
 		},
 	);
+});
+
+describe('carousel pointer isolation', () => {
+	it('mounts rotating after an earlier carousel was hovered', async () => {
+		const first = await mountCarousel(1, true);
+		await userEvent.hover(first);
+		document.body.replaceChildren();
+		await userEvent.unhover(document.body);
+		const next = await mountCarousel(1, true);
+		expect(next.querySelector('[data-ref="viewport"]')?.getAttribute('aria-live')).toBe('off');
+	});
 });
 
 describe('carousel autoplay pause sources', () => {
