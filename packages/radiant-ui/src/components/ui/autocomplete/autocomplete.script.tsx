@@ -160,6 +160,17 @@ export class RuiAutocomplete extends RadiantElement {
 		this.applyFilter();
 	}
 
+	/**
+	 * @remarks A native reset rewrites the input text without an `input` event. The
+	 * reset event fires before the controls are restored, hence the timeout.
+	 */
+	@onEvent({ document: true, type: 'reset' })
+	onFormReset(event: Event): void {
+		if (event.target instanceof HTMLFormElement && event.target.contains(this)) {
+			setTimeout(() => this.applyFilter(), 0);
+		}
+	}
+
 	@onEvent({ selector: '[data-autocomplete-input]', type: 'input' })
 	onInput(): void {
 		this.applyFilter();

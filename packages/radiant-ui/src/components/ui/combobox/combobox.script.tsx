@@ -303,7 +303,7 @@ export class RuiCombobox extends RadiantElement {
 
 	private syncAutocompleteFilter(): void {
 		const autocomplete = this.getAutocomplete();
-		if (autocomplete) {
+		if (autocomplete && typeof autocomplete.syncFilter === 'function') {
 			autocomplete.syncFilter();
 			return;
 		}
@@ -414,8 +414,31 @@ export class RuiCombobox extends RadiantElement {
 		this.syncInput();
 		this.collection.syncListboxHost();
 		this.syncFromValue();
+		this.syncFilterWhenCleared();
 		this.collection.syncOptionSelection();
 		this.collection.syncTagGroup();
+	}
+
+	/**
+	 * @remarks A native reset writes the input text without an `input` event, so the
+	 * filter is re-run once the form has finished resetting. The reset event fires
+	 * before the controls are restored, hence the timeout.
+	 */
+	@onEvent({ document: true, type: 'reset' })
+	onFormReset(event: Event): void {
+		if (event.target instanceof HTMLFormElement && event.target.contains(this)) {
+			setTimeout(() => this.syncFilterWhenCleared(), 0);
+		}
+	}
+
+	/**
+	 * @remarks Showing every option again is only correct once the text is empty;
+	 * a selected label keeps the filter `select()` already applied.
+	 */
+	private syncFilterWhenCleared(): void {
+		if (!(this.getInput()?.value ?? '')) {
+			this.syncFilter();
+		}
 	}
 
 	/**
@@ -612,8 +635,6 @@ export class RuiCombobox extends RadiantElement {
 		this.setOpen(false);
 	}
 }
-
-
 
 declare global {
 	interface HTMLElementTagNameMap {
