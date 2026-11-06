@@ -19,10 +19,12 @@ import {
 	dateToIso,
 	formatMonthYear,
 	formatTodayLabel,
+	getDaySelectionAppearance,
 	getVisibleMonthViews,
 	getWeekStartsOn,
 	getWeekdayLabels,
 	isoToDate,
+	normalizeRange,
 	parseIsoRange,
 	parseMultipleIsos,
 	serializeIsoRange,
@@ -61,6 +63,15 @@ type MonthPanel = {
 	label: string;
 	weeks: CalendarWeek[];
 };
+
+/** Writes `name="true"` when `on`, and removes it otherwise, as the rendered day cells do. */
+function setFlag(element: Element, name: string, on: boolean): void {
+	if (on) {
+		element.setAttribute(name, 'true');
+	} else {
+		element.removeAttribute(name);
+	}
+}
 
 /**
  * `<rui-calendar>` — locale-aware month grid(s) for picking dates.
@@ -131,7 +142,13 @@ export class RuiCalendar extends RadiantElement {
 	@state monthPanels: MonthPanel[] = [];
 	@state todayLabel = '';
 	@state rangeAnchor: string | null = null;
-	@state rangeHover: string | null = null;
+	/**
+	 * @remarks Plain field, not `@state`: hover changes repaint the live day cells through
+	 * {@link RuiCalendar.paintRangeDraft} instead of re-rendering the grid. A render replaces every
+	 * day button, so a press that starts on the hovered cell would end on a detached node and its
+	 * click would never reach the host. The next render reads it through `monthOptions`.
+	 */
+	private rangeHover: string | null = null;
 
 	private get resolvedLocale(): string | string[] | undefined {
 		return resolveLocale(this.locale);
@@ -359,7 +376,7 @@ export class RuiCalendar extends RadiantElement {
 			return;
 		}
 		this.rangeHover = iso;
-		this.refreshGrid();
+		this.paintRangeDraft();
 	}
 
 	private clearRangePreview(): void {
@@ -367,7 +384,29 @@ export class RuiCalendar extends RadiantElement {
 			return;
 		}
 		this.rangeHover = this.rangeAnchor;
-		this.refreshGrid();
+		this.paintRangeDraft();
+	}
+
+	/**
+	 * Sets the range attributes of the rendered day cells from the current draft, matching what
+	 * `render()` would produce for the same `rangeAnchor` / `rangeHover`.
+	 */
+	private paintRangeDraft(): void {
+		if (!this.rangeAnchor) {
+			return;
+		}
+		const range = normalizeRange(this.rangeAnchor, this.rangeHover ?? this.rangeAnchor);
+		for (const day of this.querySelectorAll<HTMLButtonElement>('[data-calendar-day]')) {
+			const iso = day.getAttribute('data-iso');
+			if (!iso) {
+				continue;
+			}
+			const appearance = getDaySelectionAppearance(iso, 'range', { range });
+			day.setAttribute('aria-selected', appearance.isSelected ? 'true' : 'false');
+			setFlag(day, 'data-range-start', appearance.isRangeStart);
+			setFlag(day, 'data-range-end', appearance.isRangeEnd);
+			setFlag(day, 'data-range-middle', appearance.isRangeMiddle);
+		}
 	}
 
 	private initialize(): void {
@@ -422,9 +461,17 @@ export class RuiCalendar extends RadiantElement {
 		this.selectIso(iso);
 	}
 
-	@onEvent({ selector: '[data-calendar-day]', type: 'pointerenter' })
-	onDayPointerEnter(event: Event): void {
+	/**
+	 * @remarks `pointerenter` / `pointerleave` do not bubble to the host, so the preview uses the
+	 * bubbling `pointerover` / `pointerout` pair and checks `relatedTarget` to ignore moves between
+	 * descendants of the same day cell or grid.
+	 */
+	@onEvent({ selector: '[data-calendar-day]', type: 'pointerover' })
+	onDayPointerOver(event: PointerEvent): void {
 		const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-calendar-day]');
+		if (button && event.relatedTarget instanceof Node && button.contains(event.relatedTarget)) {
+			return;
+		}
 		const iso = button?.getAttribute('data-iso');
 		if (!iso || button?.disabled) {
 			return;
@@ -432,8 +479,12 @@ export class RuiCalendar extends RadiantElement {
 		this.previewRange(iso);
 	}
 
-	@onEvent({ selector: '[data-calendar-grid]', type: 'pointerleave' })
-	onGridPointerLeave(): void {
+	@onEvent({ selector: '[data-calendar-grid]', type: 'pointerout' })
+	onGridPointerOut(event: PointerEvent): void {
+		const grid = (event.target as HTMLElement).closest('[data-calendar-grid]');
+		if (grid && event.relatedTarget instanceof Node && grid.contains(event.relatedTarget)) {
+			return;
+		}
 		this.clearRangePreview();
 	}
 
@@ -585,8 +636,6 @@ export class RuiCalendar extends RadiantElement {
 		);
 	}
 }
-
-
 
 declare global {
 	interface HTMLElementTagNameMap {

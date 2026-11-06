@@ -66,6 +66,15 @@ class ClickController extends RadiantController<{ count: number }> {
 	}
 }
 
+class HoverController extends RadiantController {
+	entered = 0;
+
+	@onEvent({ host: true, type: 'pointerenter' })
+	onEnter() {
+		this.entered += 1;
+	}
+}
+
 class ContextProviderController extends RadiantController {
 	@provideContext<typeof controllerContext>({
 		context: controllerContext,
@@ -274,6 +283,19 @@ describeWhenStandard('RadiantController', () => {
 		await waitFor(() => {
 			expect(host.querySelector('[data-ref="toggle"]')?.textContent).toBe('1');
 		});
+	});
+
+	test('binds a host @onEvent listener on the element the controller is attached to', () => {
+		const host = document.createElement('div');
+		const controller = new HoverController(host);
+
+		controller.connect();
+		host.dispatchEvent(new Event('pointerenter'));
+		expect(controller.entered).toBe(1);
+
+		controller.disconnect();
+		host.dispatchEvent(new Event('pointerenter'));
+		expect(controller.entered).toBe(1);
 	});
 
 	test('createReactiveProp reads initial host property values through the host property channel', () => {

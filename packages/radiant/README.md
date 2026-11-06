@@ -219,6 +219,7 @@ At the class level, `@onEvent(...)` is the main decorator for incoming DOM event
 
 - descendants that match a CSS selector
 - descendants marked with `data-ref`
+- the host itself (`host: true`), including non-bubbling events such as `pointerenter` and `pointerleave`
 - global `window` events
 - global `document` events
 
