@@ -45,6 +45,7 @@ export type RuiCheckboxGroupChangeDetail = {
  *
  * Do not set `checked`, `disabled`, or `name` on `rui-checkbox` children — the host owns those.
  * After connect, group `value` wins over per-item `checked`.
+ * Group `value` follows user toggles (`rui-change`) only: a programmatic `checked` write on a child does not update it or emit `rui-change`, and the next sync overwrites that write; set the group `value` instead.
  *
  * Nested hosts: `rui-checkbox` (listens for `rui-change`; stops propagation and re-emits group-shaped detail).
  *
@@ -139,8 +140,6 @@ export class RuiCheckboxGroup extends RadiantElement {
 		);
 	}
 }
-
-
 
 declare global {
 	interface HTMLElementTagNameMap {
