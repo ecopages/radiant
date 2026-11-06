@@ -185,6 +185,7 @@ export class RuiTagGroup extends RadiantElement {
 			if (removeButton) {
 				removeButton.type = 'button';
 				removeButton.tabIndex = -1;
+				removeButton.disabled = this.disabled;
 				removeButton.setAttribute('aria-label', `Remove ${this.getTagLabel(tag)}`);
 			}
 		});
@@ -214,6 +215,9 @@ export class RuiTagGroup extends RadiantElement {
 	}
 
 	private removeTag(tag: HTMLElement): void {
+		if (this.disabled) {
+			return;
+		}
 		const tagValue = this.getTagValue(tag);
 		const selected = new Set(this.getSelectedValues());
 		selected.delete(tagValue);
@@ -357,7 +361,7 @@ export class RuiTagGroup extends RadiantElement {
 
 		if (event.key === 'Backspace' || event.key === 'Delete') {
 			const removeButton = current.querySelector('[data-tag-remove]');
-			if (removeButton) {
+			if (removeButton && !this.disabled) {
 				event.preventDefault();
 				this.removeTag(current);
 			}

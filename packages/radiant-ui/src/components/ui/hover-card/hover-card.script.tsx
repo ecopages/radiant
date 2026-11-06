@@ -126,6 +126,13 @@ export class RuiHoverCard extends RadiantElement {
 	private longPressTimer: ReturnType<typeof setTimeout> | null = null;
 	private openedByKeyboard = false;
 
+	/**
+	 * @remarks Set by Escape and kept until the trigger loses focus or the pointer leaves it.
+	 * The `focusin` from returning focus to the anchor can arrive after the keydown handler
+	 * (for example when the window is not focused), so a synchronous guard is not enough.
+	 */
+	private dismissed = false;
+
 	override connectedCallback(): void {
 		super.connectedCallback();
 		this.addEventListener('pointerenter', this.onPointerEnter);
@@ -256,7 +263,11 @@ export class RuiHoverCard extends RadiantElement {
 	}
 
 	private scheduleShow(fromKeyboard = false): void {
-		if (this.disabled || this.open) {
+		if (this.disabled) {
+			return;
+		}
+		if (this.open) {
+			this.cancelHide();
 			return;
 		}
 
@@ -268,6 +279,12 @@ export class RuiHoverCard extends RadiantElement {
 			return;
 		}
 		this.showTimer = setTimeout(() => this.setOpen(true), effectiveDelay);
+	}
+
+	/** @remarks Lets the pointer reach the card, and stay on it, after leaving the trigger. */
+	private cancelHide(): void {
+		if (this.hideTimer) clearTimeout(this.hideTimer);
+		this.hideTimer = null;
 	}
 
 	private scheduleHide(): void {
@@ -291,6 +308,7 @@ export class RuiHoverCard extends RadiantElement {
 		}
 		event.preventDefault();
 		const anchor = this.getAnchor();
+		this.dismissed = true;
 		this.setOpen(false);
 		if (anchor && document.activeElement !== anchor) {
 			anchor.focus();
@@ -299,6 +317,9 @@ export class RuiHoverCard extends RadiantElement {
 
 	@onEvent({ type: 'focusin', ref: 'trigger' })
 	onFocusIn(event: FocusEvent): void {
+		if (this.dismissed) {
+			return;
+		}
 		if (!shouldDismissPopoverFocus(this.getAnchor(), this.getFloatingElement(), event.relatedTarget)) {
 			return;
 		}
@@ -307,6 +328,7 @@ export class RuiHoverCard extends RadiantElement {
 
 	@onEvent({ type: 'focusout', ref: 'trigger' })
 	onFocusOut(event: FocusEvent): void {
+		this.dismissed = false;
 		if (!shouldDismissPopoverFocus(this.getAnchor(), this.getFloatingElement(), event.relatedTarget)) {
 			return;
 		}
@@ -340,6 +362,7 @@ export class RuiHoverCard extends RadiantElement {
 
 	@bound
 	onPointerLeave(event: PointerEvent): void {
+		this.dismissed = false;
 		if (this.isTouchPointer(event)) {
 			return;
 		}

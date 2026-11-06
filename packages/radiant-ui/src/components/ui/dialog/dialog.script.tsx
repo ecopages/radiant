@@ -98,6 +98,7 @@ export class RuiDialog extends RadiantElement {
 	closeEvent: EventEmitter<RuiDialogCloseDetail>;
 
 	private previouslyFocused: HTMLElement | null = null;
+	private lastOpen = false;
 	private readonly uid = uniqueId('rui-dialog');
 
 	private get titleId(): string {
@@ -112,12 +113,24 @@ export class RuiDialog extends RadiantElement {
 		this.syncOpenState();
 	}
 
+	@onUpdated('alert')
+	syncRole(): void {
+		this.dialogTarget?.setAttribute('role', this.alert ? 'alertdialog' : 'dialog');
+	}
+
+	/**
+	 * @remarks
+	 * Focus is captured and restored only when `open` actually changes; a `label` update while
+	 * open must not overwrite `previouslyFocused` with an element inside the dialog.
+	 */
 	@bound
 	@onUpdated(['open', 'label'])
 	syncOpenState(): void {
 		if (!this.dialogTarget) {
 			return;
 		}
+
+		this.syncRole();
 
 		if (this.titleTarget?.textContent?.trim()) {
 			this.titleTarget.id = this.titleId;
@@ -135,6 +148,11 @@ export class RuiDialog extends RadiantElement {
 			this.dialogTarget.removeAttribute('aria-describedby');
 		}
 
+		if (this.open === this.lastOpen) {
+			return;
+		}
+		this.lastOpen = this.open;
+
 		if (this.open) {
 			this.previouslyFocused = document.activeElement as HTMLElement | null;
 			queueMicrotask(() => this.focusInitial());
@@ -149,8 +167,27 @@ export class RuiDialog extends RadiantElement {
 		(focusable[0] ?? this.dialogTarget)?.focus();
 	}
 
+	/**
+	 * Focusable elements in the tab loop.
+	 *
+	 * @remarks
+	 * With `alert`, the loop is limited to `[data-dialog-actions]` so the user must answer the
+	 * prompt. An alert dialog with no focusable action falls back to the whole surface rather
+	 * than trapping focus on nothing.
+	 */
 	private getFocusable(): HTMLElement[] {
-		return this.dialogTarget ? queryFocusableCandidates(this.dialogTarget) : [];
+		if (!this.dialogTarget) {
+			return [];
+		}
+		if (this.alert) {
+			const actions = Array.from(
+				this.dialogTarget.querySelectorAll<HTMLElement>('[data-dialog-actions]'),
+			).flatMap((row) => queryFocusableCandidates(row));
+			if (actions.length) {
+				return actions;
+			}
+		}
+		return queryFocusableCandidates(this.dialogTarget);
 	}
 
 	private dismiss(reason: RuiDialogCloseDetail['reason']): void {
@@ -174,7 +211,14 @@ export class RuiDialog extends RadiantElement {
 			return;
 		}
 
-		if (event.key !== 'Tab') {
+		if (event.key === 'Tab') {
+			this.trapTab(event);
+		}
+	}
+
+	private trapTab(event: KeyboardEvent): void {
+		const active = document.activeElement as HTMLElement | null;
+		if (!active || !this.dialogTarget?.contains(active)) {
 			return;
 		}
 
@@ -187,9 +231,11 @@ export class RuiDialog extends RadiantElement {
 
 		const first = focusable[0];
 		const last = focusable[focusable.length - 1];
-		const active = document.activeElement as HTMLElement | null;
 
-		if (event.shiftKey && active === first) {
+		if (this.alert && !focusable.includes(active)) {
+			event.preventDefault();
+			(event.shiftKey ? last : first).focus();
+		} else if (event.shiftKey && active === first) {
 			event.preventDefault();
 			last.focus();
 		} else if (!event.shiftKey && active === last) {
@@ -208,8 +254,6 @@ export class RuiDialog extends RadiantElement {
 		this.dismiss('dismiss');
 	}
 }
-
-
 
 declare global {
 	interface HTMLElementTagNameMap {
