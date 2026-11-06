@@ -116,6 +116,11 @@ export class FormStore<T extends FieldValues = FieldValues> {
 		};
 	}
 
+	/**
+	 * @remarks A present `defaultValue` key always overwrites, including `null`,
+	 * so a default that is removed stops winning on reset. Only
+	 * `collectFieldDefaults` treats `null` as "no default".
+	 */
 	updateFieldOptions(name: string, options: RegisterOptions): void {
 		const field = this.fields.get(name);
 		if (!field) {
@@ -124,7 +129,7 @@ export class FormStore<T extends FieldValues = FieldValues> {
 		if (options.rules !== undefined) {
 			field.rules = options.rules;
 		}
-		if (options.defaultValue !== undefined) {
+		if ('defaultValue' in options) {
 			field.defaultValue = options.defaultValue;
 		}
 	}
@@ -318,10 +323,15 @@ export class FormStore<T extends FieldValues = FieldValues> {
 		this.notify();
 	}
 
+	/**
+	 * @remarks A field without an explicit default reports `null` (the `@prop`
+	 * default of `rui-field`). Only a non-null default overrides the form's
+	 * `defaultValues`, so a bare field never wipes them on reset.
+	 */
 	private collectFieldDefaults(): Partial<T> {
 		const defaults: Partial<T> = {};
 		for (const [name, field] of this.fields) {
-			if (field.defaultValue !== undefined) {
+			if (field.defaultValue !== undefined && field.defaultValue !== null) {
 				defaults[name as keyof T] = field.defaultValue as T[keyof T];
 			}
 		}

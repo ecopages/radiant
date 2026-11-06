@@ -1,4 +1,5 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
+import { isResetBy } from '../shared/form-owner';
 import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { textContains } from '@/lib/text-filter';
@@ -301,9 +302,14 @@ export class RuiCombobox extends RadiantElement {
 		return this.querySelector('rui-autocomplete');
 	}
 
+	/**
+	 * @remarks The `typeof` guard covers a nested `rui-autocomplete` that is not
+	 * upgraded yet during the first prop update, when the element exists but its
+	 * class methods are not attached. The inline filter below then stands in.
+	 */
 	private syncAutocompleteFilter(): void {
 		const autocomplete = this.getAutocomplete();
-		if (autocomplete) {
+		if (autocomplete && typeof autocomplete.syncFilter === 'function') {
 			autocomplete.syncFilter();
 			return;
 		}
@@ -414,8 +420,31 @@ export class RuiCombobox extends RadiantElement {
 		this.syncInput();
 		this.collection.syncListboxHost();
 		this.syncFromValue();
+		this.syncFilterWhenCleared();
 		this.collection.syncOptionSelection();
 		this.collection.syncTagGroup();
+	}
+
+	/**
+	 * @remarks A native reset writes the input text without an `input` event, so the
+	 * filter is re-run once the form has finished resetting. The reset event fires
+	 * before the controls are restored, hence the timeout.
+	 */
+	@onEvent({ document: true, type: 'reset' })
+	onFormReset(event: Event): void {
+		if (event.target instanceof HTMLFormElement && isResetBy(event.target, this, this.getInput())) {
+			setTimeout(() => this.syncFilterWhenCleared(), 0);
+		}
+	}
+
+	/**
+	 * @remarks Showing every option again is only correct once the text is empty;
+	 * a selected label keeps the filter `select()` already applied.
+	 */
+	private syncFilterWhenCleared(): void {
+		if (!(this.getInput()?.value ?? '')) {
+			this.syncFilter();
+		}
 	}
 
 	/**
@@ -612,8 +641,6 @@ export class RuiCombobox extends RadiantElement {
 		this.setOpen(false);
 	}
 }
-
-
 
 declare global {
 	interface HTMLElementTagNameMap {
