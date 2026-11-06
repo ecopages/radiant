@@ -151,12 +151,23 @@ describe('RuiHoverCard', () => {
 		expect(content.hidden).toBe(true);
 		expect(events).toEqual([true, false]);
 
+		trigger.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+		await new Promise((resolve) => setTimeout(resolve, 30));
+		await settled();
+		expect(content.hidden).toBe(true);
+		expect(events).toEqual([true, false]);
+
+		trigger.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+		trigger.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+		await settled();
+		expect(content.hidden).toBe(false);
+
 		cleanup();
 	});
 
 	it('keeps the card open when the pointer moves from the trigger onto the card', async () => {
 		const { host, cleanup } = mount(
-			<RuiHoverCard delay={0} closeDelay={60} portal={false}>
+			<RuiHoverCard delay={0} closeDelay={60}>
 				<RuiHoverCardTrigger>
 					<button type="button">Trigger</button>
 				</RuiHoverCardTrigger>
