@@ -53,6 +53,13 @@ See [Typing Decorated Fields](/docs/decorators) for the field type.
 provider.setContext({ user: { ...provider.getContext().user, name: 'Grace' } });
 ```
 
+When the current value or `update` is not a plain object (an array, string, number, boolean or `null`), `update` replaces the value instead. Subscribers and the callback still run.
+
+```typescript
+// context: ['a']
+provider.setContext(['a', 'b']);
+```
+
 ## SSR Hydration
 
 When `hydrate` is set, the provider can restore its context value from server-rendered hydration data.
