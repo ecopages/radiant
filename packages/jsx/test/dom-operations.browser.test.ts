@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { insertNodesBefore } from '../src/dom-render/dom-operations.ts';
+import { clearRangeBetween, insertNodesBefore } from '../src/dom-render/dom-operations.ts';
+import { jsx, jsxs } from '../src/jsx-runtime.ts';
+import { createRoot } from '../src/index.ts';
 import {
 	installDefaultDevWarningFormatter,
 	resetRuntimeWarningsForTests,
@@ -76,5 +78,53 @@ describe('insertNodesBefore', () => {
 
 		ancestor.remove();
 		warn.mockRestore();
+	});
+});
+
+describe('clearRangeBetween', () => {
+	test('removes the nodes between the markers and keeps the markers', () => {
+		const parent = document.createElement('div');
+		const start = document.createTextNode('');
+		const end = document.createTextNode('');
+		parent.append(document.createElement('header'), start, 'a', document.createElement('b'), end, 'tail');
+
+		clearRangeBetween(start, end);
+
+		expect([...parent.childNodes].map((node) => node.nodeName)).toEqual(['HEADER', '#text', '#text', '#text']);
+		expect(start.nextSibling).toBe(end);
+		expect(end.nextSibling?.textContent).toBe('tail');
+	});
+
+	test('renders, replaces and clears a keyed list without creating a DOM Range', () => {
+		const createRange = vi.spyOn(document, 'createRange');
+		const container = document.createElement('div');
+		document.body.append(container);
+		const root = createRoot(container);
+		let nextId = 1;
+		const view = (count: number) =>
+			jsx('table', {
+				children: jsx('tbody', {
+					children: Array.from({ length: count }, () => {
+						const id = nextId++;
+						return jsxs('tr', {
+							key: id,
+							children: [jsx('td', { children: id }), jsx('td', { children: `row ${id}` })],
+						});
+					}),
+				}),
+			});
+
+		try {
+			root.render(view(200));
+			root.render(view(200));
+			expect(container.querySelectorAll('tr')).toHaveLength(200);
+			root.render(view(0));
+			expect(container.querySelectorAll('tr')).toHaveLength(0);
+			expect(createRange).not.toHaveBeenCalled();
+		} finally {
+			root.unmount();
+			container.remove();
+			createRange.mockRestore();
+		}
 	});
 });

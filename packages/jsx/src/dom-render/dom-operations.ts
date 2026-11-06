@@ -14,15 +14,20 @@ import type { JsxNodeLike } from '../types/index.ts';
  *
  * @param startMarker Start boundary text node.
  * @param endMarker End boundary text node.
+ *
+ * @remarks Removes the nodes one by one rather than through a DOM `Range`. Browsers keep every `Range` live until
+ * garbage collection and update each one on every DOM mutation, so a `Range` per call made a list render quadratic.
  */
 export function clearRangeBetween(startMarker: Text, endMarker: Text): void {
 	const parentNode = startMarker.parentNode;
 
 	if (parentNode && parentNode === endMarker.parentNode) {
-		const range = document.createRange();
-		range.setStartAfter(startMarker);
-		range.setEndBefore(endMarker);
-		range.deleteContents();
+		let node = startMarker.nextSibling;
+		while (node && node !== endMarker) {
+			const next = node.nextSibling;
+			parentNode.removeChild(node);
+			node = next;
+		}
 		return;
 	}
 
