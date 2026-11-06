@@ -67,7 +67,7 @@ It is best understood as proposal-aligned in its core semantics, but not yet ful
 ## API Notes
 
 - `subscribe(...)` is intended for adapter-style push integration. Application-level derived work is usually better expressed with `Computed`, `effect(...)`, or `watch(...)`.
-- `watch(...)` is built on top of a computed signal plus an effect, so it inherits computed equality behavior and effect scheduling.
+- `watch(...)` is built on top of a computed signal plus an effect, so it inherits computed equality behavior and effect scheduling. It notifies on change, not per flush: a set followed by a set-back before the scheduler runs does not notify, and `previousValue` is the last value delivered.
 - `subtle.Watcher` reports staleness rather than recalculated values. Calling `watch(...)` is both registration and reset.
 - `createStore(...)` wraps nested plain objects and arrays, while `snapshot(...)` detaches the current plain value graph for logging, serialization, or comparison.
 
