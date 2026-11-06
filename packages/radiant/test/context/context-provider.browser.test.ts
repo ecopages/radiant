@@ -134,3 +134,18 @@ describe('ContextProvider initialValue', () => {
 		expect(two.getContext()).toEqual([1]);
 	});
 });
+
+describe('ContextProvider merge', () => {
+	test('setContext overwrites a nested object instead of merging it', () => {
+		const host = document.createElement('div') as unknown as ContextHostLike;
+		const context = createContext<{ user: { name: string; age: number }; theme: string }>(Symbol('merge-context'));
+		const provider = new ContextProvider(host, {
+			context,
+			initialValue: { user: { name: 'Ada', age: 36 }, theme: 'light' },
+		});
+
+		provider.setContext({ user: { name: 'Grace' } } as never);
+
+		expect(provider.getContext()).toEqual({ user: { name: 'Grace' }, theme: 'light' });
+	});
+});

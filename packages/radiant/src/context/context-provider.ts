@@ -35,6 +35,19 @@ type ActiveContextSubscription<T extends UnknownContext> = {
 	active: boolean;
 };
 
+/**
+ * Merges `update` over `base` one level deep into a new object.
+ *
+ * @remarks A key present in `update` replaces the same key in `base` outright, so a nested object is
+ * overwritten, not merged. Used for `setContext` and for merging a hydration payload over the initial value.
+ */
+function mergeShallow(
+	base: Record<string, unknown> | undefined,
+	update: Record<string, unknown>,
+): Record<string, unknown> {
+	return { ...base, ...update };
+}
+
 export interface SsrSerializableContextProvider extends SsrSerializableHydrationBinding {
 	/** Returns the current context payload that should be visible to descendants. */
 	getContext(): unknown;
@@ -136,7 +149,7 @@ export class ContextProvider<T extends Context<unknown, unknown>>
 
 		if (typeof this.value === 'undefined' && this.isObject(update)) {
 			const oldContext = this.value;
-			this.value = { ...update } as ContextType<T>;
+			this.value = mergeShallow(undefined, update) as ContextType<T>;
 			if (callback) callback(this.value);
 			this.notifySubscribers(this.value, oldContext);
 			return;
@@ -144,7 +157,7 @@ export class ContextProvider<T extends Context<unknown, unknown>>
 
 		if (this.isObject(this.value) && this.isObject(update)) {
 			const oldContext = { ...this.value };
-			this.value = { ...this.value, ...update };
+			this.value = mergeShallow(this.value, update) as ContextType<T>;
 			if (callback) callback(this.value);
 			this.notifySubscribers(this.value, oldContext);
 		}
@@ -289,10 +302,7 @@ export class ContextProvider<T extends Context<unknown, unknown>>
 			this.isObject(parsedHydrationValue) &&
 			(this.isObject(this.value) || typeof this.value === 'undefined')
 		) {
-			return {
-				...(this.value ?? {}),
-				...parsedHydrationValue,
-			} as ContextType<T>;
+			return mergeShallow(this.value, parsedHydrationValue) as ContextType<T>;
 		}
 
 		return parsedHydrationValue;
