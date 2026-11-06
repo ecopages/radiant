@@ -7,14 +7,7 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 
-type PackageJsonExport =
-	| string
-	| {
-			import?: string;
-			types?: string;
-			node?: string;
-			default?: string;
-	  };
+type PackageJsonExport = string | { [condition: string]: PackageJsonExport };
 
 export type DerivedEntrypoints = {
 	browserSubpathEntrypoints: string[];
@@ -22,11 +15,15 @@ export type DerivedEntrypoints = {
 };
 
 function collectBrowserImportPath(exportValue: Exclude<PackageJsonExport, string>): string | undefined {
-	return exportValue.import ?? exportValue.default;
+	return asString(exportValue.import) ?? asString(exportValue.default);
 }
 
 function collectNodeImportPath(exportValue: Exclude<PackageJsonExport, string>): string | undefined {
-	return exportValue.node;
+	return asString(exportValue.node);
+}
+
+function asString(value: PackageJsonExport | undefined): string | undefined {
+	return typeof value === 'string' ? value : undefined;
 }
 
 function stripDistPrefix(value: string): string {
