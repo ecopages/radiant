@@ -57,6 +57,9 @@ describe('minimal-dom selectors', () => {
 		'div:not(.a)',
 		'.item:first-child',
 		'a:nth-child(2)',
+		'li:open',
+		'p:foo',
+		'svg:rect',
 	])('throws SyntaxError for the pseudo in %s, adjacent to a tag or not', (selector) => {
 		const host = new MinimalHTMLElement('div');
 		host.innerHTML = '<ul><li class="item"><a href="/">x</a></li></ul>';
@@ -66,12 +69,12 @@ describe('minimal-dom selectors', () => {
 		expect(() => host.matches(selector)).toThrow(SyntaxError);
 	});
 
-	test('still matches a namespaced tag name', () => {
+	test('matches a namespaced tag name written with an escaped colon', () => {
 		const host = new MinimalHTMLElement('div');
 		host.innerHTML = '<svg:rect class="r"></svg:rect><p></p>';
 
-		expect(host.querySelector('svg:rect')).toBe(host.childNodes[0]);
-		expect(host.querySelector('svg:rect.r')).toBe(host.childNodes[0]);
+		expect(host.querySelector('svg\\:rect')).toBe(host.childNodes[0]);
+		expect(host.querySelector('div > svg\\:rect.r')).toBe(host.childNodes[0]);
 		expect(host.querySelector('p')).toBe(host.childNodes[1]);
 	});
 

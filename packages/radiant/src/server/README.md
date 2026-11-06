@@ -261,7 +261,7 @@ The shim supports a focused query surface for component lifecycle code that runs
 
 **Unsupported (throws `SyntaxError`):**
 
-- Pseudo-classes and pseudo-elements, alone or after a tag, class or attribute (`:not`, `:has`, `a:hover`, `p::before`)
+- Pseudo-classes and pseudo-elements, alone or after a tag, class or attribute (`:not`, `:has`, `a:hover`, `p::before`); a colon after a tag name always starts one, so a namespaced tag is written `svg\:rect`, as in a browser
 - `:scope`, sibling combinators (`+`, `~`)
 - Shadow-root queries (SSR is light-DOM only)
 

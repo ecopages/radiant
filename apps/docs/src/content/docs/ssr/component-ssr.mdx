@@ -75,6 +75,6 @@ Node SSR installs a lightweight DOM shim, not a full browser. Component code tha
 
 **Supported:** tag, `#id`, `.class`, `[attr]`, `[attr="value"]`, descendant and child combinators, comma-separated lists.
 
-**Unsupported:** pseudo-classes (`:not`, `:has`, …), pseudo-elements, sibling combinators, shadow-root queries. Every unsupported selector throws `SyntaxError`: a pseudo-class or pseudo-element wherever it is written (`:not(...)`, `.card:hover`, `p:first-child`, `a:hover`, `p::before`), sibling combinators (`+`, `~`), and malformed attribute selectors. A namespaced tag such as `svg:rect` still matches by its full name. Query with tags, ids, classes and attributes.
+**Unsupported:** pseudo-classes (`:not`, `:has`, …), pseudo-elements, sibling combinators, shadow-root queries. Every unsupported selector throws `SyntaxError`: a pseudo-class or pseudo-element wherever it is written (`:not(...)`, `.card:hover`, `p:first-child`, `a:hover`, `p::before`), sibling combinators (`+`, `~`), and malformed attribute selectors. Write a namespaced tag with an escaped colon, `svg\:rect`, as in a browser. Query with tags, ids, classes and attributes.
 
 Author light DOM with `authoredContent` / `prepareHost` before the first server render when lifecycle code needs to query slotted or projected nodes. See the package server README for the full supported surface.
