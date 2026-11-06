@@ -80,4 +80,25 @@ describe('@debounce', () => {
 
 		expect(test.receivers).toEqual([test]);
 	});
+
+	test('decorator above @bound stays debounced on every property read', async () => {
+		class Test {
+			callCount = 0;
+
+			@debounce(5)
+			@bound
+			method(): void {
+				this.callCount++;
+			}
+		}
+
+		const test = new Test();
+		test.method();
+		test.method();
+		test.method();
+		await new Promise((resolve) => setTimeout(resolve, 10));
+
+		expect(test.callCount).toBe(1);
+		expect(test.method).toBe(test.method);
+	});
 });
