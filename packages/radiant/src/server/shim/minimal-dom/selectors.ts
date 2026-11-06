@@ -240,85 +240,19 @@ function parseAttributePart(selector: string, index: number): { nextIndex: numbe
 }
 
 /**
- * @remarks Names a colon after a tag can spell. A colon form `a:b` is read as one namespaced tag (`svg:rect`)
- * unless `b` is one of these, or is followed by `(` or `:`, in which case it is an unsupported pseudo-class or
- * pseudo-element and throws.
+ * @remarks A colon after a tag name always starts a pseudo-class or pseudo-element, which throws. A namespaced
+ * tag such as `svg:rect` is written with an escaped colon, `svg\\:rect`, as in a browser, where `svg:rect` is a
+ * tag followed by the unknown pseudo-class `:rect` and throws too.
  */
-const PSEUDO_NAMES = new Set([
-	'active',
-	'any-link',
-	'autofill',
-	'checked',
-	'default',
-	'defined',
-	'dir',
-	'disabled',
-	'empty',
-	'enabled',
-	'first',
-	'first-child',
-	'first-of-type',
-	'focus',
-	'focus-visible',
-	'focus-within',
-	'fullscreen',
-	'has',
-	'host',
-	'hover',
-	'in-range',
-	'indeterminate',
-	'invalid',
-	'is',
-	'lang',
-	'last-child',
-	'last-of-type',
-	'link',
-	'modal',
-	'not',
-	'nth-child',
-	'nth-last-child',
-	'nth-last-of-type',
-	'nth-of-type',
-	'only-child',
-	'only-of-type',
-	'optional',
-	'out-of-range',
-	'placeholder-shown',
-	'popover-open',
-	'read-only',
-	'read-write',
-	'required',
-	'root',
-	'scope',
-	'target',
-	'valid',
-	'visited',
-	'where',
-	'after',
-	'backdrop',
-	'before',
-	'file-selector-button',
-	'first-letter',
-	'first-line',
-	'marker',
-	'part',
-	'placeholder',
-	'selection',
-	'slotted',
-]);
-
 function parseTagPart(selector: string, index: number): { nextIndex: number; part?: SelectorPart } {
-	const rest = selector.slice(index);
-	if (rest.startsWith('*')) return { nextIndex: index + 1 };
-	const base = /^[A-Za-z][A-Za-z0-9_-]*/.exec(rest);
-	if (!base) throwUnsupported(selector);
-	let length = base[0].length;
-	if (rest[length] === ':') {
-		const suffix = /^:([A-Za-z][A-Za-z0-9_-]*)(?![A-Za-z0-9_(:-])/.exec(rest.slice(length));
-		if (!suffix || PSEUDO_NAMES.has(suffix[1]!.toLowerCase())) throwUnsupported(selector);
-		length += suffix[0].length;
-	}
-	return { nextIndex: index + length, part: { type: 'tag', value: rest.slice(0, length).toLowerCase() } };
+	const match = /^(?:[A-Za-z](?:[A-Za-z0-9_-]|\\:)*|\*)/.exec(selector.slice(index));
+	if (!match) throwUnsupported(selector);
+	return match[0] === '*'
+		? { nextIndex: index + 1 }
+		: {
+				nextIndex: index + match[0].length,
+				part: { type: 'tag', value: match[0].replaceAll('\\:', ':').toLowerCase() },
+			};
 }
 
 function throwUnsupported(selector: string): never {
