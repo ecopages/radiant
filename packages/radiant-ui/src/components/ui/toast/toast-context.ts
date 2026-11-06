@@ -22,8 +22,20 @@ export type ToastAction = {
 
 export type ToastId = string | number;
 
+/** Accessible-name overrides for the controls a toast renders. */
+export type ToastAria = {
+	/** Accessible name of the close button. Default: `Close toast`. */
+	closeLabel?: string;
+};
+
 export type ToastOptions = {
 	id?: ToastId;
+	/**
+	 * Plain text for the polite live region, used instead of `title` and `description`.
+	 * Error toasts are `role="alert"` and are not announced from the live region.
+	 */
+	announcement?: string;
+	aria?: ToastAria;
 	description?: string;
 	duration?: number;
 	action?: ToastAction;
@@ -36,6 +48,8 @@ export type ToastRecord = {
 	id: ToastId;
 	title: string;
 	description?: string;
+	announcement?: string;
+	aria?: ToastAria;
 	variant: ToastVariant;
 	duration?: number;
 	action?: ToastAction;
