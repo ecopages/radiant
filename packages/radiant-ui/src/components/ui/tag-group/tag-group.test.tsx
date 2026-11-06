@@ -116,4 +116,48 @@ describe('RuiTagGroup', () => {
 		expect((host.querySelector('[data-tag-list]:not([data-rui-managed-list])') as HTMLElement).hidden).toBe(true);
 		cleanup();
 	});
+
+	describe('when disabled', () => {
+		async function mountDisabled() {
+			const mounted = mount(
+				<RuiTagGroup value={['imprinted']} disabled>
+					<RuiTagList>
+						<RuiTag value="imprinted" label="Imprinted">
+							Imprinted
+						</RuiTag>
+					</RuiTagList>
+				</RuiTagGroup>,
+			);
+			await settled();
+			const group = mounted.host.querySelector('rui-tag-group') as RuiTagGroupElement;
+			const events: string[] = [];
+			group.addEventListener('rui-remove', () => events.push('rui-remove'));
+			group.addEventListener('rui-change', () => events.push('rui-change'));
+			return { ...mounted, group, events };
+		}
+
+		it('does not remove a tag when the remove control is clicked', async () => {
+			const { host, group, events, cleanup } = await mountDisabled();
+
+			host.querySelector<HTMLElement>('[data-tag-remove]')!.click();
+			await settled();
+
+			expect(events).toEqual([]);
+			expect(group.value).toEqual(['imprinted']);
+			cleanup();
+		});
+
+		it.each(['Delete', 'Backspace'])('does not remove a tag on %s', async (key) => {
+			const { host, group, events, cleanup } = await mountDisabled();
+
+			host.querySelector<HTMLElement>('[data-tag]')!.dispatchEvent(
+				new KeyboardEvent('keydown', { key, bubbles: true }),
+			);
+			await settled();
+
+			expect(events).toEqual([]);
+			expect(group.value).toEqual(['imprinted']);
+			cleanup();
+		});
+	});
 });
