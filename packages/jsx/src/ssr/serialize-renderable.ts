@@ -15,7 +15,7 @@ import {
 } from '../hydration/hydration-bindings.ts';
 import { isCustomElementSubtreeRoot } from '../hydration/hydration-subtree-policy.ts';
 import { isClientOnlyBinding } from '../hydration/hydration-marker-policy.ts';
-import { serializeStyleSnapshot } from '../factory/attribute-normalize.ts';
+import { resolveAttributeText } from '../factory/attribute-normalize.ts';
 import { RAW_TEXT_ELEMENT_NAMES } from '../factory/raw-text-element-names.ts';
 import { stringifyTextContentValue } from '../factory/text-content-value.ts';
 import { escapeAttribute, escapeHtml } from './html-escape.ts';
@@ -315,11 +315,12 @@ function serializeTemplatePart(
 			: '';
 
 	if (isClientOnlyBinding(part.kind)) return hydrationMarker;
-	if (part.kind === 'bool') return value ? `${hydrationMarker} ${part.name}` : hydrationMarker;
-	if (value === undefined || value === null) return hydrationMarker;
 
-	const attributeValue = part.name.toLowerCase() === 'style' ? serializeStyleSnapshot(value) : String(value);
-	return `${hydrationMarker} ${part.name}="${escapeAttribute(attributeValue)}"`;
+	const text = resolveAttributeText(part.name, value, part.kind === 'bool');
+	if (text === undefined) return hydrationMarker;
+	return part.kind === 'bool'
+		? `${hydrationMarker} ${part.name}`
+		: `${hydrationMarker} ${part.name}="${escapeAttribute(text)}"`;
 }
 
 function serializeNodeLike(node: JsxNodeLike): string {

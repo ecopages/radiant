@@ -1,5 +1,5 @@
 import { createJsxElement, createMarkupNodeLike } from '../factory/jsx-factory.ts';
-import { forEachNormalizedAttribute, serializeStyleSnapshot } from '../factory/attribute-normalize.ts';
+import { forEachNormalizedAttribute, resolveAttributeText } from '../factory/attribute-normalize.ts';
 import {
 	shouldUseAttributeBindingByDefaultForElement,
 	shouldUseBooleanAttributeBinding,
@@ -171,19 +171,20 @@ function applyServerCustomElementAttribute(
 		return;
 	}
 
-	if (resolvedValue === undefined || resolvedValue === null) {
-		element.removeAttribute?.(normalizedName);
-		return;
-	}
-
 	if (typeof resolvedValue === 'boolean' && shouldUseBooleanAttributeBinding(normalizedName)) {
 		syncServerCustomElementProperty(element, normalizedName, resolvedValue);
 		applyServerBooleanAttribute(element, normalizedName, resolvedValue);
 		return;
 	}
 
+	const text = resolveAttributeText(normalizedName, resolvedValue);
+	if (text === undefined) {
+		element.removeAttribute?.(normalizedName);
+		return;
+	}
+
 	syncServerCustomElementProperty(element, normalizedName, resolvedValue);
-	element.setAttribute?.(normalizedName, serializeServerCustomElementAttribute(normalizedName, resolvedValue));
+	element.setAttribute?.(normalizedName, text);
 }
 
 function isServerCustomElementEventBinding(name: string): boolean {
@@ -195,15 +196,12 @@ function shouldUseServerCustomElementAttributeBinding(name: string, normalizedNa
 }
 
 function applyServerBooleanAttribute(element: HTMLElement, name: string, value: boolean): void {
-	if (value) {
-		element.setAttribute?.(name, '');
-	} else {
+	const text = resolveAttributeText(name, value, true);
+	if (text === undefined) {
 		element.removeAttribute?.(name);
+	} else {
+		element.setAttribute?.(name, text);
 	}
-}
-
-function serializeServerCustomElementAttribute(name: string, value: unknown): string {
-	return name.toLowerCase() === 'style' ? serializeStyleSnapshot(value) : String(value);
 }
 
 function applyServerCustomElementChildren(

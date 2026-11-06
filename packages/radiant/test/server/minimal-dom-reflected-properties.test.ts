@@ -159,4 +159,61 @@ describe('minimal DOM reflected properties', () => {
 		expect(node.hidden).toBe(true);
 		expect(node.getAttribute('hidden')).toBe('');
 	});
+
+	test('name reflects on form controls and stays a plain value elsewhere', () => {
+		const radio = el('input');
+		radio.type = 'radio';
+		(radio as unknown as { name: string }).name = 'plan';
+		expect(radio.outerHTML).toBe('<input type="radio" name="plan">');
+		const div = el('div') as unknown as { name: string };
+		div.name = 'x';
+		expect(div.name).toBe('x');
+		expect((div as unknown as MinimalHTMLElement).hasAttribute('name')).toBe(false);
+	});
+
+	test('href reflects on a, area, base and link only', () => {
+		const anchor = el('a') as unknown as { href: string };
+		anchor.href = '/x';
+		expect((anchor as unknown as MinimalHTMLElement).outerHTML).toBe('<a href="/x"></a>');
+		const div = el('div') as unknown as { href: string };
+		div.href = '/x';
+		expect((div as unknown as MinimalHTMLElement).hasAttribute('href')).toBe(false);
+	});
+
+	test('slot reflects on every element', () => {
+		const node = el('span') as unknown as { slot: string };
+		expect(node.slot).toBe('');
+		node.slot = 'icon';
+		expect((node as unknown as MinimalHTMLElement).outerHTML).toBe('<span slot="icon"></span>');
+	});
+
+	test('aria string properties and role reflect, and null removes them', () => {
+		const node = el('div');
+		expect(node.ariaLabel).toBeNull();
+		node.ariaLabel = 'Close';
+		node.ariaAutoComplete = 'list';
+		node.ariaValueNow = '3';
+		node.role = 'button';
+		expect(node.outerHTML).toBe(
+			'<div aria-label="Close" aria-autocomplete="list" aria-valuenow="3" role="button"></div>',
+		);
+		node.ariaLabel = null;
+		expect(node.hasAttribute('aria-label')).toBe(false);
+	});
+
+	test('option and button value reflect; option falls back to its text; input value does not', () => {
+		const option = el('option') as unknown as { value: string } & MinimalHTMLElement;
+		option.textContent = ' Free  plan ';
+		expect(option.value).toBe('Free plan');
+		option.value = 'free';
+		expect(option.outerHTML).toBe('<option value="free"> Free  plan </option>');
+		const button = el('button') as unknown as { value: string } & MinimalHTMLElement;
+		expect(button.value).toBe('');
+		button.value = 'go';
+		expect(button.outerHTML).toBe('<button value="go"></button>');
+		const input = el('input') as unknown as { value: string } & MinimalHTMLElement;
+		input.value = 'typed';
+		expect(input.value).toBe('typed');
+		expect(input.hasAttribute('value')).toBe(false);
+	});
 });

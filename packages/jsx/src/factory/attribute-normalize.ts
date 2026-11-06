@@ -126,6 +126,23 @@ export function serializeStyleSnapshot(value: unknown): string {
 }
 
 /**
+ * The text a server renderer writes for one resolved attribute value, or `undefined` when the attribute is
+ * left off.
+ *
+ * @param name Attribute name; `style` values go through {@link serializeStyleSnapshot}.
+ * @param value Resolved (non-reactive) value.
+ * @param presence Treat the attribute as boolean: a truthy value yields `''` (present), a falsy one `undefined`.
+ *
+ * @remarks `undefined` and `null` always skip. Skipping client-only bindings (`prop`, events) depends on the
+ * binding kind rather than the value, so callers decide that before calling.
+ */
+export function resolveAttributeText(name: string, value: unknown, presence = false): string | undefined {
+	if (presence) return value ? '' : undefined;
+	if (value === undefined || value === null) return undefined;
+	return name.toLowerCase() === 'style' ? serializeStyleSnapshot(value) : String(value);
+}
+
+/**
  * @remarks
  * Keep reactive sources intact — object-style normalization runs only on plain snapshots.
  */
