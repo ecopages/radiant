@@ -56,6 +56,13 @@ export function RuiDialogActions({ children, class: className, ...props }: RuiDi
 
 export type RuiDialogCloseProps = NativeButtonProps;
 
+function hasRenderableChildren(children: JsxRenderable | undefined): boolean {
+	if (Array.isArray(children)) {
+		return children.some((child) => hasRenderableChildren(child as JsxRenderable));
+	}
+	return children != null && children !== false && children !== true && children !== '';
+}
+
 /**
  * Close control for the dialog surface.
  *
@@ -65,7 +72,7 @@ export type RuiDialogCloseProps = NativeButtonProps;
  * to the icon-only button; a button with children is named by its own text.
  */
 export function RuiDialogClose({ children, class: className, aria, ...props }: RuiDialogCloseProps) {
-	const iconOnly = children == null;
+	const iconOnly = !hasRenderableChildren(children);
 	return (
 		<button
 			{...props}
@@ -75,7 +82,7 @@ export function RuiDialogClose({ children, class: className, aria, ...props }: R
 			data-ref="close"
 			class={cx('rui-dialog__close', className)}
 		>
-			{children ?? <RuiIconX />}
+			{iconOnly ? <RuiIconX /> : children}
 		</button>
 	);
 }
