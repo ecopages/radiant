@@ -2756,6 +2756,98 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(items()[3]).toBe(three);
 	});
 
+	test('swapping two keyed rows moves only those two rows', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		document.body.append(container);
+		const root = createRoot(container);
+		const view = (keys: number[]) =>
+			jsx('table', {
+				children: jsx('tbody', { children: keys.map((key) => jsx('tr', { key, children: String(key) })) }),
+			});
+		const keys = Array.from({ length: 1000 }, (_, index) => index);
+
+		root.render(view(keys));
+		const tbody = container.querySelector('tbody')!;
+		const second = tbody.children[1];
+		const nearLast = tbody.children[998];
+		const swapped = keys.slice();
+		[swapped[1], swapped[998]] = [swapped[998]!, swapped[1]!];
+
+		const movedRows = new Set<Node>();
+		const observer = new MutationObserver((records) => {
+			for (const record of records)
+				for (const node of record.addedNodes) if (node instanceof HTMLTableRowElement) movedRows.add(node);
+		});
+		observer.observe(tbody, { childList: true });
+		root.render(view(swapped));
+		observer
+			.takeRecords()
+			.forEach((record) =>
+				record.addedNodes.forEach((node) => node instanceof HTMLTableRowElement && movedRows.add(node)),
+			);
+		observer.disconnect();
+
+		expect([...tbody.children].map((row) => row.textContent)).toEqual(swapped.map(String));
+		expect(tbody.children[1]).toBe(nearLast);
+		expect(tbody.children[998]).toBe(second);
+		expect(movedRows.size).toBeLessThanOrEqual(2);
+		root.unmount();
+		container.remove();
+	});
+
+	test('keyed rows keep their nodes and order through reversals and random reorders', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const view = (keys: number[]) =>
+			jsx('ul', { children: keys.map((key) => jsx('li', { key, children: String(key) })) });
+		const nodesByKey = new Map<string, Element>();
+		let seed = 7;
+		const random = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+		let keys = Array.from({ length: 40 }, (_, index) => index);
+
+		const renderAndCheck = (next: number[]) => {
+			root.render(view(next));
+			const items = [...container.querySelectorAll('li')];
+			expect(items.map((item) => item.textContent)).toEqual(next.map(String));
+			for (const item of items) {
+				const known = nodesByKey.get(item.textContent!);
+				if (known) expect(item).toBe(known);
+				nodesByKey.set(item.textContent!, item);
+			}
+		};
+
+		renderAndCheck(keys);
+		renderAndCheck((keys = keys.slice().reverse()));
+		for (let round = 0; round < 25; round += 1) {
+			const next = keys.filter(() => random() > 0.15);
+			for (let index = next.length - 1; index > 0; index -= 1) {
+				const other = Math.floor(random() * (index + 1));
+				[next[index], next[other]] = [next[other]!, next[index]!];
+			}
+			if (random() > 0.5) next.splice(Math.floor(random() * next.length), 0, 100 + round);
+			renderAndCheck((keys = next));
+		}
+	});
+
+	test('a duplicate key renders once, at its first position', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const view = (entries: [number, string][]) =>
+			jsx('ul', { children: entries.map(([key, label]) => jsx('li', { key, children: label })) });
+
+		root.render(
+			view([
+				[1, 'a'],
+				[2, 'b'],
+				[1, 'c'],
+			]),
+		);
+		expect([...container.querySelectorAll('li')].map((item) => item.textContent)).toEqual(['a', 'b']);
+	});
+
 	test('signal-like attribute values patch attributes without rerendering the parent tree', async () => {
 		const [{ jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');

@@ -220,8 +220,11 @@ function replaceMountedRangeWithNodes(
 }
 
 /**
- * @remarks Walks the children from last to first, so each record is placed before the one that follows it. A new
- * record is created at that insertion point, where it belongs, so creating or appending rows moves no nodes.
+ * @remarks Keeps the longest run of existing rows that are already in order and moves only the others, so swapping
+ * two rows moves two ranges rather than every row between them. The previous order is read from the DOM between the
+ * markers, so the state needs no extra field. Walks the children from last to first, placing each record before the
+ * one that follows it; a new record is created at that insertion point, so creating or appending rows moves no nodes.
+ * A key that appears twice is rendered once, at its first position.
  */
 function updateKeyedChildren(
 	startMarker: Text,
@@ -245,25 +248,30 @@ function updateKeyedChildren(
 	}
 
 	const nextKeys = new Set<JsxKey>();
+	const uniqueChildren: KeyedJsxValue[] = [];
+
+	for (const child of children) {
+		if (child && !nextKeys.has(child.key)) {
+			nextKeys.add(child.key);
+			uniqueChildren.push(child);
+		}
+	}
+
+	const previousIndices = readKeyedOrder(startMarker, endMarker, keyedState.records);
+	const keep = markLongestIncreasingRun(uniqueChildren.map((child) => previousIndices.get(child.key) ?? -1));
 	let insertionPoint: ChildNode = endMarker;
 
-	for (let index = children.length - 1; index >= 0; index -= 1) {
-		const child = children[index];
-
-		if (!child) {
-			continue;
-		}
-
-		nextKeys.add(child.key);
-
+	for (let index = uniqueChildren.length - 1; index >= 0; index -= 1) {
+		const child = uniqueChildren[index]!;
 		let record = keyedState.records.get(child.key);
 
 		if (!record) {
 			record = createRangeRecord(insertionPoint);
 			keyedState.records.set(child.key, record);
+		} else if (!keep[index]) {
+			moveRangeBefore(record.start, record.end, insertionPoint);
 		}
 
-		moveRangeBefore(record.start, record.end, insertionPoint);
 		record.mounted = updateRangeContent(
 			record.start,
 			record.end,
@@ -288,6 +296,67 @@ function updateKeyedChildren(
 	}
 
 	return keyedState;
+}
+
+/** Maps each key to its record's current position between `startMarker` and `endMarker`. */
+function readKeyedOrder(
+	startMarker: Text,
+	endMarker: Text,
+	records: ReadonlyMap<JsxKey, MountedRangeRecord>,
+): Map<JsxKey, number> {
+	const indices = new Map<JsxKey, number>();
+
+	if (records.size === 0) {
+		return indices;
+	}
+
+	const keysByStart = new Map<Node, JsxKey>();
+	for (const [key, record] of records) keysByStart.set(record.start, key);
+
+	let position = 0;
+	for (let node = startMarker.nextSibling; node && node !== endMarker; node = node.nextSibling) {
+		const key = keysByStart.get(node);
+		if (key !== undefined) indices.set(key, position++);
+	}
+
+	return indices;
+}
+
+/**
+ * Marks the positions of one longest strictly increasing run of `values`, skipping negative entries.
+ *
+ * @remarks Patience sorting with back-pointers, `O(n log n)`. An already sorted input marks every non-negative entry.
+ */
+function markLongestIncreasingRun(values: readonly number[]): boolean[] {
+	const keep = new Array<boolean>(values.length).fill(false);
+	const tails: number[] = [];
+	const previous = new Array<number>(values.length).fill(-1);
+
+	for (let index = 0; index < values.length; index += 1) {
+		const value = values[index]!;
+
+		if (value < 0) {
+			continue;
+		}
+
+		let low = 0;
+		let high = tails.length;
+
+		while (low < high) {
+			const middle = (low + high) >> 1;
+			if (values[tails[middle]!]! < value) low = middle + 1;
+			else high = middle;
+		}
+
+		previous[index] = low > 0 ? tails[low - 1]! : -1;
+		tails[low] = index;
+	}
+
+	for (let index = tails.length > 0 ? tails[tails.length - 1]! : -1; index >= 0; index = previous[index]!) {
+		keep[index] = true;
+	}
+
+	return keep;
 }
 
 /**
