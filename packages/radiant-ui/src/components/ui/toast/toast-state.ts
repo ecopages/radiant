@@ -44,12 +44,12 @@ class ToastState {
 			title,
 			description: options.description,
 			announcement: options.announcement,
-			aria: options.aria,
 			variant: options.variant ?? 'default',
 			duration: options.duration,
 			action: options.action,
 			dismissible,
 			closeButton: options.closeButton,
+			closeLabel: options.closeLabel,
 			position: options.position,
 			delete: false,
 		};
@@ -108,6 +108,7 @@ class ToastState {
 			duration: Number.POSITIVE_INFINITY,
 			action: messages.action,
 			closeButton: messages.closeButton,
+			closeLabel: messages.closeLabel,
 			position: messages.position,
 			description: typeof messages.description === 'string' ? messages.description : undefined,
 		});
@@ -125,6 +126,7 @@ class ToastState {
 					duration: messages.duration,
 					action: messages.action,
 					closeButton: messages.closeButton,
+					closeLabel: messages.closeLabel,
 					position: messages.position,
 				});
 			})
@@ -138,6 +140,7 @@ class ToastState {
 					duration: messages.duration,
 					action: messages.action,
 					closeButton: messages.closeButton,
+					closeLabel: messages.closeLabel,
 					position: messages.position,
 				});
 			});

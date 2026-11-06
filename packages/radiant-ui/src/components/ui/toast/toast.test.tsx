@@ -139,6 +139,38 @@ describe('rui-toaster', () => {
 		await expectAnnouncement(host, 'Profile saved');
 	});
 
+	it('announces a toast updated in place to error from the assertive region', async () => {
+		const { host } = mount(<RuiToaster />);
+		await settled();
+		let reject: (reason: unknown) => void = () => {};
+
+		toast.promise(new Promise<string>((_, fail) => (reject = fail)), {
+			loading: 'Saving',
+			success: 'Saved',
+			error: 'Save failed',
+		});
+		await expectAnnouncement(host, 'Saving');
+		reject(new Error('offline'));
+
+		await vi.waitFor(() => {
+			expect(host.querySelector('.rui-toaster-announcer[data-assertive]')?.textContent).toBe('Save failed');
+		});
+		expect(host.querySelector('.rui-toaster-announcer[data-assertive]')?.getAttribute('aria-live')).toBe(
+			'assertive',
+		);
+	});
+
+	it('leaves a new error toast to its own alert role', async () => {
+		const { host } = mount(<RuiToaster />);
+		await settled();
+
+		toast.error('Sync failed');
+		toast('Profile saved');
+		await expectAnnouncement(host, 'Profile saved');
+
+		expect(host.querySelector('.rui-toaster-announcer[data-assertive]')?.textContent).toBe('');
+	});
+
 	it('announces a toast shown again with the same id', async () => {
 		const { host } = mount(<RuiToaster />);
 		await settled();
@@ -160,12 +192,12 @@ describe('rui-toaster', () => {
 		await expectAnnouncement(host, 'Your profile was saved');
 	});
 
-	it('names the close button from aria.closeLabel and defaults to Close toast', async () => {
+	it('names the close button from closeLabel and defaults to Close toast', async () => {
 		const { host } = mount(<RuiToaster closeButton />);
 		await settled();
 
 		toast('Default label');
-		toast('Custom label', { aria: { closeLabel: 'Fermer' } });
+		toast('Custom label', { closeLabel: 'Fermer' });
 		await settledToasts(host);
 
 		const labels = [...host.querySelectorAll('[data-toast-close]')].map((b) => b.getAttribute('aria-label'));
