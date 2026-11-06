@@ -129,6 +129,36 @@ describe('Radiant JSX runtime', () => {
 		}
 	});
 
+	test('factory templates share part descriptors and shape keys per tag and part sequence', async () => {
+		const [{ jsx, jsxs }, { toTemplateResultLike }] = await Promise.all([
+			loadJsxRuntime(),
+			loadModule<typeof import('../src/types/renderable-guards.ts')>('../src/types/renderable-guards.ts'),
+		]);
+		const shape = (value: unknown) => {
+			expectTemplateResultLike(value);
+			return value;
+		};
+		const first = shape(jsx('div', { id: 'a', hidden: false, children: 'x' }));
+		const second = shape(jsx('div', { id: 'b', hidden: true, children: 'y' }));
+
+		expect(second.shapeKey).toBe(first.shapeKey);
+		expect(second.parts[0]).toBe(first.parts[0]);
+		expect(Object.isFrozen(first.parts[0])).toBe(true);
+
+		expect(shape(jsx('div', { id: 'a', hidden: 'until-found' })).shapeKey).not.toBe(first.shapeKey);
+		expect(shape(jsx('div', { title: 'a', children: 'x' })).shapeKey).not.toBe(first.shapeKey);
+		expect(shape(jsx('span', { id: 'a', hidden: false, children: 'x' })).shapeKey).not.toBe(first.shapeKey);
+		expect(shape(jsxs('div', { id: 'a', hidden: false, children: ['x', 'y'] })).shapeKey).not.toBe(first.shapeKey);
+		expect(shape(jsx('demo-card', { hidden: false })).parts[0]).not.toBe(
+			shape(jsx('div', { hidden: false })).parts[0],
+		);
+
+		const transported = toTemplateResultLike({ strings: ['<div id="a">', '</div>'], values: ['x'] });
+		expect(transported.shapeKey).not.toBe(first.shapeKey);
+		expect(first.shapeKey.startsWith('\u0001')).toBe(true);
+		expect(transported.shapeKey.startsWith('\u0001')).toBe(false);
+	});
+
 	test('jsx returns a renderer-agnostic template result for intrinsic elements', async () => {
 		const [{ jsx }] = await Promise.all([loadJsxRuntime()]);
 		const result = jsx('div', {
