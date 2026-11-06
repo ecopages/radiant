@@ -171,19 +171,20 @@ function applyServerCustomElementAttribute(
 		return;
 	}
 
-	if (resolvedValue === undefined || resolvedValue === null) {
-		element.removeAttribute?.(normalizedName);
-		return;
-	}
-
 	if (typeof resolvedValue === 'boolean' && shouldUseBooleanAttributeBinding(normalizedName)) {
 		syncServerCustomElementProperty(element, normalizedName, resolvedValue);
 		applyServerBooleanAttribute(element, normalizedName, resolvedValue);
 		return;
 	}
 
+	const text = resolveAttributeText(normalizedName, resolvedValue);
+	if (text === undefined) {
+		element.removeAttribute?.(normalizedName);
+		return;
+	}
+
 	syncServerCustomElementProperty(element, normalizedName, resolvedValue);
-	element.setAttribute?.(normalizedName, resolveAttributeText(normalizedName, resolvedValue)!);
+	element.setAttribute?.(normalizedName, text);
 }
 
 function isServerCustomElementEventBinding(name: string): boolean {
