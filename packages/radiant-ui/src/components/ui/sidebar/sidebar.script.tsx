@@ -123,7 +123,8 @@ function isHorizontalSide(side: RuiSidebarSide): boolean {
  * - `[data-ref="menu-button"]` — menu links. When `matchActive` is set, host
  *   toggles `rui-sidebar__menu-button--active` and `aria-current="page"`.
  *
- * Host-owned on `<rui-sidebar>`: `role="complementary"`, `aria-label`, `data-state`,
+ * Host-owned on `<rui-sidebar>`: `role="complementary"` (kept when authored, and in server output),
+ * `aria-label`, `data-state`,
  * `data-collapsible`, `data-variant`, `data-side`, `data-mobile`, `data-pane-width`.
  *
  * Do not set `inert` on the pane or `aria-expanded` on the handle — the host owns those.
@@ -139,7 +140,7 @@ function isHorizontalSide(side: RuiSidebarSide): boolean {
  * @remarks
  * Public methods: `toggle()`, `syncActiveLinks()`. BEM classes live on the view helpers.
  */
-@customElement('rui-sidebar')
+@customElement('rui-sidebar', { hostAttributes: { role: 'complementary' } })
 export class RuiSidebar extends RadiantElement {
 	declare readonly [JSX_PROPS]?: RuiSidebarProps;
 
@@ -220,8 +221,6 @@ export class RuiSidebar extends RadiantElement {
 		super.connectedCallback();
 
 		this.ensureWidthInitialized();
-
-		this.setAttribute('role', 'complementary');
 		this.attachNavigationListeners();
 	}
 

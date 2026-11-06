@@ -148,7 +148,7 @@ Peel props only when the view must transform or filter them:
 - `class` composition with `cx()` on the same node — spread first, then `class={cx('rui-foo', className)}`. Import `cx` from `@ecopages/radiant-ui/cx` in apps; use `@/lib/cx` inside this package.
 - Host vs inner-node split when the view owns the composed surface (e.g. `RuiAlert` puts `role="alert"` and BEM classes on an inner div; the CE handles dismiss)
 
-`aria={{ ... }}` and direct canonical `aria-*` attributes can both be used; a direct attribute wins. The same precedence applies to `data={{ ... }}` and `data-*`. Direct `null` is a supplied value and wins over structured values and defaults. After the spread, only write a host attribute when the value is defined, or when the attribute is a locked invariant (`type="button"`, `role="tablist"`).
+`aria={{ ... }}` and direct canonical `aria-*` attributes can both be used; a direct attribute wins. The same precedence applies to `data={{ ... }}` and `data-*`. Direct `null` is a supplied value and wins over structured values and defaults. After the spread, only write a host attribute when the value is defined, or when the attribute is a locked invariant (`type="button"`, `role="tablist"`). A fixed attribute on the CE host itself, such as `rui-sidebar`'s `role="complementary"`, is declared with `@customElement(tag, { hostAttributes })` instead of written in `connectedCallback` or stamped by the view: it then reaches server output for a host authored without its view, and an authored value is kept.
 
 ## Popup visibility ownership
 

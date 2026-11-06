@@ -3,6 +3,7 @@ import {
 	type AutonomousCustomElementOptions,
 } from '../assert-autonomous-custom-element-options';
 import { setCustomElementTagName } from '../../core/custom-element-metadata';
+import { setHostAttributes } from '../../core/host-attributes';
 import { applyObservedAttributesFromPropRegistry } from '../../core/reactive-prop-metadata';
 
 /**
@@ -15,6 +16,7 @@ export function customElement(name: string, options?: AutonomousCustomElementOpt
 
 	return (target: CustomElementConstructor) => {
 		setCustomElementTagName(target, name);
+		setHostAttributes(target, options?.hostAttributes);
 
 		applyObservedAttributesFromPropRegistry(target);
 

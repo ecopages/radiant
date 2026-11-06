@@ -35,7 +35,24 @@ Usage in HTML:
 | Parameter | Type | Required | Description |
 | :-------- | :--- | :------- | :---------- |
 | `tagName` | `string` | Yes | The custom element tag name. |
-| `options` | Autonomous custom-element options | No | Options for defining an autonomous custom element. |
+| `options` | Autonomous custom-element options | No | Options for defining an autonomous custom element, plus `hostAttributes`. |
+
+## Host Attributes
+
+`hostAttributes` gives every instance fixed attributes, such as an ARIA landmark role:
+
+```typescript
+@customElement('app-sidebar', { hostAttributes: { role: 'complementary' } })
+export class AppSidebar extends RadiantElement {}
+```
+
+- Server rendering writes them while it prepares the host, so the server output carries them before any script runs.
+- In the browser they are written at the start of every connect, before `onConnected()`.
+- An attribute the author already wrote is kept: `<app-sidebar role="navigation">` stays a navigation landmark.
+- A subclass inherits its base class's attributes, and its own `hostAttributes` override them by name.
+- Only `RadiantElement` hosts apply them. Use `@bindTo` or `@onUpdated` for attributes that depend on state.
+
+The custom elements specification forbids adding attributes in the constructor, which is why the attributes wait for connect or server preparation.
 
 ## Customized Built-in Elements
 
