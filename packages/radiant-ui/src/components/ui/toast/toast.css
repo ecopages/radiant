@@ -178,6 +178,10 @@ rui-toaster[data-y-position='top'] rui-toast[data-expanded='true']::after {
 		display: contents;
 	}
 
+	.rui-toaster-announcer {
+		@apply sr-only;
+	}
+
 	.rui-toaster {
 		@apply relative m-0 list-none p-0;
 		width: 100%;
