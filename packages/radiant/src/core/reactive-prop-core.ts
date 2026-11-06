@@ -54,6 +54,13 @@ export type ReactivePropertyOptions<T, C extends AttributeTypeConstant = Attribu
 	 * a parser, and always accepts `null`.
 	 */
 	type: C;
+	/**
+	 * Writes property changes back to the host attribute.
+	 *
+	 * @remarks
+	 * Write-back only. An authored attribute stays on the host either way and is read once at upgrade; without
+	 * `reflect` it is not rewritten, removed or kept in sync by later property writes.
+	 */
 	reflect?: boolean;
 	/**
 	 * @remarks Defaults to the property name in kebab-case: each camelCase boundary becomes a hyphen, each run of
