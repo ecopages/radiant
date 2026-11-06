@@ -134,15 +134,6 @@ export class RuiHoverCard extends RadiantElement {
 	 */
 	private dismissed = false;
 
-	override connectedCallback(): void {
-		super.connectedCallback();
-		this.addEventListener('pointerenter', this.onPointerEnter);
-		this.addEventListener('pointerleave', this.onPointerLeave);
-		this.addEventListener('pointerdown', this.onPointerDown);
-		this.addEventListener('pointerup', this.onPointerUp);
-		this.addEventListener('pointercancel', this.onPointerUp);
-	}
-
 	protected override onConnected(): void {
 		this.syncCard();
 	}
@@ -154,11 +145,6 @@ export class RuiHoverCard extends RadiantElement {
 		}
 		this.controller?.destroy();
 		this.controller = null;
-		this.removeEventListener('pointerenter', this.onPointerEnter);
-		this.removeEventListener('pointerleave', this.onPointerLeave);
-		this.removeEventListener('pointerdown', this.onPointerDown);
-		this.removeEventListener('pointerup', this.onPointerUp);
-		this.removeEventListener('pointercancel', this.onPointerUp);
 		super.disconnectedCallback();
 	}
 
@@ -353,6 +339,7 @@ export class RuiHoverCard extends RadiantElement {
 		first.focus();
 	}
 
+	@onEvent({ host: true, type: 'pointerenter' })
 	@bound
 	onPointerEnter(event: PointerEvent): void {
 		if (this.isTouchPointer(event)) {
@@ -361,6 +348,7 @@ export class RuiHoverCard extends RadiantElement {
 		this.scheduleShow();
 	}
 
+	@onEvent({ host: true, type: 'pointerleave' })
 	@bound
 	onPointerLeave(event: PointerEvent): void {
 		this.dismissed = false;
@@ -370,6 +358,7 @@ export class RuiHoverCard extends RadiantElement {
 		this.scheduleHide();
 	}
 
+	@onEvent({ host: true, type: 'pointerdown' })
 	@bound
 	onPointerDown(event: PointerEvent): void {
 		if (this.disabled || !this.isTouchPointer(event)) {
@@ -382,6 +371,8 @@ export class RuiHoverCard extends RadiantElement {
 		}, LONG_PRESS_MS);
 	}
 
+	@onEvent({ host: true, type: 'pointerup' })
+	@onEvent({ host: true, type: 'pointercancel' })
 	@bound
 	onPointerUp(): void {
 		if (this.longPressTimer) {
@@ -390,8 +381,6 @@ export class RuiHoverCard extends RadiantElement {
 		}
 	}
 }
-
-
 
 declare global {
 	interface HTMLElementTagNameMap {

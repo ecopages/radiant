@@ -198,19 +198,7 @@ export class RuiCarousel extends RadiantElement {
 		this.syncAriaLive();
 	}
 
-	/**
-	 * @remarks Hover pause listens on the host: `pointerenter` / `pointerleave` do not
-	 * bubble, so a delegated `@onEvent` never receives them.
-	 */
-	override connectedCallback(): void {
-		super.connectedCallback();
-		this.addEventListener('pointerenter', this.onRootPointerEnter);
-		this.addEventListener('pointerleave', this.onRootPointerLeave);
-	}
-
 	override disconnectedCallback(): void {
-		this.removeEventListener('pointerenter', this.onRootPointerEnter);
-		this.removeEventListener('pointerleave', this.onRootPointerLeave);
 		this.autoplayController.stop();
 		super.disconnectedCallback();
 	}
@@ -606,19 +594,21 @@ export class RuiCarousel extends RadiantElement {
 		indicators[this.index]?.focus();
 	}
 
-	private readonly onRootPointerEnter = (event: PointerEvent): void => {
+	@onEvent({ host: true, type: 'pointerenter' })
+	onRootPointerEnter(event: PointerEvent): void {
 		if (event.pointerType === 'mouse') {
 			this.hovered = true;
 			this.syncAutoplay();
 		}
-	};
+	}
 
-	private readonly onRootPointerLeave = (event: PointerEvent): void => {
+	@onEvent({ host: true, type: 'pointerleave' })
+	onRootPointerLeave(event: PointerEvent): void {
 		if (event.pointerType === 'mouse') {
 			this.hovered = false;
 			this.syncAutoplay();
 		}
-	};
+	}
 
 	@onEvent({ ref: 'root', type: 'focusin' })
 	onRootFocusIn(): void {
