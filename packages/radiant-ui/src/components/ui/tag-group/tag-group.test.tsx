@@ -182,4 +182,65 @@ describe('RuiTagGroup', () => {
 			cleanup();
 		});
 	});
+
+	describe('with an aria-disabled tag', () => {
+		async function mountWithDisabledTag() {
+			const mounted = mount(
+				<RuiTagGroup value={['imprinted', 'tamed']}>
+					<RuiTagList>
+						<RuiTag value="imprinted" label="Imprinted">
+							Imprinted
+						</RuiTag>
+						<RuiTag value="tamed" label="Tamed" disabled>
+							Tamed
+						</RuiTag>
+					</RuiTagList>
+				</RuiTagGroup>,
+			);
+			await settled();
+			const group = mounted.host.querySelector('rui-tag-group') as RuiTagGroupElement;
+			const tamed = mounted.host.querySelector<HTMLElement>('[data-value="tamed"]')!;
+			const events: string[] = [];
+			group.addEventListener('rui-remove', () => events.push('rui-remove'));
+			return { ...mounted, group, tamed, events };
+		}
+
+		it('does not remove the tag when its remove control is clicked', async () => {
+			const { group, tamed, events, cleanup } = await mountWithDisabledTag();
+			const remove = tamed.querySelector<HTMLButtonElement>('[data-tag-remove]')!;
+			expect(remove.disabled).toBe(true);
+
+			remove.click();
+			await settled();
+
+			expect(events).toEqual([]);
+			expect(group.value).toEqual(['imprinted', 'tamed']);
+			cleanup();
+		});
+
+		it.each(['Delete', 'Backspace'])('ignores %s without preventing default', async (key) => {
+			const { group, tamed, events, cleanup } = await mountWithDisabledTag();
+			const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
+
+			tamed.dispatchEvent(event);
+			await settled();
+
+			expect(events).toEqual([]);
+			expect(group.value).toEqual(['imprinted', 'tamed']);
+			expect(event.defaultPrevented).toBe(false);
+			cleanup();
+		});
+
+		it('still removes an enabled tag', async () => {
+			const { host, group, events, cleanup } = await mountWithDisabledTag();
+			const imprinted = host.querySelector<HTMLElement>('[data-value="imprinted"]')!;
+
+			imprinted.querySelector<HTMLElement>('[data-tag-remove]')!.click();
+			await settled();
+
+			expect(events).toEqual(['rui-remove']);
+			expect(group.value).toEqual(['tamed']);
+			cleanup();
+		});
+	});
 });
