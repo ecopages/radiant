@@ -76,8 +76,12 @@
 		},
 		"./is-server": {
 			"types": "./dist/is-server.d.ts",
+			"browser": "./dist/is-server.js",
 			"node": "./dist/is-server-node.js",
-			"import": "./dist/is-server.js",
+			"deno": "./dist/is-server-node.js",
+			"bun": "./dist/is-server-node.js",
+			"workerd": "./dist/is-server-node.js",
+			"edge-light": "./dist/is-server-node.js",
 			"default": "./dist/is-server.js"
 		},
 		"./context": {

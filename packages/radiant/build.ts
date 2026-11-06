@@ -25,14 +25,7 @@ import { spawnSync } from 'node:child_process';
 import * as esbuild from 'esbuild';
 import { deriveEntrypoints } from './scripts/derive-entrypoints.js';
 
-type PackageJsonExport =
-	| string
-	| {
-			import?: string;
-			types?: string;
-			node?: string;
-			default?: string;
-	  };
+type PackageJsonExport = string | { [condition: string]: PackageJsonExport };
 
 type PackageJsonShape = {
 	name: string;
@@ -66,17 +59,17 @@ function stripDistPrefix(value: string): string {
 	return value;
 }
 
+/**
+ * @remarks
+ * Conditions match in key order, so the source order is part of the contract: a runtime
+ * condition such as `node` must stay ahead of `import`, or Node resolves the `import` target.
+ */
 function rewriteExport(value: PackageJsonExport): PackageJsonExport {
 	if (typeof value === 'string') {
 		return stripDistPrefix(value);
 	}
 
-	return {
-		...(value.types ? { types: stripDistPrefix(value.types) } : {}),
-		...(value.import ? { import: stripDistPrefix(value.import) } : {}),
-		...(value.node ? { node: stripDistPrefix(value.node) } : {}),
-		...(value.default ? { default: stripDistPrefix(value.default) } : {}),
-	};
+	return Object.fromEntries(Object.entries(value).map(([condition, target]) => [condition, rewriteExport(target)]));
 }
 
 function createDistPackageJson(): PackageJsonShape {
@@ -199,6 +192,10 @@ async function buildServerEntrypoints(): Promise<boolean> {
 	});
 }
 
+/**
+ * @remarks
+ * Runs after `dist/package.json` is written, because the verifier resolves exports through it.
+ */
 function runVerifyExports(): void {
 	const signalsBuild = spawnSync('pnpm', ['--filter', '@ecopages/signals', 'run', 'build:files'], {
 		cwd: packageRoot,
@@ -228,6 +225,11 @@ const browserOk = await buildBrowserEntrypoints();
 const serverOk = await buildServerEntrypoints();
 
 if (browserOk && serverOk) {
+	writeFileSync(
+		path.join(packageRoot, 'dist', 'package.json'),
+		`${JSON.stringify(createDistPackageJson(), null, '\t')}\n`,
+	);
+
 	runVerifyExports();
 
 	copyFile(path.join(packageRoot, 'LICENSE'), path.join(packageRoot, 'dist', 'LICENSE'), (error) => {
@@ -247,11 +249,6 @@ if (browserOk && serverOk) {
 		console.log('[@ecopages/radiant]', error);
 		process.exitCode = 1;
 	});
-
-	writeFileSync(
-		path.join(packageRoot, 'dist', 'package.json'),
-		`${JSON.stringify(createDistPackageJson(), null, '\t')}\n`,
-	);
 }
 
 if (watchMode) {
