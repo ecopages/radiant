@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { createRoot, type JsxRenderable } from '@ecopages/jsx';
+import { userEvent } from 'storybook/test';
 import { RuiSlider } from './slider';
 import { RuiSlider as RuiSliderElement } from './slider.script';
 void RuiSliderElement;
@@ -48,6 +49,64 @@ describe('RuiSlider range keyboard', () => {
 
 		press(maxThumb, 'Home');
 		expect(slider.value).toEqual([20, 30]);
+		cleanup();
+	});
+});
+
+describe('RuiSlider single thumb keyboard and pointer', () => {
+	afterEach(() => {
+		document.body.innerHTML = '';
+	});
+
+	async function mountSingle(value: number) {
+		const { host, cleanup } = mount(<RuiSlider value={value} min={0} max={100} step={2} />);
+		await settled();
+		const slider = host.querySelector('rui-slider') as RuiSliderElement;
+		const thumb = host.querySelector('[data-thumb]') as HTMLElement;
+		return { host, slider, thumb, cleanup };
+	}
+
+	it('jumps to the bounds with Home and End', async () => {
+		const { slider, thumb, cleanup } = await mountSingle(40);
+
+		press(thumb, 'End');
+		expect(slider.value).toEqual([100]);
+		press(thumb, 'Home');
+		expect(slider.value).toEqual([0]);
+		cleanup();
+	});
+
+	it('moves ten steps with PageUp and PageDown and clamps at the bounds', async () => {
+		const { slider, thumb, cleanup } = await mountSingle(40);
+
+		press(thumb, 'PageUp');
+		expect(slider.value).toEqual([60]);
+		press(thumb, 'PageDown');
+		press(thumb, 'PageDown');
+		expect(slider.value).toEqual([20]);
+		press(thumb, 'PageDown');
+		press(thumb, 'PageDown');
+		press(thumb, 'PageDown');
+		expect(slider.value).toEqual([0]);
+		cleanup();
+	});
+
+	it('drags the thumb along the track and emits rui-change', async () => {
+		const { host, slider, thumb, cleanup } = await mountSingle(10);
+		const track = host.querySelector('[data-ref="rangeTrack"]') as HTMLElement;
+		const rect = track.getBoundingClientRect();
+		const y = rect.top + rect.height / 2;
+		const emissions: unknown[] = [];
+		slider.addEventListener('rui-change', (event) => emissions.push((event as CustomEvent).detail));
+
+		await userEvent.pointer([
+			{ keys: '[MouseLeft>]', target: thumb, coords: { clientX: rect.left + rect.width * 0.1, clientY: y } },
+			{ coords: { clientX: rect.left + rect.width * 0.8, clientY: y } },
+			{ keys: '[/MouseLeft]' },
+		]);
+
+		expect(slider.value[0]).toBeGreaterThan(70);
+		expect(emissions.length).toBeGreaterThan(0);
 		cleanup();
 	});
 });

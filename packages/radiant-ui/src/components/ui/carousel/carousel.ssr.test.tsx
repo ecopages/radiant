@@ -23,4 +23,19 @@ describe('RuiCarousel SSR', () => {
 		expect(indicator).toContain('type="button"');
 		expect(indicator).toContain('class="rui-carousel__indicator"');
 	});
+
+	it('serializes loop={false} instead of dropping the default-true boolean', () => {
+		const slides = [
+			{ id: 'a', children: 'A' },
+			{ id: 'b', children: 'B' },
+		];
+		const render = (loop?: boolean) =>
+			withRadiantServerCustomElementRenderBridge(() =>
+				renderToString(<RuiCarousel slides={slides} loop={loop} />),
+			);
+		const carouselTag = (html: string) => html.match(/<rui-carousel[^>]*>/)?.[0] ?? '';
+
+		expect(carouselTag(render(false))).toMatch(/\sloop="false"/);
+		expect(carouselTag(render(true))).not.toMatch(/\sloop="false"/);
+	});
 });
