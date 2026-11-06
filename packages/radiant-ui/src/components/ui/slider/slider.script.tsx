@@ -50,20 +50,33 @@ export const SLIDER_DEFAULT_RANGE_MIN = 25;
 export const SLIDER_DEFAULT_RANGE_MAX = 75;
 export const SLIDER_DEFAULT_MAX = 100;
 
-function constrainSliderPair(
+/**
+ * Clamps a range pair to the bounds and to `minDistance`.
+ *
+ * @remarks The active thumb is held `minDistance` away from the other thumb
+ * before any swap, so Home and End stop at the gap instead of jumping across
+ * the other thumb. With a gap of 0 crossed thumbs still swap. Without `active`
+ * (the view path) the upper thumb moves to restore the gap.
+ */
+export function constrainSliderPair(
 	range: NumericRange,
 	low: number,
 	high: number,
 	minDistance: number,
 	active?: RuiSliderThumb,
 ): [number, number] {
+	const gap = Math.max(0, minDistance);
 	let nextLow = range.clamp(low);
 	let nextHigh = range.clamp(high);
+	if (gap > 0 && active === 'min') {
+		nextLow = range.clamp(Math.min(nextLow, nextHigh - gap));
+	} else if (gap > 0 && active === 'max') {
+		nextHigh = range.clamp(Math.max(nextHigh, nextLow + gap));
+	}
 	if (nextLow > nextHigh) {
 		[nextLow, nextHigh] = [nextHigh, nextLow];
 	}
 
-	const gap = Math.max(0, minDistance);
 	if (nextHigh - nextLow < gap) {
 		if (active === 'min') {
 			nextLow = range.clamp(nextHigh - gap);
@@ -727,8 +740,6 @@ export class RuiSlider extends FormAssociatedElement {
 		this.commit();
 	}
 }
-
-
 
 declare global {
 	interface HTMLElementTagNameMap {

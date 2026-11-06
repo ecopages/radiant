@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { createNumericRange } from '../shared/numeric-range';
-import { formatSliderReadout, resolveSliderValues, seedSliderView, sliderTrackCssVars } from './slider.script';
+import {
+	constrainSliderPair,
+	formatSliderReadout,
+	resolveSliderValues,
+	seedSliderView,
+	sliderTrackCssVars,
+} from './slider.script';
 
 describe('resolveSliderValues', () => {
 	it('clamps a single thumb', () => {
@@ -82,5 +88,22 @@ describe('sliderTrackCssVars', () => {
 			'--rui-slider-fill-size': '50%',
 			'--rui-slider-value': '50%',
 		});
+	});
+});
+
+describe('constrainSliderPair', () => {
+	const range = createNumericRange(0, 255, 1);
+
+	it('stops End on the minimum thumb at minDistance from the maximum thumb', () => {
+		expect(constrainSliderPair(range, 255, 200, 10, 'min')).toEqual([190, 200]);
+	});
+
+	it('stops Home on the maximum thumb at minDistance from the minimum thumb', () => {
+		expect(constrainSliderPair(range, 10, 0, 10, 'max')).toEqual([10, 20]);
+	});
+
+	it('keeps swapping crossed thumbs when minDistance is 0', () => {
+		expect(constrainSliderPair(range, 255, 200, 0, 'min')).toEqual([200, 255]);
+		expect(constrainSliderPair(range, 10, 0, 0, 'max')).toEqual([0, 10]);
 	});
 });
