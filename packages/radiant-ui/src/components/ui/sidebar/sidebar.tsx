@@ -353,7 +353,7 @@ export function RuiSidebar({ children, open, label, ...props }: RuiSidebarViewPr
 					aria-label="Close sidebar"
 					hidden
 				></button>
-				<div data-ref="pane" class="rui-sidebar__pane" aria-label={label}>
+				<div data-ref="pane" class="rui-sidebar__pane">
 					{children}
 				</div>
 				<div data-ref="handle" class="rui-sidebar__handle" role="separator" tabindex={0} hidden>
