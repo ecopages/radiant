@@ -126,6 +126,9 @@ export class RuiHoverCard extends RadiantElement {
 	private longPressTimer: ReturnType<typeof setTimeout> | null = null;
 	private openedByKeyboard = false;
 
+	/** @remarks True while Escape returns focus to the anchor, so that `focusin` does not reopen the card. */
+	private restoringFocus = false;
+
 	override connectedCallback(): void {
 		super.connectedCallback();
 		this.addEventListener('pointerenter', this.onPointerEnter);
@@ -256,7 +259,11 @@ export class RuiHoverCard extends RadiantElement {
 	}
 
 	private scheduleShow(fromKeyboard = false): void {
-		if (this.disabled || this.open) {
+		if (this.disabled) {
+			return;
+		}
+		if (this.open) {
+			this.cancelHide();
 			return;
 		}
 
@@ -268,6 +275,12 @@ export class RuiHoverCard extends RadiantElement {
 			return;
 		}
 		this.showTimer = setTimeout(() => this.setOpen(true), effectiveDelay);
+	}
+
+	/** @remarks Lets the pointer reach the card, and stay on it, after leaving the trigger. */
+	private cancelHide(): void {
+		if (this.hideTimer) clearTimeout(this.hideTimer);
+		this.hideTimer = null;
 	}
 
 	private scheduleHide(): void {
@@ -293,12 +306,20 @@ export class RuiHoverCard extends RadiantElement {
 		const anchor = this.getAnchor();
 		this.setOpen(false);
 		if (anchor && document.activeElement !== anchor) {
-			anchor.focus();
+			this.restoringFocus = true;
+			try {
+				anchor.focus();
+			} finally {
+				this.restoringFocus = false;
+			}
 		}
 	}
 
 	@onEvent({ type: 'focusin', ref: 'trigger' })
 	onFocusIn(event: FocusEvent): void {
+		if (this.restoringFocus) {
+			return;
+		}
 		if (!shouldDismissPopoverFocus(this.getAnchor(), this.getFloatingElement(), event.relatedTarget)) {
 			return;
 		}
