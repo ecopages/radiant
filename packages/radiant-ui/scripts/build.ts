@@ -7,7 +7,7 @@
  *
  * Run with: pnpm run build:files
  */
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { transformAsync } from '@babel/core';
 import decorators from '@babel/plugin-proposal-decorators';
@@ -81,6 +81,7 @@ function standardDecoratorTransform(): esbuild.Plugin {
 }
 
 try {
+	rmSync(path.join(DIST, 'chunks'), { recursive: true, force: true });
 	await esbuild.build({
 		absWorkingDir: ROOT,
 		alias: {
