@@ -1,5 +1,5 @@
 ---
-'@ecopages/radiant-ui': minor
+'@ecopages/radiant-ui': patch
 '@ecopages/radiant-themes': patch
 ---
 

@@ -1,5 +1,5 @@
 ---
-'@ecopages/radiant-ui': minor
+'@ecopages/radiant-ui': patch
 ---
 
 Radiant Default's defaults change: `--rui-radius-scale` is 0.7, `--rui-border-alpha` is 11%, and the neutral seed now reads a new `--rui-neutral-tint` multiplier (default 1.3) that scales the grey chroma, so the greys carry a visible hint of the neutral hue. The docs tuner offers border opacity from 0 to 100%.
