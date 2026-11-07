@@ -75,6 +75,23 @@ export type TextContentTemplatePart = {
 export type TemplatePart = AttributeTemplatePart | ChildTemplatePart | TextContentTemplatePart;
 
 /**
+ * Child slot metadata for {@link CompiledTemplate.clientContent}, where a slot may have no marker on either side.
+ *
+ * @remarks A `null` path means that bound is the parent's first or last child (see {@link ChildRange}); `ownerPath`
+ * locates the parent when both are `null`.
+ */
+export type ClientChildTemplatePart = {
+	endPath: number[] | null;
+	index: number;
+	ownerPath: number[] | null;
+	startPath: number[] | null;
+	type: 'child';
+};
+
+/** Part metadata for {@link CompiledTemplate.clientContent}. */
+export type ClientTemplatePart = AttributeTemplatePart | ClientChildTemplatePart | TextContentTemplatePart;
+
+/**
  * Runtime state for a dynamic attribute binding attached to a live DOM element.
  *
  * Caches the previous value so identity-stable updates (events, properties) can skip
@@ -108,17 +125,31 @@ export type LiveAttributePart = {
 };
 
 /**
- * Runtime state for a dynamic child slot bounded by two empty text nodes.
+ * Bounds of a child slot's content: the nodes strictly between `start` and `end` in their parent.
  *
- * The `startMarker` and `endMarker` text nodes delimit the exclusive range owned by this
- * part. `mounted` tracks the structural shape of the current content so subsequent updates
- * can reconcile in place rather than replacing the whole range.
+ * @remarks A missing `start` means the content begins at the parent's first child, and a missing `end` that it runs
+ * to the parent's last child. The parent is read from whichever bound exists, so a slot follows its markers when a
+ * fragment is inserted into the page; `owner` names the parent when neither exists, which is only valid for a slot
+ * that is its element's only child.
+ */
+export type ChildRange = {
+	readonly end: ChildNode | null;
+	readonly owner?: ParentNode;
+	readonly start: ChildNode | null;
+};
+
+/**
+ * Runtime state for a dynamic child slot.
+ *
+ * `start` and `end` bound the content as a {@link ChildRange}. `mounted` tracks the structural shape of the current
+ * content so subsequent updates can reconcile in place rather than replacing the whole range.
  */
 export type LiveChildPart = {
-	endMarker: Text;
+	end: ChildNode | null;
 	index: number;
 	mounted: MountedRangeContent;
-	startMarker: Text;
+	owner?: ParentNode;
+	start: ChildNode | null;
 	type: 'child';
 };
 
@@ -147,13 +178,16 @@ export type ReactiveAttributeSource = ReactiveChildSource;
 export type CompiledTemplate = {
 	blueprint: HTMLTemplateElement;
 	/**
-	 * The blueprint's content with its attribute markers removed and its child comment markers already replaced by
-	 * empty text markers, for client mounts to clone.
+	 * The blueprint's content prepared for client mounts to clone: attribute markers removed, and child comment
+	 * markers replaced by as few text markers as the slots need.
 	 *
-	 * @remarks Hydration keeps reading {@link CompiledTemplate.blueprint}, which keeps the comments. Each comment is
-	 * replaced by exactly one node, so the part paths hold for both.
+	 * @remarks In an element whose children are only child slots, adjacent slots share one marker and the first and
+	 * last slots use the element's edges, so one slot needs no marker at all. Anywhere else each comment becomes one
+	 * text marker. Hydration keeps reading {@link CompiledTemplate.blueprint}, which keeps the comments.
 	 */
 	clientContent: DocumentFragment;
+	/** Part metadata located in {@link CompiledTemplate.clientContent}. */
+	clientParts: readonly ClientTemplatePart[];
 	parts: readonly TemplatePart[];
 };
 

@@ -27,7 +27,7 @@ export function createTemplateInstance(
 	const compiledTemplate = getCompiledTemplate(template);
 	const fragment = compiledTemplate.clientContent.cloneNode(true) as DocumentFragment;
 	normalizeTemplateFragmentNamespaces(fragment, contextParent, template.rootLocalName);
-	const parts = createLiveTemplateParts(fragment, compiledTemplate.parts, rootTarget);
+	const parts = createLiveTemplateParts(fragment, compiledTemplate.clientParts, rootTarget);
 	const rootNodes = Array.from(fragment.childNodes);
 	const update = createTemplateInstanceUpdate(parts, rootTarget);
 
@@ -65,14 +65,7 @@ export function createTemplateInstanceUpdate(
 				continue;
 			}
 
-			part.mounted = updateRangeContent(
-				part.startMarker,
-				part.endMarker,
-				values[part.index],
-				part.mounted,
-				rootTarget,
-				deferredProperties,
-			);
+			part.mounted = updateRangeContent(part, values[part.index], part.mounted, rootTarget, deferredProperties);
 		}
 
 		updateLiveTextContentParts(parts, values);

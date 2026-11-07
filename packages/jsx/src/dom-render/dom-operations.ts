@@ -20,7 +20,7 @@ import type { JsxNodeLike } from '../types/index.ts';
  * It first walks to `endMarker`: when `endMarker` does not follow `startMarker` (markers moved by outside code), it
  * warns and removes nothing, as a collapsed `Range` did.
  */
-export function clearRangeBetween(startMarker: Text, endMarker: Text): void {
+export function clearRangeBetween(startMarker: ChildNode, endMarker: ChildNode): void {
 	const parentNode = startMarker.parentNode;
 
 	if (parentNode && parentNode === endMarker.parentNode) {
@@ -103,8 +103,8 @@ export function createNodesFromJsxNodeLike(value: JsxNodeLike): Node[] {
 }
 
 /**
- * Inserts `nodes` into the DOM immediately before `referenceNode` using a single
- * `DocumentFragment` so that the insertion triggers at most one layout.
+ * Inserts `nodes` into the DOM immediately before `referenceNode`, several nodes through a single
+ * `DocumentFragment` so that the insertion triggers at most one layout, and a single node directly.
  *
  * No-ops when `nodes` is empty.
  *
@@ -138,6 +138,11 @@ export function insertNodesBefore(referenceNode: Node, nodes: readonly Node[]): 
 		}
 	}
 
+	if (nodes.length === 1) {
+		referenceNode.parentNode.insertBefore(nodes[0]!, referenceNode);
+		return;
+	}
+
 	const fragment = document.createDocumentFragment();
 
 	for (const node of nodes) {
@@ -157,10 +162,20 @@ export function insertNodesBefore(referenceNode: Node, nodes: readonly Node[]): 
  *
  * @param start Start boundary text node of the range to move.
  * @param end End boundary text node of the range to move.
- * @param referenceNode Target reference node.
+ * @param referenceNode Target reference node, or `null` to move the range to the end of `parentNode`.
+ * @param parentNode Parent that receives the range when `referenceNode` is `null`.
  */
-export function moveRangeBefore(start: Text, end: Text, referenceNode: Node): void {
-	if (referenceNode === start || end.nextSibling === referenceNode || isNodeWithinRange(referenceNode, start, end)) {
+export function moveRangeBefore(
+	start: Text,
+	end: Text,
+	referenceNode: Node | null,
+	parentNode: ParentNode | null = referenceNode?.parentNode ?? null,
+): void {
+	if (
+		referenceNode === start ||
+		end.nextSibling === referenceNode ||
+		(referenceNode && isNodeWithinRange(referenceNode, start, end))
+	) {
 		return;
 	}
 
@@ -185,8 +200,6 @@ export function moveRangeBefore(start: Text, end: Text, referenceNode: Node): vo
 	}
 
 	if (nodes.length > 0) {
-		const parentNode = referenceNode.parentNode;
-
 		if (!parentNode) {
 			return;
 		}

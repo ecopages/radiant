@@ -303,7 +303,7 @@ function hydrateChildRangePart(
 	}
 
 	return {
-		endMarker,
+		end: endMarker,
 		index: part.index,
 		mounted: hydrateMountedRangeContent(
 			startMarker,
@@ -313,7 +313,7 @@ function hydrateChildRangePart(
 			rootTarget,
 			indexPlan.childBaseIndices.get(part.index) ?? 0,
 		),
-		startMarker,
+		start: startMarker,
 		type: 'child',
 	};
 }

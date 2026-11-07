@@ -51,7 +51,7 @@ export function render(element: JsxRenderable, target: HTMLElement): void {
 	const deferredProperties: DeferredPropertyBinding[] = [];
 	const root = getOrCreateMountedRoot(target);
 
-	root.mounted = updateRangeContent(root.start, root.end, element, root.mounted, target, deferredProperties);
+	root.mounted = updateRangeContent(root, element, root.mounted, target, deferredProperties);
 
 	flushDeferredProperties(deferredProperties);
 	restoreFocusSnapshot(target, focusSnapshot);
@@ -87,14 +87,7 @@ export function hydrate(element: JsxRenderable, target: HTMLElement): void {
 	const root = adoptHydratedRootRange(target, reconnectedContent);
 
 	if (isReactiveChildSource(rootValue)) {
-		root.mounted = mountReactiveChildSource(
-			root.start,
-			root.end,
-			rootValue,
-			reconnectedContent,
-			target,
-			deferredProperties,
-		);
+		root.mounted = mountReactiveChildSource(root, rootValue, reconnectedContent, target, deferredProperties);
 	} else {
 		flushDeferredProperties(deferredProperties);
 	}

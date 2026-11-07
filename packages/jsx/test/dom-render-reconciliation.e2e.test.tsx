@@ -1694,18 +1694,15 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 	});
 
 	test('warns when external DOM mutation detaches renderer-managed child anchors', async () => {
-		const [{ jsx }, { createRoot }, { resetRuntimeWarningsForTests, setDevWarningsEnabled }] = await Promise.all([
-			loadJsxRuntime(),
-			loadJsxModule(),
-			loadJsxDevRuntime(),
-		]);
+		const [{ jsx, jsxs }, { createRoot }, { resetRuntimeWarningsForTests, setDevWarningsEnabled }] =
+			await Promise.all([loadJsxRuntime(), loadJsxModule(), loadJsxDevRuntime()]);
 		const container = document.createElement('div');
 		const root = createRoot(container);
 		const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
 		const renderNestedChild = (value: string) =>
-			jsx('p', {
-				children: jsx('strong', { children: value }),
+			jsxs('p', {
+				children: [jsx('strong', { children: value }), 'tail'],
 			});
 
 		root.render(renderNestedChild('alpha'));
@@ -1716,7 +1713,7 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		setDevWarningsEnabled(true);
 
 		try {
-			root.render(jsx('p', { children: 'beta' }));
+			root.render(jsxs('p', { children: ['beta', 'tail'] }));
 			expect(warnSpy).toHaveBeenCalled();
 			expect(String(warnSpy.mock.calls[0]?.[0] ?? '')).toContain(
 				'A renderer-managed DOM range was mutated outside Radiant JSX control',
@@ -1726,6 +1723,20 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 			setDevWarningsEnabled(undefined);
 			warnSpy.mockRestore();
 		}
+	});
+
+	test('a slot that is its element only child recovers after outside code replaces the element content', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+
+		root.render(jsx('p', { children: jsx('strong', { children: 'alpha' }) }));
+		const paragraph = container.querySelector('p')!;
+		paragraph.innerHTML = 'external';
+
+		root.render(jsx('p', { children: 'beta' }));
+		expect(container.querySelector('p')).toBe(paragraph);
+		expect(paragraph.innerHTML).toBe('beta');
 	});
 
 	test('hydrates adjacent attribute-only child templates without crossing sibling ranges', async () => {
@@ -2963,6 +2974,107 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		row.get();
 
 		expect(runs).toBe(1);
+	});
+
+	test('native elements use one marker between adjacent slots and none at their edges; custom elements keep full markers', async () => {
+		const [{ jsx, jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const emptyTextCount = (element: Element) =>
+			[...element.childNodes].filter((node) => node.nodeType === Node.TEXT_NODE && node.textContent === '')
+				.length;
+
+		root.render(
+			jsxs('section', {
+				children: [
+					jsx('p', { children: 'only' }),
+					jsxs('div', { children: ['a', 'b', 'c'] }),
+					jsxs('demo-markers', { children: ['a', 'b'] }),
+				],
+			}),
+		);
+
+		expect(emptyTextCount(container.querySelector('p')!)).toBe(0);
+		expect(emptyTextCount(container.querySelector('div')!)).toBe(2);
+		expect(emptyTextCount(container.querySelector('demo-markers')!)).toBe(4);
+		expect(container.querySelector('div')!.textContent).toBe('abc');
+	});
+
+	test('slots at every position switch between text, a template, a keyed list, nodes and nothing', async () => {
+		const [{ jsx, jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const shapes = [
+			(tag: string) => `${tag}-text`,
+			(tag: string) => jsx('b', { children: tag }),
+			(tag: string) => [1, 2, 3].map((key) => jsx('i', { key, children: `${tag}${key}` })),
+			(tag: string) => [3, 1].map((key) => jsx('i', { key, children: `${tag}${key}` })),
+			(tag: string) => Object.assign(document.createElement('u'), { textContent: tag }),
+			() => null,
+		];
+		const expected = (shape: number, tag: string) =>
+			[
+				`${tag}-text`,
+				`<b>${tag}</b>`,
+				`<i>${tag}1</i><i>${tag}2</i><i>${tag}3</i>`,
+				`<i>${tag}3</i><i>${tag}1</i>`,
+				`<u>${tag}</u>`,
+				'',
+			][shape]!;
+
+		for (let first = 0; first < shapes.length; first += 1) {
+			for (const offset of [0, 2, 3]) {
+				const middle = (first + offset) % shapes.length;
+				const last = (first + offset + 1) % shapes.length;
+				root.render(
+					jsxs('article', {
+						children: [
+							jsx('p', { children: shapes[first]!('p') }),
+							jsxs('div', { children: [shapes[first]!('x'), shapes[middle]!('y'), shapes[last]!('z')] }),
+						],
+					}),
+				);
+				expect(container.querySelector('p')!.innerHTML).toBe(expected(first, 'p'));
+				expect(container.querySelector('div')!.innerHTML).toBe(
+					`${expected(first, 'x')}${expected(middle, 'y')}${expected(last, 'z')}`,
+				);
+			}
+		}
+	});
+
+	test('keyed single-element rows keep their nodes and handle content that changes shape or becomes a mixed list', async () => {
+		const [{ jsx, jsxs, Fragment }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const render = (children: unknown[]) => root.render(jsx('ul', { children }));
+		const html = () => container.querySelector('ul')!.innerHTML;
+		const row = (key: number, label: string) => jsx('li', { key, children: label });
+
+		render([row(1, 'a'), row(2, 'b'), row(3, 'c')]);
+		const [first, second, third] = [...container.querySelectorAll('li')];
+		expect(html()).toBe('<li>a</li><li>b</li><li>c</li>');
+
+		render([row(3, 'c2'), row(1, 'a'), row(2, 'b')]);
+		expect(html()).toBe('<li>c2</li><li>a</li><li>b</li>');
+		expect([...container.querySelectorAll('li')]).toEqual([third, first, second]);
+
+		render([
+			row(3, 'c2'),
+			jsx('b', { key: 1, children: 'x' }),
+			jsxs(Fragment, { key: 2, children: [jsx('i', { children: 'y' }), jsx('i', { children: 'z' })] }),
+		]);
+		expect(html()).toBe('<li>c2</li><b>x</b><i>y</i><i>z</i>');
+		expect(container.querySelector('li')).toBe(third);
+
+		render([row(3, 'c3'), 'loose text', row(4, 'd')]);
+		expect(html()).toBe('<li>c3</li>loose text<li>d</li>');
+		expect(container.querySelector('li')).toBe(third);
+
+		render([row(4, 'd'), row(3, 'c3')]);
+		expect(html()).toBe('<li>d</li><li>c3</li>');
+
+		render([]);
+		expect(html()).toBe('');
 	});
 
 	test('signal-like attribute values patch attributes without rerendering the parent tree', async () => {
