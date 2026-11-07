@@ -1,5 +1,41 @@
 # @ecopages/radiant-ui
 
+## 0.3.3
+
+### Patch Changes
+
+- [#637](https://github.com/ecopages/radiant/pull/637) [`859ac1c`](https://github.com/ecopages/radiant/commit/859ac1c8d4e2dad96d6389670a0bc6edc5a40889) Thanks [@andeeplus](https://github.com/andeeplus)! - Buttons now move down by `--press-shift` (1px) while pressed, the small nudge shadcn uses, using a new `--ease-out-strong` curve, and the button transition drops from 300ms to `--duration-fast` and animates only color, shadow and transform. The icon toggle and clear buttons press the same way. Button hover styling applies only on devices that support hover, and `prefers-reduced-motion` disables the movement. The Windows 95, Mac OS Classic and macOS themes set `--press-shift: 0px` so their controls do not move.
+
+- [#637](https://github.com/ecopages/radiant/pull/637) [`367d225`](https://github.com/ecopages/radiant/commit/367d225ef217a645ab262edbe8f56703f5c032c2) Thanks [@andeeplus](https://github.com/andeeplus)! - The date field, date range picker and number field take their font size from `--text-control-input` and inherit the line height instead of applying `text-sm`, so their text sits on the same 21px line as the text input and the date input, and follows the larger mobile input size.
+
+- [#637](https://github.com/ecopages/radiant/pull/637) [`859ac1c`](https://github.com/ecopages/radiant/commit/859ac1c8d4e2dad96d6389670a0bc6edc5a40889) Thanks [@andeeplus](https://github.com/andeeplus)! - Radiant Default is close to the Zed theme's density, one step larger on the controls: 28, 32, and 36px controls (was 32, 40, and 48px), 14px control text, 10px by 4px control padding, and the 4px-base spacing scale, so control rows are compact inside evenly spaced layouts while hit areas stay well above the 24px WCAG 2.2 minimum. `--rui-density` still scales the sizes and the spacing together. The Vercel theme is also one size step smaller: 28, 32, and 40px controls with 13px control text and trimmed menu, tab, and tooltip padding; its colors, borders, and radii are unchanged.
+
+    The `@ecopages/radiant-ui/tokens/spacing/comfortable` pack keeps the earlier 32/40/48px controls, and every other complete theme in `@ecopages/radiant-themes` imports it, so their sizes do not change. Import it after `themes/default` to restore the earlier Radiant Default density. The `compact` and `wide` packs are unchanged.
+
+- [#637](https://github.com/ecopages/radiant/pull/637) [`e8bb10e`](https://github.com/ecopages/radiant/commit/e8bb10ec1dd3b4d9e63fde96128d34f71287df13) Thanks [@andeeplus](https://github.com/andeeplus)! - Filled and destructive buttons use a border in their own fill color, including their hover, active and pressed states, instead of a transparent one. At fractional zoom or display scaling the transparent border let the fill end a pixel or two short and soft next to an outline button, which looked like a height difference; the border now snaps to whole device pixels like the outline button's.
+
+- [#637](https://github.com/ecopages/radiant/pull/637) [`859ac1c`](https://github.com/ecopages/radiant/commit/859ac1c8d4e2dad96d6389670a0bc6edc5a40889) Thanks [@andeeplus](https://github.com/andeeplus)! - Composite controls (combobox, select, number field, date input, date field, date range picker, autocomplete and input group) now share `--size-control-md` with the text input. Their inner fields no longer add vertical padding on top of the minimum height, and the combobox, select and date field toggle buttons follow `--size-control-sm` instead of a fixed 2rem, so a theme with compact controls no longer renders them taller than a text input.
+
+- [#637](https://github.com/ecopages/radiant/pull/637) [`859ac1c`](https://github.com/ecopages/radiant/commit/859ac1c8d4e2dad96d6389670a0bc6edc5a40889) Thanks [@andeeplus](https://github.com/andeeplus)! - Popups, dialogs and value changes now animate with short, origin-aware motion. Floating popups (select, combobox, menus, popover, date pickers) fade and scale in from the side facing their anchor and leave faster than they arrive; tooltips fade; hover cards and the dialog surface scale in, and the dialog backdrop fades. The toast stack uses `--duration-slow` and `--ease-out-strong` instead of 400ms. The meter fill, slider range fill and thumb, and knob arc ease between values (sliders and knobs skip the transition while dragging through a new `data-dragging` attribute), checkbox and radio marks scale in, and disclosure, tree and treegrid chevrons share the strong ease-out. New `--popup-*`, `--tooltip-duration`, `--hover-card-enter-duration`, `--dialog-*`, `--backdrop-duration` and `--check-duration` tokens tune or disable it, `prefers-reduced-motion` removes the movement, and `PopoverController` keeps a portaled surface mounted until its exit finishes. The Windows 95 and Mac OS Classic themes set these durations to `0ms` so popups appear instantly.
+
+- [#637](https://github.com/ecopages/radiant/pull/637) [`859ac1c`](https://github.com/ecopages/radiant/commit/859ac1c8d4e2dad96d6389670a0bc6edc5a40889) Thanks [@andeeplus](https://github.com/andeeplus)! - Radiant Default's defaults change: `--rui-radius-scale` is 0.7, `--rui-border-alpha` is 11%, and the neutral seed now reads a new `--rui-neutral-tint` multiplier (default 1.3) that scales the grey chroma, so the greys carry a visible hint of the neutral hue. The docs tuner offers border opacity from 0 to 100%.
+
+    Check boxes and radios take their size from `--rui-choice-size` (default `1rem`, so every other theme is unchanged); Radiant Default sets it from `--size-control-sm`, so they follow `--rui-density`. Their keyboard focus ring offset is 1px instead of 2px.
+
+    In dark mode the pressed and active fills of filled controls (`--primary-dark`, `--secondary-dark`, `--error-dark`, `--success-dark`, `--info-dark`, `--warning-dark`) are now one step darker than the resting color but still light, so the near-black `on-*` text keeps its contrast. They used the dark shades of the light mode, which put dark text on a dark fill when a filled button was pressed or selected.
+
+- [#637](https://github.com/ecopages/radiant/pull/637) [`26f6150`](https://github.com/ecopages/radiant/commit/26f61508f3ebba9b643fc93ab457f2e384452667) Thanks [@andeeplus](https://github.com/andeeplus)! - The remove button of a `RuiTagGroup` tag draws a smaller, quieter cross inside its 16px hit area, and a tag that has one trades some end padding for it, so the cross no longer crowds the label.
+
+- [#637](https://github.com/ecopages/radiant/pull/637) [`859ac1c`](https://github.com/ecopages/radiant/commit/859ac1c8d4e2dad96d6389670a0bc6edc5a40889) Thanks [@andeeplus](https://github.com/andeeplus)! - The toast close button now sits inside the toast, at the end of the row (at the start for toasters positioned at the start of the screen), as a 24px ghost button with a 14px icon instead of a 20px badge on the corner whose icon filled the circle. The knob arc ends follow `--rui-knob-linecap` (`round`, `butt` or `square`, default `round`); the sharp radius pack and the Zed, VS Code, High Contrast, Windows 95 and Mac OS Classic themes set `butt`, and a `--rui-radius-scale` of exactly 0 squares the ends too.
+
+    Tags in `RuiTagGroup` and their remove buttons follow the radius scale (`--radius-control` and `--radius-sm`) instead of staying fully rounded, so a square or lightly rounded theme gets square tags.
+
+- [#637](https://github.com/ecopages/radiant/pull/637) [`311dea5`](https://github.com/ecopages/radiant/commit/311dea533f361dd4a9057f51081774dac27135f7) Thanks [@andeeplus](https://github.com/andeeplus)! - Toast variants draw real icons instead of letters and a cross: info and warning keep their meaning with a circled `i` and a triangle exclamation, and an error toast uses a circled exclamation, so a failure no longer shows two crosses next to the close button. `@ecopages/radiant-ui/icons` exports `RuiIconAlertCircle`, `RuiIconAlertTriangle` and `RuiIconInfo`.
+- Updated dependencies [[`2abd106`](https://github.com/ecopages/radiant/commit/2abd106079f005b388d49337da87118e5f51dabe)]:
+    - @ecopages/radiant@0.8.1
+    - @ecopages/jsx@0.8.1
+    - @ecopages/signals@0.8.1
+
 ## 0.3.2
 
 ### Patch Changes

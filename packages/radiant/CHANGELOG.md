@@ -1,5 +1,14 @@
 # @ecopages/radiant
 
+## 0.8.1
+
+### Patch Changes
+
+- [#637](https://github.com/ecopages/radiant/pull/637) [`2abd106`](https://github.com/ecopages/radiant/commit/2abd106079f005b388d49337da87118e5f51dabe) Thanks [@andeeplus](https://github.com/andeeplus)! - Server-rendered hosts now write a `@prop` with a `transform.toAttribute` through it instead of its raw type converter. An empty `string[]` value, such as an unselected combobox, select, listbox or checkbox group, no longer renders `value="[]"`, which the client read back as a selected value named `[]` and showed in the input.
+- Updated dependencies []:
+    - @ecopages/jsx@0.8.1
+    - @ecopages/signals@0.8.1
+
 ## 0.8.0
 
 ### Minor Changes
