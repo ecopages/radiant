@@ -235,9 +235,10 @@ type AttributePartDescriptor = Extract<TemplatePartDescriptor, { type: 'attribut
  * value is a boolean (see {@link resolveBindingPart}), so one frozen object serves every render. Sharing them keeps
  * {@link getFactoryShapeKey} on identity lookups. The map stops growing at {@link MAX_BINDING_PARTS}: names that come
  * from data, such as the keys of a `data` object, would otherwise grow it for as long as a server runs. Past the cap a
- * descriptor is created per use and the shape key is built as a string.
+ * descriptor is created per use and the shape key is built as a string. Each name holds its four variants by index,
+ * so a lookup builds no key string.
  */
-const BINDING_PARTS = new Map<string, AttributePartDescriptor>();
+const BINDING_PARTS = new Map<string, (AttributePartDescriptor | undefined)[]>();
 const MAX_BINDING_PARTS = 2048;
 
 /** Descriptors that are shared, and so can key a node of the shape tree. */
@@ -250,13 +251,20 @@ const SHARED_PARTS = new WeakSet<TemplatePartDescriptor>();
  */
 function getBindingPart(elementName: string, name: string, value: unknown): AttributePartDescriptor {
 	const isBoolean = shouldUseBooleanAttributeBinding(name) && typeof resolveReactiveSnapshot(value) === 'boolean';
-	const cacheKey = `${elementName.includes('-') ? 'c' : 'n'}${isBoolean ? 'b' : 'v'}${name}`;
-	let part = BINDING_PARTS.get(cacheKey);
+	const variant = (elementName.includes('-') ? 2 : 0) + (isBoolean ? 1 : 0);
+	let variants = BINDING_PARTS.get(name);
+
+	if (!variants && BINDING_PARTS.size < MAX_BINDING_PARTS) {
+		variants = [];
+		BINDING_PARTS.set(name, variants);
+	}
+
+	let part = variants?.[variant];
 
 	if (!part) {
 		part = Object.freeze(resolveBindingPart(elementName, name, value));
-		if (BINDING_PARTS.size < MAX_BINDING_PARTS) {
-			BINDING_PARTS.set(cacheKey, part);
+		if (variants) {
+			variants[variant] = part;
 			SHARED_PARTS.add(part);
 		}
 	}
@@ -334,25 +342,18 @@ function appendChildren(
 	children: JsxRenderable | undefined,
 	childSlotMode: ChildSlotMode,
 ): void {
-	for (const slot of toChildSlots(children, childSlotMode)) {
-		values.push(slot);
-		parts.push(CHILD_PART);
-		strings.push('');
+	if (childSlotMode === 'multiple' && isIterableJsxChild(children)) {
+		for (const child of children) appendChildSlot(strings, values, parts, toChildSlot(child as JsxRenderable));
+		return;
 	}
+
+	appendChildSlot(strings, values, parts, toChildSlot(children));
 }
 
-/**
- * Splits `children` into the discrete slot values for the given slot mode.
- *
- * `multiple` keeps siblings in separate slots; `single` folds the whole subtree into
- * one.
- */
-function toChildSlots(children: JsxRenderable | undefined, childSlotMode: ChildSlotMode): unknown[] {
-	if (childSlotMode === 'multiple' && isIterableJsxChild(children)) {
-		return Array.from(children, (child) => toChildSlot(child as JsxRenderable));
-	}
-
-	return [toChildSlot(children)];
+function appendChildSlot(strings: string[], values: unknown[], parts: TemplatePartDescriptor[], slot: unknown): void {
+	values.push(slot);
+	parts.push(CHILD_PART);
+	strings.push('');
 }
 
 /**
