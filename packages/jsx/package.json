@@ -66,14 +66,14 @@
 	"devDependencies": {
 		"@ecopages/signals": "workspace:*",
 		"@types/node": "^24.13.2",
-		"esbuild": "^0.28.1",
-		"@vitest/browser": "^4.1.10",
-		"@vitest/browser-playwright": "^4.1.10",
+		"esbuild": "^0.28.2",
+		"@vitest/browser": "^4.1.12",
+		"@vitest/browser-playwright": "^4.1.12",
 		"mitata": "^1.0.34",
 		"playwright": "^1.52.0",
 		"tsx": "^4.20.6",
-		"vite": "^8.1.1",
-		"vitest": "^4.1.10",
+		"vite": "^8.3.6",
+		"vitest": "^4.1.12",
 		"typescript": "catalog:"
 	},
 	"peerDependencies": {
