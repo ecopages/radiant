@@ -8,7 +8,7 @@ When authoring behavior changes, update the README beside the code.
 
 ## Invariants
 
-- **Authored Children** stay in parent JSX. Do not project them through CE `<slot>` / `render()`.
+- **Authored Children** stay in parent JSX. Do not place them through CE `render()` / `this.slotted`.
 - Default host shape is a **View-owned Shell**. Keep `render()` only for a **Derived Tree**.
 - A **Binding** (`this.$`) only patches the host's own `render()` / `hydrate()` tree. Omit the `Bindings` generic unless the script uses `this.$`, `this.bindings`, or `this.bind(...)`.
 - `@bindTo` copies a field onto existing light DOM. Keep `@onUpdated` for procedures (focus, joined ARIA, branching).

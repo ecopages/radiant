@@ -44,7 +44,7 @@ const Card = ({ title, children }: CardProps) => (
 );
 ```
 
-Fragments (`<>...</>`) and `<slot>` element wrappers are runtime-supported. Slot projection follows the [Slots](/docs/components/slots) model.
+Fragments (`<>...</>`) are runtime-supported. `<slot>` is an ordinary element; a host places its children with `this.slotted` (see [Slots](/docs/components/slots)).
 
 ## Keyed Children
 

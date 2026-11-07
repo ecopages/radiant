@@ -47,17 +47,17 @@ Default `@prop({ type: Array })` serializes attributes as JSON. These hosts pass
 
 ## Light-DOM ownership
 
-Parent JSX owns **Authored Children**. Do not let a custom element `render()` project that content through `<slot>`: catalog composites keep chrome and children in the view, as a View-owned Shell.
+Parent JSX owns **Authored Children**. Do not let a custom element `render()` place that content through `this.slotted`: catalog composites keep chrome and children in the view, as a View-owned Shell.
 
 - **View-owned Shell:** JSX helpers (or named view props) place chrome and children. The CE has no `render()` slot tree. Query with `data-ref` / `data-*` / roles. **Never query BEM class names.** Toggle volatile attrs with `toggleAttribute`.
-- **Composition Helper:** named regions in the right DOM position (`RuiDialogTitle`, `RuiNumberFieldInput`, `primary` / `secondary` props) — not `slot="…"` + CE `<slot name="…">`.
+- **Composition Helper:** named regions in the right DOM position (`RuiDialogTitle`, `RuiNumberFieldInput`, `primary` / `secondary` props) — not `slot="…"` attributes; Radiant has no named slots.
 - **Default chrome when children are omitted:** the view supplies defaults (for example `RuiNumberField` renders input + steppers when `children` is empty).
 - **Stylesheet ownership:** component stylesheets are atomic: never inline child or shared CSS. `style-dependencies.json` is generated from rendered default composition and lists the complete ordered stylesheet union for selective consumers. Applications should normally import `styles.css` once; it imports each atomic and primitive stylesheet exactly once. Public `--rui-*` knobs: defaults on the host (or portaled surface root), never on an inner BEM grain — [`DESIGN.md`](../../../DESIGN.md).
 - **Derived Tree:** keep `render()` when inner DOM is generated from CE state and is not parent JSX ranges (toaster list, TOC heading list, calendar day grid).
 - **SSR preparation:** when a Derived Tree depends on state normally initialized in `onConnected()`, register an SSR preparation callback too. Calendar prepares its month panels from the supplied value and locale before server serialization; client connection still initializes interactive state.
-- Do not use HTML `<slot>` as the public JSX API. Drop `slot=` on helpers and `@slot` TSDoc once view helpers own the layout.
+- Do not use `this.slotted` as the public JSX API. Drop `slot=` on helpers and `@slot` TSDoc once view helpers own the layout.
 
-Core Radiant still has **Slot** as the architectural projection boundary for a render-owning host. Catalog composites do not expose HTML `<slot>` as the JSX API.
+Core Radiant still has **Slot** (`this.slotted`) as the architectural projection boundary for a render-owning host. Catalog composites do not expose it as the JSX API.
 
 ## Generated descendant ids
 
@@ -90,7 +90,7 @@ Slider and knob normalize off-step values. Only floating-point noise is ignored 
 
 - **View-owned Shell** (most composites): no `render()` override, no `RadiantElement<Bindings>` generic. The view places chrome; the CE queries `data-ref` / `data-*` / roles. Copy 1:1 field values with `@bindTo`. Keep `@onUpdated` for procedures (focus, joined ARIA, branching). Do not query class names. Do not move this chrome into CE `render()` to "use bindings": the catalog keeps composites as View-owned Shells.
 - **Derived Tree** (meter, toaster, calendar, TOC): override `render()` for derived structure. Use plain reads (`this.variant`, `this.entries`) for branches, lists, and `class`; use `this.$` for stable leaf text and whole attribute values that should patch without a full host rerender. Do not add `@onUpdated` + `requestUpdate()` for fields already bound with `this.$` — tracked `render()` handles structural reads; bindings handle leaves.
-- Never CE `render()` + `<slot>` for parent-owned chrome.
+- Never CE `render()` + `this.slotted` for parent-owned chrome.
 
 Omit the `Bindings` generic unless the script actually uses `this.$`, `this.bindings`, or `this.bind(...)`.
 

@@ -285,7 +285,7 @@ _Avoid_: provider, selector field, local state copy
 > **Dev:** "What is a slot in Radiant?"
 > **Domain expert:** "A **Slot** is where a render-owning **Element Host** places `this.slotted`: the **Children Value** from a JSX view or the **Authored Children** it captured. A host has one, and `{this.slotted ?? fallback}` renders fallback content when there is none. `<slot>` is not special in JSX."
 
-> **Dev:** "Should a radiant-ui composite project chrome through `<slot>`?"
+> **Dev:** "Should a radiant-ui composite place chrome through `this.slotted`?"
 > **Domain expert:** "No. Those composites use a **View-owned Shell**. Parent JSX owns **Authored Children**; **Composition Helpers** place named regions. Keep host `render()` for a **Derived Tree** only."
 
 > **Dev:** "What is the difference between a context provider and a consumer?"

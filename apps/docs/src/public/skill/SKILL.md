@@ -4,7 +4,7 @@ description: >-
     Author, refactor, review, or explain Radiant reactive hosts built with
     @ecopages/radiant. Use when the user asks for a RadiantElement or
     RadiantController, custom elements with @prop/@state/@signal, controller-attached
-    authored DOM, JSX-host rendering, slot projection, SSR hydration, internal
+    authored DOM, JSX-host rendering, slotted content, SSR hydration, internal
     bindings, @bindTo paint onto existing DOM, or when to use plain reactive
     reads versus this.$ / this.bindings / this.bind(...). Also use when updating
     docs, examples, or playground code so the output follows Radiant's shared
@@ -26,7 +26,7 @@ Use `llms.txt` for a compact map, then the full docs for API details.
 - Creating or editing a `RadiantElement` or `RadiantController`
 - Choosing `@prop` / `@state` / `@signal`, or `@customElement` / `@controller`
 - Choosing plain reads (`this.count`) vs JSX bindings (`this.$.count`) vs `@bindTo`
-- Wiring SSR, hydration, host rendering, or slot projection
+- Wiring SSR, hydration, host rendering, or slotted content
 - Reviewing docs or examples so they teach the Radiant model, not React habits
 
 ## Import paths
@@ -98,8 +98,8 @@ Read only the modules relevant to the task. Each file is one level deep from thi
 6. `@query` is a live element handle (focus, observers, third-party APIs) — not a way to copy a field into a node.
 7. Import context from `@ecopages/radiant/context`, not the root entry.
 8. Radiant SSR is light-DOM only. Prefer explicit `mode: 'plain'` or `mode: 'hydrate'`. In hydrate mode, define a parent host on the client too: a host inside a parent host's view stays inert until the parent hydrates.
-9. Type decorated fields as the decorator checks them ([field types](reference/decorators.md#field-types)): prefer an initializer, never `declare` a decorated field, and treat a `@query` / `@querySlot` field as `T | null` (`T[]` with `all: true`), guarding each use.
-10. A view hands a render-owning host its children as one value: `<slot />` renders them, and a named region is a property (`<x-card header={<h2 />}>`), not `slot="name"`. Change children in the parent view, not with DOM APIs, and define custom elements before rendering views that use them ([children](reference/hosts.md#children)).
+9. Type decorated fields as the decorator checks them ([field types](reference/decorators.md#field-types)): prefer an initializer, never `declare` a decorated field, and treat a `@query` field as `T | null` (`T[]` with `all: true`), guarding each use.
+10. A view hands a render-owning host its children as one value: `{this.slotted}` places them (`{this.slotted ?? fallback}` for a fallback), and a named region is a property (`<x-card header={<h2 />}>`). `<slot>` is an ordinary element. Change children in the parent view, not with DOM APIs, and define custom elements before rendering views that use them ([children](reference/hosts.md#children)).
 11. Declare public props with `declare readonly [JSX_PROPS]?: Props` and render the class directly (`<UserCard name="Ada" />`). `@prop` HTML attributes are kebab-case (`minWidth` is `min-width`); JSX keeps camelCase. Keep internal `@state` `protected` or `private`.
 
 ## Resources
