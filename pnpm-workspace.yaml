@@ -8,6 +8,10 @@ catalog:
     oxlint: ^1.78.0
     typescript: ~7.0.2
 
+# tsup 8 pins esbuild ~0.27, which has an advisory fixed in 0.28.1; tsup works with 0.28.
+overrides:
+    'tsup>esbuild': ^0.28.2
+
 allowBuilds:
     esbuild: true
     '@swc/core': true

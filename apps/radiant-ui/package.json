@@ -27,8 +27,8 @@
 		"@rehype-pretty/transformers": "^0.13.2",
 		"@types/hast": "^3.0.4",
 		"@types/node": "^24.13.2",
-		"@vitest/browser": "^4.1.10",
-		"@vitest/browser-playwright": "^4.1.10",
+		"@vitest/browser": "^4.1.12",
+		"@vitest/browser-playwright": "^4.1.12",
 		"ecopages": "0.6.1",
 		"playwright": "^1.62.1",
 		"rehype-pretty-code": "^0.14.1",
@@ -36,8 +36,8 @@
 		"shiki": "^3.20.0",
 		"tailwindcss": "^4.3.0",
 		"tsx": "^4.20.6",
-		"vite": "^8.1.1",
-		"vitest": "^4.1.10",
-		"zod": "^4.4.3"
+		"vite": "^8.3.6",
+		"vitest": "^4.1.12",
+		"zod": "^4.6.7"
 	}
 }

@@ -79,12 +79,12 @@
 		"@types/babel__traverse": "^7.28.0",
 		"@types/node": "^24.13.2",
 		"@types/picomatch": "^4.0.0",
-		"nitro": "^3.0.260311-beta",
+		"nitro": "latest",
 		"rollup": "^4.53.2",
 		"tsup": "^8.5.0",
 		"typescript": "catalog:",
-		"vite": "^8.1.1",
-		"vitest": "^4.1.10"
+		"vite": "^8.3.6",
+		"vitest": "^4.1.12"
 	},
 	"peerDependencies": {
 		"@babel/core": "^7.0.0",
@@ -95,7 +95,7 @@
 		"@ecopages/radiant": ">=0.8.0",
 		"@ecopages/signals": ">=0.8.0",
 		"@rolldown/plugin-babel": "^0.2.0",
-		"nitro": "^3.0.260311-beta",
+		"nitro": "^3",
 		"vite": "^8.0.0"
 	},
 	"peerDependenciesMeta": {
