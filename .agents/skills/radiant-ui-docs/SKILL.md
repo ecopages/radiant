@@ -43,7 +43,7 @@ Work one component at a time. Do not invent targets, roles, or examples.
 5. Replace the CE class TSDoc with the template in `references/contract.md`. Describe the **full child tree**.
 6. Document each public helper: target stamped, required or not, chrome it always injects.
 7. `@cssclass` on the **export that authors the class**, not on the CE, unless CE `render()` paints that class.
-8. No `@slot` unless HTML `<slot>` is still the public API.
+8. No `@slot` TSDoc: Radiant has no named slots.
 9. Update `apps/radiant-ui/src/content/components/<slug>.mdx`. Usage matches real helper props. Custom markup matches the script. Extra capabilities get a **Canvas** plus a `docsStory` in `apps/radiant-ui/src/content/stories/<slug>.tsx`.
 10. Public methods get a Methods table in MDX and a mention in CE `@remarks`.
 11. TSDoc, MDX, and helpers must agree. The script wins; fix the docs.
@@ -67,7 +67,7 @@ Ignore private markers (`data-rui-managed-list`, ephemeral ids) unless authors m
 
 - State the contract. Do not substitute “compose with helpers” for listing targets.
 - First Usage example: helpers. Custom markup: headless path.
-- Consumer MDX: **behavior host**, query contract, targets, Composition Helpers, Authored Children. Never **View-owned Shell**, **Binding**, or **slot** (unless HTML `<slot>` is real).
+- Consumer MDX: **behavior host**, query contract, targets, Composition Helpers, Authored Children. Never **View-owned Shell**, **Binding**, or **slot**.
 - No fluff. No emoji.
 - If a helper always injects chrome you cannot omit, say so.
 - Do not copy a closing line that contradicts the contract list above it.

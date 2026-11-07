@@ -38,11 +38,8 @@ export class HydratedSlotCard extends RadiantElement {
 	override render() {
 		return (
 			<section>
-				<header>
-					<slot name="header" />
-				</header>
 				<div>
-					<slot />
+					{this.slotted}
 				</div>
 				<button type="button" on:click={this.increment}>
 					Count {this.count}
@@ -59,7 +56,7 @@ export class HydratedConditionalSlotCard extends RadiantElement {
 	override render() {
 		return this.open ? (
 			<section>
-				<slot />
+				{this.slotted}
 			</section>
 		) : (
 			<p>closed</p>
@@ -75,7 +72,7 @@ export class HydratedMarkerSlotChild extends RadiantElement {
 	override render() {
 		return (
 			<div class="child">
-				<slot />
+				{this.slotted}
 			</div>
 		);
 	}
@@ -147,15 +144,9 @@ export class HydratedComplexSlotCard extends RadiantElement {
 	override render() {
 		return (
 			<section>
-				<header>
-					<slot name="header" />
-				</header>
 				<div data-ref="body">
-					<slot />
+					{this.slotted}
 				</div>
-				<footer>
-					<slot name="footer" />
-				</footer>
 				<button type="button" on:click={this.increment}>
 					Count {this.count}
 				</button>
@@ -276,7 +267,7 @@ export class HydratedNestedCounter extends RadiantElement<{ count: number }> {
 				<button type="button" on:click={this.increment}>
 					{this.$.count}
 				</button>
-				<slot />
+				{this.slotted}
 			</div>
 		);
 	}
@@ -354,12 +345,12 @@ export class HydratedLateChildParent extends RadiantElement<{ inside: string; tr
 	}
 }
 
-/** Page-level JSX around a host, outside every host's view: the server gives the host Authored Children. */
+/** Page-level JSX around a host, outside every host's view: the server gives the host captured children. */
 export function pageSlotCardView(body: JsxRenderable = 'SSR body') {
 	return (
 		<main title="page">
 			<hydrated-slot-card-test>
-				<h2 slot="header">SSR header</h2>
+				<h2>SSR header</h2>
 				<p>{body}</p>
 			</hydrated-slot-card-test>
 		</main>
@@ -372,7 +363,7 @@ export function staticPageSlotCardView() {
 		<main>
 			<h1>SSR title</h1>
 			<hydrated-slot-card-test>
-				<h2 slot="header">SSR header</h2>
+				<h2>SSR header</h2>
 				<p>SSR body</p>
 			</hydrated-slot-card-test>
 		</main>
@@ -384,24 +375,21 @@ export class HydratedBindlessSlotCard extends RadiantElement {
 	override render() {
 		return (
 			<section>
-				<header>
-					<slot name="header" />
-				</header>
 				<div>
-					<slot />
+					{this.slotted}
 				</div>
 			</section>
 		);
 	}
 }
 
-/** Page-level JSX with no binding of its own around a host whose view has no binding either, only slots. */
+/** Page-level JSX with no binding of its own around a host whose view has no binding either, only slotted content. */
 export function staticPageBindlessCardView() {
 	return (
 		<main>
 			<h1>SSR title</h1>
 			<hydrated-bindless-slot-card-test>
-				<h2 slot="header">SSR header</h2>
+				<h2>SSR header</h2>
 				<p>SSR body</p>
 			</hydrated-bindless-slot-card-test>
 		</main>
@@ -423,7 +411,7 @@ export class HydratedOptionalChildrenParent extends RadiantElement<{ show: boole
 	}
 }
 
-/** Page-level JSX around a host whose only children go to its default slot, with a handler and a reactive text. */
+/** Page-level JSX around a host that slots its children, with a handler and a reactive text. */
 export function pageBuyCardView(count: JsxRenderable, onBuy: () => void) {
 	return (
 		<main title="page">

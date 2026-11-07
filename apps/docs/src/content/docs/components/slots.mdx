@@ -1,16 +1,20 @@
 ---
 title: "Slots"
-description: "Where a render-owning RadiantElement places its children: a Children Value from a JSX view or Authored Children by slot name."
+description: "Where a render-owning RadiantElement places its children: this.slotted holds a Children Value from a JSX view or captured Authored Children."
 group: Components
 order: 4
 ---
 
 # Slots
 
-`<slot>` in `render()` places a render-owning `RadiantElement`'s children. How they arrive decides how `<slot>` resolves, with one exception for hosts the server rendered outside every host's view (see [Server-rendered hosts](#server-rendered-hosts)):
+A render-owning `RadiantElement` places its children with `{this.slotted}` in `render()`. `this.slotted` is `null` when there are none, so `{this.slotted ?? fallback}` renders fallback content. `<slot>` is an ordinary element: it has no meaning in a Radiant view.
 
-- **From a JSX view.** When a view renders `<x-card>{children}</x-card>` and `x-card` is defined and overrides `render()`, the view hands a **Children Value** to the host. `<slot />` renders that value, and the host's renderer is the only one that touches the resulting nodes. Named regions are properties.
-- **As HTML.** Children written in markup, created with DOM APIs, rendered before the tag was defined, or rendered on the server in a page outside every host's view or in plain mode become **Authored Children**. They are captured once, when the host first renders, and assigned to slots by their `slot` attribute.
+How the children arrive decides where `this.slotted` comes from:
+
+- **From a JSX view.** When a view renders `<x-card>{children}</x-card>` and `x-card` is defined and overrides `render()`, the view hands a **Children Value** to the host on every render. The host's renderer is the only one that touches the resulting nodes.
+- **As HTML.** Children written in markup, created with DOM APIs before the first render, rendered before the tag was defined, or rendered on the server in a page outside every host's view or in plain mode become **Authored Children**. The host captures them once, before its first render. Nodes appended later are not slotted.
+
+A host has one slotted value. A named region is a property.
 
 ## Children Value from a JSX view
 
@@ -29,11 +33,7 @@ export class XCard extends RadiantElement {
 		return (
 			<section class="x-card">
 				<header>{this.header}</header>
-				{this.open ? (
-					<slot>
-						<p>Nothing here yet</p>
-					</slot>
-				) : null}
+				{this.open ? (this.slotted ?? <p>Nothing here yet</p>) : null}
 			</section>
 		);
 	}
@@ -48,14 +48,12 @@ export class XCard extends RadiantElement {
 </x-card>
 ```
 
-- `children` fills the default `<slot />`. Its fallback renders while the children are empty.
+- `children` becomes `this.slotted`. The fallback renders while the children are empty.
 - A named region is a property, rendered with `{this.header}`. An unprefixed name binds as a property on a custom element; write `prop:name` only for a name that binds as an attribute by default, such as `title` or `id`.
-- Every render of the view passes the **Children Value** again and the host renders it in place, so adding, removing or reordering children, and binding updates inside them, show up even when the host hid its `<slot />` meanwhile.
-- `slot="name"` on a JSX child does not select a named slot: the child stays in the default slot, and development builds warn to pass it as a property. A `<slot name="…">` in such a host renders its fallback.
-- Nodes appended to the host with DOM APIs remain outside its projected slot content; development builds warn to change the children in the view instead.
-- On the server, a host builds its children inside its own context providers, so a consumer passed as a child of a provider host resolves that provider. In hydrate-mode SSR, a host inside another host's view renders the children itself and waits on the client for that view to hand them back, so define the parent host on the client as well. Plain-mode SSR does not make the host wait, and its parent may never be defined on the client, so it renders them as **Authored Children** with a slot-projection payload, and the host still renders them when its parent is not defined.
-
-The `slot` and appended-node warnings show when the app's bundler sets `process.env.NODE_ENV` to anything other than `"production"`. `setDevWarningsEnabled(false)` from `@ecopages/jsx/jsx-dev-runtime` silences them along with the JSX warnings.
+- Every render of the view passes the **Children Value** again and the host renders it in place, so adding, removing or reordering children, and binding updates inside them, show up even when the host hid its slotted content meanwhile.
+- Place `this.slotted` once per render. On the client it comes wrapped in two empty text nodes that `this.slottedElements` reads.
+- `slot="name"` on a child is an ordinary attribute.
+- On the server, a host builds its children inside its own context providers, so a consumer passed as a child of a provider host resolves that provider. In hydrate-mode SSR, a host inside another host's view renders the children itself and waits on the client for that view to hand them back, so define the parent host on the client as well. Plain-mode SSR does not make the host wait, and its parent may never be defined on the client, so it renders them as **Authored Children** with a slotted payload, and the host still renders them when its parent is not defined.
 
 A custom element that is not a Radiant host, or a Radiant host without a `render()` override, keeps its JSX children as DOM nodes inside it.
 
@@ -71,14 +69,7 @@ export class ShellCard extends RadiantElement {
 	override render() {
 		return (
 			<section class="shell-card">
-				<slot name="heading">
-					<h2>Fallback heading</h2>
-				</slot>
-				<div class="shell-card__body">
-					<slot>
-						<p>Fallback body content</p>
-					</slot>
-				</div>
+				<div class="shell-card__body">{this.slotted ?? <p>Fallback body content</p>}</div>
 			</section>
 		);
 	}
@@ -87,29 +78,42 @@ export class ShellCard extends RadiantElement {
 
 ```html
 <shell-card>
-	<h2 slot="heading">Projected heading</h2>
-	<p>Projected body content</p>
+	<h2>Heading</h2>
+	<p>Body content</p>
 </shell-card>
 ```
 
-- Slots are resolved from direct host children.
-- The default slot receives direct host children without a `slot` attribute.
-- Named slots receive direct host children whose `slot` attribute matches the slot `name`.
-- Fallback JSX inside `<slot>` renders only when no matching projected content exists.
-- Nodes appended to the host after its first render are projected too.
-- SSR host rendering serializes the projected content and embeds the metadata needed to reconstruct slot assignments on the client.
+- The host captures its direct children once, before its first render, and moves those same nodes to where the view places `this.slotted`.
+- The host captures them even when its first view does not place `this.slotted`, so a host that shows its content only later still has it.
+- Nodes appended to the host after its first render are not slotted; they stay where they were appended.
+- SSR host rendering serializes the captured children and embeds a payload the client restores them from.
 
-A tag defined only after a view rendered it treats those JSX children as **Authored Children**, and development builds warn: the host then does not follow later edits the view makes to them. Define custom elements before rendering views that use them.
+A tag defined only after a view rendered it treats those JSX children as **Authored Children**, and development builds warn: the host then does not follow later edits the view makes to them. Define custom elements before rendering views that use them. The warning shows when the app's bundler sets `process.env.NODE_ENV` to anything other than `"production"`, and `setDevWarningsEnabled(false)` from `@ecopages/jsx/jsx-dev-runtime` silences it along with the JSX warnings.
 
 ### Server-rendered hosts
 
-What the server rendered decides how a server-rendered host takes its children on the client. In hydrate mode, a host the server renders outside every host's view gets **Authored Children** and ships them in a slot-projection payload. When some of them fill a named slot, it is stamped `data-radiant-ssr="authored"`: it keeps those children for its lifetime and ignores any **Children Value**: when page-level JSX hydrates over it, its named slots stay as the server rendered them, a later render of the page JSX does not change them, and event bindings in them never attach. Render changing or interactive content inside a host's view, or pass it through a property. When they only fill the default slot, the host takes the page JSX's **Children Value**, which renders them in the same place with live bindings. The page's hydration keeps the host's node when the tag was defined before the page JSX was created; otherwise, or when the page JSX hydrates while the tag is still undefined, the host is rebuilt and takes those children as **Authored Children**, as before. A page JSX with no binding of its own still hydrates after its hosts hydrated or rendered themselves, and after they updated, as long as its static markup matches what the server rendered. A page whose static markup differs renders fresh, and its new hosts take a **Children Value**.
+In hydrate mode, a host the server renders outside every host's view gets **Authored Children** and ships them in a slotted payload. When page-level JSX hydrates over it, the host takes the page JSX's **Children Value**, which renders the same children in the same place with live bindings, and follows later renders of the page JSX. The page's hydration keeps the host's node when the tag was defined before the page JSX was created; otherwise, or when the page JSX hydrates while the tag is still undefined, the host is rebuilt and takes those children as **Authored Children**. A page JSX with no binding of its own still hydrates after its hosts hydrated or rendered themselves, and after they updated, as long as its static markup matches what the server rendered. A page whose static markup differs renders fresh, and its new hosts take a **Children Value**.
 
 A host the server renders inside another host's view in hydrate mode, and any host that client JSX creates while its tag is defined, takes the **Children Value**. Plain-mode markup carries no stamp and no hydration markers, so page JSX renders over it instead of hydrating.
 
+## Forwarding to another host
+
+`this.slotted` is an ordinary value in the view, so a host can hand it to a host it renders. The inner host places it with its own `{this.slotted}`:
+
+```tsx
+@customElement('x-panel')
+export class XPanel extends RadiantElement {
+	override render() {
+		return <x-card>{this.slotted ?? <p>Empty</p>}</x-card>;
+	}
+}
+```
+
+This works whether `x-panel`'s children come from a JSX view or from HTML. Forward a named region the same way, as a property: `<x-card header={this.header}>`. Forwarding counts as the one place the render puts `this.slotted`.
+
 ## View helpers
 
-A view helper that owns the shell can also put chrome and children in the **parent tree**: named helpers or props occupy a region, and the custom element queries `data-ref` / `data-*` and paints with [@bindTo](/docs/decorators/bind-to) instead of rendering a `<slot>`. Radiant UI composes its parts this way.
+A view helper that owns the shell can also put chrome and children in the **parent tree**: named helpers or props occupy a region, and the custom element queries `data-ref` / `data-*` and paints with [@bindTo](/docs/decorators/bind-to) instead of placing `this.slotted`. Radiant UI composes its parts this way. That is a convention of the catalog, not a limit of Radiant: your own hosts can place or forward `this.slotted` as above.
 
 ```tsx
 <RuiDialog title={<>Edit plant</>}>Body</RuiDialog>
@@ -117,6 +121,47 @@ A view helper that owns the shell can also put chrome and children in the **pare
 
 See the authored light-DOM host in [RadiantElement](/docs/components/radiant-element) and the Radiant UI composition guide.
 
-## Querying Assigned Content
+## Reading slotted elements
 
-Use [@querySlot](/docs/decorators/query-slot) when component logic needs the assigned elements for a default or named slot. On a host that receives a **Children Value**, the default slot's elements are the top-level elements that value rendered to, and named slots are empty.
+`this.slottedElements` lists the top-level elements the slotted content rendered to, for `classList`, focus or measuring. It is empty before the first client render and on the server, so read it in `onConnected()`, `updated()` or an event handler rather than in `render()`.
+
+```tsx
+override onConnected() {
+	this.slottedElements[0]?.classList.add('is-first');
+}
+```
+
+### Copying slotted elements
+
+The same nodes cannot render in two places, but a copy can. Clone an element after the first render and keep the copy in state; the view renders it as any other node:
+
+```tsx
+@customElement('x-preview-card')
+export class XPreviewCard extends RadiantElement {
+	@state preview: Node | null = null;
+
+	override onConnected() {
+		this.preview = this.slottedElements[0]?.cloneNode(true) ?? null;
+	}
+
+	override render() {
+		return (
+			<section>
+				<div class="main">{this.slotted}</div>
+				<aside>{this.preview}</aside>
+			</section>
+		);
+	}
+}
+```
+
+A copy is a snapshot. It does not follow later changes to the original, it has none of the listeners or bindings attached to the original, a custom element inside it is a new instance with its own state, and an `id` is duplicated. Prefer rendering the source data twice when the host has it.
+
+## Migrating from `<slot>`
+
+| Before | After |
+| --- | --- |
+| `<slot />` in `render()` | `{this.slotted}` |
+| `<slot>Fallback</slot>` | `{this.slotted ?? <p>Fallback</p>}` |
+| `<slot name="header" />` with `slot="header"` children | a `header` property (`<x-card header={<h2 />}>`, rendered with `{this.header}`), or composition |
+| `getSlotElements()`, `getSlotElement()`, `@querySlot`, `createQuerySlot` | `this.slottedElements` |

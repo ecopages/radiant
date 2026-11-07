@@ -227,8 +227,8 @@ test('Nitro kitchen sink studio board composes slots and propagates context upda
 
 		const studioBoard = page.locator('radiant-slot-studio-board').first();
 		await waitForLocatorText(
-			studioBoard.locator('h3[slot="heading"]'),
-			'Launch board with projected planning rails',
+			studioBoard.locator('.component-card--studio > h3'),
+			'Launch board with slotted planning rails',
 		);
 		await waitForLocatorText(
 			studioBoard.locator('.studio-summary'),
@@ -236,7 +236,7 @@ test('Nitro kitchen sink studio board composes slots and propagates context upda
 		);
 		await waitForLocatorText(
 			studioBoard.locator('.studio-slot-meta'),
-			'@querySlot sees 2 body regions, sidebar ready, footer ready. Projected custom element: radiant-counter.',
+			'slottedElements sees 2 body regions, sidebar ready, footer ready. Slotted custom element: radiant-counter.',
 		);
 		await waitForLocatorText(
 			studioBoard.locator('.studio-insight[data-kind="stage"] .studio-insight__value'),

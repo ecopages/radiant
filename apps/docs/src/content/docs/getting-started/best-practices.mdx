@@ -220,7 +220,7 @@ In that example, the `class` expression still belongs to the host render pass, w
 
 ### @query vs paint
 
-`@query` and `@querySlot` are live element handles — slotted/consumer-authored content, a `RadiantController` enhancing existing markup, or a node needed by a third-party imperative API. They are not a substitute for copying a reactive field into a node.
+`@query` and `this.slottedElements` are live element handles — slotted/consumer-authored content, a `RadiantController` enhancing existing markup, or a node needed by a third-party imperative API. They are not a substitute for copying a reactive field into a node.
 
 - Host owns `render()`: bind the value in JSX (`{this.$.count}`).
 - Host keeps authored light DOM: copy the field with `@bindTo`.

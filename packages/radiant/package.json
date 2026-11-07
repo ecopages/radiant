@@ -208,10 +208,6 @@
 			"types": "./dist/helpers/create-query.d.ts",
 			"import": "./dist/helpers/create-query.js"
 		},
-		"./helpers/create-query-slot": {
-			"types": "./dist/helpers/create-query-slot.d.ts",
-			"import": "./dist/helpers/create-query-slot.js"
-		},
 		"./helpers/create-event": {
 			"types": "./dist/helpers/create-event.d.ts",
 			"import": "./dist/helpers/create-event.js"
@@ -239,10 +235,6 @@
 		"./decorators/query": {
 			"types": "./dist/decorators/query.d.ts",
 			"import": "./dist/decorators/query.js"
-		},
-		"./decorators/query-slot": {
-			"types": "./dist/decorators/query-slot.d.ts",
-			"import": "./dist/decorators/query-slot.js"
 		},
 		"./decorators/signal": {
 			"types": "./dist/decorators/signal.d.ts",

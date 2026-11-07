@@ -9,8 +9,8 @@ const packageRoot = path.resolve(import.meta.dirname, '../..');
 export const distRoot = path.join(packageRoot, 'dist');
 
 /**
- * A consumer app that renders a render-owning host from a JSX view: `mountFrame` passes a child marked
- * `slot="header"` to a defined host, and `mountLateFrame` defines the tag only after the view rendered it.
+ * A consumer app that renders a render-owning host from a JSX view: `mountFrame` passes children to a defined host,
+ * and `mountLateFrame` defines the tag only after the view rendered it.
  *
  * @remarks Each call defines its own tag, so a development and a production bundle can load in one page.
  */
@@ -21,7 +21,7 @@ import { RadiantElement } from '@ecopages/radiant';
 function defineFrame(tag) {
 	class Frame extends RadiantElement {
 		render() {
-			return <div><header /><main><slot /></main></div>;
+			return <div><main>{this.slotted}</main></div>;
 		}
 	}
 	customElements.define(tag, Frame);
@@ -30,7 +30,7 @@ function defineFrame(tag) {
 export function mountFrame(tag, container) {
 	const Tag = tag;
 	defineFrame(tag);
-	render(<Tag><h2 slot="header">Title</h2></Tag>, container);
+	render(<Tag><h2>Title</h2></Tag>, container);
 
 	return container.querySelector(tag);
 }

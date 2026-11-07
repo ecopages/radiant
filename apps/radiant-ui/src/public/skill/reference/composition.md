@@ -21,7 +21,7 @@ Light DOM is the default: style with theme roles and BEM `.rui-*` classes, not s
 
 ## Named regions
 
-Parent JSX owns the children you pass. The view places them, and the custom element coordinates behavior over that tree; it does not project them through `<slot>`. Fill a named region with a Composition Helper (`RuiDialogTitle`, `RuiNumberFieldInput`) or a view prop (`trigger`, `primary` / `secondary`). Do not use `slot="name"`.
+Parent JSX owns the children you pass. The view places them, and the custom element coordinates behavior over that tree; it does not place them through its own `render()` and `this.slotted`. Fill a named region with a Composition Helper (`RuiDialogTitle`, `RuiNumberFieldInput`) or a view prop (`trigger`, `primary` / `secondary`). Do not use `slot="name"`.
 
 ## Views that take no children
 

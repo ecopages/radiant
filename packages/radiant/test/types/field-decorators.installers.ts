@@ -19,7 +19,6 @@ import { contextSelector } from '../../src/context/decorators/context-selector';
 import { provideContext } from '../../src/context/decorators/provide-context';
 import { event } from '../../src/decorators/event';
 import { query } from '../../src/decorators/query';
-import { querySlot } from '../../src/decorators/query-slot';
 import { createQuery } from '../../src/helpers/create-query';
 import type { EventEmitter } from '../../src/tools/event-emitter';
 
@@ -36,9 +35,6 @@ export class ValidElementInstallers extends RadiantElement {
 	@query({ selector: '.r' }) q3: Element | null;
 	@query({ ref: 'r', all: true }) q4: HTMLLIElement[];
 	@query({ ref: 'r', all: false }) q5: HTMLElement | null;
-
-	@querySlot() s1!: HTMLParagraphElement | null;
-	@querySlot({ all: true }) s2!: HTMLElement[];
 
 	@event({ name: 'x' }) e1: EventEmitter<{ a: number }>;
 	@event({ name: 'x' }) e2!: EventEmitter;

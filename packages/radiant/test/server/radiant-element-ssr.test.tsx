@@ -8,7 +8,6 @@ import { bindTo } from '../../src/decorators/bind-to';
 import { customElement } from '../../src/decorators/custom-element';
 import { onUpdated } from '../../src/decorators/on-updated';
 import { prop } from '../../src/decorators/prop';
-import { querySlot } from '../../src/decorators/query-slot';
 import { signal } from '../../src/decorators/signal';
 import { state } from '../../src/decorators/state';
 import { createResource } from '../../src/signals/host-resource';
@@ -107,27 +106,16 @@ class PreparedAuthoredBindToHost extends RadiantElement {
 	value = 'bound';
 
 	override render() {
-		return <slot />;
+		return this.slotted;
 	}
 }
 
-@customElement('server-host-slot-query-card-test')
-class ServerHostSlotQueryCard extends RadiantElement {
-	@querySlot() defaultSlot!: HTMLParagraphElement | null;
-	@querySlot({ name: 'header' }) headerSlot!: HTMLHeadingElement | null;
-
+@customElement('server-host-prepared-card-test')
+class ServerHostPreparedCard extends RadiantElement {
 	override render() {
 		return (
-			<section
-				data-default-slot={this.defaultSlot?.textContent ?? 'missing'}
-				data-header-slot={this.headerSlot?.textContent ?? 'missing'}
-			>
-				<header>
-					<slot name="header" />
-				</header>
-				<div>
-					<slot />
-				</div>
+			<section>
+				<div>{this.slotted}</div>
 			</section>
 		);
 	}
@@ -493,7 +481,7 @@ describe('RadiantElement SSR', () => {
 			override render() {
 				return (
 					<section>
-						<slot />
+						{this.slotted}
 					</section>
 				);
 			}
@@ -518,7 +506,7 @@ describe('RadiantElement SSR', () => {
 			override render() {
 				return (
 					<div>
-						<slot />
+						{this.slotted}
 					</div>
 				);
 			}
@@ -708,31 +696,27 @@ describe('RadiantElement SSR', () => {
 		);
 	});
 
-	test('renderRadiantElementHostToString() serializes projected slot content and embeds slot projection payload', () => {
+	test('renderRadiantElementHostToString() serializes slotted content and embeds the slotted payload', () => {
 		@customElement('server-host-slot-card-test')
 		class ServerHostSlotCard extends RadiantElement {
 			override render() {
 				return (
 					<section>
-						<header>
-							<slot name="header" />
-						</header>
-						<div>
-							<slot />
-						</div>
+						<div>{this.slotted}</div>
 					</section>
 				);
 			}
 		}
 
 		const element = new ServerHostSlotCard();
-		element.innerHTML = '<h2 slot="header">Server heading</h2><p>Server body</p>';
+		element.innerHTML = '<h2>Server heading</h2><p>Server body</p>';
 
 		const html = renderRadiantElementHostToString(element, { mode: 'hydrate' });
 
-		expect(html).toContain('<header><h2 slot="header">Server heading</h2></header>');
-		expect(html).toContain('<div><p>Server body</p></div>');
-		expect(html).toContain('data-radiant-slot-projection');
+		expect(html).toContain('<div><h2>Server heading</h2><p>Server body</p></div>');
+		expect(html).toContain(
+			'<script type="application/json" data-radiant-slot-projection>{"":["\\u003ch2>Server heading\\u003c/h2>","\\u003cp>Server body\\u003c/p>"]}</script>',
+		);
 	});
 
 	test('A View-owned Shell ships its children once', () => {
@@ -748,7 +732,7 @@ describe('RadiantElement SSR', () => {
 		expect(html).not.toContain('data-radiant-slot-projection');
 	});
 
-	test('A host whose view has no slot still ships Authored Children in the slot-projection payload', () => {
+	test('A host whose view does not place its slotted content still ships it in the slotted payload', () => {
 		@customElement('derived-list')
 		class DerivedList extends RadiantElement {
 			override render() {
@@ -770,13 +754,13 @@ describe('RadiantElement SSR', () => {
 		expect(html).toContain('\\u003cp>ignored by render\\u003c/p>');
 	});
 
-	test('slot projection payload keeps escaped text escaped', () => {
+	test('the slotted payload keeps escaped text escaped', () => {
 		@customElement('server-host-slot-escape-test')
 		class ServerHostSlotEscape extends RadiantElement {
 			override render() {
 				return (
 					<section>
-						<slot />
+						{this.slotted}
 					</section>
 				);
 			}
@@ -793,7 +777,7 @@ describe('RadiantElement SSR', () => {
 	});
 
 	describeWhenStandard('SSR ordering with generated hydration scripts', () => {
-		test("renderRadiantElementHostToString({ mode: 'hydrate' }) emits host content before slot projection and hydration scripts", () => {
+		test("renderRadiantElementHostToString({ mode: 'hydrate' }) emits host content before the slotted payload and hydration scripts", () => {
 			@customElement('server-host-ordering-card-test')
 			class ServerHostOrderingCard extends RadiantElement {
 				@signal({ hydrate: String, initial: 'idle' }) status!: WritableSignal<string>;
@@ -801,7 +785,7 @@ describe('RadiantElement SSR', () => {
 				override render() {
 					return (
 						<section>
-							<slot />
+							{this.slotted}
 							<p>{this.status}</p>
 						</section>
 					);
@@ -823,16 +807,16 @@ describe('RadiantElement SSR', () => {
 		});
 	});
 
-	test('createServerRenderEnvironment() prepares authored content for server-side slot queries', () => {
+	test('createServerRenderEnvironment() prepares authored content as slotted content', () => {
 		const environment = createServerRenderEnvironment();
 
-		const element = new ServerHostSlotQueryCard();
+		const element = new ServerHostPreparedCard();
 		environment.prepareHost(element, {
-			authoredContent: '<h2 slot="header">Prepared heading</h2><p>Prepared body</p>',
+			authoredContent: '<h2>Prepared heading</h2><p>Prepared body</p>',
 		});
 
 		expect(renderRadiantElementHostToString(element, { mode: 'hydrate' })).toContain(
-			'data-header-slot="Prepared heading"',
+			'<section><div><h2>Prepared heading</h2><p>Prepared body</p></div></section>',
 		);
 	});
 
@@ -915,13 +899,13 @@ describe('RadiantElement SSR', () => {
 		expect(html).toContain('{"count":3,"label":"Authored child"}</script>');
 	});
 
-	test("renderRadiantElementHostToString({ mode: 'plain' }) emits authored hydration markup before slot projection payloads", () => {
+	test("renderRadiantElementHostToString({ mode: 'plain' }) emits authored hydration markup before the slotted payload", () => {
 		@customElement('server-host-authored-hydration-order-card-test')
 		class ServerHostAuthoredHydrationOrderCard extends RadiantElement {
 			override render() {
 				return (
 					<section>
-						<slot />
+						{this.slotted}
 					</section>
 				);
 			}
@@ -1023,18 +1007,6 @@ describe('RadiantElement SSR', () => {
 	});
 
 	describeWhenStandard('pre-connect SSR accessors', () => {
-		test('createServerRenderEnvironment() resolves slot query accessors before connect', () => {
-			const environment = createServerRenderEnvironment();
-			const element = new ServerHostSlotQueryCard();
-
-			environment.prepareHost(element, {
-				authoredContent: '<h2 slot="header">Prepared heading</h2><p>Prepared body</p>',
-			});
-
-			expect(element.headerSlot?.textContent).toBe('Prepared heading');
-			expect(element.defaultSlot?.textContent).toBe('Prepared body');
-		});
-
 		test("renderRadiantElementHostToString({ mode: 'hydrate' }) appends signal hydration scripts automatically", () => {
 			class ServerHostSignalCard extends RadiantElement {
 				@signal({ hydrate: String, initial: 'idle' }) status!: WritableSignal<string>;

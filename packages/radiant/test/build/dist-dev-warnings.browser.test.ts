@@ -30,29 +30,14 @@ describe('published dist development warnings in a browser', () => {
 		document.body.innerHTML = '';
 	});
 
-	test('A development build of an app warns when a render-owning host receives a JSX child marked slot="header"', async () => {
+	test('A development build of an app renders the children a view passes to a host without warning', async () => {
 		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 		const app = await loadDistApp('development');
 
 		const frame = app.mountFrame('dist-dev-frame', mountContainer());
 		await waitFor(() => expect(frame.querySelector('main > h2')?.textContent).toBe('Title'));
 
-		expect(warn).toHaveBeenCalledWith(expect.stringContaining('slot="header"; pass it as the header property'));
-	});
-
-	test('A development build of an app warns when a node is appended to a host fed by a view', async () => {
-		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-		const app = await loadDistApp('development');
-		const frame = app.mountFrame('dist-dev-append-frame', mountContainer());
-		await waitFor(() => expect(frame.querySelector('main > h2')).not.toBeNull());
-
-		frame.append(document.createElement('i'));
-
-		await waitFor(() =>
-			expect(warn).toHaveBeenCalledWith(
-				expect.stringContaining('<dist-dev-append-frame> ignores appended nodes'),
-			),
-		);
+		expect(warn).not.toHaveBeenCalled();
 	});
 
 	test('A development build of an app warns when a tag is defined after a view rendered it', async () => {
@@ -75,9 +60,6 @@ describe('published dist development warnings in a browser', () => {
 		await waitFor(() => expect(frame.querySelector('main > h2')?.textContent).toBe('Title'));
 		await waitFor(() => expect(lateFrame.querySelector('main > p')?.textContent).toBe('Body'));
 
-		frame.append(document.createElement('i'));
-		await new Promise((resolve) => setTimeout(resolve, 0));
-
 		expect(warn).not.toHaveBeenCalled();
 	});
 
@@ -86,10 +68,8 @@ describe('published dist development warnings in a browser', () => {
 		const app = await loadDistApp('development');
 		setDevWarningsEnabled(false);
 
-		const frame = app.mountFrame('dist-disabled-frame', mountContainer());
-		await waitFor(() => expect(frame.querySelector('main > h2')?.textContent).toBe('Title'));
-		frame.append(document.createElement('i'));
-		await new Promise((resolve) => setTimeout(resolve, 0));
+		const lateFrame = app.mountLateFrame('dist-disabled-late-frame', mountContainer());
+		await waitFor(() => expect(lateFrame.querySelector('main > p')?.textContent).toBe('Body'));
 
 		expect(warn).not.toHaveBeenCalled();
 	});

@@ -18,7 +18,6 @@ import { getRadiantElementSsrRuntime } from '../../src/core/radiant-element-ssr-
 import { RadiantElement } from '../../src/core/radiant-element';
 import { controller } from '../../src/decorators/controller';
 import { customElement } from '../../src/decorators/custom-element';
-import { querySlot } from '../../src/decorators/query-slot';
 import { registerController } from '../../src/controller-registry';
 import { createServerRenderEnvironment } from '../../src/server/light-dom-shim';
 import {
@@ -105,23 +104,12 @@ class RenderComponentNestedParent extends RadiantElement {
 	}
 }
 
-@customElement('render-component-slot-query-card-test')
-class RenderComponentSlotQueryCard extends RadiantElement {
-	@querySlot() defaultSlot!: HTMLParagraphElement | null;
-	@querySlot({ name: 'header' }) headerSlot!: HTMLHeadingElement | null;
-
+@customElement('render-component-slotted-card-test')
+class RenderComponentSlottedCard extends RadiantElement {
 	override render() {
 		return (
-			<section
-				data-default-slot={this.defaultSlot?.textContent ?? 'missing'}
-				data-header-slot={this.headerSlot?.textContent ?? 'missing'}
-			>
-				<header>
-					<slot name="header" />
-				</header>
-				<div>
-					<slot />
-				</div>
+			<section>
+				<div>{this.slotted}</div>
 			</section>
 		);
 	}
@@ -638,27 +626,22 @@ describe('render-component server helpers', () => {
 	});
 
 	test('renderComponent() prepares authored content through a server render environment', async () => {
-		const rendered = await renderComponent(RenderComponentSlotQueryCard, {
-			authoredContent: '<h2 slot="header">Server heading</h2><p>Server body</p>',
+		const rendered = await renderComponent(RenderComponentSlottedCard, {
+			authoredContent: '<h2>Server heading</h2><p>Server body</p>',
 			environment: createServerRenderEnvironment(),
 		});
 
-		expect(rendered.markup).toContain('data-header-slot="Server heading"');
-		expect(rendered.markup).toContain('data-default-slot="Server body"');
-		expect(rendered.markup).toContain('<header><h2 slot="header">Server heading</h2></header>');
-		expect(rendered.markup).toContain('<div><p>Server body</p></div>');
+		expect(rendered.markup).toContain('<div><h2>Server heading</h2><p>Server body</p></div>');
 	});
 
-	test('renderComponent() lets adapters prepare host content before slot-aware SSR', async () => {
-		const rendered = await renderComponent(RenderComponentSlotQueryCard, {
+	test('renderComponent() lets adapters prepare host content before it is slotted', async () => {
+		const rendered = await renderComponent(RenderComponentSlottedCard, {
 			prepareHost: (host) => {
-				host.insertAdjacentHTML('beforeend', '<h2 slot="header">Prepared heading</h2><p>Prepared body</p>');
+				host.insertAdjacentHTML('beforeend', '<h2>Prepared heading</h2><p>Prepared body</p>');
 			},
 		});
 
-		expect(rendered.markup).toContain('data-header-slot="Prepared heading"');
-		expect(rendered.markup).toContain('data-default-slot="Prepared body"');
-		expect(rendered.markup).toContain('<header><h2 slot="header">Prepared heading</h2></header>');
+		expect(rendered.markup).toContain('<div><h2>Prepared heading</h2><p>Prepared body</p></div>');
 	});
 
 	test('renderComponent() exposes ambient SSR context to standalone consumers', async () => {

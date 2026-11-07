@@ -31,11 +31,7 @@ class SsrValueFrame extends RadiantElement {
 		return (
 			<div class="frame">
 				<header>{this.header}</header>
-				<main>
-					<slot>
-						<em class="fallback">empty</em>
-					</slot>
-				</main>
+				<main>{this.slotted ?? <em class="fallback">empty</em>}</main>
 			</div>
 		);
 	}
@@ -53,19 +49,12 @@ class SsrValueBadge extends RadiantElement<{ label: string }> {
 
 @customElement('ssr-value-parent-test')
 class SsrValueParent extends RadiantElement {
-	@state variant: 'children' | 'empty' | 'named' | 'region' | 'shell' = 'children';
+	@state variant: 'children' | 'empty' | 'region' | 'shell' = 'children';
 
 	override render() {
 		switch (this.variant) {
 			case 'empty':
 				return <ssr-value-frame-test>{null}</ssr-value-frame-test>;
-			case 'named':
-				return (
-					<ssr-value-frame-test>
-						<h2 slot="header">Title</h2>
-						<p>Body</p>
-					</ssr-value-frame-test>
-				);
 			case 'shell':
 				return (
 					<ssr-value-shell-test>
@@ -108,7 +97,7 @@ afterEach(() => {
 });
 
 describe('a render-owning host in a view, on the server', () => {
-	test('renders the JSX children in its slot, in its own marker namespace, without a slot payload', () => {
+	test('renders the JSX children as its slotted content, in its own marker namespace, without a slotted payload', () => {
 		const html = renderParent('children');
 
 		expect(html).toContain(
@@ -129,18 +118,11 @@ describe('a render-owning host in a view, on the server', () => {
 		expect(plain).not.toContain('data-radiant-ssr');
 	});
 
-	test('renders the slot fallback for empty children', () => {
+	test('renders the fallback for empty children', () => {
 		const html = renderParent('empty');
 
 		expect(html).toMatch(/<main><em [^>]*class="fallback">empty<\/em><\/main>/);
 		expect(html).not.toContain('data-radiant-slot-projection');
-	});
-
-	test('keeps a child marked with a slot name in the default slot and warns', () => {
-		const html = renderParent('named');
-
-		expect(html).toContain('<header></header><main><h2');
-		expect(warn).toHaveBeenCalledWith(expect.stringContaining('slot="header"; pass it as the header property'));
 	});
 
 	test('renders a named region passed as an unprefixed property', () => {
@@ -160,7 +142,7 @@ describe('a render-owning host among the JSX children of a host without render()
 });
 
 describe('a render-owning host outside any view, on the server', () => {
-	test('takes its JSX children as HTML and ships them in the slot payload', () => {
+	test('takes its JSX children as HTML and ships them in the slotted payload', () => {
 		const html = withRadiantServerCustomElementRenderBridge(() =>
 			renderToString(
 				<ssr-value-frame-test>

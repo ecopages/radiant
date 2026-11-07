@@ -12,7 +12,7 @@ Default to `RadiantElement` when the host should own a custom-element view. Host
 
 Choose `RadiantController` when behavior should attach to existing DOM without defining a custom element.
 
-Both share the same decorator-driven reactive model. `@event` and `@querySlot` need a `RadiantElement`; a controller cannot use them.
+Both share the same decorator-driven reactive model. `@event` needs a `RadiantElement`; a controller cannot use it.
 
 Choose a simpler `RadiantElement` shape when the host is mainly authored light DOM, string-template based, or a lower-level custom element embedded inside another JSX tree. Copy fields onto that DOM with `@bindTo`. `this.$` is for hosts that override `render()`. `@onUpdated` is for procedures, not those copies.
 
@@ -58,9 +58,9 @@ If the component never uses `this.$`, `this.bindings`, or `this.bind(...)`, omit
 
 ## Children
 
-A render-owning `RadiantElement` that a JSX view creates receives that view's JSX children as one **Children Value**. `<slot />` in its `render()` renders it, and every render of the parent view hands it over again, so added, removed and reordered children and binding updates inside them show up, even while the host hid its `<slot />`.
+A render-owning `RadiantElement` that a JSX view creates receives that view's JSX children as one **Children Value**. `{this.slotted}` in its `render()` places it (`{this.slotted ?? fallback}` when it is `null`), and every render of the parent view hands it over again, so added, removed and reordered children and binding updates inside them show up, even while the host hid them.
 
-Named regions are properties, not `slot="name"`:
+Named regions are properties:
 
 ```tsx
 import type { JsxRenderable } from '@ecopages/jsx';
@@ -74,7 +74,7 @@ export class XCard extends RadiantElement {
 		return (
 			<section>
 				<header>{this.header}</header>
-				<slot />
+				{this.slotted}
 			</section>
 		);
 	}
@@ -88,11 +88,11 @@ export class XCard extends RadiantElement {
 ```
 
 - An unprefixed name binds as a property on a custom element. Write `prop:name` only for a name that binds as an attribute by default, such as `title` or `id`.
-- `slot="name"` on a JSX child does not select a named slot: the child stays in the default slot, and development builds warn. A `<slot name>` in such a host renders its fallback.
-- Nodes appended to the host with DOM APIs are not projected, and development builds warn. Change the children in the parent view instead.
-- `getSlotElements()`, `getSlotElement()` and `@querySlot` return the top-level elements the children rendered to, and nothing for a named slot.
+- `<slot>` and `slot="name"` are ordinary HTML in a Radiant view.
+- Nodes appended to the host with DOM APIs are not slotted. Change the children in the parent view instead.
+- Place `this.slotted` once per render, or forward it to a host the view renders (`<x-card>{this.slotted}</x-card>`); a named region forwards as a property. `this.slottedElements` lists the top-level elements it rendered to; it is empty before the first client render and on the server. To show an element twice, render a `cloneNode(true)` copy kept in state: a snapshot without the original's listeners or bindings.
 - Define custom elements before rendering the views that use them. A tag defined after a view rendered it takes those children as **Authored Children**, does not follow later edits, and development builds warn.
 
-**Authored Children** are children written as HTML, created with DOM APIs, or rendered on the server outside every host's view or in plain mode. `<slot name>` assigns them by their `slot` attribute, and nodes appended later are projected too. Server-rendered hosts: see [SSR hydration](ssr.md#hydration).
+**Authored Children** are children written as HTML, created with DOM APIs, or rendered on the server outside every host's view or in plain mode. The host captures them once, before its first render, into the same `this.slotted`; nodes appended later are not slotted. Server-rendered hosts: see [SSR hydration](ssr.md#hydration).
 
 A custom element that is not a Radiant host, or a `RadiantElement` without a `render()` override, keeps its JSX children as DOM nodes inside it.

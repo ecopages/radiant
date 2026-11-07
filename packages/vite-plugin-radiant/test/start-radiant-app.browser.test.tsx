@@ -30,12 +30,7 @@ class StartRadiantCard extends RadiantElement {
 	override render() {
 		return (
 			<section>
-				<header>
-					<slot name="header" />
-				</header>
-				<div>
-					<slot />
-				</div>
+				<div>{this.slotted}</div>
 			</section>
 		);
 	}
@@ -45,18 +40,15 @@ function renderPage(): JsxRenderable {
 	return jsx('main', {
 		title: 'page',
 		children: jsx(tagName, {
-			children: [jsx('h2', { slot: 'header', children: 'Title' }), jsx('p', { children: 'Body' })],
+			children: [jsx('h2', { children: 'Title' }), jsx('p', { children: 'Body' })],
 		}),
 	});
 }
 
 function renderServerMarkup(): string {
-	const projection = JSON.stringify({
-		header: ['<h2 slot="header">Title</h2>'],
-		'': ['<p>Body</p>'],
-	}).replaceAll('<', '\\u003c');
+	const projection = JSON.stringify({ '': ['<h2>Title</h2>', '<p>Body</p>'] }).replaceAll('<', '\\u003c');
 
-	return `<main data-radiant-jsx-bind-0="attr:title" title="page"><${tagName} data-radiant-ssr="authored"><section><header><h2 slot="header">Title</h2></header><div><p>Body</p></div></section><script type="application/json" data-radiant-slot-projection>${projection}</script></${tagName}></main>`;
+	return `<main data-radiant-jsx-bind-0="attr:title" title="page"><${tagName} data-radiant-ssr><section><div><h2>Title</h2><p>Body</p></div></section><script type="application/json" data-radiant-slot-projection>${projection}</script></${tagName}></main>`;
 }
 
 describe('startRadiantApp', () => {
@@ -91,9 +83,9 @@ describe('startRadiantApp', () => {
 
 		await startRadiantApp({ app: renderPage, documentRoot: document, installHydrator: true, root });
 
-		await vi.waitFor(() => expect(root.querySelector(`${tagName} header > h2`)).not.toBeNull());
+		await vi.waitFor(() => expect(root.querySelector(`${tagName} div > h2`)).not.toBeNull());
 		expect(root.querySelector(tagName)).toBe(serverHost);
-		expect(root.querySelector(`${tagName} header > h2`)?.textContent).toBe('Title');
+		expect(root.querySelector(`${tagName} div > h2`)?.textContent).toBe('Title');
 		expect(root.querySelector(`${tagName} div > p`)?.textContent).toBe('Body');
 		expect(warn).not.toHaveBeenCalled();
 	});

@@ -2,12 +2,12 @@ import type { JsxRenderable } from '@ecopages/jsx';
 import { CUSTOM_ELEMENT_CHILDREN_SYMBOL, createMarkupNodeLike } from '@ecopages/jsx';
 import type { RenderToStringOptions } from '@ecopages/jsx/server';
 import { getCustomElementTagName } from '@ecopages/jsx';
-import { SERVER_RENDERED_AUTHORED_STAMP, SERVER_RENDERED_HOST_ATTRIBUTE } from '../../core/server-rendered-host';
+import { SERVER_RENDERED_HOST_ATTRIBUTE } from '../../core/server-rendered-host';
 import { ensureLegacyHostReady } from '../../decorators/legacy/host-readiness';
 import { assertValidHtmlTagName } from '../../utils/html-names';
 import { runWithSsrProviderStack, withSsrContextProviders } from '../context-ssr';
 import { alignMinimalDomHostTagName } from '../shim/minimal-dom/align-host-tag-name';
-import { createSlotProjectionScriptTag, hasNamedSlotNames } from '../../core/slot-projection-runtime';
+import { createSlottedPayloadScriptTag } from '../../core/slotted-content';
 import { composeHostContent } from './host-script-composition';
 import { resolveHostAttributes, stringifyHostAttributes } from './host-attribute-serialization';
 import { toInternalRadiantSsrHost } from './radiant-element-ssr-extractor';
@@ -67,7 +67,7 @@ export class RadiantElementSsrService {
 
 	/**
 	 * @param attributeOverrides Merged after attributes are read from the prepared host, so a nested children stamp can replace the default host stamp.
-	 * @remarks One pass: align the tag and legacy readiness, prepare, render the view, flush `@bindTo`, then read attributes, the slot-projection payload, and hydration bindings. A later serialization prepares again.
+	 * @remarks One pass: align the tag and legacy readiness, prepare, render the view, flush `@bindTo`, then read attributes, the slotted payload, and hydration bindings. A later serialization prepares again.
 	 */
 	public renderHostToString(
 		options: RenderToStringOptions = {},
@@ -79,8 +79,8 @@ export class RadiantElementSsrService {
 		const tagName = this.getTagName();
 		const hydrate = isHydrateMode(options);
 
-		const slotPayload = this.host.getProjectedSlotPayload?.();
-		const slotProjectionMarkup = slotPayload !== undefined ? createSlotProjectionScriptTag(slotPayload) : '';
+		const slottedPayload = this.host.getSlottedPayload?.();
+		const slottedPayloadScript = slottedPayload !== undefined ? createSlottedPayloadScriptTag(slottedPayload) : '';
 		const authoredHydrationMarkup = this.host.getAuthoredHydrationScriptMarkup?.() ?? '';
 		const hydrationScripts = hydrate
 			? this.host
@@ -93,23 +93,17 @@ export class RadiantElementSsrService {
 			...this.readHostAttributes(),
 			...attributeOverrides,
 		};
-		const stamp =
-			takesChildrenValue(this.host.constructor) &&
-			slotProjectionMarkup !== '' &&
-			hasNamedSlotNames(slotPayload ?? {})
-				? SERVER_RENDERED_AUTHORED_STAMP
-				: '';
 		const hostAttributes = hydrate
 			? {
 					...attributes,
-					[SERVER_RENDERED_HOST_ATTRIBUTE]: attributes[SERVER_RENDERED_HOST_ATTRIBUTE] ?? stamp,
+					[SERVER_RENDERED_HOST_ATTRIBUTE]: attributes[SERVER_RENDERED_HOST_ATTRIBUTE] ?? '',
 				}
 			: attributes;
 		const content = composeHostContent(
 			{
 				hostContent,
 				authoredHydrationMarkup,
-				slotProjectionScript: slotProjectionMarkup,
+				slottedPayloadScript,
 				hydrationScripts,
 			},
 			hydrate,
@@ -156,7 +150,7 @@ export class RadiantElementSsrService {
 	}
 }
 
-/** @remarks Only a class that takes a Children Value from a view tells Authored Children apart in its stamp. */
+/** Whether the class overrides `render()`, the test that also makes a view hand it a Children Value. */
 function takesChildrenValue(constructor: object): boolean {
 	return (constructor as { [CUSTOM_ELEMENT_CHILDREN_SYMBOL]?: unknown })[CUSTOM_ELEMENT_CHILDREN_SYMBOL] === true;
 }
