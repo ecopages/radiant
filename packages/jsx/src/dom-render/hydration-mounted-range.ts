@@ -52,7 +52,6 @@ export function hydrateMountedRangeContent(
 			nextValue,
 			mountedContentFromNodes(existingNodes),
 			rootTarget,
-			[],
 		);
 	}
 
