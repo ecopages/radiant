@@ -11,7 +11,7 @@ export const meta = {
 	args: {
 		size: 'xl',
 		as: 'h1',
-		children: 'radiant UI',
+		children: 'Radiant UI',
 	},
 	argTypes: {
 		size: {
