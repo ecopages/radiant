@@ -43,6 +43,17 @@ On the client, context flows through the DOM tree using custom events with `bubb
 3. The nearest ancestor provider whose token matches calls the event callback with itself (or the selected value), then stops propagation.
 4. A consumer that finds no provider asks once more in a microtask, so a provider that upgrades right after it still answers.
 
+```mermaid
+sequenceDiagram
+  participant C as Consumer
+  participant D as DOM ancestors
+  participant P as Nearest provider
+  C->>D: ContextRequestEvent bubbles up
+  D->>P: first matching token
+  P-->>C: callback with the value, propagation stops
+  Note over C,P: With no provider, the consumer asks once more in a microtask
+```
+
 Because resolution relies on event bubbling, the provider must be a DOM ancestor of the consumer. Sibling or detached elements cannot resolve each other's context.
 
 ### SSR (Ambient Provider Stack)

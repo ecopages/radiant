@@ -14,7 +14,13 @@ import { RuiHeading, RuiHeadingDescription, RuiHeadingEyebrow, RuiHeadingTitle }
 import { BaseLayout } from '@/layouts/base-layout';
 import { CodeTabs } from '@/components/code-tabs';
 import { RadiantJsxCounter as RadiantCounterDemo } from '@/components/radiant-counter/radiant-jsx-counter';
-import { counterElementExampleCode } from '@/data/home-code-examples';
+import { counterElementExampleCode, counterUsageExampleCode } from '@/data/home-code-examples';
+
+const counterUsageExample = await codeToHtml(counterUsageExampleCode, {
+	lang: 'tsx',
+	themes: { light: 'light-plus', dark: 'dark-plus' },
+	defaultColor: false,
+});
 
 const counterElementExample = await codeToHtml(counterElementExampleCode, {
 	lang: 'tsx',
@@ -38,6 +44,12 @@ const COUNTER_EXAMPLE_TABS = [
 		label: 'radiant-counter.tsx',
 		html: highlightedCodeFigure(counterElementExample),
 		content: counterElementExampleCode,
+	},
+	{
+		id: 'usage',
+		label: 'page.tsx',
+		html: highlightedCodeFigure(counterUsageExample),
+		content: counterUsageExampleCode,
 	},
 ];
 
@@ -340,7 +352,6 @@ const HomeHero = () => (
 		<div class="home-hero">
 			<div class="home-hero__text">
 				<RuiHeading size="xl" class="home-header__heading">
-					<RuiHeadingEyebrow>Radiant</RuiHeadingEyebrow>
 					<RuiHeadingTitle as="h1">Build reactive hosts with JSX and Signals.</RuiHeadingTitle>
 					<RuiHeadingDescription>
 						Radiant gives you one reactive host model for both custom elements and DOM-attached controllers.

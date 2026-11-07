@@ -78,6 +78,16 @@ Returning a falsy value (`false`, `null`, `undefined`) from `source` disables fe
 
 ## Lifecycle
 
+```mermaid
+stateDiagram-v2
+  [*] --> idle
+  idle --> pending: connect starts the fetch
+  pending --> success: resolved
+  pending --> error: rejected
+  success --> pending: source change or refetch
+  error --> pending: source change or refetch
+```
+
 1. **Connect** — after the host's first-connect attribute sync, the resource starts observing the source (or fetches immediately if no source is set).
 2. **Source change** — the previous request is aborted and a new one starts.
 3. **Disconnect** — the in-flight request is aborted. The current state is preserved.

@@ -6,6 +6,7 @@ import { ecopagesJsxPlugin } from '@ecopages/ecopages-jsx';
 import { contentProcessorPlugin } from '@ecopages/content-processor/plugin';
 import { compareEntriesByField } from '@ecopages/content-processor';
 import { createDocsMdxPlugins } from './src/mdx/plugins';
+import { remarkMermaid } from './src/lib/remark-mermaid';
 import { docsFrontmatterSchema } from './src/content/docs';
 import { configuredSiteOrigin } from './src/lib/docs/site-meta';
 import { devToolbar } from '@ecopages/dev-toolbar/config';
@@ -22,6 +23,7 @@ export default defineConfig({
 		ecopagesJsxPlugin({
 			mdx: {
 				...createDocsMdxPlugins({
+					remarkPlugins: [remarkMermaid],
 					rehypePrettyCode: {
 						theme: {
 							light: 'light-plus',
