@@ -192,23 +192,10 @@ describe('RadiantElement', () => {
 		});
 	});
 
-	test('projects default and named slot content in client rendering', async () => {
+	test('places captured child nodes as slotted content in place of the fallback', async () => {
 		class SlotCard extends RadiantElement {
 			override render() {
-				return (
-					<section>
-						<header>
-							<slot name="header">
-								<h2>Fallback heading</h2>
-							</slot>
-						</header>
-						<div data-ref="body">
-							<slot>
-								<p>Fallback body</p>
-							</slot>
-						</div>
-					</section>
-				);
+				return <div data-ref="body">{this.slotted ?? <p>Fallback body</p>}</div>;
 			}
 		}
 
@@ -216,7 +203,6 @@ describe('RadiantElement', () => {
 
 		const element = createCustomElement<SlotCard>('slot-card-test');
 		const heading = document.createElement('h1');
-		heading.setAttribute('slot', 'header');
 		heading.textContent = 'Projected heading';
 		const body = document.createElement('p');
 		body.textContent = 'Projected body';
@@ -224,21 +210,19 @@ describe('RadiantElement', () => {
 		document.body.appendChild(element);
 
 		await waitFor(() => {
-			expect(element.querySelector('header > h1')?.textContent).toBe('Projected heading');
-			expect(element.querySelector('[data-ref="body"] > p')?.textContent).toBe('Projected body');
+			expect(element.querySelector('[data-ref="body"] > h1')).toBe(heading);
+			expect(element.querySelector('[data-ref="body"] > p')).toBe(body);
 		});
 
 		expect(element.querySelectorAll('p').length).toBe(1);
 	});
 
-	test('does not duplicate default-slot projected nodes after light-DOM render', async () => {
+	test('does not duplicate captured slotted nodes after the first render', async () => {
 		@customElement('slot-single-projection-test')
 		class SlotSingleProjection extends RadiantElement {
 			override render() {
 				return (
-					<div data-ref="body">
-						<slot />
-					</div>
+					<div data-ref="body">{this.slotted}</div>
 				);
 			}
 		}
@@ -255,7 +239,7 @@ describe('RadiantElement', () => {
 		});
 	});
 
-	test('keeps a projected default-slot node tracked across a second render', async () => {
+	test('keeps a captured slotted node across a second render', async () => {
 		@customElement('slot-rerender-projection-test')
 		class SlotRerenderProjection extends RadiantElement {
 			@prop({ type: Number, defaultValue: 0 }) tick = 0;
@@ -267,9 +251,7 @@ describe('RadiantElement', () => {
 
 			override render() {
 				return (
-					<div data-ref="body">
-						<slot />
-					</div>
+					<div data-ref="body">{this.slotted}</div>
 				);
 			}
 		}
@@ -293,16 +275,12 @@ describe('RadiantElement', () => {
 		});
 	});
 
-	test('falls back when a slot has no projected content', async () => {
+	test('renders the fallback when it has no slotted content', async () => {
 		class FallbackSlotCard extends RadiantElement {
 			override render() {
 				return (
 					<section>
-						<header>
-							<slot name="header">
-								<h2 data-ref="fallback">Fallback heading</h2>
-							</slot>
-						</header>
+						<header>{this.slotted ?? <h2 data-ref="fallback">Fallback heading</h2>}</header>
 					</section>
 				);
 			}
@@ -315,38 +293,6 @@ describe('RadiantElement', () => {
 
 		await waitFor(() => {
 			expect(element.querySelector('[data-ref="fallback"]')?.textContent).toBe('Fallback heading');
-		});
-	});
-
-	test('reprojects direct host child mutations after connect', async () => {
-		class DynamicSlotCard extends RadiantElement {
-			override render() {
-				return (
-					<section>
-						<header data-ref="header">
-							<slot name="header" />
-						</header>
-					</section>
-				);
-			}
-		}
-
-		customElements.define('dynamic-slot-card-test', DynamicSlotCard);
-
-		const element = createCustomElement<DynamicSlotCard>('dynamic-slot-card-test');
-		document.body.appendChild(element);
-
-		await waitFor(() => {
-			expect(element.querySelector('[data-ref="header"]')?.children).toHaveLength(0);
-		});
-
-		const heading = document.createElement('h2');
-		heading.setAttribute('slot', 'header');
-		heading.textContent = 'Late heading';
-		element.appendChild(heading);
-
-		await waitFor(() => {
-			expect(element.querySelector('[data-ref="header"] > h2')?.textContent).toBe('Late heading');
 		});
 	});
 

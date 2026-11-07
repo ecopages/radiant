@@ -15,7 +15,6 @@ export {
 	mapSubscribable,
 	type JsxFragment,
 	isKeyedJsxValue,
-	isSlotJsxValue,
 	isSubscribableJsxValue,
 } from './jsx-runtime.ts';
 
@@ -49,7 +48,6 @@ export type {
 	ServerCustomElementRenderHook,
 	ServerCustomElementRenderHookContext,
 	ServerRenderableCustomElement,
-	SlotJsxValue,
 	StylePropertyValue,
 	StyleValue,
 	SubscribableJsxValue,

@@ -47,7 +47,7 @@ export const SSR_HYDRATION_CASES: Record<string, () => string> = {
 		withHost('hydrated-counter-test', renderRadiantElementViewToString(new HydratedCounter(), { mode: 'hydrate' })),
 	'slot-card': () => {
 		const element = new HydratedSlotCard();
-		element.innerHTML = '<h2 slot="header">SSR header</h2><p>SSR body</p>';
+		element.innerHTML = '<h2>SSR header</h2><p>SSR body</p>';
 		return renderRadiantElementHostToString(element, { mode: 'hydrate' });
 	},
 	'conditional-slot': () => {
@@ -69,7 +69,7 @@ export const SSR_HYDRATION_CASES: Record<string, () => string> = {
 	'complex-slot-card': () => {
 		const element = new HydratedComplexSlotCard();
 		element.innerHTML =
-			'<h2 slot="header" data-note="1 > 0">SSR header</h2><article data-kind="primary"><p>SSR body</p></article><radiant-component-counter count="4" label="Projected SSR counter"></radiant-component-counter><p slot="footer">SSR footer</p>';
+			'<h2 data-note="1 > 0">SSR header</h2><article data-kind="primary"><p>SSR body</p></article><radiant-component-counter count="4" label="Projected SSR counter"></radiant-component-counter><p>SSR footer</p>';
 		return renderRadiantElementHostToString(element, { mode: 'hydrate' });
 	},
 	'non-hydrated-counter': () =>

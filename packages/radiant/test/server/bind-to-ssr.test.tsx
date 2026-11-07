@@ -17,7 +17,7 @@ class BindToSsrAttrHost extends RadiantElement {
 	value: string;
 
 	override render() {
-		return <slot />;
+		return this.slotted;
 	}
 }
 
@@ -28,7 +28,7 @@ class BindToSsrBoolHost extends RadiantElement {
 	open: boolean;
 
 	override render() {
-		return <slot />;
+		return this.slotted;
 	}
 }
 
@@ -39,7 +39,7 @@ class BindToSsrTextHost extends RadiantElement {
 	label: string;
 
 	override render() {
-		return <slot />;
+		return this.slotted;
 	}
 }
 
@@ -50,7 +50,7 @@ class BindToSsrSignalHost extends RadiantElement {
 	n!: WritableSignal<number>;
 
 	override render() {
-		return <slot />;
+		return this.slotted;
 	}
 }
 

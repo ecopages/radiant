@@ -5,13 +5,12 @@ import { setDevWarningsEnabled } from '@ecopages/jsx/jsx-dev-runtime';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { customElement } from '../../src/decorators/custom-element';
-import { querySlot } from '../../src/decorators/query-slot';
 import { state } from '../../src/decorators/state';
 
 /**
- * Waits two macrotask turns so slot-projection observers and the child update cycles they request have run.
+ * Waits two macrotask turns so the child update cycles a parent render requests have run.
  *
- * @remarks Radiant updates and slot re-projection run as microtasks, so a macrotask turn drains them. Used before
+ * @remarks Radiant updates run as microtasks, so a macrotask turn drains them. Used before
  * asserting that something did not happen, where `waitFor` would pass immediately, and to separate state steps.
  */
 async function settle(): Promise<void> {
@@ -39,7 +38,7 @@ class NestedSlotFrame extends RadiantElement {
 	override render() {
 		return (
 			<div class="frame" data-tone={this.tone}>
-				<slot />
+				{this.slotted}
 			</div>
 		);
 	}
@@ -102,7 +101,7 @@ class NestedSlotListFrame extends RadiantElement {
 	override render() {
 		return (
 			<ul>
-				<slot />
+				{this.slotted}
 			</ul>
 		);
 	}
@@ -123,72 +122,12 @@ class NestedSlotTodoParent extends RadiantElement {
 	}
 }
 
-@customElement('nested-named-slot-frame-test')
-class NestedNamedSlotFrame extends RadiantElement {
-	override render() {
-		return (
-			<div>
-				<header>
-					<slot name="header" />
-				</header>
-				<main>
-					<slot />
-				</main>
-			</div>
-		);
-	}
-}
-
-@customElement('nested-named-slot-parent-test')
-class NestedNamedSlotParent extends RadiantElement {
-	@state showTitle = false;
-
-	override render() {
-		return (
-			<nested-named-slot-frame-test>
-				{this.showTitle ? <h2 slot="header">Title</h2> : null}
-				<p>Body</p>
-			</nested-named-slot-frame-test>
-		);
-	}
-}
-
-@customElement('nested-silenced-slot-frame-test')
-class NestedSilencedSlotFrame extends RadiantElement {
-	override render() {
-		return (
-			<div>
-				<header>
-					<slot name="header" />
-				</header>
-				<main>
-					<slot />
-				</main>
-			</div>
-		);
-	}
-}
-
-void NestedSilencedSlotFrame;
-
-@customElement('nested-silenced-slot-parent-test')
-class NestedSilencedSlotParent extends RadiantElement {
-	override render() {
-		return (
-			<nested-silenced-slot-frame-test>
-				<h2 slot="header">Title</h2>
-				<p>Body</p>
-			</nested-silenced-slot-frame-test>
-		);
-	}
-}
-
 @customElement('nested-toggle-slot-frame-test')
 class NestedToggleSlotFrame extends RadiantElement {
 	@state open = true;
 
 	override render() {
-		return <div class="frame">{this.open ? <slot /> : <em>closed</em>}</div>;
+		return <div class="frame">{this.open ? this.slotted : <em>closed</em>}</div>;
 	}
 }
 
@@ -260,7 +199,7 @@ class NestedPlainRegionCard extends RadiantElement {
 			<div>
 				<header>{this.header}</header>
 				<main>
-					<slot />
+					{this.slotted}
 				</main>
 			</div>
 		);
@@ -282,12 +221,10 @@ class NestedPlainRegionParent extends RadiantElement {
 
 @customElement('nested-query-frame-test')
 class NestedQueryFrame extends RadiantElement {
-	@querySlot({ all: true }) items!: Element[];
-
 	override render() {
 		return (
 			<ul>
-				<slot />
+				{this.slotted}
 			</ul>
 		);
 	}
@@ -313,9 +250,7 @@ class NestedFallbackFrame extends RadiantElement {
 	override render() {
 		return (
 			<div class="frame">
-				<slot>
-					<em class="fallback">empty</em>
-				</slot>
+				{this.slotted ?? <em class="fallback">empty</em>}
 			</div>
 		);
 	}
@@ -353,7 +288,7 @@ class NestedBareSlotFrame extends RadiantElement<{ label: string | null }> {
 		return (
 			<>
 				{this.$.label}
-				<slot />
+				{this.slotted}
 			</>
 		);
 	}
@@ -373,7 +308,7 @@ class NestedHtmlFrame extends RadiantElement {
 	override render() {
 		return (
 			<div class="frame">
-				<slot />
+				{this.slotted}
 			</div>
 		);
 	}
@@ -383,7 +318,7 @@ class NestedLateFrame extends RadiantElement {
 	override render() {
 		return (
 			<div class="frame">
-				<slot />
+				{this.slotted}
 			</div>
 		);
 	}
@@ -402,7 +337,7 @@ afterEach(() => {
 	document.body.innerHTML = '';
 });
 
-describe('a render-owning host projecting JSX children of a parent view through <slot>', () => {
+describe('a render-owning host placing JSX children of a parent view with slotted', () => {
 	test('projects the parent children into the slot', async () => {
 		const parent = mount<NestedSlotParent>('nested-slot-parent-test');
 
@@ -492,32 +427,6 @@ describe('a render-owning host projecting JSX children of a parent view through 
 		await settle();
 
 		expect(Array.from(parent.querySelectorAll('.frame > .item'), (item) => item.textContent)).toEqual(['B', 'B2']);
-	});
-
-	test('keeps a JSX child marked with a slot name in the default slot and warns to use a property', async () => {
-		const parent = document.createElement('nested-named-slot-parent-test') as NestedNamedSlotParent;
-		parent.showTitle = true;
-		document.body.append(parent);
-		await waitFor(() => expect(parent.querySelector('main > p')).not.toBeNull());
-		expect(parent.firstElementChild).toBeInstanceOf(NestedNamedSlotFrame);
-
-		expect(parent.querySelector('header > h2')).toBeNull();
-		expect(parent.querySelector('main > h2')?.textContent).toBe('Title');
-		expect(warn).toHaveBeenCalledWith(expect.stringContaining('slot="header"; pass it as the header property'));
-
-		parent.showTitle = false;
-		await settle();
-
-		expect(parent.querySelector('h2')).toBeNull();
-	});
-
-	test('does not log render warnings when JSX development warnings are disabled', async () => {
-		setDevWarningsEnabled(false);
-		const parent = document.createElement('nested-silenced-slot-parent-test') as NestedSilencedSlotParent;
-		document.body.append(parent);
-
-		await waitFor(() => expect(parent.querySelector('main > h2')?.textContent).toBe('Title'));
-		expect(warn).not.toHaveBeenCalled();
 	});
 
 	test('shows parent edits made while the child slot was not rendered once the slot returns', async () => {
@@ -638,7 +547,7 @@ describe('a render-owning host rendering JSX a parent view passes through an unp
 });
 
 describe('the children a parent view passes to a render-owning host', () => {
-	test('render the slot fallback while the parent passes nothing', async () => {
+	test('render the fallback after slotted while the parent passes nothing', async () => {
 		const parent = mount<NestedFallbackParent>('nested-fallback-parent-test');
 		await waitFor(() => expect(parent.querySelector('.frame > .fallback')).not.toBeNull());
 		expect(parent.firstElementChild).toBeInstanceOf(NestedFallbackFrame);
@@ -652,19 +561,21 @@ describe('the children a parent view passes to a render-owning host', () => {
 		expect(parent.querySelector('.item')).toBeNull();
 	});
 
-	test('are the elements getSlotElements and @querySlot return', async () => {
+	test('are the elements slottedElements returns, empty before the first render', async () => {
+		const frame = document.createElement('nested-query-frame-test') as NestedQueryFrame;
+		expect(frame.slottedElements).toEqual([]);
+
 		const parent = mount<NestedQueryParent>('nested-query-parent-test');
 		await waitFor(() => expect(parent.querySelectorAll('ul > li')).toHaveLength(1));
-		const frame = parent.querySelector('nested-query-frame-test') as NestedQueryFrame;
+		const rendered = parent.querySelector('nested-query-frame-test') as NestedQueryFrame;
 
-		expect(frame.items.map((item) => item.textContent)).toEqual(['One']);
+		expect(rendered.slottedElements.map((item) => item.textContent)).toEqual(['One']);
 
 		parent.todos = ['One', 'Two'];
 		await settle();
 
-		expect(frame.getSlotElements().map((item) => item.textContent)).toEqual(['One', 'Two']);
-		expect(frame.items.map((item) => item.textContent)).toEqual(['One', 'Two']);
-		expect(frame.getSlotElements('header')).toEqual([]);
+		expect(rendered.slottedElements.map((item) => item.textContent)).toEqual(['One', 'Two']);
+		expect(rendered.slottedElements).toEqual(Array.from(rendered.querySelectorAll('ul > li')));
 	});
 
 	test('reach a host that a view rendered into a detached tree once it connects', async () => {
@@ -695,7 +606,7 @@ describe('the children a parent view passes to a render-owning host', () => {
 		expect(warn).not.toHaveBeenCalled();
 	});
 
-	test('do not include a node appended to the host, which stays outside its render and warns', async () => {
+	test('do not include a node appended to the host, which stays outside its render', async () => {
 		const parent = mount<NestedSlotParent>('nested-slot-parent-test');
 		await waitFor(() => expect(parent.querySelector('.frame > .label')).not.toBeNull());
 		const frame = parent.querySelector('nested-slot-frame-test') as NestedSlotFrame;
@@ -708,20 +619,26 @@ describe('the children a parent view passes to a render-owning host', () => {
 
 		expect(appended.parentNode).toBe(frame);
 		expect(frame.querySelector('.frame i')).toBeNull();
-		expect(warn).toHaveBeenCalledWith(expect.stringContaining('ignores appended nodes'));
 	});
 });
 
 describe('a render-owning host whose children were authored as HTML', () => {
-	test('projects a node appended to it after mount', async () => {
+	test('slots the child nodes it held at first render and leaves a node appended later where it was put', async () => {
 		const frame = document.createElement('nested-html-frame-test') as NestedHtmlFrame;
 		frame.innerHTML = '<span class="label">one</span>';
+		const label = frame.firstElementChild;
 		document.body.append(frame);
-		await waitFor(() => expect(frame.querySelector('.frame > .label')).not.toBeNull());
+		await waitFor(() => expect(frame.querySelector('.frame > .label')).toBe(label));
+		expect(frame.slottedElements).toEqual([label]);
 
-		frame.append(Object.assign(document.createElement('i'), { className: 'late' }));
+		const late = Object.assign(document.createElement('i'), { className: 'late' });
+		frame.append(late);
+		frame.requestUpdate();
+		await settle();
 
-		await waitFor(() => expect(frame.querySelector('.frame > .late')).not.toBeNull());
+		expect(late.parentNode).toBe(frame);
+		expect(frame.querySelector('.frame > .late')).toBeNull();
+		expect(frame.querySelector('.frame > .label')).toBe(label);
 		expect(warn).not.toHaveBeenCalled();
 	});
 

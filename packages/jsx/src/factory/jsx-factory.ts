@@ -9,14 +9,12 @@ import {
 	RADIANT_MARKUP_NODE_SYMBOL,
 	RADIANT_TEMPLATE_RESULT,
 	RADIANT_TEMPLATE_RESULT_FIELD,
-	SLOT_JSX_VALUE_SYMBOL,
 } from '../types/index.ts';
 import type {
 	JsxComponent,
 	JsxNodeLike,
 	JsxPropsWithChildren,
 	JsxRenderable,
-	SlotJsxValue,
 	TemplatePartDescriptor,
 	TemplateResultLike,
 } from '../types/index.ts';
@@ -127,10 +125,6 @@ export function createJsxElement<Props extends object>(
 		const fragmentChildren = (props as JsxPropsWithChildren).children;
 
 		return wrapKeyedValue((toChildSlot(fragmentChildren) ?? '') as JsxRenderable, keyedValue);
-	}
-
-	if (type === 'slot') {
-		return wrapKeyedValue(createSlotJsxValue(props as JsxPropsWithChildren & { name?: unknown }), keyedValue);
 	}
 
 	if (typeof type !== 'string') {
@@ -480,13 +474,5 @@ function wrapKeyedValue(value: JsxRenderable, key: unknown): JsxRenderable {
 		key,
 		value,
 		[KEYED_VALUE_SYMBOL]: true,
-	};
-}
-
-function createSlotJsxValue(props: JsxPropsWithChildren & { name?: unknown }): SlotJsxValue {
-	return {
-		fallback: props.children,
-		name: typeof props.name === 'string' && props.name !== '' ? props.name : undefined,
-		[SLOT_JSX_VALUE_SYMBOL]: true,
 	};
 }

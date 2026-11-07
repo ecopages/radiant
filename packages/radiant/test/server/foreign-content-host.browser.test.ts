@@ -26,7 +26,7 @@ describe('a host inside foreign content in server HTML', () => {
 	);
 });
 
-describe('the slot-projection payload in server HTML', () => {
+describe('the slotted payload in server HTML', () => {
 	test.each(
 		renders
 			.filter((render) => render.html.includes('data-radiant-slot-projection'))

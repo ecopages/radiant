@@ -43,33 +43,36 @@ export function RadiantElementLabSection() {
 				<radiant-signal-release-board></radiant-signal-release-board>
 				<RadiantControllerDecoratorVisualizer />
 				<RadiantControllerContextVisualizer />
-				<radiant-slot-studio-board>
-					<p slot="eyebrow" class="component-tag">
-						Creative composition lab
-					</p>
-					<h3 slot="heading">Launch board with projected planning rails</h3>
-					<div slot="sidebar" class="studio-note-stack">
-						<p class="studio-note-stack__title">Sidebar checklist</p>
-						<ul class="studio-checklist">
-							<li>Slots define editorial regions.</li>
-							<li>Nested consumers mirror shared context.</li>
-							<li>Buttons mutate provider state in place.</li>
-						</ul>
-					</div>
+				<radiant-slot-studio-board
+					eyebrow={<p class="component-tag">Creative composition lab</p>}
+					heading={<h3>Launch board with slotted planning rails</h3>}
+					sidebar={
+						<div class="studio-note-stack">
+							<p class="studio-note-stack__title">Sidebar checklist</p>
+							<ul class="studio-checklist">
+								<li>Region properties define editorial regions.</li>
+								<li>Nested consumers mirror shared context.</li>
+								<li>Buttons mutate provider state in place.</li>
+							</ul>
+						</div>
+					}
+					footer={
+						<p class="studio-footer">
+							Footer region: treat this as the handoff rail for approvals, publishing notes, or last-mile QA.
+						</p>
+					}
+				>
 					<div class="studio-story">
 						<p class="component-copy">
 							This board mixes a composed header, sidebar, and body with context-driven subcomponents so
-							the projection model feels useful beyond a simple card shell.
+							the slotted content model feels useful beyond a simple card shell.
 						</p>
 						<p class="component-copy">
 							Use it as a pattern for dashboards, release notes, or guided workflows where consumers need
 							shared state but the host still wants authored content regions.
 						</p>
 					</div>
-					<radiant-counter count={5} label="Projected slot counter" />
-					<p slot="footer" class="studio-footer">
-						Footer slot: treat this as the handoff rail for approvals, publishing notes, or last-mile QA.
-					</p>
+					<radiant-counter count={5} label="Slotted counter" />
 				</radiant-slot-studio-board>
 			</div>
 		</section>

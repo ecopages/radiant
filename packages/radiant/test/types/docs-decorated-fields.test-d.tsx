@@ -33,7 +33,6 @@ import { onEvent } from '../../src/decorators/on-event';
 import { onUpdated } from '../../src/decorators/on-updated';
 import { prop } from '../../src/decorators/prop';
 import { query } from '../../src/decorators/query';
-import { querySlot } from '../../src/decorators/query-slot';
 import { signal } from '../../src/decorators/signal';
 import { state } from '../../src/decorators/state';
 import type { EventEmitter } from '../../src/tools/event-emitter';
@@ -182,14 +181,10 @@ const ctx = createContext<{ count: number }>('count');
 export class InstallerFields extends RadiantElement {
 	@query({ ref: 'item' }) first!: HTMLLIElement | null;
 	@query({ ref: 'item', all: true }) items!: HTMLLIElement[];
-	@querySlot({ name: 'heading' }) heading!: HTMLHeadingElement | null;
-	@querySlot({ all: true }) actions!: HTMLButtonElement[];
 	// @ts-expect-error a single-element query can be null
 	@query({ ref: 'item' }) bad1!: HTMLLIElement;
 	// @ts-expect-error an array needs all: true
 	@query({ ref: 'item' }) bad2!: HTMLLIElement[];
-	// @ts-expect-error a single-element slot query can be null
-	@querySlot() bad3!: HTMLParagraphElement;
 
 	@consumeContext(ctx) consumed?: ContextProvider<typeof ctx>;
 	@provideContext({ context: ctx, initialValue: { count: 0 } }) provided!: ContextProvider<typeof ctx>;
@@ -304,7 +299,7 @@ export class ControllerFields extends RadiantController {
 	@query({ ref: 'form' }) form!: HTMLFormElement | null;
 }
 
-/** decorators/query.mdx and decorators/query-slot.mdx */
+/** decorators/query.mdx */
 
 export class UserProfile extends RadiantElement {
 	@query({ ref: 'avatar' }) avatar!: HTMLImageElement | null;
@@ -315,12 +310,6 @@ export class UserProfile extends RadiantElement {
 	focusAvatar() {
 		this.avatar?.focus();
 	}
-}
-
-export class ShellCard extends RadiantElement {
-	@querySlot({ name: 'heading' }) heading!: HTMLHeadingElement | null;
-	@querySlot() body!: HTMLParagraphElement | null;
-	@querySlot({ name: 'action', all: true }) actions!: HTMLButtonElement[];
 }
 
 declare const allMatches: boolean;
@@ -629,8 +618,6 @@ export class NewsletterFormController extends RadiantController {
 }
 
 export class ElementOnlyOnController extends RadiantController {
-	// @ts-expect-error @querySlot needs a RadiantElement host
-	@querySlot({ name: 'heading' }) heading!: HTMLHeadingElement | null;
 	// @ts-expect-error @event needs a RadiantElement host
 	@event({ name: 'picked' }) picked!: EventEmitter<{ id: string }>;
 }

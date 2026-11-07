@@ -7,7 +7,7 @@ export class HydratedLateChild extends RadiantElement {
 	override render() {
 		return (
 			<div class="child">
-				<slot />
+				{this.slotted}
 			</div>
 		);
 	}

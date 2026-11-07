@@ -8,12 +8,7 @@ import { assertFreshDist } from './dist-freshness';
 
 const DELEGATED_FOCUS_WARNING = 'Delegated @onEvent listens on the host in the bubble phase, so "focus"';
 const PEER_PACKAGES = ['@ecopages/jsx', '@ecopages/jsx/*', '@ecopages/signals', '@ecopages/signals/*'];
-const DEVELOPMENT_WARNING_TEXTS = [
-	'Delegated @onEvent listens',
-	'pass it as the',
-	'ignores appended nodes',
-	'was defined after a JSX view rendered it',
-];
+const DEVELOPMENT_WARNING_TEXTS = ['Delegated @onEvent listens', 'was defined after a JSX view rendered it'];
 const NODE_ENV_READ = /process\.env\.NODE_ENV/g;
 /** Matches the check as the first expression in a `try` block, whether esbuild kept the `if` or minified it to `&&`. */
 const GUARDED_NODE_ENV_READ = /try\s*\{\s*(?:if\s*\(\s*)?process\.env\.NODE_ENV\s*!==\s*"production"/g;

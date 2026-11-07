@@ -1,48 +1,40 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 
 import {
-	captureProjectedSlotRenderables,
+	captureSlottedNodes,
 	collectAuthoredHydrationScriptMarkup,
-	deserializeProjectedSlotRenderables,
-	serializeProjectedSlotRenderables,
-	SLOT_PROJECTION_SCRIPT_ATTRIBUTE,
-} from '../../src/core/slot-projection-runtime';
+	deserializeSlottedPayload,
+	serializeSlottedPayload,
+	SLOTTED_PAYLOAD_SCRIPT_ATTRIBUTE,
+} from '../../src/core/slotted-content';
 import { installLightDomShim } from '../../src/server/light-dom-shim';
 
-describe('slot projection helpers', () => {
+describe('slotted content helpers', () => {
 	beforeEach(() => {
 		installLightDomShim();
 	});
 
-	test('round-trips projected light-DOM nodes through slot projection payloads', () => {
+	test('round-trips captured light-DOM nodes through the slotted payload, without the server scripts', () => {
 		const host = document.createElement('div');
 		host.innerHTML =
-			'<h2 slot="header" data-note="1 > 0">SSR header</h2>' +
+			'<h2 data-note="1 > 0">SSR header</h2>' +
 			'<article data-kind="primary"><p>SSR body</p></article>' +
-			'<p slot="footer">SSR footer</p>' +
 			'<script type="application/json" data-hydration data-hydration-type="context" data-hydration-key="provider">{"count":3}</script>' +
-			`<script type="application/json" ${SLOT_PROJECTION_SCRIPT_ATTRIBUTE}>{"ignored":["<p>ignored</p>"]}</script>`;
+			`<script type="application/json" ${SLOTTED_PAYLOAD_SCRIPT_ATTRIBUTE}>{"":["<p>ignored</p>"]}</script>`;
 
-		const parsed = captureProjectedSlotRenderables(host);
-		const serialized = serializeProjectedSlotRenderables(parsed);
+		const serialized = serializeSlottedPayload(captureSlottedNodes(host));
 
 		expect(serialized).toEqual({
-			'': ['<article data-kind="primary"><p>SSR body</p></article>'],
-			footer: ['<p slot="footer">SSR footer</p>'],
-			header: ['<h2 slot="header" data-note="1 > 0">SSR header</h2>'],
+			'': ['<h2 data-note="1 > 0">SSR header</h2>', '<article data-kind="primary"><p>SSR body</p></article>'],
 		});
-		expect(
-			serializeProjectedSlotRenderables(deserializeProjectedSlotRenderables(JSON.stringify(serialized))),
-		).toEqual(serialized);
+		expect(serializeSlottedPayload(deserializeSlottedPayload(JSON.stringify(serialized)))).toEqual(serialized);
 	});
 
 	test('serializes comment nodes as nothing so their data cannot become payload markup', () => {
 		const host = document.createElement('div');
 		host.append(document.createComment('<img src=x onerror=alert(1)>'), document.createTextNode('kept'));
 
-		const serialized = serializeProjectedSlotRenderables(captureProjectedSlotRenderables(host));
-
-		expect(serialized).toEqual({ '': ['kept'] });
+		expect(serializeSlottedPayload(captureSlottedNodes(host))).toEqual({ '': ['kept'] });
 	});
 
 	test('collects only authored hydration scripts from the host light DOM', () => {
@@ -52,7 +44,7 @@ describe('slot projection helpers', () => {
 		host.innerHTML =
 			'<p>SSR body</p>' +
 			hydrationMarkup +
-			`<script type="application/json" ${SLOT_PROJECTION_SCRIPT_ATTRIBUTE}>{"": ["<p>SSR body</p>"]}</script>`;
+			`<script type="application/json" ${SLOTTED_PAYLOAD_SCRIPT_ATTRIBUTE}>{"": ["<p>SSR body</p>"]}</script>`;
 
 		expect(collectAuthoredHydrationScriptMarkup(host)).toBe(hydrationMarkup);
 	});

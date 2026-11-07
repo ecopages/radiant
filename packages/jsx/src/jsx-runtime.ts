@@ -1,6 +1,6 @@
 import { createJsxElement, createMarkupNodeLike, fragmentSymbol, type JsxFragment } from './factory/jsx-factory.ts';
 import { isSubscribableJsxValue } from './types/renderable-guards.ts';
-import { SLOT_JSX_VALUE_SYMBOL, SUBSCRIBABLE_JSX_VALUE_SYMBOL } from './types/index.ts';
+import { SUBSCRIBABLE_JSX_VALUE_SYMBOL } from './types/index.ts';
 import type {
 	JsxBindingSourceValue,
 	JsxComponent,
@@ -13,7 +13,6 @@ import type {
 	SignalLike,
 	SubscribableJsxValue,
 	SubscribableJsxValueWithAccess,
-	SlotJsxValue,
 } from './types/index.ts';
 
 export { CUSTOM_ELEMENT_TAG_NAME, getCustomElementTagName } from './custom-element-tag-name.ts';
@@ -60,7 +59,6 @@ export type {
 	SignalLike,
 	ServerCustomElementRenderHookContext,
 	ServerRenderableCustomElement,
-	SlotJsxValue,
 	StylePropertyValue,
 	StyleValue,
 	SubscribableJsxValue,
@@ -201,11 +199,6 @@ export namespace JSX {
 		JsxCustomIntrinsicElements & {
 			[elementName: string]: JsxOpenIntrinsicAttributes<globalThis.Element>;
 		};
-}
-
-/** Returns whether a value carries internal slot placeholder metadata. */
-export function isSlotJsxValue(value: unknown): value is SlotJsxValue {
-	return typeof value === 'object' && value !== null && SLOT_JSX_VALUE_SYMBOL in value;
 }
 
 type MapSource<Value extends JsxBindingSourceValue> =

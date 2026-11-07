@@ -37,7 +37,7 @@ class HookChildrenProvider extends RadiantElement {
 	override render() {
 		return (
 			<section>
-				<slot />
+				{this.slotted}
 			</section>
 		);
 	}
