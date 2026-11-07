@@ -7,7 +7,6 @@ import {
 	getCompiledTemplate,
 	normalizeTemplateFragmentNamespaces,
 } from './template-compiler.ts';
-import { createTemplateInstanceUpdate } from './template-instance.ts';
 import type {
 	BindingDescriptor,
 	CompiledTemplate,
@@ -165,7 +164,6 @@ function createTreeInstance(
 		parts,
 		rootTarget,
 		rootNodes,
-		update: createTemplateInstanceUpdate(parts, rootTarget),
 	};
 }
 

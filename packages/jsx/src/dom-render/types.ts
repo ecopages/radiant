@@ -203,7 +203,6 @@ export type TemplateInstance = {
 	parts: readonly LiveTemplatePart[];
 	rootTarget: HTMLElement;
 	rootNodes: readonly Node[];
-	update: (values: readonly unknown[], deferredProperties: DeferredPropertyBinding[]) => void;
 };
 
 /** Mounted state for a child range that currently contains no DOM nodes. */

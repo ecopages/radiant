@@ -12,7 +12,7 @@ import {
 import { disposeLiveTemplateParts } from './mounted-disposal.ts';
 import { getNodeAtPath, getPathKey } from './path-utils.ts';
 import { getCompiledTemplate } from './template-compiler.ts';
-import { createTemplateInstanceUpdate } from './template-instance.ts';
+import { updateTemplateInstance } from './template-instance.ts';
 import type { TemplateHydrationIndexPlan } from '../hydration/hydration-bindings.ts';
 import type {
 	ChildTemplatePart,
@@ -93,10 +93,9 @@ export function hydrateTemplateInstance(
 		parts,
 		rootTarget,
 		rootNodes: hostRoots,
-		update: createTemplateInstanceUpdate(parts, rootTarget),
 	};
 
-	instance.update(template.values, deferredProperties);
+	updateTemplateInstance(instance, template.values, deferredProperties);
 
 	return instance;
 }
