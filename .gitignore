@@ -184,3 +184,4 @@ apps/radiant-ui/src/public/assets/themes/
 
 # Generated docs fonts, copied from the Fontsource packages during app builds
 apps/radiant-ui/src/public/assets/fonts/
+apps/docs/src/public/assets/fonts/

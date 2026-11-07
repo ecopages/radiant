@@ -106,9 +106,27 @@
 	padding: 0.5rem;
 }
 
+/**
+ * Controls line up on the card padding instead of floating in the middle, so wide ones such as the date pickers and
+ * fields start where narrow ones do, and nothing is clipped on either side.
+ */
 .theme-lab__card-body .docs-story__preview {
+	align-items: flex-start;
+	justify-content: flex-start;
 	min-height: 0;
+	min-width: 0;
 	padding: 1rem;
+	overflow-x: auto;
+}
+
+.theme-lab__card-body .docs-story__preview-mount {
+	align-items: flex-start;
+	justify-content: flex-start;
+	min-width: 0;
+}
+
+.theme-lab__card-body radiant-docs-canvas {
+	min-width: 0;
 }
 
 .theme-lab__kit {
