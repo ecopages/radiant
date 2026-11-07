@@ -4,6 +4,7 @@
 
 ### Minor Changes
 
+- [#632](https://github.com/ecopages/radiant/pull/632) [`6e98ef9`](https://github.com/ecopages/radiant/commit/6e98ef9ffd57ce38d5d92d15ddfb0bf6576ae49e) Thanks [@andeeplus](https://github.com/andeeplus)! - `<MapItems each={signal}>{(item) => row}</MapItems>` renders each item of a list signal once and reuses that row while the item stays in the list; rows without a `key` are keyed by their item. A keyed list skips a row whose value is the same object it rendered last, while a new object with equal values is still applied in full. A lone signal in `class` binds directly, its value normalized when written.
 - [#620](https://github.com/ecopages/radiant/pull/620) [`a0e8a39`](https://github.com/ecopages/radiant/commit/a0e8a392b6c735b6c9aa2041d05d766bd77012b1) Thanks [@andeeplus](https://github.com/andeeplus)! - **Breaking:** a render-owning host places its children with `this.slotted` instead of `<slot>`. `this.slotted` holds what the parent passed and is `null` when there is none; `this.slottedElements` lists the top-level elements it rendered to. Where the children come from:
 
     - a host created by a JSX view gets the view's children on every render;
