@@ -6,7 +6,9 @@ rui-number-field {
 
 @layer components {
 	.rui-number-field {
-		@apply w-full text-sm;
+		@apply w-full;
+		font-size: var(--text-control-input);
+		line-height: inherit;
 	}
 
 	.rui-number-field__group {
