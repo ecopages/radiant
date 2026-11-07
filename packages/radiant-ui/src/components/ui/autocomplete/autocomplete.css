@@ -6,7 +6,8 @@
 	}
 
 	.rui-autocomplete__input {
-		@apply min-w-0 rounded-control border border-border bg-background px-control-x py-control-y text-on-background outline-none;
+		@apply min-w-0 rounded-control border border-border bg-background px-control-x py-0 text-on-background outline-none;
+		height: var(--size-control-md);
 		font-size: var(--text-control-input);
 	}
 

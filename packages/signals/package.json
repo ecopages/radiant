@@ -1,6 +1,6 @@
 {
 	"name": "@ecopages/signals",
-	"version": "0.8.0",
+	"version": "0.8.1",
 	"description": "Renderer-agnostic signal primitives based on the TC39 Signals proposal",
 	"repository": {
 		"type": "git",
@@ -51,10 +51,10 @@
 	},
 	"devDependencies": {
 		"@types/node": "^24.13.3",
-		"@vitest/coverage-v8": "^4.1.10",
-		"esbuild": "^0.28.1",
+		"@vitest/coverage-v8": "^4.1.12",
+		"esbuild": "^0.28.2",
 		"tsx": "^4.20.6",
 		"typescript": "catalog:",
-		"vitest": "^4.1.10"
+		"vitest": "^4.1.12"
 	}
 }

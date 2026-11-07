@@ -20,7 +20,7 @@ Component CSS must **not** `@import` a theme file.
 | `radius/<name>.css`      | Radius scale + `--radius-control`, `--radius-container`, `--radius-pill` |
 | `elevation/<name>.css`   | `--shadow-control`, `--shadow-overlay`, `--shadow-modal`                 |
 | `typography/<name>.css`  | Font family, text sizes, weights, leading roles                          |
-| `motion/<name>.css`      | `--duration-*`, `--ease-*`                                               |
+| `motion/<name>.css`      | `--duration-*`, `--ease-*`, `--press-shift`                              |
 
 The default Radiant Default neutral, primary, and secondary scales ship steps **50–975** and derive from three OKLCH seed variables (`--rui-neutral`, `--rui-primary`, and `--rui-secondary`). `--rui-secondary` defaults to primary's hue plus 40 degrees, an analogous offset that stays clear of the status hues. Error, warning, and success scales use fixed red, amber, and green seeds, so status colors stay recognizable when the seeds change; the info role follows the primary seed. `--color-black` and `--color-white` live in `system.css` (absolute anchors, not a hue pack). The semantic gray utility scale stays **50–950** (Tailwind-shaped); the default theme maps it to Radiant Default neutrals. Optional palettes and their semantic role maps are owned by `@ecopages/radiant-themes`.
 
@@ -37,6 +37,32 @@ Components must **never** reference palette steps (e.g. `--color-havelock-blue-8
 - There is no separate `semantic.dark.css`.
 - Dark applies to any `.dark` scope, not only `html`: `semantic.css` registers the `--color-*` aliases with `@theme inline` (utilities read the role token, e.g. `var(--primary)`, where they are used) and declares them again under `:where(:root, .dark)` so `var(--color-*)` readers resolve on a light page and inside a nested `.dark`. `generate:exports` (part of `build:lib`) writes that second block from the `@theme inline` one; edit only `@theme inline` and commit the regenerated block. Override roles (`--primary`), not `--color-*`.
 - App-level aliases declared with a plain `@theme` (such as `--color-background-accent` and `--color-muted` in the docs and radiant-ui apps) resolve once at `:root`, so they do not follow a nested `.dark`; those apps switch theme with `data-theme` on the root. Declare an app alias with `@theme inline` and redeclare it under `:where(:root, .dark)` if it must follow a nested section.
+
+Press feedback: `motion/<name>.css` defines `--ease-out-strong` (`cubic-bezier(0.23, 1, 0.32, 1)`) and `--press-shift` (1px, like shadcn's press nudge). `.rui-button` and the shared icon toggle and clear buttons transition only `background-color, color, box-shadow, transform` over `--duration-fast`, and on `:active:not(:disabled)` move down by `--press-shift`; link and `none` buttons do not move. Hover styling sits behind `@media (hover: hover)` so touch devices get no sticky hover. `accessibility.css` sets `--press-shift: 0px` and zeroes durations under `prefers-reduced-motion: reduce`. Classic and native themes (Windows 95, Mac OS Classic, macOS) set `--press-shift: 0px` so controls never move.
+
+Popup, dialog and value motion: `motion/<name>.css` also defines the popup tokens, so a theme or app can tune or disable them on `:root`.
+
+| Token                                                | Default                       | Used by                                                         |
+| ---------------------------------------------------- | ----------------------------- | --------------------------------------------------------------- |
+| `--popup-scale-from`                                 | `0.96`                        | Floating popups and the dialog surface start at this scale      |
+| `--popup-shift`                                      | `4px`                         | Translate toward the anchor (dialog: downward) at the start     |
+| `--popup-enter-duration` / `--popup-exit-duration`   | `--duration-fast` / `100ms`   | `.rui-floating`: select, combobox, menus, popover, date pickers |
+| `--tooltip-duration`                                 | `120ms`                       | Tooltip fade (opacity only, no scale)                           |
+| `--hover-card-enter-duration`                        | `180ms`                       | Hover card enter (exit uses `--popup-exit-duration`)            |
+| `--dialog-enter-duration` / `--dialog-exit-duration` | `--duration-normal` / `120ms` | Dialog surface                                                  |
+| `--backdrop-duration`                                | `--duration-fast`             | Dialog backdrop fade in (it fades out over the dialog exit)     |
+| `--check-duration`                                   | `min(120ms, --duration-fast)` | Checkbox check and radio dot scale-in from 0.6                  |
+
+All of it uses `--ease-out-strong`. Exits are always shorter than enters.
+
+- **Floating popups** (`shared/floating.css`) toggle `hidden`. Enter uses `@starting-style` (`opacity: 0`, `scale(--popup-scale-from)` plus a `--popup-shift` translate toward the anchor); the `hidden` state is the exit, and `display` transitions with `allow-discrete` so the exit plays before `display: none`. The scale is origin-aware: `transform-origin` and the shift follow `data-placement` (`bottom-start` grows from the top left, `top` from the bottom center, `right-*` from the left, `left-*` from the right), and nothing starts from `scale(0)`. `visibility: hidden` before the first position does not flash: the script positions and sets `visibility: visible` in the same task as un-hiding, before the first frame. `applyFloatingPosition` seeds `data-placement` with the requested side before it measures, so the very first open already starts from the right side. Because moving a node detaches it and drops the running transition, `PopoverController` keeps a portaled surface in `document.body` until its exit transition finishes (immediately when there is none).
+- **Tooltip** is opacity only (`--tooltip-duration`). **Hover card** is a popup with `--hover-card-enter-duration`.
+- **Dialog**: the backdrop fades and the surface enters with opacity and `scale(--popup-scale-from) translateY(--popup-shift)`. `.rui-dialog[hidden]` transitions `display` so the backdrop and surface exit before it disappears.
+- **Toast** keeps its stack mechanics: transform and height use `--duration-slow`, opacity `--duration-normal`; the removed state uses `--duration-normal` / `--duration-fast`, so it leaves faster than it arrives. Swipe is unchanged and has no transition while swiping.
+- **Value changes**: the meter fill, the slider range fill and thumb, and the knob arc ease over `--duration-normal`. The slider and knob scripts set `data-dragging` while a pointer drags, which turns the transition off so the thumb never lags the pointer; keyboard and programmatic changes (and a click on the track) animate. There is no first-paint animation: the meter and slider render the stored value before the first frame, and a transition only runs on a later change. Numbers stay `tabular-nums`.
+- **Small details**: checkbox check and radio dot scale in from 0.6; disclosure chevron and panel, tree and treegrid chevrons share the strong ease-out; tabs animate color only (no sliding indicator).
+
+Deliberately not animated: list option and menu item hover or keyboard highlight (high frequency), anything during a drag, and the sheen or focus rings. Under `prefers-reduced-motion: reduce`, `accessibility.css` zeroes the durations, sets `--popup-scale-from: 1` and `--popup-shift: 0px`, and the global rule forces a 0.01ms transition and animation, so nothing moves. Windows 95 and Mac OS Classic set every popup, dialog and check duration to `0ms` (and the scale to 1) so popups appear instantly like the real OS; their toasts keep the base motion.
 
 Dark remaps **colors only** (including `--color-overlay`). Spacing, radius, elevation, typography, and motion stay mode-independent unless a theme explicitly documents otherwise.
 
@@ -56,7 +82,7 @@ Filled status surfaces (alerts) use `*-container` backgrounds. Lightweight notif
 
 ### Tier 3 — system (`tokens/system.css`)
 
-Shared structural tokens: absolute colours (`--color-black`, `--color-white`), border roles, border widths, focus ring geometry, opacity roles, z-index stack, control/icon sizes, and range-track fill (`--rui-track-mix`, `--rui-track-fill`). Imported by every theme; not a swappable mood pack in v1. `--size-control-sm/md/lg` alias `--space-8/10/12` (with rem fallbacks) so compact and wide change control height along with padding. `--size-icon-*` stay fixed. Set `--rui-track-color` on an ancestor to replace `--rui-track-fill` for slider and knob together. `accessibility.css` provides a base focus outline that component styles may customize, increases boundary and focus visibility for `prefers-contrast: more`, reduces motion when requested, and maps semantic roles and focus to system colors in forced-colors mode.
+Shared structural tokens: absolute colours (`--color-black`, `--color-white`), border roles, border widths, focus ring geometry, opacity roles, z-index stack, control/icon sizes, and range-track fill (`--rui-track-mix`, `--rui-track-fill`). Imported by every theme; not a swappable mood pack in v1. `--size-control-sm/md/lg` alias `--space-8/10/12` (with rem fallbacks) so the compact, comfortable and wide packs change control height along with padding; the default pack sets 28/32/36px itself (scaled by `--rui-density`). `--size-icon-*` stay fixed. Set `--rui-track-color` on an ancestor to replace `--rui-track-fill` for slider and knob together. `accessibility.css` provides a base focus outline that component styles may customize, increases boundary and focus visibility for `prefers-contrast: more`, reduces motion when requested, and maps semantic roles and focus to system colors in forced-colors mode.
 
 ## Themes
 
@@ -70,11 +96,11 @@ A theme is an import graph, e.g. [`src/styles/themes/default.css`](src/styles/th
 @import '../tokens/presets/colors/rui-default.css';
 ```
 
-Radiant UI ships only the `default` theme: Radiant Default colors, comfortable spacing, and soft-square controls. Optional complete themes and named compact variants live in `@ecopages/radiant-themes`. Each entry owns its typography, spacing, component shape, and component-specific treatment. The source theme layers compose behind the package's simple theme imports.
+Radiant UI ships only the `default` theme: Radiant Default colors, near-Zed spacing (28/32/36px controls, 14px control text), and restrained controls (radius scale 0.7, 4.2px) with flat surfaces (`radius/soft` keeps the earlier 12px scale). Optional complete themes and named compact variants live in `@ecopages/radiant-themes`. Each entry owns its typography, spacing, component shape, and component-specific treatment. The source theme layers compose behind the package's simple theme imports.
 
-**Storybook and docs preview:** the theme preview uses the same published stylesheets applications import. The docs header palette menu and Storybook expose Radiant Default, GitHub, Cloudflare, VS Code, Vercel, Material Design, High Contrast, Windows 95, Mac OS Classic, and macOS. Docs preview injects the compiled full-theme entries at runtime; named compact variants remain separate package imports. `data-rui-*` attributes are preview markers only and are not an application API.
+**Storybook and docs preview:** the theme preview uses the same published stylesheets applications import. The docs header palette menu and Storybook expose Radiant Default, GitHub, Cloudflare, VS Code, Vercel, Material Design, High Contrast, Windows 95, Mac OS Classic, macOS, and Zed. Docs preview injects the compiled full-theme entries at runtime; named compact variants remain separate package imports. `data-rui-*` attributes are preview markers only and are not an application API.
 
-**Radiant Default tuning:** `--rui-primary`, `--rui-secondary`, and `--rui-neutral` generate the default theme's OKLCH scales. `--rui-density`, `--rui-radius-scale`, and `--rui-border-alpha` tune spacing, corner size, and semantic border strength. The docs tuner shows all six inputs. Controls use a separate solid border role that keeps their boundaries at or above 3:1 contrast in light and dark modes. These controls are for Radiant Default; each optional theme sets its own values.
+**Radiant Default tuning:** `--rui-primary`, `--rui-secondary`, and `--rui-neutral` generate the default theme's OKLCH scales. `--rui-neutral-tint` (default 1.3) multiplies the neutral seed's chroma. `--rui-density`, `--rui-radius-scale` (default 0.7), and `--rui-border-alpha` (default 11%) tune spacing, corner size, and semantic border strength. The docs tuner shows every input. Controls use a separate solid border role that keeps their boundaries at or above 3:1 contrast in light and dark modes. These controls are for Radiant Default; each optional theme sets its own values.
 
 ## Component stylesheet rules
 

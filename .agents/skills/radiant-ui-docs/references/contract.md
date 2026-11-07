@@ -151,12 +151,12 @@ Document that inner DOM is generated from host state. Authored children are not 
 
 ## Consumer-facing terms
 
-| Say                                    | Do not say                                            |
-| -------------------------------------- | ----------------------------------------------------- |
-| behavior host, query contract, targets | shadow parts, slots |
-| Composition Helpers                    | slots, render props                                   |
-| Authored Children                      | projected content, light-DOM slot                     |
-| host writes / author owns              | "managed internally" with no list                     |
-| `[data-ref="…"]`                       | `.rui-foo__bar` as a query target                     |
+| Say                                    | Do not say                        |
+| -------------------------------------- | --------------------------------- |
+| behavior host, query contract, targets | shadow parts, slots               |
+| Composition Helpers                    | slots, render props               |
+| Authored Children                      | projected content, light-DOM slot |
+| host writes / author owns              | "managed internally" with no list |
+| `[data-ref="…"]`                       | `.rui-foo__bar` as a query target |
 
 Internal catalog terms (View-owned Shell, Binding) stay in package READMEs, not in component MDX, unless the page is teaching authoring.

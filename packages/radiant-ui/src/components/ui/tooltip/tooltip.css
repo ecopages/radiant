@@ -36,4 +36,14 @@ rui-tooltip {
 	.rui-tooltip__content[hidden] {
 		display: none;
 	}
+
+	/* Opacity only: a tooltip is secondary, so it never scales or moves. */
+	.rui-floating.rui-tooltip__content {
+		--floating-from: none;
+		transition-duration: var(--tooltip-duration, 120ms);
+	}
+
+	.rui-floating.rui-tooltip__content[hidden] {
+		transition-duration: var(--popup-exit-duration, 100ms);
+	}
 }

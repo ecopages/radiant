@@ -23,6 +23,8 @@ rui-tabs {
 		@apply inline-flex shrink-0 cursor-pointer items-center justify-center whitespace-nowrap border-0 border-transparent bg-transparent text-on-background transition-colors;
 		border-bottom-style: solid;
 		border-bottom-width: var(--rui-tabs-indicator-width);
+		transition-duration: var(--duration-fast, 150ms);
+		transition-timing-function: var(--ease-out-strong, cubic-bezier(0.23, 1, 0.32, 1));
 	}
 
 	.rui-tabs__tab[aria-selected='true'] {

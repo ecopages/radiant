@@ -1,7 +1,10 @@
+export { RuiIconAlertCircle } from './alert-circle';
+export { RuiIconAlertTriangle } from './alert-triangle';
 export { RuiIconCalendar } from './calendar';
 export { RuiIconCheck } from './check';
 export { RuiIconChevronDown } from './chevron-down';
 export { RuiIconChevronLeft } from './chevron-left';
 export { RuiIconChevronRight } from './chevron-right';
+export { RuiIconInfo } from './info';
 export { RuiIconX } from './x';
 export type { RuiIconProps } from './types';

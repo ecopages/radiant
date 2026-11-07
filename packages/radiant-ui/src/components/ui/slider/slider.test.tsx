@@ -109,4 +109,25 @@ describe('RuiSlider single thumb keyboard and pointer', () => {
 		expect(emissions.length).toBeGreaterThan(0);
 		cleanup();
 	});
+
+	it('marks the track data-dragging only while a pointer drags', async () => {
+		const { host, slider, thumb, cleanup } = await mountSingle(10);
+		const track = host.querySelector('[data-ref="rangeTrack"]') as HTMLElement;
+		const rect = track.getBoundingClientRect();
+		const y = rect.top + rect.height / 2;
+		const duringDrag: boolean[] = [];
+		slider.addEventListener('rui-change', () => duringDrag.push(track.hasAttribute('data-dragging')));
+		expect(track.hasAttribute('data-dragging')).toBe(false);
+
+		await userEvent.pointer([
+			{ keys: '[MouseLeft>]', target: thumb, coords: { clientX: rect.left + rect.width * 0.1, clientY: y } },
+			{ coords: { clientX: rect.left + rect.width * 0.5, clientY: y } },
+			{ keys: '[/MouseLeft]' },
+		]);
+
+		expect(duringDrag.length).toBeGreaterThan(0);
+		expect(duringDrag.every(Boolean)).toBe(true);
+		expect(track.hasAttribute('data-dragging')).toBe(false);
+		cleanup();
+	});
 });

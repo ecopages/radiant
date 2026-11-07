@@ -204,8 +204,6 @@ export class RuiSidebarTrigger extends RadiantElement {
 	}
 }
 
-
-
 declare global {
 	interface HTMLElementTagNameMap {
 		'rui-sidebar-trigger': RuiSidebarTrigger;

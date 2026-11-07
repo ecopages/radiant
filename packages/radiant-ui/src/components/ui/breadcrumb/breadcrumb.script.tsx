@@ -36,8 +36,6 @@ export class RuiBreadcrumb extends RadiantElement {
 	@prop({ type: String, defaultValue: '/' }) separator: string;
 }
 
-
-
 declare global {
 	interface HTMLElementTagNameMap {
 		'rui-breadcrumb': RuiBreadcrumb;

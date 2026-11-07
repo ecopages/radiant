@@ -9,9 +9,9 @@
 /** @remarks Docs brand type while Radiant Default is active; optional themes keep their own font stacks. */
 :root:not([data-rui-theme]),
 :root[data-rui-theme='rui-default'] {
-	--font-sans: 'Geist Sans', ui-sans-serif, system-ui, sans-serif;
-	--font-heading: 'Karla', ui-sans-serif, system-ui, sans-serif;
-	--font-mono: 'Inconsolata', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	--font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+	--font-heading: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+	--font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 .rui-headline {

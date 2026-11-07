@@ -21,7 +21,8 @@ rui-date-input {
 	.rui-date-input__segments {
 		@apply flex min-w-0 flex-1 items-center overflow-x-clip overflow-y-clip whitespace-nowrap;
 		padding-inline: var(--space-control-x);
-		padding-block: var(--space-control-y);
+		padding-block: 0;
+		min-height: calc(var(--size-control-md) - 2px);
 		font-size: var(--text-control-input);
 		font-variant-numeric: tabular-nums;
 		cursor: text;

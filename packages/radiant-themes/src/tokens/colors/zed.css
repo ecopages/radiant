@@ -1,0 +1,54 @@
+/**
+ * Zed One Light and One Dark: editor background, panel and elevated surfaces, borders, text, and the syntax-derived
+ * accents. The accent blue is used as a tint, so `--color-zed-accent-solid` is a deeper blue that carries white text on
+ * filled buttons and `--color-zed-accent` is the editor blue used for focus, links and selection fills.
+ */
+:where(:root),
+:root[data-rui-theme='zed'] {
+	--color-zed-background: #fafafa;
+	--color-zed-panel: #ebebec;
+	--color-zed-elevated: #dcdcdd;
+	--color-zed-border: #c9c9ca;
+	--color-zed-border-subtle: #dcdcdd;
+	--color-zed-border-strong: #8a8a90;
+	--color-zed-text: #383a41;
+	--color-zed-text-muted: #5d5f68;
+
+	--color-zed-accent: #5c78e2;
+	--color-zed-accent-solid: #4a62cf;
+	--color-zed-accent-hover: #3f56bd;
+	--color-zed-accent-text: #3b55c4;
+	--color-zed-green: #669f59;
+	--color-zed-red: #d36151;
+	--color-zed-amber: #dec184;
+	--color-zed-purple: #a449ab;
+	--color-zed-teal: #3882b7;
+
+	--color-zed-hover: color-mix(in srgb, var(--color-zed-accent) 10%, transparent);
+	--color-zed-selected: color-mix(in srgb, var(--color-zed-accent) 15%, transparent);
+}
+
+:where(.dark),
+:root.dark[data-rui-theme='zed'] {
+	--color-zed-background: #282c33;
+	--color-zed-panel: #2f343e;
+	--color-zed-elevated: #363c46;
+	--color-zed-border: #464b57;
+	--color-zed-border-subtle: #363c46;
+	--color-zed-border-strong: #7d8392;
+	--color-zed-text: #dce0e5;
+	--color-zed-text-muted: #a9afbc;
+
+	--color-zed-accent: #74ade8;
+	--color-zed-accent-solid: #74ade8;
+	--color-zed-accent-hover: #8bbcee;
+	--color-zed-accent-text: #74ade8;
+	--color-zed-green: #a1c181;
+	--color-zed-red: #d07277;
+	--color-zed-amber: #dfc184;
+	--color-zed-purple: #b477cf;
+	--color-zed-teal: #6eb4bf;
+
+	--color-zed-hover: color-mix(in srgb, var(--color-zed-accent) 10%, transparent);
+	--color-zed-selected: color-mix(in srgb, var(--color-zed-accent) 15%, transparent);
+}

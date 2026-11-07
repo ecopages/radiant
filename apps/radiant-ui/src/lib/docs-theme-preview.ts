@@ -3,9 +3,18 @@ import {
 	clearDefaultThemeTuning,
 	DOCS_DEFAULT_THEME_TUNING,
 	DOCS_DEFAULT_TUNING_SCHEMA,
+	DOCS_TUNING_CHANGE_EVENT,
 	parseDocsDefaultThemeTuning,
 	type DocsDefaultThemeTuning,
 } from './docs-default-theme-tuning';
+import {
+	applyDocsFonts,
+	DOCS_FONT_PATTERNS,
+	DOCS_FONT_ROLES,
+	DOCS_FONT_VARIABLES,
+	parseDocsFonts,
+	type DocsFonts,
+} from './docs-fonts';
 
 export const DOCS_APPEARANCE_STORAGE_KEY = 'radiant-ui-docs:appearance';
 
@@ -47,6 +56,7 @@ export const docsThemeColorOptions = [
 	},
 	{ value: 'macos-classic', label: 'Mac OS Classic', description: 'Platinum controls and striped title bars' },
 	{ value: 'macos', label: 'macOS', description: 'Layered native-inspired surfaces and accent states' },
+	{ value: 'zed', label: 'Zed', description: 'Flat, dense editor surfaces with quiet accent states' },
 ] as const;
 
 export const docsThemeTokenNames = ['colors'] as const;
@@ -80,10 +90,11 @@ export const defaultDocsThemeSelection: DocsThemeSelection = {
 	colors: 'rui-default',
 };
 
-const TUNING_QUERY_KEYS: Record<keyof DocsDefaultThemeTuning, string> = {
+export const TUNING_QUERY_KEYS: Record<keyof DocsDefaultThemeTuning, string> = {
 	primaryHue: 'rui-primary-hue',
 	secondaryOffset: 'rui-secondary-offset',
 	neutralHue: 'rui-neutral-hue',
+	neutralTint: 'rui-neutral-tint',
 	density: 'rui-density',
 	radiusScale: 'rui-radius',
 	borderAlpha: 'rui-border-alpha',
@@ -92,7 +103,10 @@ const TUNING_QUERY_KEYS: Record<keyof DocsDefaultThemeTuning, string> = {
 type DocsAppearance = {
 	colors: DocsThemeColor;
 	tuning: DocsDefaultThemeTuning;
+	fonts: DocsFonts;
 };
+
+export const FONT_QUERY_KEYS = { sans: 'rui-font-sans', heading: 'rui-font-heading', mono: 'rui-font-mono' } as const;
 
 function readSearchParams(): URLSearchParams | undefined {
 	const location = typeof window === 'undefined' ? undefined : window.location;
@@ -111,14 +125,16 @@ function readStoredAppearance(): DocsAppearance {
 					record.v === DOCS_APPEARANCE_VERSION
 						? parseDocsDefaultThemeTuning(record.tuning)
 						: DOCS_DEFAULT_THEME_TUNING,
+				fonts: parseDocsFonts(record.fonts),
 			};
 		}
 		return {
 			colors: parseDocsThemeSelection(localStorage.getItem(DOCS_THEME_STORAGE_KEY)).colors,
 			tuning: DOCS_DEFAULT_THEME_TUNING,
+			fonts: {},
 		};
 	} catch {
-		return { colors: defaultDocsThemeSelection.colors, tuning: DOCS_DEFAULT_THEME_TUNING };
+		return { colors: defaultDocsThemeSelection.colors, tuning: DOCS_DEFAULT_THEME_TUNING, fonts: {} };
 	}
 }
 
@@ -131,7 +147,12 @@ function writeStoredAppearance(appearance: DocsAppearance): void {
 		);
 		localStorage.setItem(
 			DOCS_APPEARANCE_STORAGE_KEY,
-			JSON.stringify({ v: DOCS_APPEARANCE_VERSION, colors: appearance.colors, tuning: overrides }),
+			JSON.stringify({
+				v: DOCS_APPEARANCE_VERSION,
+				colors: appearance.colors,
+				tuning: overrides,
+				fonts: appearance.fonts,
+			}),
 		);
 		localStorage.removeItem(DOCS_THEME_STORAGE_KEY);
 	} catch {}
@@ -151,6 +172,7 @@ function writeAppearanceUrl(appearance: DocsAppearance, mode?: DocsThemeMode): v
 		const value = appearance.tuning[key];
 		setOrDelete(queryKey, value === DOCS_DEFAULT_THEME_TUNING[key] ? undefined : String(value));
 	}
+	for (const role of DOCS_FONT_ROLES) setOrDelete(FONT_QUERY_KEYS[role], appearance.fonts[role]?.id);
 	window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
 }
 
@@ -245,7 +267,11 @@ export function writeDocsThemeMode(mode: DocsThemeMode): void {
 	try {
 		localStorage.setItem('theme', mode);
 	} catch {}
-	const appearance = { colors: readDocsThemeSelection().colors, tuning: readDocsDefaultThemeTuning() };
+	const appearance = {
+		colors: readDocsThemeSelection().colors,
+		tuning: readDocsDefaultThemeTuning(),
+		fonts: readStoredAppearance().fonts,
+	};
 	writeAppearanceUrl(appearance, mode);
 }
 
@@ -349,10 +375,38 @@ export function applyDocumentTokens(selection: DocsThemeSelection, options: { pe
 	if (selection.colors === 'rui-default') applyDefaultThemeTuning(root, readDocsDefaultThemeTuning());
 	else clearDefaultThemeTuning(root);
 
+	applyDocsFonts(root, readStoredAppearance().fonts);
+
 	const stylesheets = readInstalledThemeStylesheets();
 	if (stylesheets) {
 		syncThemeStylesheetForSelection(selection, stylesheets);
 	}
+}
+
+/** The fonts the visitor chose, which apply on every docs page until reset. */
+export function readDocsFonts(): DocsFonts {
+	return readStoredAppearance().fonts;
+}
+
+/** Stores and applies `fonts`, replacing the previous choice. */
+export function writeDocsFonts(fonts: DocsFonts): void {
+	if (typeof document === 'undefined' || !document.documentElement) return;
+	const appearance = { ...readStoredAppearance(), fonts: parseDocsFonts(fonts) };
+	writeStoredAppearance(appearance);
+	writeAppearanceUrl(appearance);
+	applyDocsFonts(document.documentElement, appearance.fonts);
+}
+
+/** Returns every docs page to Radiant Default: the theme, its tuning and the fonts. */
+export function resetDocsAppearance(): void {
+	const appearance: DocsAppearance = {
+		colors: defaultDocsThemeSelection.colors,
+		tuning: DOCS_DEFAULT_THEME_TUNING,
+		fonts: {},
+	};
+	writeStoredAppearance(appearance);
+	writeAppearanceUrl(appearance);
+	applyDocumentTokens(defaultDocsThemeSelection, { persist: false });
 }
 
 /**
@@ -403,6 +457,23 @@ export function createDocsThemeBootScript(stylesheets: DocsThemeStylesheets): st
 		const clearDefaultTuning = () => {
 			for (const setting of Object.values(tuningSchema)) root.style.removeProperty(setting.cssVariable);
 		};
+		const fontPatterns = ${JSON.stringify(DOCS_FONT_PATTERNS)};
+		const fontVariables = ${JSON.stringify(DOCS_FONT_VARIABLES)};
+		const storedFonts = appearance.fonts && typeof appearance.fonts === 'object' ? appearance.fonts : {};
+		for (const [role, variable] of Object.entries(fontVariables)) {
+			const font = storedFonts[role];
+			if (!font || typeof font !== 'object') continue;
+			if (!['id', 'family', 'pkg', 'fallback'].every((key) => typeof font[key] === 'string' && new RegExp(fontPatterns[key]).test(font[key]))) continue;
+			if (role === 'mono' && font.kind !== 'mono') continue;
+			root.style.setProperty(variable, "'" + font.family + "', " + font.fallback);
+			if (!document.getElementById('rui-docs-font-' + font.id)) {
+				const link = document.createElement('link');
+				link.id = 'rui-docs-font-' + font.id;
+				link.rel = 'stylesheet';
+				link.href = 'https://cdn.jsdelivr.net/npm/' + font.pkg + '@5/index.css';
+				document.head.append(link);
+			}
+		}
 		root.setAttribute('data-theme', resolvedMode);
 		root.classList.toggle('dark', resolvedMode === 'dark');
 		root.dataset.ruiTheme = colors;
@@ -410,7 +481,7 @@ export function createDocsThemeBootScript(stylesheets: DocsThemeStylesheets): st
 		else clearDefaultTuning();
 		globalThis[${JSON.stringify(DOCS_THEME_STYLESHEETS_GLOBAL)}] = stylesheets;
 	if (!read(${JSON.stringify(DOCS_APPEARANCE_STORAGE_KEY)})) {
-		try { localStorage.setItem(${JSON.stringify(DOCS_APPEARANCE_STORAGE_KEY)}, JSON.stringify({ v: ${DOCS_APPEARANCE_VERSION}, colors: savedTheme || 'rui-default', tuning: {} })); } catch {}
+		try { localStorage.setItem(${JSON.stringify(DOCS_APPEARANCE_STORAGE_KEY)}, JSON.stringify({ v: ${DOCS_APPEARANCE_VERSION}, colors: savedTheme || 'rui-default', tuning: {}, fonts: {} })); } catch {}
 	}
 		const attr = ${JSON.stringify(DOCS_THEME_STYLESHEET_ATTR)};
 		const href = colors === 'rui-default' ? null : stylesheets.themes[colors];
@@ -462,10 +533,25 @@ export function readDocsDefaultThemeTuning(): DocsDefaultThemeTuning {
 	return readUrlTuning(readStoredAppearance().tuning);
 }
 
+/**
+ * Merges `changes` into the Radiant Default tuning, stores it, applies it to the document, and announces it so the
+ * sliders and the generated CSS follow.
+ */
+export function updateDocsDefaultThemeTuning(changes: Partial<DocsDefaultThemeTuning>): DocsDefaultThemeTuning {
+	const tuning = parseDocsDefaultThemeTuning({ ...readDocsDefaultThemeTuning(), ...changes });
+	writeDocsDefaultThemeTuning(tuning);
+	if (typeof document !== 'undefined' && document.documentElement?.dataset.ruiTheme === 'rui-default') {
+		applyDefaultThemeTuning(document.documentElement, tuning);
+	}
+	document.dispatchEvent(new CustomEvent(DOCS_TUNING_CHANGE_EVENT, { detail: tuning }));
+	return tuning;
+}
+
 export function writeDocsDefaultThemeTuning(tuning: DocsDefaultThemeTuning): void {
 	const appearance = {
 		colors: readDocsThemeSelection().colors,
 		tuning: parseDocsDefaultThemeTuning(tuning),
+		fonts: readStoredAppearance().fonts,
 	};
 	writeStoredAppearance(appearance);
 	writeAppearanceUrl(appearance);

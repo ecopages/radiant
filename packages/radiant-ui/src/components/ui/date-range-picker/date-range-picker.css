@@ -6,7 +6,9 @@ rui-date-range-picker {
 
 @layer components {
 	.rui-date-range-picker {
-		@apply w-full text-sm;
+		@apply w-full;
+		font-size: var(--text-control-input);
+		line-height: inherit;
 	}
 
 	.rui-date-range-picker__group {

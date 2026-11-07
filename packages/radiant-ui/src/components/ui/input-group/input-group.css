@@ -23,6 +23,8 @@
 	.rui-input-group .rui-input {
 		@apply min-w-0 flex-1 self-stretch border-0 bg-transparent shadow-none;
 		border-radius: 0;
+		height: auto;
+		min-height: calc(var(--size-control-md) - 2px);
 	}
 
 	.rui-input-group .rui-input:focus-visible {

@@ -95,7 +95,7 @@ test('published default theme keeps its Radiant Default color and geometry contr
 	assert.match(theme, /--font-sans:/);
 	assert.match(theme, /--font-heading:/);
 	assert.match(theme, /--font-mono:/);
-	assert.match(theme, /--rui-border-alpha:\s*20%/);
+	assert.match(theme, /--rui-border-alpha:\s*11%/);
 	assert.match(roles, /--rui-control-border-color:\s*var\(--color-rui-default-500\)/);
 	assert.match(colors, /--rui-neutral:\s*oklch/);
 	assert.match(colors, /--rui-primary:\s*oklch/);
@@ -106,8 +106,8 @@ test('published default theme keeps its Radiant Default color and geometry contr
 	assert.match(roles, /--border:\s*oklch\(from var\(--rui-border-color\) l c h \/ var\(--rui-border-alpha\)\)/);
 	assert.match(spacingScale, /--rui-density:\s*1/);
 	assert.match(spacing, /--space-1:\s*calc\(0\.25rem \* var\(--rui-density\)\)/);
-	assert.match(radius, /--rui-radius-scale:\s*1/);
-	assert.match(radius, /--border-radius-md:\s*calc\(0\.75rem \* var\(--rui-radius-scale\)\)/);
+	assert.match(radius, /--rui-radius-scale:\s*0\.7/);
+	assert.match(radius, /--border-radius-md:\s*calc\(0\.375rem \* var\(--rui-radius-scale\)\)/);
 });
 
 for (const [entry, view, value, expectedInputs] of [

@@ -218,8 +218,6 @@ export class RuiListbox extends RadiantElement {
 	}
 }
 
-
-
 declare global {
 	interface HTMLElementTagNameMap {
 		'rui-listbox': RuiListbox;

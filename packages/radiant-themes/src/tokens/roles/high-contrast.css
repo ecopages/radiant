@@ -1,4 +1,5 @@
-:where(:root), :root[data-rui-theme='high-contrast'] {
+:where(:root),
+:root[data-rui-theme='high-contrast'] {
 	--gray-50: #ffffff;
 	--gray-100: #ffffff;
 	--gray-200: #f2f2f2;
@@ -76,7 +77,8 @@
 	--on-background-code: #000000;
 }
 
-:where(.dark), :root.dark[data-rui-theme='high-contrast'] {
+:where(.dark),
+:root.dark[data-rui-theme='high-contrast'] {
 	--gray-50: #ffffff;
 	--gray-100: #f2f2f2;
 	--gray-200: #d9d9d9;

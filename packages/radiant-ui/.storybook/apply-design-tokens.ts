@@ -9,6 +9,7 @@ import highContrastThemeCss from '@ecopages/radiant-themes/compiled/high-contras
 import windows95ThemeCss from '@ecopages/radiant-themes/compiled/windows95.css?inline';
 import macOsClassicThemeCss from '@ecopages/radiant-themes/compiled/macos-classic.css?inline';
 import macOsThemeCss from '@ecopages/radiant-themes/compiled/macos.css?inline';
+import zedThemeCss from '@ecopages/radiant-themes/compiled/zed.css?inline';
 
 const THEME_PACKS = [
 	'rui-default',
@@ -21,6 +22,7 @@ const THEME_PACKS = [
 	'windows95',
 	'macos-classic',
 	'macos',
+	'zed',
 ] as const;
 
 const LEGACY_THEME_LINK_ID = 'rui-storybook-theme';
@@ -37,6 +39,7 @@ const THEME_SHEETS = {
 	windows95: windows95ThemeCss,
 	'macos-classic': macOsClassicThemeCss,
 	macos: macOsThemeCss,
+	zed: zedThemeCss,
 } as const satisfies Record<(typeof THEME_PACKS)[number], string | null>;
 
 export type DesignTokenGlobals = {

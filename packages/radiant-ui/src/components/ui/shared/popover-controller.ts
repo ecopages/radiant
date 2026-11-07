@@ -50,6 +50,7 @@ export class PopoverController {
 	private cleanupFloating: (() => void) | null = null;
 	private portalHandle: PortalHandle | null = null;
 	private floatingElement: HTMLElement | null = null;
+	private exitToken: object | null = null;
 
 	constructor(config: PopoverControllerConfig) {
 		this.config = config;
@@ -67,10 +68,13 @@ export class PopoverController {
 
 		const open = this.config.getOpen();
 		if (!open) {
-			this.teardown();
+			this.teardownFloating();
 			floating.toggleAttribute('hidden', true);
+			this.releasePortalAfterExit(floating);
 			return;
 		}
+
+		this.exitToken = null;
 
 		const anchor = this.config.getAnchor();
 		if (!anchor) {
@@ -108,6 +112,7 @@ export class PopoverController {
 	}
 
 	teardown(): void {
+		this.exitToken = null;
 		this.teardownFloating();
 		if (this.portalHandle) {
 			this.portalHandle.unmount();
@@ -126,6 +131,30 @@ export class PopoverController {
 			this.floatingElement = configuredFloating;
 		}
 		return configuredFloating ?? this.floatingElement;
+	}
+
+	/**
+	 * Keeps the portaled surface in `document.body` until its exit transition ends.
+	 *
+	 * @remarks Moving a node back to its placeholder detaches it, which drops the running transition and skips the
+	 * exit. Without animations (reduced motion, classic themes, non-browser DOMs) the unmount stays synchronous.
+	 */
+	private releasePortalAfterExit(floating: HTMLElement): void {
+		if (!this.portalHandle) {
+			return;
+		}
+		const animations = typeof floating.getAnimations === 'function' ? floating.getAnimations() : [];
+		if (animations.length === 0) {
+			this.teardown();
+			return;
+		}
+		const token = {};
+		this.exitToken = token;
+		void Promise.allSettled(animations.map((animation) => animation.finished)).then(() => {
+			if (this.exitToken === token) {
+				this.teardown();
+			}
+		});
 	}
 
 	private teardownFloating(): void {

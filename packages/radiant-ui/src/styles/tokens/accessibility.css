@@ -27,6 +27,13 @@
 		--duration-fast: 0ms;
 		--duration-normal: 0ms;
 		--duration-slow: 0ms;
+		--press-shift: 0px;
+		--popup-scale-from: 1;
+		--popup-shift: 0px;
+		--popup-exit-duration: 0ms;
+		--tooltip-duration: 0ms;
+		--hover-card-enter-duration: 0ms;
+		--dialog-exit-duration: 0ms;
 	}
 
 	*,

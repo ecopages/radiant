@@ -92,6 +92,9 @@ rui-slider:has(.rui-slider--vertical) {
 		inset-block: 0;
 		inset-inline-start: var(--rui-slider-fill-start, 0%);
 		inline-size: var(--rui-slider-fill-size, 0%);
+		transition-property: inset-inline-start, inline-size, inset-block-end, block-size;
+		transition-duration: var(--duration-normal, 200ms);
+		transition-timing-function: var(--ease-out-strong, cubic-bezier(0.23, 1, 0.32, 1));
 	}
 
 	.rui-slider--vertical .rui-slider__range-fill {
@@ -111,6 +114,15 @@ rui-slider:has(.rui-slider--vertical) {
 		border-radius: var(--rui-slider-thumb-radius, var(--radius-control));
 		background: var(--rui-slider-thumb-background, var(--background));
 		box-shadow: var(--rui-slider-thumb-shadow, var(--shadow-control));
+		transition-property: left, top;
+		transition-duration: var(--duration-normal, 200ms);
+		transition-timing-function: var(--ease-out-strong, cubic-bezier(0.23, 1, 0.32, 1));
+	}
+
+	/* Set by the script while a pointer drags: the thumb and fill must track the pointer without lag. */
+	.rui-slider__range-track[data-dragging] .rui-slider__range-fill,
+	.rui-slider__range-track[data-dragging] .rui-slider__thumb {
+		transition: none;
 	}
 
 	.rui-slider__thumb::before {

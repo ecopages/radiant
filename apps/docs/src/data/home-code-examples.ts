@@ -1,7 +1,10 @@
-export const counterElementExampleCode = `import { RadiantElement, customElement, prop } from '@ecopages/radiant';
+export const counterElementExampleCode = `import type { JSX_PROPS } from '@ecopages/jsx';
+import { RadiantElement, customElement, prop } from '@ecopages/radiant';
 
 @customElement('radiant-counter')
 export class RadiantCounter extends RadiantElement<{ value: number }> {
+  declare readonly [JSX_PROPS]?: { value?: number };
+
   @prop({ type: Number, reflect: true }) value = 0;
 
   private readonly decrement = () => {
@@ -21,4 +24,10 @@ export class RadiantCounter extends RadiantElement<{ value: number }> {
       </>
     );
   }
+}`;
+
+export const counterUsageExampleCode = `import { RadiantCounter } from './radiant-counter';
+
+export function Page() {
+  return <RadiantCounter value={0} />;
 }`;

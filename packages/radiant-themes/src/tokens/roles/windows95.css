@@ -1,4 +1,5 @@
-:where(:root), :root[data-rui-theme='windows95'] {
+:where(:root),
+:root[data-rui-theme='windows95'] {
 	--gray-50: #ffffff;
 	--gray-100: #dfdfdf;
 	--gray-200: #c0c0c0;
@@ -76,7 +77,8 @@
 	--on-background-code: #000000;
 }
 
-:where(.dark), :root.dark[data-rui-theme='windows95'] {
+:where(.dark),
+:root.dark[data-rui-theme='windows95'] {
 	--gray-50: #ffffff;
 	--gray-100: #e0e0e0;
 	--gray-200: #c0c0c0;

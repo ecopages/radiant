@@ -3,7 +3,8 @@
  * Human Interface Guidelines and the Appearance Manager's default theme: system greys #eeeeee, #dddddd, #cccccc,
  * #aaaaaa, #808080, #393939, #202020, with the default blue accent #6666cc.
  */
-:where(:root), :root[data-rui-theme='macos-classic'] {
+:where(:root),
+:root[data-rui-theme='macos-classic'] {
 	--macos-classic-canvas: #dddddd;
 	--macos-classic-surface: #dddddd;
 	--macos-classic-container: #cccccc;
@@ -32,7 +33,8 @@
  * @remarks Mac OS 8 and 9 had no dark appearance. This scheme keeps Platinum's black frames, bevels, and striped title
  * bars on darker faces and fields.
  */
-:where(.dark), :root.dark[data-rui-theme='macos-classic'] {
+:where(.dark),
+:root.dark[data-rui-theme='macos-classic'] {
 	--macos-classic-canvas: #262626;
 	--macos-classic-surface: #2e2e2e;
 	--macos-classic-container: #3a3a3a;

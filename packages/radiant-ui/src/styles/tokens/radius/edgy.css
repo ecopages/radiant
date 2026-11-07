@@ -13,6 +13,7 @@
 	--border-radius-3xl: 0;
 	--border-radius-full: 9999px;
 
+	--rui-knob-linecap: butt;
 	--radius-control: 0;
 	--radius-container: 0;
 	--radius-pill: var(--border-radius-full);

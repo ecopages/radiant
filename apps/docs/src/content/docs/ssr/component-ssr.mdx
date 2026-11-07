@@ -39,6 +39,17 @@ const rendered = await renderComponent(MyCard, {
 
 When `ssrContext` supplies a consumed context, `renderComponent` resolves it before `initialize` runs. A `renderController` call inside an active provider context does the same. Use either callback to derive initial host state from the consumed value.
 
+## From request to hydrated page
+
+```mermaid
+flowchart LR
+  Boot[Install the SSR runtime] --> Data[Await data first]
+  Data --> Render[renderComponent]
+  Render --> Html[HTML with data-radiant-ssr]
+  Html --> Upgrade[Browser upgrades hosts]
+  Upgrade --> Hydrate[Hydrator attaches]
+```
+
 ## Surfaces
 
 | Need | API |

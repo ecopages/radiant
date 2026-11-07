@@ -120,8 +120,6 @@ export class RuiRadioGroup extends RadiantElement {
 	}
 }
 
-
-
 declare global {
 	interface HTMLElementTagNameMap {
 		'rui-radio-group': RuiRadioGroup;

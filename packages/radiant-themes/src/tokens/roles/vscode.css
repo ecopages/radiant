@@ -1,4 +1,5 @@
-:where(:root), :root[data-rui-theme='vscode'] {
+:where(:root),
+:root[data-rui-theme='vscode'] {
 	--gray-50: color-mix(in oklab, var(--color-vscode-canvas), var(--color-vscode-fg) 4%);
 	--gray-100: color-mix(in oklab, var(--color-vscode-canvas), var(--color-vscode-fg) 10%);
 	--gray-200: color-mix(in oklab, var(--color-vscode-canvas), var(--color-vscode-fg) 20%);
@@ -76,7 +77,8 @@
 	--on-background-code: var(--color-vscode-fg);
 }
 
-:where(.dark), :root.dark[data-rui-theme='vscode'] {
+:where(.dark),
+:root.dark[data-rui-theme='vscode'] {
 	--gray-50: color-mix(in oklab, var(--color-vscode-canvas), white 96%);
 	--gray-100: color-mix(in oklab, var(--color-vscode-canvas), white 90%);
 	--gray-200: color-mix(in oklab, var(--color-vscode-canvas), white 80%);

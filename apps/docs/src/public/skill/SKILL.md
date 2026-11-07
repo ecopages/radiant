@@ -89,7 +89,7 @@ Read only the modules relevant to the task. Each file is one level deep from thi
 | [reference/context.md](reference/context.md)               | Provide/consume, `@contextSelector` vs `@onContextUpdate`, context field types                                              |
 | [reference/ssr.md](reference/ssr.md)                       | Server entrypoints, hydrate modes, nested and page-level hydration, render scope                                            |
 | [reference/authoring.md](reference/authoring.md)           | Authoring rules, development warnings, review checklist, output shape                                                       |
-| [reference/jsx-signals.md](reference/jsx-signals.md)       | `@ecopages/jsx` with `createRoot` and signals, no host: render once, computed keyed lists, signals in attributes             |
+| [reference/jsx-signals.md](reference/jsx-signals.md)       | `@ecopages/jsx` with `createRoot` and signals, no host: render once, computed keyed lists, signals in attributes            |
 
 ## Critical rules
 

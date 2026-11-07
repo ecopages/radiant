@@ -1,11 +1,18 @@
 @custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
 
 @theme {
-	--font-sans: 'Geist Sans', ui-sans-serif, system-ui, sans-serif;
-	--font-heading: 'Karla', ui-sans-serif, system-ui, sans-serif;
-	--font-mono: 'Inconsolata', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	--font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+	--font-heading: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+	--font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
 	--color-background-accent: var(--surface);
 	--color-on-background-accent: var(--on-surface);
 	--color-muted: var(--surface-container-low);
+}
+
+/** @remarks The default theme sets a system stack on `:root`, so the docs type needs a plain `:root` rule that loads after it. */
+:root {
+	--font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+	--font-heading: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+	--font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }

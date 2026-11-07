@@ -198,8 +198,6 @@ export class RuiTabs extends RadiantElement {
 	}
 }
 
-
-
 declare global {
 	interface HTMLElementTagNameMap {
 		'rui-tabs': RuiTabs;

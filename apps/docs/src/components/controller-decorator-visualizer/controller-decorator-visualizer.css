@@ -5,3 +5,13 @@
 .controller-decorator-visualizer code {
 	@apply font-mono text-[0.875em];
 }
+
+/**
+ * Live text swaps (transmission description, last event and action lines) reserve two lines, so a longer message
+ * does not make the box grow and the page jump when a control is used.
+ */
+.controller-decorator-visualizer [data-ref='flow-description'],
+.controller-decorator-visualizer [data-ref='event-action'],
+.controller-decorator-visualizer [data-ref='state-last-action'] {
+	min-height: 2lh;
+}

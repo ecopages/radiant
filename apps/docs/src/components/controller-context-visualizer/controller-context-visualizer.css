@@ -5,3 +5,11 @@
 .controller-context-visualizer code {
 	@apply font-mono text-[0.875em];
 }
+
+/**
+ * Live text swaps (status line, history rows) must not change the box height, or every click moves the page. The
+ * status reserves two lines, and the selector element always renders three history slots, empty ones hidden.
+ */
+.controller-context-visualizer [data-ref='status'] {
+	min-height: 2lh;
+}

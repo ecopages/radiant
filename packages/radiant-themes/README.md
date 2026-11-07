@@ -19,12 +19,25 @@ Import a complete theme and the component stylesheet:
 @import '@ecopages/radiant-ui/styles.css';
 ```
 
-Themes include GitHub, Cloudflare, VS Code, Vercel, Material Design, High Contrast, Windows 95, Mac OS Classic, and macOS. Each
+Themes include GitHub, Cloudflare, VS Code, Vercel, Material Design, High Contrast, Windows 95, Mac OS Classic, macOS, and Zed. Each
 owns its shape, typography, spacing, semantic colors, and any component-specific styling. Theme source remains
 composable internally, while the public API stays at one import per complete theme.
 
 Theme entries define font-family stacks but do not bundle font files. An app can load properly licensed font files
 separately and override `--font-sans`, `--font-heading`, or `--font-mono` after the theme import.
+
+### Fonts
+
+Themes that name a web font expect the app to load it; without it the stack falls back to the system font.
+
+| Theme    | Font                         | Install                                                        |
+| -------- | ---------------------------- | -------------------------------------------------------------- |
+| Zed      | IBM Plex Sans, IBM Plex Mono | `pnpm add @fontsource/ibm-plex-sans @fontsource/ibm-plex-mono` |
+| Zed      | Lilex (optional, code)       | `pnpm add @fontsource/lilex`                                   |
+| Vercel   | Geist                        | `pnpm add @fontsource-variable/geist`                          |
+| Material | Roboto                       | `pnpm add @fontsource/roboto`                                  |
+
+Import the Fontsource CSS once in the app, for example `import '@fontsource/ibm-plex-sans/400.css';`.
 
 Compact variants have their own export, for example:
 
@@ -81,6 +94,9 @@ breadcrumb links are blue, dark mode uses a brighter orange for orange text, and
 GitHub maps Primer's functional roles: green is limited to the primary button, the meter, and success states, blue marks links, focus, and
 selected, checked, or current states, the selected tab uses Primer's coral underline, and secondary actions use
 Primer's grey default button.
+
+The Zed theme follows One Light and One Dark: flat panels, hairline borders, 4px controls, 6px popovers, 13px control
+text, and translucent accent fills for hover and selection.
 
 The Vercel theme uses Background 2 for the light canvas and Background 1 for primary surfaces. Its component colors
 drive hover and active fills, Colors 4–6 drive default, hover, and active borders, and blue stays focused on links and

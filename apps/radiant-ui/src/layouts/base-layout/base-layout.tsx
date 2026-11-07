@@ -2,7 +2,6 @@ import { eco } from '@ecopages/core';
 import type { JsxRenderable } from '@ecopages/jsx';
 import { RuiButton } from '@ecopages/radiant-ui/button';
 import { Logo } from '@/components/logo/logo';
-import { ThemePalettePicker } from '@/components/theme-palette-picker/theme-palette-picker';
 import { ThemeToggle } from '@/components/theme-toggle/theme-toggle';
 import radiantUiJson from '../../../../../packages/radiant-ui/package.json';
 import { RuiChip } from '@ecopages/radiant-ui/chip';
@@ -30,7 +29,7 @@ export const BaseLayout = eco.component<BaseLayoutProps, JsxRenderable>({
 	dependencies: {
 		stylesheets: ['./base-layout.css'],
 		scripts: ['./base-layout.script.ts'],
-		components: [ThemePalettePicker, Logo, ThemeToggle],
+		components: [Logo, ThemeToggle],
 	},
 	render: ({ children, class: className, showHeader = true }) => (
 		<body>
@@ -63,7 +62,29 @@ export const BaseLayout = eco.component<BaseLayoutProps, JsxRenderable>({
 									</RuiButton>
 								</li>
 								<li>
-									<ThemePalettePicker />
+									<RuiButton
+										href="/themes"
+										variant="ghost"
+										size="sm"
+										aria-label="Themes"
+										title="Browse themes"
+									>
+										<svg
+											viewBox="0 0 24 24"
+											width="20"
+											height="20"
+											fill="none"
+											stroke="currentColor"
+											stroke-width="1.7"
+											aria-hidden="true"
+										>
+											<path d="M12 3.5a8.5 8.5 0 1 0 0 17h1.2a2.3 2.3 0 0 0 1.7-3.9 1.5 1.5 0 0 1 1.1-2.6h1.1a3.4 3.4 0 0 0 3.4-3.4A8.5 8.5 0 0 0 12 3.5Z" />
+											<circle cx="7.7" cy="11.5" r="1" fill="currentColor" />
+											<circle cx="9.8" cy="7.8" r="1" fill="currentColor" />
+											<circle cx="14.2" cy="7.6" r="1" fill="currentColor" />
+											<circle cx="17" cy="10.5" r="1" fill="currentColor" />
+										</svg>
+									</RuiButton>
 								</li>
 								<li>
 									<ThemeToggle id="toggle-dark-mode" label="Theme" />

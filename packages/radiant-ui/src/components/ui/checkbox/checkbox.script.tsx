@@ -130,8 +130,6 @@ export class RuiCheckbox extends RadiantElement {
 	}
 }
 
-
-
 declare global {
 	interface HTMLElementTagNameMap {
 		'rui-checkbox': RuiCheckbox;
