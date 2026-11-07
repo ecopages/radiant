@@ -65,7 +65,7 @@ Choose the narrowest import path for the environment you are writing in. Prefer 
 	
 />
 
-`@ecopages/radiant` depends on `@ecopages/signals` directly, so installing it brings signals automatically. `@ecopages/jsx` declares `@ecopages/signals` as a peer dependency; install signals explicitly only when using `@ecopages/jsx` standalone with signal-backed bindings such as `mapSubscribable(...)`.
+`@ecopages/radiant` depends on `@ecopages/signals` directly, so installing it brings signals automatically. `@ecopages/jsx` declares `@ecopages/signals` as a peer dependency; install signals explicitly when using `@ecopages/jsx` standalone with signals, such as `state` and `computed` bound in JSX (see [Signals](/docs/jsx/rendering#signals)) or `mapSubscribable(...)`.
 
 ```json
 {

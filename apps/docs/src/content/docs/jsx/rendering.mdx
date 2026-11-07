@@ -102,42 +102,69 @@ if (container instanceof HTMLElement && hasHydrationMarkers(container)) {
 }
 ```
 
-## Fine-Grained Child Updates
+## Signals
 
-Child values can update without rerendering the parent tree when they expose `get()` and `subscribe(...)` or when you wrap an external source with `createSubscribableJsxValue(...)`.
+`@ecopages/jsx` reads signals directly: pass a value with `get()` and `subscribe(...)`, such as a `state` or `computed` from `@ecopages/signals`, as a child or an attribute value, and the renderer subscribes to it and patches that one text node or attribute when it changes. No Radiant host is needed.
 
-That makes this package useful both as a plain JSX runtime and as a renderer that can consume signal-like values directly.
+So the usual shape is to render once and let signals carry every later change:
+
+```tsx
+/** @jsxImportSource @ecopages/jsx */
+
+import { computed, state, type State } from '@ecopages/signals';
+import { createRoot } from '@ecopages/jsx';
+
+type Row = { id: number; label: State<string>; cls: State<string> };
+
+const rows = state<Row[]>([]);
+
+const list = computed(() =>
+	rows.get().map((row) => (
+		<tr key={row.id} class={row.cls}>
+			<td>{row.id}</td>
+			<td>{row.label}</td>
+		</tr>
+	)),
+);
+
+createRoot(document.querySelector('#app') as HTMLElement).render(
+	<table>
+		<tbody>{list}</tbody>
+	</table>,
+);
+
+rows.set([{ id: 1, label: state('first'), cls: state('') }]);
+rows.get()[0].label.set('renamed'); // patches one text node
+rows.get()[0].cls.set('selected'); // patches one class attribute
+```
+
+- **Children:** `{row.label}` binds the text; a signal that holds JSX, such as `list` above, mounts and reconciles it in place.
+- **Attributes:** a signal works as any attribute value, `class` and `classes` included, as well as `attr:`, `bool:` and `prop:` bindings. In `class` and `style`, the signal's value is normalized like a static one, so a class signal can hold a string, a list or a class map, and a style signal a string or a style object.
+- **Lists:** a `computed` that maps a signal of rows to keyed JSX rebuilds only when the list itself changes. Keyed rows keep their nodes, and each row's own signals update its text and attributes without touching the list.
+
+Pass the signal itself, not its value. Calling `row.label.get()` while the `computed` builds the rows would make the whole list depend on every label, so renaming one row would rebuild all of them.
+
+The alternative is to call `render(...)` again with fresh JSX on every change. That works, since the renderer patches what changed, but every render rebuilds and compares the whole tree. Use it for small or rarely changing views, and signals for anything that updates often.
+
+### Other update sources
+
+Wrap a source that has its own change notifications but no `get()`/`subscribe(...)` pair with `createSubscribableJsxValue(...)`:
 
 ```tsx
 /** @jsxImportSource @ecopages/jsx */
 
 import { createRoot, createSubscribableJsxValue } from '@ecopages/jsx';
 
-let count = 0;
-const subscribers = new Set<(value: number) => void>();
-
-const boundCount = createSubscribableJsxValue({
-	getValue: () => count,
+const clock = createSubscribableJsxValue({
+	getValue: () => new Date().toLocaleTimeString(),
 	subscribe: (notify) => {
-		subscribers.add(notify);
-
-		return () => {
-			subscribers.delete(notify);
-		};
+		const timer = setInterval(() => notify(new Date().toLocaleTimeString()), 1000);
+		return () => clearInterval(timer);
 	},
 });
 
-const root = createRoot(document.querySelector('#app') as HTMLElement);
-root.render(<p>Count: {boundCount}</p>);
-
-count += 1;
-
-for (const subscriber of subscribers) {
-	subscriber(count);
-}
+createRoot(document.querySelector('#app') as HTMLElement).render(<p>{clock}</p>);
 ```
-
-Pass signal-like children directly when they already expose `get()` and `subscribe(...)`. Use `createSubscribableJsxValue(...)` when the source has its own update notifications but does not match that shape.
 
 ## Empty Values During Updates
 

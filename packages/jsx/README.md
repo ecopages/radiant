@@ -310,7 +310,29 @@ sequenceDiagram
     Renderer->>Dom: patch owned child range only
 ```
 
-Pass a signal-like child value directly when it already exposes `get()` and `subscribe(...)`. Use `createSubscribableJsxValue(...)` when a child value has its own update source but does not already match that shape. Think of it as a small renderer adapter, not a separate state model.
+Pass a signal directly, as a child or as an attribute value, when it exposes `get()` and `subscribe(...)`, as `state` and `computed` from `@ecopages/signals` do. Render once and let the signals carry later changes:
+
+```tsx
+/** @jsxImportSource @ecopages/jsx */
+import { computed, state, type State } from '@ecopages/signals';
+import { createRoot } from '@ecopages/jsx/client';
+
+type Row = { id: number; label: State<string>; cls: State<string> };
+const rows = state<Row[]>([]);
+const list = computed(() =>
+	rows.get().map((row) => (
+		<tr key={row.id} class={row.cls}>
+			<td>{row.label}</td>
+		</tr>
+	)),
+);
+
+createRoot(document.querySelector('#app') as HTMLElement).render(<tbody>{list}</tbody>);
+```
+
+The `computed` rebuilds the rows only when `rows` changes, and keyed rows keep their nodes; a row's `label` and `cls` patch its own text and class. Pass the signal, not `signal.get()`: reading values while the `computed` builds the rows makes the list depend on every one of them. A signal works in any attribute, `class` and `classes` included, where its value is normalized like a static class value.
+
+Use `createSubscribableJsxValue(...)` when a value has its own update source but does not already match that shape. Think of it as a small renderer adapter, not a separate state model.
 
 ```tsx
 /** @jsxImportSource @ecopages/jsx */
@@ -759,6 +781,8 @@ Use `prop:*` when the target must receive a real property value instead of a ser
 	aria={{ live: 'polite' }}
 />
 ```
+
+`class` and `classes` take a string, a list or a class map. A signal or subscribable in either binds live: each change is normalized the same way and patches the attribute.
 
 ## Runtime Output Contract
 

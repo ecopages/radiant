@@ -16,6 +16,7 @@ Read only the module relevant to your task:
 | Context | [/skill/reference/context.md](/skill/reference/context.md) | Provide/consume, `@contextSelector` vs `@onContextUpdate`, context field types |
 | SSR | [/skill/reference/ssr.md](/skill/reference/ssr.md) | Server entrypoints, hydrate modes, nested and page-level hydration, render scope |
 | Authoring | [/skill/reference/authoring.md](/skill/reference/authoring.md) | Authoring rules, development warnings, review checklist, output shape |
+| JSX with signals | [/skill/reference/jsx-signals.md](/skill/reference/jsx-signals.md) | `@ecopages/jsx` with `createRoot` and signals, no host: render once, computed keyed lists, signals in attributes |
 
 ## Full documentation
 
