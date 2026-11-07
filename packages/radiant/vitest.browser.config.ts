@@ -20,7 +20,7 @@ export default mergeConfig(
 			alias: {
 				'@ecopages/radiant/is-server': fileURLToPath(new URL('./src/is-server.ts', import.meta.url)),
 				'node:async_hooks': fileURLToPath(
-					new URL('../../configs/async-local-storage.browser.ts', import.meta.url),
+					new URL('../jsx/test/shims/async-local-storage.browser.ts', import.meta.url),
 				),
 			},
 		},
