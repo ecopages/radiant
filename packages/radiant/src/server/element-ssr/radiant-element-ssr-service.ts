@@ -67,7 +67,7 @@ export class RadiantElementSsrService {
 
 	/**
 	 * @param attributeOverrides Merged after attributes are read from the prepared host, so a nested children stamp can replace the default host stamp.
-	 * @remarks One pass: align the tag and legacy readiness, prepare, render the view, flush `@bindTo`, then read attributes, the slot-projection payload, and hydration bindings. A later serialization prepares again.
+	 * @remarks One pass: align the tag and legacy readiness, prepare, render the view, flush `@bindTo`, then read attributes, the slotted payload, and hydration bindings. A later serialization prepares again.
 	 */
 	public renderHostToString(
 		options: RenderToStringOptions = {},
@@ -80,7 +80,7 @@ export class RadiantElementSsrService {
 		const hydrate = isHydrateMode(options);
 
 		const slottedPayload = this.host.getSlottedPayload?.();
-		const slotProjectionMarkup = slottedPayload !== undefined ? createSlottedPayloadScriptTag(slottedPayload) : '';
+		const slottedPayloadScript = slottedPayload !== undefined ? createSlottedPayloadScriptTag(slottedPayload) : '';
 		const authoredHydrationMarkup = this.host.getAuthoredHydrationScriptMarkup?.() ?? '';
 		const hydrationScripts = hydrate
 			? this.host
@@ -103,7 +103,7 @@ export class RadiantElementSsrService {
 			{
 				hostContent,
 				authoredHydrationMarkup,
-				slotProjectionScript: slotProjectionMarkup,
+				slottedPayloadScript,
 				hydrationScripts,
 			},
 			hydrate,
@@ -150,7 +150,7 @@ export class RadiantElementSsrService {
 	}
 }
 
-/** @remarks Only a class that takes a Children Value from a view tells Authored Children apart in its stamp. */
+/** Whether the class overrides `render()`, the test that also makes a view hand it a Children Value. */
 function takesChildrenValue(constructor: object): boolean {
 	return (constructor as { [CUSTOM_ELEMENT_CHILDREN_SYMBOL]?: unknown })[CUSTOM_ELEMENT_CHILDREN_SYMBOL] === true;
 }

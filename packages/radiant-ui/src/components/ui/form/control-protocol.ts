@@ -59,7 +59,7 @@ export function isFormAssociatedHost(host: HTMLElement): boolean {
 	return Reflect.get(host.constructor, 'formAssociated') === true;
 }
 
-type FieldSlotHost = HTMLElement & { getSlotElements?: (name?: string) => Element[] };
+type FieldSlotHost = HTMLElement & { slottedElements?: Element[] };
 
 type ControlValueAdapter = {
 	read: (host: HTMLElement) => unknown;
@@ -171,10 +171,8 @@ function forEachFieldContentNode(root: HTMLElement, visit: (node: Element) => vo
 		visit(node);
 	};
 
-	if (typeof slotHost.getSlotElements === 'function') {
-		for (const node of slotHost.getSlotElements()) {
-			safeVisit(node);
-		}
+	for (const node of slotHost.slottedElements ?? []) {
+		safeVisit(node);
 	}
 
 	const renderRoot = root.querySelector(FIELD_COLUMN_SELECTOR) ?? root;
@@ -366,7 +364,7 @@ export function findFieldError(root: HTMLElement): HTMLElement | null {
 	return all[0] ?? null;
 }
 
-/** Every error region in the field (handles duplicate slot-projection copies). */
+/** Every error region in the field (handles duplicate copies of slotted content). */
 export function findFieldErrorElements(root: HTMLElement): HTMLElement[] {
 	const renderRoot = root.querySelector(FIELD_COLUMN_SELECTOR);
 	if (renderRoot instanceof HTMLElement) {

@@ -32,7 +32,7 @@ export type LightDomShimWindow = {
 	Event: typeof Event;
 	/** EventTarget constructor exposed to SSR-created components. */
 	EventTarget: typeof EventTarget;
-	/** HTMLScriptElement constructor used by slot projection payload parsing. */
+	/** HTMLScriptElement constructor used to find the slotted payload script. */
 	HTMLScriptElement: typeof HTMLScriptElement;
 	/** HTMLElement constructor exposed to SSR-created components. */
 	HTMLElement: typeof HTMLElement;

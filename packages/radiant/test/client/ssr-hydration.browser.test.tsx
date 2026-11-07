@@ -108,7 +108,7 @@ describe('hydrating server-rendered markup', () => {
 		expect(element.querySelector('button')).toBe(button);
 	});
 
-	test('hydrates SSR markup that uses slot projection payloads', async () => {
+	test('hydrates SSR markup that uses a slotted payload', async () => {
 		installRadiantHydrator();
 		const element = mount<HydratedSlotCard>('slot-card', 'hydrated-slot-card-test');
 
@@ -137,7 +137,7 @@ describe('hydrating server-rendered markup', () => {
 		expect(element.querySelector('script[data-radiant-slot-projection]')).toBeNull();
 	});
 
-	test('keeps Authored Children when the default slot appears after hydration', async () => {
+	test('keeps Authored Children when the view places slotted content only after hydration', async () => {
 		installRadiantHydrator();
 		const markup = serverMarkup('conditional-slot');
 		expect(markup).toContain('data-radiant-slot-projection');
@@ -239,7 +239,7 @@ describe('hydrating server-rendered markup', () => {
 		});
 	});
 
-	test('hydrates slot projection payloads with multiple projected roots and quoted attributes', async () => {
+	test('hydrates a slotted payload with multiple roots and quoted attributes', async () => {
 		installRadiantHydrator();
 		const element = mount<HydratedComplexSlotCard>('complex-slot-card', 'hydrated-complex-slot-card-test');
 
