@@ -53,12 +53,16 @@ rui-switch {
 
 	.rui-switch__thumb {
 		@apply pointer-events-none absolute top-1/2 left-1 -translate-y-1/2 rounded-full;
-		@apply transition-[left,right,transform] duration-normal ease-in-out;
+		transition: left var(--duration-fast, 150ms) var(--ease-out-strong, cubic-bezier(0.23, 1, 0.32, 1));
 		inline-size: var(--rui-switch-thumb-size);
 		block-size: var(--rui-switch-thumb-size);
 		background-color: var(--rui-switch-thumb);
 	}
 
+	/**
+	 * @remarks The checked position uses `right`, which the complete themes override with their own thumb sizes and
+	 * offsets. Setting `left` here too would over-constrain them and push a larger thumb past the end of the track.
+	 */
 	.rui-switch__input:checked + .rui-switch__track .rui-switch__thumb {
 		@apply right-1 left-auto;
 		background-color: var(--rui-switch-thumb-on);

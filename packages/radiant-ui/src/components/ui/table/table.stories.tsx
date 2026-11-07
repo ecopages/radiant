@@ -331,8 +331,6 @@ export const DesignTokens: Story = {
 	},
 };
 
-
-
 declare global {
 	interface HTMLElementTagNameMap {
 		'rui-table-sort-demo': RuiTableSortDemo;

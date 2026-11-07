@@ -23,10 +23,12 @@ export const config = {
 
 <DesignTokenPanel />
 
+Try every theme on all components at once, pick fonts, and copy the install command and CSS for your choice in the [theme lab](/themes).
+
 ## Start with Radiant Default
 
 Import the default theme and the component stylesheet in the application entry stylesheet. The default uses a cool,
-soft neutral palette, comfortable spacing, soft-square checkboxes, and visible translucent borders.
+soft neutral palette, near-Zed spacing (28, 32, and 36px controls), restrained corners, flat controls, and visible translucent borders.
 
 ```css
 @import 'tailwindcss';
@@ -37,7 +39,7 @@ soft neutral palette, comfortable spacing, soft-square checkboxes, and visible t
 ## Install a complete theme
 
 Install `@ecopages/radiant-ui` and `@ecopages/radiant-themes` to use GitHub, Cloudflare, VS Code, Vercel, Material Design,
-High Contrast, Windows 95, Mac OS Classic, or macOS. Each theme owns its component shape, typography, spacing, colors,
+High Contrast, Windows 95, Mac OS Classic, macOS, or Zed. Each theme owns its component shape, typography, spacing, colors,
 and any component-specific details.
 
 ```sh
@@ -61,10 +63,10 @@ do not alter a branded theme's shape.
 @import '@ecopages/radiant-ui/styles.css';
 ```
 
-The theme picker beside the light/dark control previews every full theme across the index and component docs. Theme,
-mode, and Radiant Default tuner values are saved in the browser and can be shared with `rui-theme`, `rui-mode`, and
-`rui-*` tuning query parameters. URL parameters override saved values, so reloading a shared link keeps the same
-appearance. The six tuner parameters are `rui-primary-hue`, `rui-secondary-offset`, `rui-neutral-hue`, `rui-density`,
+The [theme lab](/themes) previews every full theme across all components. Theme, mode, fonts, and Radiant Default
+tuner values are saved in the browser and can be shared with `rui-theme`, `rui-mode`, `rui-font-sans`,
+`rui-font-heading`, `rui-font-mono`, and `rui-*` tuning query parameters. URL parameters override saved values, so
+reloading a shared link keeps the same appearance. The seven tuner parameters are `rui-primary-hue`, `rui-secondary-offset`, `rui-neutral-hue`, `rui-neutral-tint`, `rui-density`,
 `rui-radius`, and `rui-border-alpha`. Each theme import sets its own `--font-sans`, `--font-heading`, and `--font-mono`
 stacks. Radiant does not bundle font files;
 to use a custom licensed font, load it in your app and override those three variables:
@@ -91,8 +93,8 @@ after custom role overrides, especially non-text boundaries and content supplied
 
 The default derives matching OKLCH color scales from three seed colors. Secondary follows primary at a 40° analogous
 hue offset, which keeps it clear of the red, amber, and green status hues. Adjust the primary and neutral hues, the
-secondary offset, density, corner radius, and border opacity (8–100%) below. The page preview updates live, and the
-generated CSS copies the six small inputs needed to create a different palette and geometry.
+secondary offset, density, corner radius, and border opacity (0–100%) below. The page preview updates live, and the
+generated CSS copies the small inputs needed to create a different palette and geometry.
 
 <DefaultThemeTuner />
 

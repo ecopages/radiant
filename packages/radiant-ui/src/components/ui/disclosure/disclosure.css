@@ -27,8 +27,8 @@ rui-disclosure {
 		@apply inline-flex shrink-0 items-center justify-center text-on-surface;
 		pointer-events: none;
 		transition:
-			transform 150ms ease,
-			color 150ms ease;
+			transform var(--duration-fast, 150ms) var(--ease-out-strong, cubic-bezier(0.23, 1, 0.32, 1)),
+			color var(--duration-fast, 150ms) var(--ease-out-strong, cubic-bezier(0.23, 1, 0.32, 1));
 	}
 
 	.rui-disclosure__icon--chevron {
@@ -75,7 +75,8 @@ rui-disclosure {
 		display: grid;
 		grid-template-rows: 0fr;
 		overflow: hidden;
-		transition: grid-template-rows 200ms ease;
+		transition: grid-template-rows var(--duration-normal, 200ms)
+			var(--ease-out-strong, cubic-bezier(0.23, 1, 0.32, 1));
 	}
 
 	rui-disclosure[data-animated] .rui-disclosure__panel[data-state='open'] {

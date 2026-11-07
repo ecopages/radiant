@@ -344,8 +344,6 @@ export class RuiTreegrid extends RadiantElement {
 	}
 }
 
-
-
 declare global {
 	interface HTMLElementTagNameMap {
 		'rui-treegrid': RuiTreegrid;

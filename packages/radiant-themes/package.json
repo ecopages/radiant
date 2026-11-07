@@ -65,6 +65,12 @@
 		"./compiled/vercel/compact.css": {
 			"default": "./dist/compiled/themes/vercel/compact.css"
 		},
+		"./compiled/zed.css": {
+			"default": "./dist/compiled/themes/zed.css"
+		},
+		"./compiled/zed/compact.css": {
+			"default": "./dist/compiled/themes/zed/compact.css"
+		},
 		"./compiled/high-contrast.css": {
 			"default": "./dist/compiled/themes/high-contrast.css"
 		},
@@ -118,6 +124,12 @@
 		},
 		"./vercel/compact": {
 			"default": "./dist/themes/vercel/compact.css"
+		},
+		"./zed": {
+			"default": "./dist/themes/zed.css"
+		},
+		"./zed/compact": {
+			"default": "./dist/themes/zed/compact.css"
 		},
 		"./high-contrast": {
 			"default": "./dist/themes/high-contrast.css"

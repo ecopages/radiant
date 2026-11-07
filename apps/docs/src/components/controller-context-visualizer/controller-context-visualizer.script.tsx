@@ -118,6 +118,7 @@ export class ControllerContextViewer extends RadiantElement {
 	override render(): JsxRenderable {
 		const lastEntry = this.history[this.history.length - 1] ?? 'Waiting for updates';
 		const recentEntries = this.history.slice(-3).reverse();
+		const recentSlots = [0, 1, 2].map((index) => recentEntries[index]);
 		const parityLabel = this.count % 2 === 0 ? 'even' : 'odd';
 
 		return (
@@ -141,13 +142,16 @@ export class ControllerContextViewer extends RadiantElement {
 					</div>
 				</dl>
 				<p class="controller-context-visualizer__detail m-0 text-sm text-on-background/80">{lastEntry}</p>
-				{recentEntries.length > 0 ? (
-					<ul class="m-0 grid list-none gap-1 p-0 text-sm text-on-background/70">
-						{recentEntries.map((entry) => (
-							<li class="m-0 border-t border-border/50 pt-1 first:border-0 first:pt-0">{entry}</li>
-						))}
-					</ul>
-				) : null}
+				<ul class="m-0 grid list-none gap-1 p-0 text-sm text-on-background/70">
+					{recentSlots.map((entry) => (
+						<li
+							class={`m-0 border-t border-border/50 pt-1 first:border-0 first:pt-0${entry === undefined ? ' invisible' : ''}`}
+							aria-hidden={entry === undefined ? 'true' : undefined}
+						>
+							{entry ?? '\u00a0'}
+						</li>
+					))}
+				</ul>
 			</article>
 		);
 	}

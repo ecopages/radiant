@@ -388,8 +388,6 @@ export class RuiToc extends RadiantElement<RuiTocBindings> {
 	}
 }
 
-
-
 declare global {
 	interface HTMLElementTagNameMap {
 		'rui-toc': RuiToc;

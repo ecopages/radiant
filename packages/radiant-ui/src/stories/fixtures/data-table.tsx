@@ -693,8 +693,6 @@ export class RuiDataTable extends RadiantElement {
 	}
 }
 
-
-
 declare global {
 	interface HTMLElementTagNameMap {
 		'rui-data-table': RuiDataTable;

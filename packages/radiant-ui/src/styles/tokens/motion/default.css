@@ -7,6 +7,18 @@
 	--duration-slow: 300ms;
 	--ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
 	--ease-out: cubic-bezier(0, 0, 0.2, 1);
+	--ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+	--popup-scale-from: 0.96;
+	--popup-shift: 4px;
+	--popup-enter-duration: var(--duration-fast);
+	--popup-exit-duration: 100ms;
+	--tooltip-duration: 120ms;
+	--hover-card-enter-duration: 180ms;
+	--dialog-enter-duration: var(--duration-normal);
+	--dialog-exit-duration: 120ms;
+	--backdrop-duration: var(--duration-fast);
+	--check-duration: min(120ms, var(--duration-fast));
+	--press-shift: 1px;
 }
 
 @theme {

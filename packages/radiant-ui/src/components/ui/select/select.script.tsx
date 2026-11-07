@@ -657,8 +657,6 @@ export class RuiSelect extends RadiantElement {
 	}
 }
 
-
-
 declare global {
 	interface HTMLElementTagNameMap {
 		'rui-select': RuiSelect;

@@ -54,6 +54,7 @@ const preview: Preview = {
 					{ value: 'windows95', title: 'Windows 95' },
 					{ value: 'macos-classic', title: 'Mac OS Classic' },
 					{ value: 'macos', title: 'macOS' },
+					{ value: 'zed', title: 'Zed' },
 				],
 				dynamicTitle: true,
 			},

@@ -261,8 +261,6 @@ export class RuiMenuButton extends RadiantElement {
 	}
 }
 
-
-
 declare global {
 	interface HTMLElementTagNameMap {
 		'rui-menu-button': RuiMenuButton;

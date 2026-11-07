@@ -24,6 +24,15 @@ const html = renderToString(view);
 const hydratedHtml = renderToString(view, { mode: 'hydrate' });
 ```
 
+```mermaid
+flowchart LR
+  View[JSX view] --> Plain[renderToString]
+  View --> Hydrate[renderToString with mode hydrate]
+  Plain --> Html[Plain HTML]
+  Hydrate --> Marked[HTML plus binding markers]
+  Marked --> Client[Client hydrator reconnects the same view]
+```
+
 - `renderToString(view)` returns plain HTML
 - `renderToString(view, { mode: 'hydrate' })` returns HTML plus binding markers that the client hydrator can reconnect later
 

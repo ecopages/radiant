@@ -93,6 +93,12 @@ importers:
       '@ecopages/signals':
         specifier: workspace:*
         version: link:../../packages/signals/dist
+      '@fontsource/ibm-plex-mono':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@fontsource/ibm-plex-sans':
+        specifier: ^5.3.0
+        version: 5.3.0
       '@mdx-js/esbuild':
         specifier: ^3.1.1
         version: 3.1.1(esbuild@0.28.2)(supports-color@7.2.0)
@@ -114,6 +120,9 @@ importers:
       ecopages:
         specifier: 0.6.1
         version: 0.6.1(@ecopages/dev-toolbar@0.6.1(@ecopages/signals@packages+signals+dist))(typescript@7.0.2)
+      pele:
+        specifier: ^1.13.0
+        version: 1.13.0
       remark-gfm:
         specifier: ^4.0.1
         version: 4.0.1(supports-color@7.2.0)
@@ -174,6 +183,12 @@ importers:
       '@ecopages/signals':
         specifier: workspace:*
         version: link:../../packages/signals/dist
+      '@fontsource/ibm-plex-mono':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@fontsource/ibm-plex-sans':
+        specifier: ^5.3.0
+        version: 5.3.0
       '@rehype-pretty/transformers':
         specifier: ^0.13.2
         version: 0.13.2
@@ -1167,6 +1182,12 @@ packages:
     engines: {node: '>=18'}
     cpu: [x64]
     os: [win32]
+
+  '@fontsource/ibm-plex-mono@5.3.0':
+    resolution: {integrity: sha512-eTgnZjZEGk1QtD3ZstF+Vclo2HLAni8YMy34/DxllwZvyz1lR/1RF/xTiAquOBO7MvqBx8D2Ig2WCPMVfdZu7Q==}
+
+  '@fontsource/ibm-plex-sans@5.3.0':
+    resolution: {integrity: sha512-CbE4CbbEEZJX860XyUiRpsksXIQR8Rp2XDva2VO53NJox9tVNtusrysd2x5YkUEY3ErQ66W1IiiQL8/wihhw5w==}
 
   '@inquirer/ansi@2.0.8':
     resolution: {integrity: sha512-WpQM+Ti6Z40EFwwt+uL2p4UabT+W179zHp6HhLVOzfbwnVn05IPO/eXIZXGNqcT1jbQ15SujNLzQ39k4QPPxBQ==}
@@ -3928,6 +3949,10 @@ packages:
     resolution: {integrity: sha512-//nshmD55c46FuFw26xV/xFAaB5HF9Xdap7HJBBnrKdAd6/GxDBaNA1870O79+9ueg61cZLSVc+OaFlfmObYVQ==}
     engines: {node: '>= 14.16'}
 
+  pele@1.13.0:
+    resolution: {integrity: sha512-Ie8UKY9x00MsuR3jO6AzUwzK2Z6MIV3Tf4EDdITiuk8Uaz8K7g0R082WqsqNaSU8DdgkrRvZThzhit83mi/uiw==}
+    engines: {node: '>=20'}
+
   picocolors@1.1.1:
     resolution: {integrity: sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==}
 
@@ -5354,6 +5379,10 @@ snapshots:
 
   '@esbuild/win32-x64@0.28.2':
     optional: true
+
+  '@fontsource/ibm-plex-mono@5.3.0': {}
+
+  '@fontsource/ibm-plex-sans@5.3.0': {}
 
   '@inquirer/ansi@2.0.8': {}
 
@@ -8044,6 +8073,8 @@ snapshots:
   pathe@2.0.3: {}
 
   pathval@2.0.1: {}
+
+  pele@1.13.0: {}
 
   picocolors@1.1.1: {}
 

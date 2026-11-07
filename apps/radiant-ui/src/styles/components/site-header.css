@@ -25,7 +25,7 @@
 
 :root[data-rui-theme='github']
 	:is(.site-header, .rui-sidebar-provider__site-header)
-	:is(.rui-button--ghost[aria-label], .rui-sidebar__trigger, .theme-picker__trigger) {
+	:is(.rui-button--ghost[aria-label], .rui-sidebar__trigger) {
 	width: 2rem;
 	height: 2rem;
 	min-width: 2rem;
@@ -37,7 +37,7 @@
 
 :root[data-rui-theme='github']
 	:is(.site-header, .rui-sidebar-provider__site-header)
-	:is(.rui-button--ghost[aria-label], .rui-sidebar__trigger, .theme-picker__trigger):hover {
+	:is(.rui-button--ghost[aria-label], .rui-sidebar__trigger):hover {
 	background-color: var(--site-header-button-hover);
 }
 
@@ -48,40 +48,21 @@
 }
 
 /**
- * The classic themes bevel every select, but the picker trigger sits among plain icon buttons in the header, so it drops
- * its frame to match them.
- */
-:root:is([data-rui-theme='windows95'], [data-rui-theme='macos-classic'])
-	:is(.site-header, .rui-sidebar-provider__site-header)
-	.theme-picker__control {
-	border-color: transparent;
-	background-color: transparent;
-	background-image: none;
-	box-shadow: none;
-}
-
-/**
  * Classic toolbar buttons are square, so hover fills and focus rings in the header follow square corners instead of the
  * default 6px push-button radius.
  */
 :root:is([data-rui-theme='windows95'], [data-rui-theme='macos-classic'])
 	:is(.site-header, .rui-sidebar-provider__site-header)
-	:is(.rui-button--ghost, .rui-sidebar__trigger, .theme-picker__control, .theme-picker__trigger) {
+	:is(.rui-button--ghost, .rui-sidebar__trigger) {
 	border-radius: 0;
 }
 
 /**
- * Phones have room for the logo, the navigation trigger, and a link or two. The theme picker and the light, dark, and
- * system toggle are desktop previews, so they hide below the `md` breakpoint; a saved or system theme still applies.
+ * Phones have room for the logo, the navigation trigger, and a link or two. The light, dark, and system toggle is a
+ * desktop preview control, so it hides below the `md` breakpoint; a saved or system theme still applies.
  */
 @media (width < 48rem) {
-	:is(.site-header__nav, .rui-sidebar-provider__site-header-nav)
-		:is(
-			radiant-theme-palette-picker,
-			theme-toggle,
-			li:has(> radiant-theme-palette-picker),
-			li:has(> theme-toggle)
-		) {
+	:is(.site-header__nav, .rui-sidebar-provider__site-header-nav) :is(theme-toggle, li:has(> theme-toggle)) {
 		display: none;
 	}
 }

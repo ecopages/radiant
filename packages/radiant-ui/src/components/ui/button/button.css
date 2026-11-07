@@ -4,10 +4,16 @@
 	.rui-button {
 		@apply inline-flex items-center justify-center w-fit;
 		@apply font-medium rounded-button border border-transparent;
-		@apply transition-[background-color,color,box-shadow] duration-300 ease-out;
 		@apply cursor-pointer;
 		@apply whitespace-nowrap;
 		gap: var(--space-inline);
+		transition-property: background-color, color, box-shadow, transform;
+		transition-duration: var(--duration-fast);
+		transition-timing-function: var(--ease-out-strong);
+	}
+
+	.rui-button:active:not(:disabled):not(.rui-button--link):not(.rui-button--none) {
+		transform: translateY(var(--press-shift));
 	}
 
 	.rui-button > svg {
@@ -23,28 +29,37 @@
 	}
 
 	/* Variants */
+	/**
+	 * Filled and destructive buttons carry a border in their own fill color instead of a transparent one. The border
+	 * snaps to whole device pixels like the outline button's, so at fractional zoom or display scaling both reach the
+	 * same edges instead of the fill ending a pixel or two short and soft.
+	 */
 	.rui-button--filled {
-		@apply bg-primary text-on-primary rui-sheen;
+		@apply border-primary bg-primary text-on-primary rui-sheen;
 	}
 
-	.rui-button--filled:hover:not(:disabled) {
-		@apply bg-primary/90;
+	@media (hover: hover) {
+		.rui-button--filled:hover:not(:disabled) {
+			@apply border-primary/90 bg-primary/90;
+		}
 	}
 
 	.rui-button--filled:active:not(:disabled) {
-		@apply bg-primary-dark;
+		@apply border-primary-dark bg-primary-dark;
 	}
 
 	.rui-button--filled[aria-pressed='true'] {
-		@apply bg-primary-dark ring-2 ring-focus-ring;
+		@apply border-primary-dark bg-primary-dark ring-2 ring-focus-ring;
 	}
 
 	.rui-button--outline {
 		@apply bg-transparent text-on-background border-border;
 	}
 
-	.rui-button--outline:hover:not(:disabled) {
-		@apply bg-surface;
+	@media (hover: hover) {
+		.rui-button--outline:hover:not(:disabled) {
+			@apply bg-surface;
+		}
 	}
 
 	.rui-button--outline:active:not(:disabled) {
@@ -59,8 +74,10 @@
 		@apply bg-transparent text-on-surface;
 	}
 
-	.rui-button--ghost:hover:not(:disabled) {
-		@apply bg-surface-container-low;
+	@media (hover: hover) {
+		.rui-button--ghost:hover:not(:disabled) {
+			@apply bg-surface-container-low;
+		}
 	}
 
 	.rui-button--ghost:active:not(:disabled) {
@@ -72,15 +89,17 @@
 	}
 
 	.rui-button--destructive {
-		@apply bg-error text-on-error rui-sheen;
+		@apply border-error bg-error text-on-error rui-sheen;
 	}
 
-	.rui-button--destructive:hover:not(:disabled) {
-		@apply bg-error/90;
+	@media (hover: hover) {
+		.rui-button--destructive:hover:not(:disabled) {
+			@apply border-error/90 bg-error/90;
+		}
 	}
 
 	.rui-button--destructive:active:not(:disabled) {
-		@apply bg-error-dark;
+		@apply border-error-dark bg-error-dark;
 	}
 
 	.rui-button--link {

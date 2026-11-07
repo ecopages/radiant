@@ -41,7 +41,7 @@ rui-tree {
 		border-bottom: 4px solid transparent;
 		border-left: 6px solid currentColor;
 		vertical-align: middle;
-		transition: transform 150ms ease;
+		transition: transform var(--duration-fast, 150ms) var(--ease-out-strong, cubic-bezier(0.23, 1, 0.32, 1));
 	}
 
 	.rui-tree__node[aria-expanded='true']::before {

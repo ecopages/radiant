@@ -1,5 +1,5 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
-import { RadiantElement, customElement, onEvent, state } from '@ecopages/radiant';
+import { RadiantElement, customElement, onEvent, prop, state } from '@ecopages/radiant';
 import { RuiButton } from '@ecopages/radiant-ui/button';
 import { RuiField, RuiFieldDescription } from '@ecopages/radiant-ui/field';
 import { RuiLabel } from '@ecopages/radiant-ui/label';
@@ -9,6 +9,9 @@ import {
 	createDocsDefaultThemeTuningCss,
 	DOCS_DEFAULT_THEME_TUNING,
 	DOCS_DEFAULT_TUNING_SCHEMA,
+	DOCS_TUNING_CHANGE_EVENT,
+	formatTuningValue,
+	tuningValueDigits,
 	parseDocsDefaultThemeTuning,
 	type DocsDefaultThemeTuning,
 } from '@/lib/docs-default-theme-tuning';
@@ -22,14 +25,21 @@ const tuningControls = (Object.keys(DOCS_DEFAULT_TUNING_SCHEMA) as (keyof DocsDe
 /** Docs-only controls for exploring the Radiant Default seed and geometry inputs. */
 @customElement('radiant-default-theme-tuner')
 export class DefaultThemeTunerElement extends RadiantElement {
-	declare readonly [JSX_PROPS]?: Record<never, never>;
+	declare readonly [JSX_PROPS]?: { heading?: string };
+	@prop({ type: String }) heading = 'Tune a few inputs, reshape the whole palette';
 	@state private tuning = readDocsDefaultThemeTuning();
 	private rootObserver: MutationObserver | null = null;
 	private persistenceTimeout: ReturnType<typeof setTimeout> | null = null;
 	@state private copyStatus = '';
 
+	private readonly onExternalTuning = (event: Event): void => {
+		const tuning = parseDocsDefaultThemeTuning((event as CustomEvent<unknown>).detail);
+		if (JSON.stringify(tuning) !== JSON.stringify(this.tuning)) this.tuning = tuning;
+	};
+
 	override connectedCallback(): void {
 		super.connectedCallback();
+		document.addEventListener(DOCS_TUNING_CHANGE_EVENT, this.onExternalTuning);
 		this.tuning = readDocsDefaultThemeTuning();
 		const root = typeof document === 'undefined' ? null : document.documentElement;
 		if (root?.dataset.ruiTheme === 'rui-default') {
@@ -45,6 +55,7 @@ export class DefaultThemeTunerElement extends RadiantElement {
 	}
 
 	override disconnectedCallback(): void {
+		document.removeEventListener(DOCS_TUNING_CHANGE_EVENT, this.onExternalTuning);
 		this.rootObserver?.disconnect();
 		this.rootObserver = null;
 		if (this.persistenceTimeout !== null) {
@@ -53,6 +64,10 @@ export class DefaultThemeTunerElement extends RadiantElement {
 			writeDocsDefaultThemeTuning(this.tuning);
 		}
 		super.disconnectedCallback();
+	}
+
+	private announceTuning(): void {
+		document.dispatchEvent(new CustomEvent(DOCS_TUNING_CHANGE_EVENT, { detail: this.tuning }));
 	}
 
 	private schedulePersistence(): void {
@@ -72,6 +87,7 @@ export class DefaultThemeTunerElement extends RadiantElement {
 		if (!key || !tuningControls.some((control) => control.key === key) || !Number.isFinite(value)) return;
 
 		this.tuning = parseDocsDefaultThemeTuning({ ...this.tuning, [key]: value });
+		this.announceTuning();
 		this.schedulePersistence();
 		const root = typeof document === 'undefined' ? null : document.documentElement;
 		if (root?.dataset.ruiTheme === 'rui-default') {
@@ -86,6 +102,7 @@ export class DefaultThemeTunerElement extends RadiantElement {
 			this.persistenceTimeout = null;
 		}
 		this.tuning = DOCS_DEFAULT_THEME_TUNING;
+		this.announceTuning();
 		writeDocsDefaultThemeTuning(this.tuning);
 		const root = typeof document === 'undefined' ? null : document.documentElement;
 		if (root?.dataset.ruiTheme === 'rui-default') {
@@ -112,7 +129,7 @@ export class DefaultThemeTunerElement extends RadiantElement {
 				<div class="default-theme-tuner__intro">
 					<div>
 						<p class="default-theme-tuner__eyebrow">Radiant Default</p>
-						<h2 id="default-theme-tuner-title">Tune six inputs, reshape the whole palette</h2>
+						<h2 id="default-theme-tuner-title">{this.heading}</h2>
 						<p>
 							OKLCH derives each color scale from the primary and neutral hues, with secondary offset from
 							primary; three geometry values adjust density, corners, and borders.
@@ -134,12 +151,12 @@ export class DefaultThemeTunerElement extends RadiantElement {
 								<span class="default-theme-tuner__control-heading">
 									<RuiLabel>{control.label}</RuiLabel>
 									<output data-default-tuning-value={control.key}>
-										{this.tuning[control.key]}
-										{control.unit}
+										{formatTuningValue(control.key, this.tuning[control.key])}
 									</output>
 								</span>
 								<RuiSlider
 									data-default-tuning={control.key}
+									valuePrecision={tuningValueDigits(control.key)}
 									min={control.min}
 									max={control.max}
 									step={control.step}

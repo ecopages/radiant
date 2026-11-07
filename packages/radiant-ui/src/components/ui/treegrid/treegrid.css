@@ -74,7 +74,7 @@ rui-treegrid {
 		border-block-end: 1.5px solid currentColor;
 		vertical-align: 0.1rem;
 		transform: rotate(-45deg);
-		transition: transform var(--duration-fast) var(--ease-standard);
+		transition: transform var(--duration-fast) var(--ease-out-strong, cubic-bezier(0.23, 1, 0.32, 1));
 	}
 
 	.rui-treegrid__row[aria-expanded='true'] .rui-treegrid__cell:first-child::before {

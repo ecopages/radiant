@@ -346,8 +346,6 @@ export class RuiForm extends RadiantElement {
 	}
 }
 
-
-
 declare global {
 	interface HTMLElementTagNameMap {
 		'rui-form': RuiForm;

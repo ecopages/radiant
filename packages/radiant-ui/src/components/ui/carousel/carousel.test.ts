@@ -157,7 +157,8 @@ describe('carousel transition validation', () => {
 	it('applies the transition class with zero slides', async () => {
 		const host = new RuiCarousel();
 		host.setAttribute('transition', 'fade');
-		host.innerHTML = '<section class="rui-carousel" data-ref="root"><div data-ref="viewport"><div data-ref="track"></div></div></section>';
+		host.innerHTML =
+			'<section class="rui-carousel" data-ref="root"><div data-ref="viewport"><div data-ref="track"></div></div></section>';
 		document.body.append(host);
 		await new Promise((resolve) => setTimeout(resolve, 0));
 		expect(host.querySelector('[data-ref="root"]')!.classList.contains('rui-carousel--fade')).toBe(true);

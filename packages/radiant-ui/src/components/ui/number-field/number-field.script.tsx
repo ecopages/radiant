@@ -422,8 +422,6 @@ export class RuiNumberField extends FormAssociatedElement {
 	}
 }
 
-
-
 declare global {
 	interface HTMLElementTagNameMap {
 		'rui-number-field': RuiNumberField;

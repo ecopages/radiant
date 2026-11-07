@@ -119,6 +119,16 @@ When the browser upgrades a server-rendered render-owning `RadiantElement` host,
 4. if both are true, call `hydrate()` and reconnect listeners and bindings in place
 5. otherwise call `update()` and mount a fresh client render
 
+```mermaid
+flowchart TD
+  Upgrade[Browser upgrades the host] --> Wait[Wait one microtask after connectedCallback]
+  Wait --> Server{Server-rendered or hydration markers?}
+  Server -- no --> Update[update: mount a fresh client render]
+  Server -- yes --> Installed{Hydrator installed?}
+  Installed -- no --> Update
+  Installed -- yes --> Hydrate[hydrate: reconnect listeners and bindings in place]
+```
+
 That last fallback is intentional. It means a page can still work without the hydrator import, but it will stop preserving the exact SSR DOM tree.
 
 ## When You Need The Hydrator

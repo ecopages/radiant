@@ -361,10 +361,6 @@ function resolvePopoverAnchor(trigger: HTMLElement): HTMLElement {
 	return focusable ?? trigger;
 }
 
-
-
-
-
 declare global {
 	interface HTMLElementTagNameMap {
 		'rui-popover': RuiPopover;

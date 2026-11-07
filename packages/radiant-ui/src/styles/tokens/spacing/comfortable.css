@@ -1,0 +1,23 @@
+@import './scale-bridge.css';
+
+/**
+ * Comfortable spacing pack: the roomy scale that `@ecopages/radiant-themes` complete themes build on.
+ */
+:root {
+	--space-1: calc(0.25rem * var(--rui-density));
+	--space-2: calc(0.5rem * var(--rui-density));
+	--space-3: calc(0.75rem * var(--rui-density));
+	--space-4: calc(1rem * var(--rui-density));
+	--space-5: calc(1.25rem * var(--rui-density));
+	--space-6: calc(1.5rem * var(--rui-density));
+	--space-8: calc(2rem * var(--rui-density));
+	--space-10: calc(2.5rem * var(--rui-density));
+	--space-12: calc(3rem * var(--rui-density));
+	--space-16: calc(4rem * var(--rui-density));
+
+	--space-control-x: var(--space-3);
+	--space-control-y: var(--space-2);
+	--space-inline: var(--space-2);
+	--space-stack: var(--space-4);
+	--space-inset: var(--space-4);
+}

@@ -32,7 +32,8 @@ export type HostAttributeSource = {
  *
  * 2. **Reactive prop definitions** — decorator-based definitions. Skipped when the
  *    target attribute name was already emitted by source 1 (dedup via `seenAttributes`).
- *    Uses `writeAttributeValue` for type-aware conversion.
+ *    Uses the definition's `transform.toAttribute` when it has one, so a transform that returns null or an empty
+ *    string omits the attribute, as in the property path above, instead of reflecting an empty list as `"[]"`, and `writeAttributeValue` for type-aware conversion otherwise.
  *
  * 3. **Authored attributes** — raw host-level attributes from the original markup.
  *    These always win if present, regardless of whether sources 1 or 2 already
@@ -118,7 +119,15 @@ function appendReactivePropDefinitionAttributes(
 			continue;
 		}
 
-		attributes[attributeName] = String(writeAttributeValue(currentValue, definition.options.type));
+		const { transform, type } = definition.options;
+		const serialized = transform?.toAttribute
+			? transform.toAttribute(currentValue as never)
+			: writeAttributeValue(currentValue, type);
+		if (transform?.toAttribute && (serialized == null || serialized === '')) {
+			continue;
+		}
+
+		attributes[attributeName] = String(serialized);
 		seenAttributes.add(attributeName);
 	}
 }

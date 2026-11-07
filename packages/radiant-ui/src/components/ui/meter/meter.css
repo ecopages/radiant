@@ -32,6 +32,7 @@ rui-meter {
 		inline-size: var(--rui-meter-percent, 0%);
 		background: var(--rui-meter-fill-color, var(--primary));
 		border-radius: var(--rui-meter-radius, var(--radius-control));
+		transition: inline-size var(--duration-normal, 200ms) var(--ease-out-strong, cubic-bezier(0.23, 1, 0.32, 1));
 	}
 
 	.rui-meter__value {

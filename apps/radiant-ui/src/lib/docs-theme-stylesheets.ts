@@ -12,5 +12,6 @@ export const docsThemeStylesheets: DocsThemeStylesheets = {
 		windows95: '/assets/themes/windows95.css',
 		'macos-classic': '/assets/themes/macos-classic.css',
 		macos: '/assets/themes/macos.css',
+		zed: '/assets/themes/zed.css',
 	},
 };

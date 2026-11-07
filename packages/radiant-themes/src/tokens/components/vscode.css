@@ -6,8 +6,11 @@
  */
 :root,
 :root[data-rui-theme='vscode'] {
-	--font-sans: -apple-system, BlinkMacSystemFont, 'Segoe WPC', 'Segoe UI', system-ui, Ubuntu, 'Droid Sans', sans-serif;
-	--font-heading: -apple-system, BlinkMacSystemFont, 'Segoe WPC', 'Segoe UI', system-ui, Ubuntu, 'Droid Sans', sans-serif;
+	--rui-knob-linecap: butt;
+	--font-sans:
+		-apple-system, BlinkMacSystemFont, 'Segoe WPC', 'Segoe UI', system-ui, Ubuntu, 'Droid Sans', sans-serif;
+	--font-heading:
+		-apple-system, BlinkMacSystemFont, 'Segoe WPC', 'Segoe UI', system-ui, Ubuntu, 'Droid Sans', sans-serif;
 	--font-mono: Menlo, Monaco, Consolas, 'Droid Sans Mono', 'Courier New', monospace;
 	--rui-border-alpha: 100%;
 	--border-radius-xs: 0.125rem;

@@ -19,8 +19,27 @@ rui-dialog {
 		@apply hidden;
 	}
 
+	/*
+	 * `hidden` removes the root through a discrete `display` transition, which keeps it rendered long enough for the
+	 * backdrop and surface to play their exit. Both fade out faster than they fade in.
+	 */
+	.rui-dialog {
+		transition: display var(--dialog-enter-duration, 200ms) allow-discrete;
+	}
+
+	.rui-dialog[hidden] {
+		transition-duration: var(--dialog-exit-duration, 120ms);
+	}
+
 	.rui-dialog__backdrop {
 		@apply absolute inset-0 bg-overlay;
+		opacity: 1;
+		transition: opacity var(--backdrop-duration, 150ms) var(--ease-out-strong, cubic-bezier(0.23, 1, 0.32, 1));
+	}
+
+	.rui-dialog[hidden] .rui-dialog__backdrop {
+		opacity: 0;
+		transition-duration: var(--dialog-exit-duration, 120ms);
 	}
 
 	.rui-dialog__surface {
@@ -30,6 +49,28 @@ rui-dialog {
 		border-radius: var(--rui-dialog-radius);
 		background-color: var(--rui-dialog-surface);
 		box-shadow: var(--rui-dialog-shadow);
+		opacity: 1;
+		transform: none;
+		transition-property: opacity, transform;
+		transition-duration: var(--dialog-enter-duration, 200ms);
+		transition-timing-function: var(--ease-out-strong, cubic-bezier(0.23, 1, 0.32, 1));
+	}
+
+	.rui-dialog[hidden] .rui-dialog__surface {
+		opacity: 0;
+		transform: scale(var(--popup-scale-from, 0.96)) translateY(var(--popup-shift, 4px));
+		transition-duration: var(--dialog-exit-duration, 120ms);
+	}
+
+	@starting-style {
+		.rui-dialog__backdrop {
+			opacity: 0;
+		}
+
+		.rui-dialog__surface {
+			opacity: 0;
+			transform: scale(var(--popup-scale-from, 0.96)) translateY(var(--popup-shift, 4px));
+		}
 	}
 
 	.rui-dialog__close {

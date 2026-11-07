@@ -33,4 +33,12 @@ rui-hover-card {
 	.rui-hover-card__content[hidden] {
 		display: none;
 	}
+
+	.rui-floating.rui-hover-card__content {
+		transition-duration: var(--hover-card-enter-duration, 180ms);
+	}
+
+	.rui-floating.rui-hover-card__content[hidden] {
+		transition-duration: var(--popup-exit-duration, 100ms);
+	}
 }

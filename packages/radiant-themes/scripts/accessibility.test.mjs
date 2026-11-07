@@ -21,6 +21,7 @@ const optionalThemes = [
 	'windows95',
 	'macos-classic',
 	'macos',
+	'zed',
 ];
 /** Themes whose radios mark the checked state with a black dot in a bevelled well instead of a primary border. */
 const classicControlThemes = new Set(['windows95', 'macos-classic']);

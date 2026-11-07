@@ -91,8 +91,6 @@ export class RuiPagination extends RadiantElement {
 	}
 }
 
-
-
 declare global {
 	interface HTMLElementTagNameMap {
 		'rui-pagination': RuiPagination;

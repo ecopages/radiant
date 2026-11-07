@@ -95,10 +95,11 @@
 	--primary-container: var(--color-carbon-blue-800);
 	--on-primary-container: var(--color-carbon-blue-100);
 	--primary-light: var(--color-carbon-blue-200);
-	--primary-dark: var(--color-carbon-blue-700);
+	--primary-dark: var(--color-carbon-blue-400);
 
 	--secondary: var(--color-carbon-violet-300);
 	--on-secondary: var(--color-rui-default-975);
+	--secondary-dark: var(--color-carbon-violet-400);
 	--secondary-container: var(--color-rui-default-800);
 	--on-secondary-container: var(--color-rui-default-100);
 
@@ -109,11 +110,13 @@
 
 	--error: var(--color-carbon-red-300);
 	--on-error: var(--color-rui-default-975);
+	--error-dark: var(--color-carbon-red-400);
 	--error-container: var(--color-carbon-red-800);
 	--on-error-container: var(--color-carbon-red-100);
 
 	--success: var(--color-carbon-green-300);
 	--on-success: var(--color-rui-default-975);
+	--success-dark: var(--color-carbon-green-400);
 	--success-container: var(--color-carbon-green-900);
 	--on-success-container: var(--color-carbon-green-100);
 
@@ -122,14 +125,14 @@
 	--info-container: var(--color-carbon-blue-800);
 	--on-info-container: var(--color-carbon-blue-100);
 	--info-light: var(--color-carbon-blue-300);
-	--info-dark: var(--color-carbon-blue-700);
+	--info-dark: var(--color-carbon-blue-400);
 
 	--warning: var(--color-carbon-amber-300);
 	--on-warning: var(--color-rui-default-975);
 	--warning-container: var(--color-carbon-amber-900);
 	--on-warning-container: var(--color-carbon-amber-100);
 	--warning-light: var(--color-carbon-amber-200);
-	--warning-dark: var(--color-carbon-amber-700);
+	--warning-dark: var(--color-carbon-amber-400);
 
 	--surface: var(--color-rui-default-975);
 	--on-surface: var(--color-rui-default-50);

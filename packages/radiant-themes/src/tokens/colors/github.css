@@ -2,7 +2,8 @@
  * Primer functional colors: `bgColor`, `fgColor`, `borderColor`, the accent family for selection and focus, and the
  * primary and default button fills.
  */
-:where(:root), :root[data-rui-theme='github'] {
+:where(:root),
+:root[data-rui-theme='github'] {
 	--color-github-white: #ffffff;
 	--color-github-canvas: #ffffff;
 	--color-github-subtle: #f6f8fa;
@@ -33,7 +34,8 @@
 	--color-github-knob-border: #818b98;
 }
 
-:where(.dark), :root.dark[data-rui-theme='github'] {
+:where(.dark),
+:root.dark[data-rui-theme='github'] {
 	--color-github-white: #f0f6fc;
 	--color-github-canvas: #0d1117;
 	--color-github-subtle: #151b23;

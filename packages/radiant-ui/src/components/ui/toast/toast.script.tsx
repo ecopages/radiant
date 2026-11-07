@@ -1,7 +1,7 @@
 import type { WithoutChildren } from '../../../lib/without-children';
 import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, bindTo, bound, customElement, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
-import { RuiIconCheck, RuiIconX } from '@/lib/icons';
+import { RuiIconAlertCircle, RuiIconAlertTriangle, RuiIconCheck, RuiIconInfo, RuiIconX } from '@/lib/icons';
 import {
 	DEFAULT_TOAST_POSITION,
 	TOAST_EXIT_MS,
@@ -482,11 +482,11 @@ export class RuiToast extends RadiantElement<RuiToastBindings> {
 			case 'success':
 				return <RuiIconCheck />;
 			case 'error':
-				return <RuiIconX />;
+				return <RuiIconAlertCircle />;
 			case 'warning':
-				return '!';
+				return <RuiIconAlertTriangle />;
 			case 'info':
-				return 'i';
+				return <RuiIconInfo />;
 			default:
 				return '';
 		}

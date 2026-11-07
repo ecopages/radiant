@@ -180,7 +180,13 @@ export function computeFloatingPosition(
 	};
 }
 
-/** Applies fixed coords to a floating element. */
+/**
+ * Applies fixed coords to a floating element.
+ *
+ * @remarks Measuring below forces the style update that captures the enter transition's starting values, so a
+ * surface that has never been positioned gets the requested `data-placement` first. The origin and shift the
+ * enter transition starts from then face the anchor; the resolved placement overwrites it after a flip.
+ */
 export function applyFloatingPosition(
 	anchor: HTMLElement,
 	floating: HTMLElement,
@@ -189,6 +195,9 @@ export function applyFloatingPosition(
 	options: { matchAnchorWidth?: boolean } = {},
 ): RuiPlacement {
 	const matchAnchorWidth = options.matchAnchorWidth === true;
+	if (!floating.hasAttribute('data-placement')) {
+		floating.setAttribute('data-placement', placement);
+	}
 	const anchorWidth = anchor.offsetWidth;
 	const size = matchAnchorWidth
 		? { width: anchorWidth, height: floating.offsetHeight }

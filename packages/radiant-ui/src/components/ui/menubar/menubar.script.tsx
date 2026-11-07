@@ -307,8 +307,6 @@ export class RuiMenubar extends RadiantElement {
 	}
 }
 
-
-
 declare global {
 	interface HTMLElementTagNameMap {
 		'rui-menubar': RuiMenubar;

@@ -22,11 +22,13 @@ rui-radio-group {
 	}
 
 	.rui-radio__control {
-		@apply relative size-4 shrink-0 rounded-full border border-border bg-background;
+		@apply relative shrink-0 rounded-full border border-border bg-background;
+		inline-size: var(--rui-choice-size, 1rem);
+		block-size: var(--rui-choice-size, 1rem);
 	}
 
 	.rui-radio__input:focus-visible + .rui-radio__control {
-		@apply ring-2 ring-focus-ring ring-offset-2;
+		@apply ring-2 ring-focus-ring ring-offset-1;
 	}
 
 	:root .rui-radio__input:checked + .rui-radio__control {
@@ -35,10 +37,20 @@ rui-radio-group {
 
 	.rui-radio__input:checked + .rui-radio__control::after {
 		content: '';
-		@apply absolute left-1/2 top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary;
+		@apply absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary;
+		inline-size: calc(var(--rui-choice-size, 1rem) / 2);
+		block-size: calc(var(--rui-choice-size, 1rem) / 2);
+		animation: rui-check-in var(--check-duration, 120ms) var(--ease-out-strong, cubic-bezier(0.23, 1, 0.32, 1));
 	}
 
 	.rui-radio__label {
 		@apply select-none;
+	}
+}
+
+@keyframes rui-check-in {
+	from {
+		opacity: 0;
+		transform: scale(0.6);
 	}
 }

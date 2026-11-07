@@ -6,7 +6,9 @@ rui-date-field {
 
 @layer components {
 	.rui-date-field {
-		@apply w-full text-sm;
+		@apply w-full;
+		font-size: var(--text-control-input);
+		line-height: inherit;
 	}
 
 	.rui-date-field__group {

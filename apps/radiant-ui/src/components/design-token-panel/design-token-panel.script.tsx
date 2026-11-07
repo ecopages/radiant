@@ -1,43 +1,30 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, onEvent } from '@ecopages/radiant';
-import { RuiFeed, RuiFeedArticle, RuiFeedArticleContent } from '@ecopages/radiant-ui/feed';
-import { RuiHeading, RuiHeadingDescription, RuiHeadingEyebrow, RuiHeadingTitle } from '@ecopages/radiant-ui/heading';
+import { RuiHeading, RuiHeadingDescription, RuiHeadingTitle } from '@ecopages/radiant-ui/heading';
 import { RuiLabel } from '@ecopages/radiant-ui/label';
-import { RuiRadio, RuiRadioGroup, RuiRadioGroupControl } from '@ecopages/radiant-ui/radio-group';
+import { RuiListbox, RuiListboxOption, RuiListboxOptionIndicator } from '@ecopages/radiant-ui/listbox';
+import {
+	RuiSelect,
+	RuiSelectControl,
+	RuiSelectListbox,
+	RuiSelectToggle,
+	RuiSelectTrigger,
+	RuiSelectValue,
+} from '@ecopages/radiant-ui/select';
+import { DOCS_DEFAULT_THEME_TUNING } from '@/lib/docs-default-theme-tuning';
+import { applySavedTheme } from '@/lib/docs-saved-themes';
 import {
 	applyDocumentTokens,
 	defaultDocsThemeSelection,
 	docsThemeColorOptions,
-	isDocsThemeTokenName,
+	isDocsThemeColor,
 	readDocsThemeSelection,
-	updateDocsThemeSelection,
 	type DocsThemeSelection,
 } from '@/lib/docs-theme-preview';
 
-function TokenOptions({
-	name,
-	options,
-}: {
-	name: string;
-	options: readonly { value: string; label: string; description: string }[];
-}) {
-	return (
-		<RuiRadioGroupControl class="design-token-panel__options">
-			{options.map((option) => (
-				<RuiRadio value={option.value} name={name}>
-					<span class="design-token-panel__option-copy">
-						<span class="design-token-panel__option-label">{option.label}</span>
-						<span class="design-token-panel__option-description">{option.description}</span>
-					</span>
-				</RuiRadio>
-			))}
-		</RuiRadioGroupControl>
-	);
-}
-
 /**
- * Docs-only token preview host. Owns its markup via `render()` so nested radio
- * groups are not authored as light-DOM slots (avoids projection wiping selection UI).
+ * Docs-only theme preview host: a select that applies a theme to every docs page, and a link to the theme lab. Owns its
+ * markup via `render()` so the nested select is not authored as a light-DOM slot (avoids projection wiping selection UI).
  */
 @customElement('radiant-design-token-panel')
 export class DesignTokenPanelElement extends RadiantElement {
@@ -69,15 +56,12 @@ export class DesignTokenPanelElement extends RadiantElement {
 		super.disconnectedCallback();
 	}
 
-	@onEvent({ selector: 'rui-radio-group[data-token]', type: 'rui-change' })
-	onTokenChange(event: Event): void {
-		const group = event.target;
-		const token = group instanceof HTMLElement ? group.dataset.token : undefined;
-		const value = (event as CustomEvent<{ value?: unknown }>).detail?.value;
-		if (!isDocsThemeTokenName(token) || typeof value !== 'string') return;
+	@onEvent({ selector: 'rui-select[data-token]', type: 'rui-change' })
+	onThemeChange(event: Event): void {
+		const [value] = (event as CustomEvent<{ value?: unknown[] }>).detail?.value ?? [];
+		if (!isDocsThemeColor(value)) return;
 
-		this.selection = updateDocsThemeSelection(this.selection, token, value);
-		applyDocumentTokens(this.selection);
+		applySavedTheme({ colors: value, tuning: DOCS_DEFAULT_THEME_TUNING, fonts: {} });
 		this.resetShellScroll();
 	}
 
@@ -100,25 +84,39 @@ export class DesignTokenPanelElement extends RadiantElement {
 		const { colors } = this.selection;
 		return (
 			<section class="design-token-panel" aria-labelledby="design-token-panel-title">
-				<div class="design-token-panel__intro">
-					<RuiHeading size="sm">
-						<RuiHeadingEyebrow>Live token preview</RuiHeadingEyebrow>
-						<RuiHeadingTitle id="design-token-panel-title">Choose a visual theme</RuiHeadingTitle>
-						<RuiHeadingDescription>
-							Preview each theme with its own colors, typography, spacing, shape, and component details.
-						</RuiHeadingDescription>
-					</RuiHeading>
+				<RuiHeading size="sm">
+					<RuiHeadingTitle id="design-token-panel-title">Choose a visual theme</RuiHeadingTitle>
+					<RuiHeadingDescription>
+						Preview each theme with its own colors, typography, spacing, shape, and component details. Build
+						your own, with fonts and a copyable setup, in the <a href="/themes">theme lab</a>.
+					</RuiHeadingDescription>
+				</RuiHeading>
+				<div class="design-token-panel__control">
+					<RuiLabel>Theme</RuiLabel>
+					<RuiSelect label="Theme" value={[colors]} data-token="colors">
+						<RuiSelectControl>
+							<RuiSelectTrigger>
+								<RuiSelectValue />
+							</RuiSelectTrigger>
+							<RuiSelectToggle />
+						</RuiSelectControl>
+						<RuiSelectListbox>
+							<RuiListbox embedded label="Theme">
+								{docsThemeColorOptions.map((option) => (
+									<RuiListboxOption value={option.value} label={option.label}>
+										<span class="design-token-panel__option-copy">
+											<span class="design-token-panel__option-label">{option.label}</span>
+											<span class="design-token-panel__option-description">
+												{option.description}
+											</span>
+										</span>
+										<RuiListboxOptionIndicator />
+									</RuiListboxOption>
+								))}
+							</RuiListbox>
+						</RuiSelectListbox>
+					</RuiSelect>
 				</div>
-				<RuiFeed class="design-token-panel__groups" label="Theme selection">
-					<RuiFeedArticle class="design-token-panel__group" posinset={1} setsize={1} tabindex={-1}>
-						<RuiFeedArticleContent>
-							<RuiLabel>Theme</RuiLabel>
-							<RuiRadioGroup value={colors} name="docs-color-theme" label="Theme" data-token="colors">
-								<TokenOptions name="docs-color-theme" options={docsThemeColorOptions} />
-							</RuiRadioGroup>
-						</RuiFeedArticleContent>
-					</RuiFeedArticle>
-				</RuiFeed>
 			</section>
 		);
 	}

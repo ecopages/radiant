@@ -1,8 +1,8 @@
 /**
  * Structural system tokens (Tier 3) — shared across all themes.
  *
- * `--size-control-*` aliases `--space-8/10/12` so compact and wide packs
- * change button and input height with padding. Icon sizes stay fixed.
+ * `--size-control-*` aliases `--space-8/10/12` so compact, comfortable and wide packs
+ * change button and input height with padding; the default pack sets its own heights. Icon sizes stay fixed.
  * `--rui-track-mix` / `--rui-track-fill` size the unfilled slider and knob
  * track against `--on-background`. Optional `--rui-track-color` replaces the fill.
  */

@@ -97,8 +97,6 @@ export class RuiGrid extends RadiantElement {
 	}
 }
 
-
-
 declare global {
 	interface HTMLElementTagNameMap {
 		'rui-grid': RuiGrid;

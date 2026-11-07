@@ -38,4 +38,3 @@ describe('RuiInput SSR', () => {
 		expect(html).toContain('pattern="[a-z]+"');
 	});
 });
-

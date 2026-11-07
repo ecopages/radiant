@@ -1,6 +1,72 @@
 @layer components {
+	/*
+	 * Floating surfaces open with a short fade and scale from the side that faces the anchor and close faster than
+	 * they open. `hidden` removes the surface through a discrete `display` transition, so the exit plays before
+	 * `display: none` lands. Tune or disable through the `--popup-*` tokens.
+	 */
 	.rui-floating {
+		--floating-ox: center;
+		--floating-oy: center;
+		--floating-sx: 0px;
+		--floating-sy: 0px;
+		--floating-from: translate(var(--floating-sx), var(--floating-sy)) scale(var(--popup-scale-from, 0.96));
 		position: fixed;
 		visibility: hidden;
+		opacity: 1;
+		transform: none;
+		transform-origin: var(--floating-ox) var(--floating-oy);
+		transition-property: opacity, transform, display;
+		transition-duration: var(--popup-enter-duration, 160ms);
+		transition-timing-function: var(--ease-out-strong, cubic-bezier(0.23, 1, 0.32, 1));
+		transition-behavior: allow-discrete;
+	}
+
+	.rui-floating[hidden] {
+		opacity: 0;
+		transform: var(--floating-from);
+		transition-duration: var(--popup-exit-duration, 100ms);
+	}
+
+	.rui-floating:where([data-placement^='bottom']) {
+		--floating-oy: top;
+		--floating-sy: calc(var(--popup-shift, 4px) * -1);
+	}
+
+	.rui-floating:where([data-placement^='top']) {
+		--floating-oy: bottom;
+		--floating-sy: var(--popup-shift, 4px);
+	}
+
+	.rui-floating:where([data-placement^='right']) {
+		--floating-ox: left;
+		--floating-sx: calc(var(--popup-shift, 4px) * -1);
+	}
+
+	.rui-floating:where([data-placement^='left']) {
+		--floating-ox: right;
+		--floating-sx: var(--popup-shift, 4px);
+	}
+
+	.rui-floating:where([data-placement^='bottom'], [data-placement^='top']):where([data-placement$='-start']) {
+		--floating-ox: left;
+	}
+
+	.rui-floating:where([data-placement^='bottom'], [data-placement^='top']):where([data-placement$='-end']) {
+		--floating-ox: right;
+	}
+
+	.rui-floating:where([data-placement^='left'], [data-placement^='right']):where([data-placement$='-start']) {
+		--floating-oy: top;
+	}
+
+	.rui-floating:where([data-placement^='left'], [data-placement^='right']):where([data-placement$='-end']) {
+		--floating-oy: bottom;
+	}
+
+	@starting-style {
+		.rui-floating {
+			opacity: 0;
+			transform: var(--floating-from);
+		}
 	}
 }

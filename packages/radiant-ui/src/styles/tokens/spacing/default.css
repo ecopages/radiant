@@ -1,7 +1,12 @@
 @import './scale-bridge.css';
 
 /**
- * Default spacing pack — comfortable density.
+ * Default spacing pack: close to the Zed theme's density, one step larger on the controls. The scale is the comfortable
+ * one (4px base), controls are 28/32/36px with 10px by 4px padding, so a dense control row sits in an evenly spaced
+ * layout and its hit areas stay comfortably above the 24px WCAG 2.2 minimum.
+ *
+ * @remarks Control heights do not alias `--space-8/10/12`, which keeps hit areas independent of the scale. Both scale
+ * with `--rui-density`.
  */
 :root {
 	--space-1: calc(0.25rem * var(--rui-density));
@@ -15,9 +20,13 @@
 	--space-12: calc(3rem * var(--rui-density));
 	--space-16: calc(4rem * var(--rui-density));
 
-	--space-control-x: var(--space-3);
-	--space-control-y: var(--space-2);
+	--space-control-x: calc(var(--space-2) + 0.125rem * var(--rui-density));
+	--space-control-y: var(--space-1);
 	--space-inline: var(--space-2);
 	--space-stack: var(--space-4);
 	--space-inset: var(--space-4);
+
+	--size-control-sm: calc(1.75rem * var(--rui-density));
+	--size-control-md: calc(2rem * var(--rui-density));
+	--size-control-lg: calc(2.25rem * var(--rui-density));
 }

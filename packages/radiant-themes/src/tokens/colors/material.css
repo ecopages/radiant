@@ -1,7 +1,8 @@
 /**
  * Material 3 baseline scheme (source color #6750a4), light and dark.
  */
-:where(:root), :root[data-rui-theme='material'] {
+:where(:root),
+:root[data-rui-theme='material'] {
 	--material-primary: #6750a4;
 	--material-on-primary: #ffffff;
 	--material-primary-container: #eaddff;
@@ -33,7 +34,8 @@
 	--material-outline-variant: #cac4d0;
 }
 
-:where(.dark), :root.dark[data-rui-theme='material'] {
+:where(.dark),
+:root.dark[data-rui-theme='material'] {
 	--material-primary: #d0bcff;
 	--material-on-primary: #381e72;
 	--material-primary-container: #4f378b;
