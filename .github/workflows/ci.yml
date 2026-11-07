@@ -39,6 +39,31 @@ jobs:
             - name: Lint
               run: pnpm exec oxlint . --max-warnings 0
 
+    size:
+        name: Size
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v5
+
+            - name: Setup pnpm
+              uses: pnpm/action-setup@v6
+
+            - name: Setup Node
+              uses: actions/setup-node@v5
+              with:
+                  node-version: '24'
+                  cache: 'pnpm'
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Build libraries
+              run: pnpm --filter @ecopages/signals build:lib && pnpm --filter @ecopages/jsx build:lib && pnpm --filter @ecopages/radiant build:lib
+
+            - name: Check bundle sizes
+              run: pnpm --filter @ecopages/signals size:check && pnpm --filter @ecopages/jsx size:check && pnpm --filter @ecopages/radiant size:check
+
     typecheck:
         name: Typecheck
         runs-on: ubuntu-latest
