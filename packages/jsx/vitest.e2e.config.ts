@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 export default defineConfig({
 	resolve: {
 		alias: {
-			'node:async_hooks': fileURLToPath(new URL('../../configs/async-local-storage.browser.ts', import.meta.url)),
+			'node:async_hooks': fileURLToPath(new URL('./test/shims/async-local-storage.browser.ts', import.meta.url)),
 		},
 	},
 	test: {

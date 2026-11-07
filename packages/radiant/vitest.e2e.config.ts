@@ -16,7 +16,7 @@ export default mergeConfig(
 		resolve: {
 			alias: {
 				'node:async_hooks': fileURLToPath(
-					new URL('../../configs/async-local-storage.browser.ts', import.meta.url),
+					new URL('../jsx/test/shims/async-local-storage.browser.ts', import.meta.url),
 				),
 			},
 		},

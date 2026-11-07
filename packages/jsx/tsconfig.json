@@ -1,5 +1,5 @@
 {
-	"extends": "../../configs/tsconfig.base.json",
+	"extends": "../../tsconfig.base.json",
 	"compilerOptions": {
 		// Environment setup & latest features
 		"lib": ["DOM", "DOM.Iterable", "ESNext"],
