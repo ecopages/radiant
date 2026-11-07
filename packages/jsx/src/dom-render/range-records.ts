@@ -25,7 +25,7 @@ export function mountedContentFromNodes(nodes: readonly Node[]): MountedRangeCon
  *
  * @param referenceNode Node before which the new boundary pair is inserted.
  */
-export function createRangeRecord(referenceNode: Text): MountedRangeRecord {
+export function createRangeRecord(referenceNode: ChildNode): MountedRangeRecord {
 	const start = createBoundaryMarker();
 	const end = createBoundaryMarker();
 	referenceNode.before(start, end);

@@ -146,6 +146,14 @@ export type ReactiveAttributeSource = ReactiveChildSource;
 /** Static template blueprint plus path-based metadata for every dynamic part. */
 export type CompiledTemplate = {
 	blueprint: HTMLTemplateElement;
+	/**
+	 * The blueprint's content with its attribute markers removed and its child comment markers already replaced by
+	 * empty text markers, for client mounts to clone.
+	 *
+	 * @remarks Hydration keeps reading {@link CompiledTemplate.blueprint}, which keeps the comments. Each comment is
+	 * replaced by exactly one node, so the part paths hold for both.
+	 */
+	clientContent: DocumentFragment;
 	parts: readonly TemplatePart[];
 };
 
