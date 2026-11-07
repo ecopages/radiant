@@ -1,10 +1,6 @@
 import type { TemplateResultLike } from '../types/index.ts';
-import {
-	createLiveTemplateParts,
-	getCompiledTemplate,
-	normalizeTemplateFragmentNamespaces,
-} from './template-compiler.ts';
 import { updateRangeContent } from './child-range-update.ts';
+import { getTemplateTree, instantiateTemplateTree } from './template-tree.ts';
 import { updateLiveAttributePart } from './live-attribute-update.ts';
 import { updateLiveTextContentParts } from './live-text-content-update.ts';
 import type { DeferredPropertyBinding, LiveTemplatePart, TemplateInstance } from './types.ts';
@@ -24,21 +20,7 @@ export function createTemplateInstance(
 	deferredProperties: DeferredPropertyBinding[],
 	contextParent: Node | null = rootTarget,
 ): TemplateInstance {
-	const compiledTemplate = getCompiledTemplate(template);
-	const fragment = compiledTemplate.clientContent.cloneNode(true) as DocumentFragment;
-	normalizeTemplateFragmentNamespaces(fragment, contextParent, template.rootLocalName);
-	const parts = createLiveTemplateParts(fragment, compiledTemplate.clientParts, rootTarget);
-	const rootNodes = Array.from(fragment.childNodes);
-	const update = createTemplateInstanceUpdate(parts, rootTarget);
-
-	const instance: TemplateInstance = {
-		compiled: compiledTemplate,
-		parts,
-		rootTarget,
-		rootNodes,
-		update,
-	};
-
+	const instance = instantiateTemplateTree(getTemplateTree(template, contextParent, rootTarget), rootTarget);
 	instance.update(template.values, deferredProperties);
 	return instance;
 }

@@ -5,7 +5,7 @@ import { shouldUseBooleanAttributeBinding } from './binding-defaults.ts';
  * Iterates normalized JSX attributes and invokes `append` for each resolved name/value
  * pair. No intermediate record is created.
  *
- * @param attributes Raw JSX props object.
+ * @param attributes Raw JSX props object; `key` and `children` are skipped, so a caller can pass the props as they are.
  * @param append Callback invoked once per normalized attribute name/value pair.
  */
 export function forEachNormalizedAttribute(
@@ -24,7 +24,7 @@ export function forEachNormalizedAttribute(
 
 	for (const name in attributes) {
 		const value = attributes[name];
-		if (value === undefined || name === 'key' || name === 'class' || name === 'classes') {
+		if (value === undefined || name === 'key' || name === 'children' || name === 'class' || name === 'classes') {
 			continue;
 		}
 

@@ -219,6 +219,12 @@ function updateKeyedChildren(
 		}
 	}
 
+	if (keyedState.records.size > 0 && !keepsAnyRecord(keyedState.records, nextKeys)) {
+		for (const record of keyedState.records.values()) disposeMountedRangeContent(record.mounted);
+		keyedState.records.clear();
+		clearRange(range);
+	}
+
 	const previousIndices = readKeyedOrder(range, keyedState.records);
 	const keep = markLongestIncreasingRun(uniqueChildren.map((child) => previousIndices.get(child.key) ?? -1));
 	const parent = getRangeParent(range);
@@ -256,6 +262,17 @@ function updateKeyedChildren(
 	}
 
 	return keyedState;
+}
+
+/**
+ * @remarks When no record survives, as on a clear or a full replace, the caller empties the whole range at once
+ * rather than removing each record and its markers.
+ */
+function keepsAnyRecord(records: ReadonlyMap<JsxKey, MountedRangeRecord>, nextKeys: ReadonlySet<JsxKey>): boolean {
+	for (const key of records.keys()) {
+		if (nextKeys.has(key)) return true;
+	}
+	return false;
 }
 
 /** Maps each key to its record's current position within `range`. */

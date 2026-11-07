@@ -134,8 +134,8 @@ export function createJsxElement<Props extends object>(
 	const strings = [`<${type}`];
 	const values: unknown[] = [];
 	const parts: TemplatePartDescriptor[] = [];
-	const { children, key: _key, ...rawAttributes } = props as JsxPropsWithChildren & Record<string, unknown>;
-	forEachNormalizedAttribute(rawAttributes, (name, value) => {
+	const children = (props as JsxPropsWithChildren).children;
+	forEachNormalizedAttribute(props as Record<string, unknown>, (name, value) => {
 		appendBinding(strings, values, parts, type, name, value);
 	});
 	const hasChildren = 'children' in props;
