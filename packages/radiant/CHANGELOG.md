@@ -1,5 +1,14 @@
 # @ecopages/radiant
 
+## 0.8.1
+
+### Patch Changes
+
+- [#630](https://github.com/ecopages/radiant/pull/630) [`0b117aa`](https://github.com/ecopages/radiant/commit/0b117aabdd8b1a537f0ce3164d2885d1c852706e) Thanks [@andeeplus](https://github.com/andeeplus)! - A server-rendered host sends its Authored Children once, inside its view, between `<!--radiant-slotted-->` comments, and the client adopts those same nodes before its first render instead of rebuilding copies from a JSON payload. Children the server-time view does not place travel in an inert `<template data-radiant-slotted>`. The `data-radiant-slot-projection` script is gone.
+- Updated dependencies [[`fd81dd1`](https://github.com/ecopages/radiant/commit/fd81dd1eb44f6331b81ad818dbf21b9a8c17a02f)]:
+    - @ecopages/jsx@0.8.1
+    - @ecopages/signals@0.8.1
+
 ## 0.8.0
 
 ### Minor Changes

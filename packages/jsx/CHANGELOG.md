@@ -1,5 +1,13 @@
 # @ecopages/jsx
 
+## 0.8.1
+
+### Patch Changes
+
+- [#628](https://github.com/ecopages/radiant/pull/628) [`fd81dd1`](https://github.com/ecopages/radiant/commit/fd81dd1eb44f6331b81ad818dbf21b9a8c17a02f) Thanks [@andeeplus](https://github.com/andeeplus)! - A signal or subscribable in `class` or `classes` binds the class attribute live, its value normalized like a static class value (a string, a list or a class map). It was read as a class map, so `class={signal}` rendered the signal's own field names as classes.
+- Updated dependencies []:
+    - @ecopages/signals@0.8.1
+
 ## 0.8.0
 
 ### Minor Changes
