@@ -232,6 +232,8 @@ Read it like this:
 - `server-render` owns HTML serialization of the same renderable values.
 - `dom-render/*` holds the browser-only internals so the public surface can stay small.
 
+Each JSX element is its own template, and a nested element is the value of its parent's child slot. A mount builds the DOM of a template and of the element templates nested in its slots once per combination of shapes, then clones it whole, so a table row and its cells cost one clone. Every nested template still owns its slot: a child that later renders a different shape replaces that slot alone, and its parent and siblings keep their nodes.
+
 ## Direct DOM Usage
 
 If you need app-level mounting outside a `RadiantElement`, use the DOM root helper.

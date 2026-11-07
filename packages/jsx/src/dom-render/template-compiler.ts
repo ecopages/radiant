@@ -231,7 +231,7 @@ export function createLiveTemplateParts(
 				end: end as ChildNode | null,
 				index: part.index,
 				mounted: { kind: 'empty' },
-				...(owner instanceof Element ? { owner } : {}),
+				owner: owner instanceof Element ? owner : undefined,
 				start: start as ChildNode | null,
 				type: 'child',
 			});

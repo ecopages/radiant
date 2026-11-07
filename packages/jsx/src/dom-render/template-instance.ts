@@ -1,13 +1,9 @@
 import type { TemplateResultLike } from '../types/index.ts';
-import {
-	createLiveTemplateParts,
-	getCompiledTemplate,
-	normalizeTemplateFragmentNamespaces,
-} from './template-compiler.ts';
 import { updateRangeContent } from './child-range-update.ts';
+import { getTemplateTree, instantiateTemplateTree } from './template-tree.ts';
 import { updateLiveAttributePart } from './live-attribute-update.ts';
 import { updateLiveTextContentParts } from './live-text-content-update.ts';
-import type { DeferredPropertyBinding, LiveTemplatePart, TemplateInstance } from './types.ts';
+import type { DeferredPropertyBinding, TemplateInstance } from './types.ts';
 
 /**
  * Creates a live template instance from a template result and applies initial values.
@@ -16,7 +12,7 @@ import type { DeferredPropertyBinding, LiveTemplatePart, TemplateInstance } from
  * @param rootTarget Host element that owns delegated listeners and child reconciliation.
  * @param deferredProperties Queue populated by `.prop` bindings during the initial update.
  * @param contextParent Optional namespace context for cloned fragment nodes.
- * @returns A mounted template instance with an `update` function for later passes.
+ * @returns A mounted template instance; {@link updateTemplateInstance} applies later passes.
  */
 export function createTemplateInstance(
 	template: TemplateResultLike,
@@ -24,50 +20,31 @@ export function createTemplateInstance(
 	deferredProperties: DeferredPropertyBinding[],
 	contextParent: Node | null = rootTarget,
 ): TemplateInstance {
-	const compiledTemplate = getCompiledTemplate(template);
-	const fragment = compiledTemplate.clientContent.cloneNode(true) as DocumentFragment;
-	normalizeTemplateFragmentNamespaces(fragment, contextParent, template.rootLocalName);
-	const parts = createLiveTemplateParts(fragment, compiledTemplate.clientParts, rootTarget);
-	const rootNodes = Array.from(fragment.childNodes);
-	const update = createTemplateInstanceUpdate(parts, rootTarget);
-
-	const instance: TemplateInstance = {
-		compiled: compiledTemplate,
-		parts,
-		rootTarget,
-		rootNodes,
-		update,
-	};
-
-	instance.update(template.values, deferredProperties);
+	const instance = instantiateTemplateTree(getTemplateTree(template, contextParent, rootTarget), rootTarget);
+	updateTemplateInstance(instance, template.values, deferredProperties);
 	return instance;
 }
 
-/**
- * Shared update loop for mounted and hydrated template instances.
- *
- * @param parts Live attribute and child-range parts for one template instance.
- * @param rootTarget Host element passed through to child-range reconciliation.
- * @returns An `update` function that applies the next value array.
- */
-export function createTemplateInstanceUpdate(
-	parts: readonly LiveTemplatePart[],
-	rootTarget: HTMLElement,
-): (values: readonly unknown[], deferredProperties: DeferredPropertyBinding[]) => void {
-	return (values, deferredProperties) => {
-		for (const part of parts) {
-			if (part.type === 'attribute') {
-				updateLiveAttributePart(part, values[part.index], deferredProperties);
-				continue;
-			}
+/** Applies a template's next values to a mounted or hydrated instance. */
+export function updateTemplateInstance(
+	instance: TemplateInstance,
+	values: readonly unknown[],
+	deferredProperties: DeferredPropertyBinding[],
+): void {
+	const { parts, rootTarget } = instance;
 
-			if (part.type === 'text-content') {
-				continue;
-			}
-
-			part.mounted = updateRangeContent(part, values[part.index], part.mounted, rootTarget, deferredProperties);
+	for (const part of parts) {
+		if (part.type === 'attribute') {
+			updateLiveAttributePart(part, values[part.index], deferredProperties);
+			continue;
 		}
 
-		updateLiveTextContentParts(parts, values);
-	};
+		if (part.type === 'text-content') {
+			continue;
+		}
+
+		part.mounted = updateRangeContent(part, values[part.index], part.mounted, rootTarget, deferredProperties);
+	}
+
+	updateLiveTextContentParts(parts, values);
 }
