@@ -1,4 +1,5 @@
-:where(:root), :root[data-rui-theme='windows95'] {
+:where(:root),
+:root[data-rui-theme='windows95'] {
 	--windows95-canvas: #c0c0c0;
 	--windows95-face: #c0c0c0;
 	--windows95-light: #ffffff;
@@ -25,7 +26,8 @@
  * button face, in the spirit of the custom color schemes Windows offered: light and highlight edges stay above the
  * face and shadow and dark edges below it, so raised and sunken controls still read as relief instead of outlines.
  */
-:where(.dark), :root.dark[data-rui-theme='windows95'] {
+:where(.dark),
+:root.dark[data-rui-theme='windows95'] {
 	--windows95-canvas: #2b2b2b;
 	--windows95-face: #3a3a3a;
 	--windows95-light: #8a8a8a;

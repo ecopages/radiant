@@ -1,4 +1,4 @@
-/** Radiant UI's single default: derived Radiant Default colors, comfortable density, soft radius. */
+/** Radiant UI's single default: derived Radiant Default colors, compact-leaning density, restrained radius, flat controls. */
 @import '../tokens/foundation.css';
 @import '../tokens/spacing/default.css';
 @import '../tokens/radius/default.css';
@@ -11,8 +11,19 @@
 		sans-serif;
 	--font-heading: var(--font-sans);
 	--font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-	--rui-border-alpha: 20%;
+	--rui-border-alpha: 11%;
 	color-scheme: light;
+}
+
+/**
+ * @remarks `--text-control` lives in the shared typography scale, so the 14px control text is set here and
+ * only applies to Radiant Default. `--sheen-image` drops the gradient on filled controls for a flat surface. `--rui-choice-size` sizes check boxes and radios from the small control height (16px at the default density), so they follow `--rui-density`. Both use
+ * `:root` so they win over the shared tokens regardless of import order.
+ */
+:root {
+	--text-control: 0.875rem;
+	--rui-choice-size: calc(var(--size-control-sm) * 2 / 3);
+	--sheen-image: none;
 }
 
 :where(.dark) {
@@ -24,22 +35,23 @@
  * such as `aria-invalid` and `:checked` (prefixed with `:root`) still win.
  */
 @layer components {
-	:root:where(:not([data-rui-theme]), [data-rui-theme='rui-default']) :is(
-		.rui-input,
-		.rui-textarea,
-		.rui-autocomplete__input,
-		.rui-combobox__control,
-		.rui-date-field__group,
-		.rui-date-range-picker__group,
-		.rui-input-group,
-		.rui-number-field__group,
-		rui-date-input:where(:not([data-date-field-input], [data-range-start], [data-range-end])),
-		.rui-select__control,
-		.rui-select__search,
-		.rui-checkbox__control,
-		.rui-radio__control,
-		.rui-switch__track
-	) {
+	:root:where(:not([data-rui-theme]), [data-rui-theme='rui-default'])
+		:is(
+			.rui-input,
+			.rui-textarea,
+			.rui-autocomplete__input,
+			.rui-combobox__control,
+			.rui-date-field__group,
+			.rui-date-range-picker__group,
+			.rui-input-group,
+			.rui-number-field__group,
+			rui-date-input:where(:not([data-date-field-input], [data-range-start], [data-range-end])),
+			.rui-select__control,
+			.rui-select__search,
+			.rui-checkbox__control,
+			.rui-radio__control,
+			.rui-switch__track
+		) {
 		border-color: var(--rui-control-border-color);
 	}
 }

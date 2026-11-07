@@ -27,4 +27,3 @@ describe('RuiButton SSR', () => {
 		expect(html).toContain('value="draft"');
 	});
 });
-

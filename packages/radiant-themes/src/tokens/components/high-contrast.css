@@ -2,6 +2,7 @@
 
 :root,
 :root[data-rui-theme='high-contrast'] {
+	--rui-knob-linecap: butt;
 	--font-sans: ui-sans-serif, system-ui, sans-serif;
 	--font-heading: var(--font-sans);
 	--font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;

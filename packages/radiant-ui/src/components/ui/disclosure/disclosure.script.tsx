@@ -132,8 +132,6 @@ export class RuiDisclosure extends RadiantElement {
 	}
 }
 
-
-
 declare global {
 	interface HTMLElementTagNameMap {
 		'rui-disclosure': RuiDisclosure;

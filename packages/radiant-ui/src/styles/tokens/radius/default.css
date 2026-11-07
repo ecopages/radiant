@@ -1,16 +1,17 @@
 /**
- * Default soft radius pack.
+ * Default radius pack: restrained corners (2.7px controls and 3.6px containers at the default 0.45 scale, 6px and 8px at 1) in the spirit of editor UIs. `radius/soft` keeps
+ * the earlier rounder scale.
  */
 :root {
-	--rui-radius-scale: 1;
+	--rui-radius-scale: 0.45;
 	--border-radius-none: 0;
-	--border-radius-xs: calc(0.25rem * var(--rui-radius-scale));
-	--border-radius-sm: calc(0.5rem * var(--rui-radius-scale));
-	--border-radius-md: calc(0.75rem * var(--rui-radius-scale));
-	--border-radius-lg: calc(1rem * var(--rui-radius-scale));
-	--border-radius-xl: calc(1.25rem * var(--rui-radius-scale));
-	--border-radius-2xl: calc(1.5rem * var(--rui-radius-scale));
-	--border-radius-3xl: calc(2rem * var(--rui-radius-scale));
+	--border-radius-xs: calc(0.125rem * var(--rui-radius-scale));
+	--border-radius-sm: calc(0.25rem * var(--rui-radius-scale));
+	--border-radius-md: calc(0.375rem * var(--rui-radius-scale));
+	--border-radius-lg: calc(0.5rem * var(--rui-radius-scale));
+	--border-radius-xl: calc(0.75rem * var(--rui-radius-scale));
+	--border-radius-2xl: calc(1rem * var(--rui-radius-scale));
+	--border-radius-3xl: calc(1.5rem * var(--rui-radius-scale));
 	--border-radius-full: 9999px;
 
 	--radius-control: var(--border-radius-md);

@@ -1,4 +1,5 @@
-:where(:root), :root[data-rui-theme='material'] {
+:where(:root),
+:root[data-rui-theme='material'] {
 	--gray-50: oklch(98% 0.008 285);
 	--gray-100: oklch(95% 0.012 285);
 	--gray-200: oklch(89% 0.015 285);
@@ -78,7 +79,8 @@
 	--on-background-code: var(--material-on-surface);
 }
 
-:where(.dark), :root.dark[data-rui-theme='material'] {
+:where(.dark),
+:root.dark[data-rui-theme='material'] {
 	--gray-50: oklch(95% 0.008 285);
 	--gray-100: oklch(90% 0.01 285);
 	--gray-200: oklch(82% 0.012 285);

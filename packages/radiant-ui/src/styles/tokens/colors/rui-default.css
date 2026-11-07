@@ -1,6 +1,7 @@
 /** Radiant Default's neutral, accent, and status families, derived from editable OKLCH seeds. */
 :root {
-	--rui-neutral: oklch(62% 0.014 265);
+	--rui-neutral-tint: 1.3;
+	--rui-neutral: oklch(62% calc(0.014 * var(--rui-neutral-tint)) 265);
 	--color-rui-default-50: oklch(from var(--rui-neutral) 98.2% calc(c * 0.29) h);
 	--color-rui-default-100: oklch(from var(--rui-neutral) 96% calc(c * 0.43) h);
 	--color-rui-default-200: oklch(from var(--rui-neutral) 91.5% calc(c * 0.57) h);
@@ -14,7 +15,7 @@
 	--color-rui-default-950: oklch(from var(--rui-neutral) 16% calc(c * 0.43) h);
 	--color-rui-default-975: oklch(from var(--rui-neutral) 13% calc(c * 0.36) h);
 
-	--rui-primary: oklch(52% 0.19 264);
+	--rui-primary: oklch(52% 0.19 275);
 	--color-carbon-blue-50: oklch(from var(--rui-primary) 97% calc(c * 0.1) h);
 	--color-carbon-blue-100: oklch(from var(--rui-primary) 93% calc(c * 0.21) h);
 	--color-carbon-blue-200: oklch(from var(--rui-primary) 86% calc(c * 0.42) h);

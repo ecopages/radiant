@@ -31,7 +31,8 @@ rui-number-field {
 	.rui-number-field__input {
 		@apply min-w-0 flex-1 border-0 bg-transparent text-on-background outline-none;
 		padding-inline: var(--space-control-x);
-		padding-block: var(--space-control-y);
+		padding-block: 0;
+		min-height: calc(var(--size-control-md) - 2px);
 		font-size: var(--text-control-input);
 		font-variant-numeric: tabular-nums;
 	}

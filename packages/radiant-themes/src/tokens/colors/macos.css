@@ -6,7 +6,8 @@
  * @remarks AppKit's translucent label colors are flattened onto their usual backgrounds. Status hues use Apple's
  * increased-contrast variants (`#d70015`, `#248a3d`, `#b25000`) where the standard hue cannot carry text at 4.5:1.
  */
-:where(:root), :root[data-rui-theme='macos'] {
+:where(:root),
+:root[data-rui-theme='macos'] {
 	--macos-canvas: #ececec;
 	--macos-surface: #ffffff;
 	--macos-subtle: #e3e3e3;
@@ -34,10 +35,12 @@
 	--macos-purple: #8944ab;
 	--macos-control-shadow:
 		0 0 0 0.5px rgb(0 0 0 / 0.16), 0 0.5px 1px rgb(0 0 0 / 0.22), 0 1px 1.5px -0.5px rgb(0 0 0 / 0.1);
-	--macos-menu-shadow: 0 0 0 0.5px var(--macos-elevated-edge), 0 10px 30px rgb(0 0 0 / 0.2), 0 2px 6px rgb(0 0 0 / 0.1);
+	--macos-menu-shadow:
+		0 0 0 0.5px var(--macos-elevated-edge), 0 10px 30px rgb(0 0 0 / 0.2), 0 2px 6px rgb(0 0 0 / 0.1);
 }
 
-:where(.dark), :root.dark[data-rui-theme='macos'] {
+:where(.dark),
+:root.dark[data-rui-theme='macos'] {
 	--macos-canvas: #323232;
 	--macos-surface: #1e1e1e;
 	--macos-subtle: #3d3d3d;

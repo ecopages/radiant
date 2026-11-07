@@ -4,10 +4,10 @@ Read this when a change touches component CSS, tokens, or anything a theme can r
 
 ## Two packages
 
-| Package                    | Ships                                                                                                                                                            |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@ecopages/radiant-ui`     | Components, foundation tokens, and exactly one theme: `themes/default` (Radiant Default).                                                                        |
-| `@ecopages/radiant-themes` | Optional complete themes (GitHub, Cloudflare, VS Code, Vercel, Material Design, High Contrast, Windows 95, Mac OS Classic, macOS) and a compact variant of each. |
+| Package                    | Ships                                                                                                                                                                 |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@ecopages/radiant-ui`     | Components, foundation tokens, and exactly one theme: `themes/default` (Radiant Default).                                                                             |
+| `@ecopages/radiant-themes` | Optional complete themes (GitHub, Cloudflare, VS Code, Vercel, Material Design, High Contrast, Windows 95, Mac OS Classic, macOS, Zed) and a compact variant of each. |
 
 Both are versioned together (`fixed` in `.changeset/config.json`). A theme entry is `@ecopages/radiant-themes/<theme>` or `/<theme>/compact`. Non-Tailwind apps use `compiled/<theme>.css`.
 
@@ -45,9 +45,10 @@ Radiant Default derives its colors and geometry from a few variables. Set them i
 | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `--rui-primary`, `--rui-neutral` | OKLCH seeds, e.g. `oklch(52% 0.19 264)`. Each generates a 50-975 scale with relative color syntax: lightness is fixed per step, chroma scales per step, hue comes from the seed. |
 | `--rui-secondary`                | Defaults to the primary seed rotated 40 degrees. Set it to any color to override.                                                                                                |
+| `--rui-neutral-tint`             | Multiplies the neutral seed's chroma (default 1.3): how strongly the greys carry the neutral hue.                                                                                |
 | `--rui-density`                  | Multiplies the spacing scale (the tuner offers 0.85-1.15).                                                                                                                       |
-| `--rui-radius-scale`             | Multiplies the radius scale (0.75-1.25).                                                                                                                                         |
-| `--rui-border-alpha`             | Semantic border strength, 8-100%. `prefers-contrast: more` pins it to 100%, and that preference wins over a theme or app value.                                                  |
+| `--rui-radius-scale`             | Multiplies the radius scale (default 0.45; the docs tuner offers 0, fully square, to 4, fully rounded).                                                                          |
+| `--rui-border-alpha`             | Semantic border strength, 0-100% (default 11%). `prefers-contrast: more` pins it to 100%, and that preference wins over a theme or app value.                                    |
 
 Tricks and limits:
 

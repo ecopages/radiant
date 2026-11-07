@@ -58,6 +58,7 @@ function buildStaticStyleExports(): Record<string, { default: string }> {
 		'tokens/colors/rui-default.css',
 		'tokens/foundation.css',
 		'tokens/semantic.css',
+		'tokens/spacing/comfortable.css',
 		'tokens/spacing/compact.css',
 		'tokens/spacing/default.css',
 		'tokens/spacing/wide.css',

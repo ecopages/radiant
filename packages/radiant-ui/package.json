@@ -113,6 +113,9 @@
 		"./tokens/semantic": {
 			"default": "./dist/styles/tokens/semantic.css"
 		},
+		"./tokens/spacing/comfortable": {
+			"default": "./dist/styles/tokens/spacing/comfortable.css"
+		},
 		"./tokens/spacing/compact": {
 			"default": "./dist/styles/tokens/spacing/compact.css"
 		},

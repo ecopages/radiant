@@ -159,8 +159,6 @@ export class RuiDisclosureGroup extends RadiantElement {
 	}
 }
 
-
-
 declare global {
 	interface HTMLElementTagNameMap {
 		'rui-disclosure-group': RuiDisclosureGroup;

@@ -462,8 +462,6 @@ export class RuiTable extends RadiantElement {
 	}
 }
 
-
-
 declare global {
 	interface HTMLElementTagNameMap {
 		'rui-table': RuiTable;

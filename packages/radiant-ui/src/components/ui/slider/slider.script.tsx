@@ -59,7 +59,10 @@ export const SLIDER_DEFAULT_MAX = 100;
  */
 function snapToStep(range: NumericRange, value: number, direction: 'down' | 'up'): number {
 	const ticks = (value - range.lowerBound) / range.step;
-	const rounded = Math.abs(ticks - Math.round(ticks)) < 1e-9 ? Math.round(ticks) : Math[direction === 'down' ? 'floor' : 'ceil'](ticks);
+	const rounded =
+		Math.abs(ticks - Math.round(ticks)) < 1e-9
+			? Math.round(ticks)
+			: Math[direction === 'down' ? 'floor' : 'ceil'](ticks);
 	return range.clamp(range.lowerBound + rounded * range.step);
 }
 
@@ -227,6 +230,7 @@ export function sliderTrackCssVars(values: number[], range: NumericRange): Recor
  * - `[data-ref="rangeTrack"]` — pointer target and fill geometry host. Host sets
  *   inline `--rui-slider-*` CSS variables and optional `title` when `valueTitle`.
  *   The view seeds those variables so fill and thumbs match the value before hydration.
+ *   Host sets `data-dragging` while a pointer drags so thumbs and fill skip their position transition.
  * - `[data-thumb]` — thumb buttons inside the track (`value`, `min`, or `max`).
  *   Host sets `hidden`, `disabled`, `tabindex`, `aria-label`, `aria-orientation`,
  *   `aria-valuemin`, `aria-valuemax`, `aria-valuenow`, `aria-valuetext`,
@@ -655,6 +659,7 @@ export class RuiSlider extends FormAssociatedElement {
 
 	private commit(): void {
 		const values = this.liveValues();
+		this.rangeTrack?.removeAttribute('data-dragging');
 		this.pending = null;
 		this.activeThumb = null;
 		this.activePointerId = null;
@@ -662,6 +667,7 @@ export class RuiSlider extends FormAssociatedElement {
 	}
 
 	private revert(): void {
+		this.rangeTrack?.removeAttribute('data-dragging');
 		this.pending = null;
 		this.activeThumb = null;
 		this.activePointerId = null;
@@ -692,7 +698,9 @@ export class RuiSlider extends FormAssociatedElement {
 		this.activePointerId = event.pointerId;
 		this.rangeTrack?.setPointerCapture(event.pointerId);
 		this.thumbFor(thumb)?.focus();
-		if (!fromThumb) {
+		if (fromThumb) {
+			this.rangeTrack?.setAttribute('data-dragging', '');
+		} else {
 			this.moveThumb(thumb, next);
 		}
 		event.preventDefault();
@@ -708,6 +716,7 @@ export class RuiSlider extends FormAssociatedElement {
 			return;
 		}
 
+		this.rangeTrack?.setAttribute('data-dragging', '');
 		this.moveThumb(this.activeThumb, this.valueFromPointer(event));
 	}
 

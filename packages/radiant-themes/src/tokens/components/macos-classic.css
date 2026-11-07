@@ -7,6 +7,18 @@
  */
 :root,
 :root[data-rui-theme='macos-classic'] {
+	--rui-knob-linecap: butt;
+	--press-shift: 0px;
+	--popup-enter-duration: 0ms;
+	--popup-exit-duration: 0ms;
+	--popup-scale-from: 1;
+	--popup-shift: 0px;
+	--tooltip-duration: 0ms;
+	--hover-card-enter-duration: 0ms;
+	--dialog-enter-duration: 0ms;
+	--dialog-exit-duration: 0ms;
+	--backdrop-duration: 0ms;
+	--check-duration: 0ms;
 	--font-sans: Charcoal, Geneva, 'Lucida Grande', 'Helvetica Neue', Arial, sans-serif;
 	--font-heading: Charcoal, Geneva, 'Lucida Grande', 'Helvetica Neue', Arial, sans-serif;
 	--font-mono: Monaco, Menlo, 'Courier New', monospace;
@@ -379,7 +391,8 @@
 		--rui-popover-radius: 0;
 		--rui-popover-surface: var(--macos-classic-surface);
 		--rui-popover-border-color: var(--macos-classic-dark);
-		--rui-popover-shadow: var(--macos-classic-bevel), 1px 1px 0 var(--macos-classic-dark), 3px 3px 0 rgb(0 0 0 / 0.25);
+		--rui-popover-shadow:
+			var(--macos-classic-bevel), 1px 1px 0 var(--macos-classic-dark), 3px 3px 0 rgb(0 0 0 / 0.25);
 	}
 
 	:root .rui-dialog__surface,

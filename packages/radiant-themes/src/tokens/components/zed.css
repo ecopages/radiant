@@ -1,0 +1,440 @@
+@reference 'tailwindcss';
+
+/**
+ * @remarks Zed is flat and dense: 4px controls, 6px popovers, hairline borders, 13px control text, and no heavy
+ * shadows. Hover and selection are translucent accent fills. Web fonts are named but not bundled.
+ */
+:where(:root),
+:root[data-rui-theme='zed'] {
+	--rui-knob-linecap: butt;
+	--font-sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+	--font-heading: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+	--font-mono: Lilex, 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	--rui-border-alpha: 100%;
+	--border-radius-xs: 0.125rem;
+	--border-radius-sm: 0.1875rem;
+	--border-radius-md: 0.25rem;
+	--border-radius-lg: 0.375rem;
+	--border-radius-xl: 0.5rem;
+	--border-radius-2xl: 0.75rem;
+	--border-radius-3xl: 1rem;
+	--radius-control: var(--border-radius-md);
+	--radius-container: var(--border-radius-lg);
+	--size-control-sm: 1.5rem;
+	--size-control-md: 1.75rem;
+	--size-control-lg: 2rem;
+	--text-control: 0.8125rem;
+	--space-control-x: var(--space-2);
+	--space-control-y: var(--space-1);
+	--sheen-image: none;
+}
+
+:root rui-tooltip {
+	--rui-tooltip-surface: var(--color-zed-elevated);
+	--rui-tooltip-color: var(--color-zed-text);
+	--rui-tooltip-radius: var(--border-radius-md);
+	--rui-tooltip-shadow: 0 0 0 1px var(--color-zed-border);
+}
+
+@layer components {
+	:root .rui-button {
+		@apply rounded-control border border-transparent font-medium shadow-none;
+		background-image: none;
+	}
+
+	:root .rui-button--filled {
+		@apply bg-primary text-on-primary;
+	}
+
+	:root .rui-button--filled:hover:not(:disabled) {
+		background-color: var(--color-zed-accent-hover);
+		color: var(--on-primary);
+	}
+
+	:root .rui-button--outline {
+		@apply bg-transparent text-on-surface shadow-none;
+		border-color: var(--rui-control-border-color);
+	}
+
+	:root .rui-button--outline:hover:not(:disabled),
+	:root .rui-button--ghost:hover:not(:disabled) {
+		background-color: var(--color-zed-hover);
+	}
+
+	:root .rui-button--outline:active:not(:disabled),
+	:root .rui-button--ghost:active:not(:disabled) {
+		background-color: var(--color-zed-selected);
+	}
+
+	:root .rui-button:focus-visible,
+	:root .rui-tabs__tab:focus-visible {
+		outline: 1px solid var(--focus-ring);
+		outline-offset: 2px;
+		--tw-ring-shadow: 0 0 #0000;
+		--tw-ring-offset-shadow: 0 0 #0000;
+	}
+
+	:root .rui-input,
+	:root .rui-textarea,
+	:root .rui-autocomplete__input,
+	:root .rui-combobox__control,
+	:root .rui-date-field__group,
+	:root .rui-date-range-picker__group,
+	:root .rui-input-group,
+	:root .rui-number-field__group,
+	:root rui-date-input:where(:not([data-date-field-input], [data-range-start], [data-range-end])),
+	:root .rui-select__control {
+		@apply rounded-control border bg-surface-container-low text-on-surface shadow-none;
+		border-color: var(--rui-control-border-color);
+	}
+
+	:root .rui-input:hover:not(:disabled),
+	:root .rui-textarea:hover:not(:disabled),
+	:root .rui-select__control:hover:not(:disabled) {
+		border-color: var(--rui-border-hover-color);
+	}
+
+	:root .rui-input:focus-visible,
+	:root .rui-textarea:focus-visible,
+	:root .rui-combobox__control:focus-within,
+	:root .rui-number-field__group:focus-within,
+	:root .rui-input-group:focus-within,
+	:root .rui-select__control:focus-within {
+		border-color: var(--focus-ring);
+		outline: 1px solid var(--focus-ring);
+		outline-offset: 0;
+		--tw-ring-shadow: 0 0 #0000;
+		--tw-ring-offset-shadow: 0 0 #0000;
+	}
+
+	:root .rui-input-group .rui-input:focus-visible {
+		outline: none;
+	}
+
+	:root .rui-checkbox__control,
+	:root .rui-radio__control {
+		@apply bg-surface-container-low;
+		border-color: var(--rui-control-border-color);
+	}
+
+	:root .rui-checkbox__control {
+		@apply rounded-sm;
+	}
+
+	:root .rui-badge {
+		@apply rounded-sm;
+	}
+
+	:root .rui-dialog__surface,
+	:root .rui-hover-card__content,
+	:root .rui-calendar,
+	:root rui-tabs[variant='boxed'] {
+		@apply rounded-container border border-border bg-surface-container text-on-surface shadow-none;
+	}
+
+	:root .rui-dialog__surface {
+		box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
+	}
+
+	:root .rui-popover {
+		--rui-popover-radius: var(--radius-container);
+		--rui-popover-surface: var(--color-zed-panel);
+		--rui-popover-border-color: var(--color-zed-border);
+		--rui-popover-shadow: 0 4px 12px rgb(0 0 0 / 0.14);
+	}
+
+	:root .rui-menu-button__menu,
+	:root .rui-menubar__menu,
+	:root .rui-select__listbox,
+	:root .rui-combobox__listbox {
+		@apply rounded-container border border-border p-1 text-on-surface;
+		background-color: var(--color-zed-panel);
+		box-shadow: 0 4px 12px rgb(0 0 0 / 0.14);
+	}
+
+	:root .rui-select__listbox .rui-listbox,
+	:root .rui-combobox__listbox .rui-listbox {
+		@apply bg-transparent p-0;
+	}
+
+	:root .rui-listbox__option,
+	:root .rui-menu-button__item,
+	:root .rui-menubar__menu-item {
+		@apply rounded-control;
+	}
+
+	:root .rui-listbox__option:hover:not([aria-disabled='true']),
+	:root .rui-listbox__option[data-active]:not([aria-disabled='true']),
+	:root .rui-menu-button__item:hover:not([aria-checked='true']):not([aria-disabled='true']),
+	:root .rui-menubar__menu-item:hover:not([aria-expanded='true']):not([aria-disabled='true']) {
+		background-color: var(--color-zed-hover);
+	}
+
+	:root .rui-listbox__option[aria-selected='true']:not([aria-disabled='true']),
+	:root .rui-listbox__option[aria-selected='true']:focus-visible,
+	:root .rui-menu-button__item[aria-checked='true'],
+	:root .rui-sidebar__menu-button[aria-current='page'],
+	:root .rui-sidebar__menu-button--active {
+		background-color: var(--color-zed-selected);
+		background-image: none;
+		color: var(--color-zed-text);
+	}
+
+	:root .rui-listbox__option[aria-selected='true'] .rui-listbox__option-indicator {
+		color: var(--color-zed-accent-text);
+	}
+
+	:root .rui-listbox__option[aria-selected='true'][data-active]:not([aria-disabled='true']) {
+		--tw-ring-color: transparent;
+	}
+
+	/**
+	 * @remarks Boxed tabs follow Zed's editor tabs: a panel-colored strip, a flat inactive tab, and an active tab on the
+	 * editor background.
+	 */
+	:root rui-tabs[variant='boxed'] .rui-tabs__list {
+		@apply gap-0 border-b border-border p-0;
+		background-color: var(--color-zed-panel);
+	}
+
+	:root rui-tabs[variant='boxed'] .rui-tabs__tab {
+		@apply relative rounded-none border-0 border-r border-border font-normal;
+		margin-bottom: -1px;
+		background-color: transparent;
+		color: var(--color-zed-text-muted);
+		transition: none;
+	}
+
+	:root rui-tabs[variant='boxed'] .rui-tabs__tab[aria-selected='true'] {
+		background-color: var(--color-zed-background);
+		color: var(--color-zed-text);
+	}
+
+	:root rui-tabs[variant='boxed'] .rui-tabs__panel {
+		background-color: var(--color-zed-background);
+	}
+
+	:root .rui-button--sm,
+	:root .rui-button--md,
+	:root .rui-button--lg {
+		font-size: var(--text-control);
+	}
+
+	:root .rui-button--md,
+	:root .rui-button--lg {
+		padding-inline: var(--space-control-x);
+	}
+
+	:root .rui-button--filled,
+	:root .rui-button--destructive {
+		@apply font-medium;
+	}
+
+	:root .rui-button--outline,
+	:root .rui-button--ghost {
+		@apply font-normal;
+	}
+
+	/**
+	 * @remarks Pagination, toolbars and button groups are rows of ghost and outline buttons. The current page and a
+	 * pressed toggle use the selected fill instead of a solid accent.
+	 */
+	:root .rui-pagination__list {
+		@apply gap-0.5;
+	}
+
+	:root .rui-pagination__link[aria-current='page'],
+	:root .rui-toolbar .rui-button[aria-pressed='true'] {
+		background-color: var(--color-zed-selected);
+		border-color: transparent;
+		color: var(--color-zed-text);
+		box-shadow: none;
+		--tw-ring-shadow: 0 0 #0000;
+	}
+
+	:root .rui-pagination__ellipsis,
+	:root .rui-pagination__status-label {
+		font-size: var(--text-control);
+	}
+
+	:root .rui-button-group {
+		@apply gap-0.5;
+	}
+
+	:root .rui-toolbar,
+	:root .rui-menubar {
+		@apply gap-0.5 rounded-container border border-border p-0.5 shadow-none;
+		background-color: var(--color-zed-panel);
+	}
+
+	:root .rui-toolbar .rui-separator {
+		@apply mx-0.5 self-stretch;
+	}
+
+	:root .rui-menubar__item {
+		@apply inline-flex items-center rounded-control py-0 font-normal shadow-none;
+		height: var(--size-control-sm);
+		font-size: var(--text-control);
+	}
+
+	:root .rui-menubar__item[aria-expanded='true'] {
+		@apply font-normal shadow-none;
+		background-color: var(--color-zed-selected);
+		color: var(--color-zed-text);
+	}
+
+	:root .rui-menubar__item:focus-visible,
+	:root .rui-menubar__menu-item:focus-visible,
+	:root .rui-menu-button__item:focus-visible {
+		outline: 1px solid var(--focus-ring);
+		outline-offset: -1px;
+		--tw-ring-shadow: 0 0 #0000;
+		--tw-ring-offset-shadow: 0 0 #0000;
+	}
+
+	:root .rui-menubar__item:active:not(:disabled):not([aria-disabled='true']),
+	:root .rui-menubar__menu-item:active:not(:disabled):not([aria-disabled='true']) {
+		background-color: var(--color-zed-selected);
+	}
+
+	:root .rui-menubar__menu-item,
+	:root .rui-menu-button__item {
+		@apply py-0;
+		min-height: var(--size-control-sm);
+		font-size: var(--text-control);
+	}
+
+	:root .rui-menubar__menu-item[aria-expanded='true'] {
+		background-color: var(--color-zed-hover);
+	}
+
+	:root .rui-tabs__tab,
+	:root .rui-tabs__panel {
+		font-size: var(--text-control);
+	}
+
+	:root rui-tabs[variant='boxed'] .rui-tabs__tab {
+		@apply py-0;
+		height: var(--size-control-md);
+		font-size: var(--text-control);
+	}
+
+	/**
+	 * @remarks Tables are flat and dense like Zed's lists: 28px rows, hairline row separators, no column rules, and a
+	 * muted header on the panel color. Hover and selection use the same translucent fills as menus.
+	 */
+	:root rui-table {
+		@apply rounded-container border border-border shadow-none;
+	}
+
+	:root .rui-table {
+		font-size: var(--text-control);
+	}
+
+	:root .rui-table__column,
+	:root .rui-table__cell,
+	:root .rui-table__selection-cell,
+	:root .rui-table__empty-state,
+	:root .rui-table__empty-state-spacer {
+		@apply border-r-0 py-0 text-left;
+		height: var(--size-control-md);
+		padding-inline: var(--space-control-x);
+		border-color: var(--color-zed-border-subtle);
+		background-color: var(--color-zed-background);
+		color: var(--color-zed-text);
+	}
+
+	:root .rui-table__column {
+		@apply font-medium;
+		border-color: var(--color-zed-border);
+		background-color: var(--color-zed-panel);
+		color: var(--color-zed-text-muted);
+	}
+
+	:root .rui-table__selection-cell {
+		@apply w-8;
+	}
+
+	:root .rui-table__selection-cell rui-checkbox {
+		min-height: var(--size-control-md);
+	}
+
+	:root .rui-table__sort {
+		@apply my-0 py-0 font-medium;
+		min-height: var(--size-control-md);
+		color: inherit;
+	}
+
+	:root .rui-table__sort-indicator::before {
+		color: var(--color-zed-text-muted);
+	}
+
+	:root .rui-table__column[aria-sort='ascending'],
+	:root .rui-table__column[aria-sort='descending'] {
+		color: var(--color-zed-text);
+	}
+
+	:root .rui-table__body .rui-table__row:last-child > * {
+		@apply border-b-0;
+	}
+
+	@media (hover: hover) and (pointer: fine) {
+		:root
+			.rui-table__body
+			.rui-table__row:not([aria-disabled='true']):not(.rui-table__row--empty):hover
+			> :is(.rui-table__cell, .rui-table__selection-cell) {
+			background-color: var(--color-zed-hover);
+		}
+	}
+
+	:root .rui-table__row[aria-selected='true'] > :is(.rui-table__cell, .rui-table__selection-cell) {
+		background-color: var(--color-zed-selected);
+		color: var(--color-zed-text);
+	}
+
+	:root .rui-table__cell:focus-visible,
+	:root .rui-table__sort:focus-visible {
+		outline: 1px solid var(--focus-ring);
+		outline-offset: -1px;
+		--tw-ring-shadow: 0 0 #0000;
+		--tw-ring-offset-shadow: 0 0 #0000;
+	}
+
+	:root .rui-table__empty-state {
+		@apply py-6;
+		height: auto;
+	}
+
+	:root .rui-treegrid {
+		@apply rounded-none border-0 bg-transparent shadow-none;
+		--rui-treegrid-indent: 0.75rem;
+	}
+
+	:root .rui-treegrid__cell {
+		@apply border-0 bg-transparent px-2 py-1;
+	}
+
+	:root .rui-treegrid__row--header .rui-treegrid__cell {
+		@apply border-b border-border bg-transparent text-xs font-medium text-on-surface-container-low;
+	}
+
+	:root .rui-treegrid__row:not(.rui-treegrid__row--header):hover .rui-treegrid__cell:not([aria-selected='true']) {
+		background-color: var(--color-zed-hover);
+	}
+
+	:root .rui-treegrid__cell[aria-selected='true'] {
+		background-color: var(--color-zed-selected);
+		color: var(--color-zed-text);
+	}
+
+	:root .rui-alert,
+	:root .rui-toast {
+		@apply rounded-control shadow-none;
+		background-image: none;
+	}
+
+	:root .rui-separator,
+	:root .rui-sidebar__separator {
+		@apply bg-border;
+	}
+}

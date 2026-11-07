@@ -507,8 +507,6 @@ function isSameFieldContext(previous: FieldContextValue, next: FieldContextValue
 	);
 }
 
-
-
 declare global {
 	interface HTMLElementTagNameMap {
 		'rui-field': RuiField;

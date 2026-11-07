@@ -198,8 +198,6 @@ export class RuiCycleToggle extends RadiantElement {
 	}
 }
 
-
-
 declare global {
 	interface HTMLElementTagNameMap {
 		'rui-cycle-toggle': RuiCycleToggle;

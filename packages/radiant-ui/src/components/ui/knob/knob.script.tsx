@@ -55,7 +55,7 @@ export const KNOB_DEFAULT_VALUE = 50;
  *   set `--rui-knob-size` on the host element when `size` is set.
  * - `[data-ref="control"]` — focusable `role="slider"` button and pointer target. Host
  *   sets `aria-valuemin`, `aria-valuemax`, `aria-valuenow`, `aria-valuetext`,
- *   `aria-label`, `aria-readonly`, and `disabled`.
+ *   `aria-label`, `aria-readonly`, `disabled`, and `data-dragging` while a pointer drags.
  * - `[data-ref="track"]` — SVG circle for the unfilled arc. Host sets `r`,
  *   `stroke-width`, and `stroke-dasharray`.
  * - `[data-ref="progress"]` — SVG circle for the filled arc. Host sets `r`,
@@ -305,6 +305,7 @@ export class RuiKnob extends FormAssociatedElement {
 
 		this.activePointerId = event.pointerId;
 		this.lastEmitted = this.value;
+		control.setAttribute('data-dragging', '');
 		control.setPointerCapture(event.pointerId);
 		const rect = control.getBoundingClientRect();
 		const value = knobValueFromPointer(event.clientX, event.clientY, rect, this.numericRange);
@@ -335,6 +336,7 @@ export class RuiKnob extends FormAssociatedElement {
 		}
 
 		this.controlTarget?.releasePointerCapture(event.pointerId);
+		this.controlTarget?.removeAttribute('data-dragging');
 		this.activePointerId = null;
 	}
 
@@ -348,6 +350,7 @@ export class RuiKnob extends FormAssociatedElement {
 		if (control?.hasPointerCapture(event.pointerId)) {
 			control.releasePointerCapture(event.pointerId);
 		}
+		control?.removeAttribute('data-dragging');
 		this.activePointerId = null;
 	}
 
@@ -367,8 +370,6 @@ export class RuiKnob extends FormAssociatedElement {
 		this.commitValue(next);
 	}
 }
-
-
 
 declare global {
 	interface HTMLElementTagNameMap {

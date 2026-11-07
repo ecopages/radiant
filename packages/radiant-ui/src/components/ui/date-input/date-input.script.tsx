@@ -486,8 +486,6 @@ export class RuiDateInput extends FormAssociatedElement {
 	}
 }
 
-
-
 declare global {
 	interface HTMLElementTagNameMap {
 		'rui-date-input': RuiDateInput;

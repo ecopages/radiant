@@ -585,8 +585,6 @@ export class RuiNavigationMenu extends RadiantElement {
 	}
 }
 
-
-
 declare global {
 	interface HTMLElementTagNameMap {
 		'rui-navigation-menu': RuiNavigationMenu;

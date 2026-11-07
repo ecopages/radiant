@@ -1,4 +1,5 @@
-:where(:root), :root[data-rui-theme='vercel'] {
+:where(:root),
+:root[data-rui-theme='vercel'] {
 	--gray-50: var(--color-vercel-gray-50);
 	--gray-100: var(--color-vercel-gray-100);
 	--gray-200: var(--color-vercel-gray-200);
@@ -83,7 +84,8 @@
 	--on-background-code: var(--color-vercel-text-primary);
 }
 
-:where(.dark), :root.dark[data-rui-theme='vercel'] {
+:where(.dark),
+:root.dark[data-rui-theme='vercel'] {
 	--primary: var(--color-vercel-high-contrast-1);
 	--on-primary: var(--color-vercel-background-1);
 	--primary-light: var(--color-vercel-high-contrast-2);

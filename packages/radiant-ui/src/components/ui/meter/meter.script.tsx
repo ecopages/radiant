@@ -94,8 +94,6 @@ export class RuiMeter extends RadiantElement<RuiMeterBindings> {
 	}
 }
 
-
-
 declare global {
 	interface HTMLElementTagNameMap {
 		'rui-meter': RuiMeter;

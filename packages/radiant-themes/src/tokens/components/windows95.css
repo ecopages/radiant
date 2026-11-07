@@ -6,6 +6,18 @@
  */
 :root,
 :root[data-rui-theme='windows95'] {
+	--rui-knob-linecap: butt;
+	--press-shift: 0px;
+	--popup-enter-duration: 0ms;
+	--popup-exit-duration: 0ms;
+	--popup-scale-from: 1;
+	--popup-shift: 0px;
+	--tooltip-duration: 0ms;
+	--hover-card-enter-duration: 0ms;
+	--dialog-enter-duration: 0ms;
+	--dialog-exit-duration: 0ms;
+	--backdrop-duration: 0ms;
+	--check-duration: 0ms;
 	--font-sans: Tahoma, 'MS Sans Serif', Arial, sans-serif;
 	--font-heading: Tahoma, 'MS Sans Serif', Arial, sans-serif;
 	--font-mono: 'Lucida Console', Consolas, Menlo, Monaco, 'Courier New', monospace;
@@ -710,7 +722,10 @@
 		border: 1px solid var(--windows95-line);
 		background-color: var(--windows95-field);
 		color: var(--windows95-field-text);
-		font: 9px/7px 'MS Sans Serif', Tahoma, sans-serif;
+		font:
+			9px/7px 'MS Sans Serif',
+			Tahoma,
+			sans-serif;
 		text-align: center;
 		transform: none;
 		transition: none;

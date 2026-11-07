@@ -110,8 +110,6 @@ export class RuiToolbar extends RadiantElement {
 	}
 }
 
-
-
 declare global {
 	interface HTMLElementTagNameMap {
 		'rui-toolbar': RuiToolbar;

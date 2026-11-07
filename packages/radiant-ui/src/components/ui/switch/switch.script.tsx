@@ -103,8 +103,6 @@ export class RuiSwitch extends RadiantElement {
 	}
 }
 
-
-
 declare global {
 	interface HTMLElementTagNameMap {
 		'rui-switch': RuiSwitch;

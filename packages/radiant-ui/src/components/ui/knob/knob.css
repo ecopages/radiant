@@ -57,9 +57,30 @@ rui-knob {
 		stroke: var(--rui-knob-value-color, var(--primary));
 	}
 
+	/**
+	 * The arc ends follow `--rui-knob-linecap` (`round`, `butt` or `square`). Themes with square shapes set it on `:root`.
+	 * A radius scale of exactly 0, as the docs tuner offers, also squares the ends through the style query below.
+	 */
 	.rui-knob__track,
 	.rui-knob__progress {
-		stroke-linecap: round;
+		stroke-linecap: var(--rui-knob-linecap, round);
+	}
+
+	@container style(--rui-radius-scale: 0) {
+		.rui-knob__track,
+		.rui-knob__progress {
+			stroke-linecap: butt;
+		}
+	}
+
+	.rui-knob__progress {
+		transition: stroke-dasharray var(--duration-normal, 200ms)
+			var(--ease-out-strong, cubic-bezier(0.23, 1, 0.32, 1));
+	}
+
+	/* Set by the script while a pointer drags: the arc must track the pointer without lag. */
+	.rui-knob__control[data-dragging] .rui-knob__progress {
+		transition: none;
 	}
 
 	.rui-knob__value {

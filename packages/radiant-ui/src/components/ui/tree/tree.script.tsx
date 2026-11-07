@@ -245,8 +245,6 @@ export class RuiTree extends RadiantElement {
 	}
 }
 
-
-
 declare global {
 	interface HTMLElementTagNameMap {
 		'rui-tree': RuiTree;

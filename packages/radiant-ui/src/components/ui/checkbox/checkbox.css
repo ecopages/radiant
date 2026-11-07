@@ -18,11 +18,13 @@ rui-checkbox {
 	}
 
 	.rui-checkbox__control {
-		@apply relative size-4 shrink-0 rounded-xs border border-border bg-background;
+		@apply relative shrink-0 rounded-xs border border-border bg-background;
+		inline-size: var(--rui-choice-size, 1rem);
+		block-size: var(--rui-choice-size, 1rem);
 	}
 
 	.rui-checkbox__input:focus-visible + .rui-checkbox__control {
-		@apply ring-2 ring-focus-ring ring-offset-2;
+		@apply ring-2 ring-focus-ring ring-offset-1;
 	}
 
 	.rui-checkbox__input:checked:not(:indeterminate):not([aria-checked='mixed']) + .rui-checkbox__control {
@@ -31,10 +33,13 @@ rui-checkbox {
 
 	.rui-checkbox__input:checked:not(:indeterminate):not([aria-checked='mixed']) + .rui-checkbox__control::after {
 		content: '';
-		@apply absolute left-1/2 top-1/2 block size-2 -translate-x-1/2 -translate-y-1/2;
+		@apply absolute left-1/2 top-1/2 block -translate-x-1/2 -translate-y-1/2;
+		inline-size: calc(var(--rui-choice-size, 1rem) / 2);
+		block-size: calc(var(--rui-choice-size, 1rem) / 2);
 		background: currentColor;
 		color: var(--color-on-primary, white);
 		clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+		animation: rui-check-in var(--check-duration, 120ms) var(--ease-out-strong, cubic-bezier(0.23, 1, 0.32, 1));
 	}
 
 	:root .rui-checkbox__input:indeterminate + .rui-checkbox__control,
@@ -45,11 +50,19 @@ rui-checkbox {
 	.rui-checkbox__input:indeterminate + .rui-checkbox__control::after,
 	.rui-checkbox__input[aria-checked='mixed'] + .rui-checkbox__control::after {
 		content: '';
-		@apply absolute left-1/2 top-1/2 block h-0.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary;
+		@apply absolute left-1/2 top-1/2 block h-0.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary;
+		inline-size: calc(var(--rui-choice-size, 1rem) * 0.625);
 		clip-path: none;
 	}
 
 	.rui-checkbox__label {
 		@apply select-none;
+	}
+}
+
+@keyframes rui-check-in {
+	from {
+		opacity: 0;
+		transform: scale(0.6);
 	}
 }
