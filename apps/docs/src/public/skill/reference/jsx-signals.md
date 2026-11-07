@@ -8,24 +8,25 @@ Mount the view once and let signals carry every later change. Do not call `root.
 
 ```tsx
 /** @jsxImportSource @ecopages/jsx */
-import { computed, state, type State } from '@ecopages/signals';
-import { createRoot } from '@ecopages/jsx/client';
+import { state, type State } from '@ecopages/signals';
+import { createRoot, MapItems } from '@ecopages/jsx';
 
 type Row = { id: number; label: State<string>; cls: State<string> };
 
 const rows = state<Row[]>([]);
-const list = computed(() =>
-	rows.get().map((row) => (
-		<tr key={row.id} class={row.cls}>
-			<td>{row.id}</td>
-			<td>{row.label}</td>
-		</tr>
-	)),
-);
 
 createRoot(document.querySelector('#app') as HTMLElement).render(
 	<table>
-		<tbody>{list}</tbody>
+		<tbody>
+			<MapItems each={rows}>
+				{(row) => (
+					<tr class={row.cls}>
+						<td>{row.id}</td>
+						<td>{row.label}</td>
+					</tr>
+				)}
+			</MapItems>
+		</tbody>
 	</table>,
 );
 ```
@@ -34,10 +35,13 @@ createRoot(document.querySelector('#app') as HTMLElement).render(
 
 - A signal (anything with `get()` and `subscribe(...)`) works as a child and as any attribute value: `class`, `classes`, `attr:`, `bool:`, `prop:`, `data-*`, `aria-*`. The renderer patches only that text node or attribute.
 - In `class` and `classes`, a signal's value is normalized like a static one: a string, a list or a class map.
-- A list is a `computed` that maps a signal of rows to keyed JSX. It rebuilds only when the list signal changes; keyed rows keep their nodes.
-- Give each row the signals that change per row (label, selection class) and pass them into the row's JSX.
-- Pass the signal, never `signal.get()`, inside JSX a `computed` builds: reading a value there makes the whole list depend on it, so one row's change rebuilds every row.
-- Keep the header and other static parts out of the `computed`, so a list change rebuilds only the rows.
+- A list is `<MapItems each={rows}>{(row) => ...}</MapItems>`, or `mapItems(rows, project)` from `@ecopages/signals` outside JSX. `each` must be a signal or subscribable holding an array, not a plain array.
+- Each row renders once per item and is reused while the item stays in the list. Rows are keyed by item automatically; a row with its own `key` keeps it.
+- Give each row the signals that change per row (label, selection class) and bind them in the row's JSX. The `MapItems` callback is untracked, so reading `row.label.get()` there does not subscribe the view and the text will not update.
+- For a hand-written `computed` + `.map`, pass the signal, never `signal.get()`: reading a value there makes the whole list depend on it, and every row re-renders on each list change.
+- To skip work for unchanged rows, return the same row object; `MapItems` does this. A new object with equal values is applied in full.
+- To group several nodes under one key, use `<Fragment key={id}>`; the group moves as one entry when keyed siblings reorder.
+- Keep the header and other static parts out of the list, so a list change touches only the rows.
 - Delegate row events: one `on:click` on the list container, reading the row from `event.target.closest(...)`, instead of a handler per row.
 - For a source with its own notifications but no `get()`/`subscribe(...)`, wrap it with `createSubscribableJsxValue({ getValue, subscribe })`.
 - Install `@ecopages/signals` explicitly: `@ecopages/jsx` lists it as a peer dependency.

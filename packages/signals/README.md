@@ -18,6 +18,7 @@ This package currently provides:
 - `untrack(...)` and `peek(...)` for non-tracking reads
 - `subtle.Watcher` plus `watched` and `unwatched` hooks for low-level invalidation workflows
 - `createStore(...)` for deep reactive object and array state
+- `mapItems(...)` for derived lists that map each item once and reuse its result while it stays in the list
 - `isStore(...)` for detecting signal-backed store proxies
 - `snapshot(...)` for materializing plain nested data
 - automatic dependency discovery during `Computed` evaluation
@@ -80,6 +81,7 @@ It is best understood as proposal-aligned in its core semantics, but not yet ful
 - `watch(...)` is built on top of a computed signal plus an effect, so it inherits computed equality behavior and effect scheduling. It notifies on change, not per flush: a set followed by a set-back before the scheduler runs does not notify, and `previousValue` is the last value delivered.
 - `subtle.Watcher` reports staleness rather than recalculated values. Calling `watch(...)` is both registration and reset.
 - `createStore(...)` wraps nested plain objects and arrays, while `snapshot(...)` detaches the current plain value graph for logging, serialization, or comparison.
+- `mapItems(source, project, options?)` keeps each item's result by item identity, so only new items are projected and the others keep the same result object. `project` runs untracked, so a result that reads its item's signals does not re-map the list. A renderer such as `@ecopages/jsx` skips rows whose value is unchanged; JSX users can use `<MapItems each={list}>` instead.
 
 ## Example
 

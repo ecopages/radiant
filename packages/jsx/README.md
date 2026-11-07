@@ -333,23 +333,28 @@ Pass a signal directly, as a child or as an attribute value, when it exposes `ge
 
 ```tsx
 /** @jsxImportSource @ecopages/jsx */
-import { computed, state, type State } from '@ecopages/signals';
-import { createRoot } from '@ecopages/jsx/client';
+import { state, type State } from '@ecopages/signals';
+import { createRoot, MapItems } from '@ecopages/jsx/client';
 
 type Row = { id: number; label: State<string>; cls: State<string> };
 const rows = state<Row[]>([]);
-const list = computed(() =>
-	rows.get().map((row) => (
-		<tr key={row.id} class={row.cls}>
-			<td>{row.label}</td>
-		</tr>
-	)),
-);
 
-createRoot(document.querySelector('#app') as HTMLElement).render(<tbody>{list}</tbody>);
+createRoot(document.querySelector('#app') as HTMLElement).render(
+	<tbody>
+		<MapItems each={rows}>
+			{(row) => (
+				<tr class={row.cls}>
+					<td>{row.label}</td>
+				</tr>
+			)}
+		</MapItems>
+	</tbody>,
+);
 ```
 
-The `computed` rebuilds the rows only when `rows` changes, and keyed rows keep their nodes; a row's `label` and `cls` patch its own text and class. Pass the signal, not `signal.get()`: reading values while the `computed` builds the rows makes the list depend on every one of them. A signal works in any attribute, `class` and `classes` included, where its value is normalized like a static class value.
+`MapItems` renders each item once and reuses the row while the item stays in the list, so a swap or removal touches only the rows that moved or left. Rows without a `key` are keyed by their item. A row's `label` and `cls` patch its own text and class. The row callback is untracked: reading an item's signals there does not subscribe the view, so bind the signals in the row, as above. `each` must be a signal or subscribable holding an array. Outside JSX, `mapItems(rows, project)` from `@ecopages/signals` is the non-JSX form and returns a `Computed`. A signal works in any attribute, `class` and `classes` included, where its value is normalized like a static class value.
+
+The renderer skips a keyed row whose value is the same object it rendered last time; a new object with equal values is applied in full. `<Fragment key=...>` groups several nodes under one key, and the group moves as a unit when keyed siblings reorder.
 
 Use `createSubscribableJsxValue(...)` when a value has its own update source but does not already match that shape. Think of it as a small renderer adapter, not a separate state model.
 
@@ -910,6 +915,7 @@ For user-generated HTML, sanitize at the application boundary (or avoid `unsafeH
 Main exports:
 
 - `Fragment`
+- `MapItems`
 - `unsafeHtml`
 - `jsx`
 - `jsxs`

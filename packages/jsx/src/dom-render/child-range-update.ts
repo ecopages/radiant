@@ -245,7 +245,7 @@ function updateKeyedChildren(
 			moveRangeBefore(record.start, record.end, insertionPoint, parent);
 		}
 
-		record.mounted = updateRangeContent(record, child.value, record.mounted, rootTarget, deferredProperties);
+		updateKeyedRecord(record, child.value, rootTarget, deferredProperties);
 		insertionPoint = record.start;
 	}
 
@@ -262,6 +262,22 @@ function updateKeyedChildren(
 	}
 
 	return keyedState;
+}
+
+/**
+ * @remarks A record that receives the same value object it rendered last is left alone: a template result does not
+ * change after creation, so rendering it again would change nothing. A new object with equal values is applied in
+ * full, which re-applies property bindings and keeps controlled inputs in sync.
+ */
+function updateKeyedRecord(
+	record: MountedRangeRecord,
+	value: unknown,
+	rootTarget: HTMLElement,
+	deferredProperties: DeferredPropertyBinding[],
+): void {
+	if (record.value === value && value !== undefined) return;
+	record.mounted = updateRangeContent(record, value, record.mounted, rootTarget, deferredProperties);
+	record.value = value;
 }
 
 /**
