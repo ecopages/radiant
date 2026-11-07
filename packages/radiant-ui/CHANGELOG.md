@@ -1,5 +1,15 @@
 # @ecopages/radiant-ui
 
+## 0.3.2
+
+### Patch Changes
+
+- [#624](https://github.com/ecopages/radiant/pull/624) [`9dd78b7`](https://github.com/ecopages/radiant/commit/9dd78b7c85550a8b5c6f984dfe58d58249f826a8) Thanks [@andeeplus](https://github.com/andeeplus)! - Field controls placed as a host's slotted content are found again with Radiant 0.8.0: the field lookup reads `slottedElements` instead of the removed `getSlotElements`.
+- Updated dependencies:
+    - @ecopages/jsx@0.8.0
+    - @ecopages/radiant@0.8.0
+    - @ecopages/signals@0.8.0
+
 ## 0.3.1
 
 ### Patch Changes

@@ -37,6 +37,19 @@ console.log(parity.get());
 
 Dependencies are discovered automatically from the signals read during evaluation.
 
+## Derived Lists
+
+`mapItems(source, project)` returns a computed that maps each item of a list signal once and reuses that item's result while it stays in the list. Results are kept by item identity, so moving, removing or adding items projects only the new ones; the others keep the same result object. `project` runs untracked: the list depends on the source alone.
+
+```ts
+import { mapItems, state } from '@ecopages/signals';
+
+const rows = state([{ id: 1, label: state('first') }]);
+const labels = mapItems(rows, (row) => row.label);
+```
+
+In JSX, `<MapItems each={rows}>` from `@ecopages/jsx` is the same idea for rows; see [Signals](/docs/jsx/rendering#signals).
+
 ## Equality And Caching
 
 Both writable and computed signals support custom equality functions through options. Computed signals cache their last successful value and only publish when the exposed value actually changes under that equality function.

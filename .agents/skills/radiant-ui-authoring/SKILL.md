@@ -23,7 +23,7 @@ New or changed files under `packages/radiant-ui/src/components/ui/`. Skip for pl
 Work one component at a time. Copy a neighbor of the same **tier** (Native / Composite / Form / Shell), not a random file.
 
 1. **Classify** — Native (thin platform control), Composite (APG host), Form (field/form wiring), Shell (layout coordinator). Read Introduction.mdx before inventing a new category.
-2. **Pick a host shape** — default **View-owned Shell** (no CE `render()`, no `Bindings` generic). Use **Derived Tree** (`render()` + optional `this.$`) only when inner DOM is generated from host state (calendar grid, toaster list, TOC, meter). Never CE `render()` + `<slot>` for parent-owned chrome. Copy 1:1 field→DOM writes with `@bindTo`; keep `@onUpdated` for procedures.
+2. **Pick a host shape** — default **View-owned Shell** (no CE `render()`, no `Bindings` generic). Use **Derived Tree** (`render()` + optional `this.$`) only when inner DOM is generated from host state (calendar grid, toaster list, TOC, meter). Never CE `render()` + `this.slotted` for parent-owned chrome. Copy 1:1 field→DOM writes with `@bindTo`; keep `@onUpdated` for procedures.
 3. **Lay out files** — see [references/files.md](references/files.md).
 4. **Stamp, then query** — the view (or CE `render()` for Derived Tree) places `data-ref` / `data-*` / roles. The script queries those nodes. Never `querySelector('.rui-…')`. Prefer existing shared controllers (`MenuTreeController`, `ListboxHostController`, `ListboxPopoverBehavior`, `PopoverController`) over a one-off keyboard/popover stack.
 5. **Connect** — post-sync work in `onConnected()`, not `connectedCallback` + `queueMicrotask(sync)`. Tear down in `disconnectedCallback` what `onConnected` rebuilds.
@@ -38,7 +38,7 @@ Update the README beside the code when behavior or ownership changes.
 
 ## Invariants (do not violate)
 
-- Authored Children stay in parent JSX. No HTML `<slot>` as the JSX API.
+- Authored Children stay in parent JSX. No `slot="name"` or CE `this.slotted` as the JSX API.
 - Bindings (`this.$`) never patch parent-authored light DOM.
 - Do not bind `hidden` in the view when the CE toggles it with `@bindTo` / `toggleAttribute`. Reflected `open`: seed SSR with `hidden={open ? undefined : true}` and still sync from the host. Internal open: omit `hidden` in the view.
 - Peel view-only props; spread the rest; lock invariants after the spread (`JsxCustomElementAttributes` / `NativeInputProps` · `NativeButtonProps` for native helpers). `cx` from `@/lib/cx`. Default accessible names via `withDefaultAriaLabel`.

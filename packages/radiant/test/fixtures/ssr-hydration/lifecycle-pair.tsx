@@ -30,7 +30,7 @@ export function defineLifecycleChild(prefix: string, log: string[]): void {
 			return (
 				<div class="child">
 					<em>{this.$.flag}</em>
-					<slot />
+					{this.slotted}
 				</div>
 			);
 		}

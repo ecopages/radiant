@@ -1,5 +1,5 @@
 {
-	"extends": "../../configs/tsconfig.base.json",
+	"extends": "../../tsconfig.base.json",
 	"compilerOptions": {
 		// Environment setup & latest features
 		"lib": ["DOM", "DOM.Iterable", "ESNext"],
@@ -27,5 +27,5 @@
 
 		"types": ["node"]
 	},
-	"exclude": ["dist", "node_modules", "./test/types/custom-element-class.tsx"]
+	"exclude": ["dist", "node_modules", "./test/types/custom-element-class.tsx", "./test/types/map-items.tsx"]
 }

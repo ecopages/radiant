@@ -103,7 +103,7 @@ A decorator that copies a reactive field onto existing DOM (the host or a descen
 _Avoid_: Binding, onUpdated glue, query-and-write
 
 **Slot**:
-The projection boundary inside a render-owning Element Host that resolves either a Children Value from a JSX view or matching Authored Children and can provide fallback content when neither supplies content.
+The place in a render-owning Element Host's view where `render()` puts its slotted content (`this.slotted`): the Children Value from a JSX view, or the Authored Children it captured, with fallback content when there is none. There is one per host; named regions are properties.
 _Avoid_: internal child list, shadow-only slot, query helper
 
 **View-owned Shell**:
@@ -168,8 +168,8 @@ _Avoid_: provider, selector field, local state copy
 - A **Children Value** is JSX children a view hands to a **Render-owning Element Host**
 - A **Render-owning Element Host** can receive a **Children Value** from a JSX view or capture **Authored Children** from HTML
 - **Element Hosts** and **Controller Hosts** can work with **Authored Children** without hiding them behind **Shadow DOM** by default
-- A **Slot** resolves a **Children Value** or matching **Authored Children**
-- A **Slot** can be default or named
+- A **Slot** places a **Children Value** or captured **Authored Children**
+- A host has one **Slot**; a named region is a property, not a **Slot**
 - A **Slot** can render fallback content when neither source supplies content
 - A **View-owned Shell** keeps **Authored Children** in parent JSX instead of projecting them through a **Slot**
 - A **Derived Tree** is host-owned render output, not **Authored Children**
@@ -283,9 +283,9 @@ _Avoid_: provider, selector field, local state copy
 > **Domain expert:** "A **Binding** is the connection from a reactive runtime value to rendered output, so the DOM can update the affected part without rebuilding the whole view."
 
 > **Dev:** "What is a slot in Radiant?"
-> **Domain expert:** "A **Slot** is the projection boundary where an **Element Host** accepts a **Children Value** from a JSX view or matching **Authored Children**. It can be default or named, and it can render fallback content when neither source supplies content."
+> **Domain expert:** "A **Slot** is where a render-owning **Element Host** places `this.slotted`: the **Children Value** from a JSX view or the **Authored Children** it captured. A host has one, and `{this.slotted ?? fallback}` renders fallback content when there is none. `<slot>` is not special in JSX."
 
-> **Dev:** "Should a radiant-ui composite project chrome through `<slot>`?"
+> **Dev:** "Should a radiant-ui composite place chrome through `this.slotted`?"
 > **Domain expert:** "No. Those composites use a **View-owned Shell**. Parent JSX owns **Authored Children**; **Composition Helpers** place named regions. Keep host `render()` for a **Derived Tree** only."
 
 > **Dev:** "What is the difference between a context provider and a consumer?"
@@ -341,7 +341,7 @@ _Avoid_: provider, selector field, local state copy
 - **Attribute**, **Property**, and **Reactive Property** are distinct concepts and should not be used interchangeably
 - the root glossary can name broad concepts like decorators, but specific decorator terms should be added only when they clarify a distinct platform concept
 - **Light DOM** and **Shadow DOM** are contrasting concepts, but **Radiant** is explicitly light-DOM-first rather than neutral between them
-- **Slot** is the architectural projection boundary; `@querySlot` is a later API detail built on top of it, not a catalog JSX API
+- **Slot** is the architectural projection boundary; `this.slotted` and `this.slottedElements` are its API, not a catalog JSX API
 - In `@ecopages/radiant-ui` composites, **View-owned Shell** is the default; **Slot** remains the core projection concept for a **Render-owning Element Host**, not the public JSX API for those widgets
 - **Derived Tree** and **Composition Helper** are catalog authoring terms; they do not replace **Slot** in core Radiant
 - **Context Provider** and **Context Consumer** are architectural context terms; selector and update decorators are narrower mechanisms built on top of that relationship

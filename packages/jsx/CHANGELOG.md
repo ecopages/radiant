@@ -1,5 +1,61 @@
 # @ecopages/jsx
 
+## 0.8.0
+
+### Minor Changes
+
+- [#632](https://github.com/ecopages/radiant/pull/632) [`6e98ef9`](https://github.com/ecopages/radiant/commit/6e98ef9ffd57ce38d5d92d15ddfb0bf6576ae49e) Thanks [@andeeplus](https://github.com/andeeplus)! - `<MapItems each={signal}>{(item) => row}</MapItems>` renders each item of a list signal once and reuses that row while the item stays in the list; rows without a `key` are keyed by their item. A keyed list skips a row whose value is the same object it rendered last, while a new object with equal values is still applied in full. A lone signal in `class` binds directly, its value normalized when written.
+- [#620](https://github.com/ecopages/radiant/pull/620) [`a0e8a39`](https://github.com/ecopages/radiant/commit/a0e8a392b6c735b6c9aa2041d05d766bd77012b1) Thanks [@andeeplus](https://github.com/andeeplus)! - **Breaking:** a render-owning host places its children with `this.slotted` instead of `<slot>`. `this.slotted` holds what the parent passed and is `null` when there is none; `this.slottedElements` lists the top-level elements it rendered to. Where the children come from:
+
+    - a host created by a JSX view gets the view's children on every render;
+    - a host written in HTML captures its child nodes once, at first render, and nodes appended later are not slotted;
+    - a host inside another host's view receives them when that view hydrates.
+
+    | Before                                                 | After                                                                                           |
+    | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
+    | `<slot />` in `render()`                               | `{this.slotted}`                                                                                |
+    | `<slot>Fallback</slot>`                                | `{this.slotted ?? <p>Fallback</p>}`                                                             |
+    | `<slot name="header" />` with `slot="header"` children | a `header` property (`<x-card header={<h2 />}>`, rendered with `{this.header}`), or composition |
+    | `getSlotElements()`, `getSlotElement()`, `@querySlot`  | `this.slottedElements`                                                                          |
+    | `createQuerySlot` from `@ecopages/radiant/helpers`     | `this.slottedElements`                                                                          |
+
+    Also removed:
+
+    - named projection from HTML (`slot="name"` children);
+    - the `data-radiant-ssr="authored"` stamp;
+    - the `slot="name"` and appended-nodes development warnings;
+    - the `@ecopages/radiant/decorators/query-slot` and `@ecopages/radiant/helpers/create-query-slot` entries.
+
+    In `@ecopages/jsx`, `<slot>` is now an ordinary element, and `SlotJsxValue` and `isSlotJsxValue` are no longer exported.
+
+    A server-rendered host outside every host's view now always takes the page JSX's children when the page hydrates over it, with live bindings. It no longer keeps the server's children. The Radiant client bundle shrinks by about 3 KB raw.
+
+### Patch Changes
+
+- `class` and `attr:class` write a list or class map as class tokens, and leave the attribute off for an empty value, as a static `class` always did: a signal or `attr:class` holding `''` used to write `class=""`, and one holding a list wrote it comma-separated.
+- `forEachNormalizedAttribute` skips `children` as it skips `key`, so callers can pass JSX props as they are.
+- [#628](https://github.com/ecopages/radiant/pull/628) [`fd81dd1`](https://github.com/ecopages/radiant/commit/fd81dd1eb44f6331b81ad818dbf21b9a8c17a02f) Thanks [@andeeplus](https://github.com/andeeplus)! - A signal or subscribable in `class` or `classes` binds the class attribute live, its value normalized like a static class value (a string, a list or a class map). It was read as a class map, so `class={signal}` rendered the signal's own field names as classes.
+- [#626](https://github.com/ecopages/radiant/pull/626) [`a5d40e7`](https://github.com/ecopages/radiant/commit/a5d40e7623ac6abc1d5382854d30d1974522fd8c) Thanks [@andeeplus](https://github.com/andeeplus)! - Mounting nested JSX is faster: a template and the element templates nested in its child slots are built once per combination of shapes and then cloned whole, instead of being cloned and inserted one element at a time. Clearing or replacing every row of a keyed list empties it in one operation, and the factory no longer copies each element's props.
+- [#610](https://github.com/ecopages/radiant/pull/610) [`beb4cff`](https://github.com/ecopages/radiant/commit/beb4cffe986a86d603cf5e30c9a60b90207ecb37) Thanks [@andeeplus](https://github.com/andeeplus)! - Fix quadratic list rendering. Clearing a child range used a DOM `Range` per call, and browsers update every live `Range` on each DOM mutation until it is garbage collected, so rendering 1,000 keyed rows took about 0.9 s and 4,000 rows about 43 s in Chromium, and later renders slowed further. The nodes are now removed directly: 1,000 rows render in about 25 ms and the time grows linearly.
+
+- [#610](https://github.com/ecopages/radiant/pull/610) [`a3d2852`](https://github.com/ecopages/radiant/commit/a3d2852c20edc377f5ead4900563b96bf3048703) Thanks [@andeeplus](https://github.com/andeeplus)! - Mount templates faster on the client: each compiled template keeps a copy with its child markers already in place, so a new instance no longer replaces two comment markers per dynamic child or removes each attribute marker. Hydration is unchanged.
+
+- [#610](https://github.com/ecopages/radiant/pull/610) [`99e6652`](https://github.com/ecopages/radiant/commit/99e665216d6ce7cbb9d8a55e79e7f546be069633) Thanks [@andeeplus](https://github.com/andeeplus)! - Render faster by finding a JSX element's compiled template without building a string key on every render. Updating a 1,000-row table drops from about 15 ms to about 5 ms in Chromium, and creating 10,000 rows from about 550 ms to about 270 ms.
+
+- [#619](https://github.com/ecopages/radiant/pull/619) [`a0cefb5`](https://github.com/ecopages/radiant/commit/a0cefb5a49984adb93e8f3671717282f36e394d3) Thanks [@andeeplus](https://github.com/andeeplus)! - Render half as many DOM nodes for typical markup. Inside a native element whose children are all JSX expressions, adjacent expressions now share one empty marker node and the first and last need none, so `<td>{id}</td>` adds no marker and a four-cell row adds three instead of eight. A row of the js-framework-benchmark table drops from 30 DOM nodes to 15. Custom elements, top-level fragments and hydrated markup keep their markers.
+
+- [#610](https://github.com/ecopages/radiant/pull/610) [`bacef68`](https://github.com/ecopages/radiant/commit/bacef687e72f5e8d9f0fddcb9f48ed152ae6bcd6) Thanks [@andeeplus](https://github.com/andeeplus)! - Creating JSX inside a `computed` no longer subscribes it to the signals passed as attributes. jsx read every attribute value to decide whether it was a boolean; it now reads only standard boolean attributes. A computed row list that binds each row's class to a signal no longer re-runs when one row is selected.
+
+- [#610](https://github.com/ecopages/radiant/pull/610) [`0de8fde`](https://github.com/ecopages/radiant/commit/0de8fde6aba2ecf232feab1bd34c7713515cb2d0) Thanks [@andeeplus](https://github.com/andeeplus)! - Create a new keyed list row where it belongs instead of creating it at the end of the list and moving it, so creating or appending rows moves no nodes.
+
+- [#610](https://github.com/ecopages/radiant/pull/610) [`c3f551e`](https://github.com/ecopages/radiant/commit/c3f551e43e5ed8d1014586436ad9373d18f2963e) Thanks [@andeeplus](https://github.com/andeeplus)! - Swapping two rows of a keyed list now moves only those two rows. The renderer used to move every row between the two swapped rows to keep the order, so a swap in a 1,000-row list made about 6,000 DOM mutations and took 121 ms in the js-framework-benchmark, against 13.5 ms for vanilla JS. It now keeps the longest run of rows already in order and moves only the rest.
+
+- [#610](https://github.com/ecopages/radiant/pull/610) [`d1b6571`](https://github.com/ecopages/radiant/commit/d1b6571a9b03e4660ba6c30a9568b201e5f59e5b) Thanks [@andeeplus](https://github.com/andeeplus)! - Fix `prop:` bindings on a custom element that holds a signal child. Mounting each signal child re-applied every `prop:` binding queued so far, before the elements were in the page: on a custom element that was not upgraded yet, the write hid the class setter, so the setter never ran. It also made a list whose rows each hold a signal child quadratic (about 1.2 s of 1.4 s for 10,000 rows). Each binding is now applied once, after the DOM is in place.
+
+- [#619](https://github.com/ecopages/radiant/pull/619) [`eb9595a`](https://github.com/ecopages/radiant/commit/eb9595af17114678ec744360cfcd22ac0b647b73) Thanks [@andeeplus](https://github.com/andeeplus)! - Insert a single node directly instead of through a `DocumentFragment`. Most template instances have one root node, so creating 1,000 rows gets about 20% faster.
+- Updated dependencies []:
+    - @ecopages/signals@0.8.0
+
 ## 0.7.0
 
 ### Minor Changes

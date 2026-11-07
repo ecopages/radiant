@@ -17,7 +17,7 @@ It covers both common host styles:
 The distinction is no longer the base class. It is whether the class overrides `render()`.
 
 - If you **do not** override `render()`, the host behaves like an authored light-DOM custom element and keeps its children visible.
-- If you **do** override `render()`, Radiant enables the host render lifecycle: `update()`, `requestUpdate()`, SSR helpers, hydration, and slot projection.
+- If you **do** override `render()`, Radiant enables the host render lifecycle: `update()`, `requestUpdate()`, SSR helpers, hydration, and slotted content (`this.slotted`).
 
 It gives you one consistent host API:
 
@@ -122,7 +122,7 @@ Once `render()` is overridden, `RadiantElement` exposes the full host render lif
 - `updateComplete` to wait until the cycle, including the first connect render, finishes
 - `renderRadiantElementViewToString(host, options)` from `@ecopages/radiant/server/radiant-element-ssr` for the prepared view only
 - `hydrate()` when SSR markers exist and the explicit client hydrator is installed
-- light-DOM slot projection through literal `<slot>` tags
+- `this.slotted` to place the host's children in the view, and `this.slottedElements` to read the elements they rendered to
 
 Full host HTML (`<my-element>...</my-element>`) is produced by the server pipeline — prefer `renderComponent(...)` from `@ecopages/radiant/server/render-component`. See [Component SSR](/docs/ssr/component-ssr).
 
@@ -130,7 +130,7 @@ Full host HTML (`<my-element>...</my-element>`) is produced by the server pipeli
 
 `RadiantElement` only runs the host render lifecycle when `render()` is overridden.
 
-- The base `render()` returns `<slot />`.
+- The base `render()` is never called, so authored children stay where they are.
 - A plain `RadiantElement` instance with no override keeps authored children visible and does not call `update()` on first connect.
 - An overridden `render()` opt-in turns the host into a JSX-owned render boundary.
 
@@ -224,7 +224,7 @@ Use these when you build host adapters, tests, or custom decorators. Prefer `@st
 - Override `render()` when the host itself should own a JSX view.
 - Skip `render()` when the host should enhance authored light DOM instead.
 - Override `onConnected()` for post-catch-up connect work; keep listeners in `connectedCallback`.
-- A render-owning host places the JSX children a view passes it with `<slot />`, and takes named regions as properties (see [Slots](/docs/components/slots)). Radiant UI keeps parent-owned children in the view shell instead.
+- A render-owning host places the JSX children a view passes it with `{this.slotted}`, and takes named regions as properties (see [Slots](/docs/components/slots)). Radiant UI keeps parent-owned children in the view shell instead.
 - Use [RadiantController](/docs/components/radiant-controller) when the DOM is authored elsewhere and a custom element wrapper would be unnecessary.
 
 ## See Also

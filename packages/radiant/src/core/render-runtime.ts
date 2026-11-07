@@ -1,10 +1,4 @@
-import {
-	hasHydrationMarkers,
-	hydrate as hydrateJsx,
-	isKeyedJsxValue,
-	render as renderJsx,
-	type JsxRenderable,
-} from '@ecopages/jsx';
+import { hasHydrationMarkers, hydrate as hydrateJsx, render as renderJsx, type JsxRenderable } from '@ecopages/jsx';
 import { isMinimalDomElement } from './minimal-dom-identity';
 import { areJsxDevWarningsEnabled } from '../helpers/dev-warnings';
 import {
@@ -13,20 +7,15 @@ import {
 	type ReactiveComputed,
 	type ReactiveWatcher,
 } from './reactivity-adapter';
-
-import { HYDRATION_ATTRIBUTE } from './hydration-codec';
 import {
-	DEFAULT_SLOT_NAME,
-	SLOT_PROJECTION_SCRIPT_ATTRIBUTE,
+	captureSlottedNodes,
 	collectAuthoredHydrationScriptMarkup,
-	captureProjectedSlotRenderables,
-	deserializeProjectedSlotRenderables,
-	isTemplateResultLike,
-	resolveSlotProjection,
-	serializeProjectedSlotRenderables,
-	takeSlotProjectionScriptPayload,
-	type ForeignSlotContentProjector,
-} from './slot-projection-runtime';
+	createSlottedBounds,
+	projectForeignSlotted,
+	serializeSlottedMarkup,
+	takeServerSlotted,
+	type ForeignSlottedProjector,
+} from './slotted-content';
 
 export type RenderRuntimeHost = HTMLElement & {
 	render(): JsxRenderable;
@@ -34,24 +23,20 @@ export type RenderRuntimeHost = HTMLElement & {
 };
 
 /**
- * Owns a render-owning host's render and the content its `<slot>` elements resolve against.
+ * Owns a render-owning host's render and its slotted content.
  *
- * @remarks Slot content has one of two sources. A host that a JSX view creates receives a Children Value
- * ({@link setChildrenValue}): `<slot />` resolves to it, named slots to their fallback, and only this host's
- * renderer touches the resulting nodes. Any other host takes its Authored Children: they are
- * captured once at first render, from the SSR slot-projection payload when present, and nodes appended to the
- * host later are projected too.
+ * @remarks Slotted content has one of two sources. A host that a JSX view creates receives the view's children on
+ * every render ({@link setSlotted}). Any other host captures its child nodes once, at first render, or adopts the
+ * slotted content the server rendered for it; nodes appended to the host later are not slotted.
  */
 export class RenderRuntime {
 	#host: RenderRuntimeHost;
-	#projectedSlotContent = new Map<string, JsxRenderable[]>();
-	#hasChildrenValue = false;
-	#childrenValue: JsxRenderable = null;
-	#childrenBounds?: [Text, Text];
-	#renderSignal?: ReactiveComputed<{ containsSlots: boolean; value: JsxRenderable }>;
+	#slotted: JsxRenderable = null;
+	#hasViewSlotted = false;
+	#capturedSlotted = false;
+	#slottedBounds?: [Text, Text];
+	#renderSignal?: ReactiveComputed<JsxRenderable>;
 	readonly #renderWatcher: ReactiveWatcher;
-	#slotProjectionObserver?: MutationObserver;
-	#slotProjectionVersion = 0;
 	#hasMounted = false;
 
 	constructor(host: RenderRuntimeHost) {
@@ -61,55 +46,65 @@ export class RenderRuntime {
 		});
 	}
 
-	get slotProjectionVersion(): number {
-		return this.#slotProjectionVersion;
-	}
-
 	/**
-	 * @remarks True after the first client `hydrate`/`render` into this host. Used to
-	 * avoid re-hydrating across disconnect/reconnect when SSR markers may still remain
-	 * under projected light-DOM content.
+	 * @remarks True after the first client `hydrate`/`render` into this host. Used to avoid re-hydrating across
+	 * disconnect/reconnect when SSR markers may still remain under slotted light-DOM content.
 	 */
 	get hasMounted(): boolean {
 		return this.#hasMounted;
 	}
 
-	/** Whether authored or persisted slot content is currently projected into this host. */
-	get hasProjectedSlotContent(): boolean {
-		this.ensureSlotProjectionState();
-		return this.#projectedSlotContent.size > 0;
+	/** Whether the host slots child nodes it captured, rather than children a view passes. */
+	get hasCapturedSlotted(): boolean {
+		this.ensureSlotted();
+		return this.#capturedSlotted && !isEmptySlotted(this.#slotted);
 	}
 
 	/**
-	 * @remarks For a host that receives a Children Value, the default slot's elements are the top-level elements
-	 * that value rendered to, and named slots are always empty. Before the first client render there are none.
+	 * The host's slotted content for its view, or `null` when there is none.
+	 *
+	 * @remarks While connected, the content is wrapped in two empty text nodes this runtime keeps, so
+	 * {@link getSlottedElements} can find what it rendered to; place it once per render. On the server, captured
+	 * content is wrapped in the comments the client adopts it by (see {@link takeServerSlotted}), and content a view
+	 * passed is returned as it is; {@link projectForeignSlotted} finds the entries of either.
 	 */
-	getSlotElements<T extends Element = Element>(name?: string): T[] {
-		if (this.#hasChildrenValue) {
-			const elements: T[] = [];
-			const [start, end] = this.#childrenBounds ?? [];
+	getSlotted(): JsxRenderable {
+		this.ensureSlotted();
 
-			if (name) {
-				return elements;
-			}
-
-			for (let node = start?.nextSibling; node && node !== end; node = node.nextSibling) {
-				if (node instanceof Element) elements.push(node as T);
-			}
-
-			return elements;
+		if (isEmptySlotted(this.#slotted)) {
+			return null;
 		}
 
-		this.ensureSlotProjectionState();
+		if (!this.#host.isConnected) {
+			if (!this.#capturedSlotted) return this.#slotted;
+			const [start, end] = createSlottedBounds();
+			return [start, this.#slotted, end];
+		}
 
-		return (this.#projectedSlotContent.get(name ?? DEFAULT_SLOT_NAME) ?? []).filter(
-			(renderable): renderable is T => typeof Node !== 'undefined' && renderable instanceof Element,
-		);
+		const [start, end] = (this.#slottedBounds ??= [document.createTextNode(''), document.createTextNode('')]);
+		return [start, this.#slotted, end];
 	}
 
-	getProjectedSlotPayload(): Record<string, string[]> | undefined {
-		this.ensureSlotProjectionState();
-		return serializeProjectedSlotRenderables(this.#projectedSlotContent);
+	/** The top-level elements the slotted content rendered to; empty before the first client render. */
+	getSlottedElements<T extends Element = Element>(): T[] {
+		const elements: T[] = [];
+		const [start, end] = this.#slottedBounds ?? [];
+
+		for (let node = start?.nextSibling; node && node !== end; node = node.nextSibling) {
+			if (node instanceof Element) elements.push(node as T);
+		}
+
+		return elements;
+	}
+
+	/**
+	 * The markup of the host's captured slotted content, for a server render whose view did not place it, or
+	 * `undefined` when the host captured nothing.
+	 */
+	getSlottedMarkup(): string | undefined {
+		this.ensureSlotted();
+		if (!this.#capturedSlotted) return undefined;
+		return Array.isArray(this.#slotted) ? serializeSlottedMarkup(this.#slotted) : '';
 	}
 
 	getAuthoredHydrationScriptMarkup(): string | undefined {
@@ -124,38 +119,15 @@ export class RenderRuntime {
 		this.commit(renderJsx, renderTarget);
 	}
 
-	holdsChildrenValue(value: JsxRenderable): boolean {
-		return this.#hasChildrenValue && this.#childrenValue === value;
+	holdsSlotted(value: JsxRenderable): boolean {
+		return this.#hasViewSlotted && this.#slotted === value;
 	}
 
-	/**
-	 * Makes `value` the host's children, as a JSX view passed them. From then on the host no longer captures
-	 * or projects its DOM children.
-	 */
-	setChildrenValue(value: JsxRenderable): void {
-		this.#hasChildrenValue = true;
-		this.#childrenValue = value;
-		this.#projectedSlotContent.clear();
-
-		try {
-			if (process.env.NODE_ENV !== 'production' && areJsxDevWarningsEnabled()) {
-				warnSlotAttributeInChildren(this.#host, value);
-			}
-		} catch {}
-	}
-
-	observeSlotProjection(): void {
-		if (typeof MutationObserver === 'undefined' || this.#slotProjectionObserver || !this.#host.isConnected) {
-			return;
-		}
-
-		this.#slotProjectionObserver = new MutationObserver((records) => this.handleSlotProjectionMutations(records));
-		this.#slotProjectionObserver.observe(this.#host, { childList: true });
-	}
-
-	disconnectSlotProjectionObserver(): void {
-		this.#slotProjectionObserver?.disconnect();
-		this.#slotProjectionObserver = undefined;
+	/** Makes `value` the host's slotted content, as a JSX view passed it. From then on the host captures nothing. */
+	setSlotted(value: JsxRenderable): void {
+		this.#hasViewSlotted = true;
+		this.#capturedSlotted = false;
+		this.#slotted = value;
 	}
 
 	disconnectRenderWatcher(): void {
@@ -167,217 +139,94 @@ export class RenderRuntime {
 		this.#renderSignal = undefined;
 	}
 
-	/** @param projectForeign Passed by the server only; see {@link resolveSlotProjection}. */
-	resolveTrackedRenderOutput(projectForeign?: ForeignSlotContentProjector): {
-		containsSlots: boolean;
-		value: JsxRenderable;
-	} {
-		const nextRenderSignal = createReactiveComputed(() => this.resolveRenderOutput(projectForeign));
-		const output = nextRenderSignal.get();
+	/**
+	 * @param projectForeign Passed by the server only; see {@link projectForeignSlotted}.
+	 * @remarks Captures slotted content before every render, even one whose view does not place it yet, so a host
+	 * that shows its content only later still takes the child nodes or server content it held at first render.
+	 */
+	resolveTrackedRenderOutput(projectForeign?: ForeignSlottedProjector): { value: JsxRenderable } {
+		this.ensureSlotted();
+		const nextRenderSignal = createReactiveComputed(() => {
+			const value = this.#host.render();
+			return projectForeign ? projectForeignSlotted(value, this.getSlotted(), projectForeign) : value;
+		});
+		const value = nextRenderSignal.get();
 
-		if (!this.#host.isConnected) {
-			return output;
+		if (this.#host.isConnected) {
+			if (this.#renderSignal) {
+				this.#renderWatcher.unwatch(this.#renderSignal);
+			}
+
+			this.#renderSignal = nextRenderSignal;
+			this.#renderWatcher.watch(nextRenderSignal);
 		}
 
-		if (this.#renderSignal) {
-			this.#renderWatcher.unwatch(this.#renderSignal);
-		}
-
-		this.#renderSignal = nextRenderSignal;
-		this.#renderWatcher.watch(nextRenderSignal);
-		return output;
+		return { value };
 	}
 
 	dispose(): void {
-		this.disconnectSlotProjectionObserver();
 		this.disconnectRenderWatcher();
 	}
 
 	/**
-	 * Capture authored light-DOM slot content once, before the host's own first render.
+	 * Captures the host's child nodes as its slotted content once, before its first render.
 	 *
-	 * @remarks
-	 * Prefer the `data-radiant-slot-projection` script when present. Otherwise treat
-	 * "host has children" as authored content only while `#hasMounted` is still false —
-	 * after the first pass those children are the host's own light-DOM output and must
-	 * not be fed back in as slot content.
-	 *
-	 * `#hasMounted` alone misses SSR hydration: the host already holds its server-rendered
-	 * markup while the flag is false. Client-side, {@link hasHydrationMarkers} is the
-	 * positive signal to skip capture (authored SSR content arrives via the script above).
-	 * In the minimal SSR DOM the children *are* authored and there are no markers yet,
-	 * so the marker walk is skipped for those hosts.
+	 * @remarks Prefers the slotted content the server rendered for the host ({@link takeServerSlotted}), whose nodes
+	 * are adopted where they are. Otherwise child nodes count as slotted content only while `#hasMounted` is false:
+	 * after the first render they are the host's own output. A server-rendered host also holds its markup while the
+	 * flag is false, so {@link hasHydrationMarkers} skips capture on the client; in the minimal SSR DOM the children
+	 * are authored and carry no markers yet. A host whose view passed its children before its first render removes
+	 * the server's comments or template unread: the view's children replace that content.
 	 */
-	private ensureSlotProjectionState(): void {
-		if (this.#hasChildrenValue || this.#projectedSlotContent.size > 0) {
+	private ensureSlotted(): void {
+		if (this.#hasViewSlotted && !this.#hasMounted && this.#host.isConnected) {
+			takeServerSlotted(this.#host);
+		}
+
+		if (this.#hasViewSlotted || this.#capturedSlotted) {
 			return;
 		}
 
-		const scriptPayload = this.#host.isConnected ? takeSlotProjectionScriptPayload(this.#host) : undefined;
+		const serverSlotted = this.#host.isConnected && !this.#hasMounted ? takeServerSlotted(this.#host) : undefined;
 
-		if (typeof scriptPayload === 'string' && scriptPayload !== '') {
-			this.#projectedSlotContent = deserializeProjectedSlotRenderables(scriptPayload);
-			this.#slotProjectionVersion += 1;
+		if (serverSlotted) {
+			this.#slotted = serverSlotted;
+			this.#capturedSlotted = true;
 			return;
 		}
 
-		if (
-			!this.#hasMounted &&
-			this.#host.childNodes.length > 0 &&
-			(isMinimalDomElement(this.#host) || !hasHydrationMarkers(this.#host))
-		) {
+		if (this.holdsAuthoredChildNodes()) {
 			try {
 				if (process.env.NODE_ENV !== 'production' && areJsxDevWarningsEnabled()) {
 					warnLateDefinition(this.#host);
 				}
 			} catch {}
 
-			this.#projectedSlotContent = captureProjectedSlotRenderables(this.#host);
-			this.#slotProjectionVersion += 1;
+			this.#slotted = captureSlottedNodes(this.#host);
+			this.#capturedSlotted = true;
 		}
 	}
 
-	private handleSlotProjectionMutations(records: MutationRecord[]): void {
-		if (this.#hasChildrenValue) {
-			try {
-				if (process.env.NODE_ENV !== 'production' && areJsxDevWarningsEnabled()) {
-					warnAppendedNodes(this.#host, records);
-				}
-			} catch {}
-
-			return;
-		}
-
-		let hasProjectionChanges = false;
-
-		for (const record of records) {
-			for (const removedNode of Array.from(record.removedNodes)) {
-				if (this.removeProjectedSlotNode(removedNode)) {
-					hasProjectionChanges = true;
-				}
-			}
-
-			for (const addedNode of Array.from(record.addedNodes)) {
-				if (this.addProjectedSlotNode(addedNode)) {
-					hasProjectionChanges = true;
-				}
-			}
-		}
-
-		if (hasProjectionChanges) {
-			this.#slotProjectionVersion += 1;
-			this.#host.requestUpdate();
-		}
+	/** Whether the host's child nodes are still authored, not its own output: see {@link ensureSlotted}. */
+	private holdsAuthoredChildNodes(): boolean {
+		return (
+			!this.#hasMounted &&
+			this.#host.childNodes.length > 0 &&
+			(isMinimalDomElement(this.#host) || !hasHydrationMarkers(this.#host))
+		);
 	}
 
-	private addProjectedSlotNode(node: Node): boolean {
-		if (!this.#host.contains(node)) {
-			return false;
-		}
-
-		if (
-			node instanceof HTMLScriptElement &&
-			(node.hasAttribute(SLOT_PROJECTION_SCRIPT_ATTRIBUTE) || node.hasAttribute(HYDRATION_ATTRIBUTE))
-		) {
-			return false;
-		}
-
-		const slotName = node instanceof Element ? (node.getAttribute('slot') ?? DEFAULT_SLOT_NAME) : DEFAULT_SLOT_NAME;
-		const bucket = this.#projectedSlotContent.get(slotName);
-
-		if (bucket) {
-			if (bucket.includes(node)) {
-				return false;
-			}
-
-			bucket.push(node);
-			return true;
-		}
-
-		this.#projectedSlotContent.set(slotName, [node]);
-		return true;
-	}
-
-	/**
-	 * Remove a projected slot node from the projected slot content.
-	 *
-	 * Light-DOM render moves projected nodes under an inner wrapper; the host still
-	 * contains them, so do not drop projection entries for that repositioning.
-	 *
-	 * @param node
-	 * @returns
-	 */
-	private removeProjectedSlotNode(node: Node): boolean {
-		if (this.#host.contains(node)) {
-			return false;
-		}
-
-		for (const [slotName, bucket] of this.#projectedSlotContent.entries()) {
-			const nodeIndex = bucket.indexOf(node);
-
-			if (nodeIndex === -1) {
-				continue;
-			}
-
-			bucket.splice(nodeIndex, 1);
-
-			if (bucket.length === 0) {
-				this.#projectedSlotContent.delete(slotName);
-			}
-
-			return true;
-		}
-
-		return false;
-	}
-
-	/**
-	 * @remarks A host fed by a view gets a new slot projection version on every commit, since each one can
-	 * change what its children rendered to.
-	 */
 	private commit(mount: (value: JsxRenderable, target: HTMLElement) => void, renderTarget: HTMLElement): void {
-		this.disconnectSlotProjectionObserver();
-
 		try {
 			mount(this.resolveTrackedRenderOutput().value, renderTarget);
 		} finally {
 			this.#hasMounted = true;
-
-			if (this.#hasChildrenValue) {
-				this.#slotProjectionVersion += 1;
-			}
-
-			this.observeSlotProjection();
 		}
 	}
+}
 
-	/**
-	 * @remarks For a host that receives a Children Value, `<slot />` resolves to that value, or to its fallback
-	 * when the value is empty. On the client the children render between two empty text nodes this runtime keeps, so
-	 * {@link getSlotElements} can find what they rendered to.
-	 */
-	private resolveRenderOutput(projectForeign?: ForeignSlotContentProjector): {
-		containsSlots: boolean;
-		value: JsxRenderable;
-	} {
-		this.ensureSlotProjectionState();
-		const value = this.#childrenValue;
-		let content = this.#projectedSlotContent;
-
-		if (this.#hasChildrenValue && value !== null && value !== undefined && value !== '') {
-			if (this.#host.isConnected) {
-				const [start, end] = (this.#childrenBounds ??= [
-					document.createTextNode(''),
-					document.createTextNode(''),
-				]);
-				content = new Map([[DEFAULT_SLOT_NAME, [start, value, end]]]);
-			} else {
-				content = new Map([[DEFAULT_SLOT_NAME, [value]]]);
-			}
-		}
-
-		return resolveSlotProjection(this.#host.render(), content, projectForeign);
-	}
+function isEmptySlotted(value: JsxRenderable): boolean {
+	return value === null || value === undefined || value === '' || (Array.isArray(value) && value.length === 0);
 }
 
 const issuedWarnings = new Set<string>();
@@ -396,45 +245,16 @@ function warnOnce(host: HTMLElement, message: string): void {
 	}
 }
 
-/** @remarks A JSX child marked `slot="name"` still fills the default slot of a host fed by a view. */
-function warnSlotAttributeInChildren(host: HTMLElement, value: JsxRenderable): void {
-	const child = isKeyedJsxValue(value) ? value.value : value;
-
-	if (Array.isArray(child)) {
-		child.forEach((entry: JsxRenderable) => warnSlotAttributeInChildren(host, entry));
-	} else if (isTemplateResultLike(child)) {
-		const { parts, values } = child;
-		const name = values[parts.findIndex((part) => part.type === 'attribute' && part.name === 'slot')];
-
-		if (typeof name === 'string') {
-			warnOnce(
-				host,
-				`fills its default slot with a JSX child marked slot="${name}"; pass it as the ${name} property.`,
-			);
-		}
-	}
-}
-
 /**
- * @remarks The host's renderer always inserts before a range marker it keeps inside the host, so a node it
- * places never ends up last. A node appended with DOM APIs does; nodes inserted elsewhere go unreported.
- */
-function warnAppendedNodes(host: HTMLElement, records: readonly MutationRecord[]): void {
-	if (records.some((record) => Array.from(record.addedNodes).some((node) => node === host.lastChild))) {
-		warnOnce(host, 'ignores appended nodes; change its children in the parent view.');
-	}
-}
-
-/**
- * @remarks A JSX renderer leaves empty text nodes around the ranges it owns, and the HTML parser never
- * creates one, so finding one at capture means a view rendered the children before the tag was defined. The
- * server's light DOM is skipped: it builds an empty text node for an empty string child.
+ * @remarks A JSX renderer leaves empty text nodes around the ranges it owns, and the HTML parser never creates one, so
+ * finding one at capture means a view rendered the children before the tag was defined. The server's light DOM is
+ * skipped: it builds an empty text node for an empty string child.
  */
 function warnLateDefinition(host: HTMLElement): void {
 	if (
 		!isMinimalDomElement(host) &&
 		Array.from(host.childNodes).some((node) => node.nodeType === Node.TEXT_NODE && !node.textContent)
 	) {
-		warnOnce(host, 'was defined after a JSX view rendered it, so it treats its children as Authored Children.');
+		warnOnce(host, 'was defined after a JSX view rendered it, so it slots its children as captured nodes.');
 	}
 }

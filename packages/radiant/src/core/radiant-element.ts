@@ -1,7 +1,6 @@
 import {
 	CUSTOM_ELEMENT_CHILDREN_SYMBOL,
 	hasHydrationMarkers,
-	jsx,
 	type JsxRenderable,
 	type SubscribableJsxValueWithAccess,
 } from '@ecopages/jsx';
@@ -19,18 +18,14 @@ import {
 import { EventSubscriptionRegistry } from './event-subscription-registry';
 import { ReactivePropertyState } from './reactive-property-state';
 import { RenderRuntime, type RenderRuntimeHost } from './render-runtime';
-import type { ForeignSlotContentProjector } from './slot-projection-runtime';
+import type { ForeignSlottedProjector } from './slotted-content';
 import { UpdateCycle } from './update-cycle';
 import { REACTIVE_HOST, ReactiveHost, type ReactiveHostInternals } from './reactive-host';
 import type { ReactiveState } from './reactivity-contract';
 import { applyHostAttributes } from './host-attributes';
 import { runSsrPreparationCallbacks } from './ssr-preparation';
 import { isRadiantHydratorInstalled } from './radiant-hydrator-state';
-import {
-	SERVER_RENDERED_AUTHORED_STAMP,
-	SERVER_RENDERED_CHILDREN_STAMP,
-	SERVER_RENDERED_HOST_ATTRIBUTE,
-} from './server-rendered-host';
+import { SERVER_RENDERED_CHILDREN_STAMP, SERVER_RENDERED_HOST_ATTRIBUTE } from './server-rendered-host';
 import { RADIANT_ELEMENT_BRAND } from './radiant-element-brand';
 
 export type {
@@ -238,8 +233,6 @@ export class RadiantElement<Bindings extends object = {}>
 	 * hydrator is installed; cleared when the children arrive (see the children setter). The host is inert until then.
 	 */
 	private awaitsChildren = false;
-	/** Set at first connect for a host stamped {@link SERVER_RENDERED_AUTHORED_STAMP}; see the children setter. */
-	private keepsServerChildren = false;
 	/** Until the first connect sync adopts authored attributes; it can wait past the first connect. */
 	private initialSyncPending = false;
 	private readonly updateCycle: UpdateCycle;
@@ -285,7 +278,7 @@ export class RadiantElement<Bindings extends object = {}>
 	}
 
 	/**
-	 * Receives the Children Value a view passes; `<slot />` in `render()` resolves to them. Framework plumbing.
+	 * Receives the children a view passes as {@link slotted}. Framework plumbing.
 	 *
 	 * @remarks A server-rendered host whose Children Value comes from its parent's view cannot hydrate without it, so it
 	 * stays inert until it arrives here: its first connect sync (attribute adoption, `@onUpdated` callbacks,
@@ -293,24 +286,15 @@ export class RadiantElement<Bindings extends object = {}>
 	 * defined before its parent's, as when the parent's module imports it, that sync runs here, inside the parent's
 	 * hydration; otherwise the value arrives first and the sync runs at its usual time. Assigning the value the
 	 * host already holds does nothing, since hydration can assign it more than once.
-	 *
-	 * A host the server rendered with Authored Children that fill a named slot (stamped
-	 * {@link SERVER_RENDERED_AUTHORED_STAMP}) ignores
-	 * the value for its lifetime, so its named slots stay as the server rendered them: neither the value a page view
-	 * that hydrates over it passes, nor a later one, reaches it, and event bindings in those children never attach.
 	 */
 	set [CUSTOM_ELEMENT_CHILDREN_SYMBOL](value: JsxRenderable) {
-		if (this.keepsServerChildren) {
-			return;
-		}
-
 		const renderRuntime = this.getOrCreateRenderRuntime();
 
-		if (renderRuntime.holdsChildrenValue(value)) {
+		if (renderRuntime.holdsSlotted(value)) {
 			return;
 		}
 
-		renderRuntime.setChildrenValue(value);
+		renderRuntime.setSlotted(value);
 
 		if (this.awaitsChildren) {
 			this.awaitsChildren = false;
@@ -328,8 +312,8 @@ export class RadiantElement<Bindings extends object = {}>
 	 * content (for example light-DOM children its parent view authored) can rely on it. It says nothing about
 	 * whether the hydrator is installed; combine it with `hasRadiantHydrator()` when that matters. Plain-mode SSR
 	 * does not stamp hosts, so those report `false`. The attribute is removed once read, so markup copied from a
-	 * connected host does not carry it. Slot-projection payloads embed host markup as written, stamps included, so
-	 * a host the client rebuilds from a payload also reports `true`. A render-owning host in another host's view
+	 * connected host does not carry it. A host inside server-rendered slotted content keeps the server's node,
+	 * or comes from the slotted template with its stamp, so it also reports `true`. A render-owning host in another host's view
 	 * keeps its server node when that parent hydrates, so it reports `true` too; one the parent's view rebuilds
 	 * instead (its tag was defined only after the parent hydrated, or the server markup does not match the view)
 	 * is a client-made instance and reports `false`.
@@ -338,8 +322,21 @@ export class RadiantElement<Bindings extends object = {}>
 		return this.serverRendered;
 	}
 
-	public get slotProjectionVersion(): number {
-		return this.renderRuntime?.slotProjectionVersion ?? 0;
+	/**
+	 * The content the parent passed, for `render()` to place: `<section>{this.slotted}</section>`. `null` when
+	 * there is none, so `{this.slotted ?? <p>Nothing here</p>}` gives a fallback.
+	 *
+	 * @remarks A host that a JSX view creates receives the view's children on every render. A host written in HTML
+	 * captures its child nodes once, at first render; nodes appended later are not slotted. Place it once per
+	 * render: on the client the content comes wrapped in two empty text nodes that {@link slottedElements} reads.
+	 */
+	public get slotted(): JsxRenderable {
+		return this.shouldRunRenderLifecycle() ? this.getOrCreateRenderRuntime().getSlotted() : null;
+	}
+
+	/** The top-level elements {@link slotted} rendered to, for `classList`, focus or measuring; empty before the first render. */
+	public get slottedElements(): Element[] {
+		return this.renderRuntime?.getSlottedElements() ?? [];
 	}
 
 	/**
@@ -368,7 +365,6 @@ export class RadiantElement<Bindings extends object = {}>
 			const stamp = this.getAttribute(SERVER_RENDERED_HOST_ATTRIBUTE);
 			this.serverRendered = stamp !== null;
 			this.awaitsChildren = stamp === SERVER_RENDERED_CHILDREN_STAMP && isRadiantHydratorInstalled();
-			this.keepsServerChildren = stamp === SERVER_RENDERED_AUTHORED_STAMP;
 			this.initialSyncPending = true;
 			this.removeAttribute(SERVER_RENDERED_HOST_ATTRIBUTE);
 		}
@@ -404,7 +400,6 @@ export class RadiantElement<Bindings extends object = {}>
 
 			if (this.shouldRunRenderLifecycle()) {
 				const renderRuntime = this.getOrCreateRenderRuntime();
-				renderRuntime.observeSlotProjection();
 
 				if (this.needsInitialHydration(renderRuntime)) {
 					this.hydrate();
@@ -412,7 +407,7 @@ export class RadiantElement<Bindings extends object = {}>
 					if (this.updateCycle.renderPending) {
 						this.update();
 					}
-				} else if (!this.isReconnectWithLiveProjection(renderRuntime)) {
+				} else if (!this.isReconnectWithCapturedSlotted(renderRuntime)) {
 					this.update();
 				}
 			}
@@ -479,11 +474,11 @@ export class RadiantElement<Bindings extends object = {}>
 	}
 
 	/**
-	 * @remarks Already-mounted reconnects with projected slot content must keep the existing
-	 * light DOM — a fresh `update()` would re-project slots and reset scroll/input state.
+	 * @remarks Already-mounted reconnects with captured slotted nodes keep the existing light DOM, so a reconnect does
+	 * not move those nodes again and reset scroll or input state.
 	 */
-	private isReconnectWithLiveProjection(renderRuntime: RenderRuntime): boolean {
-		return renderRuntime.hasMounted && renderRuntime.hasProjectedSlotContent;
+	private isReconnectWithCapturedSlotted(renderRuntime: RenderRuntime): boolean {
+		return renderRuntime.hasMounted && renderRuntime.hasCapturedSlotted;
 	}
 
 	connectedContextCallback(_contextName: UnknownContext): void {}
@@ -493,11 +488,11 @@ export class RadiantElement<Bindings extends object = {}>
 	 * Keep the same `renderRuntime` instance across a disconnect/reconnect cycle —
 	 * only its transient observer/watcher get torn down (both reattach naturally on
 	 * the next render/hydrate). Discarding the instance here would reset its
-	 * slot-projection capture state too, and a light-DOM re-render that relocates a
+	 * slotted capture state too, and a light-DOM re-render that relocates a
 	 * still-connected descendant (removing then reinserting the same subtree) fires
 	 * this callback on that descendant without its authored content ever changing —
 	 * re-capturing at that point would treat the descendant's own already-rendered
-	 * output as fresh authored slot content.
+	 * output as fresh slotted content.
 	 */
 	disconnectedCallback() {
 		this.renderRuntime?.dispose();
@@ -546,7 +541,7 @@ export class RadiantElement<Bindings extends object = {}>
 	}
 
 	public render(): JsxRenderable {
-		return jsx('slot', {});
+		return this.slotted;
 	}
 
 	public getReactivePropDefinitions(): ReactivePropDefinition[] {
@@ -719,14 +714,6 @@ export class RadiantElement<Bindings extends object = {}>
 		return (this.querySelector(selector) as T) ?? null;
 	}
 
-	public getSlotElement<T extends Element = Element>(name?: string): T | null {
-		return (this.getSlotElements<T>(name)[0] ?? null) as T | null;
-	}
-
-	public getSlotElements<T extends Element = Element>(name?: string): T[] {
-		return this.getOrCreateRenderRuntime().getSlotElements<T>(name);
-	}
-
 	public createReactiveField<T>(propertyName: string, initialValue: T, options: ReactiveFieldOptions = {}): void {
 		this.reactiveHost.createReactiveField(propertyName, initialValue, options);
 	}
@@ -750,27 +737,23 @@ export class RadiantElement<Bindings extends object = {}>
 	}
 
 	/**
-	 * Authored Children keyed by slot name, for SSR to decide whether to emit a slot-projection payload.
+	 * The markup of captured slotted nodes, for SSR to carry them when the view did not place them.
 	 *
-	 * @remarks Undefined when this host does not own a render lifecycle. The service emits the payload script
-	 * when this is set, regardless of whether the current server-time view contains a `<slot>`.
+	 * @remarks Undefined when this host does not own a render lifecycle or slots a view's children.
 	 */
-	public getProjectedSlotPayload(): Record<string, string[]> | undefined {
+	public getSlottedMarkup(): string | undefined {
 		if (!this.shouldRunRenderLifecycle()) {
 			return undefined;
 		}
 
-		return this.getOrCreateRenderRuntime().getProjectedSlotPayload();
+		return this.getOrCreateRenderRuntime().getSlottedMarkup();
 	}
 
 	public getAuthoredHydrationScriptMarkup(): string | undefined {
 		return this.getOrCreateRenderRuntime().getAuthoredHydrationScriptMarkup();
 	}
 
-	public resolveTrackedRenderOutput(projectForeign?: ForeignSlotContentProjector): {
-		containsSlots: boolean;
-		value: JsxRenderable;
-	} {
+	public resolveTrackedRenderOutput(projectForeign?: ForeignSlottedProjector): { value: JsxRenderable } {
 		return this.getOrCreateRenderRuntime().resolveTrackedRenderOutput(projectForeign);
 	}
 

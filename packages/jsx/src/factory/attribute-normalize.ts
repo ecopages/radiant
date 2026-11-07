@@ -1,11 +1,12 @@
 import { isSignalLikeValue, isSubscribableJsxValue } from '../types/renderable-guards.ts';
+import { SUBSCRIBABLE_JSX_VALUE_SYMBOL } from '../types/renderable-types.ts';
 import { shouldUseBooleanAttributeBinding } from './binding-defaults.ts';
 
 /**
  * Iterates normalized JSX attributes and invokes `append` for each resolved name/value
  * pair. No intermediate record is created.
  *
- * @param attributes Raw JSX props object.
+ * @param attributes Raw JSX props object; `key` and `children` are skipped, so a caller can pass the props as they are.
  * @param append Callback invoked once per normalized attribute name/value pair.
  */
 export function forEachNormalizedAttribute(
@@ -13,13 +14,10 @@ export function forEachNormalizedAttribute(
 	append: (name: string, value: unknown) => void,
 ): void {
 	const classValue = normalizeMergedClassValue(attributes.class, attributes.classes);
-	const directAttributeNames = new Set<string>();
-
-	for (const name in attributes) {
-		if ((name.startsWith('aria-') || name.startsWith('data-')) && attributes[name] !== undefined) {
-			directAttributeNames.add(name);
-		}
-	}
+	const directAttributeNames =
+		attributes.data !== undefined || attributes.aria !== undefined
+			? collectDirectAttributeNames(attributes)
+			: undefined;
 
 	if (classValue !== undefined) {
 		append('class', classValue);
@@ -27,13 +25,13 @@ export function forEachNormalizedAttribute(
 
 	for (const name in attributes) {
 		const value = attributes[name];
-		if (value === undefined || name === 'key' || name === 'class' || name === 'classes') {
+		if (value === undefined || name === 'key' || name === 'children' || name === 'class' || name === 'classes') {
 			continue;
 		}
 
 		if (name === 'data' || name === 'aria') {
 			appendStructuredAttributes(name, value, (attributeName, attributeValue) => {
-				if (!directAttributeNames.has(attributeName)) {
+				if (!directAttributeNames?.has(attributeName)) {
 					append(attributeName, attributeValue);
 				}
 			});
@@ -47,6 +45,21 @@ export function forEachNormalizedAttribute(
 
 		append(name, value);
 	}
+}
+
+/**
+ * @remarks An `aria-*` or `data-*` prop written directly wins over the same name from the `aria` or `data` object.
+ */
+function collectDirectAttributeNames(attributes: Record<string, unknown>): Set<string> | undefined {
+	let names: Set<string> | undefined;
+
+	for (const name in attributes) {
+		if ((name.startsWith('aria-') || name.startsWith('data-')) && attributes[name] !== undefined) {
+			(names ??= new Set()).add(name);
+		}
+	}
+
+	return names;
 }
 
 function appendStructuredAttributes(
@@ -63,11 +76,64 @@ function appendStructuredAttributes(
 	}
 }
 
+/**
+ * @remarks A plain non-empty `class` string with no `classes` is returned as it is, skipping the token list: it is
+ * the common case, and joining one token gives the same string. A lone signal or subscribable in `class` binds as it
+ * is: {@link resolveAttributeText} normalizes each value it writes. A signal mixed with `classes`, or one in
+ * `classes`, becomes a live class value (see {@link createLiveClassValue}).
+ */
 function normalizeMergedClassValue(classValue: unknown, classesValue: unknown): unknown {
+	if (classesValue === undefined && typeof classValue === 'string') {
+		return classValue === '' ? undefined : classValue;
+	}
+
+	if (classesValue === undefined && isReactiveValue(classValue)) {
+		return classValue;
+	}
+
+	if (isReactiveValue(classValue) || isReactiveValue(classesValue)) {
+		return createLiveClassValue(classValue, classesValue);
+	}
+
+	return joinClassTokens(classValue, classesValue);
+}
+
+function joinClassTokens(classValue: unknown, classesValue: unknown): string | undefined {
 	const tokens: string[] = [];
 	appendClassTokens(tokens, classValue);
 	appendClassTokens(tokens, classesValue);
 	return tokens.length === 0 ? undefined : tokens.join(' ');
+}
+
+type ReactiveValue = ({ get(): unknown } | { getValue(): unknown }) & { subscribe(notify: () => void): () => void };
+
+function isReactiveValue(value: unknown): value is ReactiveValue {
+	return isSignalLikeValue(value) || isSubscribableJsxValue(value);
+}
+
+function readReactiveValue(value: unknown): unknown {
+	if (isSubscribableJsxValue(value)) return value.getValue();
+	return isSignalLikeValue(value) ? value.get() : value;
+}
+
+/**
+ * A subscribable class attribute value: the class tokens of `classValue` and `classesValue`, read again whenever a
+ * reactive one of them notifies.
+ *
+ * @remarks Without it a signal in `class` was read as a class map, so its field names became the classes.
+ */
+function createLiveClassValue(classValue: unknown, classesValue: unknown): unknown {
+	const sources = [classValue, classesValue].filter(isReactiveValue);
+	const getValue = () => joinClassTokens(readReactiveValue(classValue), readReactiveValue(classesValue));
+
+	return {
+		[SUBSCRIBABLE_JSX_VALUE_SYMBOL]: true,
+		getValue,
+		subscribe: (notify: (value: string | undefined) => void) => {
+			const unsubscribes = sources.map((source) => source.subscribe(() => notify(getValue())));
+			return () => unsubscribes.forEach((unsubscribe) => unsubscribe());
+		},
+	};
 }
 
 function appendClassTokens(tokens: string[], value: unknown): void {
@@ -130,7 +196,8 @@ export function serializeStyleSnapshot(value: unknown): string {
  * The text a server renderer writes for one resolved attribute value, or `undefined` when the attribute is
  * left off.
  *
- * @param name Attribute name; `style` values go through {@link serializeStyleSnapshot}.
+ * @param name Attribute name; `style` values go through {@link serializeStyleSnapshot}, and a `class` list, class map
+ * or empty string is joined into class tokens, or left off when there are none.
  * @param value Resolved (non-reactive) value.
  * @param presence Treat the attribute as boolean: a non-empty string is written as given, any other truthy value
  * yields `''` (present), and a falsy one, `''` included, `undefined`.
@@ -147,7 +214,10 @@ export function resolveAttributeText(name: string, value: unknown, presence = fa
 	if (presence || (typeof value === 'boolean' && shouldUseBooleanAttributeBinding(name)))
 		return value ? '' : undefined;
 	if (value === undefined || value === null) return undefined;
-	return name.toLowerCase() === 'style' ? serializeStyleSnapshot(value) : String(value);
+	const lowerName = name.toLowerCase();
+	if (lowerName === 'style') return serializeStyleSnapshot(value);
+	if (lowerName === 'class' && (typeof value === 'object' || value === '')) return joinClassTokens(value, undefined);
+	return String(value);
 }
 
 /**

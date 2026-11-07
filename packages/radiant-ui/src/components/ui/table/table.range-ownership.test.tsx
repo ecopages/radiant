@@ -146,7 +146,7 @@ describe('RuiTable range ownership', () => {
 		cleanup();
 	});
 
-	it('keeps the grid surface in authored JSX rather than a host slot projection', async () => {
+	it('keeps the grid surface in authored JSX rather than host slotted content', async () => {
 		const { host, cleanup } = mount(
 			<RuiTable label="Plants">
 				<RuiTableHeader>

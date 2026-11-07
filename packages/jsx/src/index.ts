@@ -15,7 +15,6 @@ export {
 	mapSubscribable,
 	type JsxFragment,
 	isKeyedJsxValue,
-	isSlotJsxValue,
 	isSubscribableJsxValue,
 } from './jsx-runtime.ts';
 
@@ -49,10 +48,10 @@ export type {
 	ServerCustomElementRenderHook,
 	ServerCustomElementRenderHookContext,
 	ServerRenderableCustomElement,
-	SlotJsxValue,
 	StylePropertyValue,
 	StyleValue,
 	SubscribableJsxValue,
 	SubscribableJsxValueWithAccess,
 	TemplateResultLike,
 } from './types/index.ts';
+export { MapItems, type MapItemsProps, type MapItemsSource } from './map-items.ts';

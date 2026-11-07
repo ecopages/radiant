@@ -83,7 +83,7 @@ export function isTrustedMarkupNode(value: unknown): value is TrustedMarkupNode 
  *
  * Allowed sources:
  * - branded nodes from `createMarkupNodeLike` / `unsafeHtml`
- * - live `Node` instances (slot projection and host passthrough)
+ * - live `Node` instances (slotted content and host passthrough)
  *
  * Plain `{ nodeType, outerHTML }` objects are rejected so accidental shapes
  * cannot bypass escaping. This is not an HTML sanitizer: callers still own

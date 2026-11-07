@@ -65,7 +65,7 @@ Choose the narrowest import path for the environment you are writing in. Prefer 
 	
 />
 
-`@ecopages/radiant` depends on `@ecopages/signals` directly, so installing it brings signals automatically. `@ecopages/jsx` declares `@ecopages/signals` as a peer dependency; install signals explicitly only when using `@ecopages/jsx` standalone with signal-backed bindings such as `mapSubscribable(...)`.
+`@ecopages/radiant` depends on `@ecopages/signals` directly, so installing it brings signals automatically. `@ecopages/jsx` declares `@ecopages/signals` as a peer dependency; install signals explicitly when using `@ecopages/jsx` standalone with signals, such as `state` and `computed` bound in JSX (see [Signals](/docs/jsx/rendering#signals)) or `mapSubscribable(...)`.
 
 ```json
 {
@@ -120,7 +120,7 @@ return (
 
 Removing a binding this way follows the normal renderer path. For attributes and event handlers, `undefined` is dropped from the next template, so changing a previously defined binding to `undefined` changes the template shape and the DOM renderer may replace the affected node rather than preserve the previous instance.
 
-Child content is different: a child expression keeps its place in the template whatever it holds. Showing, hiding or emptying a child, including a mapped list or an item in a fragment, patches that child only, and the element around it and its siblings keep their nodes. A mapped list such as `rows.map(...)` keeps its own range inside its parent, so its keyed items keep their nodes when an unkeyed item beside it comes and goes; unkeyed items are matched by position. Keys match within one list only: key the groups themselves, for example with a keyed `Fragment`, when items move between groups or a group is inserted before another. A key that appears twice in one list renders once, at its first position.
+Child content is different: a child expression keeps its place in the template whatever it holds. Showing, hiding or emptying a child, including a mapped list or an item in a fragment, patches that child only, and the element around it and its siblings keep their nodes. A mapped list such as `rows.map(...)` keeps its own range inside its parent, so its keyed items keep their nodes when an unkeyed item beside it comes and goes; unkeyed items are matched by position. Keys match within one list only: key the groups themselves, for example with a keyed `Fragment`, when items move between groups or a group is inserted before another. A key that appears twice in one list renders once, at its first position. For a list held in a signal, `<MapItems each={rows}>` renders each item once and keeps its row while the item stays in the list (see [Signals](/docs/jsx/rendering#signals)).
 
 ## Quick Start With RadiantElement
 

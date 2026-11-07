@@ -8,6 +8,7 @@ import type { TemplateResultLike } from '../types/index.ts';
 import type {
 	BindingDescriptor,
 	ChildTemplatePart,
+	ClientTemplatePart,
 	CompiledTemplate,
 	LiveTemplatePart,
 	TemplatePart,
@@ -62,9 +63,13 @@ export function getCompiledTemplate(template: TemplateResultLike): CompiledTempl
 	const blueprint = document.createElement('template');
 	blueprint.innerHTML = htmlParts.join('');
 
+	const parts = collectTemplateParts(blueprint.content, bindings, textContentBindingIndices);
+	const client = createClientContent(blueprint.content, parts);
 	const compiledTemplate = {
 		blueprint,
-		parts: collectTemplateParts(blueprint.content, bindings, textContentBindingIndices),
+		clientContent: client.content,
+		clientParts: client.parts,
+		parts,
 	};
 
 	TEMPLATE_CACHE_BY_SHAPE.set(template.shapeKey, compiledTemplate);
@@ -99,70 +104,155 @@ export function normalizeTemplateFragmentNamespaces(
 	);
 }
 
-/** Resolves blueprint part metadata into live DOM references for a freshly cloned fragment. */
+type ClientChildBounds = {
+	end: ChildNode | null;
+	owner: ParentNode | null;
+	part: ChildTemplatePart;
+	start: ChildNode | null;
+};
+
+/**
+ * Copies `content` for client mounts: attribute markers removed and child comment markers replaced by as few text
+ * markers as the slots need (see {@link CompiledTemplate.clientContent}).
+ */
+function createClientContent(
+	content: DocumentFragment,
+	parts: readonly TemplatePart[],
+): { content: DocumentFragment; parts: ClientTemplatePart[] } {
+	const clientContent = content.cloneNode(true) as DocumentFragment;
+	const childParts = parts.filter((part): part is ChildTemplatePart => part.type === 'child');
+	const comments = new Map<Node, ChildTemplatePart>();
+	const groups = new Map<ParentNode, ChildTemplatePart[]>();
+
+	for (const part of parts) {
+		if (part.type !== 'attribute') continue;
+		const element = getNodeAtPath(clientContent, part.path);
+		if (element instanceof Element) element.removeAttribute(part.markerName);
+	}
+
+	for (const part of childParts) {
+		const startNode = getNodeAtPath(clientContent, part.startPath);
+		const endNode = getNodeAtPath(clientContent, part.endPath);
+		if (!startNode || !endNode || !startNode.parentNode) continue;
+		comments.set(startNode, part);
+		comments.set(endNode, part);
+		const group = groups.get(startNode.parentNode) ?? [];
+		group.push(part);
+		groups.set(startNode.parentNode, group);
+	}
+
+	const bounds = new Map<ChildTemplatePart, ClientChildBounds>();
+
+	for (const [parent, group] of groups) {
+		const ordered = readSlotOnlyChildren(parent, comments);
+
+		if (ordered) {
+			const markers = ordered.slice(1).map(() => createBoundaryMarker());
+			parent.replaceChildren(...markers);
+			ordered.forEach((part, index) => {
+				bounds.set(part, {
+					end: markers[index] ?? null,
+					owner: ordered.length === 1 ? parent : null,
+					part,
+					start: index > 0 ? markers[index - 1]! : null,
+				});
+			});
+			continue;
+		}
+
+		for (const part of group) {
+			const start = createBoundaryMarker();
+			const end = createBoundaryMarker();
+			(getNodeAtPath(clientContent, part.startPath) as ChildNode).replaceWith(start);
+			(getNodeAtPath(clientContent, part.endPath) as ChildNode).replaceWith(end);
+			bounds.set(part, { end, owner: null, part, start });
+		}
+	}
+
+	const clientParts = parts.map((part): ClientTemplatePart => {
+		if (part.type !== 'child') return part;
+		const bound = bounds.get(part);
+		return {
+			endPath: bound?.end ? getNodePath(clientContent, bound.end) : null,
+			index: part.index,
+			ownerPath: bound?.owner ? getNodePath(clientContent, bound.owner as Node) : null,
+			startPath: bound?.start ? getNodePath(clientContent, bound.start) : null,
+			type: 'child',
+		};
+	});
+
+	return { content: clientContent, parts: clientParts };
+}
+
+/**
+ * Returns the slots of `parent` in order when its children are only their start and end comments, in pairs.
+ *
+ * @remarks Only a native element qualifies. Slots at the top of a fragment change parent when the fragment is
+ * inserted, and a custom element may manage its own children (and Radiant reads the markers inside a host), so
+ * both keep full markers.
+ */
+function readSlotOnlyChildren(
+	parent: ParentNode,
+	comments: ReadonlyMap<Node, ChildTemplatePart>,
+): ChildTemplatePart[] | undefined {
+	if (!(parent instanceof Element) || parent.localName.includes('-') || parent.hasAttribute('is')) return undefined;
+
+	const ordered: ChildTemplatePart[] = [];
+	const nodes = parent.childNodes;
+
+	if (nodes.length === 0 || nodes.length % 2 !== 0) return undefined;
+
+	for (let index = 0; index < nodes.length; index += 2) {
+		const part = comments.get(nodes[index]!);
+		if (!part || comments.get(nodes[index + 1]!) !== part) return undefined;
+		ordered.push(part);
+	}
+
+	return ordered;
+}
+
+/** Resolves {@link CompiledTemplate.clientParts} into live DOM references for a fresh clone of `clientContent`. */
 export function createLiveTemplateParts(
 	fragment: DocumentFragment,
-	parts: readonly TemplatePart[],
+	parts: readonly ClientTemplatePart[],
 	rootTarget: HTMLElement,
 ): LiveTemplatePart[] {
 	const liveParts: LiveTemplatePart[] = [];
 
 	for (const part of parts) {
-		if (part.type === 'attribute') {
-			const targetNode = getNodeAtPath(fragment, part.path);
+		if (part.type === 'child') {
+			const start = part.startPath ? getNodeAtPath(fragment, part.startPath) : null;
+			const end = part.endPath ? getNodeAtPath(fragment, part.endPath) : null;
+			const owner = part.ownerPath ? getNodeAtPath(fragment, part.ownerPath) : null;
 
-			if (!(targetNode instanceof Element)) {
-				continue;
-			}
+			if (start === undefined || end === undefined || (!start && !end && !(owner instanceof Element))) continue;
 
-			targetNode.removeAttribute(part.markerName);
 			liveParts.push({
-				binding: part.binding,
-				element: targetNode,
+				end: end as ChildNode | null,
 				index: part.index,
-				rootTarget,
-				subscriptionSerial: 0,
-				type: 'attribute',
+				mounted: { kind: 'empty' },
+				owner: owner instanceof Element ? owner : undefined,
+				start: start as ChildNode | null,
+				type: 'child',
 			});
 			continue;
 		}
 
-		if (part.type === 'text-content') {
-			const targetNode = getNodeAtPath(fragment, part.path);
+		const element = getNodeAtPath(fragment, part.path);
+		if (!(element instanceof Element)) continue;
 
-			if (!(targetNode instanceof Element)) {
-				continue;
-			}
-
-			liveParts.push({
-				committedText: '',
-				element: targetNode,
-				index: part.index,
-				subscriptionSerial: 0,
-				type: 'text-content',
-			});
-			continue;
-		}
-
-		const startNode = getNodeAtPath(fragment, part.startPath);
-		const endNode = getNodeAtPath(fragment, part.endPath);
-
-		if (!(startNode instanceof Comment) || !(endNode instanceof Comment)) {
-			continue;
-		}
-
-		const startMarker = createBoundaryMarker();
-		const endMarker = createBoundaryMarker();
-		startNode.replaceWith(startMarker);
-		endNode.replaceWith(endMarker);
-
-		liveParts.push({
-			endMarker,
-			index: part.index,
-			mounted: { kind: 'empty' },
-			startMarker,
-			type: 'child',
-		});
+		liveParts.push(
+			part.type === 'attribute'
+				? {
+						binding: part.binding,
+						element,
+						index: part.index,
+						rootTarget,
+						subscriptionSerial: 0,
+						type: 'attribute',
+					}
+				: { committedText: '', element, index: part.index, subscriptionSerial: 0, type: 'text-content' },
+		);
 	}
 
 	return liveParts;

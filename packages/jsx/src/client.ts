@@ -10,7 +10,6 @@ export {
 	type JsxBindingSourceValue,
 	type JsxKey,
 	type KeyedJsxValue,
-	type SlotJsxValue,
 	type JsxComponent,
 	type JsxCustomElementAttributes,
 	type JsxCustomIntrinsicElements,
@@ -24,7 +23,6 @@ export {
 	type JsxPrimitive,
 	type JsxRenderable,
 	isKeyedJsxValue,
-	isSlotJsxValue,
 	isSubscribableJsxValue,
 	type SubscribableJsxValue,
 	type SubscribableJsxValueWithAccess,
@@ -34,3 +32,4 @@ export {
 export type { JSX_PROPS } from './types/index.ts';
 
 export { createRoot, hasHydrationMarkers, hydrate, render, type JsxRoot } from './dom-render.ts';
+export { MapItems, type MapItemsProps, type MapItemsSource } from './map-items.ts';

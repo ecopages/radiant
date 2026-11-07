@@ -16,7 +16,6 @@ import { contextSelector } from '../../src/context/decorators/context-selector';
 import { provideContext } from '../../src/context/decorators/provide-context';
 import { event } from '../../src/decorators/event';
 import { query } from '../../src/decorators/query';
-import { querySlot } from '../../src/decorators/query-slot';
 import { createQuery } from '../../src/helpers/create-query';
 
 const ctxA = createContext<{ count: number }>('a');
@@ -41,9 +40,6 @@ export class StandardElementInstallers extends RadiantElement {
 	@query({ ref: 'r', all: true }) q4: HTMLElement | null;
 	// @ts-expect-error all picks the field type, so it must be a literal
 	@query({ ref: 'r', all: flag }) q5: HTMLElement | null;
-
-	// @ts-expect-error not an element
-	@querySlot() s1!: string;
 
 	// @ts-expect-error the decorator installs an EventEmitter
 	@event({ name: 'x' }) e1: string;
@@ -84,9 +80,6 @@ export class StandardGenericSelector<T extends number> extends RadiantElement {
 }
 
 export class StandardControllerInstallers extends RadiantController {
-	// @ts-expect-error slot queries need a RadiantElement host
-	@querySlot() s1!: HTMLElement | null;
-
 	// @ts-expect-error a single-element query can be null
 	@query({ ref: 'r' }) q1: HTMLElement;
 }

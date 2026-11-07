@@ -295,9 +295,8 @@ These decorators are part of the `RadiantController` authoring model today:
 
 ## Element-Only Decorators
 
-These remain tied to `RadiantElement` because they depend on custom-element prop APIs or slot projection. On a `RadiantController` they are a type error:
+This remains tied to `RadiantElement` because it depends on custom-element APIs. On a `RadiantController` it is a type error:
 
-- `@querySlot(...)`
 - `@event(...)`
 
 For render-owned controller markup, prefer normal JSX bindings and direct event handlers.

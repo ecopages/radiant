@@ -232,6 +232,27 @@ Read it like this:
 - `server-render` owns HTML serialization of the same renderable values.
 - `dom-render/*` holds the browser-only internals so the public surface can stay small.
 
+Each JSX element is its own template, and a nested element is the value of its parent's child slot. A mount builds the DOM of a template and of the element templates nested in its slots once per combination of shapes, then clones it whole, so a table row and its cells cost one clone. Every nested template still owns its slot: a child that later renders a different shape replaces that slot alone, and its parent and siblings keep their nodes.
+
+### From JSX to DOM
+
+```mermaid
+flowchart TD
+	Source["JSX source"] -->|"automatic runtime (TypeScript, esbuild, Babel)"| Calls["jsx() / jsxs() calls"]
+	Calls --> Factory["createJsxElement: normalize attributes,<br/>one part per binding and per child slot"]
+	Factory --> Result["Template result:<br/>tag, parts, values, shape key"]
+	Result -->|"a nested element is<br/>the value of a child slot"| Result
+	Result --> Compile["getCompiledTemplate<br/>(once per shape key)"]
+	Compile --> Blueprint["blueprint for hydration,<br/>clientContent and clientParts for mounts"]
+	Blueprint --> Tree["getTemplateTree<br/>(once per namespace and combination of nested shapes)"]
+	Tree --> Mount["instantiateTemplateTree:<br/>one clone, parts bound by tree-order position"]
+	Mount --> Update["updateTemplateInstance on later renders"]
+	Update --> Attr["attribute parts:<br/>attr, bool, prop, event"]
+	Update --> Range["child ranges:<br/>text, template, keyed list, signal subscription"]
+```
+
+The factory runs on every render and produces plain objects. Everything after it is cached by shape, so a render that repeats a shape only clones and binds, and an update only walks the parts of the instances it reaches.
+
 ## Direct DOM Usage
 
 If you need app-level mounting outside a `RadiantElement`, use the DOM root helper.
@@ -308,7 +329,34 @@ sequenceDiagram
     Renderer->>Dom: patch owned child range only
 ```
 
-Pass a signal-like child value directly when it already exposes `get()` and `subscribe(...)`. Use `createSubscribableJsxValue(...)` when a child value has its own update source but does not already match that shape. Think of it as a small renderer adapter, not a separate state model.
+Pass a signal directly, as a child or as an attribute value, when it exposes `get()` and `subscribe(...)`, as `state` and `computed` from `@ecopages/signals` do. Render once and let the signals carry later changes:
+
+```tsx
+/** @jsxImportSource @ecopages/jsx */
+import { state, type State } from '@ecopages/signals';
+import { createRoot, MapItems } from '@ecopages/jsx/client';
+
+type Row = { id: number; label: State<string>; cls: State<string> };
+const rows = state<Row[]>([]);
+
+createRoot(document.querySelector('#app') as HTMLElement).render(
+	<tbody>
+		<MapItems each={rows}>
+			{(row) => (
+				<tr class={row.cls}>
+					<td>{row.label}</td>
+				</tr>
+			)}
+		</MapItems>
+	</tbody>,
+);
+```
+
+`MapItems` renders each item once and reuses the row while the item stays in the list, so a swap or removal touches only the rows that moved or left. Rows without a `key` are keyed by their item. A row's `label` and `cls` patch its own text and class. The row callback is untracked: reading an item's signals there does not subscribe the view, so bind the signals in the row, as above. `each` must be a signal or subscribable holding an array. Outside JSX, `mapItems(rows, project)` from `@ecopages/signals` is the non-JSX form and returns a `Computed`. A signal works in any attribute, `class` and `classes` included, where its value is normalized like a static class value.
+
+The renderer skips a keyed row whose value is the same object it rendered last time; a new object with equal values is applied in full. `<Fragment key=...>` groups several nodes under one key, and the group moves as a unit when keyed siblings reorder.
+
+Use `createSubscribableJsxValue(...)` when a value has its own update source but does not already match that shape. Think of it as a small renderer adapter, not a separate state model.
 
 ```tsx
 /** @jsxImportSource @ecopages/jsx */
@@ -431,6 +479,24 @@ const view = (
 
 const html = renderToString(view, { mode: 'plain' });
 const hydratedHtml = renderToString(view, { mode: 'hydrate' });
+```
+
+```mermaid
+flowchart TD
+	View["JSX view"] --> R2S["renderToString(view, { mode })"]
+	R2S --> Walk["serializeRenderable:<br/>walks template results depth first"]
+	Walk --> Kind{"element"}
+	Kind -->|"intrinsic"| Html["static strings and escaped values;<br/>hydrate mode adds data-radiant-jsx-bind-N<br/>and child-range comments"]
+	Kind -->|"custom element (tag with -)"| CE["construct it, apply attributes"]
+	CE --> Hook{"render hook installed?<br/>withServerCustomElementRenderHook"}
+	Hook -->|"yes, such as Radiant's bridge"| HookMarkup["the hook returns the host's markup;<br/>children as light DOM (renderServerLightDom)<br/>or as a value"]
+	Hook -->|"no"| Self{"renderHostToString?"}
+	Self -->|"yes"| SelfMarkup["the element serializes itself"]
+	Self -->|"no"| Fallback["authored markup,<br/>upgraded on the client"]
+	Html --> Out["HTML string"]
+	HookMarkup --> Out
+	SelfMarkup --> Out
+	Fallback --> Out
 ```
 
 Hydrated SSR adds binding markers so `hydrate(...)` can attach listeners and dynamic parts without rebuilding the existing DOM tree. A page root with no marker of its own can also reconnect when a nested element already owns its content through its own client root, such as a custom element or an island root (it hydrated or rendered itself, possibly updating since) and the page's static markup still matches; otherwise the marker requirement remains.
@@ -758,6 +824,8 @@ Use `prop:*` when the target must receive a real property value instead of a ser
 />
 ```
 
+`class` and `classes` take a string, a list or a class map. A signal or subscribable in either binds live: each change is normalized the same way and patches the attribute.
+
 ## Runtime Output Contract
 
 `jsx()` and `jsxs()` return a template result object that contains:
@@ -817,7 +885,7 @@ These surfaces emit or parse raw HTML by design. Pass only content you already t
 | Compiled JSX / template `strings[]`                                           | Static author HTML; emitted raw                                                                                                                                                                                        |
 | Transported `{ strings, values }`                                             | Only via `toTemplateResultLike(...)`; `strings` are trusted author HTML, dynamic `values` are still escaped                                                                                                            |
 | `unsafeHtml(...)` / `createMarkupNodeLike(...)`                               | Branded markup; `outerHTML` emitted and parsed raw                                                                                                                                                                     |
-| Live `Node` instances                                                         | `outerHTML` emitted raw (slot projection / host passthrough)                                                                                                                                                           |
+| Live `Node` instances                                                         | `outerHTML` emitted raw (slotted content / host passthrough)                                                                                                                                                           |
 | Custom-element `renderHostToString` / server render hooks                     | Host HTML is trusted; return branded markup via `createMarkupNodeLike(...)`                                                                                                                                            |
 | Raw-text children (`script`, `style`, `xmp`, `iframe`, `noembed`, `noframes`) | Joined before SSR escaping; in HTML only the matching `</name` is rewritten, inside `svg` or `math` the text is entity-escaped; `script` content is otherwise trusted, and JSON data in it must escape `<` as `\u003c` |
 | `prop:*` (including `prop:innerHTML`)                                         | Live property assignment; no sanitization                                                                                                                                                                              |
@@ -847,6 +915,7 @@ For user-generated HTML, sanitize at the application boundary (or avoid `unsafeH
 Main exports:
 
 - `Fragment`
+- `MapItems`
 - `unsafeHtml`
 - `jsx`
 - `jsxs`

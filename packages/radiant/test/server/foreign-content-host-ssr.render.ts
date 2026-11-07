@@ -22,7 +22,7 @@ class LightHost extends RadiantElement {}
 
 class SlotHost extends RadiantElement {
 	override render() {
-		return element('g', element('slot'));
+		return element('g', this.slotted);
 	}
 }
 
@@ -38,42 +38,36 @@ class SvgParentHost extends RadiantElement {
 	}
 }
 
-/** A light-DOM child of a host whose view places `<slot />` in `svg` or `math`; the issue's text (#505). */
+/** A light-DOM child of a host whose view places `this.slotted` in `svg` or `math`; the issue's text (#505). */
 const SLOTTED = '<img id="pwn" src="x"><b>b</b>';
 
 class SvgSlotHost extends RadiantElement {
 	override render() {
-		return element('svg', element('slot'));
+		return element('svg', this.slotted);
 	}
 }
 
 class SvgGroupSlotHost extends RadiantElement {
 	override render() {
-		return element('svg', element('g', element('slot')));
+		return element('svg', element('g', this.slotted));
 	}
 }
 
 class MathSlotHost extends RadiantElement {
 	override render() {
-		return element('math', element('slot'));
-	}
-}
-
-class SvgNamedSlotHost extends RadiantElement {
-	override render() {
-		return element('svg', jsx('slot', { name: 'x' }));
+		return element('math', this.slotted);
 	}
 }
 
 class ForeignObjectSlotHost extends RadiantElement {
 	override render() {
-		return element('svg', element('foreignObject', element('slot')));
+		return element('svg', element('foreignObject', this.slotted));
 	}
 }
 
 class DivSlotHost extends RadiantElement {
 	override render() {
-		return element('div', element('slot'));
+		return element('div', this.slotted);
 	}
 }
 
@@ -87,7 +81,6 @@ customElements.define('light-host', LightHost);
 customElements.define('svg-slot-host', SvgSlotHost);
 customElements.define('svg-g-slot-host', SvgGroupSlotHost);
 customElements.define('math-slot-host', MathSlotHost);
-customElements.define('svg-named-slot-host', SvgNamedSlotHost);
 customElements.define('foreign-object-slot-host', ForeignObjectSlotHost);
 customElements.define('div-slot-host', DivSlotHost);
 customElements.define('svg-slot-parent-host', SvgSlotParentHost);
@@ -151,12 +144,6 @@ const slotCases: ForeignCase[] = [
 		),
 	),
 	...modes.flatMap((mode): ForeignCase[] => [
-		[
-			`svg-named-slot-host slotted style into slot x, ${mode}`,
-			element('svg-named-slot-host', jsx('style', { slot: 'x', children: SLOTTED })),
-			mode,
-			'style',
-		],
 		[
 			`svg-slot-host slotted light-host with a style, ${mode}`,
 			element('svg-slot-host', element('light-host', element('style', SLOTTED))),

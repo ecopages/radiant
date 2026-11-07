@@ -40,7 +40,7 @@ describe('@customElement hostAttributes', () => {
 	});
 
 	test('a subclass inherits the base attributes and overrides them by name', () => {
-		const element = document.createElement('host-attributes-subclass-test');
+		const element = document.createElement('host-attributes-subclass-test') as HostAttributesSubclass;
 		document.body.append(element);
 
 		expect(element.getAttribute('role')).toBe('complementary');

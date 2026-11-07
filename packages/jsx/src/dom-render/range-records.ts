@@ -21,18 +21,21 @@ export function mountedContentFromNodes(nodes: readonly Node[]): MountedRangeCon
 
 /**
  * Allocates a new empty {@link MountedRangeRecord} with fresh boundary markers
- * inserted immediately before `referenceNode`.
+ * inserted immediately before `referenceNode`, or at the end of `parentNode` when it is `null`.
  *
+ * @param parentNode Parent that receives the boundary pair.
  * @param referenceNode Node before which the new boundary pair is inserted.
  */
-export function createRangeRecord(referenceNode: Text): MountedRangeRecord {
+export function createRangeRecord(parentNode: ParentNode, referenceNode: ChildNode | null): MountedRangeRecord {
 	const start = createBoundaryMarker();
 	const end = createBoundaryMarker();
-	referenceNode.before(start, end);
+	parentNode.insertBefore(start, referenceNode);
+	parentNode.insertBefore(end, referenceNode);
 	return {
 		end,
 		mounted: { kind: 'empty' },
 		start,
+		value: undefined,
 	};
 }
 
@@ -57,6 +60,7 @@ export function createHydratedRangeRecord(existingNodes: readonly Node[], refere
 			end,
 			mounted: { kind: 'empty' },
 			start,
+			value: undefined,
 		};
 	}
 
@@ -75,5 +79,6 @@ export function createHydratedRangeRecord(existingNodes: readonly Node[], refere
 		end,
 		mounted: { kind: 'empty' },
 		start,
+		value: undefined,
 	};
 }

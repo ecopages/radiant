@@ -1,10 +1,11 @@
 import type { JsxKey, KeyedJsxValue } from '../types/index.ts';
 import { isKeyedJsxValue } from '../types/renderable-guards.ts';
-import { clearRangeBetween, insertNodesBefore, moveRangeBefore } from './dom-operations.ts';
+import { clearRange, getRangeFirstNode, getRangeParent, insertIntoRange } from './child-range.ts';
+import { moveRangeBefore } from './dom-operations.ts';
 import { disposeMountedRangeContent, releaseMountedSubscription } from './mounted-disposal.ts';
 import { createRangeRecord } from './range-records.ts';
 import { getCompiledTemplate } from './template-compiler.ts';
-import { createTemplateInstance } from './template-instance.ts';
+import { createTemplateInstance, updateTemplateInstance } from './template-instance.ts';
 import {
 	canRenderAsTextNode,
 	createNodesFromValue,
@@ -19,6 +20,7 @@ import {
 	unwrapKeyedValue,
 } from './runtime-helpers.ts';
 import type {
+	ChildRange,
 	DeferredPropertyBinding,
 	MountedRangeContent,
 	MountedRangeRecord,
@@ -30,16 +32,14 @@ import type {
 } from './types.ts';
 
 /**
- * Reconciles the content between two boundary markers against the next child
- * value.
+ * Reconciles the content of a child range against the next child value.
  *
  * This is the main child-part update engine. It handles subscriptions, keyed
  * iterables, mixed iterables, nested template instances, primitive text, and
  * generic node content through a single structural state machine.
  */
 export function updateRangeContent(
-	startMarker: Text,
-	endMarker: Text,
+	range: ChildRange,
 	value: unknown,
 	current: MountedRangeContent,
 	rootTarget: HTMLElement,
@@ -50,14 +50,7 @@ export function updateRangeContent(
 		return current;
 	const currentContent = current.kind === 'subscription' ? releaseMountedSubscription(current) : current;
 	if (isReactiveChildSource(nextValue)) {
-		return mountReactiveChildSource(
-			startMarker,
-			endMarker,
-			nextValue,
-			currentContent,
-			rootTarget,
-			deferredProperties,
-		);
+		return mountReactiveChildSource(range, nextValue, currentContent, rootTarget);
 	}
 	const nextKind = classifyChildValue(nextValue);
 
@@ -68,35 +61,13 @@ export function updateRangeContent(
 			const keyedCurrent =
 				currentContent.kind === 'mixed-list' ? migrateMixedListToKeyed(currentContent) : currentContent;
 
-			return updateKeyedChildren(
-				startMarker,
-				endMarker,
-				keyedChildren,
-				keyedCurrent,
-				rootTarget,
-				deferredProperties,
-			);
+			return updateKeyedChildren(range, keyedChildren, keyedCurrent, rootTarget, deferredProperties);
 		}
 
-		return updateMixedChildren(
-			startMarker,
-			endMarker,
-			iterableChildren,
-			currentContent,
-			rootTarget,
-			deferredProperties,
-		);
+		return updateMixedChildren(range, iterableChildren, currentContent, rootTarget, deferredProperties);
 	}
 
-	return updateSingleChildContent(
-		startMarker,
-		endMarker,
-		nextValue,
-		nextKind,
-		currentContent,
-		rootTarget,
-		deferredProperties,
-	);
+	return updateSingleChildContent(range, nextValue, nextKind, currentContent, rootTarget, deferredProperties);
 }
 
 /** Keeps the keyed entries of a mixed list as a keyed list's records and removes the positional ones. */
@@ -115,8 +86,7 @@ function migrateMixedListToKeyed(current: MountedMixedList): MountedRangeContent
 }
 
 function updateSingleChildContent(
-	startMarker: Text,
-	endMarker: Text,
+	range: ChildRange,
 	nextValue: unknown,
 	nextKind: 'empty' | 'nodes' | 'template' | 'text',
 	currentContent: MountedRangeContent,
@@ -125,16 +95,16 @@ function updateSingleChildContent(
 ): MountedRangeContent {
 	if (nextKind === 'template' && isTemplateResultLike(nextValue)) {
 		if (currentContent.kind === 'template' && currentContent.instance.compiled === getCompiledTemplate(nextValue)) {
-			currentContent.instance.update(nextValue.values, deferredProperties);
+			updateTemplateInstance(currentContent.instance, nextValue.values, deferredProperties);
 			return currentContent;
 		}
 
-		const instance = createTemplateInstance(nextValue, rootTarget, deferredProperties, endMarker.parentNode);
-		return replaceMountedRangeWithTemplate(startMarker, endMarker, currentContent, instance);
+		const instance = createTemplateInstance(nextValue, rootTarget, deferredProperties, getRangeParent(range));
+		return replaceMountedRangeWithTemplate(range, currentContent, instance);
 	}
 
 	if (nextKind === 'empty') {
-		return replaceMountedRangeWithEmpty(startMarker, endMarker, currentContent);
+		return replaceMountedRangeWithEmpty(range, currentContent);
 	}
 
 	if (nextKind === 'text' && currentContent.kind === 'text') {
@@ -149,7 +119,7 @@ function updateSingleChildContent(
 
 	if (nextKind === 'text') {
 		const textNode = document.createTextNode(String(nextValue));
-		return replaceMountedRangeWithText(startMarker, endMarker, currentContent, textNode);
+		return replaceMountedRangeWithText(range, currentContent, textNode);
 	}
 
 	const nodes = createNodesFromValue(
@@ -157,9 +127,9 @@ function updateSingleChildContent(
 		rootTarget,
 		deferredProperties,
 		createTemplateInstance,
-		endMarker.parentNode,
+		getRangeParent(range),
 	);
-	return replaceMountedRangeWithNodes(startMarker, endMarker, currentContent, nodes);
+	return replaceMountedRangeWithNodes(range, currentContent, nodes);
 }
 
 /**
@@ -173,55 +143,54 @@ function classifyChildValue(value: unknown): 'empty' | 'iterable' | 'template' |
 	return canRenderAsTextNode(value) ? 'text' : 'nodes';
 }
 
-function replaceMountedRangeWithEmpty(
-	startMarker: Text,
-	endMarker: Text,
-	current: MountedRangeContent,
-): MountedRangeContent {
+function replaceMountedRangeWithEmpty(range: ChildRange, current: MountedRangeContent): MountedRangeContent {
 	disposeMountedRangeContent(current);
-	clearRangeBetween(startMarker, endMarker);
+	clearRange(range);
 	return { kind: 'empty' };
 }
 
 function replaceMountedRangeWithTemplate(
-	startMarker: Text,
-	endMarker: Text,
+	range: ChildRange,
 	current: MountedRangeContent,
 	instance: TemplateInstance,
 ): MountedRangeContent {
 	disposeMountedRangeContent(current);
-	clearRangeBetween(startMarker, endMarker);
-	insertNodesBefore(endMarker, instance.rootNodes);
+	clearRange(range);
+	insertIntoRange(range, instance.rootNodes);
 	return { instance, kind: 'template' };
 }
 
 function replaceMountedRangeWithText(
-	startMarker: Text,
-	endMarker: Text,
+	range: ChildRange,
 	current: MountedRangeContent,
 	textNode: Text,
 ): MountedRangeContent {
 	disposeMountedRangeContent(current);
-	clearRangeBetween(startMarker, endMarker);
-	insertNodesBefore(endMarker, [textNode]);
+	clearRange(range);
+	insertIntoRange(range, [textNode]);
 	return { kind: 'text', node: textNode };
 }
 
 function replaceMountedRangeWithNodes(
-	startMarker: Text,
-	endMarker: Text,
+	range: ChildRange,
 	current: MountedRangeContent,
 	nodes: readonly Node[],
 ): MountedRangeContent {
 	disposeMountedRangeContent(current);
-	clearRangeBetween(startMarker, endMarker);
-	insertNodesBefore(endMarker, nodes);
+	clearRange(range);
+	insertIntoRange(range, nodes);
 	return { kind: 'nodes', nodes };
 }
 
+/**
+ * @remarks Keeps the longest run of existing rows that are already in order and moves only the others, so swapping
+ * two rows moves two ranges rather than every row between them. The previous order is read from the DOM between the
+ * markers, so the state needs no extra field. Walks the children from last to first, placing each record before the
+ * one that follows it; a new record is created at that insertion point, so creating or appending rows moves no nodes.
+ * A key that appears twice is rendered once, at its first position.
+ */
 function updateKeyedChildren(
-	startMarker: Text,
-	endMarker: Text,
+	range: ChildRange,
 	children: readonly KeyedJsxValue[],
 	current: MountedRangeContent,
 	rootTarget: HTMLElement,
@@ -237,37 +206,46 @@ function updateKeyedChildren(
 
 	if (current.kind !== 'keyed-list') {
 		disposeMountedRangeContent(current);
-		clearRangeBetween(startMarker, endMarker);
+		clearRange(range);
 	}
 
 	const nextKeys = new Set<JsxKey>();
-	let insertionPoint: Node = endMarker;
+	const uniqueChildren: KeyedJsxValue[] = [];
 
-	for (let index = children.length - 1; index >= 0; index -= 1) {
-		const child = children[index];
-
-		if (!child) {
-			continue;
+	for (const child of children) {
+		if (child && !nextKeys.has(child.key)) {
+			nextKeys.add(child.key);
+			uniqueChildren.push(child);
 		}
+	}
 
-		nextKeys.add(child.key);
+	if (keyedState.records.size > 0 && !keepsAnyRecord(keyedState.records, nextKeys)) {
+		for (const record of keyedState.records.values()) disposeMountedRangeContent(record.mounted);
+		keyedState.records.clear();
+		clearRange(range);
+	}
 
+	const previousIndices = readKeyedOrder(range, keyedState.records);
+	const keep = markLongestIncreasingRun(uniqueChildren.map((child) => previousIndices.get(child.key) ?? -1));
+	const parent = getRangeParent(range);
+	let insertionPoint: ChildNode | null = range.end;
+
+	if (!parent) {
+		return keyedState;
+	}
+
+	for (let index = uniqueChildren.length - 1; index >= 0; index -= 1) {
+		const child = uniqueChildren[index]!;
 		let record = keyedState.records.get(child.key);
 
 		if (!record) {
-			record = createRangeRecord(endMarker);
+			record = createRangeRecord(parent, insertionPoint);
 			keyedState.records.set(child.key, record);
+		} else if (!keep[index]) {
+			moveRangeBefore(record.start, record.end, insertionPoint, parent);
 		}
 
-		moveRangeBefore(record.start, record.end, insertionPoint);
-		record.mounted = updateRangeContent(
-			record.start,
-			record.end,
-			child.value,
-			record.mounted,
-			rootTarget,
-			deferredProperties,
-		);
+		updateKeyedRecord(record, child.value, rootTarget, deferredProperties);
 		insertionPoint = record.start;
 	}
 
@@ -277,13 +255,97 @@ function updateKeyedChildren(
 		}
 
 		disposeMountedRangeContent(record.mounted);
-		clearRangeBetween(record.start, record.end);
+		clearRange(record);
 		record.start.remove();
 		record.end.remove();
 		keyedState.records.delete(key);
 	}
 
 	return keyedState;
+}
+
+/**
+ * @remarks A record that receives the same value object it rendered last is left alone: a template result does not
+ * change after creation, so rendering it again would change nothing. A new object with equal values is applied in
+ * full, which re-applies property bindings and keeps controlled inputs in sync.
+ */
+function updateKeyedRecord(
+	record: MountedRangeRecord,
+	value: unknown,
+	rootTarget: HTMLElement,
+	deferredProperties: DeferredPropertyBinding[],
+): void {
+	if (record.value === value && value !== undefined) return;
+	record.mounted = updateRangeContent(record, value, record.mounted, rootTarget, deferredProperties);
+	record.value = value;
+}
+
+/**
+ * @remarks When no record survives, as on a clear or a full replace, the caller empties the whole range at once
+ * rather than removing each record and its markers.
+ */
+function keepsAnyRecord(records: ReadonlyMap<JsxKey, MountedRangeRecord>, nextKeys: ReadonlySet<JsxKey>): boolean {
+	for (const key of records.keys()) {
+		if (nextKeys.has(key)) return true;
+	}
+	return false;
+}
+
+/** Maps each key to its record's current position within `range`. */
+function readKeyedOrder(range: ChildRange, records: ReadonlyMap<JsxKey, MountedRangeRecord>): Map<JsxKey, number> {
+	const indices = new Map<JsxKey, number>();
+
+	if (records.size === 0) {
+		return indices;
+	}
+
+	const keysByStart = new Map<Node, JsxKey>();
+	for (const [key, record] of records) keysByStart.set(record.start, key);
+
+	let position = 0;
+	for (let node = getRangeFirstNode(range); node && node !== range.end; node = node.nextSibling) {
+		const key = keysByStart.get(node);
+		if (key !== undefined) indices.set(key, position++);
+	}
+
+	return indices;
+}
+
+/**
+ * Marks the positions of one longest strictly increasing run of `values`, skipping negative entries.
+ *
+ * @remarks Patience sorting with back-pointers, `O(n log n)`. An already sorted input marks every non-negative entry.
+ */
+function markLongestIncreasingRun(values: readonly number[]): boolean[] {
+	const keep = new Array<boolean>(values.length).fill(false);
+	const tails: number[] = [];
+	const previous = new Array<number>(values.length).fill(-1);
+
+	for (let index = 0; index < values.length; index += 1) {
+		const value = values[index]!;
+
+		if (value < 0) {
+			continue;
+		}
+
+		let low = 0;
+		let high = tails.length;
+
+		while (low < high) {
+			const middle = (low + high) >> 1;
+			if (values[tails[middle]!]! < value) low = middle + 1;
+			else high = middle;
+		}
+
+		previous[index] = low > 0 ? tails[low - 1]! : -1;
+		tails[low] = index;
+	}
+
+	for (let index = tails.length > 0 ? tails[tails.length - 1]! : -1; index >= 0; index = previous[index]!) {
+		keep[index] = true;
+	}
+
+	return keep;
 }
 
 /**
@@ -294,8 +356,7 @@ function updateKeyedChildren(
  * the positional path, which updates its records in place.
  */
 function updateMixedChildren(
-	startMarker: Text,
-	endMarker: Text,
+	range: ChildRange,
 	children: readonly unknown[],
 	current: MountedRangeContent,
 	rootTarget: HTMLElement,
@@ -303,21 +364,33 @@ function updateMixedChildren(
 ): MountedMixedList {
 	if (current.kind !== 'mixed-list' && current.kind !== 'keyed-list') {
 		disposeMountedRangeContent(current);
-		clearRangeBetween(startMarker, endMarker);
+		clearRange(range);
 	}
 
 	const state: MountedMixedList = current.kind === 'mixed-list' ? current : { entries: [], kind: 'mixed-list' };
 
 	if (current.kind === 'keyed-list' || state.keyed || children.some(isKeyedJsxValue)) {
-		return updateKeyedMixedChildren(endMarker, children, current, state.entries, rootTarget, deferredProperties);
+		return updateKeyedMixedChildren(range, children, current, state.entries, rootTarget, deferredProperties);
 	}
 
 	const entries = state.entries;
-	let insertionPoint: Node = endMarker;
+	const parent = getRangeParent(range);
+	let insertionPoint: ChildNode | null = range.end;
+
+	if (!parent) {
+		return state;
+	}
 
 	for (let index = children.length - 1; index >= 0; index -= 1) {
-		const record = (entries[index] ??= { record: createRangeRecord(endMarker) }).record;
-		insertionPoint = updateRecordBefore(record, children[index], insertionPoint, rootTarget, deferredProperties);
+		const record = (entries[index] ??= { record: createRangeRecord(parent, insertionPoint) }).record;
+		insertionPoint = updateRecordBefore(
+			record,
+			children[index],
+			insertionPoint,
+			parent,
+			rootTarget,
+			deferredProperties,
+		);
 	}
 
 	while (entries.length > children.length) {
@@ -328,7 +401,7 @@ function updateMixedChildren(
 }
 
 function updateKeyedMixedChildren(
-	endMarker: Text,
+	range: ChildRange,
 	children: readonly unknown[],
 	current: MountedRangeContent,
 	previousEntries: MountedMixedListEntry[],
@@ -342,6 +415,11 @@ function updateKeyedMixedChildren(
 	const entries: MountedMixedListEntry[] = [];
 	const values: unknown[] = [];
 	const usedKeys = new Set<JsxKey>();
+	const parent = getRangeParent(range);
+
+	if (!parent) {
+		return { entries: [], keyed: false, kind: 'mixed-list' };
+	}
 
 	for (const child of children) {
 		const key = isKeyedJsxValue(child) ? child.key : undefined;
@@ -357,17 +435,18 @@ function updateKeyedMixedChildren(
 			record = keyedRecords.get(key);
 		}
 
-		entries.push({ key, record: record ?? createRangeRecord(endMarker) });
+		entries.push({ key, record: record ?? createRangeRecord(parent, range.end) });
 		values.push(child);
 	}
 
-	let insertionPoint: Node = endMarker;
+	let insertionPoint: ChildNode | null = range.end;
 
 	for (let index = entries.length - 1; index >= 0; index -= 1) {
 		insertionPoint = updateRecordBefore(
 			entries[index]!.record,
 			values[index],
 			insertionPoint,
+			parent,
 			rootTarget,
 			deferredProperties,
 		);
@@ -390,36 +469,35 @@ function updateKeyedMixedChildren(
 function updateRecordBefore(
 	record: MountedRangeRecord,
 	value: unknown,
-	insertionPoint: Node,
+	insertionPoint: ChildNode | null,
+	parent: ParentNode,
 	rootTarget: HTMLElement,
 	deferredProperties: DeferredPropertyBinding[],
-): Node {
-	moveRangeBefore(record.start, record.end, insertionPoint);
-	record.mounted = updateRangeContent(
-		record.start,
-		record.end,
-		value,
-		record.mounted,
-		rootTarget,
-		deferredProperties,
-	);
+): ChildNode {
+	moveRangeBefore(record.start, record.end, insertionPoint, parent);
+	record.mounted = updateRangeContent(record, value, record.mounted, rootTarget, deferredProperties);
 	return record.start;
 }
 
 function removeRangeRecord(record: MountedRangeRecord): void {
 	disposeMountedRangeContent(record.mounted);
-	clearRangeBetween(record.start, record.end);
+	clearRange(record);
 	record.start.remove();
 	record.end.remove();
 }
 
+/**
+ * Mounts a signal-like child source and keeps the range in sync with it.
+ *
+ * @remarks Only the source's own content is flushed here, through a local queue per value. It takes no caller queue:
+ * whoever created that queue flushes it once the DOM is in place, and flushing it here too re-applied every queued
+ * property once per signal child, so a list whose rows each hold one was quadratic.
+ */
 export function mountReactiveChildSource(
-	startMarker: Text,
-	endMarker: Text,
+	range: ChildRange,
 	source: ReactiveChildSource,
 	current: MountedRangeContent,
 	rootTarget: HTMLElement,
-	deferredProperties: DeferredPropertyBinding[],
 ): MountedSubscription {
 	const subscriptionSerial = 1;
 	const mountedSubscription: MountedSubscription = {
@@ -433,8 +511,7 @@ export function mountReactiveChildSource(
 	const applyValue = (nextValue: unknown) => {
 		const nextDeferredProperties: DeferredPropertyBinding[] = [];
 		mountedSubscription.mounted = updateRangeContent(
-			startMarker,
-			endMarker,
+			range,
 			nextValue,
 			mountedSubscription.mounted,
 			rootTarget,
@@ -452,7 +529,6 @@ export function mountReactiveChildSource(
 	});
 
 	applyValue(readReactiveChildSourceValue(source));
-	flushDeferredProperties(deferredProperties);
 
 	return mountedSubscription;
 }

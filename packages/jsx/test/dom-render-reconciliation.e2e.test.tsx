@@ -1694,18 +1694,15 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 	});
 
 	test('warns when external DOM mutation detaches renderer-managed child anchors', async () => {
-		const [{ jsx }, { createRoot }, { resetRuntimeWarningsForTests, setDevWarningsEnabled }] = await Promise.all([
-			loadJsxRuntime(),
-			loadJsxModule(),
-			loadJsxDevRuntime(),
-		]);
+		const [{ jsx, jsxs }, { createRoot }, { resetRuntimeWarningsForTests, setDevWarningsEnabled }] =
+			await Promise.all([loadJsxRuntime(), loadJsxModule(), loadJsxDevRuntime()]);
 		const container = document.createElement('div');
 		const root = createRoot(container);
 		const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
 		const renderNestedChild = (value: string) =>
-			jsx('p', {
-				children: jsx('strong', { children: value }),
+			jsxs('p', {
+				children: [jsx('strong', { children: value }), 'tail'],
 			});
 
 		root.render(renderNestedChild('alpha'));
@@ -1716,7 +1713,7 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		setDevWarningsEnabled(true);
 
 		try {
-			root.render(jsx('p', { children: 'beta' }));
+			root.render(jsxs('p', { children: ['beta', 'tail'] }));
 			expect(warnSpy).toHaveBeenCalled();
 			expect(String(warnSpy.mock.calls[0]?.[0] ?? '')).toContain(
 				'A renderer-managed DOM range was mutated outside Radiant JSX control',
@@ -1726,6 +1723,20 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 			setDevWarningsEnabled(undefined);
 			warnSpy.mockRestore();
 		}
+	});
+
+	test('a slot that is its element only child recovers after outside code replaces the element content', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+
+		root.render(jsx('p', { children: jsx('strong', { children: 'alpha' }) }));
+		const paragraph = container.querySelector('p')!;
+		paragraph.innerHTML = 'external';
+
+		root.render(jsx('p', { children: 'beta' }));
+		expect(container.querySelector('p')).toBe(paragraph);
+		expect(paragraph.innerHTML).toBe('beta');
 	});
 
 	test('hydrates adjacent attribute-only child templates without crossing sibling ranges', async () => {
@@ -2732,6 +2743,338 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 
 		set(null);
 		expect(element?.hasAttribute('inert')).toBe(false);
+	});
+
+	test('keyed rows keep their nodes and order when new keys are prepended, interleaved and appended', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const view = (keys: number[]) =>
+			jsx('ul', { children: keys.map((key) => jsx('li', { key, children: String(key) })) });
+		const items = () => [...container.querySelectorAll('li')];
+
+		root.render(view([3, 5]));
+		const [three, five] = items();
+
+		root.render(view([1, 2, 3, 4, 5, 6]));
+		expect(items().map((item) => item.textContent)).toEqual(['1', '2', '3', '4', '5', '6']);
+		expect(items()[2]).toBe(three);
+		expect(items()[4]).toBe(five);
+
+		root.render(view([6, 0, 5, 3]));
+		expect(items().map((item) => item.textContent)).toEqual(['6', '0', '5', '3']);
+		expect(items()[2]).toBe(five);
+		expect(items()[3]).toBe(three);
+	});
+
+	test('swapping two keyed rows moves only those two rows', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		document.body.append(container);
+		const root = createRoot(container);
+		const view = (keys: number[]) =>
+			jsx('table', {
+				children: jsx('tbody', { children: keys.map((key) => jsx('tr', { key, children: String(key) })) }),
+			});
+		const keys = Array.from({ length: 1000 }, (_, index) => index);
+
+		root.render(view(keys));
+		const tbody = container.querySelector('tbody')!;
+		const second = tbody.children[1];
+		const nearLast = tbody.children[998];
+		const swapped = keys.slice();
+		[swapped[1], swapped[998]] = [swapped[998]!, swapped[1]!];
+
+		const movedRows = new Set<Node>();
+		const observer = new MutationObserver((records) => {
+			for (const record of records)
+				for (const node of record.addedNodes) if (node instanceof HTMLTableRowElement) movedRows.add(node);
+		});
+		observer.observe(tbody, { childList: true });
+		root.render(view(swapped));
+		observer
+			.takeRecords()
+			.forEach((record) =>
+				record.addedNodes.forEach((node) => node instanceof HTMLTableRowElement && movedRows.add(node)),
+			);
+		observer.disconnect();
+
+		expect([...tbody.children].map((row) => row.textContent)).toEqual(swapped.map(String));
+		expect(tbody.children[1]).toBe(nearLast);
+		expect(tbody.children[998]).toBe(second);
+		expect(movedRows.size).toBeLessThanOrEqual(2);
+		root.unmount();
+		container.remove();
+	});
+
+	test('keyed rows keep their nodes and order through reversals and random reorders', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const view = (keys: number[]) =>
+			jsx('ul', { children: keys.map((key) => jsx('li', { key, children: String(key) })) });
+		const nodesByKey = new Map<string, Element>();
+		let seed = 7;
+		const random = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+		let keys = Array.from({ length: 40 }, (_, index) => index);
+
+		const renderAndCheck = (next: number[]) => {
+			root.render(view(next));
+			const items = [...container.querySelectorAll('li')];
+			expect(items.map((item) => item.textContent)).toEqual(next.map(String));
+			for (const item of items) {
+				const known = nodesByKey.get(item.textContent!);
+				if (known) expect(item).toBe(known);
+				nodesByKey.set(item.textContent!, item);
+			}
+		};
+
+		renderAndCheck(keys);
+		renderAndCheck((keys = keys.slice().reverse()));
+		for (let round = 0; round < 25; round += 1) {
+			const next = keys.filter(() => random() > 0.15);
+			for (let index = next.length - 1; index > 0; index -= 1) {
+				const other = Math.floor(random() * (index + 1));
+				[next[index], next[other]] = [next[other]!, next[index]!];
+			}
+			if (random() > 0.5) next.splice(Math.floor(random() * next.length), 0, 100 + round);
+			renderAndCheck((keys = next));
+		}
+	});
+
+	test('a duplicate key renders once, at its first position', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const view = (entries: [number, string][]) =>
+			jsx('ul', { children: entries.map(([key, label]) => jsx('li', { key, children: label })) });
+
+		root.render(
+			view([
+				[1, 'a'],
+				[2, 'b'],
+				[1, 'c'],
+			]),
+		);
+		expect([...container.querySelectorAll('li')].map((item) => item.textContent)).toEqual(['a', 'b']);
+	});
+
+	test('creating and appending keyed rows removes no nodes', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const view = (keys: number[]) =>
+			jsx('ul', { children: keys.map((key) => jsx('li', { key, children: String(key) })) });
+
+		root.render(view([]));
+		const list = container.querySelector('ul')!;
+		const observer = new MutationObserver(() => undefined);
+		observer.observe(list, { childList: true, subtree: true });
+
+		root.render(view([1, 2, 3]));
+		root.render(view([1, 2, 3, 4, 5, 6]));
+		const removed = observer.takeRecords().reduce((count, record) => count + record.removedNodes.length, 0);
+		observer.disconnect();
+
+		expect([...list.querySelectorAll('li')].map((item) => item.textContent)).toEqual([
+			'1',
+			'2',
+			'3',
+			'4',
+			'5',
+			'6',
+		]);
+		expect(removed).toBe(0);
+	});
+
+	test('an element keeps its node while only its values change, and remounts when its shape changes', async () => {
+		const [{ jsx, jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const current = () => container.firstElementChild!;
+
+		root.render(jsx('div', { id: 'a', hidden: false, children: 'x' }));
+		const first = current();
+		root.render(jsx('div', { id: 'b', hidden: true, children: 'y' }));
+		expect(current()).toBe(first);
+		expect(current().id).toBe('b');
+
+		root.render(jsx('div', { title: 'b', children: 'y' }));
+		expect(current()).not.toBe(first);
+		const withTitle = current();
+		root.render(jsxs('div', { title: 'b', children: ['y', 'z'] }));
+		expect(current()).not.toBe(withTitle);
+		const withTwoChildren = current();
+		root.render(jsxs('section', { title: 'b', children: ['y', 'z'] }));
+		expect(current()).not.toBe(withTwoChildren);
+		expect(current().localName).toBe('section');
+	});
+
+	test('a transported template with static text, an attribute and a child renders and updates', async () => {
+		const [{ createRoot }, { toTemplateResultLike }] = await Promise.all([
+			loadJsxModule(),
+			loadModule<typeof import('../src/types/renderable-guards.ts')>('../src/types/renderable-guards.ts'),
+		]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const view = (title: string, name: string) =>
+			toTemplateResultLike({ strings: ['<p title=', '>Hello ', '!</p>'], values: [title, name] });
+
+		root.render(view('greeting', 'Ada'));
+		const paragraph = container.querySelector('p')!;
+		expect(paragraph.outerHTML).toBe('<p title="greeting">Hello Ada!</p>');
+
+		root.render(view('welcome', 'Grace'));
+		expect(container.querySelector('p')).toBe(paragraph);
+		expect(paragraph.outerHTML).toBe('<p title="welcome">Hello Grace!</p>');
+	});
+
+	test('a prop: binding reaches the element setter exactly once when rows hold a signal child', async () => {
+		const [{ jsx, jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		let setterCalls = 0;
+		class CountingRow extends HTMLElement {
+			set rowId(_value: number) {
+				setterCalls += 1;
+			}
+		}
+		customElements.define('counting-row-prop', CountingRow);
+		const label = (text: string) => ({ get: () => text, subscribe: () => () => undefined });
+		const container = document.createElement('div');
+		document.body.append(container);
+		const root = createRoot(container);
+
+		root.render(
+			jsx('div', {
+				children: Array.from({ length: 50 }, (_, index) =>
+					jsxs('counting-row-prop', { key: index, 'prop:rowId': index, children: [label(`row ${index}`)] }),
+				),
+			}),
+		);
+
+		expect(container.querySelectorAll('counting-row-prop')).toHaveLength(50);
+		expect(container.textContent).toContain('row 49');
+		expect(setterCalls).toBe(50);
+		root.unmount();
+		container.remove();
+	});
+
+	test('creating JSX inside a computed does not subscribe it to attribute signals', async () => {
+		const [{ jsx }, { computed, state }] = await Promise.all([loadJsxRuntime(), import('@ecopages/signals')]);
+		const className = state('a');
+		const title = state('t');
+		let runs = 0;
+		const row = computed(() => {
+			runs += 1;
+			return jsx('tr', { 'attr:class': className, title, 'data-x': className });
+		});
+
+		row.get();
+		className.set('b');
+		title.set('u');
+		row.get();
+
+		expect(runs).toBe(1);
+	});
+
+	test('native elements use one marker between adjacent slots and none at their edges; custom elements keep full markers', async () => {
+		const [{ jsx, jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const emptyTextCount = (element: Element) =>
+			[...element.childNodes].filter((node) => node.nodeType === Node.TEXT_NODE && node.textContent === '')
+				.length;
+
+		root.render(
+			jsxs('section', {
+				children: [
+					jsx('p', { children: 'only' }),
+					jsxs('div', { children: ['a', 'b', 'c'] }),
+					jsxs('demo-markers', { children: ['a', 'b'] }),
+				],
+			}),
+		);
+
+		expect(emptyTextCount(container.querySelector('p')!)).toBe(0);
+		expect(emptyTextCount(container.querySelector('div')!)).toBe(2);
+		expect(emptyTextCount(container.querySelector('demo-markers')!)).toBe(4);
+		expect(container.querySelector('div')!.textContent).toBe('abc');
+	});
+
+	test('slots at every position switch between text, a template, a keyed list, nodes and nothing', async () => {
+		const [{ jsx, jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const shapes = [
+			(tag: string) => `${tag}-text`,
+			(tag: string) => jsx('b', { children: tag }),
+			(tag: string) => [1, 2, 3].map((key) => jsx('i', { key, children: `${tag}${key}` })),
+			(tag: string) => [3, 1].map((key) => jsx('i', { key, children: `${tag}${key}` })),
+			(tag: string) => Object.assign(document.createElement('u'), { textContent: tag }),
+			() => null,
+		];
+		const expected = (shape: number, tag: string) =>
+			[
+				`${tag}-text`,
+				`<b>${tag}</b>`,
+				`<i>${tag}1</i><i>${tag}2</i><i>${tag}3</i>`,
+				`<i>${tag}3</i><i>${tag}1</i>`,
+				`<u>${tag}</u>`,
+				'',
+			][shape]!;
+
+		for (let first = 0; first < shapes.length; first += 1) {
+			for (const offset of [0, 2, 3]) {
+				const middle = (first + offset) % shapes.length;
+				const last = (first + offset + 1) % shapes.length;
+				root.render(
+					jsxs('article', {
+						children: [
+							jsx('p', { children: shapes[first]!('p') }),
+							jsxs('div', { children: [shapes[first]!('x'), shapes[middle]!('y'), shapes[last]!('z')] }),
+						],
+					}),
+				);
+				expect(container.querySelector('p')!.innerHTML).toBe(expected(first, 'p'));
+				expect(container.querySelector('div')!.innerHTML).toBe(
+					`${expected(first, 'x')}${expected(middle, 'y')}${expected(last, 'z')}`,
+				);
+			}
+		}
+	});
+
+	test('keyed single-element rows keep their nodes and handle content that changes shape or becomes a mixed list', async () => {
+		const [{ jsx, jsxs, Fragment }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const render = (children: unknown[]) => root.render(jsx('ul', { children }));
+		const html = () => container.querySelector('ul')!.innerHTML;
+		const row = (key: number, label: string) => jsx('li', { key, children: label });
+
+		render([row(1, 'a'), row(2, 'b'), row(3, 'c')]);
+		const [first, second, third] = [...container.querySelectorAll('li')];
+		expect(html()).toBe('<li>a</li><li>b</li><li>c</li>');
+
+		render([row(3, 'c2'), row(1, 'a'), row(2, 'b')]);
+		expect(html()).toBe('<li>c2</li><li>a</li><li>b</li>');
+		expect([...container.querySelectorAll('li')]).toEqual([third, first, second]);
+
+		render([
+			row(3, 'c2'),
+			jsx('b', { key: 1, children: 'x' }),
+			jsxs(Fragment, { key: 2, children: [jsx('i', { children: 'y' }), jsx('i', { children: 'z' })] }),
+		]);
+		expect(html()).toBe('<li>c2</li><b>x</b><i>y</i><i>z</i>');
+		expect(container.querySelector('li')).toBe(third);
+
+		render([row(3, 'c3'), 'loose text', row(4, 'd')]);
+		expect(html()).toBe('<li>c3</li>loose text<li>d</li>');
+		expect(container.querySelector('li')).toBe(third);
+
+		render([row(4, 'd'), row(3, 'c3')]);
+		expect(html()).toBe('<li>d</li><li>c3</li>');
+
+		render([]);
+		expect(html()).toBe('');
 	});
 
 	test('signal-like attribute values patch attributes without rerendering the parent tree', async () => {

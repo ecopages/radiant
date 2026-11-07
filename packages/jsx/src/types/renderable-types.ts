@@ -12,11 +12,6 @@ declare const SUBSCRIBABLE_JSX_VALUE_SYMBOL_TYPE: unique symbol;
 export const SUBSCRIBABLE_JSX_VALUE_SYMBOL: typeof SUBSCRIBABLE_JSX_VALUE_SYMBOL_TYPE = Symbol.for(
 	'@ecopages/jsx.subscribable-value',
 ) as typeof SUBSCRIBABLE_JSX_VALUE_SYMBOL_TYPE;
-declare const SLOT_JSX_VALUE_SYMBOL_TYPE: unique symbol;
-/** Symbol key present on slot placeholder wrapper objects. */
-export const SLOT_JSX_VALUE_SYMBOL: typeof SLOT_JSX_VALUE_SYMBOL_TYPE = Symbol.for(
-	'@ecopages/jsx.slot-value',
-) as typeof SLOT_JSX_VALUE_SYMBOL_TYPE;
 declare const CUSTOM_ELEMENT_CHILDREN_SYMBOL_TYPE: unique symbol;
 /**
  * Custom-element protocol for taking JSX `children` as one value instead of DOM children.
@@ -190,15 +185,6 @@ export type SubscribableJsxValueWithAccess<Value extends JsxBindingSourceValue =
 	SubscribableJsxValue<Value> & SubscribableMemberAccess<Value>;
 
 /**
- * Internal placeholder emitted from literal `<slot>` JSX tags.
- */
-export interface SlotJsxValue {
-	readonly [SLOT_JSX_VALUE_SYMBOL]: true;
-	readonly fallback?: JsxRenderable;
-	readonly name?: string;
-}
-
-/**
  * Value that can be rendered by the JSX runtime.
  */
 export type JsxRenderable =
@@ -207,7 +193,6 @@ export type JsxRenderable =
 	| KeyedJsxValue
 	| Node
 	| SignalLike
-	| SlotJsxValue
 	| SubscribableJsxValue
 	| TemplateResultLike
 	| Iterable<JsxRenderable>;

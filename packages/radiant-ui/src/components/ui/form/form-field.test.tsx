@@ -515,7 +515,7 @@ describe('rui-field composed content discovery', () => {
 		host.remove();
 	});
 
-	it('finds control and error nodes after Radiant slot projection', async () => {
+	it('finds control and error nodes among Radiant slotted content', async () => {
 		const form = document.createElement('rui-form') as RuiFormElement;
 		const field = document.createElement('rui-field') as RuiFieldElement;
 		field.name = 'email';
@@ -912,7 +912,7 @@ describe('rui-field composed content discovery', () => {
 		host.remove();
 	});
 
-	it('renders a single switch inside rui-field (no slot projection duplicate)', async () => {
+	it('renders a single switch inside rui-field (no duplicate slotted copy)', async () => {
 		const host = document.createElement('div');
 		document.body.append(host);
 		const root = createRoot(host);

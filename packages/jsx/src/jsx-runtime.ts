@@ -1,6 +1,6 @@
 import { createJsxElement, createMarkupNodeLike, fragmentSymbol, type JsxFragment } from './factory/jsx-factory.ts';
 import { isSubscribableJsxValue } from './types/renderable-guards.ts';
-import { SLOT_JSX_VALUE_SYMBOL, SUBSCRIBABLE_JSX_VALUE_SYMBOL } from './types/index.ts';
+import { SUBSCRIBABLE_JSX_VALUE_SYMBOL } from './types/index.ts';
 import type {
 	JsxBindingSourceValue,
 	JsxComponent,
@@ -13,7 +13,6 @@ import type {
 	SignalLike,
 	SubscribableJsxValue,
 	SubscribableJsxValueWithAccess,
-	SlotJsxValue,
 } from './types/index.ts';
 
 export { CUSTOM_ELEMENT_TAG_NAME, getCustomElementTagName } from './custom-element-tag-name.ts';
@@ -60,7 +59,6 @@ export type {
 	SignalLike,
 	ServerCustomElementRenderHookContext,
 	ServerRenderableCustomElement,
-	SlotJsxValue,
 	StylePropertyValue,
 	StyleValue,
 	SubscribableJsxValue,
@@ -116,23 +114,11 @@ export type { JsxFragment };
 export const Fragment: JsxFragment = fragmentSymbol;
 
 /**
- * Merge the automatic-runtime `key` argument into props.
- *
- * @remarks
- * esbuild / TypeScript emit `jsx(type, props, key)` — key is not inside props.
- * Without this, keyed list reconciliation silently falls back to index mode.
- */
-function propsWithKey<Props extends object>(props: Props, key?: JsxKey): Props {
-	if (key === undefined) return props;
-	return { ...props, key };
-}
-
-/**
  * Creates a JSX element where the `children` slot is treated as a single
  * logical value.
  */
 export function jsx<Props extends object>(type: JsxElementType<Props>, props: Props, key?: JsxKey): JsxRenderable {
-	return createJsxElement(type, propsWithKey(props, key), 'single');
+	return createJsxElement(type, props, 'single', false, key ?? (props as { key?: JsxKey }).key);
 }
 
 /**
@@ -140,7 +126,7 @@ export function jsx<Props extends object>(type: JsxElementType<Props>, props: Pr
  * slots.
  */
 export function jsxs<Props extends object>(type: JsxElementType<Props>, props: Props, key?: JsxKey): JsxRenderable {
-	return createJsxElement(type, propsWithKey(props, key), 'multiple');
+	return createJsxElement(type, props, 'multiple', false, key ?? (props as { key?: JsxKey }).key);
 }
 
 /**
@@ -201,11 +187,6 @@ export namespace JSX {
 		JsxCustomIntrinsicElements & {
 			[elementName: string]: JsxOpenIntrinsicAttributes<globalThis.Element>;
 		};
-}
-
-/** Returns whether a value carries internal slot placeholder metadata. */
-export function isSlotJsxValue(value: unknown): value is SlotJsxValue {
-	return typeof value === 'object' && value !== null && SLOT_JSX_VALUE_SYMBOL in value;
 }
 
 type MapSource<Value extends JsxBindingSourceValue> =

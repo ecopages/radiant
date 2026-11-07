@@ -13,6 +13,7 @@
 		"./test/types/custom-element-prop-bindings.ts",
 		"./test/types/host-props.ts",
 		"./test/types/style-value.ts",
-		"./test/types/boolean-attributes.tsx"
+		"./test/types/boolean-attributes.tsx",
+		"./test/types/map-items.tsx"
 	]
 }
