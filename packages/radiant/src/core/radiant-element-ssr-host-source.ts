@@ -17,7 +17,7 @@ export type RadiantElementSsrHostSource = {
 	getAttributeNames(): string[];
 	getAuthoredHydrationScriptMarkup(): string | undefined;
 	getReactiveProperties(): ReactiveProperty[];
-	getSlottedPayload(): Record<string, string[]> | undefined;
+	getSlottedMarkup(): string | undefined;
 	resolveTrackedRenderOutput(projectForeign?: ForeignSlottedProjector): { value: JsxRenderable };
 	prepareForSsr(): void;
 	readonly [REACTIVE_HOST]: ReactiveHostInternals;

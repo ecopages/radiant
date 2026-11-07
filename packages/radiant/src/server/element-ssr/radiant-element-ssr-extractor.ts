@@ -26,7 +26,7 @@ export function toInternalRadiantSsrHost(component: object): InternalRadiantSsrH
 		getReactiveProperties: () => component.getReactiveProperties(),
 		getReactivePropDefinitions: () => getReactivePropDefinitions(component),
 		getPropertyValue: (name) => Reflect.get(component, name),
-		getSlottedPayload: () => component.getSlottedPayload(),
+		getSlottedMarkup: () => component.getSlottedMarkup(),
 		resolveTrackedRenderOutput: (projectForeign) => component.resolveTrackedRenderOutput(projectForeign),
 		flushPostSync: () => internals.flushPostSync(),
 		prepareForSsr: () => component.prepareForSsr(),

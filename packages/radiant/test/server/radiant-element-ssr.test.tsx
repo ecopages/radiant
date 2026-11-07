@@ -214,7 +214,7 @@ describe('RadiantElement SSR', () => {
 
 			expect(html).toContain('data-bound="bound"');
 			expect(setAttribute).toHaveBeenCalledTimes(1);
-			expect(html.includes('data-radiant-slot-projection')).toBe(serializer === 'host');
+			expect(html.includes('data-radiant-slotted')).toBe(serializer === 'host');
 		});
 	}
 
@@ -696,7 +696,7 @@ describe('RadiantElement SSR', () => {
 		);
 	});
 
-	test('renderRadiantElementHostToString() serializes slotted content and embeds the slotted payload', () => {
+	test('renderRadiantElementHostToString() serializes slotted content once, between the comments the client adopts it by', () => {
 		@customElement('server-host-slot-card-test')
 		class ServerHostSlotCard extends RadiantElement {
 			override render() {
@@ -713,9 +713,8 @@ describe('RadiantElement SSR', () => {
 
 		const html = renderRadiantElementHostToString(element, { mode: 'hydrate' });
 
-		expect(html).toContain('<div><h2>Server heading</h2><p>Server body</p></div>');
-		expect(html).toContain(
-			'<script type="application/json" data-radiant-slot-projection>{"":["\\u003ch2>Server heading\\u003c/h2>","\\u003cp>Server body\\u003c/p>"]}</script>',
+		expect(html).toBe(
+			'<server-host-slot-card-test data-radiant-slotted data-radiant-ssr><section><div><!--radiant-slotted--><h2>Server heading</h2><p>Server body</p><!--/radiant-slotted--></div></section></server-host-slot-card-test>',
 		);
 	});
 
@@ -729,10 +728,10 @@ describe('RadiantElement SSR', () => {
 		const html = renderRadiantElementHostToString(element, { mode: 'hydrate' });
 
 		expect(html).toContain('<h2>Title</h2><p>Body</p>');
-		expect(html).not.toContain('data-radiant-slot-projection');
+		expect(html).not.toContain('data-radiant-slotted');
 	});
 
-	test('A host whose view does not place its slotted content still ships it in the slotted payload', () => {
+	test('A host whose view does not place its slotted content ships it once, in an inert template', () => {
 		@customElement('derived-list')
 		class DerivedList extends RadiantElement {
 			override render() {
@@ -749,12 +748,12 @@ describe('RadiantElement SSR', () => {
 
 		const html = renderRadiantElementHostToString(element, { mode: 'hydrate' });
 
-		expect(html).toContain('<ul><li>derived</li></ul>');
-		expect(html).toContain('data-radiant-slot-projection');
-		expect(html).toContain('\\u003cp>ignored by render\\u003c/p>');
+		expect(html).toBe(
+			'<derived-list data-radiant-slotted data-radiant-ssr><ul><li>derived</li></ul><template data-radiant-slotted><p>ignored by render</p></template></derived-list>',
+		);
 	});
 
-	test('the slotted payload keeps escaped text escaped', () => {
+	test('slotted content keeps escaped text escaped', () => {
 		@customElement('server-host-slot-escape-test')
 		class ServerHostSlotEscape extends RadiantElement {
 			override render() {
@@ -771,13 +770,15 @@ describe('RadiantElement SSR', () => {
 
 		const html = renderRadiantElementHostToString(element, { mode: 'hydrate' });
 
-		expect(html).toContain('<section>Tom &amp; Jerry &lt;img src=x onerror=alert(1)&gt;</section>');
+		expect(html).toContain(
+			'<section><!--radiant-slotted-->Tom &amp; Jerry &lt;img src=x onerror=alert(1)&gt;<!--/radiant-slotted--></section>',
+		);
 		expect(html).not.toContain('<img');
 		expect(html).not.toContain('"Tom & Jerry');
 	});
 
 	describeWhenStandard('SSR ordering with generated hydration scripts', () => {
-		test("renderRadiantElementHostToString({ mode: 'hydrate' }) emits host content before the slotted payload and hydration scripts", () => {
+		test("renderRadiantElementHostToString({ mode: 'hydrate' }) emits host content, with its slotted content, before hydration scripts", () => {
 			@customElement('server-host-ordering-card-test')
 			class ServerHostOrderingCard extends RadiantElement {
 				@signal({ hydrate: String, initial: 'idle' }) status!: WritableSignal<string>;
@@ -797,13 +798,14 @@ describe('RadiantElement SSR', () => {
 			element.status.set('ready');
 
 			const html = renderRadiantElementHostToString(element, { mode: 'hydrate' });
-			const hostContentIndex = html.indexOf('<section><p>Projected body</p><p>ready</p></section>');
-			const slotProjectionIndex = html.indexOf('data-radiant-slot-projection');
+			const hostContentIndex = html.indexOf(
+				'<section><!--radiant-slotted--><p>Projected body</p><!--/radiant-slotted--><p>ready</p></section>',
+			);
 			const hydrationScriptIndex = html.indexOf('data-hydration-key="status"');
 
 			expect(hostContentIndex).toBeGreaterThanOrEqual(0);
-			expect(slotProjectionIndex).toBeGreaterThan(hostContentIndex);
-			expect(hydrationScriptIndex).toBeGreaterThan(slotProjectionIndex);
+			expect(hydrationScriptIndex).toBeGreaterThan(hostContentIndex);
+			expect(html).not.toContain('<template data-radiant-slotted>');
 		});
 	});
 
@@ -816,7 +818,7 @@ describe('RadiantElement SSR', () => {
 		});
 
 		expect(renderRadiantElementHostToString(element, { mode: 'hydrate' })).toContain(
-			'<section><div><h2>Prepared heading</h2><p>Prepared body</p></div></section>',
+			'<section><div><!--radiant-slotted--><h2>Prepared heading</h2><p>Prepared body</p><!--/radiant-slotted--></div></section>',
 		);
 	});
 
@@ -890,16 +892,16 @@ describe('RadiantElement SSR', () => {
 			renderOptions: { mode: 'plain' },
 		});
 
-		expect(html).toContain(`<${tagName}>`);
+		expect(html).toContain(`<${tagName} data-radiant-slotted>`);
 		expect(html).toContain('<p>Authored child / 3</p>');
-		expect(html).not.toContain('data-radiant-slot-projection');
+		expect(html).not.toContain('<template data-radiant-slotted>');
 		expect(html).toContain('<script type="application/json"');
 		expect(html).toContain('data-hydration="true"');
 		expect(html).toContain('data-hydration-key="provider"');
 		expect(html).toContain('{"count":3,"label":"Authored child"}</script>');
 	});
 
-	test("renderRadiantElementHostToString({ mode: 'plain' }) emits authored hydration markup before the slotted payload", () => {
+	test("renderRadiantElementHostToString({ mode: 'plain' }) emits host content, with its slotted content, before authored hydration markup", () => {
 		@customElement('server-host-authored-hydration-order-card-test')
 		class ServerHostAuthoredHydrationOrderCard extends RadiantElement {
 			override render() {
@@ -917,13 +919,13 @@ describe('RadiantElement SSR', () => {
 			'<script type="application/json" data-hydration data-hydration-type="context" data-hydration-key="provider">{"count":3}</script>';
 
 		const html = renderRadiantElementHostToString(element, { mode: 'plain' });
-		const hostContentIndex = html.indexOf('<section><p>Projected body</p></section>');
+		const hostContentIndex = html.indexOf(
+			'<section><!--radiant-slotted--><p>Projected body</p><!--/radiant-slotted--></section>',
+		);
 		const authoredHydrationIndex = html.indexOf('data-hydration-key="provider"');
-		const slotProjectionIndex = html.indexOf('data-radiant-slot-projection');
 
 		expect(hostContentIndex).toBeGreaterThanOrEqual(0);
 		expect(authoredHydrationIndex).toBeGreaterThan(hostContentIndex);
-		expect(slotProjectionIndex).toBeGreaterThan(authoredHydrationIndex);
 		expect(html.match(/data-hydration-key="provider"/g)).toHaveLength(1);
 	});
 

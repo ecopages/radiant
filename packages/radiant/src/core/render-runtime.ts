@@ -10,10 +10,10 @@ import {
 import {
 	captureSlottedNodes,
 	collectAuthoredHydrationScriptMarkup,
-	deserializeSlottedPayload,
+	createSlottedBounds,
 	projectForeignSlotted,
-	serializeSlottedPayload,
-	takeSlottedPayload,
+	serializeSlottedMarkup,
+	takeServerSlotted,
 	type ForeignSlottedProjector,
 } from './slotted-content';
 
@@ -26,8 +26,8 @@ export type RenderRuntimeHost = HTMLElement & {
  * Owns a render-owning host's render and its slotted content.
  *
  * @remarks Slotted content has one of two sources. A host that a JSX view creates receives the view's children on
- * every render ({@link setSlotted}). Any other host captures its child nodes once, at first render, from the SSR
- * payload when present; nodes appended to the host later are not slotted.
+ * every render ({@link setSlotted}). Any other host captures its child nodes once, at first render, or adopts the
+ * slotted content the server rendered for it; nodes appended to the host later are not slotted.
  */
 export class RenderRuntime {
 	#host: RenderRuntimeHost;
@@ -64,8 +64,9 @@ export class RenderRuntime {
 	 * The host's slotted content for its view, or `null` when there is none.
 	 *
 	 * @remarks While connected, the content is wrapped in two empty text nodes this runtime keeps, so
-	 * {@link getSlottedElements} can find what it rendered to; place it once per render. On the server it is the
-	 * content itself, whose entries {@link projectForeignSlotted} finds.
+	 * {@link getSlottedElements} can find what it rendered to; place it once per render. On the server, captured
+	 * content is wrapped in the comments the client adopts it by (see {@link takeServerSlotted}), and content a view
+	 * passed is returned as it is; {@link projectForeignSlotted} finds the entries of either.
 	 */
 	getSlotted(): JsxRenderable {
 		this.ensureSlotted();
@@ -75,7 +76,9 @@ export class RenderRuntime {
 		}
 
 		if (!this.#host.isConnected) {
-			return this.#slotted;
+			if (!this.#capturedSlotted) return this.#slotted;
+			const [start, end] = createSlottedBounds();
+			return [start, this.#slotted, end];
 		}
 
 		const [start, end] = (this.#slottedBounds ??= [document.createTextNode(''), document.createTextNode('')]);
@@ -94,11 +97,14 @@ export class RenderRuntime {
 		return elements;
 	}
 
-	getSlottedPayload(): Record<string, string[]> | undefined {
+	/**
+	 * The markup of the host's captured slotted content, for a server render whose view did not place it, or
+	 * `undefined` when the host captured nothing.
+	 */
+	getSlottedMarkup(): string | undefined {
 		this.ensureSlotted();
-		return this.#capturedSlotted && Array.isArray(this.#slotted)
-			? serializeSlottedPayload(this.#slotted)
-			: undefined;
+		if (!this.#capturedSlotted) return undefined;
+		return Array.isArray(this.#slotted) ? serializeSlottedMarkup(this.#slotted) : '';
 	}
 
 	getAuthoredHydrationScriptMarkup(): string | undefined {
@@ -136,7 +142,7 @@ export class RenderRuntime {
 	/**
 	 * @param projectForeign Passed by the server only; see {@link projectForeignSlotted}.
 	 * @remarks Captures slotted content before every render, even one whose view does not place it yet, so a host
-	 * that shows its content only later still takes the child nodes or payload it held at first render.
+	 * that shows its content only later still takes the child nodes or server content it held at first render.
 	 */
 	resolveTrackedRenderOutput(projectForeign?: ForeignSlottedProjector): { value: JsxRenderable } {
 		this.ensureSlotted();
@@ -165,25 +171,26 @@ export class RenderRuntime {
 	/**
 	 * Captures the host's child nodes as its slotted content once, before its first render.
 	 *
-	 * @remarks Prefers the server's payload script when present. Otherwise child nodes count as slotted content only
-	 * while `#hasMounted` is false: after the first render they are the host's own output. A server-rendered host also
-	 * holds its markup while the flag is false, so {@link hasHydrationMarkers} skips capture on the client; in the
-	 * minimal SSR DOM the children are authored and carry no markers yet. A host whose view passed its children before
-	 * its first render drops the payload unread: the view's children replace it.
+	 * @remarks Prefers the slotted content the server rendered for the host ({@link takeServerSlotted}), whose nodes
+	 * are adopted where they are. Otherwise child nodes count as slotted content only while `#hasMounted` is false:
+	 * after the first render they are the host's own output. A server-rendered host also holds its markup while the
+	 * flag is false, so {@link hasHydrationMarkers} skips capture on the client; in the minimal SSR DOM the children
+	 * are authored and carry no markers yet. A host whose view passed its children before its first render removes
+	 * the server's comments or template unread: the view's children replace that content.
 	 */
 	private ensureSlotted(): void {
 		if (this.#hasViewSlotted && !this.#hasMounted && this.#host.isConnected) {
-			takeSlottedPayload(this.#host);
+			takeServerSlotted(this.#host);
 		}
 
 		if (this.#hasViewSlotted || this.#capturedSlotted) {
 			return;
 		}
 
-		const payload = this.#host.isConnected ? takeSlottedPayload(this.#host) : undefined;
+		const serverSlotted = this.#host.isConnected && !this.#hasMounted ? takeServerSlotted(this.#host) : undefined;
 
-		if (typeof payload === 'string' && payload !== '') {
-			this.#slotted = deserializeSlottedPayload(payload);
+		if (serverSlotted) {
+			this.#slotted = serverSlotted;
 			this.#capturedSlotted = true;
 			return;
 		}

@@ -108,25 +108,31 @@ describe('hydrating server-rendered markup', () => {
 		expect(element.querySelector('button')).toBe(button);
 	});
 
-	test('hydrates SSR markup that uses a slotted payload', async () => {
+	test('hydrates SSR markup with slotted content, adopting the server nodes and removing their comments', async () => {
 		installRadiantHydrator();
 		const element = mount<HydratedSlotCard>('slot-card', 'hydrated-slot-card-test');
+		const serverHeading = element.querySelector('div > h2');
+		expect(element.hasAttribute('data-radiant-slotted')).toBe(true);
 
 		await waitFor(() => {
 			expect(element.querySelector('div > h2')?.textContent).toBe('SSR header');
 			expect(element.querySelector('div > p')?.textContent).toBe('SSR body');
 			expect(hasHydrationMarkers(element)).toBe(false);
-			expect(element.querySelector('script[data-radiant-slot-projection]')).toBeNull();
+			expect(element.querySelector('[data-radiant-slotted]')).toBeNull();
 		});
 
+		expect(element.querySelector('div > h2')).toBe(serverHeading);
+		expect(element.hasAttribute('data-radiant-slotted')).toBe(false);
+		expect(element.innerHTML).not.toContain('radiant-slotted');
 		element.querySelector('button')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
 
 		await waitFor(() => expect(element.querySelector('button')?.textContent).toBe('Count 1'));
+		expect(element.querySelector('div > h2')).toBe(serverHeading);
 	});
 
-	test('a hydrated View-owned Shell keeps its children and has no leftover payload script', async () => {
+	test('a hydrated View-owned Shell keeps its children and carries no server slotted content', async () => {
 		const markup = serverMarkup('view-owned-shell');
-		expect(markup).not.toContain('data-radiant-slot-projection');
+		expect(markup).not.toContain('data-radiant-slotted');
 		document.body.innerHTML = markup;
 		const element = document.querySelector('shell-card-hydrate-test') as HydratedShellCard;
 
@@ -134,13 +140,13 @@ describe('hydrating server-rendered markup', () => {
 
 		expect(element.querySelector('h2')?.textContent).toBe('Title');
 		expect(element.querySelector('p')?.textContent).toBe('Body');
-		expect(element.querySelector('script[data-radiant-slot-projection]')).toBeNull();
+		expect(element.querySelector('[data-radiant-slotted]')).toBeNull();
 	});
 
 	test('keeps Authored Children when the view places slotted content only after hydration', async () => {
 		installRadiantHydrator();
 		const markup = serverMarkup('conditional-slot');
-		expect(markup).toContain('data-radiant-slot-projection');
+		expect(markup).toContain('<template data-radiant-slotted><em>child</em></template>');
 		const element = mount<HydratedConditionalSlotCard>('conditional-slot', 'conditional-slot-card-hydrate-test');
 
 		await settle();
@@ -239,7 +245,7 @@ describe('hydrating server-rendered markup', () => {
 		});
 	});
 
-	test('hydrates a slotted payload with multiple roots and quoted attributes', async () => {
+	test('hydrates slotted content with multiple roots and quoted attributes', async () => {
 		installRadiantHydrator();
 		const element = mount<HydratedComplexSlotCard>('complex-slot-card', 'hydrated-complex-slot-card-test');
 
@@ -251,7 +257,7 @@ describe('hydrating server-rendered markup', () => {
 			);
 			expect(element.querySelector('[data-ref="body"] > p')?.textContent).toBe('SSR footer');
 			expect(hasHydrationMarkers(element)).toBe(false);
-			expect(element.querySelector('script[data-radiant-slot-projection]')).toBeNull();
+			expect(element.querySelector('[data-radiant-slotted]')).toBeNull();
 		});
 
 		element.querySelector('button')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
@@ -725,7 +731,7 @@ describe('hydrating page-level JSX over a host the server rendered with Authored
 
 				expect(container.querySelector('hydrated-slot-card-test')).toBe(serverHost);
 				expect(container.innerHTML).not.toContain('data-radiant-jsx-bind-');
-				expect(container.querySelector('script[data-radiant-slot-projection]')).toBeNull();
+				expect(container.querySelector('[data-radiant-slotted]')).toBeNull();
 				expectServerChildren(serverHost);
 				expect(warn).not.toHaveBeenCalled();
 			});
@@ -959,7 +965,7 @@ describe('a nested host rendered in plain mode', () => {
 
 			expect(child.querySelectorAll('.child')).toHaveLength(1);
 			expect(child.querySelectorAll('.child > b')).toHaveLength(1);
-			expect(child.querySelector('script[data-radiant-slot-projection]')).toBeNull();
+			expect(child.querySelector('[data-radiant-slotted]')).toBeNull();
 		});
 
 		test(`renders its children once and updates them when its parent is defined${hydrator ? ', with the hydrator' : ''}`, async () => {
@@ -973,7 +979,7 @@ describe('a nested host rendered in plain mode', () => {
 			await settle();
 
 			expect(element.querySelectorAll('.child > b')).toHaveLength(1);
-			expect(element.querySelector('script[data-radiant-slot-projection]')).toBeNull();
+			expect(element.querySelector('[data-radiant-slotted]')).toBeNull();
 
 			element.inside = 'inside-1';
 

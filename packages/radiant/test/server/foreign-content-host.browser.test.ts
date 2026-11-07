@@ -26,20 +26,23 @@ describe('a host inside foreign content in server HTML', () => {
 	);
 });
 
-describe('the slotted payload in server HTML', () => {
-	test.each(
-		renders
-			.filter((render) => render.html.includes('data-radiant-slot-projection'))
-			.map((render) => [render.name, render] as const),
-	)('%s restores the authored text as the client parses it', (_name, render) => {
-		const script = parse(render.html).querySelector('script[data-radiant-slot-projection]');
-		const payload = JSON.parse(script?.textContent ?? '') as Record<string, string[]>;
-		const template = document.createElement('template');
-		template.innerHTML = Object.values(payload).flat().join('');
+describe('server slotted content in server HTML', () => {
+	const slottedRenders = renders.filter((render) => render.html.includes('<!--radiant-slotted-->'));
 
-		expect(template.content.querySelector('img')).toBeNull();
-		expect(template.content.querySelector(render.tag)?.textContent).toBe(render.text);
+	test('covers the hosts that place captured slotted content', () => {
+		expect(slottedRenders.length).toBeGreaterThan(0);
 	});
+
+	test.each(slottedRenders.map((render) => [render.name, render] as const))(
+		'%s parses to the authored text where the view places it, with no slotted payload',
+		(_name, render) => {
+			const parsed = parse(render.html);
+
+			expect(render.html).not.toContain('data-radiant-slot-projection');
+			expect(parsed.querySelector('img')).toBeNull();
+			expect(parsed.querySelector(render.tag)?.textContent).toBe(render.text);
+		},
+	);
 });
 
 describe('a host in HTML context in server HTML', () => {
@@ -64,7 +67,7 @@ describe('a host in HTML context in server HTML', () => {
 		const render = renders.find((entry) => entry.name === 'div-slot-host slotted style, plain');
 
 		expect(render?.html).toBe(
-			`<div-slot-host><div><style>${render?.text}</style></div><script type="application/json" data-radiant-slot-projection>{"":["\\u003cstyle>@media (width \\u003c 600px) { p { color: red } }\\u003c/style>"]}</script></div-slot-host>`,
+			`<div-slot-host data-radiant-slotted><div><!--radiant-slotted--><style>${render?.text}</style><!--/radiant-slotted--></div></div-slot-host>`,
 		);
 	});
 });

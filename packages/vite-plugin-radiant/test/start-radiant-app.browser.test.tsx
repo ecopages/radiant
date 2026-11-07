@@ -46,9 +46,7 @@ function renderPage(): JsxRenderable {
 }
 
 function renderServerMarkup(): string {
-	const projection = JSON.stringify({ '': ['<h2>Title</h2>', '<p>Body</p>'] }).replaceAll('<', '\\u003c');
-
-	return `<main data-radiant-jsx-bind-0="attr:title" title="page"><${tagName} data-radiant-ssr><section><div><h2>Title</h2><p>Body</p></div></section><script type="application/json" data-radiant-slot-projection>${projection}</script></${tagName}></main>`;
+	return `<main data-radiant-jsx-bind-0="attr:title" title="page"><${tagName} data-radiant-slotted data-radiant-ssr><section><div><!--radiant-slotted--><h2>Title</h2><p>Body</p><!--/radiant-slotted--></div></section></${tagName}></main>`;
 }
 
 describe('startRadiantApp', () => {

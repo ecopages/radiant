@@ -97,24 +97,24 @@ afterEach(() => {
 });
 
 describe('a render-owning host in a view, on the server', () => {
-	test('renders the JSX children as its slotted content, in its own marker namespace, without a slotted payload', () => {
+	test('renders the JSX children as its slotted content, in its own marker namespace, without server slotted markers', () => {
 		const html = renderParent('children');
 
 		expect(html).toContain(
 			'<main><p data-radiant-jsx-bind-1="attr:title" title="children">Body</p><ssr-value-badge-test data-radiant-ssr><b data-radiant-jsx-bind-0="attr:class" class="badge">badge</b>',
 		);
-		expect(html).not.toContain('data-radiant-slot-projection');
+		expect(html).not.toContain('radiant-slotted');
 		expect(html).not.toContain('fallback');
 	});
 
-	test('takes the value and the stamp in hydrate mode only, and Authored Children with a payload in plain mode', () => {
+	test('takes the value and the stamp in hydrate mode only, and Authored Children in plain mode', () => {
 		const parent = new SsrValueParent();
 		parent.variant = 'children';
 		const plain = renderRadiantElementHostToString(parent, { mode: 'plain' });
 
 		expect(renderParent('children')).toContain('<ssr-value-frame-test data-radiant-ssr="children">');
-		expect(plain).toContain('<ssr-value-frame-test><div class="frame">');
-		expect(plain).toContain('data-radiant-slot-projection');
+		expect(plain).toContain('<ssr-value-frame-test data-radiant-slotted><div class="frame">');
+		expect(plain).toContain('<main><!--radiant-slotted--><p title="children">Body</p>');
 		expect(plain).not.toContain('data-radiant-ssr');
 	});
 
@@ -122,7 +122,7 @@ describe('a render-owning host in a view, on the server', () => {
 		const html = renderParent('empty');
 
 		expect(html).toMatch(/<main><em [^>]*class="fallback">empty<\/em><\/main>/);
-		expect(html).not.toContain('data-radiant-slot-projection');
+		expect(html).not.toContain('radiant-slotted');
 	});
 
 	test('renders a named region passed as an unprefixed property', () => {
@@ -142,7 +142,7 @@ describe('a render-owning host among the JSX children of a host without render()
 });
 
 describe('a render-owning host outside any view, on the server', () => {
-	test('takes its JSX children as HTML and ships them in the slotted payload', () => {
+	test('takes its JSX children as HTML and serializes them once, between the comments the client adopts them by', () => {
 		const html = withRadiantServerCustomElementRenderBridge(() =>
 			renderToString(
 				<ssr-value-frame-test>
@@ -152,10 +152,9 @@ describe('a render-owning host outside any view, on the server', () => {
 			),
 		);
 
-		expect(html).toContain('<main><p>Body</p></main>');
-		expect(html).toContain(
-			'<script type="application/json" data-radiant-slot-projection>{"":["\\u003cp>Body\\u003c/p>"]}',
-		);
+		expect(html).toContain('<ssr-value-frame-test data-radiant-slotted data-radiant-ssr>');
+		expect(html).toContain('<main><!--radiant-slotted--><p>Body</p><!--/radiant-slotted--></main>');
+		expect(html).not.toContain('<template data-radiant-slotted>');
 	});
 
 	test('takes an empty string child without warning that the tag was defined late', () => {
@@ -184,7 +183,10 @@ describe('a render-owning host outside any view, on the server', () => {
 		);
 
 		expect(html).toContain(
-			'<main><p>Body</p></main></div><script type="application/json" data-radiant-slot-projection>{"":["\\u003cp>Body\\u003c/p>"]}</script></ssr-value-frame-test>',
+			'<main><!--radiant-slotted--><ssr-value-frame-test data-radiant-slotted data-radiant-ssr>',
+		);
+		expect(html).toContain(
+			'<main><!--radiant-slotted--><p>Body</p><!--/radiant-slotted--></main></div></ssr-value-frame-test><!--/radiant-slotted--></main>',
 		);
 	});
 });
