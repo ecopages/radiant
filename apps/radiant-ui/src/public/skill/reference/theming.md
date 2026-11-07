@@ -41,7 +41,7 @@ the roles (`--primary`, `--surface`), not the `--color-*` aliases.
 
 The default's neutral, primary, and secondary scales derive from the OKLCH seeds `--rui-neutral`, `--rui-primary`, and
 `--rui-secondary`; secondary defaults to primary's hue plus 40 degrees. Error, warning, and success scales use fixed
-red, amber, and green seeds; info follows primary through the semantic role map. `--rui-neutral-tint` (default 1.3), `--rui-density`, `--rui-radius-scale` (default 0.45), and `--rui-border-alpha` (default 11%) tune its
+red, amber, and green seeds; info follows primary through the semantic role map. `--rui-neutral-tint` (default 1.3), `--rui-density`, `--rui-radius-scale` (default 0.7), and `--rui-border-alpha` (default 11%) tune its
 geometry and border strength. Interactive controls share the `--border` role. The foundation also
 honors reduced motion, increased contrast, keyboard focus, and Windows forced-colors preferences. Dark mode remaps
 colors; geometry and other foundational tokens remain mode-independent unless a theme documents otherwise.

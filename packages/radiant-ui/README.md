@@ -66,12 +66,12 @@ import { RuiDisclosure, RuiDisclosureGroup } from '@ecopages/radiant-ui/disclosu
 import { RuiButton } from '@ecopages/radiant-ui/button';
 ```
 
-Radiant UI ships one accessible default theme: Radiant Default with near-Zed spacing (28, 32, and 36px controls, 14px text), a restrained control radius (2.7px at the default 0.45 scale), flat controls,
+Radiant UI ships one accessible default theme: Radiant Default with near-Zed spacing (28, 32, and 36px controls, 14px text), a restrained control radius (4.2px at the default 0.7 scale), flat controls,
 and light translucent borders (11%). Optional complete themes and named compact variants such as GitHub Compact, Vercel,
 Material Design, High Contrast, Windows 95, Mac OS Classic, macOS, and Zed live in
 [`@ecopages/radiant-themes`](../radiant-themes/README.md). The default's OKLCH color families can be retuned by
 overriding `--rui-primary`, `--rui-secondary`, and `--rui-neutral` after importing the theme. `--rui-density`,
-`--rui-neutral-tint` (how strongly the greys carry the neutral hue, default 1.3), `--rui-radius-scale` (default 0.45), and
+`--rui-neutral-tint` (how strongly the greys carry the neutral hue, default 1.3), `--rui-radius-scale` (default 0.7), and
 `--rui-border-alpha` (default 11%) complete its tuning surface. Optional themes set their own
 shape, spacing, typography, and component details. The default responds to reduced-motion, increased-contrast, and
 forced-colors preferences.

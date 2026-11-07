@@ -194,7 +194,7 @@ describe('docs-theme-preview', () => {
 
 	it('shows tuning values cut to the precision of their step', () => {
 		expect(formatTuningValue('density', 1)).toBe('1.00×');
-		expect(formatTuningValue('radiusScale', 0.45)).toBe('0.45×');
+		expect(formatTuningValue('radiusScale', 0.7)).toBe('0.70×');
 		expect(formatTuningValue('neutralTint', 1.3)).toBe('1.3×');
 		expect(formatTuningValue('primaryHue', 264)).toBe('264°');
 		expect(formatTuningValue('borderAlpha', 11)).toBe('11%');

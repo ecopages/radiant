@@ -47,7 +47,7 @@ Radiant Default derives its colors and geometry from a few variables. Set them i
 | `--rui-secondary`                | Defaults to the primary seed rotated 40 degrees. Set it to any color to override.                                                                                                |
 | `--rui-neutral-tint`             | Multiplies the neutral seed's chroma (default 1.3): how strongly the greys carry the neutral hue.                                                                                |
 | `--rui-density`                  | Multiplies the spacing scale (the tuner offers 0.85-1.15).                                                                                                                       |
-| `--rui-radius-scale`             | Multiplies the radius scale (default 0.45; the docs tuner offers 0, fully square, to 4, fully rounded).                                                                          |
+| `--rui-radius-scale`             | Multiplies the radius scale (default 0.7; the docs tuner offers 0, fully square, to 4, fully rounded).                                                                           |
 | `--rui-border-alpha`             | Semantic border strength, 0-100% (default 11%). `prefers-contrast: more` pins it to 100%, and that preference wins over a theme or app value.                                    |
 
 Tricks and limits:

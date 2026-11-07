@@ -1,9 +1,9 @@
 /**
- * Default radius pack: restrained corners (2.7px controls and 3.6px containers at the default 0.45 scale, 6px and 8px at 1) in the spirit of editor UIs. `radius/soft` keeps
+ * Default radius pack: restrained corners (4.2px controls and 5.6px containers at the default 0.7 scale, 6px and 8px at 1) in the spirit of editor UIs. `radius/soft` keeps
  * the earlier rounder scale.
  */
 :root {
-	--rui-radius-scale: 0.45;
+	--rui-radius-scale: 0.7;
 	--border-radius-none: 0;
 	--border-radius-xs: calc(0.125rem * var(--rui-radius-scale));
 	--border-radius-sm: calc(0.25rem * var(--rui-radius-scale));

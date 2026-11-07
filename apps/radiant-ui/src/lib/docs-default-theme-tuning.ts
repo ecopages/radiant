@@ -83,7 +83,7 @@ export const DOCS_DEFAULT_TUNING_SCHEMA: Record<DocsDefaultThemeTuningKey, DocsD
 		max: 4,
 		step: 0.05,
 		unit: '×',
-		defaultValue: 0.45,
+		defaultValue: 0.7,
 		cssVariable: '--rui-radius-scale',
 		cssValueTemplate: '{{value}}',
 	},
