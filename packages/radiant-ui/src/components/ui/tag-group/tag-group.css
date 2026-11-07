@@ -25,16 +25,36 @@ rui-tag-group {
 		@apply ring-2 ring-focus-ring outline-none;
 	}
 
-	.rui-tag__remove {
-		@apply inline-flex shrink-0 cursor-pointer items-center justify-center rounded-sm border-0 bg-transparent p-0 text-inherit;
-		@apply size-4 min-w-0 leading-none;
+	/**
+	 * A tag with a remove button trades some end padding for the button's hit area, and the icon is drawn smaller than
+	 * that area, so the cross sits optically centered and quieter than the label instead of crowding it.
+	 */
+	.rui-tag:has(.rui-tag__remove) {
+		@apply ps-2 pe-1;
+		gap: 0.25rem;
 	}
 
-	.rui-tag__remove:hover {
-		@apply bg-on-background/10;
+	.rui-tag__remove {
+		@apply inline-flex shrink-0 cursor-pointer items-center justify-center rounded-sm border-0 bg-transparent p-0 text-inherit;
+		@apply size-4 min-w-0 leading-none opacity-70;
+		transition:
+			background-color var(--duration-fast, 150ms) var(--ease-out-strong, ease-out),
+			opacity var(--duration-fast, 150ms) var(--ease-out-strong, ease-out);
+	}
+
+	.rui-tag__remove .rui-icon {
+		width: 0.625rem;
+		height: 0.625rem;
+		stroke-width: 2.5;
+	}
+
+	@media (hover: hover) {
+		.rui-tag__remove:hover {
+			@apply bg-current/15 opacity-100;
+		}
 	}
 
 	.rui-tag__remove:focus-visible {
-		@apply ring-2 ring-focus-ring outline-none;
+		@apply ring-2 ring-focus-ring opacity-100 outline-none;
 	}
 }
