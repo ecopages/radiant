@@ -57,7 +57,7 @@ Parent JSX owns **Authored Children**. Do not let a custom element `render()` pl
 - **SSR preparation:** when a Derived Tree depends on state normally initialized in `onConnected()`, register an SSR preparation callback too. Calendar prepares its month panels from the supplied value and locale before server serialization; client connection still initializes interactive state.
 - Do not use `this.slotted` as the public JSX API. Drop `slot=` on helpers and `@slot` TSDoc once view helpers own the layout.
 
-Core Radiant still has **Slot** (`this.slotted`) as the architectural projection boundary for a render-owning host. Catalog composites do not expose it as the JSX API.
+Core Radiant still has **Slot** (`this.slotted`) as the architectural projection boundary for a render-owning host, and any host may place or forward it. Catalog composites choose not to: they do not expose it as the JSX API.
 
 ## Generated descendant ids
 

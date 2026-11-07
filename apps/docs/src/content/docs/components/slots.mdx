@@ -96,9 +96,24 @@ In hydrate mode, a host the server renders outside every host's view gets **Auth
 
 A host the server renders inside another host's view in hydrate mode, and any host that client JSX creates while its tag is defined, takes the **Children Value**. Plain-mode markup carries no stamp and no hydration markers, so page JSX renders over it instead of hydrating.
 
+## Forwarding to another host
+
+`this.slotted` is an ordinary value in the view, so a host can hand it to a host it renders. The inner host places it with its own `{this.slotted}`:
+
+```tsx
+@customElement('x-panel')
+export class XPanel extends RadiantElement {
+	override render() {
+		return <x-card>{this.slotted ?? <p>Empty</p>}</x-card>;
+	}
+}
+```
+
+This works whether `x-panel`'s children come from a JSX view or from HTML. Forward a named region the same way, as a property: `<x-card header={this.header}>`. Forwarding counts as the one place the render puts `this.slotted`.
+
 ## View helpers
 
-A view helper that owns the shell can also put chrome and children in the **parent tree**: named helpers or props occupy a region, and the custom element queries `data-ref` / `data-*` and paints with [@bindTo](/docs/decorators/bind-to) instead of placing `this.slotted`. Radiant UI composes its parts this way.
+A view helper that owns the shell can also put chrome and children in the **parent tree**: named helpers or props occupy a region, and the custom element queries `data-ref` / `data-*` and paints with [@bindTo](/docs/decorators/bind-to) instead of placing `this.slotted`. Radiant UI composes its parts this way. That is a convention of the catalog, not a limit of Radiant: your own hosts can place or forward `this.slotted` as above.
 
 ```tsx
 <RuiDialog title={<>Edit plant</>}>Body</RuiDialog>
@@ -115,6 +130,32 @@ override onConnected() {
 	this.slottedElements[0]?.classList.add('is-first');
 }
 ```
+
+### Copying slotted elements
+
+The same nodes cannot render in two places, but a copy can. Clone an element after the first render and keep the copy in state; the view renders it as any other node:
+
+```tsx
+@customElement('x-preview-card')
+export class XPreviewCard extends RadiantElement {
+	@state preview: Node | null = null;
+
+	override onConnected() {
+		this.preview = this.slottedElements[0]?.cloneNode(true) ?? null;
+	}
+
+	override render() {
+		return (
+			<section>
+				<div class="main">{this.slotted}</div>
+				<aside>{this.preview}</aside>
+			</section>
+		);
+	}
+}
+```
+
+A copy is a snapshot. It does not follow later changes to the original, it has none of the listeners or bindings attached to the original, a custom element inside it is a new instance with its own state, and an `id` is duplicated. Prefer rendering the source data twice when the host has it.
 
 ## Migrating from `<slot>`
 

@@ -90,7 +90,7 @@ export class XCard extends RadiantElement {
 - An unprefixed name binds as a property on a custom element. Write `prop:name` only for a name that binds as an attribute by default, such as `title` or `id`.
 - `<slot>` and `slot="name"` are ordinary HTML in a Radiant view.
 - Nodes appended to the host with DOM APIs are not slotted. Change the children in the parent view instead.
-- Place `this.slotted` once per render. `this.slottedElements` lists the top-level elements it rendered to; it is empty before the first client render and on the server.
+- Place `this.slotted` once per render, or forward it to a host the view renders (`<x-card>{this.slotted}</x-card>`); a named region forwards as a property. `this.slottedElements` lists the top-level elements it rendered to; it is empty before the first client render and on the server. To show an element twice, render a `cloneNode(true)` copy kept in state: a snapshot without the original's listeners or bindings.
 - Define custom elements before rendering the views that use them. A tag defined after a view rendered it takes those children as **Authored Children**, does not follow later edits, and development builds warn.
 
 **Authored Children** are children written as HTML, created with DOM APIs, or rendered on the server outside every host's view or in plain mode. The host captures them once, before its first render, into the same `this.slotted`; nodes appended later are not slotted. Server-rendered hosts: see [SSR hydration](ssr.md#hydration).
