@@ -189,6 +189,7 @@ export const NarrowLayoutCalendarOpen: Story = {
 			expectWithinViewport(popover);
 			expectFitsHorizontally(popover);
 
+			await Promise.all(popover.getAnimations().map(animation => animation.finished));
 			const widthBefore = popover.getBoundingClientRect().width;
 			const prevLeft = host.querySelector('[data-calendar-prev-month]')?.getBoundingClientRect().left;
 			const nextMonth = host.querySelector('[data-calendar-next-month]') as HTMLButtonElement;
