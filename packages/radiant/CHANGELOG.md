@@ -1,5 +1,40 @@
 # @ecopages/radiant
 
+## 0.8.0
+
+### Minor Changes
+
+- [#620](https://github.com/ecopages/radiant/pull/620) [`a0e8a39`](https://github.com/ecopages/radiant/commit/a0e8a392b6c735b6c9aa2041d05d766bd77012b1) Thanks [@andeeplus](https://github.com/andeeplus)! - **Breaking:** a render-owning host places its children with `this.slotted` instead of `<slot>`. `this.slotted` holds what the parent passed and is `null` when there is none; `this.slottedElements` lists the top-level elements it rendered to. Where the children come from:
+
+    - a host created by a JSX view gets the view's children on every render;
+    - a host written in HTML captures its child nodes once, at first render, and nodes appended later are not slotted;
+    - a host inside another host's view receives them when that view hydrates.
+
+    | Before                                                 | After                                                                                           |
+    | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
+    | `<slot />` in `render()`                               | `{this.slotted}`                                                                                |
+    | `<slot>Fallback</slot>`                                | `{this.slotted ?? <p>Fallback</p>}`                                                             |
+    | `<slot name="header" />` with `slot="header"` children | a `header` property (`<x-card header={<h2 />}>`, rendered with `{this.header}`), or composition |
+    | `getSlotElements()`, `getSlotElement()`, `@querySlot`  | `this.slottedElements`                                                                          |
+    | `createQuerySlot` from `@ecopages/radiant/helpers`     | `this.slottedElements`                                                                          |
+
+    Also removed:
+
+    - named projection from HTML (`slot="name"` children);
+    - the `data-radiant-ssr="authored"` stamp;
+    - the `slot="name"` and appended-nodes development warnings;
+    - the `@ecopages/radiant/decorators/query-slot` and `@ecopages/radiant/helpers/create-query-slot` entries.
+
+    In `@ecopages/jsx`, `<slot>` is now an ordinary element, and `SlotJsxValue` and `isSlotJsxValue` are no longer exported.
+
+    A server-rendered host outside every host's view now always takes the page JSX's children when the page hydrates over it, with live bindings. It no longer keeps the server's children. The Radiant client bundle shrinks by about 3 KB raw.
+
+### Patch Changes
+
+- Updated dependencies [[`beb4cff`](https://github.com/ecopages/radiant/commit/beb4cffe986a86d603cf5e30c9a60b90207ecb37), [`a3d2852`](https://github.com/ecopages/radiant/commit/a3d2852c20edc377f5ead4900563b96bf3048703), [`99e6652`](https://github.com/ecopages/radiant/commit/99e665216d6ce7cbb9d8a55e79e7f546be069633), [`a0cefb5`](https://github.com/ecopages/radiant/commit/a0cefb5a49984adb93e8f3671717282f36e394d3), [`bacef68`](https://github.com/ecopages/radiant/commit/bacef687e72f5e8d9f0fddcb9f48ed152ae6bcd6), [`0de8fde`](https://github.com/ecopages/radiant/commit/0de8fde6aba2ecf232feab1bd34c7713515cb2d0), [`c3f551e`](https://github.com/ecopages/radiant/commit/c3f551e43e5ed8d1014586436ad9373d18f2963e), [`d1b6571`](https://github.com/ecopages/radiant/commit/d1b6571a9b03e4660ba6c30a9568b201e5f59e5b), [`eb9595a`](https://github.com/ecopages/radiant/commit/eb9595af17114678ec744360cfcd22ac0b647b73), [`a0e8a39`](https://github.com/ecopages/radiant/commit/a0e8a392b6c735b6c9aa2041d05d766bd77012b1)]:
+    - @ecopages/jsx@0.8.0
+    - @ecopages/signals@0.8.0
+
 ## 0.7.0
 
 ### Minor Changes
