@@ -8,7 +8,8 @@ description: >-
     bindings, @bindTo paint onto existing DOM, or when to use plain reactive
     reads versus this.$ / this.bindings / this.bind(...). Also use when updating
     docs, examples, or playground code so the output follows Radiant's shared
-    reactive host model.
+    reactive host model, and when rendering @ecopages/jsx without a host using
+    signals.
 ---
 
 # Radiant Reactive Host Author
@@ -28,6 +29,7 @@ Use `llms.txt` for a compact map, then the full docs for API details.
 - Choosing plain reads (`this.count`) vs JSX bindings (`this.$.count`) vs `@bindTo`
 - Wiring SSR, hydration, host rendering, or slotted content
 - Reviewing docs or examples so they teach the Radiant model, not React habits
+- Rendering `@ecopages/jsx` with `createRoot(...)` and signals, without a host
 
 ## Import paths
 
@@ -65,7 +67,7 @@ Use a **plain read** when the value shapes render logic (branches, comparisons, 
 </article>
 ```
 
-Keep `class` and `style` as render-time composition. To style without a host rerender, bind a state attribute (`data={{ state: this.$.status }}`) and key CSS off it.
+Compose `class` and `style` at render time when they follow host render logic. A binding in `class` also works (`class={this.$.variant}`): its value is normalized like a static one and patches the attribute without a host rerender. A state attribute (`data={{ state: this.$.status }}`) that CSS keys off is the other no-rerender option.
 
 When the host keeps authored markup instead of `render()`:
 
@@ -87,6 +89,7 @@ Read only the modules relevant to the task. Each file is one level deep from thi
 | [reference/context.md](reference/context.md)               | Provide/consume, `@contextSelector` vs `@onContextUpdate`, context field types                                              |
 | [reference/ssr.md](reference/ssr.md)                       | Server entrypoints, hydrate modes, nested and page-level hydration, render scope                                            |
 | [reference/authoring.md](reference/authoring.md)           | Authoring rules, development warnings, review checklist, output shape                                                       |
+| [reference/jsx-signals.md](reference/jsx-signals.md)       | `@ecopages/jsx` with `createRoot` and signals, no host: render once, computed keyed lists, signals in attributes             |
 
 ## Critical rules
 

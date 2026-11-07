@@ -1,4 +1,5 @@
 import { isSignalLikeValue, isSubscribableJsxValue } from '../types/renderable-guards.ts';
+import { SUBSCRIBABLE_JSX_VALUE_SYMBOL } from '../types/renderable-types.ts';
 import { shouldUseBooleanAttributeBinding } from './binding-defaults.ts';
 
 /**
@@ -77,17 +78,68 @@ function appendStructuredAttributes(
 
 /**
  * @remarks A plain non-empty `class` string with no `classes` is returned as it is, skipping the token list: it is
- * the common case, and joining one token gives the same string.
+ * the common case, and joining one token gives the same string. A signal or subscribable in either becomes a live
+ * class value (see {@link createLiveClassValue}).
  */
 function normalizeMergedClassValue(classValue: unknown, classesValue: unknown): unknown {
 	if (classesValue === undefined && typeof classValue === 'string') {
 		return classValue === '' ? undefined : classValue;
 	}
 
+	if (isReactiveValue(classValue) || isReactiveValue(classesValue)) {
+		return classesValue === undefined && isReactiveValue(classValue)
+			? getLiveClassValue(classValue)
+			: createLiveClassValue(classValue, classesValue);
+	}
+
+	return joinClassTokens(classValue, classesValue);
+}
+
+function joinClassTokens(classValue: unknown, classesValue: unknown): string | undefined {
 	const tokens: string[] = [];
 	appendClassTokens(tokens, classValue);
 	appendClassTokens(tokens, classesValue);
 	return tokens.length === 0 ? undefined : tokens.join(' ');
+}
+
+type ReactiveValue = ({ get(): unknown } | { getValue(): unknown }) & { subscribe(notify: () => void): () => void };
+
+function isReactiveValue(value: unknown): value is ReactiveValue {
+	return isSignalLikeValue(value) || isSubscribableJsxValue(value);
+}
+
+function readReactiveValue(value: unknown): unknown {
+	if (isSubscribableJsxValue(value)) return value.getValue();
+	return isSignalLikeValue(value) ? value.get() : value;
+}
+
+/** Live class values of a lone reactive `class`, by source, so a re-rendered element keeps its subscription. */
+const LIVE_CLASS_VALUES = new WeakMap<object, unknown>();
+
+function getLiveClassValue(source: ReactiveValue): unknown {
+	let live = LIVE_CLASS_VALUES.get(source);
+	if (!live) LIVE_CLASS_VALUES.set(source, (live = createLiveClassValue(source, undefined)));
+	return live;
+}
+
+/**
+ * A subscribable class attribute value: the class tokens of `classValue` and `classesValue`, read again whenever a
+ * reactive one of them notifies.
+ *
+ * @remarks Without it a signal in `class` was read as a class map, so its field names became the classes.
+ */
+function createLiveClassValue(classValue: unknown, classesValue: unknown): unknown {
+	const sources = [classValue, classesValue].filter(isReactiveValue);
+	const getValue = () => joinClassTokens(readReactiveValue(classValue), readReactiveValue(classesValue));
+
+	return {
+		[SUBSCRIBABLE_JSX_VALUE_SYMBOL]: true,
+		getValue,
+		subscribe: (notify: (value: string | undefined) => void) => {
+			const unsubscribes = sources.map((source) => source.subscribe(() => notify(getValue())));
+			return () => unsubscribes.forEach((unsubscribe) => unsubscribe());
+		},
+	};
 }
 
 function appendClassTokens(tokens: string[], value: unknown): void {
