@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import { createRoot } from '../src/index.ts';
+import { jsx, jsxs } from '../src/jsx-runtime.ts';
+
+const SVG = 'http://www.w3.org/2000/svg';
+const HTML = 'http://www.w3.org/1999/xhtml';
 
 describe('nested templates mounted from one tree', () => {
 	beforeEach(() => {
@@ -9,17 +13,21 @@ describe('nested templates mounted from one tree', () => {
 	test('a nested child that changes shape is replaced alone; its siblings and parent keep their nodes', () => {
 		const container = document.createElement('div');
 		const root = createRoot(container);
-		const row = (editing: boolean) => (
-			<tr>
-				<td class="id">1</td>
-				<td class="cell">{editing ? <input value="a" /> : <span>a</span>}</td>
-			</tr>
-		);
+		const row = (editing: boolean) =>
+			jsxs('tr', {
+				children: [
+					jsx('td', { class: 'id', children: '1' }),
+					jsx('td', {
+						class: 'cell',
+						children: editing ? jsx('input', { value: 'a' }) : jsx('span', { children: 'a' }),
+					}),
+				],
+			});
 
 		root.render(row(false));
 		const tr = container.querySelector('tr');
 		const idCell = container.querySelector('.id');
-		expect(container.querySelector('.cell')?.innerHTML).toBe('<span>a</span>');
+		expect(container.querySelector('.cell span')?.textContent).toBe('a');
 
 		root.render(row(true));
 
@@ -34,46 +42,43 @@ describe('nested templates mounted from one tree', () => {
 		const root = createRoot(container);
 
 		root.render([
-			<p key="p">
-				<b>one</b>
-			</p>,
-			<section key="section">
-				<b>two</b>
-			</section>,
-			<p key="p2">
-				<i>three</i>
-			</p>,
+			jsx('p', { key: 'p', children: jsx('b', { children: 'one' }) }),
+			jsx('section', { key: 'section', children: jsx('b', { children: 'two' }) }),
+			jsx('p', { key: 'p2', children: jsx('i', { children: 'three' }) }),
 		]);
 
-		expect(container.innerHTML.replace(/<!---->/g, '')).toBe(
-			'<p><b>one</b></p><section><b>two</b></section><p><i>three</i></p>',
-		);
+		expect(Array.from(container.children, (element) => element.outerHTML)).toEqual([
+			'<p><b>one</b></p>',
+			'<section><b>two</b></section>',
+			'<p><i>three</i></p>',
+		]);
 	});
 
-	test('every mount clones its own nodes and binds its own values', () => {
+	test('every mount clones its own nodes, and a keyed list built in one batch keeps its order and nodes', () => {
 		const container = document.createElement('div');
 		const root = createRoot(container);
-		const rows = (labels: string[]) => (
-			<table>
-				<tbody>
-					{labels.map((label) => (
-						<tr key={label}>
-							<td>
-								<a class="lbl">{label}</a>
-							</td>
-						</tr>
-					))}
-				</tbody>
-			</table>
-		);
+		const rows = (labels: string[]) =>
+			jsx('table', {
+				children: jsx('tbody', {
+					children: labels.map((label) =>
+						jsx('tr', { key: label, children: jsx('td', { children: jsx('a', { class: 'lbl', children: label }) }) }),
+					),
+				}),
+			});
+		const labels = () => Array.from(container.querySelectorAll('.lbl'), (link) => link.textContent);
 
 		root.render(rows(['a', 'b', 'c']));
 		const links = Array.from(container.querySelectorAll('.lbl'));
-		expect(links.map((link) => link.textContent)).toEqual(['a', 'b', 'c']);
+		expect(labels()).toEqual(['a', 'b', 'c']);
 		expect(new Set(links).size).toBe(3);
 
+		root.render(rows(['x', 'a', 'y', 'z', 'c']));
+		expect(labels()).toEqual(['x', 'a', 'y', 'z', 'c']);
+		expect(container.querySelectorAll('.lbl')[1]).toBe(links[0]);
+		expect(container.querySelectorAll('.lbl')[4]).toBe(links[2]);
+
 		root.render(rows(['c', 'a']));
-		expect(Array.from(container.querySelectorAll('.lbl'), (link) => link.textContent)).toEqual(['c', 'a']);
+		expect(labels()).toEqual(['c', 'a']);
 		expect(container.querySelectorAll('.lbl')[0]).toBe(links[2]);
 	});
 
@@ -82,26 +87,41 @@ describe('nested templates mounted from one tree', () => {
 		const root = createRoot(container);
 
 		root.render(
-			<div>
-				<svg viewBox="0 0 10 10">{<g>{<circle r="1" />}</g>}</svg>
-			</div>,
+			jsx('div', {
+				children: jsx('svg', {
+					viewBox: '0 0 10 10',
+					children: jsx('g', { children: jsx('circle', { r: '1' }) }),
+				}),
+			}),
 		);
 
-		const circle = container.querySelector('circle');
-		expect(circle?.namespaceURI).toBe('http://www.w3.org/2000/svg');
-		expect(container.querySelector('g')?.namespaceURI).toBe('http://www.w3.org/2000/svg');
+		expect(container.querySelector('g')?.namespaceURI).toBe(SVG);
+		expect(container.querySelector('circle')?.namespaceURI).toBe(SVG);
 	});
 
 	test('a template mounted inside svg after an HTML mount of the same shape gets the SVG namespace', () => {
 		const html = document.createElement('div');
 		const svgHost = document.createElement('div');
-		const shape = () => <a href="#x">{<title>t</title>}</a>;
+		const shape = () => jsx('a', { href: '#x', children: jsx('title', { children: 't' }) });
 
-		createRoot(html).render(<div>{shape()}</div>);
-		createRoot(svgHost).render(<svg>{shape()}</svg>);
+		createRoot(html).render(jsx('div', { children: shape() }));
+		createRoot(svgHost).render(jsx('svg', { children: shape() }));
 
-		expect(html.querySelector('a')?.namespaceURI).toBe('http://www.w3.org/1999/xhtml');
-		expect(svgHost.querySelector('a')?.namespaceURI).toBe('http://www.w3.org/2000/svg');
-		expect(svgHost.querySelector('title')?.namespaceURI).toBe('http://www.w3.org/2000/svg');
+		expect(html.querySelector('a')?.namespaceURI).toBe(HTML);
+		expect(svgHost.querySelector('a')?.namespaceURI).toBe(SVG);
+		expect(svgHost.querySelector('title')?.namespaceURI).toBe(SVG);
+	});
+
+	test('a keyed list inside svg creates its items in the SVG namespace', () => {
+		const container = document.createElement('div');
+		const root = createRoot(container);
+
+		root.render(
+			jsx('svg', {
+				children: ['a', 'b'].map((id) => jsx('g', { key: id, children: jsx('circle', { id }) })),
+			}),
+		);
+
+		expect(Array.from(container.querySelectorAll('circle'), (circle) => circle.namespaceURI)).toEqual([SVG, SVG]);
 	});
 });

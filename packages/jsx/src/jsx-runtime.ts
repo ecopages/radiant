@@ -114,23 +114,11 @@ export type { JsxFragment };
 export const Fragment: JsxFragment = fragmentSymbol;
 
 /**
- * Merge the automatic-runtime `key` argument into props.
- *
- * @remarks
- * esbuild / TypeScript emit `jsx(type, props, key)` — key is not inside props.
- * Without this, keyed list reconciliation silently falls back to index mode.
- */
-function propsWithKey<Props extends object>(props: Props, key?: JsxKey): Props {
-	if (key === undefined) return props;
-	return { ...props, key };
-}
-
-/**
  * Creates a JSX element where the `children` slot is treated as a single
  * logical value.
  */
 export function jsx<Props extends object>(type: JsxElementType<Props>, props: Props, key?: JsxKey): JsxRenderable {
-	return createJsxElement(type, propsWithKey(props, key), 'single');
+	return createJsxElement(type, props, 'single', false, key ?? (props as { key?: JsxKey }).key);
 }
 
 /**
@@ -138,7 +126,7 @@ export function jsx<Props extends object>(type: JsxElementType<Props>, props: Pr
  * slots.
  */
 export function jsxs<Props extends object>(type: JsxElementType<Props>, props: Props, key?: JsxKey): JsxRenderable {
-	return createJsxElement(type, propsWithKey(props, key), 'multiple');
+	return createJsxElement(type, props, 'multiple', false, key ?? (props as { key?: JsxKey }).key);
 }
 
 /**

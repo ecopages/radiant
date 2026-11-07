@@ -103,22 +103,26 @@ function resolveCustomElementTagName(type: Function): string | undefined {
  * A custom element whose class takes its children as a value
  * ({@link CUSTOM_ELEMENT_CHILDREN_SYMBOL}) gets one `children` binding instead of child
  * parts, unless `childrenAsDom` is set. The class is looked up when the element is created.
+ *
+ * `key` is the automatic runtime's third argument, read from `props` when absent. Only a function component receives
+ * it in its props, so an element's props are never copied to carry it.
  */
 export function createJsxElement<Props extends object>(
 	type: string | JsxFragment | JsxComponent<Props> | JsxClassElement,
 	props: Props,
 	childSlotMode: ChildSlotMode,
 	childrenAsDom = false,
+	key: unknown = (props as { key?: unknown }).key,
 ): JsxRenderable {
-	const keyedValue = (props as { key?: unknown }).key;
+	const keyedValue = key;
 
 	if (typeof type === 'function') {
 		const tagName = resolveCustomElementTagName(type);
 		if (!tagName) {
-			return wrapKeyedValue((type as JsxComponent<Props>)(props), keyedValue);
+			return renderComponent(type as JsxComponent<Props>, props, key);
 		}
 
-		return createJsxElement(tagName, props, childSlotMode, childrenAsDom);
+		return createJsxElement(tagName, props, childSlotMode, childrenAsDom, key);
 	}
 
 	if (type === fragmentSymbol) {
@@ -168,6 +172,12 @@ export function createJsxElement<Props extends object>(
 		),
 		keyedValue,
 	);
+}
+
+/** Calls a function component with `key` in its props, as the automatic runtime passed it. */
+function renderComponent<Props extends object>(component: JsxComponent<Props>, props: Props, key: unknown): JsxRenderable {
+	const componentProps = key === (props as { key?: unknown }).key ? props : { ...props, key };
+	return wrapKeyedValue(component(componentProps), key);
 }
 
 export function createMarkupNodeLike(outerHTML: string): JsxNodeLike {

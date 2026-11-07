@@ -13,8 +13,17 @@ export function getRangeFirstNode(range: ChildRange): ChildNode | null {
 	return first === range.end ? null : first;
 }
 
-/** Removes a range's content and keeps its bounds; warns and removes nothing when its markers left the DOM. */
+/**
+ * Removes a range's content and keeps its bounds; warns and removes nothing when its markers left the DOM.
+ *
+ * @remarks An empty range returns at once, as every slot does on its first mount; a slot that is its parent's only
+ * child would otherwise reset the parent's `textContent`.
+ */
 export function clearRange(range: ChildRange): void {
+	if (getRangeFirstNode(range) === null && getRangeParent(range)) {
+		return;
+	}
+
 	if (range.start && range.end) {
 		clearRangeBetween(range.start, range.end);
 		return;
