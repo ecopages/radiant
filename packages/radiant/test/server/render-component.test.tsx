@@ -631,7 +631,9 @@ describe('render-component server helpers', () => {
 			environment: createServerRenderEnvironment(),
 		});
 
-		expect(rendered.markup).toContain('<div><h2>Server heading</h2><p>Server body</p></div>');
+		expect(rendered.markup).toContain(
+			'<div><!--radiant-slotted--><h2>Server heading</h2><p>Server body</p><!--/radiant-slotted--></div>',
+		);
 	});
 
 	test('renderComponent() lets adapters prepare host content before it is slotted', async () => {
@@ -641,7 +643,9 @@ describe('render-component server helpers', () => {
 			},
 		});
 
-		expect(rendered.markup).toContain('<div><h2>Prepared heading</h2><p>Prepared body</p></div>');
+		expect(rendered.markup).toContain(
+			'<div><!--radiant-slotted--><h2>Prepared heading</h2><p>Prepared body</p><!--/radiant-slotted--></div>',
+		);
 	});
 
 	test('renderComponent() exposes ambient SSR context to standalone consumers', async () => {

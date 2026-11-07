@@ -140,7 +140,7 @@ export function resolveRadiantElementRenderBridge(component: object): RadiantEle
  * (no stamp) and its parent may never render on the client, so there, as anywhere outside a host's view (such as a
  * page around the hosts), the client sees the children only as Authored Children: the host builds them as light-DOM nodes
  * (`renderServerLightDom`, so no value is escaped and parsed back) inside its own context providers, and captures
- * them as its slotted content, which the slotted payload carries to the client.
+ * them as its slotted content, which its view places between the comments the client adopts it by.
  *
  * A host the page places inside `svg` or `math` serializes its light DOM and view in that namespace, as the browser
  * parses them there, so text in a `style` or `xmp` under it is entity-escaped.

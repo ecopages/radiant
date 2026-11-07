@@ -3,7 +3,15 @@ import { createMarkupNodeLike, isKeyedJsxValue, type JsxRenderable, type Templat
 import { escapeHtmlText } from '../utils/escape-html-text';
 import { HYDRATION_ATTRIBUTE } from './hydration-codec';
 
-export const SLOTTED_PAYLOAD_SCRIPT_ATTRIBUTE = 'data-radiant-slot-projection';
+/** Comment data that opens the server's placement of a host's captured slotted content in its view. */
+export const SLOTTED_START = 'radiant-slotted';
+/** Comment data that closes it. */
+export const SLOTTED_END = '/radiant-slotted';
+/**
+ * Marks a server-rendered host that holds captured slotted content, and the inert `<template>` that carries that
+ * content when the view did not place it.
+ */
+export const SLOTTED_ATTRIBUTE = 'data-radiant-slotted';
 
 type ForeignNamespace = 'svg' | 'math';
 
@@ -15,48 +23,62 @@ type ForeignNamespace = 'svg' | 'math';
  */
 export type ForeignSlottedProjector = (content: JsxRenderable, namespace: ForeignNamespace) => JsxRenderable;
 
-/** A host's child nodes as slotted content, without the hydration and payload scripts the server adds. */
+/** A host's child nodes as slotted content, without the hydration scripts and slotted template the server adds. */
 export function captureSlottedNodes(host: HTMLElement): Node[] {
-	return Array.from(host.childNodes).filter((node) => !isPayloadScript(node) && !isHydrationScript(node));
+	return Array.from(host.childNodes).filter((node) => !isSlottedTemplate(node) && !isHydrationScript(node));
 }
 
-/** Removes the server's slotted payload script from `host` and returns its text. */
-export function takeSlottedPayload(host: HTMLElement): string | undefined {
+/** The server's start and end comments around captured slotted content, as markup the view renders as it is. */
+export function createSlottedBounds(): [JsxRenderable, JsxRenderable] {
+	return [createMarkupNodeLike(`<!--${SLOTTED_START}-->`), createMarkupNodeLike(`<!--${SLOTTED_END}-->`)];
+}
+
+/**
+ * Takes the slotted content the server rendered for `host`, or returns `undefined` when the server marked none.
+ *
+ * @remarks Only a host carrying {@link SLOTTED_ATTRIBUTE} holds server slotted content, so a host whose authored
+ * children include a nested server-rendered host never takes that host's content. The attribute is removed. The
+ * content is either the nodes between the host's first {@link SLOTTED_START} comment in tree order and its matching
+ * end, which stay where they are while the comments are removed, or the content of a template child carrying the
+ * attribute, which is removed. The first start comment is the host's own: a nested host's comments sit inside the
+ * slotted content they belong to, and a host a view creates receives its children from the view and adds none.
+ */
+export function takeServerSlotted(host: HTMLElement): Node[] | undefined {
+	if (!host.hasAttribute(SLOTTED_ATTRIBUTE)) return undefined;
+	host.removeAttribute(SLOTTED_ATTRIBUTE);
+
 	for (const node of Array.from(host.childNodes)) {
-		if (!isPayloadScript(node)) continue;
-		const payload = node.textContent ?? undefined;
-		node.parentNode?.removeChild(node);
-		return payload;
+		if (!isSlottedTemplate(node)) continue;
+		node.remove();
+		return Array.from(node.content.childNodes);
 	}
 
-	return undefined;
-}
+	const start = findComment(host, SLOTTED_START);
+	if (!start) return [];
 
-/** Reads a slotted payload into markup nodes the client renders as they are. */
-export function deserializeSlottedPayload(payload: string): JsxRenderable[] {
-	try {
-		const fragments = (JSON.parse(payload) as Record<string, unknown>)[''];
-		return Array.isArray(fragments) ? fragments.map((fragment) => createMarkupNodeLike(String(fragment))) : [];
-	} catch {
-		if (typeof console !== 'undefined') {
-			console.warn('[@ecopages/radiant] Failed to parse slotted payload:', payload.slice(0, 120));
-		}
-		return [];
+	const nodes: Node[] = [];
+	let depth = 0;
+	let node = start.nextSibling;
+
+	for (; node; node = node.nextSibling) {
+		if (isComment(node, SLOTTED_START)) depth += 1;
+		if (isComment(node, SLOTTED_END) && depth-- === 0) break;
+		nodes.push(node);
 	}
+
+	start.remove();
+	node?.remove();
+	return nodes;
 }
 
-/** The payload that carries captured slotted nodes to the client, or `undefined` when there are none. */
-export function serializeSlottedPayload(nodes: readonly JsxRenderable[]): Record<string, string[]> | undefined {
-	const fragments = nodes
-		.map((node) => renderableToHtmlFragment(node))
-		.filter((fragment): fragment is string => fragment !== undefined && fragment !== '');
-
-	return fragments.length > 0 ? { '': fragments } : undefined;
+/** The markup of captured slotted nodes, for the template that carries them when the view did not place them. */
+export function serializeSlottedMarkup(nodes: readonly JsxRenderable[]): string {
+	return nodes.map((node) => renderableToHtmlFragment(node) ?? '').join('');
 }
 
-/** JSON script the client reads to restore captured slotted nodes. */
-export function createSlottedPayloadScriptTag(payload: Record<string, string[]>): string {
-	return `<script type="application/json" ${SLOTTED_PAYLOAD_SCRIPT_ATTRIBUTE}>${JSON.stringify(payload).replace(/</g, '\\u003c')}</script>`;
+/** Inert template the client reads captured slotted nodes from when the view did not place them. */
+export function createSlottedTemplateTag(markup: string): string {
+	return markup === '' ? '' : `<template ${SLOTTED_ATTRIBUTE}>${markup}</template>`;
 }
 
 export function collectAuthoredHydrationScriptMarkup(host: HTMLElement): string | undefined {
@@ -71,8 +93,8 @@ export function collectAuthoredHydrationScriptMarkup(host: HTMLElement): string 
 /**
  * Passes each entry of `slotted` through `project` wherever `value` places it inside `svg` or `math`.
  *
- * @remarks Server only. Entries are found by identity: the JSX factory copies an array child, so the slotted array
- * itself does not survive, while its entries, and a single slotted value, do. Namespaces are tracked through
+ * @remarks Server only. Entries are found by identity, at any depth: the JSX factory copies an array child, so the
+ * slotted arrays themselves do not survive, while their entries, and a single slotted value, do. Namespaces are tracked through
  * templates by the rule of the jsx serializer's `childForeignContent`.
  */
 export function projectForeignSlotted(
@@ -82,7 +104,12 @@ export function projectForeignSlotted(
 ): JsxRenderable {
 	if (slotted === null || slotted === undefined) return value;
 
-	const entries = new Set<unknown>(Array.isArray(slotted) ? [slotted, ...slotted] : [slotted]);
+	const entries = new Set<unknown>();
+	const collect = (entry: JsxRenderable): void => {
+		entries.add(entry);
+		if (Array.isArray(entry)) entry.forEach(collect);
+	};
+	collect(slotted);
 
 	const walk = (current: JsxRenderable, namespace?: ForeignNamespace): JsxRenderable => {
 		if (entries.has(current)) return namespace ? project(current, namespace) : current;
@@ -126,8 +153,31 @@ function childForeignNamespace(
 		: namespace;
 }
 
-function isPayloadScript(node: Node): node is HTMLScriptElement {
-	return node instanceof HTMLScriptElement && node.hasAttribute(SLOTTED_PAYLOAD_SCRIPT_ATTRIBUTE);
+const ELEMENT_NODE = 1;
+const COMMENT_NODE = 8;
+
+/**
+ * @remarks Checks the tag name and numeric node type: the server's minimal DOM defines neither `HTMLTemplateElement`
+ * nor always a global `Node`.
+ */
+function isSlottedTemplate(node: Node): node is HTMLTemplateElement {
+	return (
+		node.nodeType === ELEMENT_NODE &&
+		(node as Element).localName === 'template' &&
+		(node as Element).hasAttribute(SLOTTED_ATTRIBUTE)
+	);
+}
+
+function isComment(node: Node, data: string): boolean {
+	return node.nodeType === COMMENT_NODE && (node as Comment).data === data;
+}
+
+function findComment(root: Node, data: string): Comment | undefined {
+	const walker = document.createTreeWalker(root, NodeFilter.SHOW_COMMENT);
+	for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+		if ((node as Comment).data === data) return node as Comment;
+	}
+	return undefined;
 }
 
 function isHydrationScript(node: Node): node is HTMLScriptElement {
@@ -145,7 +195,7 @@ function renderableToHtmlFragment(renderable: JsxRenderable): string | undefined
 }
 
 /**
- * @remarks Comment nodes render nothing: the payload becomes trusted markup on the client, and comment data is not
+ * @remarks Comment nodes render nothing: the template becomes trusted markup on the client, and comment data is not
  * escaped by serialization.
  */
 function nodeToHtmlFragment(node: Node): string | undefined {

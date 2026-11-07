@@ -312,8 +312,8 @@ export class RadiantElement<Bindings extends object = {}>
 	 * content (for example light-DOM children its parent view authored) can rely on it. It says nothing about
 	 * whether the hydrator is installed; combine it with `hasRadiantHydrator()` when that matters. Plain-mode SSR
 	 * does not stamp hosts, so those report `false`. The attribute is removed once read, so markup copied from a
-	 * connected host does not carry it. Slotted payloads embed host markup as written, stamps included, so
-	 * a host the client rebuilds from a payload also reports `true`. A render-owning host in another host's view
+	 * connected host does not carry it. A host inside server-rendered slotted content keeps the server's node,
+	 * or comes from the slotted template with its stamp, so it also reports `true`. A render-owning host in another host's view
 	 * keeps its server node when that parent hydrates, so it reports `true` too; one the parent's view rebuilds
 	 * instead (its tag was defined only after the parent hydrated, or the server markup does not match the view)
 	 * is a client-made instance and reports `false`.
@@ -737,16 +737,16 @@ export class RadiantElement<Bindings extends object = {}>
 	}
 
 	/**
-	 * Captured slotted nodes as a payload, for SSR to carry them to the client.
+	 * The markup of captured slotted nodes, for SSR to carry them when the view did not place them.
 	 *
 	 * @remarks Undefined when this host does not own a render lifecycle or slots a view's children.
 	 */
-	public getSlottedPayload(): Record<string, string[]> | undefined {
+	public getSlottedMarkup(): string | undefined {
 		if (!this.shouldRunRenderLifecycle()) {
 			return undefined;
 		}
 
-		return this.getOrCreateRenderRuntime().getSlottedPayload();
+		return this.getOrCreateRenderRuntime().getSlottedMarkup();
 	}
 
 	public getAuthoredHydrationScriptMarkup(): string | undefined {
