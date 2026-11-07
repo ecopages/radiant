@@ -54,3 +54,4 @@ export type {
 	SubscribableJsxValueWithAccess,
 	TemplateResultLike,
 } from './types/index.ts';
+export { MapItems, type MapItemsProps, type MapItemsSource } from './map-items.ts';

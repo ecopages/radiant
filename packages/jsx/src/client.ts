@@ -32,3 +32,4 @@ export {
 export type { JSX_PROPS } from './types/index.ts';
 
 export { createRoot, hasHydrationMarkers, hydrate, render, type JsxRoot } from './dom-render.ts';
+export { MapItems, type MapItemsProps, type MapItemsSource } from './map-items.ts';

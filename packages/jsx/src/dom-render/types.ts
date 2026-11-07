@@ -239,6 +239,13 @@ export type MountedRangeRecord = {
 	end: Text;
 	mounted: MountedRangeContent;
 	start: Text;
+	/**
+	 * The value a keyed list last rendered into this record.
+	 *
+	 * @remarks The same value again is skipped: a template result is not changed after creation, so rendering it
+	 * twice changes nothing.
+	 */
+	value?: unknown;
 };
 
 /**

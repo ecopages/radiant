@@ -111,25 +111,25 @@ So the usual shape is to render once and let signals carry every later change:
 ```tsx
 /** @jsxImportSource @ecopages/jsx */
 
-import { computed, state, type State } from '@ecopages/signals';
-import { createRoot } from '@ecopages/jsx';
+import { state, type State } from '@ecopages/signals';
+import { createRoot, MapItems } from '@ecopages/jsx';
 
 type Row = { id: number; label: State<string>; cls: State<string> };
 
 const rows = state<Row[]>([]);
 
-const list = computed(() =>
-	rows.get().map((row) => (
-		<tr key={row.id} class={row.cls}>
-			<td>{row.id}</td>
-			<td>{row.label}</td>
-		</tr>
-	)),
-);
-
 createRoot(document.querySelector('#app') as HTMLElement).render(
 	<table>
-		<tbody>{list}</tbody>
+		<tbody>
+			<MapItems each={rows}>
+				{(row) => (
+					<tr class={row.cls}>
+						<td>{row.id}</td>
+						<td>{row.label}</td>
+					</tr>
+				)}
+			</MapItems>
+		</tbody>
 	</table>,
 );
 
@@ -138,13 +138,38 @@ rows.get()[0].label.set('renamed'); // patches one text node
 rows.get()[0].cls.set('selected'); // patches one class attribute
 ```
 
-- **Children:** `{row.label}` binds the text; a signal that holds JSX, such as `list` above, mounts and reconciles it in place.
+- **Children:** `{row.label}` binds the text; a signal that holds JSX mounts and reconciles it in place.
 - **Attributes:** a signal works as any attribute value, `class` and `classes` included, as well as `attr:`, `bool:` and `prop:` bindings. In `class` and `style`, the signal's value is normalized like a static one, so a class signal can hold a string, a list or a class map, and a style signal a string or a style object.
-- **Lists:** a `computed` that maps a signal of rows to keyed JSX rebuilds only when the list itself changes. Keyed rows keep their nodes, and each row's own signals update its text and attributes without touching the list.
+- **Lists:** `<MapItems each={rows}>` renders each item once and reuses that row while the item stays in the list, so a swap or a removal touches only the rows that moved or left. Rows are keyed by their item automatically; a row with its own `key` keeps it. The callback runs untracked, so reading an item's signals there does not subscribe the view. Bind the signals in the row, as `row.label` above, to keep them live. `each` must be a signal or subscribable holding an array.
 
-Pass the signal itself, not its value. Calling `row.label.get()` while the `computed` builds the rows would make the whole list depend on every label, so renaming one row would rebuild all of them.
+The list state lives with the `each` signal, so a view that renders again, such as a Radiant host `render()` or a second `root.render(...)`, keeps the same rows and subscription. Outside JSX, `mapItems(rows, (row) => row.label)` from `@ecopages/signals` does the same mapping and returns a `Computed`.
+
+A `computed` that calls `.map` over the rows still works, but it rebuilds the JSX of every row on each list change. In it, pass the signal, not `signal.get()`: reading values while it builds the rows makes the list depend on every one of them.
+
+The renderer skips a keyed row whose value is the same object it rendered last time. A new object with equal values is still applied in full, so controlled inputs keep working. `MapItems` relies on this by returning the same row object for an unchanged item.
 
 The alternative is to call `render(...)` again with fresh JSX on every change. That works, since the renderer patches what changed, but every render rebuilds and compares the whole tree. Use it for small or rarely changing views, and signals for anything that updates often.
+
+### Keyed fragments
+
+`<Fragment key=...>` groups several nodes under one key. When keyed siblings reorder, the group moves as a single entry.
+
+```tsx
+/** @jsxImportSource @ecopages/jsx */
+
+import { Fragment, MapItems } from '@ecopages/jsx';
+
+<dl>
+	<MapItems each={terms}>
+		{(term) => (
+			<Fragment key={term.id}>
+				<dt>{term.name}</dt>
+				<dd>{term.description}</dd>
+			</Fragment>
+		)}
+	</MapItems>
+</dl>;
+```
 
 ### Other update sources
 

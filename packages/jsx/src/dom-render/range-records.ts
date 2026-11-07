@@ -35,6 +35,7 @@ export function createRangeRecord(parentNode: ParentNode, referenceNode: ChildNo
 		end,
 		mounted: { kind: 'empty' },
 		start,
+		value: undefined,
 	};
 }
 
@@ -59,6 +60,7 @@ export function createHydratedRangeRecord(existingNodes: readonly Node[], refere
 			end,
 			mounted: { kind: 'empty' },
 			start,
+			value: undefined,
 		};
 	}
 
@@ -77,5 +79,6 @@ export function createHydratedRangeRecord(existingNodes: readonly Node[], refere
 		end,
 		mounted: { kind: 'empty' },
 		start,
+		value: undefined,
 	};
 }

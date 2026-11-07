@@ -78,18 +78,21 @@ function appendStructuredAttributes(
 
 /**
  * @remarks A plain non-empty `class` string with no `classes` is returned as it is, skipping the token list: it is
- * the common case, and joining one token gives the same string. A signal or subscribable in either becomes a live
- * class value (see {@link createLiveClassValue}).
+ * the common case, and joining one token gives the same string. A lone signal or subscribable in `class` binds as it
+ * is: {@link resolveAttributeText} normalizes each value it writes. A signal mixed with `classes`, or one in
+ * `classes`, becomes a live class value (see {@link createLiveClassValue}).
  */
 function normalizeMergedClassValue(classValue: unknown, classesValue: unknown): unknown {
 	if (classesValue === undefined && typeof classValue === 'string') {
 		return classValue === '' ? undefined : classValue;
 	}
 
+	if (classesValue === undefined && isReactiveValue(classValue)) {
+		return classValue;
+	}
+
 	if (isReactiveValue(classValue) || isReactiveValue(classesValue)) {
-		return classesValue === undefined && isReactiveValue(classValue)
-			? getLiveClassValue(classValue)
-			: createLiveClassValue(classValue, classesValue);
+		return createLiveClassValue(classValue, classesValue);
 	}
 
 	return joinClassTokens(classValue, classesValue);
@@ -111,15 +114,6 @@ function isReactiveValue(value: unknown): value is ReactiveValue {
 function readReactiveValue(value: unknown): unknown {
 	if (isSubscribableJsxValue(value)) return value.getValue();
 	return isSignalLikeValue(value) ? value.get() : value;
-}
-
-/** Live class values of a lone reactive `class`, by source, so a re-rendered element keeps its subscription. */
-const LIVE_CLASS_VALUES = new WeakMap<object, unknown>();
-
-function getLiveClassValue(source: ReactiveValue): unknown {
-	let live = LIVE_CLASS_VALUES.get(source);
-	if (!live) LIVE_CLASS_VALUES.set(source, (live = createLiveClassValue(source, undefined)));
-	return live;
 }
 
 /**
@@ -202,7 +196,8 @@ export function serializeStyleSnapshot(value: unknown): string {
  * The text a server renderer writes for one resolved attribute value, or `undefined` when the attribute is
  * left off.
  *
- * @param name Attribute name; `style` values go through {@link serializeStyleSnapshot}.
+ * @param name Attribute name; `style` values go through {@link serializeStyleSnapshot}, and a `class` list, class map
+ * or empty string is joined into class tokens, or left off when there are none.
  * @param value Resolved (non-reactive) value.
  * @param presence Treat the attribute as boolean: a non-empty string is written as given, any other truthy value
  * yields `''` (present), and a falsy one, `''` included, `undefined`.
@@ -219,7 +214,10 @@ export function resolveAttributeText(name: string, value: unknown, presence = fa
 	if (presence || (typeof value === 'boolean' && shouldUseBooleanAttributeBinding(name)))
 		return value ? '' : undefined;
 	if (value === undefined || value === null) return undefined;
-	return name.toLowerCase() === 'style' ? serializeStyleSnapshot(value) : String(value);
+	const lowerName = name.toLowerCase();
+	if (lowerName === 'style') return serializeStyleSnapshot(value);
+	if (lowerName === 'class' && (typeof value === 'object' || value === '')) return joinClassTokens(value, undefined);
+	return String(value);
 }
 
 /**

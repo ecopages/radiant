@@ -2,6 +2,10 @@
 
 ## 0.8.0
 
+### Minor Changes
+
+- [#632](https://github.com/ecopages/radiant/pull/632) [`6e98ef9`](https://github.com/ecopages/radiant/commit/6e98ef9ffd57ce38d5d92d15ddfb0bf6576ae49e) Thanks [@andeeplus](https://github.com/andeeplus)! - `mapItems(source, project)` maps each item of a list signal once, by identity, and reuses its result while the item stays in the list.
+
 ## 0.7.0
 
 ### Patch Changes
