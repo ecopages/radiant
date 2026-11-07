@@ -19,8 +19,9 @@ export type RadiantSlotStudioBoardProps = {
 /**
  * A board that places its children as slotted content and takes its other regions as properties.
  *
- * @remarks The inventory line reads `slottedElements`, which is empty until the first client render, so it is
- * filled in `onConnected()` and the server renders a placeholder.
+ * @remarks The body part of the inventory reads `slottedElements`, which is empty until the first client render, so
+ * it is filled in `onConnected()` and the server renders a placeholder. The region part is read in `render()`: page JSX
+ * can assign the region properties after the host connected.
  */
 @customElement('radiant-slot-studio-board')
 export class RadiantSlotStudioBoardElement extends RadiantElement {
@@ -29,7 +30,8 @@ export class RadiantSlotStudioBoardElement extends RadiantElement {
 	@state heading: JsxRenderable = null;
 	@state sidebar: JsxRenderable = null;
 	@state footer: JsxRenderable = null;
-	@state slotInventory = 'Reading slotted content...';
+	@state bodyInventory = 'reading slotted content';
+	@state slottedComponentTag = 'none';
 
 	@provideContext({
 		context: radiantSlotStudioContext,
@@ -64,7 +66,8 @@ export class RadiantSlotStudioBoardElement extends RadiantElement {
 	override onConnected() {
 		const elements = this.slottedElements;
 		const component = elements.find((element) => element.tagName.includes('-'));
-		this.slotInventory = `${elements.length} body region${elements.length === 1 ? '' : 's'}, ${this.sidebar ? 'sidebar ready' : 'no sidebar'}, ${this.footer ? 'footer ready' : 'no footer'}. Slotted custom element: ${component?.tagName.toLowerCase() ?? 'none'}.`;
+		this.bodyInventory = `${elements.length} body region${elements.length === 1 ? '' : 's'}`;
+		this.slottedComponentTag = component?.tagName.toLowerCase() ?? 'none';
 	}
 
 	override render() {
@@ -74,7 +77,8 @@ export class RadiantSlotStudioBoardElement extends RadiantElement {
 				{this.heading ?? <h3>Composed workspace board</h3>}
 				<radiant-slot-studio-summary />
 				<p class="studio-slot-meta">
-					<code>slottedElements</code> sees {this.slotInventory}
+					<code>slottedElements</code> sees{' '}
+					{`${this.bodyInventory}, ${this.sidebar ? 'sidebar ready' : 'no sidebar'}, ${this.footer ? 'footer ready' : 'no footer'}. Slotted custom element: ${this.slottedComponentTag}.`}
 				</p>
 				<div class="studio-layout">
 					<aside class="studio-sidebar">
