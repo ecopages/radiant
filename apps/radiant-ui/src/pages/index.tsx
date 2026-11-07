@@ -371,7 +371,6 @@ const HomeHero = () => (
 		<div class="home-hero">
 			<div class="home-hero__text">
 				<RuiHeading size="xl" class="home-header__heading">
-					<RuiHeadingEyebrow>Radiant UI</RuiHeadingEyebrow>
 					<RuiHeadingTitle as="h1">Accessible light-DOM components for Radiant hosts.</RuiHeadingTitle>
 					<RuiHeadingDescription>
 						Import focused modules, compose views in the document tree, and theme through semantic roles.

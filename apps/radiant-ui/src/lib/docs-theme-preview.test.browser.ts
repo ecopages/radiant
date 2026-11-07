@@ -4,6 +4,7 @@ import {
 	applyDefaultThemeTuning,
 	clearDefaultThemeTuning,
 	createDocsDefaultThemeTuningCss,
+	formatTuningValue,
 	DOCS_DEFAULT_THEME_TUNING,
 	parseDocsDefaultThemeTuning,
 } from './docs-default-theme-tuning';
@@ -156,7 +157,7 @@ describe('docs-theme-preview', () => {
 
 		expect(activeThemeLinks.size).toBe(0);
 		expect(document.documentElement.dataset.ruiTheme).toBe('rui-default');
-		expect(document.documentElement.style.getPropertyValue('--rui-primary')).toBe('oklch(52% 0.19 264)');
+		expect(document.documentElement.style.getPropertyValue('--rui-primary')).toBe('oklch(52% 0.19 275)');
 	});
 
 	it('names the package import each theme needs', () => {
@@ -188,10 +189,28 @@ describe('docs-theme-preview', () => {
 		applyDocumentTokens(defaultDocsThemeSelection);
 
 		expect(document.querySelector(`link[${DOCS_THEME_STYLESHEET_ATTR}]`)).toBeNull();
-		expect(document.documentElement.style.getPropertyValue('--rui-primary')).toBe('oklch(52% 0.19 264)');
+		expect(document.documentElement.style.getPropertyValue('--rui-primary')).toBe('oklch(52% 0.19 275)');
 	});
 
-	it('parses and bounds the six default theme inputs', () => {
+	it('shows tuning values cut to the precision of their step', () => {
+		expect(formatTuningValue('density', 1)).toBe('1.00×');
+		expect(formatTuningValue('radiusScale', 0.45)).toBe('0.45×');
+		expect(formatTuningValue('neutralTint', 1.3)).toBe('1.3×');
+		expect(formatTuningValue('primaryHue', 264)).toBe('264°');
+		expect(formatTuningValue('borderAlpha', 11)).toBe('11%');
+		expect(formatTuningValue('density', 1.0899999999999999)).toBe('1.09×');
+	});
+
+	it('rounds tuning values to two decimals', () => {
+		expect(
+			parseDocsDefaultThemeTuning({ density: 1.0899999999999999, radiusScale: 1.33424324234234 }),
+		).toMatchObject({
+			density: 1.09,
+			radiusScale: 1.33,
+		});
+	});
+
+	it('parses and bounds the default theme inputs', () => {
 		expect(parseDocsDefaultThemeTuning('{invalid')).toEqual(DOCS_DEFAULT_THEME_TUNING);
 		expect(parseDocsDefaultThemeTuning({ primaryHue: 400, density: 0.4, borderAlpha: 120 })).toEqual({
 			...DOCS_DEFAULT_THEME_TUNING,
@@ -346,6 +365,7 @@ describe('docs-theme-preview', () => {
 			v: DOCS_APPEARANCE_VERSION,
 			colors: 'github',
 			tuning: {},
+			fonts: {},
 		});
 	});
 
@@ -355,6 +375,7 @@ describe('docs-theme-preview', () => {
 			v: DOCS_APPEARANCE_VERSION,
 			colors: 'rui-default',
 			tuning: { primaryHue: 300 },
+			fonts: {},
 		});
 
 		writeDocsDefaultThemeTuning(DOCS_DEFAULT_THEME_TUNING);
@@ -385,11 +406,12 @@ describe('docs-theme-preview', () => {
 			v: DOCS_APPEARANCE_VERSION,
 			colors: 'github',
 			tuning: {},
+			fonts: {},
 		});
 		expect(new URLSearchParams(window.location.search).has('rui-primary-hue')).toBe(false);
 
 		applyDocumentTokens({ colors: 'rui-default' });
-		expect(document.documentElement.style.getPropertyValue('--rui-primary')).toBe('oklch(52% 0.19 264)');
+		expect(document.documentElement.style.getPropertyValue('--rui-primary')).toBe('oklch(52% 0.19 275)');
 		expect(readDocsDefaultThemeTuning()).toEqual(DOCS_DEFAULT_THEME_TUNING);
 	});
 

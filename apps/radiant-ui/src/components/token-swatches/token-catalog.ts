@@ -332,6 +332,30 @@ export const palettePacks: readonly PalettePack[] = [
 			},
 		],
 	},
+	{
+		id: 'zed',
+		label: 'Zed',
+		packFile: '@ecopages/radiant-themes/zed',
+		scales: [
+			{
+				name: 'Zed colors',
+				tokens: [
+					'--color-zed-background',
+					'--color-zed-panel',
+					'--color-zed-elevated',
+					'--color-zed-border',
+					'--color-zed-text',
+					'--color-zed-text-muted',
+					'--color-zed-accent',
+					'--color-zed-green',
+					'--color-zed-red',
+					'--color-zed-amber',
+					'--color-zed-purple',
+					'--color-zed-teal',
+				],
+			},
+		],
+	},
 ];
 
 export const spacingScaleTokens: readonly string[] = [

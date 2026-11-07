@@ -56,7 +56,7 @@ color controls.
 <DesignTokenPanel />
 
 Available themes include Radiant Default, GitHub, Cloudflare, VS Code, Vercel, Material Design, High Contrast, Windows 95, Mac OS
-Classic, and macOS. Each complete theme also has an individually exported compact variant, such as
+Classic, macOS, and Zed. Each complete theme also has an individually exported compact variant, such as
 `@ecopages/radiant-themes/github/compact`.
 
 ## Token tiers
@@ -65,7 +65,7 @@ Classic, and macOS. Each complete theme also has an individually exported compac
 | --- | --- | --- |
 | 1. Packs | Raw scales: colour palettes, `--space-*`, `--border-radius-*`, elevation, type, motion | Import a pack stylesheet. Do not target palette steps from component CSS. |
 | 2. Semantic | `--primary`, `--surface`, `--error`, … plus the Tailwind `@theme` bridge (`bg-primary`) | This is what components use. |
-| 3. System | Absolute colours (`--color-black`, `--color-white`), border widths, focus ring geometry, opacity, z-index, control and icon sizes | Shared by every theme; not a mood pack. `--size-control-*` aliases the spacing scale. |
+| 3. System | Absolute colours (`--color-black`, `--color-white`), border widths, focus ring geometry, opacity, z-index, control and icon sizes | Shared by every theme; not a mood pack. Radiant Default sets its own sizes; other packs alias the spacing scale. |
 
 `themes/default.css` is the default import graph. It loads the Radiant Default palette, spacing and radius, elevation,
 typography, motion, system tokens, and semantic roles. `tokens/foundation.css` contains the shared foundation tokens.
@@ -103,7 +103,7 @@ Palette files put raw colors on `:root`. Theme role files assign them to semanti
 reference palette values such as `--color-carbon-blue-500` or `--color-github-blue`.
 
 The Radiant Default scales are derived from OKLCH seed variables in `@ecopages/radiant-ui/themes/default`. Optional
-palettes such as GitHub, Cloudflare, VS Code, Vercel, Material Design, High Contrast, Windows 95, Mac OS Classic, and macOS are provided by
+palettes such as GitHub, Cloudflare, VS Code, Vercel, Material Design, High Contrast, Windows 95, Mac OS Classic, macOS, and Zed are provided by
 `@ecopages/radiant-themes`. Hue scales that include step 975
 ship steps 50–975; Vercel gray and the semantic gray scale end at 950. `--color-black` and `--color-white` are system
 tokens, not a hue pack.
@@ -124,24 +124,26 @@ Roles are what component CSS should use for control padding and stack rhythm:
 
 | Token | Radiant Default | Tailwind `@theme` |
 | --- | --- | --- |
-| `--space-1` | 0.25rem | `--spacing-1` |
-| `--space-2` | 0.5rem | `--spacing-2` |
-| `--space-3` | 0.75rem | `--spacing-3` |
-| `--space-4` | 1rem | `--spacing-4` |
-| `--space-5` | 1.25rem | `--spacing-5` |
-| `--space-6` | 1.5rem | `--spacing-6` |
-| `--space-8` | 2rem | `--spacing-8` |
-| `--space-10` | 2.5rem | not bridged |
-| `--space-12` | 3rem | not bridged |
-| `--space-16` | 4rem | not bridged |
+| `--space-1` | 0.1875rem | `--spacing-1` |
+| `--space-2` | 0.375rem | `--spacing-2` |
+| `--space-3` | 0.625rem | `--spacing-3` |
+| `--space-4` | 0.8125rem | `--spacing-4` |
+| `--space-5` | 1rem | `--spacing-5` |
+| `--space-6` | 1.25rem | `--spacing-6` |
+| `--space-8` | 1.75rem | `--spacing-8` |
+| `--space-10` | 2rem | not bridged |
+| `--space-12` | 2.5rem | not bridged |
+| `--space-16` | 3.25rem | not bridged |
 | `--space-control-x` | `--space-3` | `--spacing-control-x` |
 | `--space-control-y` | `--space-2` | `--spacing-control-y` |
 | `--space-inline` | `--space-2` | `--spacing-inline` |
 | `--space-stack` | `--space-4` | `--spacing-stack` |
 | `--space-inset` | `--space-4` | `--spacing-inset` |
 
-`--size-control-sm`, `--size-control-md`, and `--size-control-lg` alias `--space-8`, `--space-10`, and `--space-12`, so
-the selected theme's density affects button and input height as well as `--space-control-x` padding.
+`--size-control-sm`, `--size-control-md`, and `--size-control-lg` are 1.75rem, 2rem, and 2.25rem (28, 32, and 36px) in
+Radiant Default and follow `--rui-density`, so density affects button and input height as well as `--space-control-x`
+padding. The `compact`, `comfortable`, and `wide` packs alias `--space-8`, `--space-10`, and `--space-12` instead.
+Radiant Default also sets `--text-control` to 0.8125rem.
 
 `--space-10`, `--space-12`, and `--space-16` exist as CSS variables but are not mapped in the spacing `@theme` bridge.
 Use `var(--space-10)` or a role token when a value should follow the selected theme's density.
@@ -229,9 +231,9 @@ white live here so theme roles can reference them without depending on a palette
 | `--z-overlay` | 30 |
 | `--z-modal` | 40 |
 | `--z-toast` | 50 |
-| `--size-control-sm` | `var(--space-8)` (2rem / 1.5rem / 2.5rem) |
-| `--size-control-md` | `var(--space-10)` (2.5rem / 2rem / 3rem) |
-| `--size-control-lg` | `var(--space-12)` (3rem / 2.5rem / 3.75rem) |
+| `--size-control-sm` | 1.75rem in Radiant Default; other packs alias `var(--space-8)` |
+| `--size-control-md` | 2rem in Radiant Default; other packs alias `var(--space-10)` |
+| `--size-control-lg` | 2.5rem in Radiant Default; other packs alias `var(--space-12)` |
 | `--size-icon-sm` | 1rem |
 | `--size-icon-md` | 1.25rem |
 

@@ -181,3 +181,6 @@ dist
 
 # Generated docs theme assets, copied from @ecopages/radiant-themes during app builds
 apps/radiant-ui/src/public/assets/themes/
+
+# Generated docs fonts, copied from the Fontsource packages during app builds
+apps/radiant-ui/src/public/assets/fonts/

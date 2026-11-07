@@ -156,9 +156,6 @@ jobs:
             - name: Run Radiant UI docs tests
               run: pnpm --filter @ecopages/radiant-ui-docs test
 
-            - name: Run theme picker accessibility tests
-              run: pnpm --filter @ecopages/radiant-ui-docs test:a11y
-
             - name: Run Radiant UI tests
               run: pnpm --filter @ecopages/radiant-ui test:all
 

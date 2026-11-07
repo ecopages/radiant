@@ -1,0 +1,215 @@
+radiant-theme-lab-picker {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-5);
+	min-width: 0;
+}
+
+.theme-lab-picker__list {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-1);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+button.theme-lab-picker__option {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+	width: 100%;
+	padding: var(--space-2) var(--space-3);
+	border: 1px solid transparent;
+	border-radius: var(--radius-md);
+	background: transparent;
+	color: inherit;
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+}
+
+button.theme-lab-picker__option:hover {
+	background: color-mix(in oklab, currentColor 6%, transparent);
+}
+
+button.theme-lab-picker__option[aria-pressed='true'] {
+	border-color: color-mix(in oklab, currentColor 30%, transparent);
+	background: color-mix(in oklab, currentColor 8%, transparent);
+}
+
+button.theme-lab-picker__option:focus-visible {
+	outline: 2px solid currentColor;
+	outline-offset: 2px;
+}
+
+.theme-lab-picker__copy {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+
+.theme-lab-picker__label {
+	font-weight: 600;
+}
+
+.theme-lab-picker__description {
+	font-size: 0.75rem;
+	opacity: 0.7;
+}
+
+.theme-lab-picker__heading {
+	margin: 0 0 var(--space-2);
+	font-size: 0.75rem;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	opacity: 0.7;
+}
+
+.theme-lab-picker__saved-item {
+	display: flex;
+	align-items: center;
+	gap: var(--space-1);
+}
+
+.theme-lab-picker__saved-item button.theme-lab-picker__option {
+	flex: 1;
+	min-width: 0;
+}
+
+.theme-lab-picker__delete {
+	flex: none;
+	width: 1.75rem;
+	height: 1.75rem;
+	border: 0;
+	border-radius: var(--radius-md);
+	background: transparent;
+	color: inherit;
+	font: inherit;
+	cursor: pointer;
+	opacity: 0.6;
+}
+
+.theme-lab-picker__delete:hover,
+.theme-lab-picker__delete:focus-visible {
+	background: color-mix(in oklab, currentColor 10%, transparent);
+	opacity: 1;
+}
+
+.theme-lab-picker__reset p {
+	margin: var(--space-2) 0 0;
+	font-size: 0.75rem;
+	opacity: 0.7;
+}
+
+.theme-lab-picker__reset-button {
+	padding: var(--space-1) var(--space-3);
+	border: 1px solid color-mix(in oklab, currentColor 30%, transparent);
+	border-radius: var(--radius-md);
+	background: transparent;
+	color: inherit;
+	font: inherit;
+	font-size: 0.8125rem;
+	cursor: pointer;
+}
+
+.theme-lab-picker__reset-button:hover {
+	background: color-mix(in oklab, currentColor 8%, transparent);
+}
+
+.theme-lab-picker__builtins {
+	width: 100%;
+}
+
+/** Show every theme at once; the list is short enough that its own scroll box only hid the last entries. */
+.theme-lab-picker__builtins .rui-listbox,
+.theme-lab-picker__builtins {
+	max-height: none;
+	overflow: visible;
+}
+
+.rui-listbox__option.theme-lab-picker__option {
+	display: grid;
+	grid-template-columns: 0.75rem minmax(0, 1fr);
+	align-items: center;
+	gap: var(--space-3);
+}
+
+/** Dot that previews each theme's primary role in the list. */
+.theme-lab-picker__swatch {
+	width: 0.75rem;
+	height: 0.75rem;
+	border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+	border-radius: 50%;
+	background: var(--theme-lab-swatch, var(--primary));
+}
+
+/* Keep each preview dot aligned with that theme's semantic primary role. */
+.theme-lab-picker__swatch[data-theme-swatch='rui-default'] {
+	--theme-lab-swatch: oklch(from var(--rui-primary, oklch(52% 0.19 264)) 45% calc(c * 0.9) h);
+}
+.theme-lab-picker__swatch[data-theme-swatch='github'] {
+	--theme-lab-swatch: #1a7f37;
+}
+.theme-lab-picker__swatch[data-theme-swatch='cloudflare'] {
+	--theme-lab-swatch: #cc3a00;
+}
+.theme-lab-picker__swatch[data-theme-swatch='vscode'] {
+	--theme-lab-swatch: #006bb3;
+}
+.theme-lab-picker__swatch[data-theme-swatch='vercel'] {
+	--theme-lab-swatch: #000000;
+}
+.theme-lab-picker__swatch[data-theme-swatch='material'] {
+	--theme-lab-swatch: oklch(46% 0.17 293);
+}
+.theme-lab-picker__swatch[data-theme-swatch='high-contrast'] {
+	--theme-lab-swatch: #0033cc;
+}
+.theme-lab-picker__swatch[data-theme-swatch='windows95'] {
+	--theme-lab-swatch: #000080;
+}
+.theme-lab-picker__swatch[data-theme-swatch='macos-classic'] {
+	--theme-lab-swatch: #333399;
+}
+.theme-lab-picker__swatch[data-theme-swatch='macos'] {
+	--theme-lab-swatch: #005fcc;
+}
+.theme-lab-picker__swatch[data-theme-swatch='zed'] {
+	--theme-lab-swatch: #4a62cf;
+}
+
+:root.dark .theme-lab-picker__swatch[data-theme-swatch='rui-default'] {
+	--theme-lab-swatch: oklch(from var(--rui-primary, oklch(52% 0.19 264)) 76% calc(c * 0.63) h);
+}
+.dark .theme-lab-picker__swatch[data-theme-swatch='github'] {
+	--theme-lab-swatch: #238636;
+}
+.dark .theme-lab-picker__swatch[data-theme-swatch='cloudflare'] {
+	--theme-lab-swatch: #cc3a00;
+}
+.dark .theme-lab-picker__swatch[data-theme-swatch='vscode'] {
+	--theme-lab-swatch: #0078d4;
+}
+.dark .theme-lab-picker__swatch[data-theme-swatch='vercel'] {
+	--theme-lab-swatch: #ffffff;
+}
+.dark .theme-lab-picker__swatch[data-theme-swatch='material'] {
+	--theme-lab-swatch: oklch(82% 0.11 293);
+}
+.dark .theme-lab-picker__swatch[data-theme-swatch='high-contrast'] {
+	--theme-lab-swatch: #ffff00;
+}
+.dark .theme-lab-picker__swatch[data-theme-swatch='windows95'] {
+	--theme-lab-swatch: #7aa7ff;
+}
+.dark .theme-lab-picker__swatch[data-theme-swatch='macos-classic'] {
+	--theme-lab-swatch: #a9a9ff;
+}
+.dark .theme-lab-picker__swatch[data-theme-swatch='macos'] {
+	--theme-lab-swatch: #55a6ff;
+}
+.dark .theme-lab-picker__swatch[data-theme-swatch='zed'] {
+	--theme-lab-swatch: #74ade8;
+}
