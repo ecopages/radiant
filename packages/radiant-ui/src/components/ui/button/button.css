@@ -29,22 +29,27 @@
 	}
 
 	/* Variants */
+	/**
+	 * Filled and destructive buttons carry a border in their own fill color instead of a transparent one. The border
+	 * snaps to whole device pixels like the outline button's, so at fractional zoom or display scaling both reach the
+	 * same edges instead of the fill ending a pixel or two short and soft.
+	 */
 	.rui-button--filled {
-		@apply bg-primary text-on-primary rui-sheen;
+		@apply border-primary bg-primary text-on-primary rui-sheen;
 	}
 
 	@media (hover: hover) {
 		.rui-button--filled:hover:not(:disabled) {
-			@apply bg-primary/90;
+			@apply border-primary/90 bg-primary/90;
 		}
 	}
 
 	.rui-button--filled:active:not(:disabled) {
-		@apply bg-primary-dark;
+		@apply border-primary-dark bg-primary-dark;
 	}
 
 	.rui-button--filled[aria-pressed='true'] {
-		@apply bg-primary-dark ring-2 ring-focus-ring;
+		@apply border-primary-dark bg-primary-dark ring-2 ring-focus-ring;
 	}
 
 	.rui-button--outline {
@@ -84,17 +89,17 @@
 	}
 
 	.rui-button--destructive {
-		@apply bg-error text-on-error rui-sheen;
+		@apply border-error bg-error text-on-error rui-sheen;
 	}
 
 	@media (hover: hover) {
 		.rui-button--destructive:hover:not(:disabled) {
-			@apply bg-error/90;
+			@apply border-error/90 bg-error/90;
 		}
 	}
 
 	.rui-button--destructive:active:not(:disabled) {
-		@apply bg-error-dark;
+		@apply border-error-dark bg-error-dark;
 	}
 
 	.rui-button--link {
