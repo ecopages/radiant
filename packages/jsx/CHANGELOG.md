@@ -1,5 +1,13 @@
 # @ecopages/jsx
 
+## 0.8.1
+
+### Patch Changes
+
+- [#626](https://github.com/ecopages/radiant/pull/626) [`a5d40e7`](https://github.com/ecopages/radiant/commit/a5d40e7623ac6abc1d5382854d30d1974522fd8c) Thanks [@andeeplus](https://github.com/andeeplus)! - Mounting nested JSX is faster: a template and the element templates nested in its child slots are built once per combination of shapes and then cloned whole, instead of being cloned and inserted one element at a time. Clearing or replacing every row of a keyed list empties it in one operation, and the factory no longer copies each element's props.
+- Updated dependencies []:
+    - @ecopages/signals@0.8.1
+
 ## 0.8.0
 
 ### Minor Changes
