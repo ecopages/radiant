@@ -50,7 +50,7 @@ export function updateRangeContent(
 		return current;
 	const currentContent = current.kind === 'subscription' ? releaseMountedSubscription(current) : current;
 	if (isReactiveChildSource(nextValue)) {
-		return mountReactiveChildSource(range, nextValue, currentContent, rootTarget, deferredProperties);
+		return mountReactiveChildSource(range, nextValue, currentContent, rootTarget);
 	}
 	const nextKind = classifyChildValue(nextValue);
 
@@ -456,17 +456,15 @@ function removeRangeRecord(record: MountedRangeRecord): void {
 /**
  * Mounts a signal-like child source and keeps the range in sync with it.
  *
- * @remarks Only the source's own content is flushed here, through a local queue per value. The caller's
- * `deferredProperties` are left to whoever created that queue, which flushes them once the DOM is in place: flushing
- * them here too re-applied every queued property once per signal child, so a list whose rows each hold one was
- * quadratic.
+ * @remarks Only the source's own content is flushed here, through a local queue per value. It takes no caller queue:
+ * whoever created that queue flushes it once the DOM is in place, and flushing it here too re-applied every queued
+ * property once per signal child, so a list whose rows each hold one was quadratic.
  */
 export function mountReactiveChildSource(
 	range: ChildRange,
 	source: ReactiveChildSource,
 	current: MountedRangeContent,
 	rootTarget: HTMLElement,
-	deferredProperties: DeferredPropertyBinding[],
 ): MountedSubscription {
 	const subscriptionSerial = 1;
 	const mountedSubscription: MountedSubscription = {

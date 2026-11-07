@@ -13,15 +13,10 @@ export function forEachNormalizedAttribute(
 	append: (name: string, value: unknown) => void,
 ): void {
 	const classValue = normalizeMergedClassValue(attributes.class, attributes.classes);
-	let directAttributeNames: Set<string> | undefined;
-
-	if (attributes.data !== undefined || attributes.aria !== undefined) {
-		for (const name in attributes) {
-			if ((name.startsWith('aria-') || name.startsWith('data-')) && attributes[name] !== undefined) {
-				(directAttributeNames ??= new Set()).add(name);
-			}
-		}
-	}
+	const directAttributeNames =
+		attributes.data !== undefined || attributes.aria !== undefined
+			? collectDirectAttributeNames(attributes)
+			: undefined;
 
 	if (classValue !== undefined) {
 		append('class', classValue);
@@ -49,6 +44,21 @@ export function forEachNormalizedAttribute(
 
 		append(name, value);
 	}
+}
+
+/**
+ * @remarks An `aria-*` or `data-*` prop written directly wins over the same name from the `aria` or `data` object.
+ */
+function collectDirectAttributeNames(attributes: Record<string, unknown>): Set<string> | undefined {
+	let names: Set<string> | undefined;
+
+	for (const name in attributes) {
+		if ((name.startsWith('aria-') || name.startsWith('data-')) && attributes[name] !== undefined) {
+			(names ??= new Set()).add(name);
+		}
+	}
+
+	return names;
 }
 
 function appendStructuredAttributes(

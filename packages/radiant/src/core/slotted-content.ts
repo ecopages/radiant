@@ -134,31 +134,34 @@ function isHydrationScript(node: Node): node is HTMLScriptElement {
 	return node instanceof HTMLScriptElement && node.hasAttribute(HYDRATION_ATTRIBUTE);
 }
 
+function renderableToHtmlFragment(renderable: JsxRenderable): string | undefined {
+	if (renderable === undefined || renderable === null || typeof renderable === 'boolean') return undefined;
+	if (typeof renderable === 'string' || typeof renderable === 'number' || typeof renderable === 'bigint') {
+		return String(renderable);
+	}
+	if (typeof Node !== 'undefined' && renderable instanceof Node) return nodeToHtmlFragment(renderable);
+	if (isKeyedJsxValue(renderable)) return renderableToHtmlFragment(renderable.value);
+	return typeof renderable === 'object' ? objectToHtmlFragment(renderable) : undefined;
+}
+
 /**
  * @remarks Comment nodes render nothing: the payload becomes trusted markup on the client, and comment data is not
  * escaped by serialization.
  */
-function renderableToHtmlFragment(renderable: JsxRenderable): string | undefined {
-	if (renderable === undefined || renderable === null || renderable === false || renderable === true)
-		return undefined;
-	if (typeof renderable === 'string' || typeof renderable === 'number' || typeof renderable === 'bigint') {
-		return String(renderable);
-	}
+function nodeToHtmlFragment(node: Node): string | undefined {
+	if (node.nodeType === Node.TEXT_NODE) return escapeHtmlText(node.textContent ?? '');
+	if (node.nodeType === Node.COMMENT_NODE) return '';
+	return (node as Element).outerHTML ?? node.textContent ?? undefined;
+}
 
-	if (typeof Node !== 'undefined' && renderable instanceof Node) {
-		if (renderable.nodeType === Node.TEXT_NODE) return escapeHtmlText(renderable.textContent ?? '');
-		if (renderable.nodeType === Node.COMMENT_NODE) return '';
-		return (renderable as Element).outerHTML ?? renderable.textContent ?? undefined;
-	}
-
-	if (isKeyedJsxValue(renderable)) return renderableToHtmlFragment(renderable.value);
-
-	if (typeof renderable === 'object' && 'outerHTML' in renderable) {
+/** Markup-like objects by their `outerHTML`, and iterables entry by entry. */
+function objectToHtmlFragment(renderable: object): string | undefined {
+	if ('outerHTML' in renderable) {
 		const outerHTML = (renderable as { outerHTML: unknown }).outerHTML;
 		return typeof outerHTML === 'string' ? outerHTML : undefined;
 	}
 
-	if (typeof renderable === 'object' && Symbol.iterator in renderable) {
+	if (Symbol.iterator in renderable) {
 		return Array.from(renderable as Iterable<JsxRenderable>, (entry) => renderableToHtmlFragment(entry) ?? '').join(
 			'',
 		);

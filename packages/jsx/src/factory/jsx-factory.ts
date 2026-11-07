@@ -442,7 +442,8 @@ function describeShapePart(part: TemplatePartDescriptor): string {
 	return part.type === 'child' ? 'c' : `${part.kind}:${part.name}`;
 }
 
-function appendShapeTokens(key: string, parts: readonly TemplatePartDescriptor[], start: number): string {
+function appendShapeTokens(prefix: string, parts: readonly TemplatePartDescriptor[], start: number): string {
+	let key = prefix;
 	for (let index = start; index < parts.length; index += 1) key += `\u0002${describeShapePart(parts[index]!)}`;
 	return key;
 }

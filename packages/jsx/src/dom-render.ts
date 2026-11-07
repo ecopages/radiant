@@ -87,7 +87,7 @@ export function hydrate(element: JsxRenderable, target: HTMLElement): void {
 	const root = adoptHydratedRootRange(target, reconnectedContent);
 
 	if (isReactiveChildSource(rootValue)) {
-		root.mounted = mountReactiveChildSource(root, rootValue, reconnectedContent, target, deferredProperties);
+		root.mounted = mountReactiveChildSource(root, rootValue, reconnectedContent, target);
 	} else {
 		flushDeferredProperties(deferredProperties);
 	}

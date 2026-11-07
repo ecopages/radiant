@@ -188,11 +188,7 @@ export class RenderRuntime {
 			return;
 		}
 
-		if (
-			!this.#hasMounted &&
-			this.#host.childNodes.length > 0 &&
-			(isMinimalDomElement(this.#host) || !hasHydrationMarkers(this.#host))
-		) {
+		if (this.holdsAuthoredChildNodes()) {
 			try {
 				if (process.env.NODE_ENV !== 'production' && areJsxDevWarningsEnabled()) {
 					warnLateDefinition(this.#host);
@@ -202,6 +198,15 @@ export class RenderRuntime {
 			this.#slotted = captureSlottedNodes(this.#host);
 			this.#capturedSlotted = true;
 		}
+	}
+
+	/** Whether the host's child nodes are still authored, not its own output: see {@link ensureSlotted}. */
+	private holdsAuthoredChildNodes(): boolean {
+		return (
+			!this.#hasMounted &&
+			this.#host.childNodes.length > 0 &&
+			(isMinimalDomElement(this.#host) || !hasHydrationMarkers(this.#host))
+		);
 	}
 
 	private commit(mount: (value: JsxRenderable, target: HTMLElement) => void, renderTarget: HTMLElement): void {
