@@ -44,6 +44,16 @@ This package is renderer-agnostic.
 - It does not know about Radiant components.
 - It is meant to work both as a standalone package and underneath adapters in those packages.
 
+```mermaid
+flowchart LR
+	Set["state.set(value)"] --> Stale["dependent computeds<br/>marked stale"]
+	Stale --> Pull["computed.get()<br/>recomputes lazily and caches"]
+	Stale --> Notify["subscribers, effects<br/>and watchers notified"]
+	Notify --> Adapter["an adapter re-reads and patches,<br/>such as an @ecopages/jsx binding"]
+```
+
+A computed tracks the signals it reads while it evaluates, so dependencies need no declaration. Nothing recomputes until something reads it, and an adapter that subscribes gets pushed the new value to patch its own output.
+
 ## TC39 Relationship
 
 This package is based on the current TC39 Signals proposal and tracks the same broad model around:
