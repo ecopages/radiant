@@ -74,6 +74,23 @@ Decorators and SSR adapters reach host plumbing (post-sync, connect-sync and bat
 - **Children Value.** `RadiantElement` answers `@ecopages/jsx`'s `CUSTOM_ELEMENT_CHILDREN_SYMBOL` protocol with `true` when the class overrides `render()`, so a view that creates the element hands it a **Children Value** instead of mounting those children inside it, and passes the value again on every view render. The host's renderer is the only one that touches the resulting nodes. Named regions are properties: `<x-card header={<h2 />}>` rendered with `{this.header}`.
 - **Authored Children.** Any other render-owning host captures its direct children once, before its first render, or adopts the slotted content the server rendered for it (for a host the server renders outside every view, or nested in a view in plain mode): the nodes between the `<!--radiant-slotted-->` comments where the view placed them, which stay in place, or the content of a `<template data-radiant-slotted>` when the view did not place them. Only a host the server marked with `data-radiant-slotted` looks for them. Nodes appended later are not slotted. Children that a view rendered before the tag was defined land here, with a development warning.
 
+```mermaid
+sequenceDiagram
+	participant Server as Server render
+	participant Page as Page HTML
+	participant Host as Host on the client
+	Server->>Server: capture Authored Children
+	alt view places this.slotted
+		Server->>Page: children once, between<br/>radiant-slotted comments
+	else view does not place it
+		Server->>Page: children in an inert<br/>slotted template
+	end
+	Note over Page: host marked data-radiant-slotted
+	Page->>Host: first connect
+	Host->>Host: adopt those nodes,<br/>remove the markers
+	Host->>Page: render() or hydrate()<br/>keeps the adopted nodes
+```
+
 Capture runs before every render until it succeeds, so a host whose view places `slotted` only later still holds what it had at first render. A view that passes a Children Value replaces captured content, and server slotted content the host has not adopted yet is dropped: its comments, template and attribute are removed.
 
 When page-level JSX hydrates over a host the server rendered with Authored Children, the host takes the page's Children Value, which renders the same children in the same place with live bindings. The page's hydration keeps the host's node when the tag was defined before the page JSX was created; otherwise, or when the page JSX hydrates while the tag is still undefined, the page JSX put the children inside the element and the host is rebuilt, taking them as Authored Children. A page JSX with no binding of its own can also reconnect after a nested host has hydrated or rendered itself, even if it updated since, provided the page's static markup still matches; otherwise it renders fresh.

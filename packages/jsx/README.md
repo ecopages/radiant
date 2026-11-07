@@ -234,6 +234,25 @@ Read it like this:
 
 Each JSX element is its own template, and a nested element is the value of its parent's child slot. A mount builds the DOM of a template and of the element templates nested in its slots once per combination of shapes, then clones it whole, so a table row and its cells cost one clone. Every nested template still owns its slot: a child that later renders a different shape replaces that slot alone, and its parent and siblings keep their nodes.
 
+### From JSX to DOM
+
+```mermaid
+flowchart TD
+	Source["JSX source"] -->|"automatic runtime (TypeScript, esbuild, Babel)"| Calls["jsx() / jsxs() calls"]
+	Calls --> Factory["createJsxElement: normalize attributes,<br/>one part per binding and per child slot"]
+	Factory --> Result["Template result:<br/>tag, parts, values, shape key"]
+	Result -->|"a nested element is<br/>the value of a child slot"| Result
+	Result --> Compile["getCompiledTemplate<br/>(once per shape key)"]
+	Compile --> Blueprint["blueprint for hydration,<br/>clientContent and clientParts for mounts"]
+	Blueprint --> Tree["getTemplateTree<br/>(once per namespace and combination of nested shapes)"]
+	Tree --> Mount["instantiateTemplateTree:<br/>one clone, parts bound by tree-order position"]
+	Mount --> Update["updateTemplateInstance on later renders"]
+	Update --> Attr["attribute parts:<br/>attr, bool, prop, event"]
+	Update --> Range["child ranges:<br/>text, template, keyed list, signal subscription"]
+```
+
+The factory runs on every render and produces plain objects. Everything after it is cached by shape, so a render that repeats a shape only clones and binds, and an update only walks the parts of the instances it reaches.
+
 ## Direct DOM Usage
 
 If you need app-level mounting outside a `RadiantElement`, use the DOM root helper.
@@ -455,6 +474,24 @@ const view = (
 
 const html = renderToString(view, { mode: 'plain' });
 const hydratedHtml = renderToString(view, { mode: 'hydrate' });
+```
+
+```mermaid
+flowchart TD
+	View["JSX view"] --> R2S["renderToString(view, { mode })"]
+	R2S --> Walk["serializeRenderable:<br/>walks template results depth first"]
+	Walk --> Kind{"element"}
+	Kind -->|"intrinsic"| Html["static strings and escaped values;<br/>hydrate mode adds data-radiant-jsx-bind-N<br/>and child-range comments"]
+	Kind -->|"custom element (tag with -)"| CE["construct it, apply attributes"]
+	CE --> Hook{"render hook installed?<br/>withServerCustomElementRenderHook"}
+	Hook -->|"yes, such as Radiant's bridge"| HookMarkup["the hook returns the host's markup;<br/>children as light DOM (renderServerLightDom)<br/>or as a value"]
+	Hook -->|"no"| Self{"renderHostToString?"}
+	Self -->|"yes"| SelfMarkup["the element serializes itself"]
+	Self -->|"no"| Fallback["authored markup,<br/>upgraded on the client"]
+	Html --> Out["HTML string"]
+	HookMarkup --> Out
+	SelfMarkup --> Out
+	Fallback --> Out
 ```
 
 Hydrated SSR adds binding markers so `hydrate(...)` can attach listeners and dynamic parts without rebuilding the existing DOM tree. A page root with no marker of its own can also reconnect when a nested element already owns its content through its own client root, such as a custom element or an island root (it hydrated or rendered itself, possibly updating since) and the page's static markup still matches; otherwise the marker requirement remains.
