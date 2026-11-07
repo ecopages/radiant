@@ -1,13 +1,5 @@
 # @ecopages/jsx
 
-## 0.8.1
-
-### Patch Changes
-
-- [#626](https://github.com/ecopages/radiant/pull/626) [`a5d40e7`](https://github.com/ecopages/radiant/commit/a5d40e7623ac6abc1d5382854d30d1974522fd8c) Thanks [@andeeplus](https://github.com/andeeplus)! - Mounting nested JSX is faster: a template and the element templates nested in its child slots are built once per combination of shapes and then cloned whole, instead of being cloned and inserted one element at a time. Clearing or replacing every row of a keyed list empties it in one operation, and the factory no longer copies each element's props.
-- Updated dependencies []:
-    - @ecopages/signals@0.8.1
-
 ## 0.8.0
 
 ### Minor Changes
@@ -39,6 +31,7 @@
 
 ### Patch Changes
 
+- [#626](https://github.com/ecopages/radiant/pull/626) [`a5d40e7`](https://github.com/ecopages/radiant/commit/a5d40e7623ac6abc1d5382854d30d1974522fd8c) Thanks [@andeeplus](https://github.com/andeeplus)! - Mounting nested JSX is faster: a template and the element templates nested in its child slots are built once per combination of shapes and then cloned whole, instead of being cloned and inserted one element at a time. Clearing or replacing every row of a keyed list empties it in one operation, and the factory no longer copies each element's props.
 - [#610](https://github.com/ecopages/radiant/pull/610) [`beb4cff`](https://github.com/ecopages/radiant/commit/beb4cffe986a86d603cf5e30c9a60b90207ecb37) Thanks [@andeeplus](https://github.com/andeeplus)! - Fix quadratic list rendering. Clearing a child range used a DOM `Range` per call, and browsers update every live `Range` on each DOM mutation until it is garbage collected, so rendering 1,000 keyed rows took about 0.9 s and 4,000 rows about 43 s in Chromium, and later renders slowed further. The nodes are now removed directly: 1,000 rows render in about 25 ms and the time grows linearly.
 
 - [#610](https://github.com/ecopages/radiant/pull/610) [`a3d2852`](https://github.com/ecopages/radiant/commit/a3d2852c20edc377f5ead4900563b96bf3048703) Thanks [@andeeplus](https://github.com/andeeplus)! - Mount templates faster on the client: each compiled template keeps a copy with its child markers already in place, so a new instance no longer replaces two comment markers per dynamic child or removes each attribute marker. Hydration is unchanged.
