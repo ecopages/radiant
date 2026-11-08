@@ -91,9 +91,9 @@
 		"@babel/plugin-proposal-decorators": "^7.0.0",
 		"@babel/plugin-syntax-typescript": "^7.0.0",
 		"@babel/plugin-transform-class-properties": "^7.0.0",
-		"@ecopages/jsx": ">=0.8.1",
-		"@ecopages/radiant": ">=0.8.1",
-		"@ecopages/signals": ">=0.8.1",
+		"@ecopages/jsx": ">=0.8.2",
+		"@ecopages/radiant": ">=0.8.2",
+		"@ecopages/signals": ">=0.8.2",
 		"@rolldown/plugin-babel": "^0.2.0",
 		"nitro": "^3",
 		"vite": "^8.0.0"

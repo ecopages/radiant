@@ -1,5 +1,13 @@
 # @ecopages/jsx
 
+## 0.8.2
+
+### Patch Changes
+
+- [#643](https://github.com/ecopages/radiant/pull/643) [`8fc2e08`](https://github.com/ecopages/radiant/commit/8fc2e080115c52962502918b9c97809612acd51a) Thanks [@andeeplus](https://github.com/andeeplus)! - The JSX types accept a signal or subscribable in `classes`, matching what the runtime binds. `class` stays a plain string, so a wrapper component can merge the `class` it receives; put a reactive class in `classes`. The docs that showed `class={signal}` now show `classes={signal}`.
+- Updated dependencies []:
+    - @ecopages/signals@0.8.2
+
 ## 0.8.1
 
 ### Patch Changes
