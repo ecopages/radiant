@@ -343,7 +343,7 @@ createRoot(document.querySelector('#app') as HTMLElement).render(
 	<tbody>
 		<MapItems each={rows}>
 			{(row) => (
-				<tr class={row.cls}>
+				<tr classes={row.cls}>
 					<td>{row.label}</td>
 				</tr>
 			)}
@@ -352,7 +352,7 @@ createRoot(document.querySelector('#app') as HTMLElement).render(
 );
 ```
 
-`MapItems` renders each item once and reuses the row while the item stays in the list, so a swap or removal touches only the rows that moved or left. Rows without a `key` are keyed by their item. A row's `label` and `cls` patch its own text and class. The row callback is untracked: reading an item's signals there does not subscribe the view, so bind the signals in the row, as above. `each` must be a signal or subscribable holding an array. Outside JSX, `mapItems(rows, project)` from `@ecopages/signals` is the non-JSX form and returns a `Computed`. A signal works in any attribute, `class` and `classes` included, where its value is normalized like a static class value.
+`MapItems` renders each item once and reuses the row while the item stays in the list, so a swap or removal touches only the rows that moved or left. Rows without a `key` are keyed by their item. A row's `label` and `cls` patch its own text and class. The row callback is untracked: reading an item's signals there does not subscribe the view, so bind the signals in the row, as above. `each` must be a signal or subscribable holding an array. Outside JSX, `mapItems(rows, project)` from `@ecopages/signals` is the non-JSX form and returns a `Computed`. A reactive class goes in `classes`, where its value is normalized like a static class value; `class` takes a plain string.
 
 The renderer skips a keyed row whose value is the same object it rendered last time; a new object with equal values is applied in full. `<Fragment key=...>` groups several nodes under one key, and the group moves as a unit when keyed siblings reorder.
 
@@ -824,7 +824,7 @@ Use `prop:*` when the target must receive a real property value instead of a ser
 />
 ```
 
-`class` and `classes` take a string, a list or a class map. A signal or subscribable in either binds live: each change is normalized the same way and patches the attribute.
+`class` takes a string. `classes` takes a string, a list or a class map, or a signal or subscribable holding one, which binds live: each change is normalized the same way and patches the attribute. Keeping `class` a plain string lets a wrapper component merge the `class` it receives with its own.
 
 ## Runtime Output Contract
 

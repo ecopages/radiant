@@ -14,6 +14,7 @@
 		"./test/types/host-props.ts",
 		"./test/types/style-value.ts",
 		"./test/types/boolean-attributes.tsx",
-		"./test/types/map-items.tsx"
+		"./test/types/map-items.tsx",
+		"./test/types/class-value.tsx"
 	]
 }
