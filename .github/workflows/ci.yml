@@ -6,7 +6,6 @@ on:
     push:
         branches:
             - main
-            - next
             # - 'release/**'  # re-enable if a prerelease line needs CI on push, not only PRs
 
 concurrency:
