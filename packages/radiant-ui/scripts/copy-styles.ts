@@ -63,7 +63,49 @@ function isTailwindReferenceSource(relativePath: string): boolean {
 	return relativePath.startsWith(`themes${path.sep}`) || relativePath.startsWith(`tokens${path.sep}`);
 }
 
+const IMPORT_RE = /^@import\s+['"](\.[^'"]+\.css)['"];?[ \t]*$/gm;
+const REFERENCE_RE = /^@reference\s+['"][^'"]+['"];?[ \t]*\r?\n?/gm;
+const AGGREGATE_ENTRIES = new Set(['styles.css']);
+
+function referencesCore(file: string, seen = new Set<string>()): boolean {
+	if (seen.has(file)) return false;
+	seen.add(file);
+	const css = readFileSync(file, 'utf8');
+	if (/^@reference\s/m.test(css)) return true;
+	return [...css.matchAll(IMPORT_RE)].some((match) => referencesCore(path.resolve(path.dirname(file), match[1]), seen));
+}
+
+/**
+ * Inlines relative imports that depend on the core through `@reference`, and drops those
+ * `@reference` lines.
+ *
+ * @remarks
+ * Tailwind v4 re-registers every `@utility` once per `@reference` in a compilation, and each
+ * `@apply` then emits all registrations, so the aggregates would repeat utility output once per
+ * component. Imports that carry no reference (the theme bundle) stay as imports.
+ */
+function flattenReferences(file: string): string {
+	const css = readFileSync(file, 'utf8');
+	return css
+		.replace(IMPORT_RE, (line, specifier: string) => {
+			const target = path.resolve(path.dirname(file), specifier);
+			return referencesCore(target) ? flattenReferences(target) : line;
+		})
+		.replace(REFERENCE_RE, '');
+}
+
+async function compileAggregate(from: string, to: string): Promise<void> {
+	const flat = flattenReferences(from);
+	const css = /^@import\s+['"]\.\/radiant-ui\.css['"]/m.test(flat) ? flat : `@reference './radiant-ui.css';\n${flat}`;
+	const result = await processor.process(css, { from, to });
+	mkdirSync(path.dirname(to), { recursive: true });
+	writeFileSync(to, result.css);
+}
+
 async function compileCss(from: string, to: string): Promise<void> {
+	if (path.dirname(from) === STYLES_SRC && AGGREGATE_ENTRIES.has(path.basename(from))) {
+		return compileAggregate(from, to);
+	}
 	const css = readFileSync(from, 'utf8');
 	const result = await processor.process(css, { from, to });
 	mkdirSync(path.dirname(to), { recursive: true });

@@ -236,3 +236,42 @@ test('every dist/chunks file matches a sideEffects glob', () => {
 	);
 	assert.deepEqual(unmatched, []);
 });
+
+/**
+ * Collects the body of every top-level-in-layer rule, balancing braces, so repeated
+ * nested blocks inside one rule can be detected without a CSS parser.
+ */
+function findRepeatedNestedBlocks(css) {
+	const repeats = [];
+	const stack = [];
+	let start = 0;
+	for (let i = 0; i < css.length; i++) {
+		const char = css[i];
+		if (char === '{') {
+			stack.push({ header: css.slice(start, i).trim(), open: i + 1, children: new Map() });
+			start = i + 1;
+		} else if (char === '}') {
+			const block = stack.pop();
+			const text = `${block.header}{${css.slice(block.open, i)}}`;
+			const parent = stack[stack.length - 1];
+			if (parent && block.header.startsWith('@media') && !parent.header.startsWith('@layer')) {
+				parent.children.set(text, (parent.children.get(text) ?? 0) + 1);
+			}
+			for (const [child, count] of block.children) {
+				if (count > 1) repeats.push(`${block.header} x${count}: ${child}`);
+			}
+			start = i + 1;
+		} else if (char === ';') {
+			start = i + 1;
+		}
+	}
+	return repeats;
+}
+
+test('built aggregate stylesheets do not repeat an @media block inside one rule', () => {
+	const stylesPath = fileURLToPath(new URL('../dist/styles/', import.meta.url));
+	for (const file of ['styles.css']) {
+		const repeats = findRepeatedNestedBlocks(readFileSync(join(stylesPath, file), 'utf8'));
+		assert.deepEqual(repeats.slice(0, 3), [], `${file} repeats nested @media blocks (${repeats.length} rules)`);
+	}
+});
