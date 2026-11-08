@@ -77,7 +77,7 @@ The runtime normalizes the most common authoring patterns before anything reache
 
 ### `class` and `classes`
 
-`class` and `classes` merge into one token list. At runtime each accepts a string, number, array (nested), or an object map where a truthy value includes the key, and `null`, `undefined`, and booleans contribute nothing. The types are narrower: `class` is a `string`, and `classes` takes the other forms, so pass conditional, array and object values through `classes`.
+`class` and `classes` merge into one token list. At runtime each accepts a string, number, array (nested), or an object map where a truthy value includes the key, and `null`, `undefined`, and booleans contribute nothing. The types are narrower: `class` is a `string`, and `classes` takes the other forms, so pass conditional, array and object values through `classes`. `classes` also takes a signal or subscribable holding any of these forms: it binds live, and each change is normalized the same way and patches the attribute.
 
 ```tsx
 <section

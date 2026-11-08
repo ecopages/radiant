@@ -67,7 +67,7 @@ Use a **plain read** when the value shapes render logic (branches, comparisons, 
 </article>
 ```
 
-Compose `class` and `style` at render time when they follow host render logic. A binding in `class` also works (`class={this.$.variant}`): its value is normalized like a static one and patches the attribute without a host rerender. A state attribute (`data={{ state: this.$.status }}`) that CSS keys off is the other no-rerender option.
+Compose `class` and `style` at render time when they follow host render logic. A binding in `classes` also works (`classes={this.$.variant}`): its value is normalized like a static one and patches the attribute without a host rerender. `class` takes a plain string. A state attribute (`data={{ state: this.$.status }}`) that CSS keys off is the other no-rerender option.
 
 When the host keeps authored markup instead of `render()`:
 

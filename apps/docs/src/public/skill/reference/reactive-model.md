@@ -86,7 +86,7 @@ Rules:
 
 Compose `class` and `style` at render time when they express host render logic.
 
-A binding or signal in `class` or `classes` binds live: `class={this.$.variant}` normalizes each value like a static one (a string, a list or a class map) and patches the attribute without a host rerender. A state attribute such as `data={{ state: this.$.status }}` that CSS keys off is the other way to restyle without a rerender. `style` binds live the same way, and a style object in the binding is serialized like a static one.
+A binding or signal in `classes` binds live: `classes={this.$.variant}` normalizes each value like a static one (a string, a list or a class map) and patches the attribute without a host rerender. `class` takes a plain string, so a wrapper can merge it with its own classes. A state attribute such as `data={{ state: this.$.status }}` that CSS keys off is the other way to restyle without a rerender. `style` binds live the same way, and a style object in the binding is serialized like a static one.
 
 Use bindings confidently for child text, whole `data-*` / `aria-*` values, boolean attributes, and `prop:*`.
 
