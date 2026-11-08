@@ -1,5 +1,13 @@
 # @ecopages/radiant
 
+## 0.8.2
+
+### Patch Changes
+
+- Updated dependencies [[`8fc2e08`](https://github.com/ecopages/radiant/commit/8fc2e080115c52962502918b9c97809612acd51a)]:
+    - @ecopages/jsx@0.8.2
+    - @ecopages/signals@0.8.2
+
 ## 0.8.1
 
 ### Patch Changes

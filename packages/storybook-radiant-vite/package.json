@@ -74,9 +74,9 @@
 		"vitest": "^4.1.12"
 	},
 	"peerDependencies": {
-		"@ecopages/jsx": "workspace:>=0.8.1",
-		"@ecopages/radiant": "workspace:>=0.8.1",
-		"@ecopages/signals": "workspace:>=0.8.1",
+		"@ecopages/jsx": "workspace:>=0.8.2",
+		"@ecopages/radiant": "workspace:>=0.8.2",
+		"@ecopages/signals": "workspace:>=0.8.2",
 		"storybook": "^10.5.2",
 		"vite": "^8.0.0"
 	},
