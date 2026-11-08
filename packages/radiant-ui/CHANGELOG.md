@@ -1,5 +1,13 @@
 # @ecopages/radiant-ui
 
+## 0.3.4
+
+### Patch Changes
+
+- [#647](https://github.com/ecopages/radiant/pull/647) [`5f154a0`](https://github.com/ecopages/radiant/commit/5f154a07abb3570e8f31f519b9c6f5c4b52c3155) Thanks [@andeeplus](https://github.com/andeeplus)! - Stop repeating `@utility` output once per component in the built `styles.css`. `styles.css` shrinks from 241,873 B to 202,740 B (about 16%) and each `.rui-button--*` rule carries one `background-image: none` instead of 61.
+
+    In forced-colors mode the sheen is now removed as `sheen.css` intends; the old output let the `background-image` declaration override the `none` override.
+
 ## 0.3.3
 
 ### Patch Changes
