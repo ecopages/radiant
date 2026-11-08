@@ -123,7 +123,7 @@ createRoot(document.querySelector('#app') as HTMLElement).render(
 		<tbody>
 			<MapItems each={rows}>
 				{(row) => (
-					<tr class={row.cls}>
+					<tr classes={row.cls}>
 						<td>{row.id}</td>
 						<td>{row.label}</td>
 					</tr>
@@ -139,7 +139,7 @@ rows.get()[0].cls.set('selected'); // patches one class attribute
 ```
 
 - **Children:** `{row.label}` binds the text; a signal that holds JSX mounts and reconciles it in place.
-- **Attributes:** a signal works as any attribute value, `class` and `classes` included, as well as `attr:`, `bool:` and `prop:` bindings. In `class` and `style`, the signal's value is normalized like a static one, so a class signal can hold a string, a list or a class map, and a style signal a string or a style object.
+- **Attributes:** a signal works as any attribute value, as well as in `attr:`, `bool:` and `prop:` bindings. A reactive class goes in `classes`: its value is normalized like a static one, so it can hold a string, a list or a class map. `class` takes a plain string, so a wrapper can merge it with its own classes. A style signal can hold a string or a style object.
 - **Lists:** `<MapItems each={rows}>` renders each item once and reuses that row while the item stays in the list, so a swap or a removal touches only the rows that moved or left. Rows are keyed by their item automatically; a row with its own `key` keeps it. The callback runs untracked, so reading an item's signals there does not subscribe the view. Bind the signals in the row, as `row.label` above, to keep them live. `each` must be a signal or subscribable holding an array.
 
 The list state lives with the `each` signal, so a view that renders again, such as a Radiant host `render()` or a second `root.render(...)`, keeps the same rows and subscription. Outside JSX, `mapItems(rows, (row) => row.label)` from `@ecopages/signals` does the same mapping and returns a `Computed`.

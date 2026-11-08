@@ -20,7 +20,7 @@ createRoot(document.querySelector('#app') as HTMLElement).render(
 		<tbody>
 			<MapItems each={rows}>
 				{(row) => (
-					<tr class={row.cls}>
+					<tr classes={row.cls}>
 						<td>{row.id}</td>
 						<td>{row.label}</td>
 					</tr>
@@ -33,8 +33,8 @@ createRoot(document.querySelector('#app') as HTMLElement).render(
 
 ## Rules
 
-- A signal (anything with `get()` and `subscribe(...)`) works as a child and as any attribute value: `class`, `classes`, `attr:`, `bool:`, `prop:`, `data-*`, `aria-*`. The renderer patches only that text node or attribute.
-- In `class` and `classes`, a signal's value is normalized like a static one: a string, a list or a class map.
+- A signal (anything with `get()` and `subscribe(...)`) works as a child and as any attribute value: `classes`, `attr:`, `bool:`, `prop:`, `data-*`, `aria-*`. The renderer patches only that text node or attribute.
+- Put a reactive class in `classes`, where a signal's value is normalized like a static one: a string, a list or a class map. `class` takes a plain string.
 - A list is `<MapItems each={rows}>{(row) => ...}</MapItems>`, or `mapItems(rows, project)` from `@ecopages/signals` outside JSX. `each` must be a signal or subscribable holding an array, not a plain array.
 - Each row renders once per item and is reused while the item stays in the list. Rows are keyed by item automatically; a row with its own `key` keeps it.
 - Give each row the signals that change per row (label, selection class) and bind them in the row's JSX. The `MapItems` callback is untracked, so reading `row.label.get()` there does not subscribe the view and the text will not update.

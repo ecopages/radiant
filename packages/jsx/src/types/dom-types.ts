@@ -212,6 +212,14 @@ export type JsxAriaAttributes = {
  */
 export type ClassList = string | number | bigint | boolean | null | undefined | Record<string, unknown> | ClassList[];
 
+/**
+ * Accepted value for the `classes` JSX prop: a class list value, or a signal or subscribable holding one.
+ *
+ * @remarks `class` stays a plain string, so a wrapper component can merge the `class` it receives with its own
+ * classes; reactive and structured class values go in `classes`.
+ */
+export type ClassValue = ClassList | SignalLike<ClassList> | SubscribableJsxValue<ClassList>;
+
 /** Accepted value for individual entries inside a `style` object. */
 export type StylePropertyValue = string | number | null | undefined;
 
@@ -254,7 +262,7 @@ export interface JsxSharedIntrinsicAttributes {
 	aria?: Partial<AriaAttributesNormalized> | undefined;
 	children?: JsxRenderable;
 	class?: string;
-	classes?: ClassList;
+	classes?: ClassValue;
 	data?: Record<string, DataAttributeValue>;
 	dir?: ReactiveAttributeValue<string>;
 	hidden?: ReactiveAttributeValue<boolean>;
