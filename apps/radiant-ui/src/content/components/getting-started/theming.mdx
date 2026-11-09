@@ -5,11 +5,12 @@ group: Getting started
 ---
 
 import { DesignTokenPanel } from '@/components/design-token-panel/design-token-panel';
-import { DefaultThemeTuner } from '@/components/default-theme-tuner/default-theme-tuner';
+import { RuiAlert, RuiAlertDescription, RuiAlertTitle } from '@ecopages/radiant-ui/alert';
+import { RuiButton } from '@ecopages/radiant-ui/button';
 
 export const config = {
 	dependencies: {
-		components: [DesignTokenPanel, DefaultThemeTuner],
+		components: [DesignTokenPanel],
 		scripts: ['./theming.script.ts'],
 	},
 };
@@ -91,16 +92,15 @@ after custom role overrides, especially non-text boundaries and content supplied
 
 ## Tune Radiant Default
 
-The default derives matching OKLCH color scales from three seed colors. Secondary follows primary at a 40° analogous
-hue offset, which keeps it clear of the red, amber, and green status hues. Adjust the primary and neutral hues, the
-secondary offset, density, corner radius, and border opacity (0–100%) below. The page preview updates live, and the
-generated CSS copies the small inputs needed to create a different palette and geometry.
-
-<DefaultThemeTuner />
-
-The seed colors preserve the scale's lightness and chroma pattern, so semantic roles move together instead of needing
-individual color overrides. The text and focus pairs keep their tested defaults; check contrast again when using the
-generated values in your own interface.
+<RuiAlert class="unstyled" variant="info" layout="banner">
+	<RuiAlertTitle>Customize Radiant Default in the theme lab</RuiAlertTitle>
+	<RuiAlertDescription>
+		{'Adjust hues, density, corner radius, border opacity, and fonts with live previews, then copy the CSS.'}
+	</RuiAlertDescription>
+	<RuiButton class="mt-3 self-start" href="/themes" variant="outline" size="sm">
+		Open the theme lab
+	</RuiButton>
+</RuiAlert>
 
 ## Make a custom theme
 

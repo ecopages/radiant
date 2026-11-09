@@ -1,5 +1,14 @@
 export type DocsFontRole = 'sans' | 'heading' | 'mono';
 
+/**
+ * Browser-router attribute that keeps a head element across navigations.
+ *
+ * @remarks The router removes every head element the incoming page lacks. A stylesheet link added by script, such as
+ * a font or the theme, would be removed on each client navigation and re-added a tick later, which reloads it and
+ * flashes the default look.
+ */
+export const DOCS_HEAD_PERSIST_ATTR = 'data-eco-persist';
+
 export const DOCS_FONT_ROLES: readonly DocsFontRole[] = ['sans', 'heading', 'mono'];
 
 export const DOCS_FONT_VARIABLES: Record<DocsFontRole, string> = {
@@ -145,6 +154,7 @@ export function applyDocsFonts(root: HTMLElement, fonts: DocsFonts): void {
 			link.id = linkId;
 			link.rel = 'stylesheet';
 			link.href = docsFontStylesheetUrl(font);
+			link.setAttribute(DOCS_HEAD_PERSIST_ATTR, '');
 			document.head.append(link);
 		}
 		root.style.setProperty(DOCS_FONT_VARIABLES[role], docsFontStack(font));

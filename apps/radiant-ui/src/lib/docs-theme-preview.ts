@@ -11,6 +11,7 @@ import {
 	applyDocsFonts,
 	DOCS_FONT_PATTERNS,
 	DOCS_FONT_ROLES,
+	DOCS_HEAD_PERSIST_ATTR,
 	DOCS_FONT_VARIABLES,
 	parseDocsFonts,
 	type DocsFonts,
@@ -308,6 +309,7 @@ function syncThemeStylesheet(href: string | null, theme: DocsThemeColor): void {
 	stylesheet.rel = 'stylesheet';
 	stylesheet.href = href;
 	stylesheet.setAttribute(DOCS_THEME_STYLESHEET_ATTR, theme);
+	stylesheet.setAttribute(DOCS_HEAD_PERSIST_ATTR, '');
 	stylesheet.addEventListener(
 		'load',
 		() => {
@@ -347,6 +349,26 @@ function syncThemeStylesheet(href: string | null, theme: DocsThemeColor): void {
 	} else {
 		appendStylesheet();
 	}
+}
+
+/**
+ * Keeps the theme stylesheet last in `<head>` after each router navigation.
+ *
+ * @remarks The router never touches the theme link because it carries `data-eco-persist`, but it appends the next
+ * page's new stylesheets after it, and the theme's unlayered rules must follow every other stylesheet to win. A
+ * duplicate link is appended instead of moving the original, so the theme stays loaded and the page never repaints in
+ * the default theme; the original is removed once the duplicate has loaded.
+ */
+export function keepDocsThemeStylesheetLast(): void {
+	document.addEventListener('eco:after-swap', () => {
+		const link = document.head.querySelector<HTMLLinkElement>(`link[${DOCS_THEME_STYLESHEET_ATTR}]`);
+		const last = Array.from(document.head.querySelectorAll('link[rel="stylesheet"], style')).at(-1);
+		if (!link || !last || link === last) return;
+		const next = link.cloneNode() as HTMLLinkElement;
+		next.addEventListener('load', () => link.remove(), { once: true });
+		next.addEventListener('error', () => next.remove(), { once: true });
+		document.head.append(next);
+	});
 }
 
 function syncThemeStylesheetForSelection(selection: DocsThemeSelection, stylesheets: DocsThemeStylesheets): void {
@@ -411,7 +433,12 @@ export function resetDocsAppearance(): void {
 
 /**
  * Blocking head script applies appearance before paint and appends optional
- * theme CSS after the document's regular stylesheets have loaded.
+ * theme CSS after the document's regular stylesheets.
+ *
+ * @remarks The document's stylesheets are injected after this script, and the theme must follow them in the
+ * cascade, so the link is appended when `<body>` appears: every head stylesheet has been parsed by then, and the
+ * request starts long before `DOMContentLoaded`, which waits for every deferred module. The page stays hidden until
+ * the link loads, so a visitor never sees the default theme.
  */
 export function createDocsThemeBootScript(stylesheets: DocsThemeStylesheets): string {
 	const stylesheetsLiteral = JSON.stringify(stylesheets).replaceAll('<', '\\u003c');
@@ -471,6 +498,7 @@ export function createDocsThemeBootScript(stylesheets: DocsThemeStylesheets): st
 				link.id = 'rui-docs-font-' + font.id;
 				link.rel = 'stylesheet';
 				link.href = 'https://cdn.jsdelivr.net/npm/' + font.pkg + '@5/index.css';
+				link.setAttribute(${JSON.stringify(DOCS_HEAD_PERSIST_ATTR)}, '');
 				document.head.append(link);
 			}
 		}
@@ -506,6 +534,7 @@ export function createDocsThemeBootScript(stylesheets: DocsThemeStylesheets): st
 				stylesheet.rel = 'stylesheet';
 				stylesheet.href = href;
 				stylesheet.setAttribute(attr, colors);
+				stylesheet.setAttribute(${JSON.stringify(DOCS_HEAD_PERSIST_ATTR)}, '');
 				stylesheet.addEventListener('load', () => {
 					if (root.dataset.ruiTheme !== colors) stylesheet.remove();
 					root.style.removeProperty('visibility');
@@ -522,8 +551,12 @@ export function createDocsThemeBootScript(stylesheets: DocsThemeStylesheets): st
 				}, { once: true });
 				document.head.append(stylesheet);
 			};
-			if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', attachTheme, { once: true });
-			else attachTheme();
+			if (document.body) attachTheme();
+			else new MutationObserver((_, observer) => {
+				if (!document.body) return;
+				observer.disconnect();
+				attachTheme();
+			}).observe(document.documentElement, { childList: true });
 		}
 	} catch {}
 })();`;

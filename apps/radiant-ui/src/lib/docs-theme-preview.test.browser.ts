@@ -23,6 +23,7 @@ import {
 	DOCS_THEME_STYLESHEETS_GLOBAL,
 	DOCS_THEME_STYLESHEET_ATTR,
 	installDocsThemeStylesheets,
+	keepDocsThemeStylesheetLast,
 	readDocsThemeSelection,
 	readDocsDefaultThemeTuning,
 	readDocsThemeMode,
@@ -30,6 +31,7 @@ import {
 	writeDocsThemeMode,
 	updateDocsThemeSelection,
 } from './docs-theme-preview';
+import { DOCS_HEAD_PERSIST_ATTR } from './docs-fonts';
 
 let appendedThemeLinks: HTMLLinkElement[] = [];
 let appendedHeadNodes: (Node | string)[] = [];
@@ -247,7 +249,7 @@ describe('docs-theme-preview', () => {
 				DOCS_THEME_STYLESHEETS_GLOBAL
 			],
 		).toEqual(docsThemeStylesheets);
-		expect(script.length).toBeLessThan(8_000);
+		expect(script.length).toBeLessThan(8_300);
 	});
 
 	it('keeps booting when an invalid tuning preference is stored', () => {
@@ -415,8 +417,8 @@ describe('docs-theme-preview', () => {
 		expect(readDocsDefaultThemeTuning()).toEqual(DOCS_DEFAULT_THEME_TUNING);
 	});
 
-	it('waits to append a shared theme until after parsed stylesheets, then reveals the page after load', () => {
-		vi.spyOn(document, 'readyState', 'get').mockReturnValue('loading');
+	it('appends a shared theme once the body appears, after parsed stylesheets, then reveals the page after load', async () => {
+		const body = vi.spyOn(document, 'body', 'get').mockReturnValue(null as unknown as HTMLElement);
 		const baseStylesheet = document.createElement('link');
 		baseStylesheet.rel = 'stylesheet';
 		baseStylesheet.href = '/assets/styles/tailwind.css';
@@ -427,13 +429,49 @@ describe('docs-theme-preview', () => {
 		expect(appendedThemeLinks).toHaveLength(0);
 		expect(document.documentElement.style.getPropertyValue('visibility')).toBe('hidden');
 
-		document.dispatchEvent(new Event('DOMContentLoaded'));
+		body.mockRestore();
+		const bodyParsed = document.createComment('body parsed');
+		document.documentElement.append(bodyParsed);
+		await vi.waitFor(() => expect(appendedThemeLinks).toHaveLength(1));
 		const themeLink = appendedThemeLinks[0];
 		expect(appendedHeadNodes.at(-1)).toBe(themeLink);
 		expect(appendedHeadNodes.at(-2)).toBe(baseStylesheet);
+		expect(themeLink.hasAttribute(DOCS_HEAD_PERSIST_ATTR)).toBe(true);
 		expect(document.documentElement.style.getPropertyValue('visibility')).toBe('hidden');
 
 		themeLink.dispatchEvent(new Event('load'));
 		expect(document.documentElement.style.getPropertyValue('visibility')).toBe('');
+		bodyParsed.remove();
+	});
+
+	it('marks an applied theme stylesheet to survive router head reconciliation', () => {
+		installDocsThemeStylesheets(docsThemeStylesheets);
+		applyDocumentTokens({ colors: 'github' });
+		expect(appendedThemeLinks[0].hasAttribute(DOCS_HEAD_PERSIST_ATTR)).toBe(true);
+	});
+
+	it('moves the theme stylesheet behind later stylesheets after a router swap without unloading it', () => {
+		vi.restoreAllMocks();
+		const theme = document.createElement('link');
+		theme.rel = 'stylesheet';
+		theme.href = '/assets/themes/github.css';
+		theme.setAttribute(DOCS_THEME_STYLESHEET_ATTR, 'github');
+		const page = document.createElement('link');
+		page.rel = 'stylesheet';
+		page.href = '/assets/page.css';
+		document.head.append(theme, page);
+		keepDocsThemeStylesheetLast();
+		document.dispatchEvent(new Event('eco:after-swap'));
+
+		const links = Array.from(
+			document.head.querySelectorAll<HTMLLinkElement>(`link[${DOCS_THEME_STYLESHEET_ATTR}]`),
+		);
+		expect(links).toHaveLength(2);
+		expect(links[1]).toBe(document.head.querySelector('link[rel="stylesheet"]:last-of-type'));
+		expect(theme.isConnected).toBe(true);
+		links[1].dispatchEvent(new Event('load'));
+		expect(theme.isConnected).toBe(false);
+		links[1].remove();
+		page.remove();
 	});
 });
