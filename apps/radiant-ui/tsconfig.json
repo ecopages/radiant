@@ -12,9 +12,7 @@
 		"noEmit": true,
 		"noImplicitOverride": true,
 		"paths": {
-			"@/*": ["./src/*"],
-			"ecopages:content/components": ["./types/ecopages-content-components.d.ts"],
-			"ecopages:content/components/server": ["./types/ecopages-content-components-server.d.ts"]
+			"@/*": ["./src/*"]
 		},
 		"resolveJsonModule": true,
 		"target": "ES2022",
