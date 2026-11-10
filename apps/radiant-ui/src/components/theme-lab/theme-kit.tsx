@@ -43,7 +43,7 @@ export const ThemeKit = eco.component<{}, JsxRenderable>({
 		components: [DefaultThemeTuner, CodeTabs],
 	},
 	render: () => (
-		<radiant-theme-kit class="theme-kit" data-default-theme>
+		<radiant-theme-kit class="theme-kit">
 			<div class="theme-kit__col">
 				<section class="theme-kit__step theme-kit__colors" aria-labelledby="theme-kit-colors">
 					<h3 class="theme-kit__step-title" id="theme-kit-colors">

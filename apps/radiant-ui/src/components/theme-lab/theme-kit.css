@@ -22,25 +22,25 @@ radiant-theme-kit {
 		align-items: start;
 	}
 
-	radiant-theme-kit:not([data-default-theme]) {
+	:root[data-rui-theme]:not([data-rui-theme='rui-default']) radiant-theme-kit {
 		grid-template-areas:
 			'fonts output'
 			'save output';
 	}
 
-	radiant-theme-kit:not([data-default-theme]) .theme-kit__col {
+	:root[data-rui-theme]:not([data-rui-theme='rui-default']) radiant-theme-kit .theme-kit__col {
 		display: contents;
 	}
 
-	radiant-theme-kit:not([data-default-theme]) .theme-kit__fonts {
+	:root[data-rui-theme]:not([data-rui-theme='rui-default']) radiant-theme-kit .theme-kit__fonts {
 		grid-area: fonts;
 	}
 
-	radiant-theme-kit:not([data-default-theme]) .theme-kit__save-step {
+	:root[data-rui-theme]:not([data-rui-theme='rui-default']) radiant-theme-kit .theme-kit__save-step {
 		grid-area: save;
 	}
 
-	radiant-theme-kit:not([data-default-theme]) .theme-kit__output {
+	:root[data-rui-theme]:not([data-rui-theme='rui-default']) radiant-theme-kit .theme-kit__output {
 		grid-area: output;
 	}
 }
@@ -119,7 +119,7 @@ radiant-theme-kit {
 }
 
 /** Colors are tunable only in Radiant Default, so other themes drop that block. */
-radiant-theme-kit:not([data-default-theme]) .theme-kit__colors {
+:root[data-rui-theme]:not([data-rui-theme='rui-default']) radiant-theme-kit .theme-kit__colors {
 	display: none;
 }
 
@@ -264,7 +264,19 @@ radiant-theme-kit:not([data-can-save]) .theme-kit__save-step {
 .theme-kit__tuner .default-theme-tuner__controls {
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
-	gap: var(--space-3) var(--space-5);
+	gap: var(--space-5) var(--space-6);
+}
+
+:root[data-rui-theme='rui-default'] radiant-theme-kit .theme-kit__colors {
+	gap: var(--space-6);
+}
+
+:root[data-rui-theme='rui-default'] radiant-theme-kit .theme-kit__colors .theme-kit__sub {
+	gap: var(--space-4);
+}
+
+:root[data-rui-theme='rui-default'] radiant-theme-kit .theme-kit__tuner .default-theme-tuner {
+	gap: var(--space-5);
 }
 
 .theme-kit__code {

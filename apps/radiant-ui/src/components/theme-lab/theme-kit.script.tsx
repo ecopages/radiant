@@ -424,7 +424,6 @@ export class ThemeKitElement extends RadiantElement {
 		}
 		const spec = this.querySelector<HTMLElement>('script[data-kit-spec]');
 		if (spec) spec.textContent = JSON.stringify(this.currentSpec());
-		this.toggleAttribute('data-default-theme', theme === 'rui-default');
 		this.toggleAttribute('data-can-save', canSaveCurrentTheme(readCurrentAppearance()));
 	}
 }

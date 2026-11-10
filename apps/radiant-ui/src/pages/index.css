@@ -65,15 +65,12 @@
 }
 
 .home-hero__code radiant-code-tabs .code-tabs__code:has([data-rehype-pretty-code-figure]) {
-	max-height: 24;
 	overflow-y: auto;
 
 	[data-rehype-pretty-code-figure] {
-		max-height: 24;
 		overflow: auto;
 
 		& > pre {
-			max-height: 24;
 			overflow: auto;
 		}
 	}
