@@ -60,9 +60,7 @@ export class ReactivePropertyState {
 			return;
 		}
 
-		const config =
-			this.properties.get(name) ??
-			Array.from(this.properties.values()).find((property) => property.attribute === name);
+		const config = Array.from(this.properties.values()).find((property) => property.attribute === name);
 
 		if (!config) {
 			return;

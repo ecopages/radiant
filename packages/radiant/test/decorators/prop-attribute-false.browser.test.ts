@@ -52,6 +52,33 @@ describe('@prop({ attribute: false })', () => {
 	});
 });
 
+describe('attribute lookup with a property-only prop', () => {
+	afterEach(() => {
+		document.body.innerHTML = '';
+	});
+
+	test('an attribute named like a property-only prop updates only the prop that observes it', async () => {
+		const tag = nextTag('lookup');
+
+		@customElement(tag)
+		class Host extends RadiantElement {
+			@prop({ type: Object, attribute: false }) engine?: Engine;
+			@prop({ type: String, attribute: 'engine' }) label = '';
+		}
+
+		const host = new Host();
+		const engine = new Engine();
+		host.engine = engine;
+		document.body.appendChild(host);
+		await Promise.resolve();
+
+		host.setAttribute('engine', 'next');
+
+		expect(host.label).toBe('next');
+		expect(host.engine).toBe(engine);
+	});
+});
+
 describe('@prop precedence: a property assigned first beats markup', () => {
 	afterEach(() => {
 		document.body.innerHTML = '';
