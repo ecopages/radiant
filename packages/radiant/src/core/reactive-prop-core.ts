@@ -23,7 +23,8 @@ export interface ReactiveProperty<T = unknown> {
 	/** Declared `@prop` default; `true` booleans serialize as `"true"` / `"false"` instead of HTML presence. */
 	defaultValue?: T;
 	name: string;
-	attribute: string;
+	/** The attribute channel, or `null` for a property-only prop (`attribute: false`). */
+	attribute: string | null;
 	reflect: boolean;
 	converter: {
 		fromAttribute: (value: string | null) => unknown;
@@ -66,8 +67,13 @@ export type ReactivePropertyOptions<T, C extends AttributeTypeConstant = Attribu
 	 * @remarks Defaults to the property name in kebab-case: each camelCase boundary becomes a hyphen, each run of
 	 * `_` collapses to one hyphen, and the result is lowercased (`max_Width` and `max__Width` map to `max-width`).
 	 * An explicit name is used as given.
+	 *
+	 * `false` makes the prop property-only: it has no observed attribute, an authored attribute of that name is
+	 * ignored, and it is never reflected or serialized into server-rendered markup. Use it for live objects such as
+	 * class instances, whose fields would otherwise leak into the HTML and whose methods would be lost.
+	 * Combining it with `reflect: true` throws.
 	 */
-	attribute?: string;
+	attribute?: string | false;
 	/**
 	 * Value used when no attribute or earlier property write supplies one.
 	 *
@@ -119,6 +125,13 @@ export function resolveReactiveDefault<T>(options: ReactivePropertyOptions<T>): 
 		return options.defaultValue;
 	}
 	return defaultValueForType(options.type) as T;
+}
+
+/** Throws when a prop asks to reflect to an attribute it opted out of with `attribute: false`. */
+export function validatePropertyOnlyReflection(propertyName: string, options: ReactivePropertyOptions<unknown>): void {
+	if (options.attribute === false && options.reflect) {
+		throw new Error(`@prop "${propertyName}": reflect: true needs an attribute, but attribute: false makes it property-only`);
+	}
 }
 
 /**
@@ -175,7 +188,7 @@ export function createPropConverter<T>(
 
 export function createReactivePropertyMapping<T>(
 	propertyName: string,
-	attributeKey: string,
+	attributeKey: string | null,
 	type: AttributeTypeConstant,
 	initialValue: T | undefined,
 	reflect = false,

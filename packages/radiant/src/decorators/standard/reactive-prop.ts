@@ -1,6 +1,7 @@
 import {
 	type PropTransform,
 	type ReactivePropertyOptions,
+	validatePropertyOnlyReflection,
 	validateReactivePropertyDefault,
 } from '../../core/reactive-prop-core.js';
 import {
@@ -30,12 +31,13 @@ export function reactiveProp<P = unknown>(propOptions: ReactivePropertyOptions<P
 	validateReactivePropertyDefault(type, defaultValue, !!transform?.fromAttribute);
 	return function <T extends ReactivePropHost<P>>(_: undefined, context: ClassFieldDecoratorContext<T, P>) {
 		const propertyName = String(context.name);
+		validatePropertyOnlyReflection(propertyName, propOptions as ReactivePropertyOptions<unknown>);
 		const attributeKey = attributeNameForProp(propertyName, propOptions);
 		const initializerValueKey = Symbol(`@ecopages/radiant/reactive-prop:${propertyName}:initializer`);
 		const options: ReactivePropertyOptions<unknown> = {
 			type,
 			reflect,
-			attribute: attributeKey,
+			attribute: attributeKey ?? false,
 			defaultValue,
 			bind,
 			transform: transform as PropTransform<unknown> | undefined,
@@ -62,7 +64,7 @@ export function reactiveProp<P = unknown>(propOptions: ReactivePropertyOptions<P
 			this.createReactiveProp(propertyName, {
 				type,
 				reflect,
-				attribute: attributeKey,
+				attribute: attributeKey ?? false,
 				bind,
 				transform,
 				...((hasDefaultValue || resolvedDefaultValue !== undefined) && { defaultValue: resolvedDefaultValue }),

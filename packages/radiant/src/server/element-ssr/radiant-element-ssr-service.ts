@@ -140,7 +140,7 @@ export class RadiantElementSsrService {
 	}
 
 	private readHostAttributes(): Record<string, string> {
-		return resolveHostAttributes(this.host);
+		return resolveHostAttributes(this.host, getCustomElementTagName(this.host.constructor));
 	}
 
 	private getTagName(): string {

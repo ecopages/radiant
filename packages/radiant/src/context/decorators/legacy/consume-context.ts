@@ -8,6 +8,15 @@ export function consumeContext(context: UnknownContext) {
 		const assignContextProvider = (element: ContextHostLike, provider: unknown) => {
 			(element as any)[propertyKey] = provider;
 		};
+		const assigners = new WeakMap<ContextHostLike, (provider: unknown) => void>();
+		const assignerFor = (element: ContextHostLike) => {
+			let assign = assigners.get(element);
+			if (!assign) {
+				assign = (provider) => assignContextProvider(element, provider);
+				assigners.set(element, assign);
+			}
+			return assign;
+		};
 		const initializeConsumedContextForHost = (
 			element: ContextHostLike,
 			options: { emitMounted?: boolean } = {},
@@ -16,14 +25,7 @@ export function consumeContext(context: UnknownContext) {
 				return true;
 			}
 
-			return connectConsumedContext(
-				element,
-				context,
-				(provider) => {
-					assignContextProvider(element, provider);
-				},
-				options,
-			);
+			return connectConsumedContext(element, context, assignerFor(element), options);
 		};
 
 		registerLegacyPostConstructionInitializer(proto, (element) => {
