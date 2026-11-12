@@ -430,7 +430,7 @@ return (
 );
 ```
 
-Important consequence: attribute normalization drops `undefined` parts. Changing a previously defined attribute or event handler to `undefined` therefore changes the template shape, so the renderer may replace the affected DOM node instead of preserving the previously committed instance. Child expressions keep their part and do not have this shape change.
+Attribute normalization drops `undefined` parts, so a spread such as `<input {...attrs} />` binds exactly the keys it holds at each render. The element's identity does not depend on that key set: when the same tag renders again with the same number of child slots, the renderer keeps the element and its children and updates the attributes in place. A key that appears is set, a key that disappears or becomes `undefined` is removed, and a handler that appears or disappears is attached or detached once, with no duplicates. Focus, caret position and anything bound to the node survive. A dropped `prop:*` binding is assigned `undefined`, because the element cannot say what its default was. A different tag, or a different number of children, still replaces the element. Keys that stay bound keep their reactive subscription.
 
 ### Textarea children
 

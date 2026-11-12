@@ -5,7 +5,7 @@ import { moveRangeBefore } from './dom-operations.ts';
 import { disposeMountedRangeContent, releaseMountedSubscription } from './mounted-disposal.ts';
 import { createRangeRecord } from './range-records.ts';
 import { getCompiledTemplate } from './template-compiler.ts';
-import { createTemplateInstance, updateTemplateInstance } from './template-instance.ts';
+import { createTemplateInstance, retargetTemplateInstance, updateTemplateInstance } from './template-instance.ts';
 import {
 	canRenderAsTextNode,
 	createNodesFromValue,
@@ -94,9 +94,16 @@ function updateSingleChildContent(
 	deferredProperties: DeferredPropertyBinding[],
 ): MountedRangeContent {
 	if (nextKind === 'template' && isTemplateResultLike(nextValue)) {
-		if (currentContent.kind === 'template' && currentContent.instance.compiled === getCompiledTemplate(nextValue)) {
-			updateTemplateInstance(currentContent.instance, nextValue.values, deferredProperties);
-			return currentContent;
+		if (currentContent.kind === 'template') {
+			const compiled = getCompiledTemplate(nextValue);
+
+			if (
+				currentContent.instance.compiled === compiled ||
+				retargetTemplateInstance(currentContent.instance, compiled, deferredProperties)
+			) {
+				updateTemplateInstance(currentContent.instance, nextValue.values, deferredProperties);
+				return currentContent;
+			}
 		}
 
 		const instance = createTemplateInstance(nextValue, rootTarget, deferredProperties, getRangeParent(range));

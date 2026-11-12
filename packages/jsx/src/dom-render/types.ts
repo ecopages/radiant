@@ -189,6 +189,11 @@ export type CompiledTemplate = {
 	/** Part metadata located in {@link CompiledTemplate.clientContent}. */
 	clientParts: readonly ClientTemplatePart[];
 	parts: readonly TemplatePart[];
+	/**
+	 * Identifies a factory template by its tag and child slots alone, so two shapes that differ only in which
+	 * attributes they bind share it. Absent for transported templates.
+	 */
+	structureKey?: string;
 };
 
 /**
