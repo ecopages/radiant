@@ -40,6 +40,11 @@ export function signal<THost extends ReactiveHostLike, T>(
  * Besides the error on the mismatched option, TypeScript reports "Unable to
  * resolve signature of property decorator" on the decorator: a failed
  * `signal(options)` call takes its return type from the legacy overload.
+ *
+ * `@signal` is internal, not public input: a value assigned to the host before upgrade is discarded in favour of the
+ * initializer, and development builds warn once per tag and member. Use `@prop` for input.
+ *
+ * @see `warnDiscardedPreUpgradeValue` in `shared/pre-upgrade-warning.ts` for the warning and an example.
  */
 export function signal<T = unknown>(
 	options?: SignalDecoratorOptions<NoInfer<T>>,

@@ -79,8 +79,9 @@ export function disposeLiveAttributePart(part: LiveAttributePart): void {
 		);
 	}
 
-	if (part.binding.kind === 'native-event') {
-		part.element.removeEventListener(part.binding.name, part.previousValue as EventListenerOrEventListenerObject);
+	if (part.binding.kind === 'native-event' && part.nativeListener) {
+		part.element.removeEventListener(part.binding.name, part.nativeListener);
+		part.nativeListener = undefined;
 	}
 
 	part.previousValue = undefined;

@@ -16,6 +16,8 @@ import {
 	type ReactivePropertyOptions,
 } from './reactive-prop-core';
 import { EventSubscriptionRegistry } from './event-subscription-registry';
+import { warnShadowedClassAccessors } from '../decorators/shared/pre-upgrade-warning';
+import { HAS_PRE_UPGRADE_VALUE } from './pre-upgrade-value';
 import { ReactivePropertyState } from './reactive-property-state';
 import { RenderRuntime, type RenderRuntimeHost } from './render-runtime';
 import type { ForeignSlottedProjector } from './slotted-content';
@@ -241,6 +243,7 @@ export class RadiantElement<Bindings extends object = {}>
 	constructor() {
 		super();
 		this.reactivePropertyState = new ReactivePropertyState(this);
+		warnShadowedClassAccessors(this, RadiantElement.prototype);
 		this.eventSubscriptionRegistry = new EventSubscriptionRegistry(this);
 		this.updateCycle = new UpdateCycle({
 			canFlush: () => this.isConnected && !this.isFirstConnectPending && !this.awaitsChildren,
@@ -712,6 +715,11 @@ export class RadiantElement<Bindings extends object = {}>
 			return Array.from(this.querySelectorAll(selector)) as T[];
 		}
 		return (this.querySelector(selector) as T) ?? null;
+	}
+
+	/** @internal Whether a value was assigned to this host under `propertyName` before it was upgraded. */
+	public [HAS_PRE_UPGRADE_VALUE](propertyName: string): boolean {
+		return this.reactivePropertyState.hasPreUpgradeValue(propertyName);
 	}
 
 	public createReactiveField<T>(propertyName: string, initialValue: T, options: ReactiveFieldOptions = {}): void {

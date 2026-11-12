@@ -42,6 +42,11 @@ export class ReactivePropertyState {
 		}
 	}
 
+	/** Whether the host carried an own property named `propertyName` when it was constructed (assigned before upgrade). */
+	public hasPreUpgradeValue(propertyName: string): boolean {
+		return this.preUpgradePropertyValues.has(propertyName);
+	}
+
 	public register(config: ReactiveProperty<unknown>): void {
 		this.properties.set(config.name, config);
 	}
@@ -55,9 +60,7 @@ export class ReactivePropertyState {
 			return;
 		}
 
-		const config =
-			this.properties.get(name) ??
-			Array.from(this.properties.values()).find((property) => property.attribute === name);
+		const config = Array.from(this.properties.values()).find((property) => property.attribute === name);
 
 		if (!config) {
 			return;
@@ -132,7 +135,7 @@ export class ReactivePropertyState {
 	private resolveInitialValue<T>(
 		propertyName: string,
 		options: ReactivePropertyOptions<T>,
-		attributeKey: string,
+		attributeKey: string | null,
 		converter: ReactiveProperty<T>['converter'],
 	): T | undefined {
 		if (this.preUpgradePropertyValues.has(propertyName)) {
@@ -141,7 +144,7 @@ export class ReactivePropertyState {
 				options.transform?.fromProperty ? options.transform.fromProperty(preUpgradeValue) : preUpgradeValue
 			) as T;
 		}
-		if (this.host.hasAttribute(attributeKey)) {
+		if (attributeKey !== null && this.host.hasAttribute(attributeKey)) {
 			return converter.fromAttribute(this.host.getAttribute(attributeKey)) as T;
 		}
 		return resolveReactiveDefault(options);
@@ -191,6 +194,10 @@ export class ReactivePropertyState {
 				continue;
 			}
 
+			if (property.attribute === null) {
+				continue;
+			}
+
 			const currentValue = this.host.getAttribute(property.attribute);
 			if (currentValue !== null) {
 				this.applyAttributeChange(property.attribute, null, currentValue);
@@ -207,12 +214,12 @@ export class ReactivePropertyState {
 	 * does not feed `null` back into its property.
 	 */
 	private reflectValue(
-		attributeKey: string,
+		attributeKey: string | null,
 		reflect: boolean,
 		property: ReactiveProperty<unknown>,
 		value: unknown,
 	): void {
-		if (!reflect) {
+		if (!reflect || attributeKey === null) {
 			return;
 		}
 

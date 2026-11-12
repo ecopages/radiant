@@ -70,10 +70,24 @@ export function getCompiledTemplate(template: TemplateResultLike): CompiledTempl
 		clientContent: client.content,
 		clientParts: client.parts,
 		parts,
+		structureKey: getFactoryStructureKey(template.shapeKey),
 	};
 
 	TEMPLATE_CACHE_BY_SHAPE.set(template.shapeKey, compiledTemplate);
 	return compiledTemplate;
+}
+
+/**
+ * The part of a factory shape key that does not name attributes: the tag and how many child slots follow.
+ *
+ * @remarks Factory keys start with `\u0001`, the tag, then one `\u0002`-separated token per part, where `c` is a child
+ * slot. Keys of transported templates carry no such structure, so they have none.
+ */
+function getFactoryStructureKey(shapeKey: string): string | undefined {
+	if (!shapeKey.startsWith('\u0001')) return undefined;
+
+	const tokens = shapeKey.split('\u0002');
+	return `${tokens[0]}\u0002${tokens.filter((token, index) => index > 0 && token === 'c').length}`;
 }
 
 /** Repairs the namespace of a cloned template root before live part resolution. */

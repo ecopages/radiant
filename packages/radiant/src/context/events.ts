@@ -8,6 +8,7 @@ export enum ContextEventsTypes {
 	CONTEXT_REQUEST = 'context-request',
 	ON_MOUNT = 'context-on-mount',
 	MOUNTED = 'context-mounted',
+	PROVIDER = 'context-provider',
 }
 
 /**
@@ -66,6 +67,24 @@ export class ContextOnMountEvent extends CustomEvent<{ context: UnknownContext }
 }
 
 /**
+ * An event fired by a context provider when it upgrades, so consumers that were already waiting can request the
+ * context again.
+ *
+ * @remarks This is the late-provider announcement of the community context protocol: an `Event` with the `context`
+ * and the `contextTarget` that provides it. It bubbles and is composed; the provider element is the event target.
+ * A provider announces itself once, when it is created. A provider that is disconnected and connected again does not
+ * announce again: consumers re-request on their own connect.
+ */
+export class ContextProviderEvent extends Event {
+	public constructor(
+		public readonly context: UnknownContext,
+		public readonly contextTarget: Element,
+	) {
+		super(ContextEventsTypes.PROVIDER, { bubbles: true, composed: true });
+	}
+}
+
+/**
  * An event fired by a context requester to signal it desires a named context.
  *
  * A provider should inspect the `context` property of the event to determine if it has a value that can
@@ -115,5 +134,10 @@ declare global {
 		 * that a context value has been mounted and is available for consumption.
 		 */
 		[ContextEventsTypes.ON_MOUNT]: ContextOnMountEvent;
+		/**
+		 * A 'context-provider' event is emitted by a context provider when it connects or upgrades, so waiting
+		 * consumers below it can request the context again.
+		 */
+		[ContextEventsTypes.PROVIDER]: ContextProviderEvent;
 	}
 }

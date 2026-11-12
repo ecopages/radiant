@@ -107,8 +107,9 @@ export function ensureObservedAttributes(constructor: CustomElementConstructor, 
 	});
 }
 
-export function attributeNameForProp<T>(propertyName: string, options: ReactivePropertyOptions<T>): string {
-	return options.attribute ?? toKebabCaseAttributeName(propertyName);
+/** The attribute channel of a prop, or `null` when it is property-only (`attribute: false`). */
+export function attributeNameForProp<T>(propertyName: string, options: ReactivePropertyOptions<T>): string | null {
+	return options.attribute === false ? null : (options.attribute ?? toKebabCaseAttributeName(propertyName));
 }
 
 /**
@@ -119,8 +120,8 @@ export function attributeNameForProp<T>(propertyName: string, options: ReactiveP
  * this (or `ensureObservedAttributes` with the same names) before `define` if attributes should be observed.
  */
 export function applyObservedAttributesFromPropRegistry(constructor: CustomElementConstructor): void {
-	const attributeNames = getReactivePropDefinitions(constructor).map((definition) =>
-		attributeNameForProp(definition.name, definition.options),
-	);
+	const attributeNames = getReactivePropDefinitions(constructor)
+		.map((definition) => attributeNameForProp(definition.name, definition.options))
+		.filter((name): name is string => name !== null);
 	ensureObservedAttributes(constructor, attributeNames);
 }

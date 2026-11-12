@@ -23,5 +23,10 @@ test('elements keep their nodes past the shape cache limits', async () => {
 	expect(first?.textContent).toBe('y');
 
 	root.render(jsx('div', { 'data-other-after-cap': 'b', children: 'y' }));
+	expect(container.firstElementChild).toBe(first);
+	expect(first?.hasAttribute('data-after-cap')).toBe(false);
+	expect(first?.getAttribute('data-other-after-cap')).toBe('b');
+
+	root.render(jsx('span', { 'data-other-after-cap': 'b', children: 'y' }));
 	expect(container.firstElementChild).not.toBe(first);
 });

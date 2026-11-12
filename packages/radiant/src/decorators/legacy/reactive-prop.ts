@@ -1,6 +1,7 @@
 import {
 	type PropTransform,
 	type ReactivePropertyOptions,
+	validatePropertyOnlyReflection,
 	validateReactivePropertyDefault,
 } from '../../core/reactive-prop-core';
 import type { ReactiveHostLike } from '../../core/reactive-host';
@@ -22,11 +23,12 @@ export function reactiveProp<T = unknown>(propOptions: ReactivePropertyOptions<T
 	validateReactivePropertyDefault(type, defaultValue, !!transform?.fromAttribute);
 
 	return (target: ReactivePropHost<T>, propertyName: string) => {
+		validatePropertyOnlyReflection(propertyName, propOptions as ReactivePropertyOptions<unknown>);
 		const attributeKey = attributeNameForProp(propertyName, propOptions);
 		const options: ReactivePropertyOptions<unknown> = {
 			type,
 			reflect,
-			attribute: attributeKey,
+			attribute: attributeKey ?? false,
 			defaultValue,
 			bind,
 			transform: transform as PropTransform<unknown> | undefined,
@@ -74,7 +76,7 @@ export function reactiveProp<T = unknown>(propOptions: ReactivePropertyOptions<T
 			element.createReactiveProp(propertyName, {
 				type,
 				reflect,
-				attribute: attributeKey,
+				attribute: attributeKey ?? false,
 				bind,
 				transform,
 				...((hasDefaultValue || resolvedDefaultValue !== undefined) && { defaultValue: resolvedDefaultValue }),

@@ -13,11 +13,11 @@ export function customElement(name: string, options?: AutonomousCustomElementOpt
 		protoOrTarget: T,
 		nameOrContext: ClassDecoratorContext<T>,
 	): void;
-	function decorator(protoOrTarget: CustomElementConstructor): void;
+	function decorator<T extends CustomElementConstructor>(protoOrTarget: T): T | void;
 	function decorator(
 		protoOrTarget: CustomElementConstructor,
 		nameOrContext?: ClassDecoratorContext<CustomElementConstructor>,
-	): void {
+	): CustomElementConstructor | void {
 		if (typeof nameOrContext !== 'undefined') {
 			return standardCustomElement(name, options)(protoOrTarget, nameOrContext);
 		}
