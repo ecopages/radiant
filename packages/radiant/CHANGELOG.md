@@ -1,5 +1,18 @@
 # @ecopages/radiant
 
+## 0.8.3
+
+### Patch Changes
+
+- [#661](https://github.com/ecopages/radiant/pull/661) [`8633356`](https://github.com/ecopages/radiant/commit/863335695b59e88742fa941f565a311f6bb0c48f) Thanks [@andeeplus](https://github.com/andeeplus)! - A context consumer that connects before its provider's element is defined now receives the value once the provider upgrades, and keeps receiving updates. The provider announces itself once, when it is created, with a bubbling `context-provider` event, as the community context protocol's late-provider pattern describes, and consumers below it that found no provider ask again, for plain and subscribing requests. A consumer that disconnected is not called. Apps no longer need to import the provider before its consumers.
+
+- [#661](https://github.com/ecopages/radiant/pull/661) [`b62a0e2`](https://github.com/ecopages/radiant/commit/b62a0e21e37e2be179fc71b911ba134445df75b3) Thanks [@andeeplus](https://github.com/andeeplus)! - `@prop` accepts `attribute: false` to make a prop property-only: it has no observed attribute, ignores an authored attribute of that name, is never reflected and is never written into server-rendered markup. Use it for live objects such as class instances, which were serialized into the HTML, lost their methods on the client and, when cyclic, made server rendering throw. In development, server rendering now warns once per tag and prop when a prop that keeps its attribute holds a class instance, function or cycle, and points to `attribute: false`. `reflect: true` with `attribute: false` throws. With legacy decorators, `@customElement` now returns and registers a subclass so reactive setup runs when construction finishes. Decorator syntax is unaffected, and `customElements.get(tag)` is that subclass; when calling the decorator imperatively, use the returned class (`const Foo = customElement('x-foo')(class extends RadiantElement {})`).
+
+- [#661](https://github.com/ecopages/radiant/pull/661) [`1a6902d`](https://github.com/ecopages/radiant/commit/1a6902dc7d4012747c05b6e30c0c53b219d9163b) Thanks [@andeeplus](https://github.com/andeeplus)! - In development, a value assigned to an element before it was upgraded now warns when it is lost: for `@state` and `@signal`, which are internal and keep their initializer, and for a property that shadows a class accessor (a hand-written `get`/`set`, an `accessor` field or a library accessor decorator), whose setter and reactivity never see it. Each warning fires once per tag and member and points to `@prop`, which adopts a value set before upgrade. Production builds drop the warnings.
+- Updated dependencies [[`16efb9e`](https://github.com/ecopages/radiant/commit/16efb9eb8242d870a13ca9fa1f48439e12de3eaf)]:
+    - @ecopages/jsx@0.8.3
+    - @ecopages/signals@0.8.3
+
 ## 0.8.2
 
 ### Patch Changes

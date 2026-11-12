@@ -1,5 +1,22 @@
 # @ecopages/radiant-ui
 
+## 0.3.5
+
+### Patch Changes
+
+- [#664](https://github.com/ecopages/radiant/pull/664) [`201fd64`](https://github.com/ecopages/radiant/commit/201fd649b8ca672e44830dfb1e289f4effa1e88d) Thanks [@andeeplus](https://github.com/andeeplus)! - A custom control host now paints its own field ARIA, and `RuiFieldError` can show an error that does not belong to a control.
+
+    - `RuiField` no longer writes `id`, `data-rui-field-managed` or `aria-*` onto a host registered with `registerFieldControl` that declares `data-rui-aria-target(s)`. It publishes `labelId`, `describedBy` and `disabled` on `fieldContext` (new fields on `FieldContextValue`), and the host binds them declaratively from `@ecopages/radiant-ui/field`: `{...fieldAria(this.field)}` on the target in a `render()` tree, or `@bindTo(fieldAriaBindings('input'))` on the `@contextSelector` field for authored DOM. A target that renders after the field connected is now labelled, and a host that never rendered its target stays free of ARIA. Catalog hosts and native inputs are unchanged. A third-party host that relied on the field's writes must bind the context; the bound attributes include the target `id` that the label's `htmlFor` points at.
+    - Migration for a third-party host that paints its own ARIA: the field no longer sets native `disabled` on its target, so bind it yourself (for example `<input disabled={this.field?.disabled} {...fieldAria(this.field)} />`). Painted hosts support a single ARIA target, because `fieldAria` and `fieldAriaBindings` yield one `id`; a host with several targets (`data-rui-aria-targets`) must assign its own ids.
+    - `RuiFieldError` takes an `error` prop (with `children` as the fallback). It renders that content, is visible while non-empty, works outside `RuiField` and on the server, and carries `data-rui-field-error-controlled` so the enclosing field neither overwrites nor hides it.
+
+    `@ecopages/radiant-ui` requires `@ecopages/jsx`, `@ecopages/radiant` and `@ecopages/signals` 0.8.3 or later: the `fieldAria()` spread adds and drops attributes, and only that release keeps the element when bound attributes change ([#659](https://github.com/ecopages/radiant/issues/659), [#660](https://github.com/ecopages/radiant/issues/660)). The peer ranges are raised to `>=0.8.3`.
+
+- Updated dependencies [[`8633356`](https://github.com/ecopages/radiant/commit/863335695b59e88742fa941f565a311f6bb0c48f), [`16efb9e`](https://github.com/ecopages/radiant/commit/16efb9eb8242d870a13ca9fa1f48439e12de3eaf), [`b62a0e2`](https://github.com/ecopages/radiant/commit/b62a0e21e37e2be179fc71b911ba134445df75b3), [`1a6902d`](https://github.com/ecopages/radiant/commit/1a6902dc7d4012747c05b6e30c0c53b219d9163b)]:
+    - @ecopages/radiant@0.8.3
+    - @ecopages/jsx@0.8.3
+    - @ecopages/signals@0.8.3
+
 ## 0.3.4
 
 ### Patch Changes
