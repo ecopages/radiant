@@ -258,16 +258,42 @@ export function findFieldControl(root: HTMLElement): HTMLElement | null {
 	return pickPrimaryFieldControl(collectFieldControls(root));
 }
 
+/** Tags registered through {@link registerFieldControl}, as opposed to the catalog hosts built into the protocol. */
+const REGISTERED_CONTROL_TAGS = new Set<string>();
+
 /**
  * Register a custom host for `RuiField` discovery, value access, and name wiring.
  *
  * @remarks `submission` chooses where a native text target gets its name. A host
  * with `submission: 'host'` must implement FACE itself; registration only connects
  * it to the `RuiForm` store.
+ *
+ * A registered host that declares `data-rui-aria-target` or `data-rui-aria-targets` paints the field's ARIA
+ * state onto its own target with `applyFieldAria`; the field no longer writes it (see {@link paintsOwnFieldAria}).
  */
 export function registerFieldControl(tagName: string, adapter: FieldControlAdapter): void {
 	const tag = tagName.toLowerCase();
 	CONTROL_VALUE_ADAPTERS.set(tag, adapter);
+	REGISTERED_CONTROL_TAGS.add(tag);
+}
+
+/**
+ * Whether a control host paints the field's ARIA state onto its own target instead of receiving it from the field.
+ *
+ * @remarks True for a host registered with {@link registerFieldControl} that declares an ARIA target. The target
+ * may not exist yet (the host renders it later), so the field cannot write to it; the host does, through
+ * `applyFieldAria`, whenever the target renders. Catalog hosts and native inputs keep the field's direct writes.
+ */
+export function paintsOwnFieldAria(host: HTMLElement): boolean {
+	return (
+		REGISTERED_CONTROL_TAGS.has(host.localName) &&
+		(host.hasAttribute(RUI_ARIA_TARGET_ATTR) || host.hasAttribute(RUI_ARIA_TARGETS_ATTR))
+	);
+}
+
+/** The ARIA targets a host declares that are rendered now. Unlike {@link getAriaControlTargets} it never falls back to the host. */
+export function getDeclaredAriaTargets(control: HTMLElement): HTMLElement[] {
+	return resolveDeclaredAriaTargets(control);
 }
 
 /**

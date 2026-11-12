@@ -19,6 +19,7 @@ import {
 	isNativeTextControl,
 	isPrimaryFieldControlEvent,
 	isFormAssociatedHost,
+	paintsOwnFieldAria,
 	readControlValue,
 	RUI_FIELD_DEFAULT_VALUE_ATTR,
 	RUI_FIELD_MANAGED_ATTR,
@@ -85,6 +86,11 @@ export type RuiFieldProps = {
  * `aria-invalid`, `aria-required`, `aria-describedby`, and `aria-disabled` (when `disabled`).
  * Do not fight those attributes on controls inside a field.
  *
+ * A host registered with `registerFieldControl` that declares `data-rui-aria-target(s)` is the exception:
+ * the field writes no `id`, `data-rui-field-managed` or ARIA for it, because its target usually renders after
+ * the field connected. The field publishes that state on {@link fieldContext} (`labelId`, `describedBy`,
+ * `invalid`, `required`, `disabled`) and the host paints it with `applyFieldAria` whenever its target renders.
+ *
  * Nested hosts: any registered control host inside the field tree (see control protocol).
  *
  * @element rui-field
@@ -122,9 +128,12 @@ export class RuiField extends RadiantElement {
 			controlId: '',
 			descriptionId: '',
 			errorId: '',
+			labelId: '',
+			describedBy: '',
 			error: undefined,
 			invalid: false,
 			required: false,
+			disabled: false,
 		},
 		hydrate: Object,
 		serialize: (value) => ({ ...value, rules: stripValidate(value.rules) }),
@@ -368,7 +377,8 @@ export class RuiField extends RadiantElement {
 		}
 		const ariaTargets = controlHost ? getAriaControlTargets(controlHost) : [];
 		const ariaTarget = ariaTargets[0] ?? null;
-		const controlId = ariaTarget?.id || `${this.uid}-control`;
+		const paintedByHost = controlHost != null && paintsOwnFieldAria(controlHost);
+		const controlId = (!paintedByHost && ariaTarget?.id) || `${this.uid}-control`;
 		const descriptionId = `${this.uid}-desc`;
 		const errorId = `${this.uid}-error`;
 		const errorMessage = this.resolveErrorMessage(formCtx);
@@ -379,19 +389,26 @@ export class RuiField extends RadiantElement {
 		wireFieldControlName(controlHost, ariaTarget, fieldName);
 
 		const describedBy = this.syncDescriptions(descriptionId, errorId, errorMessage);
-		this.syncAriaTargets(controlHost, ariaTargets, controlId, describedBy, invalid, required);
-		this.syncLabel(ariaTargets, ariaTarget);
+		if (paintedByHost) {
+			this.syncHostDisabled(controlHost);
+		} else {
+			this.syncAriaTargets(controlHost, ariaTargets, controlId, describedBy, invalid, required);
+		}
+		const labelId = this.syncLabel(ariaTargets, ariaTarget, paintedByHost);
 
 		this.syncErrorPresentation(errorMessage);
 
 		const nextFieldContext = {
 			name: fieldName,
-			controlId: ariaTarget?.id ?? controlId,
+			controlId: (!paintedByHost && ariaTarget?.id) || controlId,
 			descriptionId,
 			errorId,
+			labelId,
+			describedBy: describedBy.join(' '),
 			error: errorMessage,
 			invalid,
 			required,
+			disabled: this.disabled,
 		};
 		this.publishFieldContext(nextFieldContext);
 	}
@@ -435,20 +452,40 @@ export class RuiField extends RadiantElement {
 		return describedBy;
 	}
 
-	private syncLabel(targets: HTMLElement[], ariaTarget: HTMLElement | null): void {
+	/**
+	 * @remarks A host that paints its own ARIA gets only the label id here; it binds `aria-labelledby` and
+	 * `htmlFor` to its target through `applyFieldAria`.
+	 *
+	 * @returns The visible label's id, or `''` when there is none.
+	 */
+	private syncLabel(targets: HTMLElement[], ariaTarget: HTMLElement | null, paintedByHost: boolean): string {
 		const label = findFieldLabel(this);
-		if (!label || !ariaTarget) {
-			return;
+		if (!label) {
+			return '';
+		}
+		if (paintedByHost) {
+			label.id ||= `${this.uid}-label`;
+			return label.id;
+		}
+		if (!ariaTarget) {
+			return label.id;
 		}
 
 		label.htmlFor = ariaTarget.id;
 		if (isNativeTextControl(ariaTarget)) {
-			return;
+			return label.id;
 		}
 
 		const labelId = label.id || `${this.uid}-label`;
 		for (const target of targets) {
 			bindVisibleLabel(label, target, { controlId: target.id, labelId });
+		}
+		return label.id;
+	}
+
+	private syncHostDisabled(controlHost: HTMLElement): void {
+		if (this.disabled && isFormAssociatedHost(controlHost)) {
+			Reflect.set(controlHost, 'disabled', true);
 		}
 	}
 
@@ -501,9 +538,12 @@ function isSameFieldContext(previous: FieldContextValue, next: FieldContextValue
 		previous.controlId === next.controlId &&
 		previous.descriptionId === next.descriptionId &&
 		previous.errorId === next.errorId &&
+		previous.labelId === next.labelId &&
+		previous.describedBy === next.describedBy &&
 		previous.error === next.error &&
 		previous.invalid === next.invalid &&
-		previous.required === next.required
+		previous.required === next.required &&
+		previous.disabled === next.disabled
 	);
 }
 

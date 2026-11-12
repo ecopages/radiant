@@ -118,12 +118,37 @@ The nested control keeps its own control tokens (`--size-control-*`, `--radius-c
 | Target | Required | Host writes | Author owns |
 | --- | --- | --- | --- |
 | `[data-rui-control]` or control host tag | yes | `id`, `data-rui-field-managed`, `aria-invalid`, `aria-required`, `aria-describedby`, `aria-disabled` on ARIA targets | control element; see each host's inner contract |
-| `[data-rui-field-label]` | no | `htmlFor` | label text |
+| `[data-rui-field-label]` | no | `htmlFor`; `id` when the control is a registered custom host | label text |
 | `[data-rui-field-description]` | no | `id` | description content |
 | `[data-rui-field-error]` | no | `id`, `textContent`, `hidden` | error region presence |
 | `[data-ref="field"]` | no | — | presentation column |
 
 Nested hosts: registered control hosts inside the field (`rui-switch`, `rui-slider`, …).
+
+### Custom control hosts
+
+A host registered with `registerFieldControl` that declares `data-rui-aria-target` or `data-rui-aria-targets` renders its target on its own schedule, often after the field connected. The field therefore writes no `id`, `data-rui-field-managed` or `aria-*` for it. It publishes the state on `fieldContext` (`labelId`, `describedBy`, `invalid`, `required`, `disabled`) and the host paints it onto its target with `applyFieldAria`, from the context handler and from `updated()` so the target is covered whenever it renders:
+
+```ts
+import { onContextUpdate } from '@ecopages/radiant/context';
+import { applyFieldAria, fieldContext, type FieldContextValue } from '@ecopages/radiant-ui/field';
+
+class XCode extends RadiantElement {
+  private field?: FieldContextValue;
+
+  @onContextUpdate({ context: fieldContext })
+  onField(field: FieldContextValue) {
+    this.field = field;
+    applyFieldAria(this, field);
+  }
+
+  protected override updated() {
+    applyFieldAria(this, this.field);
+  }
+}
+```
+
+`applyFieldAria` writes `id` (when missing), `aria-labelledby`, `aria-describedby`, `aria-invalid`, `aria-required` and `aria-disabled` on each rendered target and points the label's `htmlFor` at the first. Catalog hosts and native inputs keep the field's direct writes.
 
 ### View helpers
 
