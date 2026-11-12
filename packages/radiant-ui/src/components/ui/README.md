@@ -32,6 +32,8 @@ Native `FormData` comes from the listed control, not from `RuiField`. Named `rui
 
 A registered host that declares `data-rui-aria-target(s)` paints the field's ARIA state itself: `RuiField` publishes `labelId`, `describedBy`, `invalid`, `required` and `disabled` on `fieldContext` and writes no `id`, `data-rui-field-managed` or `aria-*` for it. The host calls `applyFieldAria(this, field)` from its `fieldContext` handler and from `updated()`, so a target that renders after the field connected is still labelled. Catalog hosts and native inputs keep the field's direct writes.
 
+`RuiFieldError` has a controlled mode for an error that belongs to a group rather than a control: with `error` it renders that content (falling back to `children`), is visible while non-empty, works outside `RuiField` and on the server, and stamps `data-rui-field-error-controlled`. `findFieldErrorElements` skips controlled regions, so the field never overwrites or hides them; it only gives a controlled region an `id` when missing and lists it in the control's `aria-describedby` while visible.
+
 ## Multi-value `value`
 
 Token-select hosts (`rui-select`, `rui-combobox`, `rui-listbox`, `rui-checkbox-group`, `rui-tag-group`, `rui-table`) share one protocol:

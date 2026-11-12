@@ -6,6 +6,7 @@ export const RUI_FIELD_MANAGED_ATTR = 'data-rui-field-managed';
 export const RUI_FIELD_LABEL_ATTR = 'data-rui-field-label';
 export const RUI_FIELD_DESCRIPTION_ATTR = 'data-rui-field-description';
 export const RUI_FIELD_ERROR_ATTR = 'data-rui-field-error';
+export const RUI_FIELD_ERROR_CONTROLLED_ATTR = 'data-rui-field-error-controlled';
 export const RUI_FIELD_DEFAULT_VALUE_ATTR = 'data-default-value';
 export const RUI_FORM_DEFAULT_VALUES_ATTR = 'data-default-values';
 export const RUI_ARIA_TARGET_ATTR = 'data-rui-aria-target';
@@ -390,8 +391,26 @@ export function findFieldError(root: HTMLElement): HTMLElement | null {
 	return all[0] ?? null;
 }
 
-/** Every error region in the field (handles duplicate copies of slotted content). */
+function isControlledFieldError(node: HTMLElement): boolean {
+	return node.hasAttribute(RUI_FIELD_ERROR_CONTROLLED_ATTR);
+}
+
+/**
+ * Every error region the field owns (handles duplicate copies of slotted content).
+ *
+ * @remarks Skips controlled regions, whose content and visibility belong to their author; see
+ * {@link findControlledFieldErrors}.
+ */
 export function findFieldErrorElements(root: HTMLElement): HTMLElement[] {
+	return collectFieldErrorRegions(root).filter((node) => !isControlledFieldError(node));
+}
+
+/** Error regions in the field whose content the author controls with `RuiFieldError`'s `error` prop. */
+export function findControlledFieldErrors(root: HTMLElement): HTMLElement[] {
+	return collectFieldErrorRegions(root).filter(isControlledFieldError);
+}
+
+function collectFieldErrorRegions(root: HTMLElement): HTMLElement[] {
 	const renderRoot = root.querySelector(FIELD_COLUMN_SELECTOR);
 	if (renderRoot instanceof HTMLElement) {
 		const inRender = Array.from(renderRoot.querySelectorAll<HTMLElement>(`[${RUI_FIELD_ERROR_ATTR}]`));

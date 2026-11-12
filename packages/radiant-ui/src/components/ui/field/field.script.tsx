@@ -11,6 +11,7 @@ import { consumeContext, onContextUpdate, provideContext } from '@ecopages/radia
 import type { ContextProvider } from '@ecopages/radiant/context';
 import {
 	findFieldControl,
+	findControlledFieldErrors,
 	findFieldDescription,
 	findFieldError,
 	findFieldErrorElements,
@@ -449,6 +450,10 @@ export class RuiField extends RadiantElement {
 		const error = findFieldError(this);
 		if (error) error.id = errorId;
 		if (error && errorMessage) describedBy.push(errorId);
+		for (const [index, controlled] of findControlledFieldErrors(this).entries()) {
+			controlled.id ||= `${this.uid}-controlled-error-${index}`;
+			if (!controlled.hidden) describedBy.push(controlled.id);
+		}
 		return describedBy;
 	}
 

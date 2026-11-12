@@ -75,6 +75,10 @@ Set `name` on the field (or on a form-associated host) so a native `<form>` can 
 
 <p>Set `invalid` and pass the error message so `RuiFieldError` renders below the control with `aria-live` semantics.</p>
 
+## Errors that belong to a group
+
+<p>Pass `error` to `RuiFieldError` for a message that is not about one control, such as a group or a repeating array. The region is controlled: it renders `error` (with `children` as the fallback), is visible while it has content, works outside a `RuiField` and on the server, and carries `data-rui-field-error-controlled` so an enclosing field never overwrites or hides it. Give the region an `id` and point the group's `aria-describedby` or `aria-errormessage` at it. Inside a field, a controlled region without an `id` gets one and is added to the control's `aria-describedby` while visible.</p>
+
 ## Disabled fields
 
 <p>Set `disabled` on the field to dim the label and prevent interaction with nested controls.</p>
@@ -120,7 +124,7 @@ The nested control keeps its own control tokens (`--size-control-*`, `--radius-c
 | `[data-rui-control]` or control host tag | yes | `id`, `data-rui-field-managed`, `aria-invalid`, `aria-required`, `aria-describedby`, `aria-disabled` on ARIA targets | control element; see each host's inner contract |
 | `[data-rui-field-label]` | no | `htmlFor`; `id` when the control is a registered custom host | label text |
 | `[data-rui-field-description]` | no | `id` | description content |
-| `[data-rui-field-error]` | no | `id`, `textContent`, `hidden` | error region presence |
+| `[data-rui-field-error]` | no | `id`, `textContent`, `hidden` (skipped when `data-rui-field-error-controlled`; only a missing `id` is written) | error region presence |
 | `[data-ref="field"]` | no | — | presentation column |
 
 Nested hosts: registered control hosts inside the field (`rui-switch`, `rui-slider`, …).
@@ -156,7 +160,7 @@ class XCode extends RadiantElement {
 | --- | --- | --- |
 | `RuiField` | `[data-ref="field"]` | Passes `rules` / `defaultValue` via `prop:` bindings. |
 | `RuiFieldDescription` | `[data-rui-field-description]` | Wired into `aria-describedby`. |
-| `RuiFieldError` | `[data-rui-field-error]` | Text populated by the field; `role="alert"`. |
+| `RuiFieldError` | `[data-rui-field-error]` | Text populated by the field; `role="alert"`. `error` makes it controlled (`data-rui-field-error-controlled`). |
 
 ### CSS classes
 
