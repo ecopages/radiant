@@ -47,12 +47,18 @@ export function customElement(name: string, options?: AutonomousCustomElementOpt
  * up as its field initializes: a later write goes through the accessor and is recorded as explicit, so it wins over
  * an authored attribute at the first connect. Classes registered without this decorator keep the connect-time
  * setup.
+ *
+ * Setup runs only when this class is the one constructed (`new.target`). A subclass, decorated or not, defines
+ * its own fields after this constructor returns and would overwrite the accessors, so for it the setup waits for the
+ * most derived decorated class, or for connect.
  */
 function withLegacyConstructionEnd<T extends CustomElementConstructor>(decorated: T): T {
 	const Constructed = class extends (decorated as CustomElementConstructor) {
 		constructor(...args: unknown[]) {
 			super(...(args as []));
-			ensureLegacyHostReady(this, 'connect');
+			if (new.target === Constructed) {
+				ensureLegacyHostReady(this, 'connect');
+			}
 		}
 	};
 
