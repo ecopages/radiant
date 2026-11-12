@@ -172,6 +172,25 @@ describe('a spread whose keys change keeps its element', () => {
 		expect([first, second]).toEqual([1, 1]);
 	});
 
+	test('a remaining binding keeps its listener when another binding of the same function is dropped', async () => {
+		const { container, root, renderInput } = await mount();
+		let calls = 0;
+		const handler = () => {
+			calls += 1;
+		};
+		root.render(renderInput({ 'on:focus': handler, 'on-native:focus': handler }));
+		const input = container.querySelector('input') as HTMLInputElement;
+
+		root.render(renderInput({ 'on:focus': handler }));
+		expect(container.querySelector('input')).toBe(input);
+		input.dispatchEvent(new FocusEvent('focus'));
+		expect(calls).toBe(1);
+
+		root.unmount();
+		input.dispatchEvent(new FocusEvent('focus'));
+		expect(calls).toBe(1);
+	});
+
 	test('a different tag still replaces the element', async () => {
 		const { container, root, jsx } = await mount();
 		root.render(jsx('input', { 'aria-invalid': 'true' }));

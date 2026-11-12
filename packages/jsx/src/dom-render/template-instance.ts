@@ -119,11 +119,37 @@ export function retargetTemplateInstance(
 		nextParts[position]!.index = part.index;
 	});
 
-	for (const sameKey of attributes.values()) {
-		for (const dropped of sameKey) updateLiveAttributePart(dropped, undefined, deferredProperties);
-	}
+	dropAttributeParts(attributes, nextParts, deferredProperties);
 
 	instance.compiled = next;
 	instance.parts = nextParts;
 	return true;
+}
+
+/**
+ * Clears the live attribute parts the new shape no longer binds.
+ *
+ * @remarks The browser keeps one registration per event, listener and capture flag, so a dropped native listener
+ * may have shared its registration with a retained part of the same function. The retained native listeners are
+ * forgotten here, so the next update attaches them again.
+ */
+function dropAttributeParts(
+	dropped: ReadonlyMap<string, LiveAttributePart[]>,
+	retained: readonly LiveTemplatePart[],
+	deferredProperties: DeferredPropertyBinding[],
+): void {
+	let droppedNativeListener = false;
+
+	for (const sameKey of dropped.values()) {
+		for (const part of sameKey) {
+			droppedNativeListener ||= part.binding.kind === 'native-event';
+			updateLiveAttributePart(part, undefined, deferredProperties);
+		}
+	}
+
+	if (!droppedNativeListener) return;
+
+	for (const live of retained) {
+		if (live.type === 'attribute' && live.binding.kind === 'native-event') live.previousValue = undefined;
+	}
 }
