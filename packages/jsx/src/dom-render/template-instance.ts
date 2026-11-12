@@ -82,12 +82,16 @@ export function retargetTemplateInstance(
 		return false;
 	}
 
-	const attributes = new Map<string, LiveAttributePart>();
+	const attributes = new Map<string, LiveAttributePart[]>();
 	const slots: LiveTemplatePart[] = [];
 
 	for (const part of instance.parts) {
-		if (part.type === 'attribute') attributes.set(`${part.binding.kind}:${part.binding.name}`, part);
-		else slots.push(part);
+		if (part.type === 'attribute') {
+			const key = `${part.binding.kind}:${part.binding.name}`;
+			const sameKey = attributes.get(key);
+			if (sameKey) sameKey.push(part);
+			else attributes.set(key, [part]);
+		} else slots.push(part);
 	}
 
 	const nextParts: LiveTemplatePart[] = [];
@@ -97,7 +101,7 @@ export function retargetTemplateInstance(
 		const key = part.type === 'attribute' ? `${part.binding.kind}:${part.binding.name}` : '';
 		const live: LiveTemplatePart | undefined =
 			part.type === 'attribute'
-				? (attributes.get(key) ?? {
+				? (attributes.get(key)?.shift() ?? {
 						binding: part.binding,
 						element,
 						index: part.index,
@@ -108,7 +112,6 @@ export function retargetTemplateInstance(
 				: slots[slot++];
 
 		if (!live) return false;
-		attributes.delete(key);
 		nextParts.push(live);
 	}
 
@@ -116,8 +119,8 @@ export function retargetTemplateInstance(
 		nextParts[position]!.index = part.index;
 	});
 
-	for (const dropped of attributes.values()) {
-		updateLiveAttributePart(dropped, undefined, deferredProperties);
+	for (const sameKey of attributes.values()) {
+		for (const dropped of sameKey) updateLiveAttributePart(dropped, undefined, deferredProperties);
 	}
 
 	instance.compiled = next;

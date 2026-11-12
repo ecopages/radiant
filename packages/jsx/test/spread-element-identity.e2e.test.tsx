@@ -148,6 +148,30 @@ describe('a spread whose keys change keeps its element', () => {
 		expect(clicks).toBe(2);
 	});
 
+	test('detaches two bindings that normalize to the same event when both are dropped', async () => {
+		const { container, root, renderInput } = await mount();
+		let first = 0;
+		let second = 0;
+		root.render(
+			renderInput({
+				'on:focus': () => {
+					first += 1;
+				},
+				'on-native:focus': () => {
+					second += 1;
+				},
+			}),
+		);
+		const input = container.querySelector('input') as HTMLInputElement;
+		input.dispatchEvent(new FocusEvent('focus'));
+		expect([first, second]).toEqual([1, 1]);
+
+		root.render(renderInput({ id: 'x' }));
+		expect(container.querySelector('input')).toBe(input);
+		input.dispatchEvent(new FocusEvent('focus'));
+		expect([first, second]).toEqual([1, 1]);
+	});
+
 	test('a different tag still replaces the element', async () => {
 		const { container, root, jsx } = await mount();
 		root.render(jsx('input', { 'aria-invalid': 'true' }));
