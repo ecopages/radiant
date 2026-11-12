@@ -191,6 +191,64 @@ describe('a spread whose keys change keeps its element', () => {
 		expect(calls).toBe(1);
 	});
 
+	test('swapping a handler while another native binding is dropped leaves one listener', async () => {
+		const { container, root, renderInput } = await mount();
+		const calls: string[] = [];
+		const h1 = () => calls.push('h1');
+		const h2 = () => calls.push('h2');
+		root.render(renderInput({ 'on:focus': h1, 'on-native:blur': () => calls.push('b') }));
+		const input = container.querySelector('input') as HTMLInputElement;
+
+		root.render(renderInput({ 'on:focus': h2 }));
+		input.dispatchEvent(new FocusEvent('focus'));
+		input.dispatchEvent(new FocusEvent('blur'));
+		expect(calls).toEqual(['h2']);
+
+		root.unmount();
+		input.dispatchEvent(new FocusEvent('focus'));
+		expect(calls).toEqual(['h2']);
+	});
+
+	test('a reactive handler keeps its listener when a direct binding of the same function is dropped', async () => {
+		const { createSubscribableJsxValue } =
+			await loadModule<typeof import('../src/jsx-runtime.ts')>('../src/jsx-runtime.ts');
+		const { container, root, renderInput } = await mount();
+		let calls = 0;
+		const handler = () => {
+			calls += 1;
+		};
+		const source = createSubscribableJsxValue({
+			getValue: (() => handler) as unknown as () => string,
+			subscribe: () => () => undefined,
+		});
+		root.render(renderInput({ 'on:focus': source, 'on-native:focus': handler }));
+		const input = container.querySelector('input') as HTMLInputElement;
+		input.dispatchEvent(new FocusEvent('focus'));
+		expect(calls).toBe(2);
+
+		root.render(renderInput({ 'on:focus': source }));
+		input.dispatchEvent(new FocusEvent('focus'));
+		expect(calls).toBe(3);
+
+		root.unmount();
+		input.dispatchEvent(new FocusEvent('focus'));
+		expect(calls).toBe(3);
+	});
+
+	test('a native handler change swaps the handler once and an object listener keeps working', async () => {
+		const { container, root, renderInput } = await mount();
+		const calls: string[] = [];
+		root.render(renderInput({ 'on:focus': () => calls.push('a') }));
+		const input = container.querySelector('input') as HTMLInputElement;
+		root.render(renderInput({ 'on:focus': () => calls.push('b') }));
+		input.dispatchEvent(new FocusEvent('focus'));
+		root.render(renderInput({ 'on:focus': { handleEvent: () => calls.push('obj') } }));
+		input.dispatchEvent(new FocusEvent('focus'));
+		root.unmount();
+		input.dispatchEvent(new FocusEvent('focus'));
+		expect(calls).toEqual(['b', 'obj']);
+	});
+
 	test('a different tag still replaces the element', async () => {
 		const { container, root, jsx } = await mount();
 		root.render(jsx('input', { 'aria-invalid': 'true' }));

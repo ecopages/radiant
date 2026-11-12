@@ -119,6 +119,11 @@ function applyDelegatedEventBinding(
 	updatePreviousValue(livePart, value);
 }
 
+/**
+ * @remarks A live part registers a wrapper of its own around the handler, not the handler itself. The browser keeps
+ * one registration per event and listener, so two parts bound to one function would share it, and dropping one would
+ * remove the other's.
+ */
 function applyNativeEventBinding(
 	element: Element,
 	name: string,
@@ -126,10 +131,18 @@ function applyNativeEventBinding(
 	livePart: LiveAttributePart | undefined,
 ): void {
 	if (livePart?.previousValue === value) return;
-	const previousListener = livePart ? asEventBindingListener(livePart.previousValue) : null;
-	if (previousListener) element.removeEventListener(name, previousListener);
-	const nextListener = asEventBindingListener(value);
-	if (nextListener) element.addEventListener(name, nextListener);
+	const handler = asEventBindingListener(value);
+
+	if (!livePart) {
+		if (handler) element.addEventListener(name, handler);
+		return;
+	}
+
+	if (livePart.nativeListener) element.removeEventListener(name, livePart.nativeListener);
+	livePart.nativeListener = handler
+		? (event) => (typeof handler === 'function' ? handler.call(element, event) : handler.handleEvent(event))
+		: undefined;
+	if (livePart.nativeListener) element.addEventListener(name, livePart.nativeListener);
 	updatePreviousValue(livePart, value);
 }
 

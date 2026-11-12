@@ -101,6 +101,8 @@ export type LiveAttributePart = {
 	binding: Exclude<BindingDescriptor, { kind: 'child' }>;
 	element: Element;
 	index: number;
+	/** The wrapper a `native-event` part registered on its element, which calls the handler. */
+	nativeListener?: EventListener;
 	previousValue?: unknown;
 	rootTarget: HTMLElement;
 	/**
