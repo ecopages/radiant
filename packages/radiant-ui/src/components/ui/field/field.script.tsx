@@ -89,7 +89,7 @@ export type RuiFieldProps = {
  *
  * A host registered with `registerFieldControl` that declares `data-rui-aria-target(s)` is the exception:
  * the field writes no `id`, `data-rui-field-managed` or ARIA for it, because its target usually renders after
- * the field connected. The field publishes that state on {@link fieldContext} (`labelId`, `describedBy`,
+ * the field connected. The field publishes that state on {@link fieldContext} (`controlId`, `labelId`, `describedBy`,
  * `invalid`, `required`, `disabled`) and the host binds it onto its target: `{...fieldAria(this.field)}` in a `render()`
  * tree, or `@bindTo(fieldAriaBindings(selector))` on the field holding the context for authored DOM.
  *
@@ -396,7 +396,7 @@ export class RuiField extends RadiantElement {
 		} else {
 			this.syncAriaTargets(controlHost, ariaTargets, controlId, describedBy, invalid, required);
 		}
-		const labelId = this.syncLabel(ariaTargets, ariaTarget, paintedByHost);
+		const labelId = this.syncLabel(ariaTargets, ariaTarget, paintedByHost, controlId);
 
 		this.syncErrorPresentation(errorMessage);
 
@@ -459,18 +459,24 @@ export class RuiField extends RadiantElement {
 	}
 
 	/**
-	 * @remarks A host that paints its own ARIA gets only the label id here; it binds `aria-labelledby` to its
-	 * target from `fieldContext`, and the label's `htmlFor` stays unset.
+	 * @remarks A host that paints its own ARIA gets only the label id here; it binds `id` (the context's
+	 * `controlId`, which the label's `htmlFor` points at) and `aria-labelledby` to its target from `fieldContext`.
 	 *
 	 * @returns The visible label's id, or `''` when there is none.
 	 */
-	private syncLabel(targets: HTMLElement[], ariaTarget: HTMLElement | null, paintedByHost: boolean): string {
+	private syncLabel(
+		targets: HTMLElement[],
+		ariaTarget: HTMLElement | null,
+		paintedByHost: boolean,
+		controlId: string,
+	): string {
 		const label = findFieldLabel(this);
 		if (!label) {
 			return '';
 		}
 		if (paintedByHost) {
 			label.id ||= `${this.uid}-label`;
+			label.htmlFor = controlId;
 			return label.id;
 		}
 		if (!ariaTarget) {

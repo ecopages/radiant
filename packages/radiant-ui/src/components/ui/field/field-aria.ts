@@ -3,6 +3,7 @@ import type { FieldContextValue } from './field-context';
 
 /** The ARIA attributes a field publishes for a custom control's target. */
 export type FieldAria = {
+	id?: string;
 	'aria-labelledby'?: string;
 	'aria-describedby'?: string;
 	'aria-invalid'?: 'true' | 'false';
@@ -15,7 +16,8 @@ export type FieldAria = {
  *
  * For a host that owns a `render()` tree: read the `fieldContext` value in a `@contextSelector` field and
  * spread this on the target, so Radiant repaints it whenever the target renders or the field changes.
- * An attribute the field has no value for is absent from the map.
+ * `id` is the one the field's label `htmlFor` points at, so clicking the label focuses the target. An attribute the
+ * field has no value for is absent from the map.
  *
  * @remarks Returns an empty map until the field has published its first state.
  */
@@ -24,6 +26,7 @@ export function fieldAria(field: FieldContextValue | undefined): FieldAria {
 		return {};
 	}
 	return {
+		id: field.controlId,
 		...(field.labelId ? { 'aria-labelledby': field.labelId } : {}),
 		...(field.describedBy ? { 'aria-describedby': field.describedBy } : {}),
 		'aria-invalid': field.invalid ? 'true' : 'false',
@@ -40,6 +43,7 @@ export function fieldAria(field: FieldContextValue | undefined): FieldAria {
  */
 export function fieldAriaBindings(selector: string): BindToTarget<FieldContextValue | undefined>[] {
 	const attributes = [
+		'id',
 		'aria-labelledby',
 		'aria-describedby',
 		'aria-invalid',

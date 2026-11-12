@@ -131,7 +131,7 @@ Nested hosts: registered control hosts inside the field (`rui-switch`, `rui-slid
 
 ### Custom control hosts
 
-A host registered with `registerFieldControl` that declares `data-rui-aria-target` or `data-rui-aria-targets` renders its target on its own schedule, often after the field connected. The field therefore writes no `id`, `data-rui-field-managed` or `aria-*` for it. It publishes the state on `fieldContext` (`labelId`, `describedBy`, `invalid`, `required`, `disabled`) and the host binds it onto its target declaratively. Read the context into a `@state` field with `@contextSelector`, then:
+A host registered with `registerFieldControl` that declares `data-rui-aria-target` or `data-rui-aria-targets` renders its target on its own schedule, often after the field connected. The field therefore writes no `id`, `data-rui-field-managed` or `aria-*` for it. It publishes the state on `fieldContext` (`controlId`, `labelId`, `describedBy`, `invalid`, `required`, `disabled`) and the host binds it onto its target declaratively. Read the context into a `@state` field with `@contextSelector`, then:
 
 A host that owns a `render()` tree spreads `fieldAria(field)` on the target, so the attributes are repainted whenever the target renders or the field changes:
 
@@ -161,7 +161,7 @@ A host that keeps authored DOM (no `render()`) decorates the same field with `@b
 field?: FieldContextValue = undefined;
 ```
 
-`@bindTo` copies on connect and when the field changes; it does not repaint a target inserted afterwards. A target the host creates after connecting must come from `render()`. Neither form sets `id` or the label's `htmlFor`: the label is associated through `aria-labelledby`, so clicking it does not focus the target unless the author wires that. Catalog hosts and native inputs keep the field's direct writes.
+`@bindTo` copies on connect and when the field changes; it does not repaint a target inserted afterwards. A target the host creates after connecting must come from `render()`. Both forms bind `id` (the `controlId` the label's `htmlFor` points at, so clicking the label focuses the target) along with `aria-labelledby`, `aria-describedby`, `aria-invalid`, `aria-required` and `aria-disabled`. Native `disabled` stays with the author. Catalog hosts and native inputs keep the field's direct writes.
 
 ### View helpers
 

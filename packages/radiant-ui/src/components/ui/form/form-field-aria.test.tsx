@@ -99,6 +99,19 @@ describe.each(['x-aria-code', 'x-aria-render'])('a custom control host (%s) pain
 		expect(input.getAttribute('aria-invalid')).toBe('false');
 	});
 
+	it('points the label at the target and focuses it on click', async () => {
+		const { field, host } = buildField({ tag, ready: true });
+		document.body.append(field);
+		await flush();
+
+		const input = host.querySelector('input')!;
+		const label = field.querySelector('label')!;
+		expect(input.id).toBeTruthy();
+		expect(label.htmlFor).toBe(input.id);
+		label.click();
+		expect(document.activeElement).toBe(input);
+	});
+
 	it('follows the field when it becomes invalid after the target rendered', async () => {
 		const { field, host } = buildField({ tag, ready: true });
 		document.body.append(field);
