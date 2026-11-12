@@ -16,6 +16,7 @@ import {
 	type ReactivePropertyOptions,
 } from './reactive-prop-core';
 import { EventSubscriptionRegistry } from './event-subscription-registry';
+import { warnShadowedClassAccessors } from '../decorators/shared/pre-upgrade-warning';
 import { ReactivePropertyState } from './reactive-property-state';
 import { RenderRuntime, type RenderRuntimeHost } from './render-runtime';
 import type { ForeignSlottedProjector } from './slotted-content';
@@ -241,6 +242,7 @@ export class RadiantElement<Bindings extends object = {}>
 	constructor() {
 		super();
 		this.reactivePropertyState = new ReactivePropertyState(this);
+		warnShadowedClassAccessors(this, RadiantElement.prototype);
 		this.eventSubscriptionRegistry = new EventSubscriptionRegistry(this);
 		this.updateCycle = new UpdateCycle({
 			canFlush: () => this.isConnected && !this.isFirstConnectPending && !this.awaitsChildren,

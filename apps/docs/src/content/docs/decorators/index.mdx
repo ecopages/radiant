@@ -21,6 +21,45 @@ Radiant decorators fall into a few groups:
 
 For the controller capability matrix, see [RadiantController](/docs/components/radiant-controller).
 
+## Upgrade Safety
+
+Code outside a host can assign to an element before its tag is defined, for example to a server-rendered host whose definition loads later. The assignment becomes an own property of the not-yet-upgraded element. What happens to it at upgrade depends on the member:
+
+- `@prop` adopts it, and it wins over an authored attribute. Definition timing does not matter, so never defer an element definition to avoid losing input.
+- `@state` and `@signal` are internal, not public input. They keep their initializer and discard the value.
+- A class accessor (hand-written `get`/`set`, an `accessor` field, or a library accessor decorator such as MobX `@observable accessor`) is shadowed by the own property, so the accessor and any reactivity behind it never sees the value.
+
+In development, the last two cases warn once per tag and member. Production builds drop the warnings, and `setDevWarningsEnabled(false)` from `@ecopages/jsx/jsx-dev-runtime` silences them.
+
+```tsx
+@customElement('x-renderer')
+class XRenderer extends RadiantElement {
+	@prop({ type: Object }) engine?: FormEngine; // public input: adopted when set before upgrade
+	@state status = 'idle'; // internal: a pre-upgrade value is discarded
+}
+
+const el = document.querySelector('x-renderer')!;
+el.engine = myEngine;
+el.status = 'ready';
+await import('./x-renderer'); // upgrade
+el.engine; // myEngine
+el.status; // 'idle', and development builds warn
+```
+
+The warning for `status` reads:
+
+```text
+[@ecopages/radiant] "status" on <x-renderer> was assigned before the element was upgraded, but @state is internal: the value was discarded and the initializer was kept. Declare it with @prop to accept it as public input.
+```
+
+The warning for a shadowed class accessor reads:
+
+```text
+[@ecopages/radiant] "mode" on <x-renderer> was assigned before the element was upgraded and now shadows the class accessor, so the accessor (and any reactivity behind it) never sees it. Declare it with @prop, or re-assign it through the setter after upgrade.
+```
+
+To accept a value from outside the host, declare it with `@prop`. State from libraries such as MobX belongs in a store passed to the host through `@prop` or context, not in accessor members on the host.
+
 ## Choosing A Reactive Field Type
 
 - use [@attr](/docs/decorators/attr) when the value should come from markup

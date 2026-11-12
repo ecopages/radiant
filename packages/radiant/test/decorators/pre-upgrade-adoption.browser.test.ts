@@ -138,4 +138,114 @@ describe('pre-upgrade property assignment', () => {
 		expect(host).toBeInstanceOf(Host);
 		expect(warn).not.toHaveBeenCalled();
 	});
+
+	describe('class accessors shadowed by a pre-upgrade assignment', () => {
+		/**
+		 * @remarks
+		 * Stands in for a library accessor decorator such as MobX `@observable accessor`. Under standard decorators it
+		 * wraps the `accessor` field; under legacy decorators it defines the accessor on the prototype.
+		 */
+		function observableAccessor(target: unknown, context: unknown): ClassAccessorDecoratorResult<RadiantElement, unknown> | void {
+			if (typeof context === 'string') {
+				const store = new WeakMap<object, unknown>();
+				Object.defineProperty(target as object, context, {
+					configurable: true,
+					get(this: object) {
+						return store.get(this);
+					},
+					set(this: object, value: unknown) {
+						store.set(this, value);
+					},
+				});
+				return;
+			}
+			const { get, set } = target as { get: () => unknown; set: (value: unknown) => void };
+			return { get, set };
+		}
+
+		test('a hand-written accessor warns once', () => {
+			const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+			const tag = nextTag('getset');
+			const first = createUnupgradedHost(tag, 'mode', 'b');
+			createUnupgradedHost(tag, 'mode', 'c');
+
+			@customElement(tag)
+			class Host extends RadiantElement {
+				#mode = 'a';
+				get mode() {
+					return this.#mode;
+				}
+				set mode(value: string) {
+					this.#mode = value;
+				}
+			}
+
+			expect(first).toBeInstanceOf(Host);
+			expect(warn).toHaveBeenCalledTimes(1);
+			const message = String(warn.mock.calls[0]?.[0]);
+			expect(message).toContain('"mode"');
+			expect(message).toContain('shadows the class accessor');
+			expect(message).toContain('@prop');
+		});
+
+		test('an accessor field warns once', () => {
+			const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+			const tag = nextTag('accessor');
+			const host = createUnupgradedHost(tag, 'mode', 'b');
+
+			@customElement(tag)
+			class Host extends RadiantElement {
+				accessor mode = 'a';
+			}
+
+			expect(host).toBeInstanceOf(Host);
+			expect(warn).toHaveBeenCalledTimes(1);
+			expect(String(warn.mock.calls[0]?.[0])).toContain('"mode"');
+		});
+
+		test('a third-party accessor decorator warns', () => {
+			const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+			const tag = nextTag('observable');
+			const host = createUnupgradedHost(tag, 'mode', 'b');
+
+			@customElement(tag)
+			class Host extends RadiantElement {
+				@observableAccessor accessor mode: unknown = 'a';
+			}
+
+			expect(host).toBeInstanceOf(Host);
+			expect(warn).toHaveBeenCalledTimes(1);
+			expect(String(warn.mock.calls[0]?.[0])).toContain('shadows the class accessor');
+		});
+
+		test('stays silent when nothing was assigned early, for @prop, and when warnings are disabled', () => {
+			const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+			const cleanTag = nextTag('accessor-clean');
+			const propTag = nextTag('accessor-prop');
+			const silentTag = nextTag('accessor-silent');
+			document.body.appendChild(document.createElement(cleanTag));
+			createUnupgradedHost(propTag, 'mode', 'b');
+
+			@customElement(cleanTag)
+			class Clean extends RadiantElement {
+				accessor mode = 'a';
+			}
+
+			@customElement(propTag)
+			class WithProp extends RadiantElement {
+				@prop({ type: String }) mode = 'a';
+			}
+
+			setDevWarningsEnabled(false);
+			createUnupgradedHost(silentTag, 'mode', 'b');
+
+			@customElement(silentTag)
+			class Silent extends RadiantElement {
+				accessor mode = 'a';
+			}
+
+			expect([Clean, WithProp, Silent]).toHaveLength(3);
+			expect(warn).not.toHaveBeenCalled();
+		});
+	});
 });
