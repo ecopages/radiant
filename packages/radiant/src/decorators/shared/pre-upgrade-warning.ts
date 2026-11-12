@@ -1,4 +1,5 @@
 import type { ReactiveHostLike } from '../../core/reactive-host';
+import { HAS_PRE_UPGRADE_VALUE } from '../../core/pre-upgrade-value';
 import { getReactivePropDefinitions } from '../../core/reactive-prop-metadata';
 import { areJsxDevWarningsEnabled, warnOnceInDevelopment } from '../../helpers/dev-warnings';
 
@@ -51,7 +52,7 @@ export function warnDiscardedPreUpgradeValue(
 ): void {
 	const tag = (host as unknown as Element).localName;
 	warnOnceInDevelopment(`${tag}:${memberName}`, () =>
-		host.hasPreUpgradeValue?.(memberName)
+		host[HAS_PRE_UPGRADE_VALUE]?.(memberName)
 			? `[@ecopages/radiant] "${memberName}" on <${tag}> was assigned before the element was upgraded, but ${decorator} is internal: the value was discarded and the initializer was kept. Declare it with @prop to accept it as public input.`
 			: undefined,
 	);

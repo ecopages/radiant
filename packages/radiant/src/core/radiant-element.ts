@@ -17,6 +17,7 @@ import {
 } from './reactive-prop-core';
 import { EventSubscriptionRegistry } from './event-subscription-registry';
 import { warnShadowedClassAccessors } from '../decorators/shared/pre-upgrade-warning';
+import { HAS_PRE_UPGRADE_VALUE } from './pre-upgrade-value';
 import { ReactivePropertyState } from './reactive-property-state';
 import { RenderRuntime, type RenderRuntimeHost } from './render-runtime';
 import type { ForeignSlottedProjector } from './slotted-content';
@@ -716,13 +717,8 @@ export class RadiantElement<Bindings extends object = {}>
 		return (this.querySelector(selector) as T) ?? null;
 	}
 
-	/**
-	 * Whether a value was assigned to this host under `propertyName` before it was upgraded.
-	 *
-	 * @remarks
-	 * `@prop` adopts such a value. `@state` and `@signal` use it only to warn in development that it was discarded.
-	 */
-	public hasPreUpgradeValue(propertyName: string): boolean {
+	/** @internal Whether a value was assigned to this host under `propertyName` before it was upgraded. */
+	public [HAS_PRE_UPGRADE_VALUE](propertyName: string): boolean {
 		return this.reactivePropertyState.hasPreUpgradeValue(propertyName);
 	}
 

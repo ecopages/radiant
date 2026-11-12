@@ -1,3 +1,4 @@
+import { HAS_PRE_UPGRADE_VALUE } from './pre-upgrade-value';
 import type { JsxBindingSourceValue, SubscribableJsxValueWithAccess } from '@ecopages/jsx';
 import { HostSsrRegistry } from './host-ssr-registry';
 import { adaptReactiveStateToJsxBinding } from './reactive-binding-adapter';
@@ -65,7 +66,7 @@ export interface ReactiveHostLike<Bindings extends object = {}> {
 	createReactiveMember<T>(propertyName: string, initialValue: T): ReactiveState<T>;
 	registerReactiveMember<T>(propertyName: string, signal: ReactiveState<T>): void;
 	/** Whether a value was assigned to the host under `propertyName` before it was upgraded; only elements can tell. */
-	hasPreUpgradeValue?(propertyName: string): boolean;
+	[HAS_PRE_UPGRADE_VALUE]?(propertyName: string): boolean;
 	defineReactiveBinding(property: string, bind?: ReactiveBindingOption): void;
 	registerCleanupCallback(callback: () => void): void;
 	registerConnectedCallback(callback: () => void): void;
