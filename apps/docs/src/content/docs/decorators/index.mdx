@@ -55,10 +55,10 @@ The warning for `status` reads:
 The warning for a shadowed class accessor reads:
 
 ```text
-[@ecopages/radiant] "mode" on <x-renderer> was assigned before the element was upgraded and now shadows the class accessor, so the accessor (and any reactivity behind it) never sees it. Declare it with @prop, or re-assign it through the setter after upgrade.
+[@ecopages/radiant] "mode" on <x-renderer> was assigned before the element was upgraded and now shadows the class accessor, so the accessor (and any reactivity behind it) never sees it. Declare it with @prop, or after upgrade save the value, delete the own property, and re-assign it so it goes through the setter.
 ```
 
-To accept a value from outside the host, declare it with `@prop`. State from libraries such as MobX belongs in a store passed to the host through `@prop` or context, not in accessor members on the host.
+To recover a shadowed accessor after upgrade, save the value, `delete` the own property, then assign the saved value again so it goes through the setter. To accept a value from outside the host, declare it with `@prop`. State from libraries such as MobX belongs in a store passed to the host through `@prop` or context, not in accessor members on the host.
 
 ## Choosing A Reactive Field Type
 

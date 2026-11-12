@@ -40,8 +40,8 @@ let warnedMembers: Set<string> | undefined;
  * }
  * el.mode = 'b'; // before upgrade
  * // [@ecopages/radiant] "mode" on <x-renderer> was assigned before the element was upgraded and now shadows the
- * // class accessor, so the accessor (and any reactivity behind it) never sees it. Declare it with @prop, or
- * // re-assign it through the setter after upgrade.
+ * // class accessor, so the accessor (and any reactivity behind it) never sees it. Declare it with @prop, or after
+ * // upgrade save the value, delete the own property, and re-assign it so it goes through the setter.
  * ```
  *
  * To accept a value from outside the host, declare it with `@prop`.
@@ -83,7 +83,7 @@ export function warnShadowedClassAccessors(host: HTMLElement, baseProto: object)
 					host as unknown as ReactiveHostLike,
 					name,
 					(tag) =>
-						`[@ecopages/radiant] "${name}" on <${tag}> was assigned before the element was upgraded and now shadows the class accessor, so the accessor (and any reactivity behind it) never sees it. Declare it with @prop, or re-assign it through the setter after upgrade.`,
+						`[@ecopages/radiant] "${name}" on <${tag}> was assigned before the element was upgraded and now shadows the class accessor, so the accessor (and any reactivity behind it) never sees it. Declare it with @prop, or after upgrade save the value, delete the own property, and re-assign it so it goes through the setter.`,
 				);
 			}
 		}

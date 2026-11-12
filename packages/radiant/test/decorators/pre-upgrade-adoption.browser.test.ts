@@ -186,6 +186,40 @@ describe('pre-upgrade property assignment', () => {
 			expect(message).toContain('"mode"');
 			expect(message).toContain('shadows the class accessor');
 			expect(message).toContain('@prop');
+			expect(message).toContain('delete the own property');
+			expect(message).not.toContain('re-assign it through the setter');
+		});
+
+		test('saving the value, deleting the own property and re-assigning it reaches the accessor', () => {
+			vi.spyOn(console, 'warn').mockImplementation(() => {});
+			const tag = nextTag('recover');
+			const host = createUnupgradedHost(tag, 'mode', 'b');
+			const seen: string[] = [];
+
+			@customElement(tag)
+			class Host extends RadiantElement {
+				#mode = 'a';
+				get mode() {
+					return this.#mode;
+				}
+				set mode(value: string) {
+					seen.push(value);
+					this.#mode = value;
+				}
+			}
+
+			const upgraded = host as unknown as Host;
+			upgraded.mode = 'c';
+			expect(seen).toEqual([]);
+			expect(upgraded.mode).toBe('c');
+
+			const saved = upgraded.mode;
+			delete (upgraded as { mode?: string }).mode;
+			expect(upgraded.mode).toBe('a');
+			upgraded.mode = saved;
+
+			expect(seen).toEqual(['c']);
+			expect(upgraded.mode).toBe('c');
 		});
 
 		test('an accessor field warns once', () => {
