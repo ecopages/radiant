@@ -9,8 +9,6 @@ class Engine {
 	}
 }
 
-declare const __LEGACY_ENVIRONMENT__: boolean;
-
 let tagCounter = 0;
 const nextTag = (kind: string) => `prop-attr-${kind}-${++tagCounter}`;
 
@@ -107,13 +105,7 @@ describe('@prop precedence: a property assigned first beats markup', () => {
 		expect(host.engine).toBe(engine);
 	});
 
-	/**
-	 * @remarks
-	 * Legacy decorators cannot tell a write after construction from a field initializer: both leave an own data
-	 * property before the first connect, and an authored attribute overrides an initializer. The cell is pinned for the
-	 * standard decorators only.
-	 */
-	test.skipIf(__LEGACY_ENVIRONMENT__).each([
+	test.each([
 		['keeps its attribute', undefined],
 		['is property-only', false as const],
 	])('assigned after construction and after an authored attribute, before the first connect sync (%s)', (_, attribute) => {
