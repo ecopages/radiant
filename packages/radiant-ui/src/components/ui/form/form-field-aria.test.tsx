@@ -126,6 +126,21 @@ describe.each(['x-aria-code', 'x-aria-render'])('a custom control host (%s) pain
 		expect(input.getAttribute('aria-describedby')?.split(' ')).toContain(errorId);
 	});
 
+	it.runIf(tag === 'x-aria-render')('keeps the target element and its focus when an error appears', async () => {
+		const { field, host } = buildField({ tag, ready: true });
+		document.body.append(field);
+		await flush();
+
+		const input = host.querySelector('input')!;
+		input.focus();
+		field.setAttribute('error', 'Required');
+		await flush();
+
+		expect(input.getAttribute('aria-invalid')).toBe('true');
+		expect(host.querySelector('input')).toBe(input);
+		expect(document.activeElement).toBe(input);
+	});
+
 	it('paints required and disabled state onto the target', async () => {
 		const { field, host } = buildField({ tag, ready: true });
 		(field as RuiFieldElement).rules = { required: 'Required' };
@@ -149,6 +164,71 @@ describe.each(['x-aria-code', 'x-aria-render'])('a custom control host (%s) pain
 
 		host.ready = true;
 		await flush();
+		expect(written(host)).toEqual([]);
+	});
+});
+
+describe('a control host that declares its ARIA target only when it connects', () => {
+	afterEach(() => {
+		document.body.innerHTML = '';
+	});
+
+	function buildLateHost(options: { id?: string }) {
+		const tag = `x-late-aria-${Math.random().toString(36).slice(2, 8)}`;
+		registerFieldControl(tag, {
+			read: (host) => host.querySelector('input')?.value ?? '',
+			write: () => {},
+		});
+		const field = document.createElement('rui-field');
+		field.setAttribute('name', 'code');
+		field.innerHTML = `
+			<label data-rui-field-label>Code</label>
+			<${tag}${options.id ? ` id="${options.id}"` : ''}><input /></${tag}>
+			<p data-rui-field-error></p>
+		`;
+		document.body.append(field);
+		const host = field.querySelector(tag) as HTMLElement;
+
+		@customElement(tag)
+		class LateHost extends RadiantElement {
+			@contextSelector({ context: fieldContext })
+			@bindTo(fieldAriaBindings('input'))
+			@state
+			field?: FieldContextValue = undefined;
+
+			protected override onConnected(): void {
+				this.setAttribute('data-rui-aria-target', 'input');
+			}
+		}
+		void LateHost;
+		return { field, host };
+	}
+
+	const written = (element: Element) =>
+		element.getAttributeNames().filter((name) => name.startsWith('aria-') || name === 'data-rui-field-managed');
+
+	it('leaves the host clean once the field syncs after the host connected', async () => {
+		const { field, host } = buildLateHost({});
+		await flush();
+		expect(written(host).length).toBeGreaterThan(0);
+
+		field.setAttribute('error', 'Required');
+		await flush();
+
+		expect(written(host)).toEqual([]);
+		expect(host.hasAttribute('id')).toBe(false);
+		const input = host.querySelector('input')!;
+		expect(input.getAttribute('aria-invalid')).toBe('true');
+		expect(field.querySelector('label')!.htmlFor).toBe(input.id);
+	});
+
+	it('keeps an id the author set on the host', async () => {
+		const { field, host } = buildLateHost({ id: 'authored' });
+		await flush();
+		field.setAttribute('error', 'Required');
+		await flush();
+
+		expect(host.id).toBe('authored');
 		expect(written(host)).toEqual([]);
 	});
 });

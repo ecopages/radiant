@@ -91,7 +91,9 @@ export type RuiFieldProps = {
  * the field writes no `id`, `data-rui-field-managed` or ARIA for it, because its target usually renders after
  * the field connected. The field publishes that state on {@link fieldContext} (`controlId`, `labelId`, `describedBy`,
  * `invalid`, `required`, `disabled`) and the host binds it onto its target: `{...fieldAria(this.field)}` in a `render()`
- * tree, or `@bindTo(fieldAriaBindings(selector))` on the field holding the context for authored DOM.
+ * tree, or `@bindTo(fieldAriaBindings(selector))` on the field holding the context for authored DOM. If the host
+ * declares its target only when it connects, the next sync removes what the field wrote on it before (an authored
+ * `id` stays).
  *
  * Nested hosts: any registered control host inside the field tree (see control protocol).
  *
@@ -146,6 +148,8 @@ export class RuiField extends RadiantElement {
 	private formContextProvider?: ContextProvider<typeof formContext>;
 
 	private readonly uid = uniqueId('rui-field');
+	/** Targets whose `id` this field assigned, as opposed to an authored one. */
+	private readonly assignedIds = new WeakSet<HTMLElement>();
 	/** Resolved field name from property or `name` attribute (Storybook can hydrate props after connect). */
 	private resolveFieldName(): string {
 		return (this.name || this.getAttribute('name') || '').trim();
@@ -392,6 +396,7 @@ export class RuiField extends RadiantElement {
 
 		const describedBy = this.syncDescriptions(descriptionId, errorId, errorMessage);
 		if (paintedByHost) {
+			this.releaseHost(controlHost);
 			this.syncHostDisabled(controlHost);
 		} else {
 			this.syncAriaTargets(controlHost, ariaTargets, controlId, describedBy, invalid, required);
@@ -495,6 +500,26 @@ export class RuiField extends RadiantElement {
 		return label.id;
 	}
 
+	/**
+	 * Removes what an earlier sync wrote on a host that has since become a custom control (its target declaration
+	 * arrived at connect, after the field's first sync).
+	 *
+	 * @remarks Only the field's own writes go: the managed marker identifies the ARIA, and an `id` is removed only
+	 * when the field assigned it, so an author's `id` stays.
+	 */
+	private releaseHost(host: HTMLElement): void {
+		if (!host.hasAttribute(RUI_FIELD_MANAGED_ATTR)) {
+			return;
+		}
+		host.removeAttribute(RUI_FIELD_MANAGED_ATTR);
+		for (const name of ['aria-invalid', 'aria-required', 'aria-describedby', 'aria-disabled', 'aria-labelledby']) {
+			host.removeAttribute(name);
+		}
+		if (this.assignedIds.delete(host)) {
+			host.removeAttribute('id');
+		}
+	}
+
 	private syncHostDisabled(controlHost: HTMLElement): void {
 		if (this.disabled && isFormAssociatedHost(controlHost)) {
 			Reflect.set(controlHost, 'disabled', true);
@@ -510,7 +535,10 @@ export class RuiField extends RadiantElement {
 		required: boolean,
 	): void {
 		for (const [index, target] of targets.entries()) {
-			if (!target.id) target.id = index === 0 ? controlId : `${controlId}-${index}`;
+			if (!target.id) {
+				target.id = index === 0 ? controlId : `${controlId}-${index}`;
+				this.assignedIds.add(target);
+			}
 			target.setAttribute(RUI_FIELD_MANAGED_ATTR, '');
 			target.setAttribute('aria-invalid', String(invalid));
 			target.toggleAttribute('aria-required', required);

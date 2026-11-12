@@ -161,7 +161,7 @@ A host that keeps authored DOM (no `render()`) decorates the same field with `@b
 field?: FieldContextValue = undefined;
 ```
 
-`@bindTo` copies on connect and when the field changes; it does not repaint a target inserted afterwards. A target the host creates after connecting must come from `render()`. Both forms bind `id` (the `controlId` the label's `htmlFor` points at, so clicking the label focuses the target) along with `aria-labelledby`, `aria-describedby`, `aria-invalid`, `aria-required` and `aria-disabled`. Native `disabled` stays with the author. Catalog hosts and native inputs keep the field's direct writes.
+`@bindTo` copies on connect and when the field changes; it does not repaint a target inserted afterwards. A target the host creates after connecting must come from `render()`. Both forms bind `id` (the `controlId` the label's `htmlFor` points at, so clicking the label focuses the target) along with `aria-labelledby`, `aria-describedby`, `aria-invalid`, `aria-required` and `aria-disabled`. Native `disabled` stays with the author. A host that declares its target only when it connects is switched over on the field's next sync, which removes what the field wrote on the host before (an authored `id` stays); the view needs no declaration helper. Catalog hosts and native inputs keep the field's direct writes.
 
 ### View helpers
 
