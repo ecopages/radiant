@@ -430,7 +430,13 @@ return (
 );
 ```
 
-Attribute normalization drops `undefined` parts, so a spread such as `<input {...attrs} />` binds exactly the keys it holds at each render. The element's identity does not depend on that key set: when the same tag renders again with the same number of child slots, the renderer keeps the element and its children and updates the attributes in place. A key that appears is set, a key that disappears or becomes `undefined` is removed, and a handler that appears or disappears is attached or detached once, with no duplicates. Focus, caret position and anything bound to the node survive. A dropped `prop:*` binding is assigned `undefined`, because the element cannot say what its default was. A different tag, or a different number of children, still replaces the element. As in React, two same-tag elements swapped at one position (for example `cond ? <input a /> : <input b />`) are therefore one reused element; give them distinct `key`s when they must be different nodes. Keys that stay bound keep their reactive subscription.
+Attribute normalization drops `undefined` parts, so a spread such as `<input {...attrs} />` binds exactly the keys it holds at each render. The element's identity does not depend on that key set: when the same tag renders again with the same number of child slots, the renderer keeps the element and its children and updates the attributes in place. A key that appears is set, a key that disappears or becomes `undefined` is removed, and a handler that appears or disappears is attached or detached once, with no duplicates. Focus, caret position and anything bound to the node survive. A dropped `prop:*` binding is assigned `undefined`, because the element cannot say what its default was. A different tag, or a different number of children, still replaces the element. As in React, two same-tag elements swapped at one position (for example `cond ? <input a /> : <input b />`) are therefore one reused element; give them distinct `key`s when they must be different nodes.
+
+Migration notes for this behaviour:
+
+- On a custom element most names are property bindings by default, so a key a spread drops sets `el.<key> = undefined` on the kept element instead of recreating it with its `@prop` defaults.
+- Reuse crosses component boundaries: two different function components that render the same root tag at the same position share the node, where React would remount. Give such elements distinct `key`s.
+- JSX-attached native listeners are registered through a wrapper per binding, so `el.removeEventListener(type, handler)` with your own function no longer removes a listener that JSX attached. Remove it by changing the JSX instead. Keys that stay bound keep their reactive subscription.
 
 ### Textarea children
 
