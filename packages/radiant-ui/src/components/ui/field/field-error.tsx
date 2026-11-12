@@ -21,8 +21,8 @@ export type RuiFieldErrorProps = JsxElementProps<HTMLParagraphElement> & {
  * @cssclass rui-field__error - Error text; hidden until a message is set.
  *
  * @remarks Renders `role="alert"`. Inside a field, the uncontrolled region is wired into the control's
- * `aria-describedby` by `<rui-field>`; a controlled region gets an `id` when it has none and is listed there
- * while visible. For a group without a control, point `aria-describedby` or `aria-errormessage` at the region's `id`.
+ * `aria-describedby` by `<rui-field>`; a controlled region gets an `id` when it has none and is always listed
+ * there (an empty hidden region adds nothing to the description, so a re-render that shows or hides it needs no field sync). For a group without a control, point `aria-describedby` or `aria-errormessage` at the region's `id`.
  */
 export function RuiFieldError({ class: className, error, children, ...props }: RuiFieldErrorProps) {
 	const controlled = error !== undefined;

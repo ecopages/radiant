@@ -77,7 +77,7 @@ Set `name` on the field (or on a form-associated host) so a native `<form>` can 
 
 ## Errors that belong to a group
 
-<p>Pass `error` to `RuiFieldError` for a message that is not about one control, such as a group or a repeating array. The region is controlled: it renders `error` (with `children` as the fallback), is visible while it has content, works outside a `RuiField` and on the server, and carries `data-rui-field-error-controlled` so an enclosing field never overwrites or hides it. Give the region an `id` and point the group's `aria-describedby` or `aria-errormessage` at it. Inside a field, a controlled region without an `id` gets one and is added to the control's `aria-describedby` while visible.</p>
+<p>Pass `error` to `RuiFieldError` for a message that is not about one control, such as a group or a repeating array. The region is controlled: it renders `error` (with `children` as the fallback), is visible while it has content, works outside a `RuiField` and on the server, and carries `data-rui-field-error-controlled` so an enclosing field never overwrites or hides it. Give the region an `id` and point the group's `aria-describedby` or `aria-errormessage` at it. Inside a field, a controlled region without an `id` gets one and is added to the control's `aria-describedby` and stays listed while hidden, since an empty region adds nothing to the description.</p>
 
 ## Disabled fields
 

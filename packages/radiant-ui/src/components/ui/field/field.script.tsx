@@ -453,7 +453,7 @@ export class RuiField extends RadiantElement {
 		if (error && errorMessage) describedBy.push(errorId);
 		for (const [index, controlled] of findControlledFieldErrors(this).entries()) {
 			controlled.id ||= `${this.uid}-controlled-error-${index}`;
-			if (!controlled.hidden) describedBy.push(controlled.id);
+			describedBy.push(controlled.id);
 		}
 		return describedBy;
 	}

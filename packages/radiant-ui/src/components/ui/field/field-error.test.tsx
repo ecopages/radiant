@@ -96,4 +96,38 @@ describe('RuiFieldError controlled mode', () => {
 		expect(error.hasAttribute('data-rui-field-error-controlled')).toBe(false);
 		cleanup();
 	});
+
+	it('keeps a controlled error in the control description while a re-render shows and hides it', async () => {
+		const host = document.createElement('div');
+		document.body.appendChild(host);
+		const root = createRoot(host);
+		const view = (error: string) => (
+			<RuiField name="items">
+				<input data-rui-control />
+				<RuiFieldError id="items-error" error={error} />
+			</RuiField>
+		);
+		root.render(view(''));
+		await settled();
+
+		const input = host.querySelector('input') as HTMLInputElement;
+		const error = host.querySelector('[data-rui-field-error]') as HTMLElement;
+		const described = () => input.getAttribute('aria-describedby')?.split(' ') ?? [];
+		expect(described()).toContain('items-error');
+		expect(error.hidden).toBe(true);
+
+		root.render(view('Required'));
+		await settled();
+		expect(described()).toContain('items-error');
+		expect(error.hidden).toBe(false);
+		expect(error.textContent).toBe('Required');
+
+		root.render(view(''));
+		await settled();
+		expect(described()).toContain('items-error');
+		expect(error.hidden).toBe(true);
+		expect(error.textContent).toBe('');
+		root.unmount();
+		host.remove();
+	});
 });
