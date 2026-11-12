@@ -119,7 +119,7 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(rerenderedButton).toBe(initialButton);
 	});
 
-	test('replaces an element when undefined attributes are dropped from its template shape', async () => {
+	test('keeps an element when undefined attributes are dropped from its template shape', async () => {
 		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');
 		const root = createRoot(container);
@@ -139,8 +139,9 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		root.render(renderSignInButton('ada', true));
 
 		const rerenderedButton = container.querySelector('button');
-		expect(rerenderedButton).not.toBe(initialButton);
-		expect(rerenderedButton?.title).toBe('');
+		expect(rerenderedButton).toBe(initialButton);
+		expect(rerenderedButton?.hasAttribute('title')).toBe(false);
+		expect(rerenderedButton?.disabled).toBe(true);
 		expect(rerenderedButton?.textContent).toBe('Signing in...');
 	});
 
@@ -2887,7 +2888,7 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(removed).toBe(0);
 	});
 
-	test('an element keeps its node while only its values change, and remounts when its shape changes', async () => {
+	test('an element keeps its node while only its values change, and keeps it when its attributes change, and remounts when its children or tag change', async () => {
 		const [{ jsx, jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');
 		const root = createRoot(container);
@@ -2900,7 +2901,8 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(current().id).toBe('b');
 
 		root.render(jsx('div', { title: 'b', children: 'y' }));
-		expect(current()).not.toBe(first);
+		expect(current()).toBe(first);
+		expect(current().hasAttribute('id')).toBe(false);
 		const withTitle = current();
 		root.render(jsxs('div', { title: 'b', children: ['y', 'z'] }));
 		expect(current()).not.toBe(withTitle);
