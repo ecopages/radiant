@@ -43,10 +43,10 @@ function paintLabel(host: HTMLElement, target: HTMLElement, field: FieldContextV
 	target.setAttribute('aria-labelledby', field.labelId);
 	target.removeAttribute('aria-label');
 	if (index === 0) {
-		const label = host.getRootNode() as Document | ShadowRoot;
-		const element = label.getElementById?.(field.labelId);
-		if (element instanceof HTMLLabelElement) {
-			element.htmlFor = target.id;
+		const root = host.getRootNode();
+		const label = 'getElementById' in root ? (root as Document | ShadowRoot).getElementById(field.labelId) : null;
+		if (label instanceof HTMLLabelElement) {
+			label.htmlFor = target.id;
 		}
 	}
 }
