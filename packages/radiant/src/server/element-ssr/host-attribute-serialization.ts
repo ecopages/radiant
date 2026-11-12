@@ -1,6 +1,7 @@
 import { reflectsBooleanAsValue, type ReactiveProperty } from '../../core/reactive-prop-core';
 import { attributeNameForProp, type ReactivePropDefinition } from '../../core/reactive-prop-metadata';
 import { writeAttributeValue, type AttributeTypeConstant } from '../../utils/attribute-utils';
+import { warnOnceInDevelopment } from '../../helpers/dev-warnings';
 import { serializeHtmlAttribute } from '../../utils/serialize-html-attribute';
 
 /**
@@ -40,11 +41,14 @@ export type HostAttributeSource = {
  *    set the same name. This preserves explicit author intent in templates.
  *
  * @param host Host shape providing reactive state and attribute accessors.
+ * @param tagName Tag name used in development warnings.
  * @returns Flat record of attribute name → serialized value.
  */
-export function resolveHostAttributes(host: HostAttributeSource): Record<string, string> {
+export function resolveHostAttributes(host: HostAttributeSource, tagName = 'host'): Record<string, string> {
 	const attributes: Record<string, string> = {};
 	const seenAttributes = new Set<string>();
+
+	warnUnserializableProps(host, tagName);
 
 	appendReactivePropertyAttributes(host, attributes, seenAttributes);
 	appendReactivePropDefinitionAttributes(host, attributes, seenAttributes);
@@ -80,6 +84,10 @@ function appendReactivePropertyAttributes(
 	seenAttributes: Set<string>,
 ): void {
 	for (const property of host.getReactiveProperties()) {
+		if (property.attribute === null) {
+			continue;
+		}
+
 		const currentValue = host.getPropertyValue(property.name);
 		if (shouldOmitReactivePropValue(currentValue, property.type, property.defaultValue)) {
 			continue;
@@ -109,7 +117,7 @@ function appendReactivePropDefinitionAttributes(
 	for (const definition of host.getReactivePropDefinitions()) {
 		const attributeName = attributeNameForProp(definition.name, definition.options);
 
-		if (seenAttributes.has(attributeName)) {
+		if (attributeName === null || seenAttributes.has(attributeName)) {
 			continue;
 		}
 
@@ -162,4 +170,45 @@ function shouldOmitReactivePropValue(value: unknown, type: AttributeTypeConstant
 	}
 
 	return !reflectsBooleanAsValue({ type, defaultValue });
+}
+
+/**
+ * Whether `JSON.stringify` keeps `value` as written: plain data without functions, class instances or cycles.
+ */
+function isJsonRepresentable(value: unknown, ancestors: object[] = []): boolean {
+	if (typeof value === 'function' || typeof value === 'symbol') return false;
+	if (typeof value !== 'object' || value === null) return true;
+	if (ancestors.includes(value)) return false;
+	if (typeof (value as { toJSON?: unknown }).toJSON === 'function') return true;
+
+	const prototype = Object.getPrototypeOf(value);
+	if (prototype !== null && prototype !== Object.prototype && prototype !== Array.prototype) return false;
+
+	ancestors.push(value);
+	const representable = Object.values(value).every((entry) => isJsonRepresentable(entry, ancestors));
+	ancestors.pop();
+	return representable;
+}
+
+/**
+ * Warns in development when a prop that keeps its attribute would serialize a value JSON cannot represent.
+ *
+ * @remarks
+ * Only the default `Object` and `Array` JSON writers are checked; a `transform.toAttribute` owns its own output.
+ * The value is still serialized as before, so a class instance loses its methods on the client and a cycle makes
+ * `JSON.stringify` throw. The warning fires once per tag and prop.
+ */
+function warnUnserializableProps(host: HostAttributeSource, tagName: string): void {
+	for (const definition of host.getReactivePropDefinitions()) {
+		const { type, transform } = definition.options;
+		if (attributeNameForProp(definition.name, definition.options) === null || transform?.toAttribute) continue;
+		if (type !== Object && type !== Array) continue;
+
+		const value = host.getPropertyValue(definition.name);
+		warnOnceInDevelopment(`ssr:${tagName}:${definition.name}`, () =>
+			value != null && !isJsonRepresentable(value)
+				? `[@ecopages/radiant] "${definition.name}" on <${tagName}> holds a value JSON cannot represent (a class instance, function or cycle), so server rendering would write a lossy attribute or throw. Declare the prop with \`attribute: false\` to keep it property-only.`
+				: undefined,
+		);
+	}
 }

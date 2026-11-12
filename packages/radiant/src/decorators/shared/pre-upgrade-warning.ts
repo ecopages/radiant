@@ -1,8 +1,6 @@
 import type { ReactiveHostLike } from '../../core/reactive-host';
 import { getReactivePropDefinitions } from '../../core/reactive-prop-metadata';
-import { areJsxDevWarningsEnabled } from '../../helpers/dev-warnings';
-
-let warnedMembers: Set<string> | undefined;
+import { areJsxDevWarningsEnabled, warnOnceInDevelopment } from '../../helpers/dev-warnings';
 
 /**
  * Warns in development that a value assigned to a host before upgrade was discarded by an internal member.
@@ -51,7 +49,8 @@ export function warnDiscardedPreUpgradeValue(
 	memberName: string,
 	decorator: '@state' | '@signal',
 ): void {
-	warnOnce(host, memberName, (tag) =>
+	const tag = (host as unknown as Element).localName;
+	warnOnceInDevelopment(`${tag}:${memberName}`, () =>
 		host.hasPreUpgradeValue?.(memberName)
 			? `[@ecopages/radiant] "${memberName}" on <${tag}> was assigned before the element was upgraded, but ${decorator} is internal: the value was discarded and the initializer was kept. Declare it with @prop to accept it as public input.`
 			: undefined,
@@ -79,10 +78,10 @@ export function warnShadowedClassAccessors(host: HTMLElement, baseProto: object)
 			const propNames = new Set(getReactivePropDefinitions(host).map((definition) => definition.name));
 			for (const name of ownNames) {
 				if (propNames.has(name) || !hasClassAccessor(host, name, baseProto)) continue;
-				warnOnce(
-					host as unknown as ReactiveHostLike,
-					name,
-					(tag) =>
+				const tag = host.localName;
+				warnOnceInDevelopment(
+					`${tag}:${name}`,
+					() =>
 						`[@ecopages/radiant] "${name}" on <${tag}> was assigned before the element was upgraded and now shadows the class accessor, so the accessor (and any reactivity behind it) never sees it. Declare it with @prop, or after upgrade save the value, delete the own property, and re-assign it so it goes through the setter.`,
 				);
 			}
@@ -96,19 +95,4 @@ function hasClassAccessor(host: object, name: string, baseProto: object): boolea
 		if (descriptor) return !!(descriptor.get || descriptor.set);
 	}
 	return false;
-}
-
-function warnOnce(host: ReactiveHostLike, memberName: string, message: (tag: string) => string | undefined): void {
-	try {
-		if (process.env.NODE_ENV !== 'production' && areJsxDevWarningsEnabled()) {
-			const tag = (host as unknown as Element).localName;
-			const key = `${tag}:${memberName}`;
-			const warned = (warnedMembers ??= new Set<string>());
-			if (warned.has(key)) return;
-			const text = message(tag);
-			if (text === undefined) return;
-			warned.add(key);
-			console.warn(text);
-		}
-	} catch {}
 }
