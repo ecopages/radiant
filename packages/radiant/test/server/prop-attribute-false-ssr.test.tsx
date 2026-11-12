@@ -73,13 +73,13 @@ describe('@prop({ attribute: false }) on the server', () => {
 		expect(message).toContain('attribute: false');
 	});
 
-	test('warns for a function and for a cycle', () => {
+	test('warns for a value holding a function and for a cycle', () => {
 		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 		const cycle: unknown[] = [];
 		cycle.push(cycle);
 
 		try {
-			render(() => <ssr-lossy-props engine={(() => 1) as never} list={cycle} />);
+			render(() => <ssr-lossy-props engine={{ run: () => 1 } as never} list={cycle} />);
 		} catch {
 			// a cyclic value still makes JSON.stringify throw; the warning comes first
 		}

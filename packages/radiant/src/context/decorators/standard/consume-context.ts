@@ -14,6 +14,15 @@ export function consumeContext<C extends UnknownContext>(consumedContext: C) {
 			const hostRecord = host as T & Record<string, unknown>;
 			hostRecord[contextName] = provider;
 		};
+		const assigners = new WeakMap<T, (provider: unknown) => void>();
+		const assignerFor = (host: T) => {
+			let assign = assigners.get(host);
+			if (!assign) {
+				assign = (provider) => assignContextProvider(host, provider);
+				assigners.set(host, assign);
+			}
+			return assign;
+		};
 		const initializeConsumedContextForHost = (host: T, options: { emitMounted?: boolean } = {}) => {
 			const hostRecord = host as T & Record<string, unknown>;
 
@@ -21,14 +30,7 @@ export function consumeContext<C extends UnknownContext>(consumedContext: C) {
 				return true;
 			}
 
-			return connectConsumedContext(
-				host,
-				consumedContext,
-				(provider) => {
-					assignContextProvider(host, provider);
-				},
-				options,
-			);
+			return connectConsumedContext(host, consumedContext, assignerFor(host), options);
 		};
 
 		context.addInitializer(function (this: T) {

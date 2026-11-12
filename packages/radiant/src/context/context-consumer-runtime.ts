@@ -1,4 +1,5 @@
 import type { ContextHostLike } from './context-host';
+import { registerPendingContextRequest } from './context-late-provider';
 import { resolveAmbientSsrContextProvider } from './context-ssr-bridge';
 import { ContextEventsTypes, ContextRequestEvent, ContextSubscriptionRequestEvent } from './events';
 import type { ContextCallback, ContextType, UnknownContext } from './types';
@@ -82,17 +83,26 @@ export function requestConsumedContext(
 	assign: ConsumedContextAssignment,
 	options: { emitMounted?: boolean } = {},
 ): boolean {
-	const event = new ContextRequestEvent(context, (provider) => {
+	const callback = (provider: unknown) => {
 		assign(provider);
 		host.connectedContextCallback(context);
 
 		if (options.emitMounted) {
 			host.dispatchEvent(new CustomEvent(ContextEventsTypes.MOUNTED, { detail: provider }));
 		}
-	});
+	};
+	const dispatch = () => {
+		const event = new ContextRequestEvent(context, callback);
+		host.dispatchEvent(event);
+		return event.handled;
+	};
 
-	host.dispatchEvent(event);
-	return event.handled;
+	if (dispatch()) {
+		return true;
+	}
+
+	registerPendingContextRequest(host, context, assign, dispatch);
+	return false;
 }
 
 /**
@@ -168,14 +178,23 @@ export function requestContextSelection<TContext extends UnknownContext, Selecte
 		onSubscribe?: (unsubscribe: () => void) => void;
 	},
 ): boolean {
-	const event = new ContextSubscriptionRequestEvent(
-		context,
-		request.callback as ContextCallback<Selected>,
-		request.select,
-		options.subscribe,
-		options.onSubscribe,
-	);
+	const dispatch = () => {
+		const event = new ContextSubscriptionRequestEvent(
+			context,
+			request.callback as ContextCallback<Selected>,
+			request.select,
+			options.subscribe,
+			options.onSubscribe,
+		);
 
-	host.dispatchEvent(event);
-	return event.handled;
+		host.dispatchEvent(event);
+		return event.handled;
+	};
+
+	if (dispatch()) {
+		return true;
+	}
+
+	registerPendingContextRequest(host, context, request.callback, dispatch);
+	return false;
 }

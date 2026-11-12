@@ -4,13 +4,14 @@ import type { AttributeTypeConstant } from '../utils/attribute-utils';
 import {
 	ContextEventsTypes,
 	ContextOnMountEvent,
+	ContextProviderEvent,
 	type ContextRequestEvent,
 	type ContextSubscription,
 	type ContextSubscriptionRequestEvent,
 } from './events';
 import { createHydrationScriptTag, findHydrationScript, parseHydrationPayload } from '../core/hydration-codec';
 import type { Context, ContextType, UnknownContext } from './types';
-import { resolveContextHydrationHost, type ContextHostLike } from './context-host';
+import { resolveContextHostElement, resolveContextHydrationHost, type ContextHostLike } from './context-host';
 
 type ContextProviderOptions<T extends UnknownContext> = {
 	context: UnknownContext;
@@ -151,6 +152,7 @@ export class ContextProvider<T extends Context<unknown, unknown>>
 
 		this.registerEvents();
 		this.host.dispatchEvent(new ContextOnMountEvent(this.context));
+		this.announceToWaitingConsumers();
 	}
 
 	/**
@@ -410,6 +412,26 @@ export class ContextProvider<T extends Context<unknown, unknown>>
 		event.markHandled();
 		event.stopPropagation();
 		callback(this);
+	};
+
+	/**
+	 * Announces this provider so consumers below it that found no provider can request again.
+	 *
+	 * @remarks
+	 * Deferred to a microtask: the provider is created while its host is still constructing, and a consumer
+	 * answered at that point could read host fields that are not initialized yet. Only a connected browser host
+	 * announces; the server has no waiting consumers.
+	 */
+	private announceToWaitingConsumers = () => {
+		const element = resolveContextHostElement(this.host);
+
+		if (!element || typeof element.isConnected !== 'boolean') return;
+
+		queueMicrotask(() => {
+			if (element.isConnected) {
+				element.dispatchEvent(new ContextProviderEvent(this.context));
+			}
+		});
 	};
 
 	private registerEvents = () => {
