@@ -270,7 +270,7 @@ const REGISTERED_CONTROL_TAGS = new Set<string>();
  * it to the `RuiForm` store.
  *
  * A registered host that declares `data-rui-aria-target` or `data-rui-aria-targets` paints the field's ARIA
- * state onto its own target with `applyFieldAria`; the field no longer writes it (see {@link paintsOwnFieldAria}).
+ * state onto its own target (`fieldAria` in a `render()` tree, `fieldAriaBindings` with `@bindTo`); the field no longer writes it (see {@link paintsOwnFieldAria}).
  */
 export function registerFieldControl(tagName: string, adapter: FieldControlAdapter): void {
 	const tag = tagName.toLowerCase();
@@ -282,8 +282,8 @@ export function registerFieldControl(tagName: string, adapter: FieldControlAdapt
  * Whether a control host paints the field's ARIA state onto its own target instead of receiving it from the field.
  *
  * @remarks True for a host registered with {@link registerFieldControl} that declares an ARIA target. The target
- * may not exist yet (the host renders it later), so the field cannot write to it; the host does, through
- * `applyFieldAria`, whenever the target renders. Catalog hosts and native inputs keep the field's direct writes.
+ * may not exist yet (the host renders it later), so the field cannot write to it; the host binds it from
+ * `fieldContext` instead. Catalog hosts and native inputs keep the field's direct writes.
  */
 export function paintsOwnFieldAria(host: HTMLElement): boolean {
 	return (

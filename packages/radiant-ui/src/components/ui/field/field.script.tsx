@@ -90,7 +90,8 @@ export type RuiFieldProps = {
  * A host registered with `registerFieldControl` that declares `data-rui-aria-target(s)` is the exception:
  * the field writes no `id`, `data-rui-field-managed` or ARIA for it, because its target usually renders after
  * the field connected. The field publishes that state on {@link fieldContext} (`labelId`, `describedBy`,
- * `invalid`, `required`, `disabled`) and the host paints it with `applyFieldAria` whenever its target renders.
+ * `invalid`, `required`, `disabled`) and the host binds it onto its target: `{...fieldAria(this.field)}` in a `render()`
+ * tree, or `@bindTo(fieldAriaBindings(selector))` on the field holding the context for authored DOM.
  *
  * Nested hosts: any registered control host inside the field tree (see control protocol).
  *
@@ -458,8 +459,8 @@ export class RuiField extends RadiantElement {
 	}
 
 	/**
-	 * @remarks A host that paints its own ARIA gets only the label id here; it binds `aria-labelledby` and
-	 * `htmlFor` to its target through `applyFieldAria`.
+	 * @remarks A host that paints its own ARIA gets only the label id here; it binds `aria-labelledby` to its
+	 * target from `fieldContext`, and the label's `htmlFor` stays unset.
 	 *
 	 * @returns The visible label's id, or `''` when there is none.
 	 */
