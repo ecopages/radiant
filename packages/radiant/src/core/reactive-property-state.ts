@@ -42,6 +42,11 @@ export class ReactivePropertyState {
 		}
 	}
 
+	/** Whether the host carried an own property named `propertyName` when it was constructed (assigned before upgrade). */
+	public hasPreUpgradeValue(propertyName: string): boolean {
+		return this.preUpgradePropertyValues.has(propertyName);
+	}
+
 	public register(config: ReactiveProperty<unknown>): void {
 		this.properties.set(config.name, config);
 	}

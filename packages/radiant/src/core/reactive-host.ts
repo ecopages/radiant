@@ -64,6 +64,8 @@ export interface ReactiveHostLike<Bindings extends object = {}> {
 	createReactiveField<T>(propertyName: string, initialValue: T, options?: ReactiveFieldOptions): void;
 	createReactiveMember<T>(propertyName: string, initialValue: T): ReactiveState<T>;
 	registerReactiveMember<T>(propertyName: string, signal: ReactiveState<T>): void;
+	/** Whether a value was assigned to the host under `propertyName` before it was upgraded; only elements can tell. */
+	hasPreUpgradeValue?(propertyName: string): boolean;
 	defineReactiveBinding(property: string, bind?: ReactiveBindingOption): void;
 	registerCleanupCallback(callback: () => void): void;
 	registerConnectedCallback(callback: () => void): void;

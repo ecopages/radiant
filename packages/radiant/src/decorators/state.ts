@@ -19,6 +19,11 @@ export function state(protoOrTarget: ReactiveHostLike, nameOrContext: string): v
  * declares its own overloads and infers the value type per field. The legacy
  * overload comes first so that a failed standard check reports the standard
  * overload.
+ *
+ * `@state` is internal, not public input: a value assigned to the host before upgrade is discarded in favour of
+ * the initializer, and development builds warn once per tag and member. Use `@prop` for input.
+ *
+ * @see `warnDiscardedPreUpgradeValue` in `shared/pre-upgrade-warning.ts` for the warning and an example.
  */
 export function state<THost extends ReactiveHostLike, TValue>(
 	protoOrTarget: undefined,

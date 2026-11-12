@@ -714,6 +714,16 @@ export class RadiantElement<Bindings extends object = {}>
 		return (this.querySelector(selector) as T) ?? null;
 	}
 
+	/**
+	 * Whether a value was assigned to this host under `propertyName` before it was upgraded.
+	 *
+	 * @remarks
+	 * `@prop` adopts such a value. `@state` and `@signal` use it only to warn in development that it was discarded.
+	 */
+	public hasPreUpgradeValue(propertyName: string): boolean {
+		return this.reactivePropertyState.hasPreUpgradeValue(propertyName);
+	}
+
 	public createReactiveField<T>(propertyName: string, initialValue: T, options: ReactiveFieldOptions = {}): void {
 		this.reactiveHost.createReactiveField(propertyName, initialValue, options);
 	}
