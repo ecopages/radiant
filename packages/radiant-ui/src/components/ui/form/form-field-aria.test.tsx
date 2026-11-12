@@ -173,7 +173,7 @@ describe('a control host that declares its ARIA target only when it connects', (
 		document.body.innerHTML = '';
 	});
 
-	function buildLateHost(options: { id?: string }) {
+	function buildLateHost(options: { id?: string; connectedId?: string }) {
 		const tag = `x-late-aria-${Math.random().toString(36).slice(2, 8)}`;
 		registerFieldControl(tag, {
 			read: (host) => host.querySelector('input')?.value ?? '',
@@ -198,6 +198,7 @@ describe('a control host that declares its ARIA target only when it connects', (
 
 			protected override onConnected(): void {
 				this.setAttribute('data-rui-aria-target', 'input');
+				if (options.connectedId) this.id = options.connectedId;
 			}
 		}
 		void LateHost;
@@ -229,6 +230,16 @@ describe('a control host that declares its ARIA target only when it connects', (
 		await flush();
 
 		expect(host.id).toBe('authored');
+		expect(written(host)).toEqual([]);
+	});
+
+	it('keeps an id the host sets for itself when it connects', async () => {
+		const { field, host } = buildLateHost({ connectedId: 'code-widget' });
+		await flush();
+		field.setAttribute('error', 'Required');
+		await flush();
+
+		expect(host.id).toBe('code-widget');
 		expect(written(host)).toEqual([]);
 	});
 });

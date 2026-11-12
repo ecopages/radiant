@@ -148,8 +148,8 @@ export class RuiField extends RadiantElement {
 	private formContextProvider?: ContextProvider<typeof formContext>;
 
 	private readonly uid = uniqueId('rui-field');
-	/** Targets whose `id` this field assigned, as opposed to an authored one. */
-	private readonly assignedIds = new WeakSet<HTMLElement>();
+	/** The `id` this field assigned to each target, as opposed to an authored one. */
+	private readonly assignedIds = new WeakMap<HTMLElement, string>();
 	/** Resolved field name from property or `name` attribute (Storybook can hydrate props after connect). */
 	private resolveFieldName(): string {
 		return (this.name || this.getAttribute('name') || '').trim();
@@ -505,7 +505,7 @@ export class RuiField extends RadiantElement {
 	 * arrived at connect, after the field's first sync).
 	 *
 	 * @remarks Only the field's own writes go: the managed marker identifies the ARIA, and an `id` is removed only
-	 * when the field assigned it, so an author's `id` stays.
+	 * when it still holds the value the field assigned, so an `id` the author or the host set stays.
 	 */
 	private releaseHost(host: HTMLElement): void {
 		if (!host.hasAttribute(RUI_FIELD_MANAGED_ATTR)) {
@@ -515,7 +515,9 @@ export class RuiField extends RadiantElement {
 		for (const name of ['aria-invalid', 'aria-required', 'aria-describedby', 'aria-disabled', 'aria-labelledby']) {
 			host.removeAttribute(name);
 		}
-		if (this.assignedIds.delete(host)) {
+		const assigned = this.assignedIds.get(host);
+		this.assignedIds.delete(host);
+		if (assigned !== undefined && host.id === assigned) {
 			host.removeAttribute('id');
 		}
 	}
@@ -537,7 +539,7 @@ export class RuiField extends RadiantElement {
 		for (const [index, target] of targets.entries()) {
 			if (!target.id) {
 				target.id = index === 0 ? controlId : `${controlId}-${index}`;
-				this.assignedIds.add(target);
+				this.assignedIds.set(target, target.id);
 			}
 			target.setAttribute(RUI_FIELD_MANAGED_ATTR, '');
 			target.setAttribute('aria-invalid', String(invalid));
