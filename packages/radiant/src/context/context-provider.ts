@@ -415,7 +415,7 @@ export class ContextProvider<T extends Context<unknown, unknown>>
 	};
 
 	/**
-	 * Announces this provider so consumers below it that found no provider can request again.
+	 * Announces this provider once, on creation, so consumers below it that found no provider can request again.
 	 *
 	 * @remarks
 	 * Deferred to a microtask: the provider is created while its host is still constructing, and a consumer
@@ -429,7 +429,7 @@ export class ContextProvider<T extends Context<unknown, unknown>>
 
 		queueMicrotask(() => {
 			if (element.isConnected) {
-				element.dispatchEvent(new ContextProviderEvent(this.context));
+				element.dispatchEvent(new ContextProviderEvent(this.context, element));
 			}
 		});
 	};

@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test } from 'vitest';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 import {
 	ContextProvider,
 	consumeContext,
@@ -129,5 +129,44 @@ describe('a provider defined after its consumer', () => {
 		await flush();
 
 		expect(mounted).toHaveLength(1);
+	});
+
+	test('ignores a foreign context-provider event without a context', async () => {
+		const context = createContext<Shared>(Symbol('foreign'));
+		const [providerTag, consumerTag] = [nextTag('provider'), nextTag('consumer')];
+		defineConsumer(consumerTag, context, []);
+		document.body.innerHTML = `<${providerTag}><${consumerTag}></${consumerTag}></${providerTag}>`;
+		await flush();
+
+		expect(() => {
+			document.body.dispatchEvent(new Event('context-provider', { bubbles: true }));
+			document.querySelector(providerTag)?.dispatchEvent(new Event('context-provider', { bubbles: true }));
+		}).not.toThrow();
+	});
+
+	test('honors a protocol-shaped announcement from another implementation', async () => {
+		const context = createContext<Shared>(Symbol('protocol'));
+		const [providerTag, consumerTag] = [nextTag('provider'), nextTag('consumer')];
+		const log: number[] = [];
+		defineConsumer(consumerTag, context, log);
+		document.body.innerHTML = `<${providerTag}><${consumerTag}></${consumerTag}></${providerTag}>`;
+		await flush();
+		const providerElement = document.querySelector(providerTag) as HTMLElement;
+		const microtask = vi.spyOn(globalThis, 'queueMicrotask').mockImplementation(() => {});
+		new ContextProvider(providerElement as never, { context, initialValue: { value: 9 } });
+		microtask.mockRestore();
+
+		class ForeignProviderEvent extends Event {
+			constructor(
+				public readonly context: unknown,
+				public readonly contextTarget: Element,
+			) {
+				super('context-provider', { bubbles: true, composed: true });
+			}
+		}
+		providerElement.dispatchEvent(new ForeignProviderEvent(context, providerElement));
+		await flush();
+
+		expect(log).toEqual([9]);
 	});
 });

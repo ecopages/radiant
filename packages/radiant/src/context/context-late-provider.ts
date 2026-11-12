@@ -36,10 +36,10 @@ function isWithin(provider: Element, node: Node | null): boolean {
 }
 
 function onContextProvider(event: Event): void {
-	const { context } = (event as ContextProviderEvent).detail;
+	const { context } = event as Partial<ContextProviderEvent>;
 	const provider = event.target;
 
-	if (!(provider instanceof Element)) return;
+	if (context === undefined || !(provider instanceof Element)) return;
 
 	for (const element of Array.from(pendingElements)) {
 		const pending = pendingByElement.get(element);

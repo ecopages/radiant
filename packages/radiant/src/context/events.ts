@@ -67,19 +67,20 @@ export class ContextOnMountEvent extends CustomEvent<{ context: UnknownContext }
 }
 
 /**
- * An event fired by a context provider when it connects or upgrades, so consumers that were already waiting can
- * request the context again.
+ * An event fired by a context provider when it upgrades, so consumers that were already waiting can request the
+ * context again.
  *
- * @remarks This is the late-provider announcement of the community context protocol. It bubbles and is
- * composed; the provider element is the event target.
+ * @remarks This is the late-provider announcement of the community context protocol: an `Event` with the `context`
+ * and the `contextTarget` that provides it. It bubbles and is composed; the provider element is the event target.
+ * A provider announces itself once, when it is created. A provider that is disconnected and connected again does not
+ * announce again: consumers re-request on their own connect.
  */
-export class ContextProviderEvent extends CustomEvent<{ context: UnknownContext }> {
-	public constructor(context: UnknownContext) {
-		super(ContextEventsTypes.PROVIDER, {
-			detail: { context },
-			bubbles: true,
-			composed: true,
-		});
+export class ContextProviderEvent extends Event {
+	public constructor(
+		public readonly context: UnknownContext,
+		public readonly contextTarget: Element,
+	) {
+		super(ContextEventsTypes.PROVIDER, { bubbles: true, composed: true });
 	}
 }
 
