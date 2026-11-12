@@ -6,6 +6,7 @@ export const RUI_FIELD_MANAGED_ATTR = 'data-rui-field-managed';
 export const RUI_FIELD_LABEL_ATTR = 'data-rui-field-label';
 export const RUI_FIELD_DESCRIPTION_ATTR = 'data-rui-field-description';
 export const RUI_FIELD_ERROR_ATTR = 'data-rui-field-error';
+export const RUI_FIELD_ERROR_CONTROLLED_ATTR = 'data-rui-field-error-controlled';
 export const RUI_FIELD_DEFAULT_VALUE_ATTR = 'data-default-value';
 export const RUI_FORM_DEFAULT_VALUES_ATTR = 'data-default-values';
 export const RUI_ARIA_TARGET_ATTR = 'data-rui-aria-target';
@@ -258,16 +259,42 @@ export function findFieldControl(root: HTMLElement): HTMLElement | null {
 	return pickPrimaryFieldControl(collectFieldControls(root));
 }
 
+/** Tags registered through {@link registerFieldControl}, as opposed to the catalog hosts built into the protocol. */
+const REGISTERED_CONTROL_TAGS = new Set<string>();
+
 /**
  * Register a custom host for `RuiField` discovery, value access, and name wiring.
  *
  * @remarks `submission` chooses where a native text target gets its name. A host
  * with `submission: 'host'` must implement FACE itself; registration only connects
  * it to the `RuiForm` store.
+ *
+ * A registered host that declares `data-rui-aria-target` or `data-rui-aria-targets` paints the field's ARIA
+ * state onto its own target (`fieldAria` in a `render()` tree, `fieldAriaBindings` with `@bindTo`); the field no longer writes it (see {@link paintsOwnFieldAria}).
  */
 export function registerFieldControl(tagName: string, adapter: FieldControlAdapter): void {
 	const tag = tagName.toLowerCase();
 	CONTROL_VALUE_ADAPTERS.set(tag, adapter);
+	REGISTERED_CONTROL_TAGS.add(tag);
+}
+
+/**
+ * Whether a control host paints the field's ARIA state onto its own target instead of receiving it from the field.
+ *
+ * @remarks True for a host registered with {@link registerFieldControl} that declares an ARIA target. The target
+ * may not exist yet (the host renders it later), so the field cannot write to it; the host binds it from
+ * `fieldContext` instead. Catalog hosts and native inputs keep the field's direct writes.
+ */
+export function paintsOwnFieldAria(host: HTMLElement): boolean {
+	return (
+		REGISTERED_CONTROL_TAGS.has(host.localName) &&
+		(host.hasAttribute(RUI_ARIA_TARGET_ATTR) || host.hasAttribute(RUI_ARIA_TARGETS_ATTR))
+	);
+}
+
+/** The ARIA targets a host declares that are rendered now. Unlike {@link getAriaControlTargets} it never falls back to the host. */
+export function getDeclaredAriaTargets(control: HTMLElement): HTMLElement[] {
+	return resolveDeclaredAriaTargets(control);
 }
 
 /**
@@ -364,8 +391,26 @@ export function findFieldError(root: HTMLElement): HTMLElement | null {
 	return all[0] ?? null;
 }
 
-/** Every error region in the field (handles duplicate copies of slotted content). */
+function isControlledFieldError(node: HTMLElement): boolean {
+	return node.hasAttribute(RUI_FIELD_ERROR_CONTROLLED_ATTR);
+}
+
+/**
+ * Every error region the field owns (handles duplicate copies of slotted content).
+ *
+ * @remarks Skips controlled regions, whose content and visibility belong to their author; see
+ * {@link findControlledFieldErrors}.
+ */
 export function findFieldErrorElements(root: HTMLElement): HTMLElement[] {
+	return collectFieldErrorRegions(root).filter((node) => !isControlledFieldError(node));
+}
+
+/** Error regions in the field whose content the author controls with `RuiFieldError`'s `error` prop. */
+export function findControlledFieldErrors(root: HTMLElement): HTMLElement[] {
+	return collectFieldErrorRegions(root).filter(isControlledFieldError);
+}
+
+function collectFieldErrorRegions(root: HTMLElement): HTMLElement[] {
 	const renderRoot = root.querySelector(FIELD_COLUMN_SELECTOR);
 	if (renderRoot instanceof HTMLElement) {
 		const inRender = Array.from(renderRoot.querySelectorAll<HTMLElement>(`[${RUI_FIELD_ERROR_ATTR}]`));

@@ -75,6 +75,10 @@ Set `name` on the field (or on a form-associated host) so a native `<form>` can 
 
 <p>Set `invalid` and pass the error message so `RuiFieldError` renders below the control with `aria-live` semantics.</p>
 
+## Errors that belong to a group
+
+<p>Pass `error` to `RuiFieldError` for a message that is not about one control, such as a group or a repeating array. The region is controlled: it renders `error` (with `children` as the fallback), is visible while it has content, works outside a `RuiField` and on the server, and carries `data-rui-field-error-controlled` so an enclosing field never overwrites or hides it. Give the region an `id` and point the group's `aria-describedby` or `aria-errormessage` at it. Inside a field, a controlled region without an `id` gets one and is added to the control's `aria-describedby` and stays listed while hidden, since an empty region adds nothing to the description.</p>
+
 ## Disabled fields
 
 <p>Set `disabled` on the field to dim the label and prevent interaction with nested controls.</p>
@@ -118,12 +122,46 @@ The nested control keeps its own control tokens (`--size-control-*`, `--radius-c
 | Target | Required | Host writes | Author owns |
 | --- | --- | --- | --- |
 | `[data-rui-control]` or control host tag | yes | `id`, `data-rui-field-managed`, `aria-invalid`, `aria-required`, `aria-describedby`, `aria-disabled` on ARIA targets | control element; see each host's inner contract |
-| `[data-rui-field-label]` | no | `htmlFor` | label text |
+| `[data-rui-field-label]` | no | `htmlFor`; `id` when the control is a registered custom host | label text |
 | `[data-rui-field-description]` | no | `id` | description content |
-| `[data-rui-field-error]` | no | `id`, `textContent`, `hidden` | error region presence |
+| `[data-rui-field-error]` | no | `id`, `textContent`, `hidden` (skipped when `data-rui-field-error-controlled`; only a missing `id` is written) | error region presence |
 | `[data-ref="field"]` | no | — | presentation column |
 
 Nested hosts: registered control hosts inside the field (`rui-switch`, `rui-slider`, …).
+
+### Custom control hosts
+
+A host registered with `registerFieldControl` that declares `data-rui-aria-target` or `data-rui-aria-targets` renders its target on its own schedule, often after the field connected. The field therefore writes no `id`, `data-rui-field-managed` or `aria-*` for it. It publishes the state on `fieldContext` (`controlId`, `labelId`, `describedBy`, `invalid`, `required`, `disabled`) and the host binds it onto its target declaratively. Read the context into a `@state` field with `@contextSelector`, then:
+
+A host that owns a `render()` tree spreads `fieldAria(field)` on the target, so the attributes are repainted whenever the target renders or the field changes:
+
+```tsx
+import { RadiantElement, customElement, state } from '@ecopages/radiant';
+import { contextSelector } from '@ecopages/radiant/context';
+import { fieldAria, fieldContext, type FieldContextValue } from '@ecopages/radiant-ui/field';
+
+@customElement('x-code')
+class XCode extends RadiantElement {
+  @contextSelector({ context: fieldContext })
+  @state
+  field?: FieldContextValue = undefined;
+
+  override render() {
+    return <input {...fieldAria(this.field)} />;
+  }
+}
+```
+
+A host that keeps authored DOM (no `render()`) decorates the same field with `@bindTo(fieldAriaBindings(selector))`:
+
+```ts
+@contextSelector({ context: fieldContext })
+@bindTo(fieldAriaBindings('input'))
+@state
+field?: FieldContextValue = undefined;
+```
+
+`@bindTo` copies on connect and when the field changes; it does not repaint a target inserted afterwards. A target the host creates after connecting must come from `render()`. Both forms bind `id` (the `controlId` the label's `htmlFor` points at, so clicking the label focuses the target) along with `aria-labelledby`, `aria-describedby`, `aria-invalid`, `aria-required` and `aria-disabled`. Native `disabled` stays with the author: bind it yourself, for example `<input disabled={this.field?.disabled} {...fieldAria(this.field)} />`. Painted hosts support a single ARIA target, since both helpers yield one `id`; a host with several targets (`data-rui-aria-targets`) must assign its own ids. A host that declares its target only when it connects is switched over on the field's next sync, which removes what the field wrote on the host before (an authored `id` stays); the view needs no declaration helper. Catalog hosts and native inputs keep the field's direct writes.
 
 ### View helpers
 
@@ -131,7 +169,7 @@ Nested hosts: registered control hosts inside the field (`rui-switch`, `rui-slid
 | --- | --- | --- |
 | `RuiField` | `[data-ref="field"]` | Passes `rules` / `defaultValue` via `prop:` bindings. |
 | `RuiFieldDescription` | `[data-rui-field-description]` | Wired into `aria-describedby`. |
-| `RuiFieldError` | `[data-rui-field-error]` | Text populated by the field; `role="alert"`. |
+| `RuiFieldError` | `[data-rui-field-error]` | Text populated by the field; `role="alert"`. `error` makes it controlled (`data-rui-field-error-controlled`). |
 
 ### CSS classes
 

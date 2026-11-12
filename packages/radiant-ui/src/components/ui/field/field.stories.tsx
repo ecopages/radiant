@@ -222,3 +222,26 @@ export const ClearsAfterFix: Story = {
 		});
 	},
 };
+
+/**
+ * An error that belongs to a group rather than a control. `error` makes the region controlled: it shows outside
+ * a `<rui-field>` and the enclosing field never overwrites or hides it.
+ */
+export const ControlledError: Story = {
+	render: () => (
+		<div role="group" aria-labelledby="items-heading" aria-describedby="items-error">
+			<h3 id="items-heading">Items</h3>
+			<RuiFieldError id="items-error" error="Add at least one item" />
+		</div>
+	),
+	play: async ({ canvasElement, step }) => {
+		const canvas = within(canvasElement);
+
+		await step('the controlled error is visible without a field', async () => {
+			const error = canvas.getByText('Add at least one item');
+			await expect(error).toBeVisible();
+			await expect(error).toHaveAttribute('data-rui-field-error-controlled');
+			await expect(canvas.getByRole('group')).toHaveAccessibleDescription('Add at least one item');
+		});
+	},
+};
