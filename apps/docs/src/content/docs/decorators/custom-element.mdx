@@ -13,6 +13,14 @@ import { RuiAlert, RuiAlertDescription, RuiAlertTitle } from '@ecopages/radiant-
 
 The `@customElement` decorator provides a concise way to register custom elements with the browser's Custom Elements registry. It is a declarative wrapper around the standard `customElements.define()` API.
 
+## Legacy decorators
+
+With legacy decorators, `@customElement` returns and registers a subclass of your class, so reactive setup runs when construction finishes and a value assigned right after `new` wins over an authored attribute, as with standard decorators. Decorator syntax is unaffected, and `customElements.get(tag)` is that subclass. When you call the decorator imperatively, use the returned class:
+
+```ts
+const Foo = customElement('x-foo')(class extends RadiantElement {});
+```
+
 ## Usage
 ```typescript
 import { RadiantElement, customElement } from '@ecopages/radiant';

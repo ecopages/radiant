@@ -204,11 +204,11 @@ function warnUnserializableProps(host: HostAttributeSource, tagName: string): vo
 		if (attributeNameForProp(definition.name, definition.options) === null || transform?.toAttribute) continue;
 		if (type !== Object && type !== Array) continue;
 
-		const value = host.getPropertyValue(definition.name);
-		warnOnceInDevelopment(`ssr:${tagName}:${definition.name}`, () =>
-			value != null && !isJsonRepresentable(value)
+		warnOnceInDevelopment(`ssr:${tagName}:${definition.name}`, () => {
+			const value = host.getPropertyValue(definition.name);
+			return value != null && !isJsonRepresentable(value)
 				? `[@ecopages/radiant] "${definition.name}" on <${tagName}> holds a value JSON cannot represent (a class instance, function or cycle), so server rendering would write a lossy attribute or throw. Declare the prop with \`attribute: false\` to keep it property-only.`
-				: undefined,
-		);
+				: undefined;
+		});
 	}
 }
