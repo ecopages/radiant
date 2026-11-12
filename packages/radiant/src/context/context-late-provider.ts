@@ -64,6 +64,21 @@ function forgetPendingRequests(element: Element): void {
 }
 
 /**
+ * Drops a pending request once something answered it, so a later provider announcement cannot deliver it again.
+ */
+export function clearPendingContextRequest(host: ContextHostLike, key: object): void {
+	const element = resolveContextHostElement(host);
+	const pending = element ? pendingByElement.get(element) : undefined;
+
+	if (!element || !pending) return;
+
+	pending.delete(key);
+	if (pending.size === 0) {
+		forgetPendingRequests(element);
+	}
+}
+
+/**
  * Remembers an unanswered context request so a provider defined later can answer it.
  *
  * @remarks

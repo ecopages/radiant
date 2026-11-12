@@ -1,5 +1,5 @@
 import type { ContextHostLike } from './context-host';
-import { registerPendingContextRequest } from './context-late-provider';
+import { clearPendingContextRequest, registerPendingContextRequest } from './context-late-provider';
 import { resolveAmbientSsrContextProvider } from './context-ssr-bridge';
 import { ContextEventsTypes, ContextRequestEvent, ContextSubscriptionRequestEvent } from './events';
 import type { ContextCallback, ContextType, UnknownContext } from './types';
@@ -98,6 +98,7 @@ export function requestConsumedContext(
 	};
 
 	if (dispatch()) {
+		clearPendingContextRequest(host, assign);
 		return true;
 	}
 
@@ -192,6 +193,7 @@ export function requestContextSelection<TContext extends UnknownContext, Selecte
 	};
 
 	if (dispatch()) {
+		clearPendingContextRequest(host, request.callback);
 		return true;
 	}
 

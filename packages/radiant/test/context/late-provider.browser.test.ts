@@ -116,4 +116,18 @@ describe('a provider defined after its consumer', () => {
 
 		expect(log).toEqual([]);
 	});
+
+	test('delivers once when the microtask retry answers before the provider announces itself', async () => {
+		const context = createContext<Shared>(Symbol('once'));
+		const [providerTag, consumerTag] = [nextTag('provider'), nextTag('consumer')];
+		defineConsumer(consumerTag, context, []);
+		const mounted: Event[] = [];
+		document.body.innerHTML = `<${providerTag}><${consumerTag}></${consumerTag}></${providerTag}>`;
+		document.querySelector(consumerTag)?.addEventListener('context-mounted', (event) => mounted.push(event));
+
+		defineProvider(providerTag, context);
+		await flush();
+
+		expect(mounted).toHaveLength(1);
+	});
 });
