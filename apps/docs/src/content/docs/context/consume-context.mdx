@@ -101,4 +101,6 @@ export class ThemeLabel extends RadiantElement {
 
 `ContextRequestEvent` follows the [community context protocol](https://github.com/webcomponents-cg/community-protocols/blob/main/proposals/context.md). Pass `true` as the third argument to subscribe to future updates.
 
-`ContextSubscriptionRequestEvent` and `ContextEventsTypes` are also available from `@ecopages/radiant/context`.
+`ContextSubscriptionRequestEvent`, `ContextProviderEvent` and `ContextEventsTypes` are also available from `@ecopages/radiant/context`.
+
+`ContextProviderEvent` is the late-provider announcement a provider dispatches when it upgrades (`context-provider`; an `Event` with `context` and `contextTarget`, bubbling and composed). `@consumeContext` and `@contextSelector` listen for it; a manual requester that should survive a provider defined after it can listen on its own ancestors and dispatch its request again when `event.context` matches. Only a provider announces itself: the manual request above is not retried for you.

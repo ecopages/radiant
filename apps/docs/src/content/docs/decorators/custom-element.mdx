@@ -21,6 +21,8 @@ With legacy decorators, `@customElement` returns and registers a subclass of you
 const Foo = customElement('x-foo')(class extends RadiantElement {});
 ```
 
+Setup runs only for the class that is constructed. A subclass of a decorated class, decorated or not, keeps its reactive accessors: it defines its own fields after the base constructor returns, so the setup waits for the most derived decorated class, or for connect when none is decorated.
+
 ## Usage
 ```typescript
 import { RadiantElement, customElement } from '@ecopages/radiant';

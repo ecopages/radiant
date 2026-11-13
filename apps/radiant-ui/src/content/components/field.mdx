@@ -77,7 +77,16 @@ Set `name` on the field (or on a form-associated host) so a native `<form>` can 
 
 ## Errors that belong to a group
 
-<p>Pass `error` to `RuiFieldError` for a message that is not about one control, such as a group or a repeating array. The region is controlled: it renders `error` (with `children` as the fallback), is visible while it has content, works outside a `RuiField` and on the server, and carries `data-rui-field-error-controlled` so an enclosing field never overwrites or hides it. Give the region an `id` and point the group's `aria-describedby` or `aria-errormessage` at it. Inside a field, a controlled region without an `id` gets one and is added to the control's `aria-describedby` and stays listed while hidden, since an empty region adds nothing to the description.</p>
+Pass `error` to `RuiFieldError` for a message that is not about one control, such as a group or a repeating array. The region is controlled: it renders `error` (with `children` as the fallback), is visible while it has content, works outside a `RuiField` and on the server, and carries `data-rui-field-error-controlled` so an enclosing field never overwrites or hides it. For example, a list with a minimum length:
+
+```tsx
+import { RuiFieldError } from '@ecopages/radiant-ui/field';
+
+<ul aria-describedby="items-error">{items}</ul>
+<RuiFieldError id="items-error" error={items.length === 0 ? 'Add at least one item' : ''} />
+```
+
+An empty `error` keeps the region controlled and hidden; omit `error` to leave the region to the enclosing field. Give the region an `id` and point the group's `aria-describedby` or `aria-errormessage` at it. Inside a field, a controlled region without an `id` gets one and is added to the control's `aria-describedby` and stays listed while hidden, since an empty region adds nothing to the description.
 
 ## Disabled fields
 
@@ -150,6 +159,26 @@ class XCode extends RadiantElement {
     return <input {...fieldAria(this.field)} />;
   }
 }
+```
+
+Register the tag before the field connects and declare the target on the host element in the field's markup:
+
+```tsx
+import { registerFieldControl } from '@ecopages/radiant-ui/form';
+
+registerFieldControl('x-code', {
+  read: (host) => host.querySelector('input')?.value ?? '',
+  write: (host, value) => {
+    const input = host.querySelector('input');
+    if (input) input.value = String(value ?? '');
+  },
+});
+
+// <RuiField name="code">
+//   <RuiLabel>Code</RuiLabel>
+//   <x-code data-rui-aria-target="input" />
+//   <RuiFieldError />
+// </RuiField>
 ```
 
 A host that keeps authored DOM (no `render()`) decorates the same field with `@bindTo(fieldAriaBindings(selector))`:
