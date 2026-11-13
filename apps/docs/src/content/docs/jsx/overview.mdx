@@ -101,7 +101,7 @@ Most code should use plain JavaScript values for empty output and removal semant
 - `null` and `undefined` remove event handlers by leaving no next listener to attach
 - an existing reactive property binding can be cleared by writing `undefined`; a plain property part with `undefined` is omitted during normalization
 
-For ordinary attributes and event handlers, `null` and `undefined` both remove the current value or listener. They differ in template construction: `null` keeps the binding part so the current node can be updated in place, while `undefined` is dropped during normalization and can change the template shape, allowing the affected node to be replaced. The merged `class`/`classes` binding is an exception: it is omitted when no class tokens remain, including when its value is `null`. In TSX the types are stricter: event handlers and the shared global attributes (`class`, `id`, `title`, `lang` and the like) accept `undefined` but not `null`, so write `undefined` for those.
+For ordinary attributes and event handlers, `null` and `undefined` both remove the current value or listener. They differ in template construction: `null` keeps the binding part, while `undefined` is dropped during normalization. Either way the element keeps its identity (see below). The merged `class`/`classes` binding is an exception: it is omitted when no class tokens remain, including when its value is `null`. In TSX the types are stricter: event handlers and the shared global attributes (`class`, `id`, `title`, `lang` and the like) accept `undefined` but not `null`, so write `undefined` for those.
 
 ```tsx
 /** @jsxImportSource @ecopages/jsx */
@@ -118,7 +118,13 @@ return (
 );
 ```
 
-Removing a binding this way follows the normal renderer path. For attributes and event handlers, `undefined` is dropped from the next template, so changing a previously defined binding to `undefined` changes the template shape and the DOM renderer may replace the affected node rather than preserve the previous instance.
+Removing a binding this way updates the existing element. When the same tag renders again at the same position with the same number of child slots, the renderer keeps the element and its children, removes the attributes and listeners the new render no longer binds, and adds the new ones. Focus, caret position and anything bound to the node survive, so `<input {...fieldAria(field)} />` can gain or lose `aria-describedby` without replacing the input. A different tag or a different number of children still replaces the element.
+
+Limits of reuse:
+
+- Same-tag elements at one position are one element, also across ternary branches and across components that render the same root tag, as in React. Give elements that must stay distinct a `key`.
+- A key a spread drops from a custom element is assigned `undefined` on the kept element, because the element cannot say what its default was. The same applies to a dropped `prop:*` binding.
+- A listener JSX attached cannot be removed with `el.removeEventListener(type, yourHandler)`; each binding registers its own wrapper. Change the JSX instead.
 
 Child content is different: a child expression keeps its place in the template whatever it holds. Showing, hiding or emptying a child, including a mapped list or an item in a fragment, patches that child only, and the element around it and its siblings keep their nodes. A mapped list such as `rows.map(...)` keeps its own range inside its parent, so its keyed items keep their nodes when an unkeyed item beside it comes and goes; unkeyed items are matched by position. Keys match within one list only: key the groups themselves, for example with a keyed `Fragment`, when items move between groups or a group is inserted before another. A key that appears twice in one list renders once, at its first position. For a list held in a signal, `<MapItems each={rows}>` renders each item once and keeps its row while the item stays in the list (see [Signals](/docs/jsx/rendering#signals)).
 

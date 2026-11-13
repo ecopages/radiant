@@ -231,7 +231,7 @@ How each removal rule applies between those two renders:
 - `on:click={... ? undefined : signIn}` — `undefined` detaches the handler while a sign-in request is in flight
 - child text swaps between the two states as normal content
 
-The template shape changes between these renders: `title` and `on:click` are present in the first template but are dropped from the second because their values are `undefined`. The renderer therefore replaces the committed button node. A child expression is different: its child part keeps its place whatever value it holds, so changing child content does not change the surrounding element's template shape.
+`title` and `on:click` are bound in the first render and dropped from the second because their values are `undefined`. The renderer keeps the same `<button>` node and removes the attribute and the listener, so focus on the button survives. The tag and the number of child slots decide whether the element is reused, not the set of bound attributes.
 
 ## Runtime Output Contract
 

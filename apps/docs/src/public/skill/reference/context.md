@@ -6,6 +6,7 @@ Import all context APIs from `@ecopages/radiant/context`, not `@ecopages/radiant
 
 - Core pieces
 - Provide vs consume
+- Definition order
 - Field types
 - Performance
 
@@ -41,6 +42,10 @@ Avoid `@consumeContext` + `@onContextUpdate` + `@state` when a single `@contextS
 Keep authoritative UI state in context and render from it. Do not split the same render decision across a local signal and `provider.getContext()` unless one is clearly an async-sourcing detail.
 
 When stale display should persist across refetches, store one explicit display value in context (for example `visibleReport`) rather than juggling local copies.
+
+## Definition order
+
+A provider defined after its consumers still answers. When a provider upgrades it dispatches a bubbling, composed `context-provider` event (`ContextProviderEvent`, an `Event` with `context` and `contextTarget`, exported from `@ecopages/radiant/context`), and unanswered consumers below it ask again, for plain and subscribing requests. A consumer that disconnects stops waiting; a request is answered once. A provider that only reconnects does not announce again. Lazy-defined providers need no import-order workaround.
 
 ## Field types
 

@@ -44,6 +44,7 @@ createRoot(document.querySelector('#app') as HTMLElement).render(
 - Keep the header and other static parts out of the list, so a list change touches only the rows.
 - Delegate row events: one `on:click` on the list container, reading the row from `event.target.closest(...)`, instead of a handler per row.
 - For a source with its own notifications but no `get()`/`subscribe(...)`, wrap it with `createSubscribableJsxValue({ getValue, subscribe })`.
+- A same-tag element at the same position is kept when its bound attributes change (a spread gaining or losing `aria-describedby` keeps focus and caret). Give elements that must stay distinct a `key`. A custom element's dropped spread key is set to `undefined`. A JSX-attached listener cannot be removed with `removeEventListener(type, yourHandler)`.
 - Install `@ecopages/signals` explicitly: `@ecopages/jsx` lists it as a peer dependency.
 
 ## Inside a Radiant host

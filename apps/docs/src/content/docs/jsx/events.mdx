@@ -54,6 +54,10 @@ Use `on-native:*` when exact attachment semantics matter, for example:
 - you want to opt out of delegation for a supported bubbling event
 - you are debugging exact listener placement
 
+## Removing A JSX Listener
+
+Each `on:*` or `on-native:*` binding registers its own listener on the element, so two bindings never share a browser registration, even with the same handler. A binding that is dropped (`on:click={undefined}`) or swapped detaches only its own listener. Because JSX registers a wrapper, `el.removeEventListener('click', yourHandler)` does not remove a listener JSX attached; change the JSX instead.
+
 ## Relationship To @onEvent(...)
 
 `on:*` and `on-native:*` are JSX-level event bindings.

@@ -21,7 +21,7 @@
 
 ## Development warnings
 
-Radiant warns in development when a delegated `@onEvent` listener uses a non-bubbling event such as `focus`, and when a tag is defined after a view rendered it. Treat each warning as a bug in the code that triggered it.
+Radiant warns in development when a delegated `@onEvent` listener uses a non-bubbling event such as `focus`, when a tag is defined after a view rendered it, when a value assigned before upgrade is discarded by `@state` or `@signal` or shadows a class accessor, and, during SSR, when a prop that keeps its attribute holds a class instance, function or cycle (declare it `attribute: false`). Treat each warning as a bug in the code that triggered it.
 
 They show when the app's bundler sets `process.env.NODE_ENV` to anything other than `"production"`; a production build removes them, and a page loaded without a bundler logs nothing. `setDevWarningsEnabled(false)` from `@ecopages/jsx/jsx-dev-runtime` silences both Radiant and JSX warnings; `true` or `undefined` enables them again.
 
