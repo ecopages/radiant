@@ -230,3 +230,22 @@ test('Docs redirects send every moved page to a built page', async () => {
 		assert.equal((await fetch(`${origin}${from}`)).status, 404, `${from} is still served as a page`);
 	}
 });
+
+test('Docs pages link Markdown exports and keep the legacy text exports', async () => {
+	const html = await (await fetch(`${origin}/docs/signals/signals-overview`)).text();
+	const alternate = html.match(/<link rel="alternate" type="text\/markdown" href="([^"]+)"/)?.[1];
+	assert.ok(alternate, 'page advertises a Markdown alternate');
+	assert.equal(new URL(alternate).pathname, '/docs-llm/signals/signals-overview.md');
+	assert.match(html, /llm-url="\/docs-llm\/signals\/signals-overview\.md"/);
+
+	const markdown = await fetch(`${origin}/docs-llm/signals/signals-overview.md`);
+	assert.equal(markdown.status, 200);
+	const body = await markdown.text();
+	const legacy = await fetch(`${origin}/llms-content/packages/signals-overview.txt`);
+	assert.equal(legacy.status, 200);
+	assert.equal(await legacy.text(), body);
+
+	const llmsTxt = await (await fetch(`${origin}/llms.txt`)).text();
+	assert.match(llmsTxt, /\/docs-llm\/getting-started\/introduction\.md\)/);
+	assert.doesNotMatch(llmsTxt, /\/llms-content\//);
+});

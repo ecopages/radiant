@@ -18,7 +18,7 @@ Fenced code blocks get a Copy button from `rehype-pretty-code` and `transformerC
 
 ## Agent-facing exports
 
-`pnpm --filter radiant-docs generate:llms` (also run by `dev`, `build` and `preview`) writes `llms.txt` and one raw-MDX text export per page under `src/public/llms-content/`. The export tree is generator-owned and staged before replacement, so a failed generation preserves the previous complete tree. `ECOPAGES_BASE_URL` is the canonical origin for configuration, generated links, and page metadata.
+`pnpm --filter radiant-docs generate:llms` (also run by `dev`, `build` and `preview`) writes `llms.txt` and one raw-MDX Markdown export per page at `src/public/docs-llm/<section>/<slug>.md`, in sidebar order. Pages with `llms: false` in frontmatter are left out. Each page links its export as `rel="alternate"` (`src/lib/docs/docs-llm-url.ts`) and Copy for LLM fetches it. For one release the generator also writes the old `src/public/llms-content/<slug>.txt` exports, under the slug a page had before the section move, so published links keep working; `LEGACY_LLMS_DIR` in `scripts/generate-llm-docs.ts` says what to delete afterwards. Both trees are generator-owned and staged before replacement, so a failed generation preserves the previous complete trees. `ECOPAGES_BASE_URL` is the canonical origin for configuration, generated links, and page metadata.
 
 Server-rendered catalog views do not register their custom elements in the browser. A docs example that uses a behavior host must import its package in a client script. The [controller decorator visualizer](./src/components/controller-decorator-visualizer/README.md) shows this boundary and tests native radio exclusivity after hydration.
 

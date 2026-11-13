@@ -55,7 +55,7 @@ export default eco.page<{ entry: Entry }, JsxRenderable>({
 	}),
 	render: async ({ entry }) => {
 		const Content = await getComponent(entry.slug);
-		const llmUrl = getDocsLlmUrl(entry.slug);
+		const llmUrl = getDocsLlmUrl(entry.segments[0]!, entry.segments[entry.segments.length - 1]!);
 
 		return (
 			<section class="docs-page">

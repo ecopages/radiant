@@ -145,7 +145,7 @@ pnpm --filter @ecopages/radiant-ui-docs generate:llms
 
 Runs before `dev`, `build` and `preview`. Pages appear in sidebar order (section, then frontmatter `order`).
 
-The command writes `llms.txt` and one raw-MDX text export per page under `src/public/llms-content/`. The export tree is generator-owned and staged before replacement, so a failed generation preserves the previous complete tree. `ECOPAGES_BASE_URL` is the canonical origin for configuration, generated links, and page metadata.
+The command writes `llms.txt` and one raw-MDX Markdown export per page at `src/public/docs-llm/<section>/<slug>.md`. Pages with `llms: false` in frontmatter are left out. Each page links its export as `rel="alternate"` (`src/lib/docs/docs-llm-url.ts`) and Copy for LLM fetches it. For one release the generator also writes the old `src/public/llms-content/<slug>.txt` exports, under the slug a page had before the section move (`/llms-content/button.txt`), so published links keep working; `LEGACY_LLMS_DIR` in `scripts/generate-llm-docs.ts` says what to delete afterwards. Both trees are generator-owned and staged before replacement, so a failed generation preserves the previous complete trees. `ECOPAGES_BASE_URL` is the canonical origin for configuration, generated links, and page metadata.
 
 ## Deployment
 

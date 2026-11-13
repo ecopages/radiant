@@ -1,17 +1,17 @@
 import { expect, test } from 'vitest';
 import { getDocsLlmUrlFromPathname } from '@/lib/docs/docs-llm-url';
 
-test('getDocsLlmUrlFromPathname maps docs paths to text exports', () => {
+test('getDocsLlmUrlFromPathname maps docs paths to markdown URLs', () => {
 	expect(getDocsLlmUrlFromPathname('/docs/getting-started/introduction')).toBe(
-		'/llms-content/getting-started/introduction.txt',
+		'/docs-llm/getting-started/introduction.md',
 	);
 	expect(getDocsLlmUrlFromPathname('/docs/getting-started/introduction/')).toBe(
-		'/llms-content/getting-started/introduction.txt',
+		'/docs-llm/getting-started/introduction.md',
 	);
-	expect(getDocsLlmUrlFromPathname('/docs/controller')).toBe('/llms-content/controller.txt');
+	expect(getDocsLlmUrlFromPathname('/docs/reference/nested/deep-page')).toBe('/docs-llm/reference/deep-page.md');
 });
+
 test('getDocsLlmUrlFromPathname returns null for non-docs paths', () => {
 	expect(getDocsLlmUrlFromPathname('/')).toBeNull();
-	expect(getDocsLlmUrlFromPathname('/llms.txt')).toBeNull();
-	expect(getDocsLlmUrlFromPathname('/docs')).toBeNull();
+	expect(getDocsLlmUrlFromPathname('/docs/getting-started')).toBeNull();
 });
