@@ -1,5 +1,11 @@
 # @ecopages/radiant-ui
 
+## 0.3.6
+
+### Patch Changes
+
+- [#666](https://github.com/ecopages/radiant/pull/666) [`81c44f7`](https://github.com/ecopages/radiant/commit/81c44f70bd8ed8b8c195fe8f4ad782e966dd1205) Thanks [@andeeplus](https://github.com/andeeplus)! - `RuiNumberField` shows an empty field as empty instead of `0`, with no `aria-valuenow` and an empty form value, and commits a typed `0` by setting `value` and emitting `rui-change`. Stepping from empty still starts at `0` or `defaultValue`.
+
 ## 0.3.5
 
 ### Patch Changes
