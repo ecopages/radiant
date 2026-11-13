@@ -1,5 +1,16 @@
 # @ecopages/radiant
 
+## 0.8.4
+
+### Patch Changes
+
+- [#674](https://github.com/ecopages/radiant/pull/674) [`528e9b2`](https://github.com/ecopages/radiant/commit/528e9b2119f8cfb3211f5c5d9eef2fdecc7bd907) Thanks [@andeeplus](https://github.com/andeeplus)! - Breaking: `context-request` callbacks now receive the context value instead of the provider, as the community context protocol specifies. If you dispatch `ContextRequestEvent` by hand, replace `provider.getContext()` with the value argument. Pass `true` as the third argument to receive updates and an `unsubscribe` function; call it when the element disconnects. A provider with no value yet answers with `undefined`, and a subscriber then receives the first value when it is set. The provider now calls `stopImmediatePropagation()` before the callback and also answers a plain `Event` with `context` and `callback` fields. `@contextSelector` and `@onContextUpdate` can now be answered by a provider from another protocol library when no Radiant provider answers. Decorators are otherwise unchanged; `@consumeContext` still receives the Radiant provider instance.
+
+- [#670](https://github.com/ecopages/radiant/pull/670) [`d4cdd6a`](https://github.com/ecopages/radiant/commit/d4cdd6a88e30ca81f93bf42077bae921812c4d77) Thanks [@andeeplus](https://github.com/andeeplus)! - Removed the unused `context-on-mount` and `context-mounted` events, along with `ContextEventsTypes.ON_MOUNT`, `ContextEventsTypes.MOUNTED` and the `ContextOnMountEvent` class exported from `@ecopages/radiant/context`. Nothing in Radiant listened for them. To run code once a consumer receives its provider, override `connectedContextCallback(context)` on the consumer, or use `@onContextUpdate` to react to the value.
+- Updated dependencies []:
+    - @ecopages/jsx@0.8.4
+    - @ecopages/signals@0.8.4
+
 ## 0.8.3
 
 ### Patch Changes
