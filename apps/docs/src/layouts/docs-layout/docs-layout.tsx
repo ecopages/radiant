@@ -26,7 +26,6 @@ import { ThemeToggle } from '@/components/theme-toggle/theme-toggle';
 import { BaseLayout } from '@/layouts/base-layout';
 import { radiantVersion } from '@/lib/radiant-version';
 import { DocsPagination } from './components/docs-pagination';
-import { getGroupIcon } from './get-group-icon';
 
 const ECO_NAVIGATION_EVENTS = 'eco:page-load,eco:after-swap';
 const DOCS_SIDEBAR_ID = 'docs-sidebar';
@@ -37,20 +36,20 @@ export type DocsLayoutProps = LayoutProps<JsxRenderable> & {
 
 const DocsNavigation = () => (
 	<>
-		{docsNav.groups.map((group, index) => (
+		{docsNav.sections.map((section, index) => (
 			<>
 				{index > 0 ? <RuiSidebarSeparator aria-label="Section divider" /> : null}
-				<RuiSidebarGroup aria-label={group.name}>
+				<RuiSidebarGroup aria-label={section.title}>
 					<RuiSidebarGroupHeader
 						label={
 							<>
-								<span class="rui-sidebar__group-icon">{getGroupIcon(group.name)}</span>
-								<span>{group.name}</span>
+								<span class="rui-sidebar__group-icon">{section.icon}</span>
+								<span>{section.title}</span>
 							</>
 						}
 					/>
-					<RuiSidebarMenu aria-label={`${group.name} links`}>
-						{group.items.map((item) => (
+					<RuiSidebarMenu aria-label={`${section.title} links`}>
+						{section.items.map((item) => (
 							<RuiSidebarMenuItem>
 								<RuiSidebarMenuButton as="a" href={item.href}>
 									{item.title}

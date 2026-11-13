@@ -8,6 +8,7 @@
 public/js
 src/public/llms.txt
 src/public/llms-content/
+src/public/_redirects
 
 # misc
 .DS_Store

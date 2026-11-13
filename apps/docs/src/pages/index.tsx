@@ -83,7 +83,7 @@ const EXPLORE_ARTICLES: HomeFeedArticleData[] = [
 			'Typed decorators for public inputs, local state, DOM queries, events, and lifecycle across both host types.',
 	},
 	{
-		href: '/docs/packages/signals-overview',
+		href: '/docs/signals/signals-overview',
 		label: 'Packages',
 		title: 'Understand the package layers',
 		description:
@@ -158,7 +158,7 @@ const HOME_FOOTER_COLUMNS: HomeFooterColumnData[] = [
 		links: [
 			{ label: 'Introduction', href: '/docs/getting-started/introduction' },
 			{ label: 'Installation', href: '/docs/getting-started/installation' },
-			{ label: 'Signals', href: '/docs/packages/signals-overview' },
+			{ label: 'Signals', href: '/docs/signals/signals-overview' },
 			{ label: 'JSX', href: '/docs/jsx/overview' },
 		],
 	},

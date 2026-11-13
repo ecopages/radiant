@@ -8,7 +8,7 @@ test('getDocsLlmUrlFromPathname maps docs paths to text exports', () => {
 	expect(getDocsLlmUrlFromPathname('/docs/getting-started/introduction/')).toBe(
 		'/llms-content/getting-started/introduction.txt',
 	);
-	expect(getDocsLlmUrlFromPathname('/docs/button')).toBe('/llms-content/button.txt');
+	expect(getDocsLlmUrlFromPathname('/docs/actions/button')).toBe('/llms-content/actions/button.txt');
 });
 
 test('getDocsLlmUrlFromPathname returns null for non-docs paths', () => {

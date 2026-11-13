@@ -5,3 +5,4 @@
 # build
 src/public/llms.txt
 src/public/llms-content/
+src/public/_redirects

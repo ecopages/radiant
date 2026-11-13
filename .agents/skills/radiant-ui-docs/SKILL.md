@@ -44,7 +44,7 @@ Work one component at a time. Do not invent targets, roles, or examples.
 6. Document each public helper: target stamped, required or not, chrome it always injects.
 7. `@cssclass` on the **export that authors the class**, not on the CE, unless CE `render()` paints that class.
 8. No `@slot` TSDoc: Radiant has no named slots.
-9. Update `apps/radiant-ui/src/content/components/<slug>.mdx`. Usage matches real helper props. Custom markup matches the script. Extra capabilities get a **Canvas** plus a `docsStory` in `apps/radiant-ui/src/content/stories/<slug>.tsx`.
+9. Update `apps/radiant-ui/src/content/components/<section>/<slug>.mdx`. Usage matches real helper props. Custom markup matches the script. Extra capabilities get a **Canvas** plus a `docsStory` in `apps/radiant-ui/src/content/stories/<slug>.tsx`.
 10. Public methods get a Methods table in MDX and a mention in CE `@remarks`.
 11. TSDoc, MDX, and helpers must agree. The script wins; fix the docs.
 

@@ -1,41 +1,36 @@
-import { DOCS_GROUP_ORDER_INDEX, DOCS_ROOT } from '@/content/components';
+import type { JsxRenderable } from '@ecopages/jsx';
 import { entries } from 'ecopages:content/components';
+import {
+	compareDocsEntries,
+	DOCS_ROOT,
+	DOCS_SECTION_CONFIG,
+	DOCS_SECTION_ORDER,
+	type DocsSectionId,
+} from '@/content/components';
 
-export type ContentNavItem = {
+export type DocsNavItem = {
 	title: string;
+	description: string;
 	href: string;
+	section: string;
 	slug: string;
 };
 
-export type ContentNavGroup = {
-	name: string;
-	items: ContentNavItem[];
+export type DocsNavSection = {
+	id: string;
+	title: string;
+	icon: JsxRenderable;
+	items: DocsNavItem[];
 };
 
-export type ContentNav = {
+export type DocsNav = {
 	rootDir: string;
-	groups: ContentNavGroup[];
+	sections: DocsNavSection[];
 };
 
-/** Flatten grouped nav into document order for prev/next pagination. */
-export function flattenContentNav(nav: ContentNav): ContentNavItem[] {
-	return nav.groups.flatMap((group) => group.items);
-}
-
-/** Adjacent items for `pathname`, or `null` when the path is not in the list. */
-export function getAdjacentContentNavItems(
-	items: readonly ContentNavItem[],
-	pathname: string,
-): { prev: ContentNavItem | null; next: ContentNavItem | null } | null {
-	const currentIndex = items.findIndex((item) => item.href === pathname);
-	if (currentIndex === -1) {
-		return null;
-	}
-
-	return {
-		prev: currentIndex > 0 ? items[currentIndex - 1]! : null,
-		next: currentIndex < items.length - 1 ? items[currentIndex + 1]! : null,
-	};
+/** Flatten the sectioned nav into document order for prev/next pagination. */
+export function flattenContentNav(nav: DocsNav): DocsNavItem[] {
+	return nav.sections.flatMap((section) => section.items);
 }
 
 export type AdjacentNavLink = {
@@ -58,64 +53,40 @@ export function findAdjacentNavItems<T extends AdjacentNavLink>(
 	};
 }
 
-export type NavigableContentEntry = {
-	title: string;
-	slug: string;
-	segments: string[];
-	group?: string;
-	category?: string;
-};
+const itemsBySection = new Map<string, DocsNavItem[]>();
 
-export type BuildGroupedNavOptions = {
-	rootDir: string;
-	groupOrder?: ReadonlyMap<string, number>;
-	/** Slug segment to exclude from nav items. Defaults to `index`. */
-	excludeSegment?: string;
-};
+for (const entry of [...entries].sort(compareDocsEntries)) {
+	const sectionId = entry.segments[0]!;
+	const pageSlug = entry.segments[entry.segments.length - 1]!;
+	const items = itemsBySection.get(sectionId) ?? [];
 
-/**
- * Builds grouped navigation from a content manifest. Group order follows
- * `groupOrder` when provided; otherwise groups appear in first-seen order.
- */
-export function buildGroupedNav<T extends NavigableContentEntry>(
-	posts: readonly T[],
-	{ rootDir, groupOrder, excludeSegment = 'index' }: BuildGroupedNavOptions,
-): ContentNav {
-	const byGroup = new Map<string, T[]>();
-	const groupInsertion = new Map<string, number>();
-
-	posts.forEach((post, index) => {
-		if (post.segments[post.segments.length - 1] === excludeSegment) return;
-		const group = post.group ?? post.category ?? post.segments[0] ?? 'Other';
-		if (!byGroup.has(group)) {
-			byGroup.set(group, []);
-			groupInsertion.set(group, index);
-		}
-		byGroup.get(group)!.push(post);
+	items.push({
+		title: entry.title,
+		description: entry.description,
+		href: `${DOCS_ROOT}/${sectionId}/${pageSlug}`,
+		section: sectionId,
+		slug: pageSlug,
 	});
-
-	const orderedGroups = Array.from(byGroup.keys()).sort((a, b) => {
-		const ai = groupOrder?.get(a);
-		const bi = groupOrder?.get(b);
-		if (ai === undefined && bi === undefined) return (groupInsertion.get(a) ?? 0) - (groupInsertion.get(b) ?? 0);
-		if (ai === undefined) return 1;
-		if (bi === undefined) return -1;
-		return ai - bi;
-	});
-
-	const groups: ContentNavGroup[] = orderedGroups.map((name) => ({
-		name,
-		items: (byGroup.get(name) ?? []).map((post) => ({
-			title: post.title,
-			href: `${rootDir}/${post.segments.join('/')}`,
-			slug: post.slug,
-		})),
-	}));
-
-	return { rootDir, groups };
+	itemsBySection.set(sectionId, items);
 }
 
-export const docsNav = buildGroupedNav(entries, {
+export const docsNav: DocsNav = {
 	rootDir: DOCS_ROOT,
-	groupOrder: DOCS_GROUP_ORDER_INDEX,
-});
+	sections: DOCS_SECTION_ORDER.flatMap((sectionId) => {
+		const items = itemsBySection.get(sectionId);
+		if (!items || items.length === 0) {
+			return [];
+		}
+
+		const config = DOCS_SECTION_CONFIG[sectionId as DocsSectionId];
+
+		return [
+			{
+				id: sectionId,
+				title: config.title,
+				icon: config.icon,
+				items,
+			},
+		];
+	}),
+};

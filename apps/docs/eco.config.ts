@@ -5,10 +5,9 @@ import { contentProcessorPlugin } from '@ecopages/content-processor/plugin';
 import { lightningCssProcessorPlugin } from '@ecopages/lightningcss-processor';
 import { suffixNesting } from '@ecopages/lightningcss-processor/plugins/suffix-nesting';
 import { tailwindV4Preset } from '@ecopages/lightningcss-processor/presets/tailwind-v4';
-import { compareEntriesByField } from '@ecopages/content-processor';
 import { createDocsMdxPlugins } from './src/mdx/plugins';
 import { remarkMermaid } from './src/lib/remark-mermaid';
-import { docsFrontmatterSchema } from './src/content/docs';
+import { compareDocsEntries, docsFrontmatterSchema } from './src/content/docs';
 import { configuredSiteOrigin } from './src/lib/docs/site-meta';
 import { devToolbar } from '@ecopages/dev-toolbar/config';
 
@@ -46,7 +45,7 @@ export default defineConfig({
 				collections: {
 					docs: {
 						contentDir: 'content/docs',
-						orderBy: compareEntriesByField('order'),
+						orderBy: compareDocsEntries,
 						schema: docsFrontmatterSchema,
 						entryType: './src/content/docs#DocsFrontmatter',
 					},

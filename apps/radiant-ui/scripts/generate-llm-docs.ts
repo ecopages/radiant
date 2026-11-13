@@ -1,7 +1,12 @@
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { ContentScanner } from '@ecopages/content-processor';
-import { DOCS_GROUP_ORDER, componentDocsFrontmatterSchema } from '../src/content/components';
+import {
+	compareDocsEntries,
+	componentDocsFrontmatterSchema,
+	DOCS_SECTION_CONFIG,
+	LLM_SECTION_ORDER,
+} from '../src/content/components';
 import { configuredSiteOrigin } from '../src/lib/docs/site-meta';
 import { generateLlmDocs as writeLlmDocs } from '../src/lib/llm-docs';
 
@@ -51,6 +56,7 @@ export type GenerateLlmDocsOptions = {
 export async function generateLlmDocs(outputRoot = PUBLIC_DIR, options: GenerateLlmDocsOptions = {}): Promise<void> {
 	const scanner = new ContentScanner({
 		contentRoot: options.contentRoot ?? DEFAULT_CONTENT_ROOT,
+		orderBy: compareDocsEntries,
 		schema: componentDocsFrontmatterSchema,
 	});
 
@@ -58,10 +64,9 @@ export async function generateLlmDocs(outputRoot = PUBLIC_DIR, options: Generate
 		outputDir: join(outputRoot, 'llms-content'),
 		indexPath: join(outputRoot, 'llms.txt'),
 		baseUrl: options.baseUrl ?? configuredSiteOrigin(),
-		sectionOrder: DOCS_GROUP_ORDER,
+		sectionOrder: LLM_SECTION_ORDER,
 		headerLines: LLMS_HEADER,
-		getSection: (post) => post.group ?? post.category ?? post.segments[0] ?? 'Other',
-		formatSectionTitle: (section) => section,
+		formatSectionTitle: (section) => DOCS_SECTION_CONFIG[section as keyof typeof DOCS_SECTION_CONFIG]?.title ?? section,
 	});
 }
 

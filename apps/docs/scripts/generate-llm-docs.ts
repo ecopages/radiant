@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { ContentScanner, compareEntriesByField } from '@ecopages/content-processor';
-import { docsFrontmatterSchema, LLM_SECTION_ORDER } from '../src/content/docs';
+import { ContentScanner } from '@ecopages/content-processor';
+import { compareDocsEntries, DOCS_SECTION_CONFIG, docsFrontmatterSchema, LLM_SECTION_ORDER } from '../src/content/docs';
 import { configuredSiteOrigin } from '../src/lib/docs/site-meta';
 import { generateLlmDocs as writeLlmDocs } from '../src/lib/llm-docs';
 
@@ -50,7 +50,7 @@ export type GenerateLlmDocsOptions = {
 export async function generateLlmDocs(outputRoot = PUBLIC_DIR, options: GenerateLlmDocsOptions = {}): Promise<void> {
 	const scanner = new ContentScanner({
 		contentRoot: options.contentRoot ?? DEFAULT_CONTENT_ROOT,
-		orderBy: compareEntriesByField('order'),
+		orderBy: compareDocsEntries,
 		schema: docsFrontmatterSchema,
 	});
 
@@ -60,6 +60,7 @@ export async function generateLlmDocs(outputRoot = PUBLIC_DIR, options: Generate
 		baseUrl: options.baseUrl ?? configuredSiteOrigin(),
 		sectionOrder: LLM_SECTION_ORDER,
 		headerLines: LLMS_HEADER,
+		formatSectionTitle: (section) => DOCS_SECTION_CONFIG[section as keyof typeof DOCS_SECTION_CONFIG]?.title ?? section,
 	});
 }
 

@@ -71,7 +71,7 @@ Rules:
 
 The primary view (`export function RuiFoo`) documents convenience props vs children, and that children are wrapped in the shell the host expects (`data-ref="root"`, …).
 
-## MDX page (`apps/radiant-ui/src/content/components/<slug>.mdx`)
+## MDX page (`apps/radiant-ui/src/content/components/<section>/<slug>.mdx`)
 
 Keep existing layers: Try it, Usage (hand-maintained snippets), Canvas variants, Theming, Accessibility, API.
 

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -216,4 +217,16 @@ test('Docs code examples copy their source', browserTestOptions, async () => {
 		assert.equal(await copyButton.getAttribute('aria-label'), 'Copy code');
 		await waitForLocatorText(page.locator('[data-code-copy-status]'), 'Code copied to clipboard');
 	});
+});
+
+test('Docs redirects send every moved page to a built page', async () => {
+	const rules = (await readFile(resolve(docsDirectory, 'dist/client/_redirects'), 'utf8')).trim().split('\n');
+	assert.ok(rules.length > 0);
+
+	for (const rule of rules) {
+		const [from, to, status] = rule.split(' ');
+		assert.equal(status, '301');
+		assert.equal((await fetch(`${origin}${to}`)).status, 200, `${from} redirects to missing ${to}`);
+		assert.equal((await fetch(`${origin}${from}`)).status, 404, `${from} is still served as a page`);
+	}
 });

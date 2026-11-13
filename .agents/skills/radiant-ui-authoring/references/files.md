@@ -36,7 +36,7 @@ Extra skins: `withStylesheets([otherCss])` from `@sb/with-stylesheets` on that s
 
 ## Docs app
 
-If the component is documented: `apps/radiant-ui/src/content/stories/<slug>.tsx` + `src/content/components/<slug>.mdx`. Register the story module where other stories are imported. See `apps/radiant-ui/README.md`.
+If the component is documented: `apps/radiant-ui/src/content/stories/<slug>.tsx` + `src/content/components/<section>/<slug>.mdx`. Register the story module where other stories are imported. See `apps/radiant-ui/README.md`.
 
 ## Style dependencies
 
