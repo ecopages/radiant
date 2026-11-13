@@ -130,7 +130,9 @@ export function resolveReactiveDefault<T>(options: ReactivePropertyOptions<T>): 
 /** Throws when a prop asks to reflect to an attribute it opted out of with `attribute: false`. */
 export function validatePropertyOnlyReflection(propertyName: string, options: ReactivePropertyOptions<unknown>): void {
 	if (options.attribute === false && options.reflect) {
-		throw new Error(`@prop "${propertyName}": reflect: true needs an attribute, but attribute: false makes it property-only`);
+		throw new Error(
+			`@prop "${propertyName}": reflect: true needs an attribute, but attribute: false makes it property-only`,
+		);
 	}
 }
 

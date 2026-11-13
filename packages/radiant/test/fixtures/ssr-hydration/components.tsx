@@ -38,9 +38,7 @@ export class HydratedSlotCard extends RadiantElement {
 	override render() {
 		return (
 			<section>
-				<div>
-					{this.slotted}
-				</div>
+				<div>{this.slotted}</div>
 				<button type="button" on:click={this.increment}>
 					Count {this.count}
 				</button>
@@ -54,13 +52,7 @@ export class HydratedConditionalSlotCard extends RadiantElement {
 	@prop({ type: Boolean }) open = false;
 
 	override render() {
-		return this.open ? (
-			<section>
-				{this.slotted}
-			</section>
-		) : (
-			<p>closed</p>
-		);
+		return this.open ? <section>{this.slotted}</section> : <p>closed</p>;
 	}
 }
 
@@ -70,11 +62,7 @@ export class HydratedShellCard extends RadiantElement {}
 @customElement('hydrated-marker-slot-child-test')
 export class HydratedMarkerSlotChild extends RadiantElement {
 	override render() {
-		return (
-			<div class="child">
-				{this.slotted}
-			</div>
-		);
+		return <div class="child">{this.slotted}</div>;
 	}
 }
 
@@ -144,9 +132,7 @@ export class HydratedComplexSlotCard extends RadiantElement {
 	override render() {
 		return (
 			<section>
-				<div data-ref="body">
-					{this.slotted}
-				</div>
+				<div data-ref="body">{this.slotted}</div>
 				<button type="button" on:click={this.increment}>
 					Count {this.count}
 				</button>
@@ -375,9 +361,7 @@ export class HydratedBindlessSlotCard extends RadiantElement {
 	override render() {
 		return (
 			<section>
-				<div>
-					{this.slotted}
-				</div>
+				<div>{this.slotted}</div>
 			</section>
 		);
 	}

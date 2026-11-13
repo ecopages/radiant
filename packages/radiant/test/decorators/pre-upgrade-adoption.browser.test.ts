@@ -145,7 +145,10 @@ describe('pre-upgrade property assignment', () => {
 		 * Stands in for a library accessor decorator such as MobX `@observable accessor`. Under standard decorators it
 		 * wraps the `accessor` field; under legacy decorators it defines the accessor on the prototype.
 		 */
-		function observableAccessor(target: unknown, context: unknown): ClassAccessorDecoratorResult<RadiantElement, unknown> | void {
+		function observableAccessor(
+			target: unknown,
+			context: unknown,
+		): ClassAccessorDecoratorResult<RadiantElement, unknown> | void {
 			if (typeof context === 'string') {
 				const store = new WeakMap<object, unknown>();
 				Object.defineProperty(target as object, context, {

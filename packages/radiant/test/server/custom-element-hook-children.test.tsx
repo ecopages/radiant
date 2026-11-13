@@ -35,11 +35,7 @@ class HookChildrenProvider extends RadiantElement {
 	context!: ContextProvider<typeof hookContext>;
 
 	override render() {
-		return (
-			<section>
-				{this.slotted}
-			</section>
-		);
+		return <section>{this.slotted}</section>;
 	}
 }
 

@@ -72,7 +72,9 @@ function referencesCore(file: string, seen = new Set<string>()): boolean {
 	seen.add(file);
 	const css = readFileSync(file, 'utf8');
 	if (/^@reference\s/m.test(css)) return true;
-	return [...css.matchAll(IMPORT_RE)].some((match) => referencesCore(path.resolve(path.dirname(file), match[1]), seen));
+	return [...css.matchAll(IMPORT_RE)].some((match) =>
+		referencesCore(path.resolve(path.dirname(file), match[1]), seen),
+	);
 }
 
 /**

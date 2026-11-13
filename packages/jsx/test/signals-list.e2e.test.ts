@@ -11,15 +11,13 @@ describe('a computed keyed list with per-row signals, rendered once', () => {
 		let builds = 0;
 		const list = computed(() => {
 			builds += 1;
-			return rows
-				.get()
-				.map((row) =>
-					jsxs('tr', {
-						key: row.id,
-						class: row.cls,
-						children: [jsx('td', { children: row.id }), jsx('td', { children: row.label })],
-					}),
-				);
+			return rows.get().map((row) =>
+				jsxs('tr', {
+					key: row.id,
+					class: row.cls,
+					children: [jsx('td', { children: row.id }), jsx('td', { children: row.label })],
+				}),
+			);
 		});
 		const container = document.createElement('div');
 		createRoot(container).render(jsx('table', { children: jsx('tbody', { children: list }) }));

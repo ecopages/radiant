@@ -19,6 +19,8 @@ describe('radiantElements virtual modules', () => {
 		const ssrRegistryId = plugin.resolveId?.('virtual:radiant/ssr-client-module-registry');
 		const ssrRegistryModule = plugin.load?.(ssrRegistryId!);
 		expect(ssrRegistryModule).toContain("import { getCustomElementTagName } from '@ecopages/jsx/jsx-runtime';");
-		expect(ssrRegistryModule).toContain('const tagName = component == null ? undefined : getCustomElementTagName(component);');
+		expect(ssrRegistryModule).toContain(
+			'const tagName = component == null ? undefined : getCustomElementTagName(component);',
+		);
 	});
 });

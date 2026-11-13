@@ -9,7 +9,10 @@ import { RenderRuntime, type RenderRuntimeHost } from '../../src/core/render-run
  * "host has children means captured light DOM" heuristic used to capture that output. The slotted value then became
  * an ancestor of the very range it was inserted into, and `insertNodesBefore` threw a `HierarchyRequestError`.
  */
-function createHost(innerHTML: string, wrap: (slotted: unknown) => unknown = (slotted) => jsx('div', { children: slotted })) {
+function createHost(
+	innerHTML: string,
+	wrap: (slotted: unknown) => unknown = (slotted) => jsx('div', { children: slotted }),
+) {
 	const host = document.createElement('slotted-runtime-host') as RenderRuntimeHost;
 	host.innerHTML = innerHTML;
 	const runtime = new RenderRuntime(host);

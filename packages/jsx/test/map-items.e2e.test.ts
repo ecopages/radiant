@@ -50,7 +50,10 @@ describe('MapItems', () => {
 		const root = createRoot(container);
 		const view = (title: string) =>
 			jsxs('section', {
-				children: [jsx('h2', { children: title }), jsx('ul', { children: jsx(MapItems<Row>, { each: rows, children: render }) })],
+				children: [
+					jsx('h2', { children: title }),
+					jsx('ul', { children: jsx(MapItems<Row>, { each: rows, children: render }) }),
+				],
 			});
 
 		root.render(view('first'));
@@ -86,7 +89,12 @@ describe('MapItems', () => {
 		const items = state<string[]>(['a', 'b', 'c']);
 		const container = document.createElement('div');
 		createRoot(container).render(
-			jsx('ul', { children: jsx(MapItems<string>, { each: items, children: (item: string) => jsx('li', { children: item }) }) }),
+			jsx('ul', {
+				children: jsx(MapItems<string>, {
+					each: items,
+					children: (item: string) => jsx('li', { children: item }),
+				}),
+			}),
 		);
 		const [, b] = Array.from(container.querySelectorAll('li'));
 

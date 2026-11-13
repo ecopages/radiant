@@ -175,7 +175,11 @@ export function createJsxElement<Props extends object>(
 }
 
 /** Calls a function component with `key` in its props, as the automatic runtime passed it. */
-function renderComponent<Props extends object>(component: JsxComponent<Props>, props: Props, key: unknown): JsxRenderable {
+function renderComponent<Props extends object>(
+	component: JsxComponent<Props>,
+	props: Props,
+	key: unknown,
+): JsxRenderable {
 	const componentProps = key === (props as { key?: unknown }).key ? props : { ...props, key };
 	return wrapKeyedValue(component(componentProps), key);
 }

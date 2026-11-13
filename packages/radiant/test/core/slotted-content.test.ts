@@ -43,7 +43,8 @@ describe('slotted content helpers', () => {
 		const hydrationMarkup =
 			'<script type="application/json" data-hydration data-hydration-type="context" data-hydration-key="provider">{"count":3}</script>';
 		const host = document.createElement('div');
-		host.innerHTML = '<p>SSR body</p>' + hydrationMarkup + `<template ${SLOTTED_ATTRIBUTE}><p>SSR body</p></template>`;
+		host.innerHTML =
+			'<p>SSR body</p>' + hydrationMarkup + `<template ${SLOTTED_ATTRIBUTE}><p>SSR body</p></template>`;
 
 		expect(collectAuthoredHydrationScriptMarkup(host)).toBe(hydrationMarkup);
 	});

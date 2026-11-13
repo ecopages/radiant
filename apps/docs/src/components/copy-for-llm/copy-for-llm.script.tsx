@@ -96,29 +96,33 @@ export class RadiantCopyForLlm extends RadiantElement {
 	override render() {
 		return (
 			<>
-			<RuiButton
-				type="button"
-				variant="outline"
-				size="sm"
-				class="docs-copy-for-llm"
-				aria-label={this.label}
-				data-testid="copy-for-llm"
-				data-copied={this.copyState === 'copied' ? 'true' : 'false'}
-				data-copy-error={this.copyState === 'error' ? 'true' : 'false'}
-				disabled={this.copying}
-				on:click={this.handleCopy}
-			>
-				<span class="docs-copy-for-llm__icon docs-copy-for-llm__icon--sparkle" aria-hidden="true">
-					{copyForLlmSparkleIcon}
+				<RuiButton
+					type="button"
+					variant="outline"
+					size="sm"
+					class="docs-copy-for-llm"
+					aria-label={this.label}
+					data-testid="copy-for-llm"
+					data-copied={this.copyState === 'copied' ? 'true' : 'false'}
+					data-copy-error={this.copyState === 'error' ? 'true' : 'false'}
+					disabled={this.copying}
+					on:click={this.handleCopy}
+				>
+					<span class="docs-copy-for-llm__icon docs-copy-for-llm__icon--sparkle" aria-hidden="true">
+						{copyForLlmSparkleIcon}
+					</span>
+					<span class="docs-copy-for-llm__icon docs-copy-for-llm__icon--check" aria-hidden="true">
+						{copyForLlmCheckIcon}
+					</span>
+					<span class="docs-copy-for-llm__label">{this.label}</span>
+				</RuiButton>
+				<span class="sr-only" role="status" aria-live="polite">
+					{this.copyState === 'copied'
+						? 'Page copied for LLM'
+						: this.copyState === 'error'
+							? 'Could not copy page'
+							: ''}
 				</span>
-				<span class="docs-copy-for-llm__icon docs-copy-for-llm__icon--check" aria-hidden="true">
-					{copyForLlmCheckIcon}
-				</span>
-				<span class="docs-copy-for-llm__label">{this.label}</span>
-			</RuiButton>
-			<span class="sr-only" role="status" aria-live="polite">
-				{this.copyState === 'copied' ? 'Page copied for LLM' : this.copyState === 'error' ? 'Could not copy page' : ''}
-			</span>
 			</>
 		);
 	}

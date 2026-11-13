@@ -11,11 +11,7 @@ import { state } from '../../../src/decorators/state';
 @customElement('hydrated-order-child-test')
 export class HydratedOrderChild extends RadiantElement {
 	override render() {
-		return (
-			<div class="child">
-				{this.slotted}
-			</div>
-		);
+		return <div class="child">{this.slotted}</div>;
 	}
 }
 

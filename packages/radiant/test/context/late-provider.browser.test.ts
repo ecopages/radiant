@@ -1,11 +1,5 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
-import {
-	ContextProvider,
-	consumeContext,
-	createContext,
-	onContextUpdate,
-	provideContext,
-} from '../../src/context';
+import { ContextProvider, consumeContext, createContext, onContextUpdate, provideContext } from '../../src/context';
 import { RadiantElement } from '../../src/core/radiant-element';
 
 type Shared = { value: number };

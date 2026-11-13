@@ -277,7 +277,13 @@ export class UserCardWithBindings extends RadiantElement<UserCardBindings> {
 /** decorators/prop.mdx */
 
 const csvStrings: PropTransform<string[]> = {
-	fromAttribute: (value) => (value ? value.split(',').map((token) => token.trim()).filter(Boolean) : []),
+	fromAttribute: (value) =>
+		value
+			? value
+					.split(',')
+					.map((token) => token.trim())
+					.filter(Boolean)
+			: [],
 	toAttribute: (values) => (values.length > 0 ? values.join(',') : null),
 	fromProperty: (value) => {
 		if (Array.isArray(value)) return value.map(String);

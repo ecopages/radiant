@@ -26,11 +26,7 @@ class MinimalDomLightChild extends RadiantElement {
 @customElement('minimal-dom-light-parent-test')
 class MinimalDomLightParent extends RadiantElement {
 	override render() {
-		return (
-			<section>
-				{this.slotted}
-			</section>
-		);
+		return <section>{this.slotted}</section>;
 	}
 }
 
@@ -79,7 +75,9 @@ describe('renderServerLightDom edge cases', () => {
 			['math', 'style'],
 			['math', 'noframes'],
 		]) {
-			const page = jsx('minimal-dom-light-child-test', { children: jsx(root, { children: jsx(tag, { children: text }) }) });
+			const page = jsx('minimal-dom-light-child-test', {
+				children: jsx(root, { children: jsx(tag, { children: text }) }),
+			});
 			const html = withRadiantServerCustomElementRenderBridge(() => renderToString(page));
 
 			expect(html).toContain(`<${root}><${tag}>&lt;img id="pwn" src="x"&gt;</${tag}></${root}>`);

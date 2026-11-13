@@ -221,9 +221,7 @@ describe('RadiantElement', () => {
 		@customElement('slot-single-projection-test')
 		class SlotSingleProjection extends RadiantElement {
 			override render() {
-				return (
-					<div data-ref="body">{this.slotted}</div>
-				);
+				return <div data-ref="body">{this.slotted}</div>;
 			}
 		}
 
@@ -250,9 +248,7 @@ describe('RadiantElement', () => {
 			}
 
 			override render() {
-				return (
-					<div data-ref="body">{this.slotted}</div>
-				);
+				return <div data-ref="body">{this.slotted}</div>;
 			}
 		}
 

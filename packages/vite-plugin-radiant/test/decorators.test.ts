@@ -73,13 +73,14 @@ describe('createRadiantDecoratorBabelPlugin', () => {
 		const select = (value: { count: number }) => value.count;
 
 		function defineClass(code: string, className: string): new () => Record<string, unknown> {
-			return new Function('Base', 'contextSelector', 'onContextUpdate', 'countContext', 'select', `${code}\nreturn ${className};`)(
-				class {},
-				contextSelector,
-				onContextUpdate,
-				countContext,
-				select,
-			);
+			return new Function(
+				'Base',
+				'contextSelector',
+				'onContextUpdate',
+				'countContext',
+				'select',
+				`${code}\nreturn ${className};`,
+			)(class {}, contextSelector, onContextUpdate, countContext, select);
 		}
 
 		test('applies @contextSelector to a field, whose descriptor carries an initializer', async () => {

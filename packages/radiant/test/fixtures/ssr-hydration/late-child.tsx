@@ -5,10 +5,6 @@ import { customElement } from '../../../src/decorators/custom-element';
 @customElement('hydrated-late-child-test')
 export class HydratedLateChild extends RadiantElement {
 	override render() {
-		return (
-			<div class="child">
-				{this.slotted}
-			</div>
-		);
+		return <div class="child">{this.slotted}</div>;
 	}
 }

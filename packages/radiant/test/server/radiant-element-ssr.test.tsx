@@ -479,11 +479,7 @@ describe('RadiantElement SSR', () => {
 			context!: ContextProvider<typeof slottedSsrContext>;
 
 			override render() {
-				return (
-					<section>
-						{this.slotted}
-					</section>
-				);
+				return <section>{this.slotted}</section>;
 			}
 		}
 
@@ -504,11 +500,7 @@ describe('RadiantElement SSR', () => {
 		@customElement('slotted-ssr-frame-test')
 		class SlottedSsrFrame extends RadiantElement {
 			override render() {
-				return (
-					<div>
-						{this.slotted}
-					</div>
-				);
+				return <div>{this.slotted}</div>;
 			}
 		}
 
@@ -757,11 +749,7 @@ describe('RadiantElement SSR', () => {
 		@customElement('server-host-slot-escape-test')
 		class ServerHostSlotEscape extends RadiantElement {
 			override render() {
-				return (
-					<section>
-						{this.slotted}
-					</section>
-				);
+				return <section>{this.slotted}</section>;
 			}
 		}
 
@@ -905,11 +893,7 @@ describe('RadiantElement SSR', () => {
 		@customElement('server-host-authored-hydration-order-card-test')
 		class ServerHostAuthoredHydrationOrderCard extends RadiantElement {
 			override render() {
-				return (
-					<section>
-						{this.slotted}
-					</section>
-				);
+				return <section>{this.slotted}</section>;
 			}
 		}
 
