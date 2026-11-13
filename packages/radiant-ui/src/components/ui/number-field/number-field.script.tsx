@@ -158,6 +158,11 @@ export class RuiNumberField extends FormAssociatedElement {
 		return `${this.uid}-input`;
 	}
 
+	/**
+	 * @remarks
+	 * Starting point for stepping and the stepper bounds only. It is not the committed value: display,
+	 * `aria-valuenow` and form submission read `value` so an empty field stays empty.
+	 */
 	private getNumericValue(): number {
 		if (typeof this.value === 'number' && Number.isFinite(this.value)) {
 			return this.value;
@@ -166,6 +171,10 @@ export class RuiNumberField extends FormAssociatedElement {
 			return this.defaultValue;
 		}
 		return 0;
+	}
+
+	private hasCommittedValue(): boolean {
+		return typeof this.value === 'number' && Number.isFinite(this.value);
 	}
 
 	private getInput(): HTMLInputElement | null {
@@ -191,15 +200,21 @@ export class RuiNumberField extends FormAssociatedElement {
 			input.id = this.inputId;
 		}
 
-		const numericValue = this.getNumericValue();
 		input.disabled = this.effectiveDisabled;
 		input.toggleAttribute('data-disabled', input.disabled);
 		input.setAttribute('role', 'spinbutton');
 		input.setAttribute('inputmode', 'decimal');
-		input.setAttribute('aria-valuenow', String(numericValue));
+
+		const committed = this.hasCommittedValue() ? this.value : undefined;
+		if (committed == null) {
+			input.removeAttribute('aria-valuenow');
+		} else {
+			input.setAttribute('aria-valuenow', String(committed));
+		}
 
 		if (!this.editing) {
-			input.value = formatNumber(numericValue, this.resolvedLocale, this.resolvedFormatOptions);
+			input.value =
+				committed == null ? '' : formatNumber(committed, this.resolvedLocale, this.resolvedFormatOptions);
 		}
 	}
 
@@ -225,6 +240,11 @@ export class RuiNumberField extends FormAssociatedElement {
 		}
 	}
 
+	/**
+	 * @remarks
+	 * The no-op check compares against the committed `value`, not `getNumericValue()`, which falls back to
+	 * `defaultValue` or `0` for display. Comparing against the fallback swallowed a typed `0` on an empty field.
+	 */
 	private commitValue(next: number, force = false): void {
 		let resolved = next;
 
@@ -232,7 +252,7 @@ export class RuiNumberField extends FormAssociatedElement {
 			resolved = snapToStep(next, this.minValue, this.maxValue, this.step);
 		}
 
-		if (resolved === this.getNumericValue()) {
+		if (resolved === this.value) {
 			this.editing = false;
 			this.syncInput();
 			this.updateStepperState();
@@ -281,7 +301,10 @@ export class RuiNumberField extends FormAssociatedElement {
 	}
 
 	protected override formValue(): FormValue {
-		return this.name ? String(this.getNumericValue()) : null;
+		if (!this.name) {
+			return null;
+		}
+		return this.hasCommittedValue() ? String(this.value) : '';
 	}
 
 	protected override formState(): FormValue {
@@ -347,7 +370,7 @@ export class RuiNumberField extends FormAssociatedElement {
 
 		const input = event.target as HTMLInputElement;
 		this.editing = true;
-		this.draftValue = String(this.getNumericValue());
+		this.draftValue = this.value == null ? '' : String(this.value);
 		input.value = this.draftValue;
 		input.select();
 	}
