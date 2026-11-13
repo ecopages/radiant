@@ -74,6 +74,23 @@ describe('FormStore', () => {
 			expect(store.getFieldError('code')).toBe('Too short');
 		});
 
+		it('uses the control message when the resolver error has none', async () => {
+			const store = new FormStore<{ code: string }>({
+				resolver: async () => ({ values: {}, errors: { code: { type: 'custom' } } }),
+			});
+			store.register({
+				name: 'code',
+				getValue: () => 'ab',
+				setValue: () => {},
+				getValidity: () => ({ valid: false, message: 'Too short' }),
+			});
+
+			expect(await store.validateField('code')).toBe(false);
+			expect(store.getFieldError('code')).toBe('Too short');
+			expect(await store.validateAll()).toBe(false);
+			expect(store.errors.code).toEqual({ type: 'native', message: 'Too short' });
+		});
+
 		it('clears the error once the control is valid', async () => {
 			const store = new FormStore<{ code: string }>();
 			let validity: { valid: boolean; message?: string } = { valid: false, message: 'Too short' };
