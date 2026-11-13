@@ -17,15 +17,12 @@ export function consumeContext(context: UnknownContext) {
 			}
 			return assign;
 		};
-		const initializeConsumedContextForHost = (
-			element: ContextHostLike,
-			options: { emitMounted?: boolean } = {},
-		) => {
+		const initializeConsumedContextForHost = (element: ContextHostLike) => {
 			if ((element as any)[propertyKey]) {
 				return true;
 			}
 
-			return connectConsumedContext(element, context, assignerFor(element), options);
+			return connectConsumedContext(element, context, assignerFor(element));
 		};
 
 		registerLegacyPostConstructionInitializer(proto, (element) => {
@@ -34,12 +31,12 @@ export function consumeContext(context: UnknownContext) {
 			});
 
 			element.registerConnectedCallback(() => {
-				if (initializeConsumedContextForHost(element, { emitMounted: true })) {
+				if (initializeConsumedContextForHost(element)) {
 					return;
 				}
 
 				queueMicrotask(() => {
-					initializeConsumedContextForHost(element, { emitMounted: true });
+					initializeConsumedContextForHost(element);
 				});
 			});
 		});

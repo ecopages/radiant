@@ -1,7 +1,6 @@
 import { waitFor } from '@testing-library/dom';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import {
-	ContextEventsTypes,
 	ContextProvider,
 	ContextRequestEvent,
 	consumeContext,
@@ -193,44 +192,44 @@ describe('Context', () => {
 		contextProvider.appendChild(contextConsumer);
 		document.body.appendChild(contextProvider);
 
-		contextConsumer.addEventListener(ContextEventsTypes.MOUNTED, async () => {
+		await waitFor(() => {
+			expect(contextConsumer.context).toBe(contextProvider.context);
 			expect(contextConsumer.innerHTML).toEqual('1');
-			contextProvider.context.setContext({ value: 3 });
-			expect(contextConsumer.innerHTML).toEqual('3');
-			contextProvider.context.setContext({ value: 3 });
-			expect(contextConsumer.innerHTML).toEqual('5');
 		});
+
+		contextProvider.context.setContext({ value: 3 });
+		expect(contextConsumer.innerHTML).toEqual('3');
+		contextProvider.context.setContext({ value: 5 });
+		expect(contextConsumer.innerHTML).toEqual('5');
 	});
 
 	test('it initializes with the provided context and initial value', () => {
-		const initialValue = { value: 10 };
 		const contextProvider = createCustomElement<MyContextProvider>('my-context-provider');
+		document.body.appendChild(contextProvider);
 
-		contextProvider.addEventListener(ContextEventsTypes.MOUNTED, () => {
-			contextProvider.context.setContext(initialValue);
-			expect(contextProvider.context.getContext()).toEqual(initialValue);
-		});
+		expect(contextProvider.context.getContextKey()).toBe(testContext);
+		expect(contextProvider.context.getContext()).toEqual({ value: 1 });
 	});
 
 	test('it sets and gets context correctly', async () => {
 		const contextProvider = createCustomElement<MyContextProvider>('my-context-provider');
+		document.body.appendChild(contextProvider);
 		const update = { value: 20 };
-		contextProvider.addEventListener(ContextEventsTypes.MOUNTED, () => {
-			contextProvider.context.setContext(update);
-			expect(contextProvider.context.getContext()).toEqual(update);
-		});
+
+		contextProvider.context.setContext(update);
+
+		expect(contextProvider.context.getContext()).toEqual(update);
 	});
 
 	test('it can initialize context from a later object update when no initial value is provided', () => {
 		const contextProvider = createCustomElement<LazyContextProvider>('lazy-context-provider');
 		const update = { value: 42 };
-
-		contextProvider.addEventListener(ContextEventsTypes.MOUNTED, () => {
-			contextProvider.context.setContext(update);
-			expect(contextProvider.context.getContext()).toEqual(update);
-		});
-
 		document.body.appendChild(contextProvider);
+		expect(contextProvider.context.getContext()).toBeUndefined();
+
+		contextProvider.context.setContext(update);
+
+		expect(contextProvider.context.getContext()).toEqual(update);
 	});
 
 	test('it cleans up lazy selector subscriptions before the provider gets its first value', async () => {
@@ -310,9 +309,8 @@ describe('Context', () => {
 		const contextConsumer = createCustomElement<MyContextConsumer>('manual-context-element');
 		contextProvider.appendChild(contextConsumer);
 		document.body.appendChild(contextProvider);
-		contextProvider.addEventListener(ContextEventsTypes.MOUNTED, () => {
-			expect(callback).toHaveBeenCalled();
-		});
+
+		expect(callback).toHaveBeenCalledExactlyOnceWith(contextProvider.context);
 	});
 
 	test('it notifies all subscribers even when mixed selector and non-selector subscriptions are present', async () => {

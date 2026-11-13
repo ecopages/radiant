@@ -3,7 +3,6 @@ import type { SsrSerializableHydrationBinding } from '../core/ssr-hydration-bind
 import type { AttributeTypeConstant } from '../utils/attribute-utils';
 import {
 	ContextEventsTypes,
-	ContextOnMountEvent,
 	ContextProviderEvent,
 	type ContextRequestEvent,
 	type ContextSubscription,
@@ -151,7 +150,6 @@ export class ContextProvider<T extends Context<unknown, unknown>>
 		this.tryHydrateFromHost();
 
 		this.registerEvents();
-		this.host.dispatchEvent(new ContextOnMountEvent(this.context));
 		this.announceToWaitingConsumers();
 	}
 
@@ -388,15 +386,11 @@ export class ContextProvider<T extends Context<unknown, unknown>>
 	};
 
 	private onSubscriptionRequest = (event: ContextSubscriptionRequestEvent<UnknownContext>) => {
-		const { context, callback, subscribe, select, target, onSubscribe } = event;
+		const { context, callback, subscribe, select, onSubscribe } = event;
 		if (context !== this.context) return;
 
 		event.markHandled();
 		event.stopPropagation();
-
-		if (target instanceof EventTarget) {
-			target.dispatchEvent(new ContextOnMountEvent(this.context));
-		}
 
 		if (select) {
 			this.handleSubscriptionRequest({ select, callback }, { subscribe, onSubscribe });
