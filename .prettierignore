@@ -5,3 +5,5 @@
 **/__snapshots__/
 # generated; CI compares it byte for byte with the generator output
 **/style-dependencies.json
+# pnpm owns its format; the formatter would re-indent it on every run
+pnpm-lock.yaml
