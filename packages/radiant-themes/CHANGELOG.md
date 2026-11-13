@@ -1,5 +1,12 @@
 # @ecopages/radiant-themes
 
+## 0.3.6
+
+### Patch Changes
+
+- Updated dependencies [[`81c44f7`](https://github.com/ecopages/radiant/commit/81c44f70bd8ed8b8c195fe8f4ad782e966dd1205)]:
+    - @ecopages/radiant-ui@0.3.6
+
 ## 0.3.5
 
 ### Patch Changes
