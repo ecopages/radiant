@@ -13,5 +13,10 @@ test('getDocsLlmUrlFromPathname maps docs paths to markdown URLs', () => {
 
 test('getDocsLlmUrlFromPathname returns null for non-docs paths', () => {
 	expect(getDocsLlmUrlFromPathname('/')).toBeNull();
-	expect(getDocsLlmUrlFromPathname('/docs/getting-started')).toBeNull();
+	expect(getDocsLlmUrlFromPathname('/docs')).toBeNull();
+});
+
+test('getDocsLlmUrlFromPathname maps a section URL to its index export', () => {
+	expect(getDocsLlmUrlFromPathname('/docs/decorators')).toBe('/docs-llm/decorators/index.md');
+	expect(getDocsLlmUrlFromPathname('/docs/decorators/')).toBe('/docs-llm/decorators/index.md');
 });

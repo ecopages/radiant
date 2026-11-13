@@ -26,7 +26,7 @@ async function collectHtmlFiles(directory: string): Promise<string[]> {
 async function createAlias(htmlFilePath: string): Promise<void> {
 	const relativePath = path.relative(distDir, htmlFilePath);
 
-	if (relativePath === 'index.html' || relativePath === '404.html') {
+	if (path.basename(relativePath) === 'index.html' || relativePath === '404.html') {
 		return;
 	}
 

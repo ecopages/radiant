@@ -8,6 +8,7 @@ import { DocsBreadcrumb } from '@/components/docs-breadcrumb';
 import { DocsLayout } from '@/layouts/docs-layout';
 import { DOCS_ROOT } from '@/content/docs';
 import { getDocsLlmUrl } from '@/lib/docs/docs-llm-url';
+import { docsEntrySegments, docsPathForEntry, docsRouteSegments } from '@/lib/docs/docs-path';
 
 /**
  * @remarks
@@ -34,13 +35,13 @@ export default eco.page<{ entry: Entry }, JsxRenderable>({
 	staticPaths: async () => ({
 		paths: entries.map((post) => ({
 			params: {
-				slug: post.segments,
+				slug: docsRouteSegments(post.segments),
 			},
 		})),
 	}),
 	staticProps: async ({ pathname }) => {
 		const segments = Array.isArray(pathname.params.slug) ? pathname.params.slug : [pathname.params.slug];
-		const entry = getEntryBySegments(segments);
+		const entry = getEntryBySegments(docsEntrySegments(segments));
 
 		return {
 			props: {
@@ -51,7 +52,7 @@ export default eco.page<{ entry: Entry }, JsxRenderable>({
 	metadata: ({ props: { entry } }) => ({
 		title: `Docs | ${entry.title}`,
 		description: entry.description,
-		url: `/docs/${entry.slug}`,
+		url: docsPathForEntry(entry.segments),
 	}),
 	render: async ({ entry }) => {
 		const Content = await getComponent(entry.slug);

@@ -2,6 +2,7 @@ import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import { describe, expect, test } from 'vitest';
+import { docsPathForEntry } from '../src/lib/docs/docs-path';
 import { MOVED_DOCS_PATHS } from '../src/lib/docs/moved-docs-paths';
 import { generateRedirects, renderRedirects } from './generate-redirects';
 
@@ -12,7 +13,13 @@ async function listDocsPaths(directory: string): Promise<Set<string>> {
 	return new Set(
 		entries
 			.filter((entry) => entry.isFile() && entry.name.endsWith('.mdx'))
-			.map((entry) => `/docs/${relative(contentRoot, join(entry.parentPath, entry.name)).replace(/\.mdx$/, '')}`),
+			.map((entry) =>
+				docsPathForEntry(
+					relative(contentRoot, join(entry.parentPath, entry.name))
+						.replace(/\.mdx$/, '')
+						.split('/'),
+				),
+			),
 	);
 }
 
@@ -28,9 +35,12 @@ describe('moved docs paths', () => {
 		expect(Object.keys(MOVED_DOCS_PATHS).filter((from) => pages.has(from))).toEqual([]);
 	});
 
-	test('every page sits in a section folder', async () => {
+	test('every page sits in a section folder, and section index pages at the section URL', async () => {
 		const pages = await listDocsPaths(contentRoot);
-		expect([...pages].filter((page) => page.split('/').length !== 4)).toEqual([]);
+		expect([...pages].filter((page) => page.split('/').length !== 4).sort()).toEqual([
+			'/docs/context',
+			'/docs/decorators',
+		]);
 	});
 });
 

@@ -47,7 +47,7 @@ In this example:
 - `label` reads from the host `aria-label` attribute
 - assigning either field writes back through that same host attribute channel
 
-The field type must agree with the options, and a field that is not a string needs `type` or a parser: see [Typing Decorated Fields](/docs/decorators/index#typing-decorated-fields).
+The field type must agree with the options, and a field that is not a string needs `type` or a parser: see [Typing Decorated Fields](/docs/decorators#typing-decorated-fields).
 
 When `type` is provided, `@attr(...)` uses the same built-in attribute codec family as `@prop(...)` for `String`, `Number`, `Boolean`, `Object`, and `Array`. Without it the field holds the raw attribute string.
 

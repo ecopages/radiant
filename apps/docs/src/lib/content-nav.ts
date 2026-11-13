@@ -29,8 +29,8 @@ export type DocsNav = {
 };
 
 /**
- * Pages whose last segment is `index` (`context/index`, `decorators/index`) stay routable but are left out of the
- * sidebar and pagination.
+ * Section landing pages (`context/index.mdx`, `decorators/index.mdx`) are served at `/docs/<section>` and left out of
+ * the sidebar and pagination.
  */
 const NAV_EXCLUDED_SEGMENT = 'index';
 

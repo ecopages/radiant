@@ -219,6 +219,12 @@ test('Docs code examples copy their source', browserTestOptions, async () => {
 	});
 });
 
+async function statusOf(url) {
+	const response = await fetch(url);
+	await response.arrayBuffer();
+	return response.status;
+}
+
 test('Docs redirects send every moved page to a built page', async () => {
 	const rules = (await readFile(resolve(docsDirectory, 'dist/client/_redirects'), 'utf8')).trim().split('\n');
 	assert.ok(rules.length > 0);
@@ -226,8 +232,8 @@ test('Docs redirects send every moved page to a built page', async () => {
 	for (const rule of rules) {
 		const [from, to, status] = rule.split(' ');
 		assert.equal(status, '301');
-		assert.equal((await fetch(`${origin}${to}`)).status, 200, `${from} redirects to missing ${to}`);
-		assert.equal((await fetch(`${origin}${from}`)).status, 404, `${from} is still served as a page`);
+		assert.equal(await statusOf(`${origin}${to}`), 200, `${from} redirects to missing ${to}`);
+		assert.equal(await statusOf(`${origin}${from}`), 404, `${from} is still served as a page`);
 	}
 });
 
@@ -248,4 +254,12 @@ test('Docs pages link Markdown exports and keep the legacy text exports', async 
 	const llmsTxt = await (await fetch(`${origin}/llms.txt`)).text();
 	assert.match(llmsTxt, /\/docs-llm\/getting-started\/introduction\.md\)/);
 	assert.doesNotMatch(llmsTxt, /\/llms-content\//);
+});
+
+test('Docs section index pages are served at the section URL', async () => {
+	const html = await (await fetch(`${origin}/docs/decorators`)).text();
+	assert.match(html, /<link rel="canonical" href="[^"]*\/docs\/decorators"/);
+	assert.match(html, /id="typing-decorated-fields"/);
+	assert.equal(await statusOf(`${origin}/docs/context`), 200);
+	assert.equal(await statusOf(`${origin}/docs/decorators/index/`), 404);
 });
