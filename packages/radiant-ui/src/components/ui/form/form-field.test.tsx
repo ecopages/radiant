@@ -789,6 +789,23 @@ describe('rui-field composed content discovery', () => {
 			form.remove();
 		});
 
+		it('clears the error when the control becomes valid and emits rui-change', async () => {
+			const { form, nativeForm, field, face } = await mountCodeField();
+			face.internals.setValidity({ customError: true }, 'Enter all 6 characters');
+			await submit(nativeForm);
+			expect(findFieldError(field)?.textContent).toBe('Enter all 6 characters');
+
+			face.setAttribute('value', '123456');
+			face.internals.setValidity({});
+			face.dispatchEvent(new CustomEvent('rui-change', { bubbles: true, composed: true }));
+			await flushRender();
+			await new Promise((resolve) => setTimeout(resolve, 0));
+
+			expect(findFieldError(field)?.hidden).toBe(true);
+			expect(face.getAttribute('aria-invalid')).not.toBe('true');
+			form.remove();
+		});
+
 		it('lets a rule message win over the control message', async () => {
 			const { form, nativeForm, field, face } = await mountCodeField({ required: 'Code is required' });
 			face.internals.setValidity({ customError: true }, 'Native message');
