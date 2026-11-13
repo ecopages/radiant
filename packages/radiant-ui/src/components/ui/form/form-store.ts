@@ -204,7 +204,7 @@ export class FormStore<T extends FieldValues = FieldValues> {
 		const result = await this.resolver(values, { fields: this.buildResolverFields() }, { names: [name] });
 		const next = { ...this.errors };
 		const resolverError: FieldError | undefined = (result.errors as Partial<Record<string, FieldError>>)[name];
-		const error = resolverError ?? this.readNativeError(name);
+		const error = resolverError?.message ? resolverError : (this.readNativeError(name) ?? resolverError);
 		if (error?.message) {
 			next[name as keyof T] = error.type === 'native' ? error : { type: 'validation', message: error.message };
 		} else {
@@ -220,7 +220,7 @@ export class FormStore<T extends FieldValues = FieldValues> {
 		const result = await this.resolver(values, { fields: this.buildResolverFields() }, {});
 		const errors = { ...result.errors } as Partial<Record<keyof T, FieldError>>;
 		for (const name of this.fields.keys()) {
-			const native = errors[name as keyof T] ? undefined : this.readNativeError(name);
+			const native = errors[name as keyof T]?.message ? undefined : this.readNativeError(name);
 			if (native) {
 				errors[name as keyof T] = native;
 			}
