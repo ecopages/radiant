@@ -128,6 +128,7 @@ Reuse fixtures such as option lists from `src/content/stories/demo-data.ts` when
 
 - `test/story-previews.test.browser.ts` — complex `render` output smoke tests
 - `test/canvas.test.browser.ts` — client repaint when story context args change
+- `test/mdx-code-copy.test.browser.ts` — the copy button is a sibling of `pre` and copies from `data-rehype-pretty-copy`
 
 Add a render test when a story layout is easy to regress (trees, sidebars, overlays).
 
@@ -139,7 +140,7 @@ Add a render test when a story layout is easy to regress (trees, sidebars, overl
 pnpm --filter @ecopages/radiant-ui-docs generate:llms
 ```
 
-Runs before `build` and `preview`.
+Runs before `dev`, `build` and `preview`. Pages appear in sidebar order (frontmatter `order`).
 
 The command writes `llms.txt` and one raw-MDX text export per page under `src/public/llms-content/`. The export tree is generator-owned and staged before replacement, so a failed generation preserves the previous complete tree. `ECOPAGES_BASE_URL` is the canonical origin for configuration, generated links, and page metadata.
 

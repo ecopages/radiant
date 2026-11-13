@@ -31,6 +31,8 @@ export type RadiantCodeTabsProps = {
 	selectedKey?: string;
 };
 
+const COPY_STATUS_TIMEOUT_MS = 2000;
+
 function isRichTab(tab: RadiantCodeTabItem): tab is Extract<RadiantCodeTabItem, { html: string; content: string }> {
 	return 'html' in tab;
 }
@@ -53,6 +55,16 @@ export class RadiantCodeTabs extends RadiantElement {
 	@prop({ type: String, reflect: true }) selectedKey = '';
 	@state copyStatus = '';
 
+	private copyStatusTimer: ReturnType<typeof setTimeout> | undefined;
+
+	private announce(message: string): void {
+		clearTimeout(this.copyStatusTimer);
+		this.copyStatus = message;
+		this.copyStatusTimer = setTimeout(() => {
+			this.copyStatus = '';
+		}, COPY_STATUS_TIMEOUT_MS);
+	}
+
 	private resolveTabs(): RadiantCodeTabItem[] {
 		if (Array.isArray(this.tabs) && this.tabs.length > 0) {
 			return this.tabs;
@@ -74,11 +86,16 @@ export class RadiantCodeTabs extends RadiantElement {
 	private handleCopy = async (tab: RadiantCodeTabItem): Promise<void> => {
 		try {
 			await navigator.clipboard.writeText(tabClipboardText(tab));
-			this.copyStatus = `${tab.label} copied to clipboard`;
-		} catch (error) {
-			console.error('Failed to copy code', error);
+			this.announce(`${tab.label} copied to clipboard`);
+		} catch {
+			this.announce(`Failed to copy ${tab.label}`);
 		}
 	};
+
+	override disconnectedCallback(): void {
+		clearTimeout(this.copyStatusTimer);
+		super.disconnectedCallback();
+	}
 
 	@onEvent({ selector: 'rui-tabs', type: 'rui-change' })
 	onTabChange(event: Event): void {

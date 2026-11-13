@@ -29,3 +29,7 @@ radiant-copy-for-llm {
 .docs-copy-for-llm__icon--check {
 	@apply hidden;
 }
+
+.docs-copy-for-llm__label {
+	@apply pointer-events-none whitespace-nowrap text-current;
+}

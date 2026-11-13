@@ -1,56 +1,29 @@
 import { eco } from '@ecopages/core';
 import type { JsxRenderable } from '@ecopages/jsx';
-import {
-	RuiBreadcrumb,
-	RuiBreadcrumbItem,
-	RuiBreadcrumbLink,
-	RuiBreadcrumbList,
-	RuiBreadcrumbPage,
-	RuiBreadcrumbSeparator,
-} from '@ecopages/radiant-ui/breadcrumb';
 import { entries, getEntryBySegments } from 'ecopages:content/components';
 import { getComponent, getEntryDependencies } from 'ecopages:content/components/server';
 import type { Entry } from 'ecopages:content/components';
 import { DocsLayout } from '@/layouts/docs-layout';
-import { docsNav } from '@/lib/content-nav';
+import { DOCS_ROOT } from '@/content/components';
 import { getDocsLlmUrl } from '@/lib/docs/docs-llm-url';
 import { CopyForLlm } from '@/components/copy-for-llm';
+import { DocsBreadcrumb } from '@/components/docs-breadcrumb';
 
-const DocsBreadcrumb = ({ entry }: { entry: Entry }) => {
-	const group = docsNav.groups.find((navGroup) => navGroup.items.some((item) => item.slug === entry.slug));
-	const groupLink = group?.items[0];
-
-	return (
-		<div class="unstyled">
-			<RuiBreadcrumb label="Page location">
-				<RuiBreadcrumbList>
-					<RuiBreadcrumbItem>
-						<RuiBreadcrumbLink href="/">Home</RuiBreadcrumbLink>
-					</RuiBreadcrumbItem>
-					<RuiBreadcrumbSeparator />
-					<RuiBreadcrumbItem>
-						<RuiBreadcrumbLink href="/docs/getting-started/introduction">Docs</RuiBreadcrumbLink>
-					</RuiBreadcrumbItem>
-					{group && groupLink ? (
-						<>
-							<RuiBreadcrumbSeparator />
-							<RuiBreadcrumbItem>
-								<RuiBreadcrumbLink href={groupLink.href}>{group.name}</RuiBreadcrumbLink>
-							</RuiBreadcrumbItem>
-						</>
-					) : null}
-					<RuiBreadcrumbSeparator />
-					<RuiBreadcrumbItem>
-						<RuiBreadcrumbPage>{entry.title}</RuiBreadcrumbPage>
-					</RuiBreadcrumbItem>
-				</RuiBreadcrumbList>
-			</RuiBreadcrumb>
-		</div>
-	);
-};
+/**
+ * @remarks
+ * Returns `undefined` for an empty slug so the layout renders no pagination
+ * instead of matching a `/docs/` href that no nav item has.
+ */
+function docsHref(slug: string | string[] | undefined): string | undefined {
+	const segments = [slug ?? []].flat().filter(Boolean);
+	return segments.length > 0 ? `${DOCS_ROOT}/${segments.join('/')}` : undefined;
+}
 
 export default eco.page<{ entry: Entry }, JsxRenderable>({
-	layout: DocsLayout,
+	layout: {
+		component: DocsLayout,
+		props: ({ params }) => ({ currentHref: docsHref(params?.slug) }),
+	},
 	dependencies: async ({ props }) => {
 		const entryDependencies = await getEntryDependencies(props.entry.slug);
 		return {

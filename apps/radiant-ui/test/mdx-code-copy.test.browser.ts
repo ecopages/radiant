@@ -1,8 +1,10 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { transformerCopyButton } from '@rehype-pretty/transformers';
-import type { Root } from 'hast';
+import type { Element, Root } from 'hast';
+import rehypePrettyCode from 'rehype-pretty-code';
+import { unified } from 'unified';
 import { rehypePrettyCopyCompatibility } from '../src/mdx/rehype-pretty-copy-compatibility';
-import '../src/layouts/docs-layout/docs-layout.script';
+import '../src/layouts/base-layout/base-layout.script';
 
 describe('transformerCopyButton', () => {
 	test('embeds the source and click behavior in each highlighted code block', () => {
@@ -51,6 +53,48 @@ describe('rehypePrettyCopyCompatibility', () => {
 			children: [{ type: 'text', value: 'Copy' }],
 		});
 		expect(tree.children).toHaveLength(1);
+	});
+});
+
+describe('copy button placement', () => {
+	test('is a child of the figure and not a descendant of code', async () => {
+		const tree: Root = {
+			type: 'root',
+			children: [
+				{
+					type: 'element',
+					tagName: 'pre',
+					properties: {},
+					children: [
+						{
+							type: 'element',
+							tagName: 'code',
+							properties: { className: ['language-js'] },
+							children: [{ type: 'text', value: 'console.log(1)' }],
+						},
+					],
+				},
+			],
+		};
+
+		const result = (await unified()
+			.use(rehypePrettyCode, {
+				theme: { light: 'light-plus', dark: 'dark-plus' },
+				transformers: [transformerCopyButton()],
+			})
+			.use(rehypePrettyCopyCompatibility)
+			.run(tree)) as Root;
+
+		const figure = result.children.find(
+			(child): child is Element => child.type === 'element' && child.tagName === 'figure',
+		);
+		expect(figure).toBeDefined();
+		const childTags = figure?.children.filter((c): c is Element => c.type === 'element').map((c) => c.tagName);
+		expect(childTags).toContain('button');
+		const code = JSON.stringify(
+			figure?.children.find((c): c is Element => c.type === 'element' && c.tagName === 'pre'),
+		);
+		expect(code).not.toContain('"tagName":"button"');
 	});
 });
 

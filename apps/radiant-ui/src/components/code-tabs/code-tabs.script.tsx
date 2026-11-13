@@ -36,6 +36,8 @@ export type RadiantCodeTabsProps = {
 	selectedKey?: string;
 };
 
+const COPY_STATUS_TIMEOUT_MS = 2000;
+
 function isRichTab(tab: RadiantCodeTabItem): tab is Extract<RadiantCodeTabItem, { html: string; content: string }> {
 	return 'html' in tab;
 }
@@ -53,6 +55,16 @@ export class RadiantCodeTabs extends RadiantElement {
 	@prop({ type: String }) defaultSelectedKey = '';
 	@prop({ type: String, reflect: true }) selectedKey = '';
 	@state copyStatus = '';
+
+	private copyStatusTimer: ReturnType<typeof setTimeout> | undefined;
+
+	private announce(message: string): void {
+		clearTimeout(this.copyStatusTimer);
+		this.copyStatus = message;
+		this.copyStatusTimer = setTimeout(() => {
+			this.copyStatus = '';
+		}, COPY_STATUS_TIMEOUT_MS);
+	}
 	@state themeImport = DOCS_DEFAULT_THEME_IMPORT;
 	private rootObserver: MutationObserver | null = null;
 
@@ -69,6 +81,7 @@ export class RadiantCodeTabs extends RadiantElement {
 	override disconnectedCallback(): void {
 		this.rootObserver?.disconnect();
 		this.rootObserver = null;
+		clearTimeout(this.copyStatusTimer);
 		super.disconnectedCallback();
 	}
 
@@ -100,9 +113,9 @@ export class RadiantCodeTabs extends RadiantElement {
 			await navigator.clipboard.writeText(
 				withThemeImport(tab, isRichTab(tab) ? tab.content : tab.code, this.themeImport),
 			);
-			this.copyStatus = `${tab.label} copied to clipboard`;
-		} catch (error) {
-			console.error('Failed to copy code', error);
+			this.announce(`${tab.label} copied to clipboard`);
+		} catch {
+			this.announce(`Failed to copy ${tab.label}`);
 		}
 	};
 

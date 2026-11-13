@@ -7,7 +7,7 @@
 @reference '../../styles/tailwind.css';
 
 .docs-layout {
-	@apply min-h-svh h-svh min-w-0;
+	@apply h-svh min-h-svh min-w-0;
 	--rui-sidebar-background: var(--color-background);
 
 	.rui-sidebar-provider__site-header-inner {
@@ -15,7 +15,7 @@
 	}
 
 	.rui-sidebar-provider__site-header-start {
-		@apply gap-2 md:gap-4;
+		@apply min-w-0 gap-2 md:gap-4;
 	}
 
 	.docs-layout__content {
@@ -38,10 +38,14 @@
 		@apply mt-16 flex flex-col justify-between gap-4 border-t border-border/40 pt-8 sm:flex-row;
 
 		a {
-			@apply flex flex-1 flex-col gap-1 rounded-lg border border-border/40 bg-background-accent/10 p-4 no-underline transition-all duration-200 hover:border-border/80 hover:bg-background-accent/40;
+			@apply flex flex-1 flex-col gap-1 rounded-lg border border-border/40 bg-background-accent/10 p-4 no-underline transition-colors duration-200;
+
+			@media (hover: hover) {
+				@apply hover:border-border/80 hover:bg-background-accent/40;
+			}
 
 			.pagination-label {
-				@apply font-mono text-[10px] uppercase tracking-widest text-on-background/75 transition-colors;
+				@apply font-mono text-[10px] uppercase tracking-widest text-on-background/75;
 			}
 
 			.pagination-title {

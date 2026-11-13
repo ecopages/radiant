@@ -1,12 +1,44 @@
 import { eco } from '@ecopages/core';
 import type { JsxRenderable } from '@ecopages/jsx';
-import './docs-pagination.script';
+import { docsNav, findAdjacentNavItems, flattenContentNav } from '@/lib/content-nav';
 
-export const DocsPagination = eco.component<Record<string, never>, JsxRenderable>({
-	dependencies: {
-		scripts: ['./docs-pagination.script.tsx'],
-	},
-	render: () => {
-		return <radiant-docs-pagination class="docs-layout__pagination" />;
+export type DocsPaginationProps = {
+	currentHref?: string;
+};
+
+const pages = flattenContentNav(docsNav);
+
+/**
+ * Previous and next links for the current docs page, rendered on the server.
+ *
+ * @remarks
+ * Every client navigation fetches and swaps the page region that contains this
+ * nav, so the links follow the route without any client code.
+ */
+export const DocsPagination = eco.component<DocsPaginationProps, JsxRenderable>({
+	render: ({ currentHref }) => {
+		const adjacent = currentHref ? findAdjacentNavItems(pages, currentHref) : null;
+		if (!adjacent || (!adjacent.prev && !adjacent.next)) {
+			return null;
+		}
+
+		return (
+			<nav class="docs-layout__pagination" aria-label="Pagination">
+				{adjacent.prev ? (
+					<a href={adjacent.prev.href} class="group prev" rel="prev">
+						<span class="pagination-label">Previous</span>
+						<span class="pagination-title">{adjacent.prev.title}</span>
+					</a>
+				) : (
+					<div></div>
+				)}
+				{adjacent.next ? (
+					<a href={adjacent.next.href} class="group next" rel="next">
+						<span class="pagination-label">Next</span>
+						<span class="pagination-title">{adjacent.next.title}</span>
+					</a>
+				) : null}
+			</nav>
+		);
 	},
 });

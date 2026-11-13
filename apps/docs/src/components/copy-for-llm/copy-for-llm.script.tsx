@@ -95,6 +95,7 @@ export class RadiantCopyForLlm extends RadiantElement {
 
 	override render() {
 		return (
+			<>
 			<RuiButton
 				type="button"
 				variant="outline"
@@ -113,8 +114,12 @@ export class RadiantCopyForLlm extends RadiantElement {
 				<span class="docs-copy-for-llm__icon docs-copy-for-llm__icon--check" aria-hidden="true">
 					{copyForLlmCheckIcon}
 				</span>
-				{this.label}
+				<span class="docs-copy-for-llm__label">{this.label}</span>
 			</RuiButton>
+			<span class="sr-only" role="status" aria-live="polite">
+				{this.copyState === 'copied' ? 'Page copied for LLM' : this.copyState === 'error' ? 'Could not copy page' : ''}
+			</span>
+			</>
 		);
 	}
 }

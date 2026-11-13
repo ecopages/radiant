@@ -18,13 +18,13 @@ allowBuilds:
     msw: false
 
 minimumReleaseAgeExclude:
-    - '@ecopages/browser-router@0.7.0'
-    - '@ecopages/content-processor@0.7.0'
-    - '@ecopages/core@0.7.0'
-    - '@ecopages/dev-toolbar@0.7.0'
-    - '@ecopages/ecopages-jsx@0.7.0'
-    - '@ecopages/file-system@0.7.0'
-    - '@ecopages/lightningcss-processor@0.7.0'
-    - '@ecopages/mdx@0.7.0'
-    - '@ecopages/postcss-processor@0.7.0'
-    - ecopages@0.7.0
+    - '@ecopages/browser-router@0.7.0 || 0.7.1'
+    - '@ecopages/content-processor@0.7.0 || 0.7.1'
+    - '@ecopages/core@0.7.0 || 0.7.1'
+    - '@ecopages/dev-toolbar@0.7.0 || 0.7.1'
+    - '@ecopages/ecopages-jsx@0.7.0 || 0.7.1'
+    - '@ecopages/file-system@0.7.0 || 0.7.1'
+    - '@ecopages/lightningcss-processor@0.7.0 || 0.7.1'
+    - '@ecopages/mdx@0.7.0 || 0.7.1'
+    - '@ecopages/postcss-processor@0.7.0 || 0.7.1'
+    - ecopages@0.7.0 || 0.7.1

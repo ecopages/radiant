@@ -141,6 +141,9 @@ jobs:
             - name: Install Playwright browsers
               run: pnpm exec playwright install chromium --with-deps
 
+            - name: Run docs unit and browser tests
+              run: pnpm --filter radiant-docs test
+
             # The suite's `before` hook builds the docs app itself, which also runs the
             # rendered-HTML assertion. Serving is `python3 -m http.server`, preinstalled here.
             - name: Run docs e2e tests
