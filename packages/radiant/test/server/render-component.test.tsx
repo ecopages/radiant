@@ -8,7 +8,6 @@ import {
 	onContextUpdate,
 	provideContext,
 } from '../../src/context';
-import { ContextEventsTypes } from '../../src/context/events';
 import type { UnknownContext } from '../../src/context/types';
 import { registerSsrPreparationCallback } from '../../src/core/ssr-preparation';
 import { attr } from '../../src/decorators/attr';
@@ -205,16 +204,12 @@ const singleDeliveryContext = createContext<{ n: number }>(Symbol('render-compon
 class RenderComponentSingleDeliveryCard extends RadiantElement {
 	@consumeContext(singleDeliveryContext) contextProvider!: ContextProvider<typeof singleDeliveryContext>;
 	connectedContextCalls = 0;
-	mountedEvents = 0;
 	selectorCalls = 0;
 	prepareCount = 0;
 	renderCount = 0;
 
 	constructor() {
 		super();
-		this.addEventListener(ContextEventsTypes.MOUNTED, () => {
-			this.mountedEvents += 1;
-		});
 		registerSsrPreparationCallback(this, () => {
 			this.prepareCount += 1;
 		});
@@ -374,7 +369,6 @@ describe('render-component server helpers', () => {
 		expect(initializedValue).toBe(5);
 		expect(rendered.markup).toContain('<p>5</p>');
 		expect(host?.connectedContextCalls).toBe(1);
-		expect(host?.mountedEvents).toBe(__LEGACY_ENVIRONMENT__ ? 0 : 1);
 		expect(host?.selectorCalls).toBe(1);
 		expect(host?.prepareCount).toBe(1);
 		expect(host?.renderCount).toBe(1);

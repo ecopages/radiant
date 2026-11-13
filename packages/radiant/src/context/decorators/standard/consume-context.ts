@@ -23,33 +23,28 @@ export function consumeContext<C extends UnknownContext>(consumedContext: C) {
 			}
 			return assign;
 		};
-		const initializeConsumedContextForHost = (host: T, options: { emitMounted?: boolean } = {}) => {
+		const initializeConsumedContextForHost = (host: T) => {
 			const hostRecord = host as T & Record<string, unknown>;
 
 			if (hostRecord[contextName]) {
 				return true;
 			}
 
-			return connectConsumedContext(host, consumedContext, assignerFor(host), options);
+			return connectConsumedContext(host, consumedContext, assignerFor(host));
 		};
 
 		context.addInitializer(function (this: T) {
-			bootstrapSsrConsumedContext(
-				this,
-				consumedContext,
-				(provider) => {
-					assignContextProvider(this, provider);
-				},
-				{ emitMounted: true },
-			);
+			bootstrapSsrConsumedContext(this, consumedContext, (provider) => {
+				assignContextProvider(this, provider);
+			});
 
 			this.registerConnectedCallback(() => {
-				if (initializeConsumedContextForHost(this, { emitMounted: true })) {
+				if (initializeConsumedContextForHost(this)) {
 					return;
 				}
 
 				queueMicrotask(() => {
-					initializeConsumedContextForHost(this, { emitMounted: true });
+					initializeConsumedContextForHost(this);
 				});
 			});
 		});

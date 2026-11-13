@@ -120,15 +120,14 @@ describe('a provider defined after its consumer', () => {
 	test('delivers once when the microtask retry answers before the provider announces itself', async () => {
 		const context = createContext<Shared>(Symbol('once'));
 		const [providerTag, consumerTag] = [nextTag('provider'), nextTag('consumer')];
-		defineConsumer(consumerTag, context, []);
-		const mounted: Event[] = [];
+		const Consumer = defineConsumer(consumerTag, context, []);
+		const deliveries = vi.spyOn(Consumer.prototype, 'connectedContextCallback');
 		document.body.innerHTML = `<${providerTag}><${consumerTag}></${consumerTag}></${providerTag}>`;
-		document.querySelector(consumerTag)?.addEventListener('context-mounted', (event) => mounted.push(event));
 
 		defineProvider(providerTag, context);
 		await flush();
 
-		expect(mounted).toHaveLength(1);
+		expect(deliveries).toHaveBeenCalledOnce();
 	});
 
 	test('ignores a foreign context-provider event without a context', async () => {

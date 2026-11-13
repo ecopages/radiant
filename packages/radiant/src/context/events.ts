@@ -6,8 +6,6 @@ import type { Context, ContextCallback, ContextType, UnknownContext } from './ty
 export enum ContextEventsTypes {
 	SUBSCRIPTION_REQUEST = 'context-subscription-request',
 	CONTEXT_REQUEST = 'context-request',
-	ON_MOUNT = 'context-on-mount',
-	MOUNTED = 'context-mounted',
 	PROVIDER = 'context-provider',
 }
 
@@ -52,19 +50,6 @@ type SelectedContextSubscription<T extends UnknownContext, Selected> = {
 
 export type ContextSubscription<T extends UnknownContext, Selected = ContextType<T>> =
 	DirectContextSubscription<T> | SelectedContextSubscription<T, Selected>;
-
-/**
- * An event fired by a context provider to signal that a context value has been mounted and is available for consumption.
- */
-export class ContextOnMountEvent extends CustomEvent<{ context: UnknownContext }> {
-	public constructor(context: UnknownContext) {
-		super(ContextEventsTypes.ON_MOUNT, {
-			detail: { context },
-			bubbles: true,
-			composed: true,
-		});
-	}
-}
 
 /**
  * An event fired by a context provider when it upgrades, so consumers that were already waiting can request the
@@ -129,11 +114,6 @@ declare global {
 		 * that it desires a context value to be provided by a context provider.
 		 */
 		[ContextEventsTypes.CONTEXT_REQUEST]: ContextRequestEvent<Context<unknown, unknown>>;
-		/**
-		 * A 'context-mount' event can be emitted by a context provider to signal
-		 * that a context value has been mounted and is available for consumption.
-		 */
-		[ContextEventsTypes.ON_MOUNT]: ContextOnMountEvent;
 		/**
 		 * A 'context-provider' event is emitted by a context provider when it connects or upgrades, so waiting
 		 * consumers below it can request the context again.

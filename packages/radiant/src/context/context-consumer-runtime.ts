@@ -1,7 +1,7 @@
 import type { ContextHostLike } from './context-host';
 import { clearPendingContextRequest, registerPendingContextRequest } from './context-late-provider';
 import { resolveAmbientSsrContextProvider } from './context-ssr-bridge';
-import { ContextEventsTypes, ContextRequestEvent, ContextSubscriptionRequestEvent } from './events';
+import { ContextRequestEvent, ContextSubscriptionRequestEvent } from './events';
 import type { ContextCallback, ContextType, UnknownContext } from './types';
 
 type ConsumedContextAssignment = (provider: unknown) => void;
@@ -24,7 +24,7 @@ type ContextSelectionRequest<TContext extends UnknownContext, Selected = Context
  *
  * @remarks A server host resolves its consumed context before `initialize` and again in `prepareForSsr`, and a
  * server-rendered controller again when it connects. Keying by the assignment keeps each field's
- * `connectedContextCallback` and mounted event to one per provider.
+ * `connectedContextCallback` to one per provider.
  */
 const announcedSsrProviders = new WeakMap<ConsumedContextAssignment, unknown>();
 
@@ -50,7 +50,6 @@ export function initializeConsumedContext(
 	host: ContextHostLike,
 	context: UnknownContext,
 	assign: ConsumedContextAssignment,
-	options: { emitMounted?: boolean } = {},
 ): boolean {
 	const provider = resolveAmbientSsrContextProvider(context);
 
@@ -67,10 +66,6 @@ export function initializeConsumedContext(
 	announcedSsrProviders.set(assign, provider);
 	host.connectedContextCallback(context);
 
-	if (options.emitMounted) {
-		host.dispatchEvent(new CustomEvent(ContextEventsTypes.MOUNTED, { detail: provider }));
-	}
-
 	return true;
 }
 
@@ -81,15 +76,10 @@ export function requestConsumedContext(
 	host: ContextHostLike,
 	context: UnknownContext,
 	assign: ConsumedContextAssignment,
-	options: { emitMounted?: boolean } = {},
 ): boolean {
 	const callback = (provider: unknown) => {
 		assign(provider);
 		host.connectedContextCallback(context);
-
-		if (options.emitMounted) {
-			host.dispatchEvent(new CustomEvent(ContextEventsTypes.MOUNTED, { detail: provider }));
-		}
 	};
 	const dispatch = () => {
 		const event = new ContextRequestEvent(context, callback);

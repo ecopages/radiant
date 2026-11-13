@@ -21,12 +21,11 @@ export function bootstrapSsrConsumedContext(
 	host: ContextHostLike,
 	context: UnknownContext,
 	assign: ConsumedContextAssignment,
-	options: { emitMounted?: boolean } = {},
 ): void {
 	registerSsrPreparationCallback(
 		host,
 		() => {
-			initializeConsumedContext(host, context, assign, options);
+			initializeConsumedContext(host, context, assign);
 		},
 		true,
 	);
@@ -71,13 +70,12 @@ export function connectConsumedContext(
 	host: ContextHostLike,
 	context: UnknownContext,
 	assign: ConsumedContextAssignment,
-	options: { emitMounted?: boolean } = {},
 ): boolean {
-	if (initializeConsumedContext(host, context, assign, options)) {
+	if (initializeConsumedContext(host, context, assign)) {
 		return true;
 	}
 
-	return requestConsumedContext(host, context, assign, options);
+	return requestConsumedContext(host, context, assign);
 }
 
 /**
