@@ -107,4 +107,4 @@ Read only the modules relevant to the task. Each file is one level deep from thi
 
 ## Resources
 
-Start with this skill pack. Full docs index: [llms.txt](/llms.txt); page exports under `/llms-content/.../*.txt`.
+Start with this skill pack. Full docs index: [llms.txt](/llms.txt); page exports under `/docs-llm/<section>/<slug>.md`.

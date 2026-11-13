@@ -9,15 +9,16 @@
 	"scripts": {
 		"start": "pnpm run build && ecopages start",
 		"dev": "pnpm --filter @ecopages/radiant-ui build:lib && pnpm run sync:font-assets && pnpm run generate:llms && ecopages dev",
-		"build": "pnpm --filter @ecopages/radiant-ui build:lib && pnpm run sync:font-assets && pnpm run generate:llms && ecopages build && tsx scripts/create-clean-url-aliases.ts",
-		"preview": "pnpm run sync:font-assets && pnpm run generate:llms && ecopages preview && tsx scripts/create-clean-url-aliases.ts",
+		"build": "pnpm --filter @ecopages/radiant-ui build:lib && pnpm run sync:font-assets && pnpm run generate:llms && pnpm run generate:redirects && ecopages build && tsx scripts/create-clean-url-aliases.ts",
+		"preview": "pnpm run sync:font-assets && pnpm run generate:llms && pnpm run generate:redirects && ecopages preview && tsx scripts/create-clean-url-aliases.ts",
 		"watch:dev": "ecopages watch:dev",
 		"typecheck": "tsc --noEmit",
 		"test": "vitest run",
 		"test:all": "pnpm run test && pnpm run test:e2e",
 		"test:e2e": "node --test ./test/*.e2e.test.mjs",
 		"sync:font-assets": "node ./scripts/copy-font-assets.mjs",
-		"generate:llms": "tsx scripts/generate-llm-docs.ts"
+		"generate:llms": "tsx scripts/generate-llm-docs.ts",
+		"generate:redirects": "tsx scripts/generate-redirects.ts"
 	},
 	"devDependencies": {
 		"@ecopages/browser-router": "0.7.1",
@@ -27,7 +28,7 @@
 		"@ecopages/ecopages-jsx": "0.7.1",
 		"@ecopages/file-system": "0.7.1",
 		"@ecopages/jsx": "workspace:*",
-		"@ecopages/postcss-processor": "0.7.1",
+		"@ecopages/lightningcss-processor": "0.7.1",
 		"@ecopages/radiant": "workspace:*",
 		"@ecopages/radiant-ui": "workspace:*",
 		"@ecopages/scripts-injector": "^0.1.5",
@@ -39,7 +40,8 @@
 		"@rehype-pretty/transformers": "^0.13.2",
 		"@vitest/browser": "^4.1.12",
 		"@vitest/browser-playwright": "^4.1.12",
-		"@tailwindcss/postcss": "^4.0.0",
+		"@tailwindcss/node": "^4.3.5",
+		"@tailwindcss/oxide": "^4.3.5",
 		"@types/hast": "^3.0.4",
 		"@types/node": "^24.13.2",
 		"ecopages": "0.7.1",

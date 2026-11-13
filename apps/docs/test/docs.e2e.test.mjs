@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -213,5 +214,52 @@ test('Docs code examples copy their source', browserTestOptions, async () => {
 
 		await waitForLocatorText(copyButton, 'Copied');
 		assert.equal(await page.locator('html').getAttribute('data-docs-copied-code'), source);
+		assert.equal(await copyButton.getAttribute('aria-label'), 'Copy code');
+		await waitForLocatorText(page.locator('[data-code-copy-status]'), 'Code copied to clipboard');
 	});
+});
+
+async function statusOf(url) {
+	const response = await fetch(url);
+	await response.arrayBuffer();
+	return response.status;
+}
+
+test('Docs redirects send every moved page to a built page', async () => {
+	const rules = (await readFile(resolve(docsDirectory, 'dist/client/_redirects'), 'utf8')).trim().split('\n');
+	assert.ok(rules.length > 0);
+
+	for (const rule of rules) {
+		const [from, to, status] = rule.split(' ');
+		assert.equal(status, '301');
+		assert.equal(await statusOf(`${origin}${to}`), 200, `${from} redirects to missing ${to}`);
+		assert.equal(await statusOf(`${origin}${from}`), 404, `${from} is still served as a page`);
+	}
+});
+
+test('Docs pages link Markdown exports and keep the legacy text exports', async () => {
+	const html = await (await fetch(`${origin}/docs/signals/signals-overview`)).text();
+	const alternate = html.match(/<link rel="alternate" type="text\/markdown" href="([^"]+)"/)?.[1];
+	assert.ok(alternate, 'page advertises a Markdown alternate');
+	assert.equal(new URL(alternate).pathname, '/docs-llm/signals/signals-overview.md');
+	assert.match(html, /llm-url="\/docs-llm\/signals\/signals-overview\.md"/);
+
+	const markdown = await fetch(`${origin}/docs-llm/signals/signals-overview.md`);
+	assert.equal(markdown.status, 200);
+	const body = await markdown.text();
+	const legacy = await fetch(`${origin}/llms-content/packages/signals-overview.txt`);
+	assert.equal(legacy.status, 200);
+	assert.equal(await legacy.text(), body);
+
+	const llmsTxt = await (await fetch(`${origin}/llms.txt`)).text();
+	assert.match(llmsTxt, /\/docs-llm\/getting-started\/introduction\.md\)/);
+	assert.doesNotMatch(llmsTxt, /\/llms-content\//);
+});
+
+test('Docs section index pages are served at the section URL', async () => {
+	const html = await (await fetch(`${origin}/docs/decorators`)).text();
+	assert.match(html, /<link rel="canonical" href="[^"]*\/docs\/decorators"/);
+	assert.match(html, /id="typing-decorated-fields"/);
+	assert.equal(await statusOf(`${origin}/docs/context`), 200);
+	assert.equal(await statusOf(`${origin}/docs/decorators/index/`), 404);
 });

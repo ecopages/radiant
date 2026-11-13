@@ -21,4 +21,4 @@ Read only the module relevant to your task:
 ## Full documentation
 
 - [llms.txt](/llms.txt) — txt index of all generated docs
-- `/llms-content/<section>/<slug>.txt` — per-page exports linked from the index
+- `/docs-llm/<section>/<slug>.md` — per-page Markdown exports linked from the index

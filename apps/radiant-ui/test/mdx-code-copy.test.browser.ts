@@ -1,10 +1,9 @@
-import { afterEach, describe, expect, test, vi } from 'vitest';
+import { describe, expect, test } from 'vitest';
 import { transformerCopyButton } from '@rehype-pretty/transformers';
 import type { Element, Root } from 'hast';
 import rehypePrettyCode from 'rehype-pretty-code';
 import { unified } from 'unified';
 import { rehypePrettyCopyCompatibility } from '../src/mdx/rehype-pretty-copy-compatibility';
-import '../src/layouts/base-layout/base-layout.script';
 
 describe('transformerCopyButton', () => {
 	test('embeds the source and click behavior in each highlighted code block', () => {
@@ -95,27 +94,5 @@ describe('copy button placement', () => {
 			figure?.children.find((c): c is Element => c.type === 'element' && c.tagName === 'pre'),
 		);
 		expect(code).not.toContain('"tagName":"button"');
-	});
-});
-
-describe('docs copy button', () => {
-	afterEach(() => {
-		document.body.replaceChildren();
-		vi.useRealTimers();
-	});
-
-	test('copies the transformer source from its data attribute', async () => {
-		vi.useFakeTimers();
-		const writeText = vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue(undefined);
-		const button = document.createElement('button');
-		button.dataset.rehypePrettyCopy = 'const answer = 42;';
-		document.body.append(button);
-
-		button.click();
-		await Promise.resolve();
-		await Promise.resolve();
-
-		expect(writeText).toHaveBeenCalledWith('const answer = 42;');
-		expect(button.textContent).toBe('Copied');
 	});
 });

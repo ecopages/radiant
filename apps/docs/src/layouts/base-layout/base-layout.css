@@ -45,3 +45,7 @@ main {
 theme-toggle {
 	@apply inline-flex;
 }
+
+.code-copy-status {
+	@apply sr-only;
+}

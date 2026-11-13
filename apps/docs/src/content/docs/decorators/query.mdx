@@ -1,7 +1,6 @@
 ---
 title: "@query"
 description: "Query and cache references to elements within your host DOM."
-group: Decorators
 order: 7
 ---
 
@@ -51,7 +50,7 @@ stableEl!: HTMLElement | null;
 
 ### Type Safety
 
-A single-element query is `T | null` and an `all: true` query is `T[]`, empty when nothing matches. Under standard decorators, any other field type does not compile: see [Typing Decorated Fields](/docs/decorators).
+A single-element query is `T | null` and an `all: true` query is `T[]`, empty when nothing matches. Under standard decorators, any other field type does not compile: see [Typing Decorated Fields](/docs/decorators#typing-decorated-fields).
 
 ```typescript
 @query({ ref: 'avatar' }) avatar!: HTMLImageElement | null;

@@ -89,7 +89,9 @@ Segmented controls render as an inset rail: the pressed option derives its corne
 
 ### 3. Add the MDX page
 
-Create `src/content/components/<slug>.mdx` with frontmatter (`title`, `description`, `category`).
+Create `src/content/components/<section>/<slug>.mdx` with frontmatter (`title`, `description`, optional `order`). The folder is the sidebar section: `actions`, `forms`, `layout`, `navigation`, `overlays`, `feedback` or `data-display` (plus `getting-started` for guides). Section titles, icons and order live in `DOCS_SECTION_CONFIG` in `src/content/components.ts`; pages within a section sort by `order`, then slug. The page URL is `/docs/<section>/<slug>`.
+
+When a page moves to another section, add its old path to `MOVED_DOCS_PATHS` in `src/lib/docs/moved-docs-paths.ts`. The build writes a Cloudflare Pages `_redirects` file from that map (`pnpm run generate:redirects`), and `scripts/generate-redirects.test.ts` checks that every old path lands on an existing page.
 
 Wire dependencies so demo custom elements hydrate:
 
@@ -114,7 +116,7 @@ Use `<Demo of={Default} meta={ButtonMeta} />` under **Try it**. Put copy-paste e
 
 Use `<Canvas of={Destructive} meta={ButtonMeta} />` for extra stories that should preview without controls.
 
-For a **behavior host** (the script queries `data-ref` / `data-*` / roles in light DOM — never BEM classes), Usage shows the `Rui*` helpers. Also document the query contract: a **Custom markup** section and an API **Light-DOM contract** table so authors can stamp the same targets without the helpers. Diff every snippet against the view — do not invent props (`id` vs `value`) or nest chrome a helper already renders. Add `<Canvas>` stories for extra capabilities (multiple selection, range mode, …). Playbook: [`.agents/skills/radiant-ui-docs/`](../../.agents/skills/radiant-ui-docs/SKILL.md). Tag Group (`src/content/components/tag-group.mdx`) is the filled example.
+For a **behavior host** (the script queries `data-ref` / `data-*` / roles in light DOM — never BEM classes), Usage shows the `Rui*` helpers. Also document the query contract: a **Custom markup** section and an API **Light-DOM contract** table so authors can stamp the same targets without the helpers. Diff every snippet against the view — do not invent props (`id` vs `value`) or nest chrome a helper already renders. Add `<Canvas>` stories for extra capabilities (multiple selection, range mode, …). Playbook: [`.agents/skills/radiant-ui-docs/`](../../.agents/skills/radiant-ui-docs/SKILL.md). Tag Group (`src/content/components/data-display/tag-group.mdx`) is the filled example.
 
 ### 4. Multiple stories
 
@@ -128,7 +130,8 @@ Reuse fixtures such as option lists from `src/content/stories/demo-data.ts` when
 
 - `test/story-previews.test.browser.ts` — complex `render` output smoke tests
 - `test/canvas.test.browser.ts` — client repaint when story context args change
-- `test/mdx-code-copy.test.browser.ts` — the copy button is a sibling of `pre` and copies from `data-rehype-pretty-copy`
+- `test/mdx-code-copy.test.browser.ts` — the copy button is a sibling of `pre`
+- `src/layouts/base-layout/code-copy.test.browser.ts` — the click handler copies from `data-rehype-pretty-copy`, keeps the accessible name "Copy code" and announces the result through the base layout's `role="status"` region
 
 Add a render test when a story layout is easy to regress (trees, sidebars, overlays).
 
@@ -140,10 +143,12 @@ Add a render test when a story layout is easy to regress (trees, sidebars, overl
 pnpm --filter @ecopages/radiant-ui-docs generate:llms
 ```
 
-Runs before `dev`, `build` and `preview`. Pages appear in sidebar order (frontmatter `order`).
+Runs before `dev`, `build` and `preview`. Pages appear in sidebar order (section, then frontmatter `order`).
 
-The command writes `llms.txt` and one raw-MDX text export per page under `src/public/llms-content/`. The export tree is generator-owned and staged before replacement, so a failed generation preserves the previous complete tree. `ECOPAGES_BASE_URL` is the canonical origin for configuration, generated links, and page metadata.
+The command writes `llms.txt` and one raw-MDX Markdown export per page at `src/public/docs-llm/<section>/<slug>.md`. Pages with `llms: false` in frontmatter are left out. Each page links its export as `rel="alternate"` (`src/lib/docs/docs-llm-url.ts`) and Copy for LLM fetches it. For one release the generator also writes the old `src/public/llms-content/<slug>.txt` exports, under the slug a page had before the section move (`/llms-content/button.txt`), so published links keep working; `LEGACY_LLMS_DIR` in `scripts/generate-llm-docs.ts` says what to delete afterwards. Both trees are generator-owned and staged before replacement, so a failed generation preserves the previous complete trees. `ECOPAGES_BASE_URL` is the canonical origin for configuration, generated links, and page metadata.
 
 ## Deployment
 
 The build writes public files to `apps/radiant-ui/dist/client` and private server files to `dist/server`. Configure the Cloudflare Pages build output directory as `apps/radiant-ui/dist/client` when the repository root is the build root (or `dist/client` when this app is the build root).
+
+The build also writes `dist/client/_redirects` from `src/lib/docs/moved-docs-paths.ts`. Cloudflare Pages reads it and answers every docs URL from before the section-folder move with a 301 to the page's current URL.

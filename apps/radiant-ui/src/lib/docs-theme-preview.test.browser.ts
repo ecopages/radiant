@@ -303,7 +303,7 @@ describe('docs-theme-preview', () => {
 		history.replaceState(
 			history.state,
 			'',
-			`/docs/tabs?keep=1&${DOCS_THEME_QUERY_KEY}=cloudflare&${DOCS_MODE_QUERY_KEY}=dark&rui-primary-hue=310#examples`,
+			`/docs/navigation/tabs?keep=1&${DOCS_THEME_QUERY_KEY}=cloudflare&${DOCS_MODE_QUERY_KEY}=dark&rui-primary-hue=310#examples`,
 		);
 
 		expect(readDocsThemeSelection()).toEqual({ colors: 'cloudflare' });
@@ -338,7 +338,7 @@ describe('docs-theme-preview', () => {
 		history.replaceState(
 			history.state,
 			'',
-			`/docs/tabs?${DOCS_THEME_QUERY_KEY}=rui-default&${DOCS_MODE_QUERY_KEY}=dark&rui-primary-hue=310&rui-border-alpha=80`,
+			`/docs/navigation/tabs?${DOCS_THEME_QUERY_KEY}=rui-default&${DOCS_MODE_QUERY_KEY}=dark&rui-primary-hue=310&rui-border-alpha=80`,
 		);
 
 		runBootScript();
@@ -356,7 +356,7 @@ describe('docs-theme-preview', () => {
 		history.replaceState(
 			history.state,
 			'',
-			`/docs/tabs?${DOCS_THEME_QUERY_KEY}=rui-default&rui-primary-hue=310&rui-border-alpha=80`,
+			`/docs/navigation/tabs?${DOCS_THEME_QUERY_KEY}=rui-default&rui-primary-hue=310&rui-border-alpha=80`,
 		);
 
 		runBootScript();

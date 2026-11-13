@@ -30,7 +30,7 @@ export const meta = {
 				</RuiBreadcrumbItem>
 				<RuiBreadcrumbSeparator />
 				<RuiBreadcrumbItem>
-					<RuiBreadcrumbLink href="/docs/button">Components</RuiBreadcrumbLink>
+					<RuiBreadcrumbLink href="/docs/actions/button">Components</RuiBreadcrumbLink>
 				</RuiBreadcrumbItem>
 				<RuiBreadcrumbSeparator />
 				<RuiBreadcrumbItem>

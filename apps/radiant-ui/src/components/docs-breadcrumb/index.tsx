@@ -13,9 +13,9 @@ import { docsNav } from '@/lib/content-nav';
 
 export const DocsBreadcrumb = eco.component<{ entry: Entry }, JsxRenderable>({
 	render: ({ entry }) => {
-		const group = docsNav.groups.find((navGroup) => navGroup.items.some((item) => item.slug === entry.slug));
-		const groupLink = group?.items[0];
-		const docsHref = docsNav.groups[0]?.items[0]?.href ?? '/';
+		const section = docsNav.sections.find((navSection) => navSection.id === entry.segments[0]);
+		const sectionLink = section?.items[0];
+		const docsHref = docsNav.sections[0]?.items[0]?.href ?? '/';
 
 		return (
 			<div class="unstyled">
@@ -28,11 +28,11 @@ export const DocsBreadcrumb = eco.component<{ entry: Entry }, JsxRenderable>({
 						<RuiBreadcrumbItem>
 							<RuiBreadcrumbLink href={docsHref}>Docs</RuiBreadcrumbLink>
 						</RuiBreadcrumbItem>
-						{group && groupLink ? (
+						{section && sectionLink ? (
 							<>
 								<RuiBreadcrumbSeparator />
 								<RuiBreadcrumbItem>
-									<RuiBreadcrumbLink href={groupLink.href}>{group.name}</RuiBreadcrumbLink>
+									<RuiBreadcrumbLink href={sectionLink.href}>{section.title}</RuiBreadcrumbLink>
 								</RuiBreadcrumbItem>
 							</>
 						) : null}

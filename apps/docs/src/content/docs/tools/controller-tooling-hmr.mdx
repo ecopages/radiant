@@ -1,7 +1,6 @@
 ---
 title: "Controller Tooling & HMR"
 description: "How RadiantController registration behaves by default, when to use explicit replacement, and how to opt in under Vite and under `ecopages dev`, and what a save does to live controllers."
-group: Tools
 order: 1
 ---
 
@@ -63,7 +62,7 @@ Treat controller state as disposable during `ecopages dev`.
 
 ## Docs-App Integration
 
-This docs app re-exports `enableControllerReplacementForHmr` from [apps/docs/src/utils/radiant-browser-runtime.ts](/Users/andeeplus/github/radiant/apps/docs/src/utils/radiant-browser-runtime.ts), but it does not call it. The shared browser shell does not enable replacement, so docs pages use the default registration contract.
+This docs app re-exports `enableControllerReplacementForHmr` from [apps/docs/src/utils/radiant-browser-runtime.ts](https://github.com/ecopages/radiant/blob/main/apps/docs/src/utils/radiant-browser-runtime.ts), but it does not call it. The shared browser shell does not enable replacement, so docs pages use the default registration contract.
 
 ## Shared Runtime Integration
 

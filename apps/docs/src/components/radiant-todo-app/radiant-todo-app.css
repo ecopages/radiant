@@ -45,7 +45,14 @@
 		}
 	}
 
-	p,
+	p {
+		@apply m-0 flex w-full gap-1 text-sm text-on-background/80;
+
+		& span {
+			@apply font-semibold text-on-background;
+		}
+	}
+
 	&__count {
 		@apply m-0 flex w-full gap-1 text-sm text-on-background/80;
 

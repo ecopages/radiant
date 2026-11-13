@@ -1,7 +1,6 @@
 ---
 title: "@signal"
 description: "Declare host-aware writable signal fields on Radiant elements and components."
-group: Decorators
 order: 5
 ---
 
@@ -43,7 +42,7 @@ export class SignalCounter extends RadiantElement {
 }
 ```
 
-The field is typed `WritableSignal<number>`, and `initial` must be a `number` and `source` a `WritableSignal<number>`: see [Typing Decorated Fields](/docs/decorators).
+The field is typed `WritableSignal<number>`, and `initial` must be a `number` and `source` a `WritableSignal<number>`: see [Typing Decorated Fields](/docs/decorators#typing-decorated-fields).
 
 ## Options
 
@@ -97,6 +96,6 @@ export class SharedCounter extends RadiantElement {
 
 Signal primitives come from `@ecopages/signals`.
 
-If you need host-owned async state built on top of signals, use `createResource` from `@ecopages/radiant` (documented in [Resources](/docs/packages/signals-resources)).
+If you need host-owned async state built on top of signals, use `createResource` from `@ecopages/radiant` (documented in [Resources](/docs/signals/signals-resources)).
 
-See [Signals Overview](/docs/packages/signals-overview) for the underlying signal model.
+See [Signals Overview](/docs/signals/signals-overview) for the underlying signal model.

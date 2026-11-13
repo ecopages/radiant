@@ -6,7 +6,7 @@ import { lightningCssProcessorPlugin } from '@ecopages/lightningcss-processor';
 import { suffixNesting } from '@ecopages/lightningcss-processor/plugins/suffix-nesting';
 import { tailwindV4Preset } from '@ecopages/lightningcss-processor/presets/tailwind-v4';
 import { createDocsMdxPlugins } from './src/mdx/plugins';
-import { componentDocsFrontmatterSchema } from './src/content/components';
+import { compareDocsEntries, componentDocsFrontmatterSchema } from './src/content/components';
 import { configuredSiteOrigin } from './src/lib/docs/site-meta';
 
 export default defineConfig({
@@ -43,6 +43,7 @@ export default defineConfig({
 				collections: {
 					components: {
 						contentDir: 'content/components',
+						orderBy: compareDocsEntries,
 						schema: componentDocsFrontmatterSchema,
 						entryType: './src/content/components#ComponentDocsFrontmatter',
 					},
