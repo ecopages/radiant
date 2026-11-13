@@ -22,15 +22,7 @@ export default defineConfig({
 	integrations: [
 		ecopagesJsxPlugin({
 			mdx: {
-				...createDocsMdxPlugins({
-					remarkPlugins: [remarkMermaid],
-					rehypePrettyCode: {
-						theme: {
-							light: 'light-plus',
-							dark: 'dark-plus',
-						},
-					},
-				}),
+				...createDocsMdxPlugins({ remarkPlugins: [remarkMermaid] }),
 			},
 		}),
 	],

@@ -21,14 +21,7 @@ export default defineConfig({
 		ecopagesJsxPlugin({
 			extensions: ['.tsx'],
 			mdx: {
-				...createDocsMdxPlugins({
-					rehypePrettyCode: {
-						theme: {
-							light: 'light-plus',
-							dark: 'dark-plus',
-						},
-					},
-				}),
+				...createDocsMdxPlugins(),
 			},
 		}),
 	],
