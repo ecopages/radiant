@@ -108,7 +108,7 @@ export async function generateLlmDocs<T extends Record<string, unknown>>(
 
 		outputLines.push(`## ${formatSectionTitle(section)}`);
 
-		for (const post of sectionPosts.sort((a, b) => a.slug.localeCompare(b.slug))) {
+		for (const post of sectionPosts) {
 			const destFile = join(stagingDir, `${post.slug}.txt`);
 			const raw = await scanner.getRawContent(post.slug);
 			await fileSystem.writeAsync(destFile, raw);
