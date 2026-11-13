@@ -2,4 +2,4 @@
 '@ecopages/radiant-ui': patch
 ---
 
-`RuiNumberField` commits a typed `0` on an empty field: it sets `value` and emits `rui-change` instead of redisplaying `0` while `value` stays unset. Focusing and blurring an empty field without typing still commits nothing.
+`RuiNumberField` shows an empty field as empty instead of `0`, with no `aria-valuenow` and an empty form value, and commits a typed `0` by setting `value` and emitting `rui-change`. Stepping from empty still starts at `0` or `defaultValue`.

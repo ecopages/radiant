@@ -158,6 +158,11 @@ export class RuiNumberField extends FormAssociatedElement {
 		return `${this.uid}-input`;
 	}
 
+	/**
+	 * @remarks
+	 * Starting point for stepping and the stepper bounds only. It is not the committed value: display,
+	 * `aria-valuenow` and form submission read `value` so an empty field stays empty.
+	 */
 	private getNumericValue(): number {
 		if (typeof this.value === 'number' && Number.isFinite(this.value)) {
 			return this.value;
@@ -166,6 +171,10 @@ export class RuiNumberField extends FormAssociatedElement {
 			return this.defaultValue;
 		}
 		return 0;
+	}
+
+	private hasCommittedValue(): boolean {
+		return typeof this.value === 'number' && Number.isFinite(this.value);
 	}
 
 	private getInput(): HTMLInputElement | null {
@@ -191,15 +200,21 @@ export class RuiNumberField extends FormAssociatedElement {
 			input.id = this.inputId;
 		}
 
-		const numericValue = this.getNumericValue();
 		input.disabled = this.effectiveDisabled;
 		input.toggleAttribute('data-disabled', input.disabled);
 		input.setAttribute('role', 'spinbutton');
 		input.setAttribute('inputmode', 'decimal');
-		input.setAttribute('aria-valuenow', String(numericValue));
+
+		const committed = this.hasCommittedValue() ? this.value : undefined;
+		if (committed == null) {
+			input.removeAttribute('aria-valuenow');
+		} else {
+			input.setAttribute('aria-valuenow', String(committed));
+		}
 
 		if (!this.editing) {
-			input.value = formatNumber(numericValue, this.resolvedLocale, this.resolvedFormatOptions);
+			input.value =
+				committed == null ? '' : formatNumber(committed, this.resolvedLocale, this.resolvedFormatOptions);
 		}
 	}
 
@@ -286,7 +301,10 @@ export class RuiNumberField extends FormAssociatedElement {
 	}
 
 	protected override formValue(): FormValue {
-		return this.name ? String(this.getNumericValue()) : null;
+		if (!this.name) {
+			return null;
+		}
+		return this.hasCommittedValue() ? String(this.value) : '';
 	}
 
 	protected override formState(): FormValue {

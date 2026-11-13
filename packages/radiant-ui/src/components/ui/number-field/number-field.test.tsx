@@ -127,4 +127,31 @@ describe('RuiNumberField commit', () => {
 		expect(host.value).toBeUndefined();
 		expect(changes).toEqual([]);
 	});
+
+	it('displays an empty field with no aria-valuenow, then 0 once 0 is typed', async () => {
+		const { input } = await mount();
+
+		expect(input.value).toBe('');
+		expect(input.hasAttribute('aria-valuenow')).toBe(false);
+
+		await typeAndBlur(input, '0');
+
+		expect(input.value).toBe('0');
+		expect(input.getAttribute('aria-valuenow')).toBe('0');
+	});
+
+	it('submits an empty string for an empty named field', async () => {
+		document.body.innerHTML = `
+			<form>
+				<rui-number-field name="quantity">
+					<input data-number-field-input />
+				</rui-number-field>
+			</form>
+		`;
+		await customElements.whenDefined('rui-number-field');
+		await settled();
+
+		const form = document.querySelector('form') as HTMLFormElement;
+		expect(new FormData(form).get('quantity')).toBe('');
+	});
 });
