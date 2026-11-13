@@ -99,11 +99,7 @@ class NestedSlotSwapParent extends RadiantElement {
 @customElement('nested-slot-list-frame-test')
 class NestedSlotListFrame extends RadiantElement {
 	override render() {
-		return (
-			<ul>
-				{this.slotted}
-			</ul>
-		);
+		return <ul>{this.slotted}</ul>;
 	}
 }
 
@@ -198,9 +194,7 @@ class NestedPlainRegionCard extends RadiantElement {
 		return (
 			<div>
 				<header>{this.header}</header>
-				<main>
-					{this.slotted}
-				</main>
+				<main>{this.slotted}</main>
 			</div>
 		);
 	}
@@ -222,11 +216,7 @@ class NestedPlainRegionParent extends RadiantElement {
 @customElement('nested-query-frame-test')
 class NestedQueryFrame extends RadiantElement {
 	override render() {
-		return (
-			<ul>
-				{this.slotted}
-			</ul>
-		);
+		return <ul>{this.slotted}</ul>;
 	}
 }
 
@@ -248,11 +238,7 @@ class NestedQueryParent extends RadiantElement {
 @customElement('nested-fallback-frame-test')
 class NestedFallbackFrame extends RadiantElement {
 	override render() {
-		return (
-			<div class="frame">
-				{this.slotted ?? <em class="fallback">empty</em>}
-			</div>
-		);
+		return <div class="frame">{this.slotted ?? <em class="fallback">empty</em>}</div>;
 	}
 }
 
@@ -306,21 +292,13 @@ class NestedBareSlotParent extends RadiantElement<{ badge: string | null }> {
 @customElement('nested-html-frame-test')
 class NestedHtmlFrame extends RadiantElement {
 	override render() {
-		return (
-			<div class="frame">
-				{this.slotted}
-			</div>
-		);
+		return <div class="frame">{this.slotted}</div>;
 	}
 }
 
 class NestedLateFrame extends RadiantElement {
 	override render() {
-		return (
-			<div class="frame">
-				{this.slotted}
-			</div>
-		);
+		return <div class="frame">{this.slotted}</div>;
 	}
 }
 

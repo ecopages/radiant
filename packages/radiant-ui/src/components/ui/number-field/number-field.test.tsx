@@ -75,7 +75,9 @@ describe('RuiNumberField commit', () => {
 		expect(input?.value).toBe('7');
 	});
 
-	async function mount(attrs = ''): Promise<{ host: RuiNumberFieldElement; input: HTMLInputElement; changes: number[] }> {
+	async function mount(
+		attrs = '',
+	): Promise<{ host: RuiNumberFieldElement; input: HTMLInputElement; changes: number[] }> {
 		document.body.innerHTML = `
 			<rui-number-field ${attrs}>
 				<input data-number-field-input />
@@ -86,7 +88,9 @@ describe('RuiNumberField commit', () => {
 		const host = document.querySelector('rui-number-field') as RuiNumberFieldElement;
 		const input = host.querySelector<HTMLInputElement>('[data-number-field-input]') as HTMLInputElement;
 		const changes: number[] = [];
-		host.addEventListener('rui-change', (event) => changes.push((event as CustomEvent<{ value: number }>).detail.value));
+		host.addEventListener('rui-change', (event) =>
+			changes.push((event as CustomEvent<{ value: number }>).detail.value),
+		);
 		return { host, input, changes };
 	}
 

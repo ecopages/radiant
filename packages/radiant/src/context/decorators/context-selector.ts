@@ -56,7 +56,10 @@ export function contextSelector<T extends Context<unknown, unknown>, Selected = 
 		nameOrContext: string | ClassFieldDecoratorContext<ContextHostLike, unknown>,
 		descriptor?: PropertyDescriptor,
 	) => {
-		if ((descriptor !== undefined && !('initializer' in descriptor)) || (typeof nameOrContext === 'object' && nameOrContext.kind !== 'field')) {
+		if (
+			(descriptor !== undefined && !('initializer' in descriptor)) ||
+			(typeof nameOrContext === 'object' && nameOrContext.kind !== 'field')
+		) {
 			throw new TypeError(
 				'@contextSelector decorates a field only. Use @onContextUpdate to run a method when the context changes.',
 			);

@@ -65,8 +65,12 @@ describe('@attr', () => {
 	});
 
 	test('collapses consecutive underscores to one hyphen, as @prop does', () => {
-		const attrElement = document.createElement('attr-double-underscore-name-test') as AttrDoubleUnderscoreNameElement;
-		const propElement = document.createElement('prop-double-underscore-name-test') as PropDoubleUnderscoreNameElement;
+		const attrElement = document.createElement(
+			'attr-double-underscore-name-test',
+		) as AttrDoubleUnderscoreNameElement;
+		const propElement = document.createElement(
+			'prop-double-underscore-name-test',
+		) as PropDoubleUnderscoreNameElement;
 		document.body.append(attrElement, propElement);
 
 		attrElement.max__Width = 3;

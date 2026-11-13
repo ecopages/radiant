@@ -109,7 +109,9 @@ describe('parsed foreign content after a change', () => {
 		const host = parseMinimal(ICON);
 		host.querySelector('style');
 
-		expect(host.innerHTML).toContain('<style type="text/css"><![CDATA[ .st0{fill:#f00} .st1{stroke:#000} ]]></style>');
+		expect(host.innerHTML).toContain(
+			'<style type="text/css"><![CDATA[ .st0{fill:#f00} .st1{stroke:#000} ]]></style>',
+		);
 	});
 
 	test('a changed CDATA icon keeps its CSS', () => {
@@ -120,7 +122,9 @@ describe('parsed foreign content after a change', () => {
 		document.body.append(rendered);
 
 		try {
-			expect(rendered.querySelector('svg > style')?.textContent).toBe(' .st0{fill:#f00} .st1{stroke:#000}  .st2{}');
+			expect(rendered.querySelector('svg > style')?.textContent).toBe(
+				' .st0{fill:#f00} .st1{stroke:#000}  .st2{}',
+			);
 			expect(getComputedStyle(rendered.querySelector('path') as Element).fill).toBe('rgb(255, 0, 0)');
 		} finally {
 			rendered.remove();

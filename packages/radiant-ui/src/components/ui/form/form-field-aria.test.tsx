@@ -159,7 +159,9 @@ describe.each(['x-aria-code', 'x-aria-render'])('a custom control host (%s) pain
 		await flush();
 
 		const written = (element: Element) =>
-			element.getAttributeNames().filter((name) => name === 'id' || name.startsWith('aria-') || name === 'data-rui-field-managed');
+			element
+				.getAttributeNames()
+				.filter((name) => name === 'id' || name.startsWith('aria-') || name === 'data-rui-field-managed');
 		expect(written(host)).toEqual([]);
 
 		host.ready = true;

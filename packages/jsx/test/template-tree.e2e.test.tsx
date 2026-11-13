@@ -61,7 +61,10 @@ describe('nested templates mounted from one tree', () => {
 			jsx('table', {
 				children: jsx('tbody', {
 					children: labels.map((label) =>
-						jsx('tr', { key: label, children: jsx('td', { children: jsx('a', { class: 'lbl', children: label }) }) }),
+						jsx('tr', {
+							key: label,
+							children: jsx('td', { children: jsx('a', { class: 'lbl', children: label }) }),
+						}),
 					),
 				}),
 			});

@@ -6,10 +6,10 @@ Source of truth: `.changeset/config.json`. While a line is in prerelease, `.chan
 
 ## Branches
 
-| Branch      | Role                                                                                                                                       |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Branch      | Role                                                                                                                                                                 |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `main`      | GitHub default and production: what is published as `latest`. Feature, fix and hotfix PRs target it. `changeset add` and `status` compare against it (`baseBranch`). |
-| `release/*` | Active prerelease channel only (see below).                                                                                                |
+| `release/*` | Active prerelease channel only (see below).                                                                                                                          |
 
 Versioning and publishing both happen on `main`:
 

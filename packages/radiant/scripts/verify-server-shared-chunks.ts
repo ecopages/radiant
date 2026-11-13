@@ -15,11 +15,7 @@ if (sharedChunks.length === 0) {
 	process.exit(1);
 }
 
-const serverEntriesThatMustShareChunks = [
-	'render-component.js',
-	'radiant-element-ssr.js',
-	'install-ssr-runtime.js',
-];
+const serverEntriesThatMustShareChunks = ['render-component.js', 'radiant-element-ssr.js', 'install-ssr-runtime.js'];
 
 for (const entryName of serverEntriesThatMustShareChunks) {
 	const entryPath = path.join(distServerDir, entryName);

@@ -284,7 +284,13 @@ function toTreeNode(built: BuiltTemplate, order: ReadonlyMap<Node, NodeRef>): Te
 			if (live.type === 'text-content') {
 				return { element: ref(live.element), index: live.index, type: 'text-content' };
 			}
-			return { end: ref(live.end), index: live.index, owner: ref(live.owner), start: ref(live.start), type: 'child' };
+			return {
+				end: ref(live.end),
+				index: live.index,
+				owner: ref(live.owner),
+				start: ref(live.start),
+				type: 'child',
+			};
 		}),
 		roots: built.rootNodes.map(ref),
 	};

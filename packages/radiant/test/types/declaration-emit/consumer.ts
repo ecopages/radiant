@@ -8,7 +8,13 @@
  */
 import { attr, bindTo, debounce, event, onEvent, onUpdated, prop, query, signal } from '@ecopages/radiant';
 import type { WritableSignal } from '@ecopages/signals';
-import { consumeContext, contextSelector, createContext, onContextUpdate, provideContext } from '@ecopages/radiant/context';
+import {
+	consumeContext,
+	contextSelector,
+	createContext,
+	onContextUpdate,
+	provideContext,
+} from '@ecopages/radiant/context';
 
 const ctx = createContext<{ n: number }>(Symbol('ctx'));
 

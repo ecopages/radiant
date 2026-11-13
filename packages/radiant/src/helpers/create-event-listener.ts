@@ -244,7 +244,8 @@ function attachDelegatedListeners(
 	config: OnEventConfig,
 	listener: EventListener,
 ): void {
-	const selector = config.selector ?? (config.ref === undefined ? undefined : `[data-ref='${CSS.escape(config.ref)}']`);
+	const selector =
+		config.selector ?? (config.ref === undefined ? undefined : `[data-ref='${CSS.escape(config.ref)}']`);
 	if (selector === undefined) return;
 	if (!cleanups.has('delegated'))
 		cleanups.set('delegated', addDelegatedListener(hostElement, config, selector, listener));

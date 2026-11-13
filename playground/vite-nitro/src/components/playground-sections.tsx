@@ -58,7 +58,8 @@ export function RadiantElementLabSection() {
 					}
 					footer={
 						<p class="studio-footer">
-							Footer region: treat this as the handoff rail for approvals, publishing notes, or last-mile QA.
+							Footer region: treat this as the handoff rail for approvals, publishing notes, or last-mile
+							QA.
 						</p>
 					}
 				>

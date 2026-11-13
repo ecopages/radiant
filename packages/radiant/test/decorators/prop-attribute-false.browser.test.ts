@@ -25,9 +25,9 @@ describe('@prop({ attribute: false })', () => {
 			@prop({ type: Object, attribute: false }) engine?: Engine;
 		}
 
-		expect((customElements.get(tag) as typeof Host & { observedAttributes: string[] }).observedAttributes ?? []).not.toContain(
-			'engine',
-		);
+		expect(
+			(customElements.get(tag) as typeof Host & { observedAttributes: string[] }).observedAttributes ?? [],
+		).not.toContain('engine');
 
 		document.body.innerHTML = `<${tag} engine='{"x":1}'></${tag}>`;
 		const host = document.body.firstElementChild as Host;
@@ -108,17 +108,20 @@ describe('@prop precedence: a property assigned first beats markup', () => {
 	test.each([
 		['keeps its attribute', undefined],
 		['is property-only', false as const],
-	])('assigned after construction and after an authored attribute, before the first connect sync (%s)', (_, attribute) => {
-		const tag = nextTag('presync');
-		const Host = define(tag, attribute);
-		const host = new Host();
-		const engine = new Engine();
-		host.setAttribute('engine', '{"x":1}');
-		host.engine = engine;
-		document.body.appendChild(host);
+	])(
+		'assigned after construction and after an authored attribute, before the first connect sync (%s)',
+		(_, attribute) => {
+			const tag = nextTag('presync');
+			const Host = define(tag, attribute);
+			const host = new Host();
+			const engine = new Engine();
+			host.setAttribute('engine', '{"x":1}');
+			host.engine = engine;
+			document.body.appendChild(host);
 
-		expect(host.engine).toBe(engine);
-	});
+			expect(host.engine).toBe(engine);
+		},
+	);
 
 	test('assigned after the first sync, a later attribute change still applies for a prop that keeps its attribute', () => {
 		const tag = nextTag('postsync');

@@ -115,7 +115,9 @@ export class RadiantSlotStudioBoardElement extends RadiantElement {
 					</button>
 				</div>
 				{this.footer ?? (
-					<p class="studio-footer">Slotted regions stay editable while nested consumers react to shared context.</p>
+					<p class="studio-footer">
+						Slotted regions stay editable while nested consumers react to shared context.
+					</p>
 				)}
 			</section>
 		);

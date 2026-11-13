@@ -69,12 +69,11 @@ export class RadiantWindowSizer extends RadiantElement {
  * Since the component is rendered client-side, the listener is added post-render.
  */
 setTimeout(() => {
-	document.querySelector('radiant-event-listener')?.addEventListener(
-		RadiantEventEvents.CustomEvent,
-		(event: CustomEvent<RadiantEventDetail>) => {
+	document
+		.querySelector('radiant-event-listener')
+		?.addEventListener(RadiantEventEvents.CustomEvent, (event: CustomEvent<RadiantEventDetail>) => {
 			console.log('External Listener:', event.detail.value);
-		},
-	);
+		});
 }, 1500);
 
 declare global {
