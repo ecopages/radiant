@@ -83,6 +83,7 @@ export const BaseLayout = eco.component<BaseLayoutProps, JsxRenderable>({
 					</header>
 				) : null}
 				{showHeader ? <main class={className}>{children}</main> : children}
+				<div class="code-copy-status" role="status" aria-live="polite" data-code-copy-status></div>
 			</body>
 		);
 	},

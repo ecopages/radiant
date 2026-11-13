@@ -128,7 +128,8 @@ Reuse fixtures such as option lists from `src/content/stories/demo-data.ts` when
 
 - `test/story-previews.test.browser.ts` — complex `render` output smoke tests
 - `test/canvas.test.browser.ts` — client repaint when story context args change
-- `test/mdx-code-copy.test.browser.ts` — the copy button is a sibling of `pre` and copies from `data-rehype-pretty-copy`
+- `test/mdx-code-copy.test.browser.ts` — the copy button is a sibling of `pre`
+- `src/layouts/base-layout/code-copy.test.browser.ts` — the click handler copies from `data-rehype-pretty-copy`, keeps the accessible name "Copy code" and announces the result through the base layout's `role="status"` region
 
 Add a render test when a story layout is easy to regress (trees, sidebars, overlays).
 

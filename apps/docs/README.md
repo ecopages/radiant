@@ -10,7 +10,7 @@ The default Open Graph and Twitter preview is `src/public/assets/images/default-
 
 ## Docs shell
 
-Fenced code blocks get a Copy button from `rehype-pretty-code` and `transformerCopyButton`. `src/mdx/rehype-pretty-copy-compatibility.ts` moves the button next to the `pre` inside its figure, and the click handler lives in `src/layouts/base-layout/base-layout.script.ts`. `src/mdx/rehype-heading-ids.ts` gives headings build-time ids so `#fragment` links land correctly. Previous and next links render on the server from `src/layouts/docs-layout/components/docs-pagination`.
+Fenced code blocks get a Copy button from `rehype-pretty-code` and `transformerCopyButton`. `src/mdx/rehype-pretty-copy-compatibility.ts` moves the button next to the `pre` inside its figure, and the click handler lives in `src/layouts/base-layout/code-copy.ts`, registered by the base layout script. The button text changes to Copied or Try again for 1.2 s while its accessible name stays "Copy code"; the result is announced through the visually hidden `role="status"` region that `BaseLayout` renders at the end of every page body, so it survives browser-router navigation. `src/mdx/rehype-heading-ids.ts` gives headings build-time ids so `#fragment` links land correctly. Previous and next links render on the server from `src/layouts/docs-layout/components/docs-pagination`.
 
 `pnpm --filter radiant-docs test` runs the Node and browser (Chromium) Vitest projects; `test:e2e` builds and checks the site.
 

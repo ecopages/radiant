@@ -213,5 +213,7 @@ test('Docs code examples copy their source', browserTestOptions, async () => {
 
 		await waitForLocatorText(copyButton, 'Copied');
 		assert.equal(await page.locator('html').getAttribute('data-docs-copied-code'), source);
+		assert.equal(await copyButton.getAttribute('aria-label'), 'Copy code');
+		await waitForLocatorText(page.locator('[data-code-copy-status]'), 'Code copied to clipboard');
 	});
 });

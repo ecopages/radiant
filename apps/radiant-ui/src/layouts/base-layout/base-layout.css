@@ -50,3 +50,7 @@ theme-toggle {
 	@apply absolute -m-px h-px w-px overflow-hidden border-0 p-0 whitespace-nowrap;
 	clip: rect(0, 0, 0, 0);
 }
+
+.code-copy-status {
+	@apply sr-only;
+}
