@@ -50,7 +50,7 @@ stableEl!: HTMLElement | null;
 
 ### Type Safety
 
-A single-element query is `T | null` and an `all: true` query is `T[]`, empty when nothing matches. Under standard decorators, any other field type does not compile: see [Typing Decorated Fields](/docs/decorators).
+A single-element query is `T | null` and an `all: true` query is `T[]`, empty when nothing matches. Under standard decorators, any other field type does not compile: see [Typing Decorated Fields](/docs/decorators/index#typing-decorated-fields).
 
 ```typescript
 @query({ ref: 'avatar' }) avatar!: HTMLImageElement | null;
