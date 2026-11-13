@@ -14,8 +14,9 @@ type PendingContextRequest = {
  * Requests no provider has answered yet, per consumer element and request key.
  *
  * @remarks
- * Part of the community context protocol's late-provider pattern. A provider whose element is defined after its
- * consumers announces itself with a `context-provider` event; the consumers below it that are still waiting then
+ * The late-provider pattern of Lit's `@lit/context` (not part of the community context protocol, which defines only
+ * `context-request`). A provider whose element is defined after its consumers announces itself with a
+ * `context-provider` event; the consumers below it that are still waiting then
  * dispatch their request again. The key is the consumer's stable callback, so a request made twice (the connect
  * pass and its microtask retry) is kept once.
  */

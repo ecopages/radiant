@@ -310,7 +310,12 @@ describe('Context', () => {
 		contextProvider.appendChild(contextConsumer);
 		document.body.appendChild(contextProvider);
 
-		expect(callback).toHaveBeenCalledExactlyOnceWith(contextProvider.context);
+		expect(callback).toHaveBeenCalledExactlyOnceWith({ value: 1 }, expect.any(Function));
+
+		contextProvider.context.setContext({ value: 2 });
+
+		expect(callback).toHaveBeenCalledTimes(2);
+		expect(callback).toHaveBeenLastCalledWith({ value: 2 }, callback.mock.calls[0][1]);
 	});
 
 	test('it notifies all subscribers even when mixed selector and non-selector subscriptions are present', async () => {
