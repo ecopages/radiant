@@ -1,4 +1,5 @@
 import { fileURLToPath } from 'node:url';
+import { playwright } from '@vitest/browser-playwright';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
@@ -8,7 +9,28 @@ export default defineConfig({
 		},
 	},
 	test: {
-		environment: 'node',
-		include: ['src/**/*.test.ts', 'scripts/**/*.test.ts'],
+		projects: [
+			{
+				extends: true,
+				test: {
+					name: 'node',
+					environment: 'node',
+					include: ['test/**/*.test.{ts,tsx}', 'src/**/*.test.{ts,tsx}', 'scripts/**/*.test.ts'],
+				},
+			},
+			{
+				extends: true,
+				test: {
+					name: 'browser',
+					include: ['src/**/*.test.browser.{ts,tsx}', 'test/**/*.test.browser.{ts,tsx}'],
+					browser: {
+						enabled: true,
+						headless: true,
+						provider: playwright({}),
+						instances: [{ browser: 'chromium' }],
+					},
+				},
+			},
+		],
 	},
 });
