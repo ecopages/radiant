@@ -9,6 +9,7 @@ import {
 	type ContextSubscriptionRequestEvent,
 } from './events';
 import { createHydrationScriptTag, findHydrationScript, parseHydrationPayload } from '../core/hydration-codec';
+import { CONTEXT_PROVIDER_REQUEST, type ContextProviderRequestEvent } from './context-provider-request';
 import type { Context, ContextType, UnknownContext } from './types';
 import { resolveContextHostElement, resolveContextHydrationHost, type ContextHostLike } from './context-host';
 
@@ -390,7 +391,7 @@ export class ContextProvider<T extends Context<unknown, unknown>>
 		if (context !== this.context) return;
 
 		event.markHandled();
-		event.stopPropagation();
+		event.stopImmediatePropagation();
 
 		if (select) {
 			this.handleSubscriptionRequest({ select, callback }, { subscribe, onSubscribe });
@@ -400,12 +401,34 @@ export class ContextProvider<T extends Context<unknown, unknown>>
 		this.handleSubscriptionRequest({ callback }, { subscribe, onSubscribe });
 	};
 
+	/**
+	 * Answers a community protocol `context-request` with the context value.
+	 *
+	 * @remarks
+	 * Propagation stops before the callback runs, so a throwing callback cannot let the request reach an outer
+	 * provider. The callback is called at once with the current value, which is `undefined` while the provider has
+	 * none, the same as Lit's `@lit/context`. A subscribing request also receives its `unsubscribe` at once and is
+	 * called again on every `setContext`, including the first value. A request without `subscribe` is answered once
+	 * and its callback is not kept. The event may come from another implementation, so only protocol fields are read.
+	 */
 	private onContextRequest = (event: ContextRequestEvent<UnknownContext>) => {
-		const { context, callback } = event;
+		const { context, callback, subscribe } = event;
 		if (context !== this.context) return;
-		event.markHandled();
-		event.stopPropagation();
-		callback(this);
+		event.stopImmediatePropagation();
+
+		if (!subscribe) {
+			callback(this.getContext());
+			return;
+		}
+
+		const unsubscribe = this.subscribe({ callback });
+		callback(this.getContext(), unsubscribe);
+	};
+
+	private onProviderRequest = (event: ContextProviderRequestEvent) => {
+		if (event.context !== this.context) return;
+		event.stopImmediatePropagation();
+		event.callback(this);
 	};
 
 	/**
@@ -434,5 +457,6 @@ export class ContextProvider<T extends Context<unknown, unknown>>
 			this.onSubscriptionRequest as EventListener,
 		);
 		this.host.addEventListener(ContextEventsTypes.CONTEXT_REQUEST, this.onContextRequest as EventListener);
+		this.host.addEventListener(CONTEXT_PROVIDER_REQUEST, this.onProviderRequest as EventListener);
 	};
 }

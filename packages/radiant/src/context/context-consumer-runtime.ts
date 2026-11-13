@@ -1,5 +1,6 @@
 import type { ContextHostLike } from './context-host';
 import { clearPendingContextRequest, registerPendingContextRequest } from './context-late-provider';
+import { ContextProviderRequestEvent } from './context-provider-request';
 import { resolveAmbientSsrContextProvider } from './context-ssr-bridge';
 import { ContextRequestEvent, ContextSubscriptionRequestEvent } from './events';
 import type { ContextCallback, ContextType, UnknownContext } from './types';
@@ -71,6 +72,10 @@ export function initializeConsumedContext(
 
 /**
  * Requests a context provider through the DOM event channel when SSR state is not active.
+ *
+ * @remarks
+ * Uses Radiant's internal provider request, not `context-request`: `@consumeContext` injects the provider
+ * instance, which a protocol provider never hands out, so only Radiant providers can answer it.
  */
 export function requestConsumedContext(
 	host: ContextHostLike,
@@ -82,7 +87,7 @@ export function requestConsumedContext(
 		host.connectedContextCallback(context);
 	};
 	const dispatch = () => {
-		const event = new ContextRequestEvent(context, callback);
+		const event = new ContextProviderRequestEvent(context, callback);
 		host.dispatchEvent(event);
 		return event.handled;
 	};
@@ -141,6 +146,12 @@ export function initializeContextSelection<TContext extends UnknownContext, Sele
 
 /**
  * Requests a selected context value through the DOM event channel.
+ *
+ * @remarks
+ * A Radiant provider answers the `context-subscription-request` first. When none does, the same request goes out
+ * as a community protocol `context-request`, so a provider from another implementation can answer it. In a tree
+ * that mixes implementations, a Radiant provider further up therefore wins over a nearer foreign provider of the
+ * same context.
  */
 export function requestContextSelection<TContext extends UnknownContext>(
 	host: ContextHostLike,
@@ -169,6 +180,7 @@ export function requestContextSelection<TContext extends UnknownContext, Selecte
 		onSubscribe?: (unsubscribe: () => void) => void;
 	},
 ): boolean {
+	const protocolCallback = createProtocolSelectionCallback(request, options);
 	const dispatch = () => {
 		const event = new ContextSubscriptionRequestEvent(
 			context,
@@ -179,7 +191,14 @@ export function requestContextSelection<TContext extends UnknownContext, Selecte
 		);
 
 		host.dispatchEvent(event);
-		return event.handled;
+
+		if (event.handled) {
+			return true;
+		}
+
+		const protocolEvent = new ContextRequestEvent(context, protocolCallback, options.subscribe);
+		host.dispatchEvent(protocolEvent);
+		return protocolEvent.handled;
 	};
 
 	if (dispatch()) {
@@ -189,4 +208,47 @@ export function requestContextSelection<TContext extends UnknownContext, Selecte
 
 	registerPendingContextRequest(host, context, request.callback, dispatch);
 	return false;
+}
+
+/**
+ * Adapts a selection request to a community protocol `context-request` callback.
+ *
+ * @remarks
+ * Mirrors what a Radiant provider does for a `context-subscription-request`: an `undefined` value before the first
+ * delivery is skipped (a protocol provider may answer before it has a value), a request that did not subscribe
+ * takes one value, `select` is applied to each value, and a subscriber's `unsubscribe` reaches `onSubscribe`.
+ * An `unsubscribe` handed to a request that did not subscribe is called at once, as the protocol advises a
+ * defensive consumer to do.
+ */
+function createProtocolSelectionCallback<TContext extends UnknownContext, Selected>(
+	request: ContextSelectionRequest<TContext, Selected>,
+	options: {
+		subscribe?: boolean;
+		onSubscribe?: (unsubscribe: () => void) => void;
+	},
+): ContextCallback<ContextType<TContext>> {
+	let delivered = false;
+	let announcedUnsubscribe: (() => void) | undefined;
+
+	return (value, unsubscribe) => {
+		if (unsubscribe && !options.subscribe) {
+			unsubscribe();
+		} else if (unsubscribe && unsubscribe !== announcedUnsubscribe) {
+			announcedUnsubscribe = unsubscribe;
+			options.onSubscribe?.(unsubscribe);
+		}
+
+		if (delivered ? !options.subscribe : typeof value === 'undefined') {
+			return;
+		}
+
+		delivered = true;
+
+		if (request.select) {
+			request.callback(request.select(value));
+			return;
+		}
+
+		request.callback(value);
+	};
 }

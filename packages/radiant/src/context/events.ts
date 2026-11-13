@@ -18,6 +18,10 @@ export enum ContextEventsTypes {
  * If the requested context event contains a truthy `subscribe` value, then a provider can call the callback
  * multiple times if the value is changed, if this is the case the provider should pass an `unsubscribe`
  * function to the callback which requesters can invoke to indicate they no longer wish to receive these updates.
+ *
+ * @remarks
+ * `handled` becomes `true` when a provider stops the event's propagation, which the protocol requires of a
+ * provider that answers, so it also reports requests answered by other implementations.
  */
 export class ContextRequestEvent<T extends UnknownContext> extends Event {
 	public handled = false;
@@ -32,6 +36,16 @@ export class ContextRequestEvent<T extends UnknownContext> extends Event {
 
 	public markHandled(): void {
 		this.handled = true;
+	}
+
+	public override stopPropagation(): void {
+		this.markHandled();
+		super.stopPropagation();
+	}
+
+	public override stopImmediatePropagation(): void {
+		this.markHandled();
+		super.stopImmediatePropagation();
 	}
 }
 
@@ -55,8 +69,9 @@ export type ContextSubscription<T extends UnknownContext, Selected = ContextType
  * An event fired by a context provider when it upgrades, so consumers that were already waiting can request the
  * context again.
  *
- * @remarks This is the late-provider announcement of the community context protocol: an `Event` with the `context`
- * and the `contextTarget` that provides it. It bubbles and is composed; the provider element is the event target.
+ * @remarks The community context protocol defines only `context-request`. This is the same `context-provider` event
+ * that Lit's `@lit/context` dispatches and its `ContextRoot` listens for: an `Event` with the `context` and the
+ * `contextTarget` that provides it. It bubbles and is composed; the provider element is the event target.
  * A provider announces itself once, when it is created. A provider that is disconnected and connected again does not
  * announce again: consumers re-request on their own connect.
  */
@@ -105,13 +120,13 @@ export class ContextSubscriptionRequestEvent<T extends UnknownContext, Selected 
 declare global {
 	interface HTMLElementEventMap {
 		/**
-		 * A 'context-request-subscription' event can be emitted by any element which desires
+		 * A 'context-subscription-request' event can be emitted by any element which desires
 		 * a context value to be injected by an external provider.
 		 */
 		[ContextEventsTypes.SUBSCRIPTION_REQUEST]: ContextSubscriptionRequestEvent<UnknownContext>;
 		/**
-		 * A context-request-provider event can be emitted by a context requester to signal
-		 * that it desires a context value to be provided by a context provider.
+		 * A 'context-request' event can be emitted by any element which desires
+		 * a context value to be injected by an external provider.
 		 */
 		[ContextEventsTypes.CONTEXT_REQUEST]: ContextRequestEvent<Context<unknown, unknown>>;
 		/**
