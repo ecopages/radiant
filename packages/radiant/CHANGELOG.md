@@ -1,5 +1,17 @@
 # @ecopages/radiant
 
+## 0.9.0
+
+### Minor Changes
+
+- [#675](https://github.com/ecopages/radiant/pull/675) [`4d1137b`](https://github.com/ecopages/radiant/commit/4d1137bbffca86cc36c4f547acda200b0e164941) Thanks [@andeeplus](https://github.com/andeeplus)! - `rui-form` now validates against a form-associated control's own validity. A host that calls `ElementInternals.setValidity` blocks submission and shows its message in the field's error region; a rule or resolver message wins. `FormAssociatedElement` exposes `validity` and `validationMessage`, and `registerFieldControl` accepts an optional `validity` reader. A subclass that already declares its own `validity` or `validationMessage` member must rename it or match the new getter types.
+
+### Patch Changes
+
+- Updated dependencies []:
+    - @ecopages/jsx@0.9.0
+    - @ecopages/signals@0.9.0
+
 ## 0.8.4
 
 ### Patch Changes
