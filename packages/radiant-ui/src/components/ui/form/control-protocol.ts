@@ -1,4 +1,5 @@
 import type { PropTransform } from '@ecopages/radiant';
+import type { FieldControlValidity } from './types';
 import { multiValueTransform, numberArrayTransform } from '../shared/multi-value';
 
 export const RUI_CONTROL_ATTR = 'data-rui-control';
@@ -68,6 +69,11 @@ type ControlValueAdapter = {
 };
 
 export type FieldControlAdapter = ControlValueAdapter & {
+	/**
+	 * The control's own validity. Defaults, for a form-associated host, to its `validity.valid`
+	 * and `validationMessage` properties; a host without them reports `undefined`.
+	 */
+	validity?: (host: HTMLElement) => FieldControlValidity | undefined;
 	/** Where a native text target gets its submission name. Defaults to `native`. */
 	submission?: 'host' | 'native' | 'none';
 };
@@ -265,7 +271,8 @@ const REGISTERED_CONTROL_TAGS = new Set<string>();
 /**
  * Register a custom host for `RuiField` discovery, value access, and name wiring.
  *
- * @remarks `submission` chooses where a native text target gets its name. A host
+ * @remarks Call `setValidity` before emitting `rui-change`, so change-time validation sees the new state.
+ * `submission` chooses where a native text target gets its name. A host
  * with `submission: 'host'` must implement FACE itself; registration only connects
  * it to the `RuiForm` store.
  *
@@ -335,6 +342,33 @@ export function readControlValue(control: HTMLElement): unknown {
 
 	const host = resolveControlHost(control);
 	return CONTROL_VALUE_ADAPTERS.get(host.localName)?.read(host) ?? host.getAttribute('value') ?? '';
+}
+
+/**
+ * Reads the control's validity through its adapter, or the form-associated default.
+ *
+ * @remarks Reads properties, never `checkValidity()`, which fires an `invalid` event.
+ * Returns `undefined` when the host exposes no validity, such as on the server.
+ */
+export function readControlValidity(control: HTMLElement): FieldControlValidity | undefined {
+	const host = resolveControlHost(control);
+	const adapter = CONTROL_VALUE_ADAPTERS.get(host.localName);
+	if (adapter?.validity) {
+		return adapter.validity(host);
+	}
+	if (!isFormAssociatedHost(host)) {
+		return undefined;
+	}
+	const validity: unknown = Reflect.get(host, 'validity');
+	if (typeof validity !== 'object' || validity === null) {
+		return undefined;
+	}
+	const valid = Reflect.get(validity, 'valid');
+	if (typeof valid !== 'boolean') {
+		return undefined;
+	}
+	const message = Reflect.get(host, 'validationMessage');
+	return { valid, message: typeof message === 'string' ? message : undefined };
 }
 
 export function writeControlValue(control: HTMLElement, value: unknown): void {

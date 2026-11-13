@@ -70,3 +70,14 @@ describe('FormAssociatedElement without ElementInternals', () => {
 		);
 	});
 });
+
+describe('FormAssociatedElement validity without ElementInternals', () => {
+	test('leaves validity undefined without throwing', async () => {
+		const host = document.createElement('fae-plain-dom') as PlainDomControl;
+		document.body.append(host);
+		await host.updateComplete;
+
+		expect(host.validity).toBeUndefined();
+		expect(host.validationMessage).toBeUndefined();
+	});
+});

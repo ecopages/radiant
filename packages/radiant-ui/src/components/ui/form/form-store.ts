@@ -202,24 +202,45 @@ export class FormStore<T extends FieldValues = FieldValues> {
 	async validateField(name: string): Promise<boolean> {
 		const values = this.getValues();
 		const result = await this.resolver(values, { fields: this.buildResolverFields() }, { names: [name] });
-		const message = result.errors[name as keyof T]?.message;
 		const next = { ...this.errors };
-		if (message) {
-			next[name as keyof T] = { type: 'validation', message };
+		const resolverError: FieldError | undefined = (result.errors as Partial<Record<string, FieldError>>)[name];
+		const error = resolverError ?? this.readNativeError(name);
+		if (error?.message) {
+			next[name as keyof T] = error.type === 'native' ? error : { type: 'validation', message: error.message };
 		} else {
 			delete next[name as keyof T];
 		}
 		this.errors = next;
 		this.notify();
-		return !message;
+		return !error?.message;
 	}
 
 	async validateAll(): Promise<boolean> {
 		const values = this.getValues();
 		const result = await this.resolver(values, { fields: this.buildResolverFields() }, {});
-		this.errors = result.errors as Partial<Record<keyof T, FieldError>>;
+		const errors = { ...result.errors } as Partial<Record<keyof T, FieldError>>;
+		for (const name of this.fields.keys()) {
+			const native = errors[name as keyof T] ? undefined : this.readNativeError(name);
+			if (native) {
+				errors[name as keyof T] = native;
+			}
+		}
+		this.errors = errors;
 		this.notify();
 		return Object.keys(this.errors).length === 0;
+	}
+
+	/**
+	 * @remarks Evaluated after the resolver, so a custom resolver cannot disable it
+	 * and a rule or resolver message wins. Reads `validity` data only; it never
+	 * calls `checkValidity()`, which fires an `invalid` event.
+	 */
+	private readNativeError(name: string): FieldError | undefined {
+		const validity = this.fields.get(name)?.getValidity?.();
+		if (!validity || validity.valid) {
+			return undefined;
+		}
+		return { type: 'native', message: validity.message || 'Invalid value' };
 	}
 
 	shouldValidate(name: string, trigger: 'change' | 'blur'): boolean {

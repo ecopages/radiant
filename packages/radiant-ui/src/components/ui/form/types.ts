@@ -63,11 +63,16 @@ export type RegisterOptions = {
 	shouldUnregister?: boolean;
 };
 
+/** A control's own validity, as `ElementInternals.setValidity` reports it. */
+export type FieldControlValidity = { valid: boolean; message?: string };
+
 export type FieldRegistration = RegisterOptions & {
 	name: string;
 	getValue: () => unknown;
 	setValue: (value: unknown) => void;
 	getRules?: () => FieldRules | undefined;
+	/** Read at validation time; an invalid result adds a `native` error when no rule or resolver error exists. */
+	getValidity?: () => FieldControlValidity | undefined;
 	onBlur?: () => void;
 	onChange?: () => void;
 };

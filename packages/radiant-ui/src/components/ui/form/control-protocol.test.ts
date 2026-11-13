@@ -1,7 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
 	findFieldControl,
 	isPrimaryFieldControlEvent,
+	readControlValidity,
 	registerFieldControl,
 	wireFieldControlName,
 } from '../form/control-protocol';
@@ -78,5 +79,68 @@ describe('field control protocol in the browser', () => {
 
 		expect(host.getAttribute('name')).toBe('quantity');
 		expect(input.hasAttribute('name')).toBe(false);
+	});
+
+	describe('control validity', () => {
+		function defineFace(tag: string, adapter?: Parameters<typeof registerFieldControl>[1]) {
+			if (!customElements.get(tag)) {
+				customElements.define(
+					tag,
+					class extends HTMLElement {
+						static formAssociated = true;
+						readonly internals = this.attachInternals();
+					},
+				);
+			}
+			registerFieldControl(tag, {
+				read: (host) => host.getAttribute('value') ?? '',
+				write: (host, value) => host.setAttribute('value', String(value)),
+				...adapter,
+			});
+			return document.createElement(tag) as HTMLElement & { internals: ElementInternals };
+		}
+
+		it('reports nothing for a host that is not form-associated', () => {
+			if (!customElements.get('x-plain-validity')) {
+				customElements.define('x-plain-validity', class extends HTMLElement {});
+			}
+			registerFieldControl('x-plain-validity', { read: () => '', write: () => {} });
+
+			expect(readControlValidity(document.createElement('x-plain-validity'))).toBeUndefined();
+		});
+
+		it('reads validity properties from a form-associated host', () => {
+			const host = defineFace('x-validity-default');
+			Object.defineProperty(host, 'validity', { get: () => host.internals.validity });
+			Object.defineProperty(host, 'validationMessage', { get: () => host.internals.validationMessage });
+			document.body.append(host);
+			expect(readControlValidity(host)).toEqual({ valid: true, message: '' });
+
+			host.internals.setValidity({ customError: true }, 'Enter all 6 characters');
+			expect(readControlValidity(host)).toEqual({ valid: false, message: 'Enter all 6 characters' });
+			host.remove();
+		});
+
+		it('does not fire invalid while reading', () => {
+			const host = defineFace('x-validity-quiet');
+			Object.defineProperty(host, 'validity', { get: () => host.internals.validity });
+			const onInvalid = vi.fn();
+			host.addEventListener('invalid', onInvalid);
+			host.internals.setValidity({ customError: true }, 'Nope');
+
+			readControlValidity(host);
+
+			expect(onInvalid).not.toHaveBeenCalled();
+		});
+
+		it('lets the adapter override the default', () => {
+			const host = defineFace('x-validity-override', {
+				read: () => '',
+				write: () => {},
+				validity: () => ({ valid: false, message: 'From adapter' }),
+			});
+
+			expect(readControlValidity(host)).toEqual({ valid: false, message: 'From adapter' });
+		});
 	});
 });
