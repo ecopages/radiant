@@ -225,6 +225,11 @@ export class RuiNumberField extends FormAssociatedElement {
 		}
 	}
 
+	/**
+	 * @remarks
+	 * The no-op check compares against the committed `value`, not `getNumericValue()`, which falls back to
+	 * `defaultValue` or `0` for display. Comparing against the fallback swallowed a typed `0` on an empty field.
+	 */
 	private commitValue(next: number, force = false): void {
 		let resolved = next;
 
@@ -232,7 +237,7 @@ export class RuiNumberField extends FormAssociatedElement {
 			resolved = snapToStep(next, this.minValue, this.maxValue, this.step);
 		}
 
-		if (resolved === this.getNumericValue()) {
+		if (resolved === this.value) {
 			this.editing = false;
 			this.syncInput();
 			this.updateStepperState();
@@ -347,7 +352,7 @@ export class RuiNumberField extends FormAssociatedElement {
 
 		const input = event.target as HTMLInputElement;
 		this.editing = true;
-		this.draftValue = String(this.getNumericValue());
+		this.draftValue = this.value == null ? '' : String(this.value);
 		input.value = this.draftValue;
 		input.select();
 	}

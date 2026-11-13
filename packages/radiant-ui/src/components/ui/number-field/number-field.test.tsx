@@ -74,4 +74,57 @@ describe('RuiNumberField commit', () => {
 
 		expect(input?.value).toBe('7');
 	});
+
+	async function mount(attrs = ''): Promise<{ host: RuiNumberFieldElement; input: HTMLInputElement; changes: number[] }> {
+		document.body.innerHTML = `
+			<rui-number-field ${attrs}>
+				<input data-number-field-input />
+			</rui-number-field>
+		`;
+		await customElements.whenDefined('rui-number-field');
+		await settled();
+		const host = document.querySelector('rui-number-field') as RuiNumberFieldElement;
+		const input = host.querySelector<HTMLInputElement>('[data-number-field-input]') as HTMLInputElement;
+		const changes: number[] = [];
+		host.addEventListener('rui-change', (event) => changes.push((event as CustomEvent<{ value: number }>).detail.value));
+		return { host, input, changes };
+	}
+
+	async function typeAndBlur(input: HTMLInputElement, text: string): Promise<void> {
+		input.focus();
+		input.value = text;
+		input.dispatchEvent(new Event('input', { bubbles: true }));
+		input.blur();
+		await settled();
+	}
+
+	it('commits a typed 0 on an empty field and emits change', async () => {
+		const { host, input, changes } = await mount();
+
+		await typeAndBlur(input, '0');
+
+		expect(host.value).toBe(0);
+		expect(changes).toEqual([0]);
+	});
+
+	it('does not emit when the same committed value is typed again', async () => {
+		const { host, input, changes } = await mount();
+
+		await typeAndBlur(input, '5');
+		await typeAndBlur(input, '5');
+
+		expect(host.value).toBe(5);
+		expect(changes).toEqual([5]);
+	});
+
+	it('does not commit when an empty field is focused and blurred untouched', async () => {
+		const { host, input, changes } = await mount();
+
+		input.focus();
+		input.blur();
+		await settled();
+
+		expect(host.value).toBeUndefined();
+		expect(changes).toEqual([]);
+	});
 });
