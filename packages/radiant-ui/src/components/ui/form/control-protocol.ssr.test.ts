@@ -6,6 +6,7 @@ import {
 	getAriaControlTargets,
 	isNativeTextControl,
 	readControlValue,
+	readControlValidity,
 	registerFieldControl,
 	wireFieldControlName,
 	writeControlValue,
@@ -209,5 +210,14 @@ describe('field control protocol on the SSR DOM', () => {
 
 		expect(input.name).toBe('tos');
 		expect(host.getAttribute('name')).toBe('tos');
+	});
+
+	it('leaves validity undefined without ElementInternals', () => {
+		const field = document.createElement('div');
+		field.innerHTML = `<rui-date-input></rui-date-input>`;
+		const host = field.querySelector('rui-date-input') as HTMLElement;
+
+		expect(() => readControlValidity(host)).not.toThrow();
+		expect(readControlValidity(host)).toBeUndefined();
 	});
 });

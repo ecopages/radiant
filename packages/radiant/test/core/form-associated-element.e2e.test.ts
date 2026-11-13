@@ -224,3 +224,18 @@ describe('FormAssociatedElement in Chromium', () => {
 		expect(form.checkValidity()).toBe(true);
 	});
 });
+
+describe('FormAssociatedElement validity', () => {
+	test('exposes validity and validationMessage from its internals', async () => {
+		const host = document.createElement('fae-tone') as ToneControl;
+		document.body.append(host);
+		await host.updateComplete;
+		expect(host.validity?.valid).toBe(true);
+
+		Reflect.get(host, 'internals').setValidity({ customError: true }, 'Pick a tone');
+
+		expect(host.validity?.valid).toBe(false);
+		expect(host.validationMessage).toBe('Pick a tone');
+		host.remove();
+	});
+});

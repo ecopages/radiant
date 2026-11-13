@@ -19,6 +19,80 @@ describe('FormStore', () => {
 		expect(store.shouldDisplayFieldError('email')).toBe(true);
 	});
 
+	describe('control validity', () => {
+		it('adds a native error from an invalid control', async () => {
+			const store = new FormStore<{ code: string }>();
+			store.register({
+				name: 'code',
+				getValue: () => 'ab',
+				setValue: () => {},
+				getValidity: () => ({ valid: false, message: 'Enter all 6 characters' }),
+			});
+
+			expect(await store.validateAll()).toBe(false);
+			expect(store.errors.code).toEqual({ type: 'native', message: 'Enter all 6 characters' });
+		});
+
+		it('falls back to a generic message', async () => {
+			const store = new FormStore<{ code: string }>();
+			store.register({
+				name: 'code',
+				getValue: () => 'ab',
+				setValue: () => {},
+				getValidity: () => ({ valid: false }),
+			});
+
+			expect(await store.validateField('code')).toBe(false);
+			expect(store.getFieldError('code')).toBe('Invalid value');
+		});
+
+		it('lets a rule message win over the control message', async () => {
+			const store = new FormStore<{ code: string }>();
+			store.register({
+				name: 'code',
+				rules: { required: 'Code is required' },
+				getValue: () => '',
+				setValue: () => {},
+				getValidity: () => ({ valid: false, message: 'Native message' }),
+			});
+
+			await store.validateAll();
+			expect(store.errors.code).toEqual({ type: 'validation', message: 'Code is required' });
+		});
+
+		it('is not disabled by a custom resolver', async () => {
+			const store = new FormStore<{ code: string }>({ resolver: async () => ({ values: {}, errors: {} }) });
+			store.register({
+				name: 'code',
+				getValue: () => 'ab',
+				setValue: () => {},
+				getValidity: () => ({ valid: false, message: 'Too short' }),
+			});
+
+			expect(await store.validateAll()).toBe(false);
+			expect(await store.validateField('code')).toBe(false);
+			expect(store.getFieldError('code')).toBe('Too short');
+		});
+
+		it('clears the error once the control is valid', async () => {
+			const store = new FormStore<{ code: string }>();
+			let validity: { valid: boolean; message?: string } = { valid: false, message: 'Too short' };
+			store.register({ name: 'code', getValue: () => 'ab', setValue: () => {}, getValidity: () => validity });
+			await store.validateAll();
+			validity = { valid: true };
+
+			expect(await store.validateField('code')).toBe(true);
+			expect(store.getFieldError('code')).toBeUndefined();
+		});
+
+		it('ignores a control that reports no validity', async () => {
+			const store = new FormStore<{ code: string }>();
+			store.register({ name: 'code', getValue: () => 'ab', setValue: () => {}, getValidity: () => undefined });
+
+			expect(await store.validateAll()).toBe(true);
+		});
+	});
+
 	describe('reset', () => {
 		function registerField(store: FormStore<{ qty: number | null }>, defaultValue: unknown) {
 			let current: unknown = null;

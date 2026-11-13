@@ -22,6 +22,7 @@ import {
 	isFormAssociatedHost,
 	paintsOwnFieldAria,
 	readControlValue,
+	readControlValidity,
 	RUI_FIELD_DEFAULT_VALUE_ATTR,
 	RUI_FIELD_MANAGED_ATTR,
 	writeControlValue,
@@ -277,6 +278,10 @@ export class RuiField extends RadiantElement {
 				getValue: () => {
 					const control = findFieldControl(this);
 					return control ? readControlValue(control) : undefined;
+				},
+				getValidity: () => {
+					const control = findFieldControl(this);
+					return control ? readControlValidity(control) : undefined;
 				},
 				setValue: (value) => {
 					const control = findFieldControl(this);

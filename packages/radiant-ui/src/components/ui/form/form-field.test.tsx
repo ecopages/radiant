@@ -40,6 +40,7 @@ import { findFieldControl, findFieldError, registerFieldControl } from './contro
 import { RuiField as RuiFieldElement } from '../field/field.script';
 import { RuiForm as RuiFormElement } from './form.script';
 import type { FormContextValue } from './form-context';
+import type { FieldRules } from './types';
 void RuiFieldElement;
 void RuiFormElement;
 void RuiSwitchScript;
@@ -723,6 +724,80 @@ describe('rui-field composed content discovery', () => {
 		expect(errorEl?.hidden).toBe(false);
 
 		form.remove();
+	});
+
+	describe('form-associated control validity', () => {
+		class CodeFace extends HTMLElement {
+			static get formAssociated(): boolean {
+				return true;
+			}
+			readonly internals = this.attachInternals();
+			get validity(): ValidityState {
+				return this.internals.validity;
+			}
+			get validationMessage(): string {
+				return this.internals.validationMessage;
+			}
+		}
+
+		async function mountCodeField(rules?: FieldRules) {
+			if (!customElements.get('x-code-face')) customElements.define('x-code-face', CodeFace);
+			registerFieldControl('x-code-face', {
+				submission: 'host',
+				read: (host) => host.getAttribute('value') ?? '',
+				write: (host, value) => host.setAttribute('value', value == null ? '' : String(value)),
+			});
+			const form = document.createElement('rui-form') as RuiFormElement;
+			const nativeForm = document.createElement('form');
+			nativeForm.className = 'rui-form';
+			nativeForm.setAttribute('data-ref', 'form');
+			nativeForm.noValidate = true;
+			const field = document.createElement('rui-field') as RuiFieldElement;
+			field.name = 'code';
+			if (rules) field.rules = rules;
+			field.innerHTML = `
+				<x-code-face></x-code-face>
+				<p class="rui-field__error" data-rui-field-error role="alert" hidden></p>
+			`;
+			nativeForm.append(field);
+			form.append(nativeForm);
+			document.body.append(form);
+			await customElements.whenDefined('rui-form');
+			await customElements.whenDefined('rui-field');
+			await flushRender();
+			await flushFirstConnect();
+			return { form, nativeForm, field, face: field.querySelector('x-code-face') as CodeFace };
+		}
+
+		async function submit(nativeForm: HTMLFormElement): Promise<void> {
+			nativeForm.requestSubmit();
+			await flushRender();
+			await new Promise((resolve) => setTimeout(resolve, 0));
+		}
+
+		it('blocks submission and shows the control message', async () => {
+			const { form, nativeForm, field, face } = await mountCodeField();
+			face.internals.setValidity({ customError: true }, 'Enter all 6 characters');
+			const onSubmit = vi.fn();
+			form.addEventListener('rui-submit', onSubmit);
+
+			await submit(nativeForm);
+
+			expect(onSubmit).not.toHaveBeenCalled();
+			expect(findFieldError(field)?.textContent).toBe('Enter all 6 characters');
+			expect(face.getAttribute('aria-invalid')).toBe('true');
+			form.remove();
+		});
+
+		it('lets a rule message win over the control message', async () => {
+			const { form, nativeForm, field, face } = await mountCodeField({ required: 'Code is required' });
+			face.internals.setValidity({ customError: true }, 'Native message');
+
+			await submit(nativeForm);
+
+			expect(findFieldError(field)?.textContent).toBe('Code is required');
+			form.remove();
+		});
 	});
 
 	it('validates email and bio like the Validation story', async () => {

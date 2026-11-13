@@ -75,6 +75,22 @@ export abstract class FormAssociatedElement extends RadiantElement {
 	}
 
 	/**
+	 * The host's constraint validity, as its {@link internals} report it, or `undefined` on the server.
+	 *
+	 * @remarks Call `this.internals?.setValidity(...)` before emitting the change event so
+	 * change-time validation sees the new state. `rui-form` reads this and
+	 * {@link validationMessage}, never `checkValidity()`, which fires an `invalid` event.
+	 */
+	get validity(): ValidityState | undefined {
+		return this.internals?.validity;
+	}
+
+	/** The message passed to `setValidity`, or `undefined` on the server. */
+	get validationMessage(): string | undefined {
+		return this.internals?.validationMessage;
+	}
+
+	/**
 	 * Whether the host is disabled by its own `disabled` attribute or by a disabled
 	 * ancestor fieldset. Watch it with `@onUpdated('effectiveDisabled')`.
 	 *
