@@ -182,6 +182,17 @@ describe('carousel swipe', () => {
 		expect(host.index).toBe(0);
 	});
 
+	it('swipes a viewport that arrives after the host connected', async () => {
+		const host = new RuiCarousel();
+		host.setAttribute('slides-per-view', '1');
+		document.body.append(host);
+		host.innerHTML = `<section class="rui-carousel" data-ref="root"><div data-ref="viewport"><div data-ref="track">${Array.from({ length: 5 }, (_, i) => `<div data-slide="${i}">${i}</div>`).join('')}</div></div></section>`;
+		await new Promise((resolve) => setTimeout(resolve, 0));
+
+		swipe(host.querySelector('[data-ref="viewport"]')!, 200, 100);
+		expect(host.index).toBe(1);
+	});
+
 	it('flips the direction in a right-to-left carousel', async () => {
 		const host = await mountCarousel(1);
 		host.dir = 'rtl';
