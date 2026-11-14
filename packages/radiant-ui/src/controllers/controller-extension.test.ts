@@ -42,8 +42,8 @@ describe('extending a controller through its protected hooks', () => {
 
 	it('SwipeController.resolveDirection changes what counts as a swipe, with lifecycle binding intact', () => {
 		class EagerSwipe extends SwipeController {
-			protected override resolveDirection(dx: number): SwipeDirection | null {
-				return dx > 10 ? 'right' : null;
+			protected override resolveDirection(dx: number, _dy: number, elapsedMs: number): SwipeDirection | null {
+				return dx > 10 && elapsedMs >= 0 ? 'right' : null;
 			}
 		}
 		const element = document.createElement('div');

@@ -98,7 +98,7 @@ export {
 } from './controllers/sortable-messages';
 export { SwipeController, createSwipeController, type SwipeControllerConfig } from './controllers/swipe-controller';
 export type { SortableAxis, SortableRect } from './controllers/sortable-order';
-export type { SwipeAxis, SwipeDirection, SwipeOptions } from './controllers/swipe-direction';
+export type { SwipeAxis, SwipeDecisionOptions, SwipeDirection, SwipeOptions } from './controllers/swipe-direction';
 export {
 	findFirstFocusableCandidate,
 	getFocusableElements,

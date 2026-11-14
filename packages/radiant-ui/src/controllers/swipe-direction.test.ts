@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_SWIPE_THRESHOLD_PX, resolveSwipeDirection } from './swipe-direction';
+import { DEFAULT_SWIPE_THRESHOLD_PX, MIN_FLICK_TRAVEL_PX, resolveSwipeDirection } from './swipe-direction';
 
 describe('resolveSwipeDirection', () => {
 	it('reads the horizontal axis by default and ignores vertical travel', () => {
@@ -30,5 +30,43 @@ describe('resolveSwipeDirection', () => {
 	it('ignores mostly-cross-axis travel even past the threshold', () => {
 		expect(resolveSwipeDirection(-80, 100)).toBeNull();
 		expect(resolveSwipeDirection(-80, 80)).toBeNull();
+	});
+
+	describe('minVelocity', () => {
+		const flick = { minVelocity: 0.5 };
+
+		it('counts a short fast flick that the threshold alone would reject', () => {
+			expect(resolveSwipeDirection(-24, 2, { ...flick, elapsedMs: 40 })).toBe('left');
+			expect(resolveSwipeDirection(-24, 2, { elapsedMs: 40 })).toBeNull();
+		});
+
+		it('rejects a short slow gesture and still accepts a slow long drag', () => {
+			expect(resolveSwipeDirection(24, 2, { ...flick, elapsedMs: 200 })).toBeNull();
+			expect(resolveSwipeDirection(80, 2, { ...flick, elapsedMs: 2000 })).toBe('right');
+		});
+
+		it('needs the minimum flick travel however fast', () => {
+			expect(resolveSwipeDirection(MIN_FLICK_TRAVEL_PX - 1, 0, { ...flick, elapsedMs: 1 })).toBeNull();
+			expect(resolveSwipeDirection(MIN_FLICK_TRAVEL_PX, 0, { ...flick, elapsedMs: 1 })).toBe('right');
+		});
+
+		it('measures speed along the axis, on the vertical axis too', () => {
+			expect(resolveSwipeDirection(2, -24, { ...flick, axis: 'y', elapsedMs: 40 })).toBe('up');
+			expect(resolveSwipeDirection(2, 24, { ...flick, axis: 'x', elapsedMs: 40 })).toBeNull();
+		});
+	});
+
+	describe('dominance', () => {
+		it('rejects a diagonal drag unless the axis travel is dominance times the cross travel', () => {
+			expect(resolveSwipeDirection(-100, 60)).toBe('left');
+			expect(resolveSwipeDirection(-100, 60, { dominance: 2 })).toBeNull();
+			expect(resolveSwipeDirection(-120, 60, { dominance: 2 })).toBeNull();
+			expect(resolveSwipeDirection(-121, 60, { dominance: 2 })).toBe('left');
+		});
+
+		it('applies to a flick as well', () => {
+			expect(resolveSwipeDirection(30, 20, { minVelocity: 0.5, dominance: 2, elapsedMs: 20 })).toBeNull();
+			expect(resolveSwipeDirection(30, 10, { minVelocity: 0.5, dominance: 2, elapsedMs: 20 })).toBe('right');
+		});
 	});
 });

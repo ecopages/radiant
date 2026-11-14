@@ -18,8 +18,12 @@ async function mountRecipe(slug: string): Promise<HTMLElement> {
 	return document.querySelector<HTMLElement>(`[data-example="${slug}"]`)!;
 }
 
-function pointer(target: Element, type: string, x: number, y: number): void {
-	target.dispatchEvent(new PointerEvent(type, { bubbles: true, button: 0, pointerId: 1, clientX: x, clientY: y }));
+function pointer(target: Element, type: string, x: number, y: number, timeStamp?: number): void {
+	const event = new PointerEvent(type, { bubbles: true, button: 0, pointerId: 1, clientX: x, clientY: y });
+	if (timeStamp !== undefined) {
+		Object.defineProperty(event, 'timeStamp', { value: timeStamp });
+	}
+	target.dispatchEvent(event);
 }
 
 const status = (root: HTMLElement) => root.querySelector('[data-status]')!.textContent;
@@ -77,24 +81,45 @@ describe('recipes', () => {
 		expect(texts(shown())).toEqual(['Banana']);
 	});
 
-	test('swipe card is dismissed by a swipe or the button, not by a press on the button', async () => {
+	test('swipe card follows the drag, springs back when short or diagonal, and is dismissed by a long drag, a flick or the button', async () => {
 		const root = await mountRecipe('swipe-card');
 		const card = root.querySelector<HTMLElement>('[data-card]')!;
 		const dismiss = root.querySelector<HTMLElement>('[data-dismiss]')!;
 		const restore = root.querySelector<HTMLButtonElement>('[data-restore]')!;
+		const dismissed = () => expect.poll(() => card.hidden).toBe(true);
 
 		pointer(dismiss, 'pointerdown', 10, 0);
 		pointer(dismiss, 'pointerup', 200, 0);
 		expect(card.hidden).toBe(false);
 
-		pointer(card, 'pointerdown', 200, 0);
-		pointer(card, 'pointerup', 20, 0);
-		expect(card.hidden).toBe(true);
+		pointer(card, 'pointerdown', 200, 0, 1000);
+		pointer(card, 'pointermove', 170, 0, 1100);
+		expect(card.style.getPropertyValue('--swipe-dx')).toBe('-30px');
+		expect(card.hasAttribute('data-dragging')).toBe(true);
+		pointer(card, 'pointerup', 170, 0, 1500);
+		expect(card.style.getPropertyValue('--swipe-dx')).toBe('0px');
+		expect(card.hasAttribute('data-dragging')).toBe(false);
+		expect(card.hidden).toBe(false);
+
+		pointer(card, 'pointerdown', 200, 0, 2000);
+		pointer(card, 'pointerup', 100, 70, 2400);
+		expect(card.style.getPropertyValue('--swipe-dx')).toBe('0px');
+		expect(card.hidden).toBe(false);
+
+		pointer(card, 'pointerdown', 200, 0, 3000);
+		pointer(card, 'pointerup', 20, 0, 3500);
+		await dismissed();
 		expect(status(root)).toBe('Card dismissed, swiped left');
 
 		restore.click();
 		expect(card.hidden).toBe(false);
 
+		pointer(card, 'pointerdown', 200, 0, 4000);
+		pointer(card, 'pointerup', 170, 0, 4030);
+		await dismissed();
+		expect(status(root)).toBe('Card dismissed, swiped left');
+
+		restore.click();
 		await userEvent.click(dismiss);
 		expect(card.hidden).toBe(true);
 		expect(status(root)).toBe('Card dismissed');

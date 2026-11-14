@@ -22,8 +22,12 @@ async function mountExample(slug: string): Promise<HTMLElement> {
 	return document.querySelector<HTMLElement>(`[data-example="${slug}"]`)!;
 }
 
-function press(target: Element, type: string, x: number, y = 0): void {
-	target.dispatchEvent(new PointerEvent(type, { bubbles: true, button: 0, pointerId: 1, clientX: x, clientY: y }));
+function press(target: Element, type: string, x: number, y = 0, timeStamp?: number): void {
+	const event = new PointerEvent(type, { bubbles: true, button: 0, pointerId: 1, clientX: x, clientY: y });
+	if (timeStamp !== undefined) {
+		Object.defineProperty(event, 'timeStamp', { value: timeStamp });
+	}
+	target.dispatchEvent(event);
 }
 
 const status = (root: HTMLElement) => root.querySelector('[data-status]')!;
@@ -169,6 +173,14 @@ describe('controller page examples', () => {
 		press(box, 'pointerdown', 100);
 		press(box, 'pointerup', 20);
 		expect(status(root).textContent).toBe('Swiped left');
+
+		press(box, 'pointerdown', 100, 0, 1000);
+		press(box, 'pointerup', 130, 0, 1030);
+		expect(status(root).textContent).toBe('Swiped right');
+
+		press(box, 'pointerdown', 100, 0, 2000);
+		press(box, 'pointerup', 20, 70, 2400);
+		expect(status(root).textContent).toBe('Swiped right');
 	});
 
 	test('PointerDragController follows the pointer and reports how the drag ended', async () => {
