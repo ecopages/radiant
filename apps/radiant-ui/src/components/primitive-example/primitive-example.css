@@ -1,4 +1,6 @@
 .primitive-example {
+	position: relative;
+	z-index: 1;
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
@@ -94,6 +96,21 @@
 	background: var(--surface-container);
 	color: var(--on-surface-container);
 	list-style: none;
+}
+
+.primitive-example :where([role='menu']) {
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+}
+
+.primitive-example :where([role='menuitem']) {
+	width: 100%;
+	text-align: left;
+}
+
+.primitive-example :where([data-box], [role='listbox'], [role='menu']) {
+	z-index: 1;
 }
 
 .primitive-example :where([role='option'][data-active], [role='menuitem']:focus-visible) {
