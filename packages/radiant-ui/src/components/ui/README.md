@@ -1,6 +1,6 @@
 # Component authoring
 
-Architecture for `src/components/ui`. Agent rules: [`AGENTS.md`](../../../AGENTS.md). Tokens and CSS: [`DESIGN.md`](../../../DESIGN.md). Tiers and file layout: [`Introduction.mdx`](../../Introduction.mdx).
+Architecture for `src/components/ui`. Agent rules: [`AGENTS.md`](../../../AGENTS.md). Tokens and CSS: [`DESIGN.md`](../../../DESIGN.md). Tiers and file layout: [`Introduction.mdx`](./Introduction.mdx).
 
 Platform vocabulary (Radiant, JSX, SSR) lives in root [`CONTEXT.md`](../../../../../CONTEXT.md). Use the catalog terms below for this package; do not load CONTEXT.md for catalog-only edits.
 
@@ -209,7 +209,7 @@ import { RuiFoo as RuiFooElement } from './foo.script';
 );
 ```
 
-A **Derived Tree** view takes no children: the host's first `render()` replaces them. When a wrapper is needed, type its props `WithoutChildren<JsxCustomElementAttributes<RuiFooElement, RuiFooProps>>` (from `src/lib/without-children.ts`, imported by relative path) and spread the full props object onto a self-closing class host (`<RuiMeterElement {...props} />`); a Composition Helper that forwards to such a view uses the same type. `WithoutChildren` adds `children?: never` rather than omitting the key: with no other attributes on the tag, the `data-*` index signature keeps TypeScript from flagging JSX body children, so `Omit` still accepts `<RuiMeter><p /></RuiMeter>`. `src/host-contract.types.tsx` pins this for every Derived Tree host and any retained view.
+A **Derived Tree** view takes no children: the host's first `render()` replaces them. When a wrapper is needed, type its props `WithoutChildren<JsxCustomElementAttributes<RuiFooElement, RuiFooProps>>` (from `src/lib/without-children.ts`, imported by relative path) and spread the full props object onto a self-closing class host (`<RuiMeterElement {...props} />`); a Composition Helper that forwards to such a view uses the same type. `WithoutChildren` adds `children?: never` rather than omitting the key: with no other attributes on the tag, the `data-*` index signature keeps TypeScript from flagging JSX body children, so `Omit` still accepts `<RuiMeter><p /></RuiMeter>`. `src/contract/host-contract.types.tsx` pins this for every Derived Tree host and any retained view.
 
 Peel props only when the view must transform or filter them:
 
