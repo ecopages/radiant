@@ -283,6 +283,20 @@ describe('SortableController on a plain list', () => {
 			expect(onChange).not.toHaveBeenCalled();
 		});
 
+		it('lifts only on the configured liftKeys, and Enter still drops', () => {
+			const { items, onChange, controller } = mount({ liftKeys: [' '] });
+			controller.attach();
+
+			press(items()[0], 'Enter');
+			expect(controller.getState()).toBeNull();
+
+			press(items()[0], ' ');
+			press(items()[0], 'ArrowDown');
+			press(items()[0], 'Enter');
+
+			expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ from: 0, to: 1 }));
+		});
+
 		it('does not lift from a control inside the item', () => {
 			const { items, onChange, controller } = mount();
 			const button = document.createElement('button');

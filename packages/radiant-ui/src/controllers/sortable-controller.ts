@@ -56,6 +56,12 @@ export type SortableControllerConfig = {
 	getContainerLabel?: () => string;
 	/** Narrows where a press or Space/Enter lifts an item to a handle inside it. Without it the whole item lifts. */
 	getHandle?: (item: HTMLElement) => HTMLElement | null;
+	/**
+	 * The keys that lift an item. Default Space and Enter.
+	 *
+	 * @remarks Drop is always Space or Enter. Narrow this when Enter or Space already does something on the item, such as selecting it.
+	 */
+	liftKeys?: readonly string[];
 	/** Which way the list runs. Default `vertical`. `both` suits a wrapping layout. */
 	axis?: SortableAxis;
 	/** Pointer travel in px before a press becomes a drag, so a click still clicks. Default `4`. */
@@ -86,6 +92,8 @@ type Session = Omit<SortableChange, 'toContainer'> & {
 };
 
 const DEFAULT_THRESHOLD_PX = 4;
+
+const DEFAULT_LIFT_KEYS = [' ', 'Enter'];
 
 /**
  * Reorders the items of a container, or moves them between containers, by pointer drag or keyboard, and tells the
@@ -137,7 +145,7 @@ const DEFAULT_THRESHOLD_PX = 4;
  * would follow a drag is swallowed. The owner's CSS needs `touch-action: none` on the draggable part (the handle or
  * the item) for touch, and `user-select: none` to stop text selection while dragging.
  *
- * Keyboard: Space or Enter on the item itself (or its handle, not a button inside it) lifts it. Arrow keys of the
+ * Keyboard: Space or Enter (`liftKeys`) on the item itself (or its handle, not a button inside it) lifts it. Arrow keys of the
  * axis move the target one step, Home and End jump to the ends, Space or Enter drops and Escape cancels (Escape is
  * stopped so an enclosing dialog or popover stays open). Focus leaving the item cancels. After a drop the owner
  * moves the node, which blurs it in some browsers: restore focus on the moved item. Focusable items are the
@@ -326,7 +334,7 @@ export class SortableController implements Controller {
 	}
 
 	private liftFromKey(event: KeyboardEvent): void {
-		if (event.key !== ' ' && event.key !== 'Enter') {
+		if (!(this.config.liftKeys ?? DEFAULT_LIFT_KEYS).includes(event.key)) {
 			return;
 		}
 		const items = this.config.getItems();
