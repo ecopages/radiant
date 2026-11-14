@@ -95,6 +95,23 @@ describe('RuiListbox', () => {
 		cleanup();
 	});
 
+	it('keeps focus on the option when the listbox is disabled and an arrow key is pressed', async () => {
+		const { host, cleanup } = mount(
+			<RuiListbox value="apple" disabled>
+				<RuiListboxOption value="apple">Apple</RuiListboxOption>
+				<RuiListboxOption value="banana">Banana</RuiListboxOption>
+			</RuiListbox>,
+		);
+		await settled();
+
+		const options = optionsOf(host);
+		options[0].focus();
+		options[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }));
+
+		expect(document.activeElement).toBe(options[0]);
+		cleanup();
+	});
+
 	it('selects the option an arrow key moves to in single mode and ignores arrows when embedded', async () => {
 		const { host, cleanup } = mount(
 			<RuiListbox value="apple">
