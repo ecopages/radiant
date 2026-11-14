@@ -131,7 +131,7 @@ describe('CalendarPopoverController on a plain element', () => {
 		controller.destroy();
 		await Promise.resolve();
 
-		expect(observers.every((record) => record.disconnected)).toBe(true);
+		expect(observers).toHaveLength(0);
 		host.remove();
 	});
 
@@ -232,8 +232,11 @@ describe('focusCalendarPickerDay', () => {
 		const calendar = document.createElement('div');
 		const day = document.createElement('button');
 		day.setAttribute('data-calendar-day', '');
-		day.setAttribute('data-iso', '2024-01-01');
-		calendar.append(day);
+		day.setAttribute('data-iso', '2024"]');
+		const fallback = document.createElement('button');
+		fallback.setAttribute('data-calendar-day', '');
+		fallback.setAttribute('data-iso', '2024-01-01');
+		calendar.append(fallback, day);
 		document.body.append(calendar);
 
 		expect(() => focusCalendarPickerDay(calendar, '2024"]')).not.toThrow();
