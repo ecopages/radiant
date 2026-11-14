@@ -25,7 +25,9 @@ export class RecipeModal extends RadiantElement {
 		getSurface: () => this.dialog,
 		getReturnFocus: () => this.returnTo,
 	});
-	private readonly lock = new ScrollLockController();
+	private readonly lock = new ScrollLockController({
+		getTarget: () => this.closest<HTMLElement>('.docs-layout__content') ?? document.documentElement,
+	});
 	private readonly dismiss = new DismissController({
 		getSurface: () => this.dialog,
 		triggers: ['pointer', 'escape'],

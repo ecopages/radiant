@@ -38,8 +38,12 @@ export class RecipeSwipeCard extends RadiantElement {
 	}
 
 	private setShown(shown: boolean, message: string): void {
+		const hadFocus = !shown && this.card.contains(document.activeElement);
 		this.card.hidden = !shown;
 		this.restoreButton.hidden = shown;
+		if (hadFocus) {
+			this.restoreButton.focus();
+		}
 		this.status.textContent = message;
 		this.card.style.setProperty('--swipe-dx', '0px');
 		this.card.style.setProperty('--swipe-opacity', '1');
@@ -54,7 +58,6 @@ export class RecipeSwipeCard extends RadiantElement {
 	@onEvent({ selector: '[data-dismiss]', type: 'click' })
 	dismiss(): void {
 		this.setShown(false, 'Card dismissed');
-		this.restoreButton.focus();
 	}
 
 	@onEvent({ selector: '[data-restore]', type: 'click' })

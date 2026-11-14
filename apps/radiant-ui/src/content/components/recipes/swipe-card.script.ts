@@ -9,8 +9,12 @@ export function mount(root: HTMLElement): () => void {
 	const status = root.querySelector('[data-status]')!;
 
 	function setShown(shown: boolean, message: string): void {
+		const hadFocus = !shown && card.contains(document.activeElement);
 		card.hidden = !shown;
 		restoreButton.hidden = shown;
+		if (hadFocus) {
+			restoreButton.focus();
+		}
 		status.textContent = message;
 		card.style.setProperty('--swipe-dx', '0px');
 		card.style.setProperty('--swipe-opacity', '1');
@@ -50,7 +54,6 @@ export function mount(root: HTMLElement): () => void {
 
 	dismissButton.addEventListener('click', () => {
 		setShown(false, 'Card dismissed');
-		restoreButton.focus();
 	});
 	restoreButton.addEventListener('click', () => {
 		setShown(true, 'The card is shown');

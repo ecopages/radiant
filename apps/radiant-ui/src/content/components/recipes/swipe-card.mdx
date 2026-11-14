@@ -29,9 +29,9 @@ A notification, a suggestion or a message in a feed that the user clears with a 
 - [PointerDragController](/docs/controllers/pointer-drag) reports the drag, so the card follows the pointer: the recipe writes `--swipe-dx` and `--swipe-opacity` on it and the CSS translates and fades it, with no transition while `data-dragging` is set and a transition on release. Its `canStart` keeps a press on the button from starting a drag.
 - [resolveSwipeDirection](/docs/helpers/decisions) decides on release from the drag's `dx`, `dy` and `elapsedMs`: a long drag counts, and so does a short quick flick (`minVelocity`) as long as it is clearly sideways (`dominance`). Past the decision the card flies out and is dismissed; otherwise it springs back.
 
-The recipe uses one `PointerDragController` and the pure decision rather than a second `SwipeController` on the same card: `SwipeController` is itself a `PointerDragController`, so two would listen for the same press twice and finish in an order the recipe does not control. The time comes from the `elapsedMs` of the drag's end.
+The recipe uses one `PointerDragController` and the pure decision rather than a second `SwipeController` on the same card: `SwipeController` is built on a `PointerDragController`, so two would listen for the same press twice and finish in an order the recipe does not control. The time comes from the `elapsedMs` of the drag's end.
 
-Left to the recipe: what dismissing does (here it waits for the fly-out animation, hides the card and says so in a live region) and moving focus on to the restore button, since the focused element just left the page. A card that only needs the decision and no feedback uses [SwipeController](/docs/controllers/swipe).
+Left to the recipe: what dismissing does (here it waits for the fly-out animation, hides the card and says so in a live region) and, where the card is hidden while it holds focus, moving focus on to the restore button. A card that only needs the decision and no feedback uses [SwipeController](/docs/controllers/swipe).
 
 ## Example
 
@@ -78,8 +78,12 @@ export function mount(root: HTMLElement): () => void {
 	const status = root.querySelector('[data-status]')!;
 
 	function setShown(shown: boolean, message: string): void {
+		const hadFocus = !shown && card.contains(document.activeElement);
 		card.hidden = !shown;
 		restoreButton.hidden = shown;
+		if (hadFocus) {
+			restoreButton.focus();
+		}
 		status.textContent = message;
 		card.style.setProperty('--swipe-dx', '0px');
 		card.style.setProperty('--swipe-opacity', '1');
@@ -119,7 +123,6 @@ export function mount(root: HTMLElement): () => void {
 
 	dismissButton.addEventListener('click', () => {
 		setShown(false, 'Card dismissed');
-		restoreButton.focus();
 	});
 	restoreButton.addEventListener('click', () => {
 		setShown(true, 'The card is shown');
@@ -204,8 +207,12 @@ export class RecipeSwipeCard extends RadiantElement {
 	}
 
 	private setShown(shown: boolean, message: string): void {
+		const hadFocus = !shown && this.card.contains(document.activeElement);
 		this.card.hidden = !shown;
 		this.restoreButton.hidden = shown;
+		if (hadFocus) {
+			this.restoreButton.focus();
+		}
 		this.status.textContent = message;
 		this.card.style.setProperty('--swipe-dx', '0px');
 		this.card.style.setProperty('--swipe-opacity', '1');
@@ -220,7 +227,6 @@ export class RecipeSwipeCard extends RadiantElement {
 	@onEvent({ selector: '[data-dismiss]', type: 'click' })
 	dismiss(): void {
 		this.setShown(false, 'Card dismissed');
-		this.restoreButton.focus();
 	}
 
 	@onEvent({ selector: '[data-restore]', type: 'click' })
@@ -234,3 +240,48 @@ export class RecipeSwipeCard extends RadiantElement {
 `createPointerDragController(this, ...)` in the constructor attaches the drag when the element connects and destroys it when the element disconnects, and the `@onEvent` listeners for the two buttons follow the same lifecycle. The card, the buttons and the live region are found with `@query`, so the element owns all of them; the pure `resolveSwipeDirection` decision is unchanged.
 
 What the Radiant form removes: the `mount` function and its registration, the cleanup to return and call, and the re-run after a client-side navigation.
+
+### Styles
+
+The card follows the drag only through these rules: the recipe writes `--swipe-dx` and `--swipe-opacity` and the stylesheet turns them into a translation and a fade, with no transition while `data-dragging` is set.
+
+```css
+:is([data-example='swipe-card'], .primitive-example:has(> recipe-swipe-card)) {
+	flex-direction: column;
+	align-items: stretch;
+	overflow-x: clip;
+	min-height: 8rem;
+}
+
+:is([data-example='swipe-card'], .primitive-example:has(> recipe-swipe-card)) [data-card] {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-3);
+	border-style: solid;
+	cursor: grab;
+	transform: translateX(var(--swipe-dx, 0));
+	opacity: var(--swipe-opacity, 1);
+	transition:
+		transform 0.2s ease,
+		opacity 0.2s ease;
+}
+
+:is([data-example='swipe-card'], .primitive-example:has(> recipe-swipe-card)) [data-card][data-dragging] {
+	transition: none;
+	cursor: grabbing;
+	box-shadow: 0 var(--space-1) var(--space-3) color-mix(in srgb, var(--on-surface) 20%, transparent);
+}
+
+:is([data-example='swipe-card'], .primitive-example:has(> recipe-swipe-card)) [data-card][hidden] {
+	display: none;
+}
+
+:is([data-example='swipe-card'], .primitive-example:has(> recipe-swipe-card)) [data-restore] {
+	align-self: flex-start;
+}
+
+:is([data-example='swipe-card'], .primitive-example:has(> recipe-swipe-card)) [data-restore][hidden] {
+	display: none;
+}
+```

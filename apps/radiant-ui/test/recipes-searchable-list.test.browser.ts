@@ -1,6 +1,6 @@
 import { userEvent } from 'vitest/browser';
 import { afterEach, describe, expect, test } from 'vitest';
-import { mountForm, type Form } from './mount-recipe';
+import { mountForm, trackListeners, type Form } from './mount-recipe';
 
 const status = (root: HTMLElement) => root.querySelector('[data-status]')!.textContent;
 const texts = (nodes: Iterable<Element>) => [...nodes].map((node) => node.textContent);
@@ -48,36 +48,16 @@ describe('recipes', () => {
 	});
 
 	test('searchable list Radiant form removes every listener when the element leaves and starts again on a fresh copy', async () => {
-		const add = EventTarget.prototype.addEventListener;
-		const remove = EventTarget.prototype.removeEventListener;
-		const live = new Set<string>();
-		const ids = new WeakMap<object, number>();
-		const key = (target: EventTarget, type: string, listener: unknown, options: unknown) => {
-			const id = (value: unknown) => {
-				if (typeof value !== 'object' && typeof value !== 'function') return String(value);
-				const object = value as object;
-				return String(ids.get(object) ?? ids.set(object, ids.size).get(object));
-			};
-			return [id(target), type, id(listener), JSON.stringify(options)].join('|');
-		};
-		EventTarget.prototype.addEventListener = function (type, listener, options) {
-			live.add(key(this, type, listener, options));
-			return add.call(this, type, listener, options);
-		};
-		EventTarget.prototype.removeEventListener = function (type, listener, options) {
-			live.delete(key(this, type, listener, options));
-			return remove.call(this, type, listener, options);
-		};
+		const tracker = trackListeners();
 		let root: HTMLElement;
 		try {
 			root = await mountForm('searchable-list', 'radiant');
 			await expect.poll(() => root.querySelector('li')!.tabIndex).toBe(0);
-			expect(live.size).toBeGreaterThan(0);
+			expect(tracker.live().length).toBeGreaterThan(0);
 			root.remove();
-			expect([...live]).toEqual([]);
+			expect(tracker.live()).toEqual([]);
 		} finally {
-			EventTarget.prototype.addEventListener = add;
-			EventTarget.prototype.removeEventListener = remove;
+			tracker.stop();
 		}
 
 		const fresh = root.cloneNode(true) as HTMLElement;

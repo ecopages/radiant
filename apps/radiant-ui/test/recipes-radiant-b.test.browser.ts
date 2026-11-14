@@ -2,7 +2,7 @@ import { userEvent } from 'vitest/browser';
 import { afterEach, describe, expect, test } from 'vitest';
 import '../src/components/primitive-example/primitive-example.css';
 import '../src/content/components/recipes/popover-menu.css';
-import { mountForm, type Form } from './mount-recipe';
+import { mountForm, trackListeners, type Form } from './mount-recipe';
 
 function pointer(target: Element, type: string, x: number, y: number, timeStamp?: number): void {
 	const event = new PointerEvent(type, { bubbles: true, button: 0, pointerId: 1, clientX: x, clientY: y });
@@ -13,36 +13,6 @@ function pointer(target: Element, type: string, x: number, y: number, timeStamp?
 }
 
 const status = (root: HTMLElement) => root.querySelector('[data-status]')!.textContent;
-
-/** Records every listener added and not yet removed, so a test can tell what a removed element left behind. */
-function trackListeners(): { live: () => string[]; stop: () => void } {
-	const add = EventTarget.prototype.addEventListener;
-	const remove = EventTarget.prototype.removeEventListener;
-	const live = new Set<string>();
-	const ids = new WeakMap<object, number>();
-	const id = (value: unknown) => {
-		if (typeof value !== 'object' && typeof value !== 'function') return String(value);
-		const object = value as object;
-		return String(ids.get(object) ?? ids.set(object, ids.size).get(object));
-	};
-	const key = (target: EventTarget, type: string, listener: unknown, options: unknown) =>
-		[id(target), type, id(listener), JSON.stringify(options)].join('|');
-	EventTarget.prototype.addEventListener = function (type, listener, options) {
-		live.add(key(this, type, listener, options));
-		return add.call(this, type, listener, options);
-	};
-	EventTarget.prototype.removeEventListener = function (type, listener, options) {
-		live.delete(key(this, type, listener, options));
-		return remove.call(this, type, listener, options);
-	};
-	return {
-		live: () => [...live],
-		stop: () => {
-			EventTarget.prototype.addEventListener = add;
-			EventTarget.prototype.removeEventListener = remove;
-		},
-	};
-}
 
 afterEach(() => {
 	document.body.innerHTML = '';
@@ -103,6 +73,18 @@ describe.each<Form>(['plain', 'radiant'])('swipe card (%s form)', (form) => {
 		expect(document.activeElement).toBe(restore);
 	});
 
+	test('a swipe while the Dismiss button has focus moves focus to the restore button', async () => {
+		const { card, dismiss, restore } = await mount();
+
+		dismiss.focus();
+		expect(document.activeElement).toBe(dismiss);
+		pointer(card, 'pointerdown', 200, 0, 1000);
+		pointer(card, 'pointerup', 20, 0, 1500);
+		await expect.poll(() => card.hidden).toBe(true);
+
+		expect(document.activeElement).toBe(restore);
+	});
+
 	test('restoring brings the card back at rest and returns focus to the dismiss button', async () => {
 		const { root, card, dismiss, restore } = await mount();
 
@@ -136,7 +118,6 @@ test('swipe card Radiant form removes every listener when the element leaves and
 	const fresh = root.cloneNode(true) as HTMLElement;
 	document.body.append(fresh);
 	const card = fresh.querySelector<HTMLElement>('[data-card]')!;
-	await expect.poll(() => fresh.isConnected).toBe(true);
 	pointer(card, 'pointerdown', 200, 0, 1000);
 	pointer(card, 'pointermove', 170, 0, 1100);
 	expect(card.style.getPropertyValue('--swipe-dx')).toBe('-30px');

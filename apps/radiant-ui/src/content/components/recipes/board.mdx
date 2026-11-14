@@ -275,3 +275,86 @@ export class RecipeBoard extends RadiantElement {
 Each column gets its own `createSortableController(this, ...)`, all sharing a `SortableGroup` kept in a field. The controllers are created in the element, one for each of the three columns, and look their column up by index when they attach, so `@query({ selector: 'ul', all: true })` is read lazily and the markup stays plain. They attach when the element connects and are destroyed when it disconnects.
 
 What the Radiant form removes: the `mount` function and its registration, the cleanup that destroys each controller, and the re-run after a client-side navigation.
+
+### Styles
+
+The same attributes style the lifted card, the placeholder and the column a card is over; `touch-action: none` on the cards lets a touch drag move them instead of scrolling.
+
+```css
+[data-example='board'].primitive-example,
+.primitive-example:has(> recipe-board) {
+	flex-direction: column;
+	flex-wrap: nowrap;
+	align-items: stretch;
+}
+
+:is([data-example='board'], recipe-board) :where([data-board]) {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: var(--space-3);
+}
+
+:is([data-example='board'], recipe-board) :where([data-column]) {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
+	min-width: 0;
+	padding: var(--space-2);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-container);
+	background: var(--surface-container);
+	color: var(--on-surface-container);
+}
+
+:is([data-example='board'], recipe-board) :where(h3) {
+	margin: 0;
+	font-size: 0.875rem;
+}
+
+:is([data-example='board'], recipe-board) :where(ul) {
+	min-height: 3rem;
+	max-height: 8rem;
+	overflow-y: auto;
+	border-radius: var(--radius-control);
+}
+
+:is([data-example='board'], recipe-board) ul[data-sortable-over] {
+	outline: 2px solid var(--primary);
+	outline-offset: -2px;
+}
+
+[data-card] {
+	padding: var(--space-1) var(--space-3);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-control);
+	background: var(--surface);
+	color: var(--on-surface);
+	font-size: 0.875rem;
+	cursor: grab;
+	touch-action: none;
+	user-select: none;
+}
+
+[data-card]:focus-visible {
+	outline: 2px solid var(--focus-ring);
+	outline-offset: 2px;
+}
+
+[data-card][data-sortable-state='lifted'] {
+	z-index: 10;
+	background: var(--primary);
+	color: var(--on-primary);
+	box-shadow: 0 0.5rem 1rem rgb(0 0 0 / 0.25);
+	cursor: grabbing;
+}
+
+:is([data-example='board'], recipe-board) [data-sortable-placeholder] {
+	border: 1px dashed var(--primary);
+	border-radius: var(--radius-control);
+	background: transparent;
+}
+
+:is([data-example='board'], recipe-board) [data-sortable-drop] {
+	box-shadow: none;
+}
+```

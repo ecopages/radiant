@@ -22,13 +22,13 @@ export const config = {
 
 ## Goal
 
-A confirmation, a form in an overlay or a lightbox: while it is open the user works only in the dialog. Tab loops inside it, the page behind does not scroll, Escape or a press outside closes it, and focus goes back to the button that opened it.
+A confirmation, a form in an overlay or a lightbox: while it is open the user works only in the dialog. Tab loops inside it, what is behind does not scroll, Escape or a press outside closes it, and focus goes back to the button that opened it.
 
 ## Primitives
 
 - [PortalController](/docs/controllers/portal) moves the dialog out of the element it lives in and puts it back on close, so no overflow or stacking context of its parents clips it. Without `getContainer` it goes to `document.body`; the example passes the example frame instead, so the dialog stays inside it and the frame styles still apply. It also carries the theme of the place it left.
 - [FocusTrapController](/docs/controllers/focus-trap) moves focus into the dialog on attach, loops Tab and Shift+Tab inside it, and returns focus on destroy: to the previously focused element, or to the control `getReturnFocus` names.
-- [ScrollLockController](/docs/controllers/scroll-lock) stops the page from scrolling, and counts, so two modals open at once release it only when both are closed.
+- [ScrollLockController](/docs/controllers/scroll-lock) stops the page from scrolling, and counts, so two modals open at once release it only when both are closed. This site is an app shell where the article column scrolls and the document does not, so the example passes that column as `getTarget`; without `getTarget` it locks the page, which is what you want in a project whose page scrolls.
 - [DismissController](/docs/controllers/dismiss) reports Escape and a press outside the dialog. Focus leaving is not listened to, because the trap already keeps it inside.
 
 Left to the recipe: the open and close function that attaches and destroys the four together, and `aria-modal` and a label on the dialog. None of them makes the rest of the page `inert`; a modal that must also block the pointer on the page or find-in-page sets `inert` itself.
@@ -109,7 +109,9 @@ export function mount(root: HTMLElement): () => void {
 	const portal = new PortalController({ getNode: () => layer, getContainer: () => root });
 	let returnTo: HTMLElement | null = null;
 	const trap = new FocusTrapController({ getSurface: () => dialog, getReturnFocus: () => returnTo });
-	const lock = new ScrollLockController();
+	const lock = new ScrollLockController({
+		getTarget: () => root.closest<HTMLElement>('.docs-layout__content') ?? document.documentElement,
+	});
 	const dismiss = new DismissController({
 		getSurface: () => dialog,
 		triggers: ['pointer', 'escape'],
@@ -229,7 +231,9 @@ export class RecipeModal extends RadiantElement {
 		getSurface: () => this.dialog,
 		getReturnFocus: () => this.returnTo,
 	});
-	private readonly lock = new ScrollLockController();
+	private readonly lock = new ScrollLockController({
+		getTarget: () => this.closest<HTMLElement>('.docs-layout__content') ?? document.documentElement,
+	});
 	private readonly dismiss = new DismissController({
 		getSurface: () => this.dialog,
 		triggers: ['pointer', 'escape'],
@@ -275,3 +279,67 @@ export class RecipeModal extends RadiantElement {
 ```
 
 The four controllers are built directly because the dialog starts and stops them, and the `@onEvent` listeners keep working after the layer is portaled because the container is the element itself. The cleanup callback closes the dialog if the element is removed while the dialog is open. What the Radiant form removes: the `mount` function and its registration, the cleanup to return and call, and the re-run after a client-side navigation.
+
+### Styles
+
+The layer is positioned with `inset: 0` against the nearest positioned ancestor, here the example frame, dims what is behind and centers the dialog. Use `position: fixed` to cover the whole page.
+
+```css
+.primitive-example[data-example='modal'],
+.primitive-example:has(> recipe-modal) {
+	min-height: 18rem;
+	align-content: flex-start;
+	align-items: flex-start;
+}
+
+:is([data-example='modal'], recipe-modal) :where([data-origin]) {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-3);
+}
+
+:is([data-example='modal'], recipe-modal) :where([data-layer]:not([hidden])) {
+	position: absolute;
+	inset: 0;
+	z-index: 2;
+	display: grid;
+	place-items: center;
+	padding: var(--space-3);
+	border-radius: inherit;
+	background: color-mix(in srgb, var(--on-surface) 50%, transparent);
+}
+
+:is([data-example='modal'], recipe-modal) :where([data-dialog]) {
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
+	width: min(100%, 22rem);
+	padding: var(--space-4);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-container);
+	background: var(--surface);
+	color: var(--on-surface);
+}
+
+:is([data-example='modal'], recipe-modal) :where([data-dialog] > *) {
+	margin: 0;
+}
+
+:is([data-example='modal'], recipe-modal) :where([data-dialog] h3) {
+	font-size: 1rem;
+}
+
+:is([data-example='modal'], recipe-modal) :where([data-actions]) {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	gap: var(--space-2);
+	margin-block-start: var(--space-2);
+}
+
+:is([data-example='modal'], recipe-modal) :where([data-confirm]) {
+	background: var(--primary);
+	color: var(--on-primary);
+}
+```

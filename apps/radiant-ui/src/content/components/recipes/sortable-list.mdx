@@ -181,3 +181,39 @@ export class RecipeSortableList extends RadiantElement {
 `createSortableController(this, ...)` and `createRovingController(this, ...)` attach when the element connects and are destroyed when it disconnects. They are field initializers because each refers to the other from its callbacks: `enabled` reads the sortable and `onChange` focuses through the roving controller. The items are read in `onConnected`, once the element has its children.
 
 What the Radiant form removes: the `mount` function and its registration, the cleanup that destroys both controllers, and the re-run after a client-side navigation.
+
+### Styles
+
+The lifted item and the placeholder are styled by `data-sortable-state` and `data-sortable-placeholder`; `touch-action: none` on the items lets a touch drag reorder instead of scrolling.
+
+```css
+[data-task] {
+	cursor: grab;
+	touch-action: none;
+	user-select: none;
+}
+
+[data-task][data-sortable-state='lifted'] {
+	z-index: 10;
+	padding: var(--space-2) var(--space-3);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-control);
+	background: var(--primary);
+	color: var(--on-primary);
+	font-size: 0.875rem;
+	box-shadow: 0 0.5rem 1rem rgb(0 0 0 / 0.25);
+	cursor: grabbing;
+}
+
+:is([data-example='sortable-list'], recipe-sortable-list) [data-sortable-placeholder] {
+	min-height: 2.5rem;
+	box-sizing: border-box;
+	outline: 1px dashed var(--primary);
+	outline-offset: -4px;
+	background: transparent;
+}
+
+:is([data-example='sortable-list'], recipe-sortable-list) [data-sortable-drop] {
+	box-shadow: none;
+}
+```

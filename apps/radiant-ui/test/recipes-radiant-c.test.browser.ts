@@ -2,7 +2,7 @@ import { userEvent } from 'vitest/browser';
 import { afterEach, describe, expect, test } from 'vitest';
 import '../src/components/primitive-example/primitive-example.css';
 import '../src/content/components/recipes/modal.css';
-import { mountForm, type Form } from './mount-recipe';
+import { mountForm, trackListeners, type Form } from './mount-recipe';
 
 const status = (root: HTMLElement) => root.querySelector('[data-status]')!.textContent;
 
@@ -58,6 +58,21 @@ describe.each<Form>(['plain', 'radiant'])('modal, %s form', (form) => {
 		expect(document.activeElement).toBe(opener);
 	});
 
+	test('locks the docs article column and not the page when the example sits in one', async () => {
+		const root = await mountForm('modal', form);
+		const column = document.createElement('div');
+		column.className = 'docs-layout__content';
+		root.replaceWith(column);
+		column.append(root);
+
+		await userEvent.click(root.querySelector<HTMLElement>('[data-open]')!);
+		expect(column.style.overflow).toBe('hidden');
+		expect(document.documentElement.style.overflow).toBe('');
+
+		await userEvent.keyboard('{Escape}');
+		expect(column.style.overflow).toBe('');
+	});
+
 	test('covers the example frame with a backdrop and a panel inside it', async () => {
 		const root = await mountForm('modal', form);
 		const frame = form === 'plain' ? root : document.createElement('div');
@@ -88,31 +103,20 @@ describe.each<Form>(['plain', 'radiant'])('modal, %s form', (form) => {
 });
 
 test('modal Radiant form releases the scroll lock and the document listeners when the element leaves while open', async () => {
-	const add = EventTarget.prototype.addEventListener;
-	const remove = EventTarget.prototype.removeEventListener;
-	let documentListeners = 0;
-	EventTarget.prototype.addEventListener = function (type, listener, options) {
-		if (this === document) documentListeners += 1;
-		return add.call(this, type, listener, options);
-	};
-	EventTarget.prototype.removeEventListener = function (type, listener, options) {
-		if (this === document) documentListeners -= 1;
-		return remove.call(this, type, listener, options);
-	};
+	const tracker = trackListeners();
 	let root: HTMLElement;
 	try {
 		root = await mountForm('modal', 'radiant');
-		const before = documentListeners;
+		const before = tracker.live(document);
 		await userEvent.click(root.querySelector<HTMLElement>('[data-open]')!);
 		expect(document.documentElement.style.overflow).toBe('hidden');
-		expect(documentListeners).toBeGreaterThan(before);
+		expect(tracker.live(document).length).toBeGreaterThan(before.length);
 
 		root.remove();
-		expect(documentListeners).toBe(before);
+		expect(tracker.live(document)).toEqual(before);
 		expect(document.documentElement.style.overflow).toBe('');
 	} finally {
-		EventTarget.prototype.addEventListener = add;
-		EventTarget.prototype.removeEventListener = remove;
+		tracker.stop();
 	}
 
 	const fresh = root.cloneNode(true) as HTMLElement;
