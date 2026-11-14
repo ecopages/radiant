@@ -8,7 +8,16 @@
 		"outDir": "./dist",
 		"rootDir": "./src"
 	},
-	"include": ["src/index.ts", "src/aria.ts", "src/cx.ts", "src/controllers.ts", "src/helpers.ts", "src/components/ui", "src/lib", "src/types.ts"],
+	"include": [
+		"src/index.ts",
+		"src/aria.ts",
+		"src/cx.ts",
+		"src/controllers.ts",
+		"src/helpers.ts",
+		"src/components/ui",
+		"src/lib",
+		"src/types.ts"
+	],
 	/* Stories and tests are development-only: emitting their declarations shipped
      `dist/lib/*.test.d.ts` as part of the package's public type surface. */
 	"exclude": ["**/*.stories.tsx", "**/*.test.ts", "**/*.test.tsx", "**/*.test-d.ts"]

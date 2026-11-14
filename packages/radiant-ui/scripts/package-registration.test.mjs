@@ -318,7 +318,10 @@ for (const { entry, used, markers } of [
 			assert.ok(everything.includes(marker), `${marker} is expected in the full ${entry} bundle`);
 			assert.ok(!single.includes(marker), `${marker} survived a bundle that imports only ${used}`);
 		}
-		assert.ok(single.length < everything.length / 4, 'the single-export bundle should be a small part of the entry');
+		assert.ok(
+			single.length < everything.length / 4,
+			'the single-export bundle should be a small part of the entry',
+		);
 	});
 }
 

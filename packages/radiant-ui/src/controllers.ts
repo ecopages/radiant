@@ -81,11 +81,7 @@ export {
 } from './controllers/popover-controller';
 export { PortalController, createPortalController, type PortalControllerConfig } from './controllers/portal';
 export { ResizeController, createResizeController, type ResizeControllerConfig } from './controllers/resize-controller';
-export {
-	RovingController,
-	createRovingController,
-	type RovingControllerConfig,
-} from './controllers/roving-controller';
+export { RovingController, createRovingController, type RovingControllerConfig } from './controllers/roving-controller';
 export { ScrollLockController, createScrollLockController } from './controllers/scroll-lock-controller';
 export {
 	SORTABLE_ACTIVE_ATTRIBUTE,
