@@ -90,7 +90,7 @@ export type SortableControllerConfig = {
 	 * @remarks
 	 * The item is moved by `PortalController`, so it keeps the theme variables of its ancestors and returns to its
 	 * place when the sort ends, before `onChange` runs. The controller sets only geometry on the preview (`position`,
-	 * `left`, `top`, `width`, `height`, `pointer-events`); the owner styles `[data-sortable-state='lifted']` and
+	 * `left`, `top`, `width`, `height`, `pointer-events`, `margin`, `box-sizing`); the owner styles `[data-sortable-state='lifted']` and
 	 * `[data-sortable-placeholder]`. See `getItems` for what the lists hold during the sort.
 	 */
 	preview?: boolean;
@@ -187,7 +187,7 @@ const DEFAULT_LIFT_KEYS = [' ', 'Enter'];
  * for CSS to draw: `data-sortable-active` on the container the item came from, `data-sortable-over` on another
  * container of the group it is over, `data-sortable-state="lifted"` on the item, `data-sortable-drop="before|after"`
  * on the item the lifted one would land beside, and `--sortable-dx` / `--sortable-dy` on the lifted item (pointer
- * travel, for a `transform`). No style is applied. `getState()` returns the sort in progress for owners that draw a
+ * travel, for a `transform`). No style is applied without `preview`; with it only the preview geometry (see `preview`). `getState()` returns the sort in progress for owners that draw a
  * placeholder.
  *
  * Pointer: a press on an item (or on its handle) followed by `threshold` px of travel lifts it; the target index
@@ -461,14 +461,18 @@ export class SortableController implements Controller {
 		const target = eligible[next];
 		if (target !== session.target) {
 			const items = this.itemsOf(session, target);
-			const slots = target === this.member ? items.length - 1 : items.length;
-			this.place(session, target, items, Math.min(session.to, slots));
+			this.place(session, target, items, Math.min(session.to, this.slotCount(target, items) - 1));
 		}
 		return true;
 	}
 
+	/** How many slots a lifted item can take in `target`: the lifted item's own container still holds it, another container does not. */
+	private slotCount(target: SortableMember, items: readonly HTMLElement[]): number {
+		return target === this.member ? items.length : items.length + 1;
+	}
+
 	private steerIndex(session: Session, event: KeyboardEvent): boolean {
-		const slots = session.target === this.member ? session.items.length : session.targetItems.length + 1;
+		const slots = this.slotCount(session.target, session.targetItems);
 		const next = resolveSortKeyIndex(event.key, session.to, slots, this.config.axis);
 		if (next === null) {
 			return false;

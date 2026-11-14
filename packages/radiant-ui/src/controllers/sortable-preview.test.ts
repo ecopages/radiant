@@ -9,7 +9,10 @@ import {
 import { SortableGroup } from './sortable-group';
 
 describe('SortableController preview', () => {
+	const live: SortableController[] = [];
+
 	afterEach(() => {
+		live.splice(0).forEach((controller) => controller.destroy());
 		document.body.replaceChildren();
 	});
 
@@ -56,6 +59,7 @@ describe('SortableController preview', () => {
 				...config,
 			});
 		const controllers = [make(todo), make(done)];
+		live.push(...controllers);
 		controllers.forEach((controller) => controller.attach());
 		return { todo, done, controllers, onChange, changes };
 	}
