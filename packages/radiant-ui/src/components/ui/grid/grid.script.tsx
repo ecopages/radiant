@@ -1,6 +1,6 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, onEvent, prop } from '@ecopages/radiant';
-import { applyRovingTabindex } from '@/lib/roving-tabindex';
+import { createRovingController, type RovingController } from '../../../controllers/roving-controller';
 
 export type RuiGridProps = {
 	label?: string;
@@ -41,15 +41,29 @@ export class RuiGrid extends RadiantElement {
 
 	@prop({ type: String, defaultValue: '' }) label: string;
 
+	private readonly roving: RovingController;
+
+	constructor() {
+		super();
+		this.roving = createRovingController(this, {
+			getItems: () => Array.from(this.querySelectorAll<HTMLElement>('[role="gridcell"]')),
+			getTarget: (): HTMLElement => this,
+			orientation: 'none',
+		});
+	}
+
 	protected override onConnected(): void {
-		const cells = Array.from(this.querySelectorAll<HTMLElement>('[role="gridcell"]'));
-		applyRovingTabindex(cells, 0);
+		this.roving.sync();
 	}
 
 	private getRows(): HTMLElement[] {
 		return Array.from(this.querySelectorAll<HTMLElement>('[role="row"]'));
 	}
 
+	/**
+	 * @remarks The row/column arithmetic stays here: moving between rows keeps the column and clamps it to a shorter
+	 * row, which a flat `RovingController` list cannot express. The controller owns the tab stop through `focus()`.
+	 */
 	@onEvent({ selector: '[role="gridcell"]', type: 'keydown' })
 	onKeydown(event: KeyboardEvent): void {
 		const rows = this.getRows();
@@ -91,9 +105,7 @@ export class RuiGrid extends RadiantElement {
 		const targetRow = rows[nextRow];
 		const targetCells = Array.from(targetRow.querySelectorAll<HTMLElement>('[role="gridcell"]'));
 		const target = targetCells[Math.min(nextCol, targetCells.length - 1)];
-		const allCells = Array.from(this.querySelectorAll<HTMLElement>('[role="gridcell"]'));
-		applyRovingTabindex(allCells, allCells.indexOf(target));
-		target.focus();
+		this.roving.focus(target);
 	}
 }
 

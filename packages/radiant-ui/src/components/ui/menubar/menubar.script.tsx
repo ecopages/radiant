@@ -1,10 +1,10 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, event, onEvent, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
-import { applyRovingTabindex, navigateRovingTabindex } from '@/lib/roving-tabindex';
 import { createDismissController } from '../../../controllers/dismiss-controller';
 import { createPopoverController } from '../../../controllers/popover-controller';
 import { createMenuTreeController } from '../../../controllers/menu-tree-controller';
+import { createRovingController, type RovingController } from '../../../controllers/roving-controller';
 
 export type RuiMenubarProps = {
 	label?: string;
@@ -103,8 +103,19 @@ export class RuiMenubar extends RadiantElement {
 		return root?.querySelector<HTMLElement>(':scope > [role="menu"]') ?? null;
 	}
 
+	private readonly roving: RovingController;
+
 	constructor() {
 		super();
+		this.roving = createRovingController(this, {
+			getItems: () => this.getTopItems(),
+			getTarget: (): HTMLElement => this,
+			onMove: (item) => {
+				if (!this.openRoot) return;
+				if (this.getMenuFor(item)) this.openMenu(item, 'first');
+				else this.closeOpenMenu();
+			},
+		});
 		createDismissController(this, {
 			getSurface: () => this.getOpenMenuSurface(),
 			getRelated: () => [this],
@@ -119,7 +130,7 @@ export class RuiMenubar extends RadiantElement {
 	}
 
 	protected override onConnected(): void {
-		applyRovingTabindex(this.getTopItems(), 0);
+		this.roving.sync();
 		this.menuTree.sync();
 	}
 
@@ -178,34 +189,17 @@ export class RuiMenubar extends RadiantElement {
 	}
 
 	/**
-	 * @remarks When a menu is open, roving focus across the bar opens the newly focused menu (APG).
+	 * @remarks Arrows and Home/End are the roving controller's; its `onMove` opens the newly focused menu while one
+	 * is open (APG). ArrowDown, Enter and Space open the focused item's own menu.
 	 */
 	@onEvent({ selector: '[data-ref="root"] > [data-ref="menubar-root"] > [role="menuitem"]', type: 'keydown' })
 	onTopKeydown(event: KeyboardEvent): void {
-		const items = this.getTopItems();
 		const current = (event.target as HTMLElement).closest('[role="menuitem"]') as HTMLElement | null;
-		if (!current || !items.includes(current)) return;
+		if (!current || !this.getTopItems().includes(current)) return;
 
-		if (event.key === 'ArrowDown' || event.key === 'Enter' || event.key === ' ') {
-			if (this.getMenuFor(current)) {
-				event.preventDefault();
-				this.openMenu(current, 'first');
-			}
-			return;
-		}
-
-		const result = navigateRovingTabindex({
-			items,
-			current,
-			key: event.key,
-			orientation: 'horizontal',
-		});
-		if (!result.handled) return;
-		event.preventDefault();
-
-		if (this.openRoot) {
-			if (this.getMenuFor(result.item)) this.openMenu(result.item, 'first');
-			else this.closeOpenMenu();
+		if ((event.key === 'ArrowDown' || event.key === 'Enter' || event.key === ' ') && this.getMenuFor(current)) {
+			event.preventDefault();
+			this.openMenu(current, 'first');
 		}
 	}
 
@@ -240,12 +234,7 @@ export class RuiMenubar extends RadiantElement {
 		const top = this.getOpenMenuAnchor();
 		if (!top) return;
 		event.preventDefault();
-		const result = navigateRovingTabindex({
-			items: this.getTopItems(),
-			current: top,
-			key: event.key,
-			orientation: 'horizontal',
-		});
+		const result = this.roving.navigate(top, event.key);
 		if (result.handled && this.getMenuFor(result.item)) this.openMenu(result.item, 'first');
 	}
 

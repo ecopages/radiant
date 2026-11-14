@@ -117,6 +117,68 @@ describe('RuiTagGroup', () => {
 		cleanup();
 	});
 
+	it('roves focus across tags with the arrow keys and keeps one tab stop', async () => {
+		const { host, cleanup } = mount(
+			<RuiTagGroup>
+				<RuiTagList>
+					<RuiTag value="a" label="A">
+						A
+					</RuiTag>
+					<RuiTag value="b" label="B">
+						B
+					</RuiTag>
+					<RuiTag value="c" label="C">
+						C
+					</RuiTag>
+				</RuiTagList>
+			</RuiTagGroup>,
+		);
+		await settled();
+
+		const tags = Array.from(host.querySelectorAll<HTMLElement>('[data-tag]'));
+		expect(tags.map((tag) => tag.tabIndex)).toEqual([0, -1, -1]);
+
+		tags[0].focus();
+		const arrow = new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true });
+		tags[0].dispatchEvent(arrow);
+		expect(arrow.defaultPrevented).toBe(true);
+		expect(document.activeElement).toBe(tags[1]);
+		expect(tags.map((tag) => tag.tabIndex)).toEqual([-1, 0, -1]);
+
+		tags[1].dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
+		expect(document.activeElement).toBe(tags[2]);
+		tags[2].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+		expect(document.activeElement).toBe(tags[0]);
+		cleanup();
+	});
+
+	it('skips disabled tags when roving', async () => {
+		const { host, cleanup } = mount(
+			<RuiTagGroup>
+				<RuiTagList>
+					<RuiTag value="a" label="A">
+						A
+					</RuiTag>
+					<RuiTag value="b" label="B" disabled>
+						B
+					</RuiTag>
+					<RuiTag value="c" label="C">
+						C
+					</RuiTag>
+				</RuiTagList>
+			</RuiTagGroup>,
+		);
+		await settled();
+
+		const tags = Array.from(host.querySelectorAll<HTMLElement>('[data-tag]'));
+		tags[0].focus();
+		tags[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+
+		expect(document.activeElement).toBe(tags[2]);
+		expect(tags.map((tag) => tag.tabIndex)).toEqual([-1, -1, 0]);
+		cleanup();
+	});
+
 	describe('when disabled', () => {
 		async function mountDisabled() {
 			const mounted = mount(

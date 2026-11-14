@@ -1,7 +1,7 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, event, onEvent, onUpdated, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
-import { applyRovingTabindex, focusRovingItem } from '@/lib/roving-tabindex';
+import { createRovingController, type RovingController } from '../../../controllers/roving-controller';
 
 export type RuiTreegridProps = {
 	label?: string;
@@ -81,6 +81,17 @@ export class RuiTreegrid extends RadiantElement {
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiTreegridChangeDetail>;
 
+	private readonly roving: RovingController;
+
+	constructor() {
+		super();
+		this.roving = createRovingController(this, {
+			getItems: () => this.getVisibleCells(),
+			getTarget: (): HTMLElement => this,
+			orientation: 'none',
+		});
+	}
+
 	private getDataRows(): HTMLElement[] {
 		return Array.from(this.querySelectorAll<HTMLElement>('[role="row"][data-row-id]'));
 	}
@@ -150,7 +161,7 @@ export class RuiTreegrid extends RadiantElement {
 
 	private syncSelection(): void {
 		const cells = this.getVisibleCells();
-		let activeIndex = 0;
+		let active: HTMLElement | undefined;
 
 		for (const row of this.getDataRows()) {
 			const rowId = row.getAttribute('data-row-id') ?? '';
@@ -158,17 +169,14 @@ export class RuiTreegrid extends RadiantElement {
 			for (const cell of this.getRowCells(row)) {
 				cell.setAttribute('aria-selected', String(selected));
 				if (selected) {
-					const index = cells.indexOf(cell);
-					if (index >= 0) {
-						activeIndex = index;
+					if (cells.includes(cell)) {
+						active = cell;
 					}
 				}
 			}
 		}
 
-		if (cells.length > 0) {
-			applyRovingTabindex(cells, activeIndex);
-		}
+		this.roving.sync(active);
 	}
 
 	protected override onConnected(): void {
@@ -211,13 +219,8 @@ export class RuiTreegrid extends RadiantElement {
 			return;
 		}
 
-		const cells = this.getVisibleCells();
 		const rowCells = this.getRowCells(row);
-		const target = rowCells[Math.min(Math.max(0, columnIndex), rowCells.length - 1)];
-		const nextIndex = cells.indexOf(target);
-		if (nextIndex >= 0) {
-			focusRovingItem(cells, nextIndex);
-		}
+		this.roving.focus(rowCells[Math.min(Math.max(0, columnIndex), rowCells.length - 1)]);
 	}
 
 	@onEvent({ selector: '[role="gridcell"]', type: 'click' })

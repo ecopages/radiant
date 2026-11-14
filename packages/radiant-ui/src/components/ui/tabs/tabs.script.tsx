@@ -1,8 +1,8 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, event, onEvent, onUpdated, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
-import { navigateRovingTabindex } from '@/lib/roving-tabindex';
 import { createMutationController } from '../../../controllers/mutation-controller';
+import { createRovingController, type RovingController } from '../../../controllers/roving-controller';
 
 export type RuiTabsVariant = 'ghost' | 'boxed';
 
@@ -85,8 +85,17 @@ export class RuiTabs extends RadiantElement {
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiTabsChangeDetail>;
 
+	private readonly roving: RovingController;
+
 	constructor() {
 		super();
+		this.roving = createRovingController(this, {
+			getItems: () => this.getTabs(),
+			getTarget: (): HTMLElement => this,
+			onMove: (tab) => {
+				if (this.automatic) this.activateTab(tab);
+			},
+		});
 		createMutationController(this, {
 			getTarget: () => this,
 			options: { childList: true, subtree: true },
@@ -143,8 +152,8 @@ export class RuiTabs extends RadiantElement {
 		for (const tab of tabs) {
 			const isSelected = tab === selected;
 			tab.setAttribute('aria-selected', String(isSelected));
-			tab.tabIndex = isSelected ? 0 : -1;
 		}
+		this.roving.sync(selected);
 
 		for (const panel of panels) {
 			const panelValue = panel.dataset.tabValue ?? panel.id.replace(/^panel-/, '');
@@ -180,17 +189,6 @@ export class RuiTabs extends RadiantElement {
 			this.activateTab(current);
 			return;
 		}
-
-		const result = navigateRovingTabindex({
-			items: tabs,
-			current,
-			key: event.key,
-			orientation: 'horizontal',
-		});
-		if (!result.handled) return;
-
-		event.preventDefault();
-		if (this.automatic) this.activateTab(result.item);
 	}
 }
 

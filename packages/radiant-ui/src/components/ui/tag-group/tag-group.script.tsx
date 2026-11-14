@@ -2,8 +2,8 @@ import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, event, onEvent, onUpdated, prop, state } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { createRuiIconX } from '@/lib/icons/x';
-import { navigateRovingTabindex } from '@/lib/roving-tabindex';
 import { uniqueId } from '@/lib/unique-id';
+import { createRovingController, type RovingController } from '../../../controllers/roving-controller';
 import { multiValuePropOptions, type ViewMultiValue } from '../shared/multi-value';
 
 export type RuiTagGroupSelectionMode = 'single' | 'multiple';
@@ -98,6 +98,16 @@ export class RuiTagGroup extends RadiantElement {
 	 */
 	@state private derivedItems: RuiTagGroupItem[] | null = null;
 
+	private readonly roving: RovingController;
+
+	constructor() {
+		super();
+		this.roving = createRovingController(this, {
+			getItems: () => this.getVisibleTags(),
+			getTarget: (): HTMLElement => this,
+		});
+	}
+
 	private isMultiple(): boolean {
 		return this.selectionMode === 'multiple';
 	}
@@ -174,13 +184,16 @@ export class RuiTagGroup extends RadiantElement {
 	private syncTags(): void {
 		const selected = new Set(this.getSelectedValues());
 		const tags = this.getTags();
+		const visible = new Set(this.getVisibleTags());
 
-		tags.forEach((tag, index) => {
+		tags.forEach((tag) => {
 			tag.setAttribute('role', 'listitem');
 			const value = this.getTagValue(tag);
 			const isSelected = selected.has(value);
 			tag.setAttribute('aria-selected', String(isSelected));
-			tag.tabIndex = index === 0 ? 0 : -1;
+			if (!visible.has(tag)) {
+				tag.tabIndex = -1;
+			}
 
 			const removeButton = tag.querySelector<HTMLButtonElement>('[data-tag-remove]');
 			if (removeButton) {
@@ -190,6 +203,7 @@ export class RuiTagGroup extends RadiantElement {
 				removeButton.setAttribute('aria-label', `Remove ${this.getTagLabel(tag)}`);
 			}
 		});
+		this.roving.sync();
 	}
 
 	private selectTag(tag: HTMLElement): void {
@@ -350,7 +364,6 @@ export class RuiTagGroup extends RadiantElement {
 
 	@onEvent({ selector: '[data-tag]', type: 'keydown' })
 	onTagKeydown(event: KeyboardEvent): void {
-		const tags = this.getVisibleTags();
 		const current = (event.target as HTMLElement).closest<HTMLElement>('[data-tag]');
 		if (!current) {
 			return;
@@ -371,16 +384,6 @@ export class RuiTagGroup extends RadiantElement {
 				this.removeTag(current);
 			}
 			return;
-		}
-
-		const result = navigateRovingTabindex({
-			items: tags,
-			current,
-			key: event.key,
-			orientation: 'horizontal',
-		});
-		if (result.handled) {
-			event.preventDefault();
 		}
 	}
 }
