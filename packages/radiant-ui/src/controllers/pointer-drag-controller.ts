@@ -37,6 +37,15 @@ export type PointerDragControllerConfig = {
 	getTarget: () => HTMLElement | null;
 	/** Refuses a press (disabled or read-only control, a child that handles its own presses). The primary button is already required. */
 	canStart?: (event: PointerEvent) => boolean;
+	/**
+	 * Capture the pointer on the target. Default `true`.
+	 *
+	 * @remarks
+	 * Set `false` when the target is a container whose children must keep receiving `click`: Chromium sends the
+	 * click of a captured pointer to the capturing element. Moves are still tracked on `document`, but a touch
+	 * pointer then needs `touch-action: none` from the owner's CSS so the browser does not claim it to scroll.
+	 */
+	capture?: boolean;
 	/** Called on the accepted press, after the pointer is captured. `event.preventDefault()` is the owner's call. */
 	onStart?: (info: PointerDragInfo) => void;
 	onMove?: (info: PointerDragInfo) => void;
@@ -119,9 +128,11 @@ export class PointerDragController implements Controller {
 			target,
 			last: event,
 		};
-		try {
-			target.setPointerCapture(event.pointerId);
-		} catch {}
+		if (this.config.capture !== false) {
+			try {
+				target.setPointerCapture(event.pointerId);
+			} catch {}
+		}
 		for (const listener of this.drag) {
 			listener.attach();
 		}

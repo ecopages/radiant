@@ -76,6 +76,19 @@ describe('PointerDragController on plain elements', () => {
 		});
 	});
 
+	it('tracks the pointer on document without capturing it when capture is false', () => {
+		const { element, setCapture, onMove, onEnd, controller } = mount({ capture: false });
+		controller.attach();
+
+		fire(element, 'pointerdown', { x: 10 });
+		fire(document, 'pointermove', { x: 40 });
+		fire(document, 'pointerup', { x: 40 });
+
+		expect(setCapture).not.toHaveBeenCalled();
+		expect(onMove).toHaveBeenCalledTimes(1);
+		expect(onEnd.mock.calls[0][0]).toMatchObject({ reason: 'release' });
+	});
+
 	it('ignores other buttons and presses canStart refuses', () => {
 		const { element, setCapture, onStart, controller } = mount({ canStart: (event) => event.clientX < 50 });
 		controller.attach();
