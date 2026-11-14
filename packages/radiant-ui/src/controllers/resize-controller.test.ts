@@ -55,6 +55,35 @@ describe('ResizeController', () => {
 		expect(() => controller.destroy()).not.toThrow();
 	});
 
+	it('moves to the targets getTargets returns when attached again, and keeps the observer for the same ones', async () => {
+		const first = mount();
+		const second = mount();
+		let current = first;
+		const onResize = vi.fn();
+		const controller = new ResizeController({ getTargets: () => [current], onResize });
+
+		controller.attach();
+		await frame();
+		onResize.mockClear();
+		controller.attach();
+		await frame();
+		expect(onResize).not.toHaveBeenCalled();
+
+		current = second;
+		controller.attach();
+		await frame();
+		onResize.mockClear();
+		first.style.width = '50px';
+		second.style.width = '50px';
+		await frame();
+		const seen = onResize.mock.calls.flatMap(([entries]) =>
+			entries.map((entry: ResizeObserverEntry) => entry.target),
+		);
+		expect(seen).toEqual([second]);
+
+		controller.destroy();
+	});
+
 	it('is bound to a host by its factory', async () => {
 		const connected: Array<() => void> = [];
 		const cleanup: Array<() => void> = [];

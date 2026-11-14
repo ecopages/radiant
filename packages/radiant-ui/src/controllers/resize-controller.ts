@@ -11,29 +11,38 @@ export type ResizeControllerConfig = {
 /**
  * Observes the size of elements from `attach()` until `destroy()`.
  *
- * @remarks Attaching again while attached changes nothing.
+ * @remarks
+ * Attaching again with the same targets keeps the running observer; with different targets it moves the observer
+ * there.
  */
 export class ResizeController implements Controller {
 	private observer: ResizeObserver | null = null;
+	private observed: Element[] = [];
 
 	constructor(private readonly config: ResizeControllerConfig) {}
 
 	attach(): void {
-		if (this.observer) {
+		const targets = this.config.getTargets().filter((target) => target !== null);
+		if (
+			this.observer &&
+			targets.length === this.observed.length &&
+			targets.every((t, i) => t === this.observed[i])
+		) {
 			return;
 		}
+		this.destroy();
 		const observer = new ResizeObserver((entries) => this.config.onResize(entries));
-		for (const target of this.config.getTargets()) {
-			if (target) {
-				observer.observe(target, this.config.options);
-			}
+		for (const target of targets) {
+			observer.observe(target, this.config.options);
 		}
 		this.observer = observer;
+		this.observed = targets;
 	}
 
 	destroy(): void {
 		this.observer?.disconnect();
 		this.observer = null;
+		this.observed = [];
 	}
 }
 
