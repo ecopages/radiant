@@ -107,4 +107,33 @@ describe('ListboxHost', () => {
 		expect(value).toEqual([]);
 		expect(collection.clearValues()).toBe(false);
 	});
+
+	it('finds the listbox, options and selection of a popup that was moved out of the root', () => {
+		const { root, host } = createRoot([createOption('a', 'A'), createOption('b', 'B')]);
+		const popup = document.createElement('div');
+		popup.append(host);
+		root.append(popup);
+		document.body.append(root);
+		let value = ['b'];
+		const collection = new ListboxHost({
+			getRoot: () => root,
+			getPopup: () => popup,
+			getSelectionMode: () => 'single',
+			getValue: () => value,
+			setValue: (next) => {
+				value = next;
+			},
+		});
+
+		document.body.append(popup);
+
+		expect(root.contains(popup)).toBe(false);
+		expect(collection.getListboxHost()).toBe(host);
+		expect(collection.getOptions()).toHaveLength(2);
+		collection.syncOptionSelection();
+		expect(collection.getOptions()[1].getAttribute('aria-selected')).toBe('true');
+		expect(collection.labelForValue('b')).toBe('B');
+		root.remove();
+		popup.remove();
+	});
 });

@@ -244,3 +244,66 @@ describe('ListboxPopoverController lifecycle on a plain element', () => {
 		floating.remove();
 	});
 });
+
+describe('ListboxPopoverController portal', () => {
+	afterEach(() => {
+		document.body.replaceChildren();
+	});
+
+	function setup(config: { portal?: boolean; getPortalContainer?: () => ParentNode | null } = {}) {
+		const host = document.createElement('div');
+		const anchor = document.createElement('div');
+		const floating = document.createElement('div');
+		const input = document.createElement('input');
+		host.append(anchor, floating);
+		document.body.append(host);
+		let open = true;
+		const behavior = new ListboxPopoverController({
+			getAnchor: () => anchor,
+			getFloating: () => floating,
+			getOpen: () => open,
+			getOptions: () => [],
+			getActiveDescendantHost: () => input,
+			getOptionIdPrefix: () => 'rui-test-option',
+			...config,
+		});
+		behavior.attach();
+		return { host, floating, behavior, setOpen: (next: boolean) => (open = next) };
+	}
+
+	it('keeps the popup in place by default', () => {
+		const { host, floating, behavior } = setup();
+
+		behavior.syncPopoverPosition();
+
+		expect(floating.parentNode).toBe(host);
+		behavior.destroy();
+	});
+
+	it('mounts the popup in the container while it is open and returns it on close', () => {
+		const frame = document.createElement('div');
+		document.body.append(frame);
+		const { host, floating, behavior, setOpen } = setup({ portal: true, getPortalContainer: () => frame });
+
+		behavior.syncPopoverPosition();
+		expect(floating.parentNode).toBe(frame);
+
+		setOpen(false);
+		behavior.syncPopoverPosition();
+		expect(floating.parentNode).toBe(host);
+		behavior.destroy();
+	});
+
+	it('follows updateConfig for the next sync', () => {
+		const { host, floating, behavior } = setup();
+
+		behavior.updateConfig({ portal: true });
+		behavior.syncPopoverPosition();
+		expect(floating.parentNode).toBe(document.body);
+
+		behavior.updateConfig({ portal: false });
+		behavior.syncPopoverPosition();
+		expect(floating.parentNode).toBe(host);
+		behavior.destroy();
+	});
+});

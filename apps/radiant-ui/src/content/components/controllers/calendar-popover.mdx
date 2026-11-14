@@ -31,7 +31,7 @@ import {
 
 ## Try it
 
-The button opens the popup and focuses its first available day. Escape from inside the popup closes it and returns focus to the button; focus leaving the host closes it without moving focus.
+The button opens the popup and focuses its first available day. Escape from inside the popup closes it and returns focus to the button; focus leaving the host closes it without moving focus. `portal` moves the popup while it is open, here into the example frame so the frame styles still reach it.
 
 <PrimitiveExample name="calendar-popover">
 	<button type="button">Pick a date</button>
@@ -69,6 +69,8 @@ export function mount(root: HTMLElement): () => void {
 		getFloating: () => popup,
 		getOpen: () => open,
 		getCalendar: () => popup,
+		portal: true,
+		getPortalContainer: () => root,
 		getFocusIso: () => undefined,
 		getToggle: () => toggle,
 		setOpenState: (next) => (open = next),
@@ -85,23 +87,27 @@ export function mount(root: HTMLElement): () => void {
 
 ## Config
 
-| Option           | Description                                                                           |
-| ---------------- | ------------------------------------------------------------------------------------- |
-| `getHost`        | The picker element. Focus inside it, or the popup, is inside.                         |
-| `getAnchor`      | The element the popup sits beside.                                                    |
-| `getFloating`    | The popup.                                                                            |
-| `getOpen`        | Whether the popup is open.                                                            |
-| `getCalendar`    | The element that holds the `[data-calendar-day]` buttons.                             |
-| `getFocusIso`    | The `YYYY-MM-DD` day to focus on open; the first available day when `undefined`.      |
-| `getToggle`      | The button that receives focus when the popup closes from inside.                     |
-| `setOpenState`   | Writes the host's `open` state.                                                       |
-| `onLayoutChange` | Called when the mobile layout viewport changes, before an open popup is repositioned. |
+| Option               | Description                                                                                                   |
+| -------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `getHost`            | The picker element. Focus inside it, or the popup, is inside.                                                 |
+| `getAnchor`          | The element the popup sits beside.                                                                            |
+| `getFloating`        | The popup.                                                                                                    |
+| `getOpen`            | Whether the popup is open.                                                                                    |
+| `getCalendar`        | The element that holds the `[data-calendar-day]` buttons.                                                     |
+| `getFocusIso`        | The `YYYY-MM-DD` day to focus on open; the first available day when `undefined`.                              |
+| `getToggle`          | The button that receives focus when the popup closes from inside.                                             |
+| `portal`             | Move the popup out of its place while open. Default `false`; `updateConfig({ portal })` changes it.           |
+| `getPortalContainer` | Where a portaled popup goes, read each time it opens. `document.body` when omitted or when it returns `null`. |
+| `setOpenState`       | Writes the host's `open` state.                                                                               |
+| `onLayoutChange`     | Called when the mobile layout viewport changes, before an open popup is repositioned.                         |
 
 ## Lifecycle
 
 `attach()` starts the dismissal and a mobile layout listener; `destroy()` removes both and the popover. `setOpen(next)` writes the state, positions the popup and, on open, focuses the calendar day. Also `closeAndRestoreFocus()`, `suppressDismiss()` (skip the next focus-out, for a press on the toggle) and `syncPopover()`. `focusCalendarPickerDay(calendar, iso)` is the focus step on its own.
 
 With a host, `createCalendarPopoverController(host, config)` does the same on connect and disconnect; see [bindController](/docs/controllers/bind-controller).
+
+A portaled popup is no longer inside the host, so the date picker holds a reference to it, listens on it directly and sets the calendar's attributes itself rather than binding them through the host.
 
 ## Protected hooks
 

@@ -124,6 +124,10 @@ Pointer hover and keyboard focus are separate states. A hovered branch can open 
 
 <p>Use `bottom-start` for left-aligned triggers. Flip to `top-*` when the button sits near the viewport bottom.</p>
 
+## Portal
+
+Menus stay in place: a submenu is a `role="menu"` nested in the light DOM of the item that opens it, and that parent and child relationship is what the arrow keys, `aria-expanded` and dismissal follow. Portaling a menu would break it, so there is no `portal` option here.
+
 ## Theming
 
 Menu Button surfaces map to **semantic surface roles**, never Tailwind palette steps:

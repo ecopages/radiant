@@ -7,6 +7,11 @@ import type { DismissReason } from '../../../controllers/dismiss-controller';
 import { createEventListenerController } from '../../../controllers/event-listener-controller';
 import { createPopoverController } from '../../../controllers/popover-controller';
 import type { RuiPlacement } from '../../../controllers/placement';
+import {
+	portalContainerPropOptions,
+	resolvePortalContainer,
+	type RuiPortalContainer,
+} from '../shared/portal-container';
 
 export type RuiPopoverOpenChangeDetail = {
 	open: boolean;
@@ -19,6 +24,8 @@ export type RuiPopoverProps = {
 	placement?: RuiPlacement;
 	/** Teleport the surface to `document.body`. Default: `true`. */
 	portal?: boolean;
+	/** CSS selector of the element a portaled surface goes to instead of `document.body`, resolved when it opens. */
+	portalContainer?: string;
 	/** Match the anchor width (dropdown menus). Default: `false`. */
 	matchAnchorWidth?: boolean;
 	/** Gap between anchor and surface in px. Default: `8`. */
@@ -60,6 +67,7 @@ export type RuiPopoverProps = {
  * @attr {boolean} open - Whether the popover is open (controlled). Default: `false`.
  * @attr {string} placement - Placement relative to the anchor. Default: `bottom`.
  * @attr {boolean} portal - Teleport the surface to `document.body`. Default: `true`.
+ * @attr {string} portal-container - CSS selector of the element a portaled surface goes to instead of `document.body`, resolved each time it opens. The `portalContainer` property also takes an element or a function that returns one.
  * @attr {boolean} match-anchor-width - Match the anchor width (dropdown menus). Default: `false`.
  * @attr {number} offset - Gap between anchor and surface in px. Default: `8`.
  * @attr {string} anchor - CSS selector for an external anchor when not using `[data-popover-trigger]`.
@@ -83,6 +91,7 @@ export class RuiPopover extends RadiantElement {
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) open: boolean;
 	@prop({ type: String, defaultValue: 'bottom' }) placement: RuiPlacement;
 	@prop({ type: Boolean, defaultValue: true }) portal: boolean;
+	@prop(portalContainerPropOptions) portalContainer: RuiPortalContainer | null;
 	@prop({ type: Boolean, defaultValue: false }) matchAnchorWidth: boolean;
 	@prop({ type: Number, defaultValue: 8 }) offset: number;
 	@prop({ type: String, defaultValue: '' }) anchor: string;
@@ -100,6 +109,7 @@ export class RuiPopover extends RadiantElement {
 		getFloating: () => this.surfaceTarget,
 		getOpen: () => this.open,
 		getPlacement: () => this.placement,
+		getPortalContainer: () => resolvePortalContainer(this.portalContainer),
 		onDismiss: (reason, event) => this.dismiss(reason, event),
 	});
 	/** @remarks An `anchor` selector can match an element outside this host that a re-render replaces, so the match is made on `document` at event time. */
