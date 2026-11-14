@@ -3,6 +3,7 @@ import { RadiantElement, customElement, onEvent, prop } from '@ecopages/radiant'
 import { queryRovingTabindexItems } from '@/lib/focusable-elements';
 import { applyRovingTabindex, navigateRovingTabindex } from '@/lib/roving-tabindex';
 import { uniqueId } from '@/lib/unique-id';
+import { createDismissController } from '../../../controllers/dismiss-controller';
 import { createPopoverController } from '../../../controllers/popover-controller';
 
 export type RuiNavigationMenuProps = {
@@ -109,9 +110,26 @@ export class RuiNavigationMenu extends RadiantElement {
 		getPlacement: () => 'bottom-start',
 		gap: NAVIGATION_MENU_GAP,
 		portal: false,
+		onDismiss: () => this.closeMenu(),
+		dismissOn: ['pointer'],
 	});
 	private openTimer: ReturnType<typeof setTimeout> | null = null;
 	private closeTimer: ReturnType<typeof setTimeout> | null = null;
+
+	constructor() {
+		super();
+		createDismissController(this, {
+			getSurface: () => this.getOpenPanel(),
+			getRelated: () => [this],
+			getOpen: () => Boolean(this.openValue),
+			onDismiss: (_reason, event) => {
+				event.preventDefault();
+				this.closeMenu(true);
+			},
+			triggers: ['escape'],
+			escapeScope: 'tree',
+		});
+	}
 
 	protected override onConnected(): void {
 		this.syncPanels();
@@ -345,43 +363,6 @@ export class RuiNavigationMenu extends RadiantElement {
 		}, delay);
 	}
 
-	@onEvent({ document: true, type: 'pointerdown' })
-	onDocumentPointerDown(event: PointerEvent): void {
-		if (!this.openValue) {
-			return;
-		}
-
-		if (this.pointerIsInOpenMenu(event.target)) {
-			return;
-		}
-
-		this.closeMenu();
-	}
-
-	@onEvent({ document: true, type: 'keydown' })
-	onDocumentKeydown(event: KeyboardEvent): void {
-		if (event.key !== 'Escape' || !this.openValue) {
-			return;
-		}
-
-		const active = document.activeElement;
-		const panel = this.getOpenPanel();
-		if (active && !this.contains(active) && !(panel && panel.contains(active))) {
-			return;
-		}
-
-		event.preventDefault();
-		this.closeMenu(true);
-	}
-
-	@onEvent({ ref: 'root', type: 'keydown' })
-	onRootKeydown(event: KeyboardEvent): void {
-		if (event.key === 'Escape' && this.openValue) {
-			event.preventDefault();
-			this.closeMenu(true);
-		}
-	}
-
 	@onEvent({ selector: '[data-navigation-trigger]', type: 'click' })
 	onTriggerClick(event: Event): void {
 		const trigger = (event.target as HTMLElement).closest<HTMLElement>('[data-navigation-trigger]');
@@ -486,14 +467,6 @@ export class RuiNavigationMenu extends RadiantElement {
 	}
 
 	private handleBarTriggerKeydown(event: KeyboardEvent, item: HTMLElement): boolean {
-		if (event.key === 'Escape') {
-			if (this.openValue) {
-				event.preventDefault();
-				this.closeMenu(true);
-			}
-			return true;
-		}
-
 		const value = item.getAttribute('data-value');
 		if (!this.isBarTrigger(item) || !value) return false;
 		if (event.key === 'Enter' || event.key === ' ') {
@@ -534,12 +507,6 @@ export class RuiNavigationMenu extends RadiantElement {
 
 		const active = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 		if (!active || !panel.contains(active)) {
-			return;
-		}
-
-		if (event.key === 'Escape') {
-			event.preventDefault();
-			this.closeMenu(true);
 			return;
 		}
 

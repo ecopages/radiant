@@ -18,6 +18,11 @@ export type DismissControllerConfig = {
 	 * For surfaces that contain elements that take focus after the old one blurs.
 	 */
 	settleFocus?: boolean;
+	/**
+	 * Where Escape counts. `document` (default) hears it from anywhere; `tree` only when the key event starts inside
+	 * the surface or a related element, for a widget that must ignore Escape while focus is elsewhere.
+	 */
+	escapeScope?: 'document' | 'tree';
 };
 
 const ALL_TRIGGERS: readonly DismissReason[] = ['pointer', 'focus', 'escape'];
@@ -136,6 +141,9 @@ export class DismissController implements Controller {
 	}
 
 	private onKeyDown(event: KeyboardEvent): void {
+		if (this.config.escapeScope === 'tree' && this.isOutside(event.target)) {
+			return;
+		}
 		if (this.isOpen() && event.key === 'Escape') {
 			this.config.onDismiss('escape', event);
 		}

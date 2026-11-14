@@ -29,7 +29,9 @@ export type PopoverControllerConfig = {
  * `sync()` does nothing until `attach()`, and nothing after `destroy()`, so an element that is not connected never
  * mounts a portal or registers floating listeners. `destroy()` removes the floating listeners and observer, returns
  * a portaled surface to its place and forgets the floating element. Dismissal is delegated to a
- * `DismissController` over the anchor and the floating surface, attached with the popover.
+ * `DismissController` over the anchor and the floating surface, attached with the popover. Its listeners sit on
+ * `document`, so a surface portaled out of the host element still counts as inside: focus moving within it does
+ * not dismiss, and focus leaving it does.
  */
 export class PopoverController implements Controller {
 	private attached = false;

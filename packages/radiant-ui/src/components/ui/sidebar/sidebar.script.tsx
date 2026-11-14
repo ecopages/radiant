@@ -15,6 +15,7 @@ import { isServer } from '@ecopages/radiant/is-server';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { parseCommaSeparated } from '@/lib/comma-separated';
 import { SIDEBAR_MOBILE_BREAKPOINT_PX } from '@/lib/viewport/breakpoints';
+import { createDismissController } from '../../../controllers/dismiss-controller';
 import type { Controller } from '../../../controllers/controller';
 import { EventListenerController, createEventListenerController } from '../../../controllers/event-listener-controller';
 
@@ -232,6 +233,19 @@ export class RuiSidebar extends RadiantElement {
 
 		this.ensureWidthInitialized();
 		this.attachNavigationListeners();
+	}
+
+	constructor() {
+		super();
+		createDismissController(this, {
+			getSurface: () => null,
+			getOpen: () => this.isMobile && this.isOpen(),
+			onDismiss: (_reason, event) => {
+				event.preventDefault();
+				this.setOpen(false);
+			},
+			triggers: ['escape'],
+		});
 	}
 
 	protected override onConnected(): void {
@@ -609,12 +623,6 @@ export class RuiSidebar extends RadiantElement {
 	@onEvent({ document: true, type: 'keydown' })
 	onHostKeydown(event: Event): void {
 		const keyboardEvent = event as KeyboardEvent;
-		if (keyboardEvent.key === 'Escape' && this.isMobile && this.isOpen()) {
-			keyboardEvent.preventDefault();
-			this.setOpen(false);
-			return;
-		}
-
 		if (isModifierPressed(keyboardEvent) && keyboardEvent.key.toLowerCase() === KEYBOARD_SHORTCUT) {
 			keyboardEvent.preventDefault();
 			this.toggle();

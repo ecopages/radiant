@@ -6,7 +6,7 @@ describe('DismissController on plain elements', () => {
 		document.body.replaceChildren();
 	});
 
-	function mount(options: { open?: () => boolean; triggers?: readonly DismissReason[]; settleFocus?: boolean } = {}) {
+	function mount(options: { open?: () => boolean; triggers?: readonly DismissReason[]; settleFocus?: boolean; escapeScope?: 'document' | 'tree' } = {}) {
 		const anchor = document.createElement('button');
 		const surface = document.createElement('div');
 		const inside = document.createElement('button');
@@ -20,6 +20,7 @@ describe('DismissController on plain elements', () => {
 			getOpen: options.open,
 			triggers: options.triggers,
 			settleFocus: options.settleFocus,
+			escapeScope: options.escapeScope,
 			onDismiss,
 		});
 		return { anchor, surface, inside, outside, onDismiss, controller };
@@ -138,6 +139,20 @@ describe('DismissController on plain elements', () => {
 		open = true;
 		pointerDown(outside);
 		expect(onDismiss).toHaveBeenCalledTimes(1);
+
+		controller.destroy();
+	});
+
+	it("with escapeScope 'tree', reports Escape only from inside the surface or related elements", () => {
+		const { anchor, inside, outside, onDismiss, controller } = mount({ escapeScope: 'tree' });
+		controller.attach();
+
+		keyDown(outside, 'Escape');
+		expect(onDismiss).not.toHaveBeenCalled();
+
+		keyDown(inside, 'Escape');
+		keyDown(anchor, 'Escape');
+		expect(onDismiss).toHaveBeenCalledTimes(2);
 
 		controller.destroy();
 	});

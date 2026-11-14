@@ -327,22 +327,6 @@ export class RuiDateRangePicker extends RadiantElement {
 		this.calendarPopover.closeAndRestoreFocus();
 	}
 
-	@onEvent({
-		selector: '[data-range-start], [data-range-end], [data-range-trigger], [data-range-calendar]',
-		type: 'keydown',
-	})
-	onRootKeydown(event: KeyboardEvent): void {
-		if (event.key === 'Escape' && this.open) {
-			event.preventDefault();
-			const insidePopover =
-				event.target instanceof Node && this.querySelector('[data-range-popover]')?.contains(event.target);
-			if (insidePopover) {
-				this.calendarPopover.closeAndRestoreFocus();
-			} else {
-				this.calendarPopover.setOpen(false);
-			}
-		}
-	}
 
 }
 

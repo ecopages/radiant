@@ -122,6 +122,38 @@ describe('CalendarPopoverController on a plain element', () => {
 		outside.remove();
 	});
 
+	it('closes on Escape from the host, returning focus to the toggle only from inside the popup', () => {
+		const { host, config } = mount();
+		const toggle = document.createElement('button');
+		const inputInHost = document.createElement('input');
+		const inPopup = document.createElement('button');
+		const popup = config.getFloating() as HTMLElement;
+		popup.append(inPopup);
+		host.append(toggle, inputInHost);
+		const outside = document.createElement('button');
+		document.body.append(outside);
+		const focusToggle = vi.spyOn(toggle, 'focus');
+		const controller = new CalendarPopoverController({ ...config, getToggle: () => toggle });
+		const escape = () => new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+
+		controller.attach();
+		outside.dispatchEvent(escape());
+		expect(config.setOpenState).not.toHaveBeenCalled();
+
+		const fromInput = escape();
+		inputInHost.dispatchEvent(fromInput);
+		expect(config.setOpenState).toHaveBeenCalledWith(false);
+		expect(fromInput.defaultPrevented).toBe(true);
+		expect(focusToggle).not.toHaveBeenCalled();
+
+		inPopup.dispatchEvent(escape());
+		expect(focusToggle).toHaveBeenCalledTimes(1);
+
+		controller.destroy();
+		host.remove();
+		outside.remove();
+	});
+
 	it('createCalendarPopoverController attaches on connect and destroys on cleanup', () => {
 		const { host, config, listeners } = mount();
 		const connected: (() => void)[] = [];

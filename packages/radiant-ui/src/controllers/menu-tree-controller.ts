@@ -41,6 +41,12 @@ export class MenuTreeController implements Controller {
 		this.config = config;
 	}
 
+	/**
+	 * @remarks
+	 * Intentionally empty: the controller holds no listener or observer of its own. Submenu popovers and timers
+	 * exist only while a branch is open, and the owner routes events to the `handle*` methods. The method exists
+	 * so the controller satisfies `Controller` and a destroyed one can be attached again.
+	 */
 	attach(): void {}
 
 	sync(): void {
@@ -171,6 +177,11 @@ export class MenuTreeController implements Controller {
 		return true;
 	}
 
+	/**
+	 * @remarks
+	 * Escape stays in the tree's key map: it runs only for keys pressed on a menu item and returns focus to the
+	 * root trigger (`returnFocus: true`), which is the menu's own keyboard contract, not a document-wide dismissal.
+	 */
 	private closeRootMenu(): boolean {
 		this.config.onCloseRoot(true);
 		return true;

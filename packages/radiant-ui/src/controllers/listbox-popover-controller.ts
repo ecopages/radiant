@@ -39,7 +39,9 @@ export type ListboxKeydownConfig = {
  * @remarks Select and combobox intentionally keep their selection and filtering
  * policies local. This behavior owns only the state machine both controls must
  * agree on: active-descendant navigation, popover positioning, and dismissal.
- * `syncPopoverPosition()` does nothing until `attach()`, and nothing after `destroy()`.
+ * `syncPopoverPosition()` does nothing until `attach()`, and nothing after `destroy()`. A host built with
+ * `createListboxPopoverController` attaches on every connect, so an element that is moved or reconnected positions
+ * its popup again.
  */
 export class ListboxPopoverController implements Controller {
 	private readonly config: ListboxPopoverControllerConfig;
@@ -161,6 +163,12 @@ export class ListboxPopoverController implements Controller {
 		if (direction === -1 && options.isOpen) options.onClose('arrow');
 	}
 
+	/**
+	 * @remarks
+	 * Escape stays in this key handler instead of `DismissController` because it runs only for keys pressed on the
+	 * control, prevents the default even when the popup is closed, and lets the combobox clear its text through
+	 * `onEscapeWhenClosed`. A document-wide Escape would also fire for focus elsewhere on the page.
+	 */
 	private handleEscapeKey(event: KeyboardEvent, options: ListboxKeydownConfig): void {
 		event.preventDefault();
 		if (options.isOpen) options.onClose('escape');

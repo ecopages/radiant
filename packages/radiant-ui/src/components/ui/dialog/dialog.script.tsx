@@ -1,4 +1,5 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
+import { createDismissController } from '../../../controllers/dismiss-controller';
 import {
 	RadiantElement,
 	bindTo,
@@ -81,6 +82,19 @@ export type RuiDialogCloseDetail = {
  */
 @customElement('rui-dialog')
 export class RuiDialog extends RadiantElement {
+	constructor() {
+		super();
+		createDismissController(this, {
+			getSurface: () => this.dialogTarget,
+			getOpen: () => this.open,
+			onDismiss: (_reason, event) => {
+				event.preventDefault();
+				this.dismiss('escape');
+			},
+			triggers: ['escape'],
+		});
+	}
+
 	declare readonly [JSX_PROPS]?: RuiDialogProps;
 
 	@prop({ type: Boolean, reflect: true, defaultValue: false })
@@ -202,12 +216,6 @@ export class RuiDialog extends RadiantElement {
 	@onEvent({ document: true, type: 'keydown' })
 	onDocumentKeydown(event: KeyboardEvent): void {
 		if (!this.open) {
-			return;
-		}
-
-		if (event.key === 'Escape') {
-			event.preventDefault();
-			this.dismiss('escape');
 			return;
 		}
 

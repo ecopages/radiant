@@ -1,6 +1,6 @@
 import { listenMobileLayoutViewport } from '@/lib/viewport/mobile-layout';
 import { bindController, type Controller, type ControllerHost } from './controller';
-import { DismissController } from './dismiss-controller';
+import { DismissController, type DismissReason } from './dismiss-controller';
 import { PopoverController } from './popover-controller';
 
 export type CalendarPopoverControllerConfig = {
@@ -22,7 +22,8 @@ export type CalendarPopoverControllerConfig = {
  *
  * @remarks
  * Date-field and date-range-picker keep value commit and selection mode local. Focus leaving the host and the popup
- * closes it, judged after focus settles; `suppressDismiss()` skips the next such close.
+ * closes it, judged after focus settles; `suppressDismiss()` skips the next such close. Escape from inside the host or
+ * popup closes it, and from inside the popup also returns focus to the toggle.
  */
 export class CalendarPopoverController implements Controller {
 	private readonly config: CalendarPopoverControllerConfig;
@@ -36,9 +37,10 @@ export class CalendarPopoverController implements Controller {
 			getSurface: () => this.config.getFloating(),
 			getRelated: () => [this.config.getHost()],
 			getOpen: () => this.config.getOpen(),
-			onDismiss: () => this.setOpen(false),
-			triggers: ['focus'],
+			onDismiss: (reason, event) => this.onDismiss(reason, event),
+			triggers: ['focus', 'escape'],
 			settleFocus: true,
+			escapeScope: 'tree',
 		});
 	}
 
@@ -108,6 +110,19 @@ export class CalendarPopoverController implements Controller {
 
 	focusCalendarDay(): void {
 		focusCalendarPickerDay(this.config.getCalendar(), this.config.getFocusIso());
+	}
+
+	private onDismiss(reason: DismissReason, event: Event): void {
+		if (reason !== 'escape') {
+			this.setOpen(false);
+			return;
+		}
+		event.preventDefault();
+		if (event.target instanceof Node && this.config.getFloating()?.contains(event.target)) {
+			this.closeAndRestoreFocus();
+		} else {
+			this.setOpen(false);
+		}
 	}
 
 	private ensureController(): PopoverController {

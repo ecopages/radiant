@@ -2,6 +2,7 @@ import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, event, onEvent, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { applyRovingTabindex, navigateRovingTabindex } from '@/lib/roving-tabindex';
+import { createDismissController } from '../../../controllers/dismiss-controller';
 import { createPopoverController } from '../../../controllers/popover-controller';
 import { createMenuTreeController } from '../../../controllers/menu-tree-controller';
 
@@ -102,6 +103,21 @@ export class RuiMenubar extends RadiantElement {
 		return root?.querySelector<HTMLElement>(':scope > [role="menu"]') ?? null;
 	}
 
+	constructor() {
+		super();
+		createDismissController(this, {
+			getSurface: () => this.getOpenMenuSurface(),
+			getRelated: () => [this],
+			getOpen: () => Boolean(this.openRoot),
+			onDismiss: (_reason, event) => {
+				event.preventDefault();
+				this.closeOpenMenu(true);
+			},
+			triggers: ['escape'],
+			escapeScope: 'tree',
+		});
+	}
+
 	protected override onConnected(): void {
 		applyRovingTabindex(this.getTopItems(), 0);
 		this.menuTree.sync();
@@ -175,12 +191,6 @@ export class RuiMenubar extends RadiantElement {
 				event.preventDefault();
 				this.openMenu(current, 'first');
 			}
-			return;
-		}
-
-		if (event.key === 'Escape') {
-			event.preventDefault();
-			this.closeOpenMenu(true);
 			return;
 		}
 
