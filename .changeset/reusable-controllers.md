@@ -2,8 +2,10 @@
 '@ecopages/radiant-ui': patch
 ---
 
-Add `@ecopages/radiant-ui/controllers` and `@ecopages/radiant-ui/helpers`, the reusable logic Radiant UI components are built from.
+Add the `@ecopages/radiant-ui/controllers` and `@ecopages/radiant-ui/helpers` entries, the reusable logic Radiant UI components are built from.
 
-Controllers attach to any element and tear down with the host: popover, dismiss, portal, focus trap, scroll lock, roving navigation, swipe, pointer drag, sortable drag and drop (with drop targets between containers), and mutation, resize and event-listener observers. Each has a `createX(host, config)` factory, and the decision points of the main ones are `protected` hooks you can extend. Helpers are the pure logic behind them: calendar and date logic, number formatting and parsing, masks, text filtering and ordering decisions.
+Controllers attach to a host and tear down with it, each with a `createX(host, config)` factory: event listeners, mutation and resize observation, dismissal, popover, portal, focus trap, scroll lock, roving tabindex, swipe, pointer drag, sortable (with drag between containers), and the listbox popover, menu tree and calendar popover controllers. Main controllers expose `protected` hooks at their decision points. `SwipeController` is built on `PointerDragController` and reports a release outside the element.
 
-`rui-tag-group` gains an opt-in `reorderable` attribute with a `rui-reorder` event. The carousel now flips its swipe direction in right-to-left layouts, `rui-dialog` releases its scroll lock and returns focus when it disconnects while open, and pointer drags ignore a non-primary button.
+Helpers are the pure logic behind them: date, selection and segment logic, masks, number formatting, parsing and numeric ranges, text filtering, `cycleValue`, `uniqueId` and `isCssSafeId`, ordering and floating-position decisions.
+
+`rui-tag-group` gains an opt-in `reorderable` attribute and a `rui-reorder` event; Space lifts and drops a tag. The carousel flips its swipe direction in right-to-left layouts, `rui-dialog` releases its scroll lock and returns focus when it disconnects while open, and pointer drags ignore a non-primary button.
