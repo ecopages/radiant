@@ -9,7 +9,8 @@ import { PrimitiveExample } from '@/components/primitive-example';
 export const config = {
 	dependencies: {
 		components: [PrimitiveExample],
-		scripts: ['./popover-menu.script.ts'],
+		scripts: ['./popover-menu.script.ts', './popover-menu.element.ts'],
+		stylesheets: ['./popover-menu.css'],
 	},
 };
 
@@ -32,7 +33,11 @@ Left to the recipe: the open flag, moving focus into the menu on open, and retur
 
 ## Example
 
-Open the menu with the button, move with the arrow keys, choose with Enter, or press Escape to close it.
+Open the menu with the button, move with the arrow keys, choose with Enter, or press Escape to close it. The two forms below behave the same.
+
+### Plain JavaScript
+
+A `mount` function wires the controllers to one element and returns the cleanup that undoes it.
 
 <PrimitiveExample name="popover-menu">
 	<button type="button" aria-haspopup="menu" aria-expanded="false">
@@ -53,8 +58,6 @@ Open the menu with the button, move with the arrow keys, choose with Enter, or p
 		Menu closed
 	</p>
 </PrimitiveExample>
-
-## Source
 
 ```html
 <div data-example="popover-menu">
@@ -126,3 +129,103 @@ export function mount(root: HTMLElement): () => void {
 ```
 
 `mount` runs once for each example element on the page, and the function it returns undoes it; see [how the examples run](/docs/recipes/overview#how-the-examples-run).
+
+### Radiant element
+
+The same behavior as a `RadiantElement`. The markup is authored inside the element and the element finds its parts with `@query`; there is nothing to mount, clean up or run again.
+
+<PrimitiveExample host>
+	<recipe-popover-menu>
+		<button type="button" aria-haspopup="menu" aria-expanded="false">
+			Actions
+		</button>
+		<div role="menu" aria-label="Actions" hidden>
+			<button type="button" role="menuitem">
+				Rename
+			</button>
+			<button type="button" role="menuitem">
+				Duplicate
+			</button>
+			<button type="button" role="menuitem">
+				Delete
+			</button>
+		</div>
+		<p data-status aria-live="polite">
+			Menu closed
+		</p>
+	</recipe-popover-menu>
+</PrimitiveExample>
+
+```html
+<recipe-popover-menu>
+	<button type="button" aria-haspopup="menu" aria-expanded="false">Actions</button>
+	<div role="menu" aria-label="Actions" hidden>
+		<button type="button" role="menuitem">Rename</button>
+		<button type="button" role="menuitem">Duplicate</button>
+		<button type="button" role="menuitem">Delete</button>
+	</div>
+	<p data-status aria-live="polite">Menu closed</p>
+</recipe-popover-menu>
+```
+
+```ts
+import { RadiantElement, customElement, onEvent, query } from '@ecopages/radiant';
+import { createPopoverController, createRovingController } from '@ecopages/radiant-ui/controllers';
+
+@customElement('recipe-popover-menu')
+export class RecipePopoverMenu extends RadiantElement {
+	@query({ selector: 'button' }) private trigger!: HTMLElement;
+	@query({ selector: '[role="menu"]' }) private menu!: HTMLElement;
+	@query({ selector: '[role="menuitem"]', all: true }) private items!: HTMLElement[];
+	@query({ selector: '[data-status]' }) private status!: HTMLElement;
+
+	private open = false;
+
+	private readonly menuPopover = createPopoverController(this, {
+		getAnchor: () => this.trigger,
+		getFloating: () => this.menu,
+		getOpen: () => this.open,
+		getPlacement: () => 'bottom-start',
+		portal: false,
+		onDismiss: (reason) => this.setOpen(false, reason === 'escape'),
+	});
+
+	private readonly roving = createRovingController(this, {
+		getItems: () => this.items,
+		getTarget: () => this.menu,
+		orientation: 'vertical',
+	});
+
+	override onConnected(): void {
+		this.roving.sync();
+	}
+
+	private setOpen(next: boolean, restoreFocus = false): void {
+		this.open = next;
+		this.menuPopover.sync();
+		this.trigger.setAttribute('aria-expanded', String(next));
+		this.status.textContent = next ? 'Menu open' : 'Menu closed';
+		if (next) {
+			this.roving.sync();
+			this.roving.focus(this.items[0]);
+		} else if (restoreFocus) {
+			this.trigger.focus();
+		}
+	}
+
+	@onEvent({ selector: 'button[aria-haspopup]', type: 'click' })
+	toggle(): void {
+		this.setOpen(!this.open, true);
+	}
+
+	@onEvent({ selector: '[role="menuitem"]', type: 'click' })
+	choose(event: Event): void {
+		this.setOpen(false, true);
+		this.status.textContent = `Chose ${(event.target as HTMLElement).textContent}`;
+	}
+}
+```
+
+`createPopoverController(this, ...)` and `createRovingController(this, ...)` are held in fields because the element calls them when the menu opens; both attach when the element connects and are destroyed when it disconnects, as are the `@onEvent` listeners. The popover still reports the dismissal reason, so the element decides whether focus returns to the button. `sync()` goes in `onConnected` because the items exist only after the element has its children.
+
+What the Radiant form removes: the `mount` function and its registration, the cleanup to return and call, and the re-run after a client-side navigation.

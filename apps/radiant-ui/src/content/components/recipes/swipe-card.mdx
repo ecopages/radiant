@@ -9,13 +9,16 @@ import { PrimitiveExample } from '@/components/primitive-example';
 export const config = {
 	dependencies: {
 		components: [PrimitiveExample],
-		scripts: ['./swipe-card.script.ts'],
+		scripts: ['./swipe-card.script.ts', './swipe-card.element.ts'],
+		stylesheets: ['./swipe-card.css'],
 	},
 };
 
 # Swipe to dismiss
 
-<p class="docs-lede">A card that follows the pointer, dismissed by a horizontal swipe, and with a button that does the same.</p>
+<p class="docs-lede">
+	A card that follows the pointer, dismissed by a horizontal swipe, and with a button that does the same.
+</p>
 
 ## Goal
 
@@ -32,7 +35,11 @@ Left to the recipe: what dismissing does (here it waits for the fly-out animatio
 
 ## Example
 
-Drag the card sideways at least 48 px, or flick it faster than 0.5 px per ms over at least 16 px, then release. A shorter or slower drag springs back, and so does one that is not at least twice as far sideways as vertically. Or press the Dismiss button.
+Drag the card sideways at least 48 px, or flick it faster than 0.5 px per ms over at least 16 px, then release. A shorter or slower drag springs back, and so does one that is not at least twice as far sideways as vertically. Or press the Dismiss button. The two forms below behave the same.
+
+### Plain JavaScript
+
+A `mount` function wires the controllers to one element and returns the cleanup that undoes it.
 
 <PrimitiveExample name="swipe-card">
 	<div data-box data-card>
@@ -48,8 +55,6 @@ Drag the card sideways at least 48 px, or flick it faster than 0.5 px per ms ove
 		The card is shown
 	</p>
 </PrimitiveExample>
-
-## Source
 
 ```html
 <div data-example="swipe-card">
@@ -125,3 +130,107 @@ export function mount(root: HTMLElement): () => void {
 ```
 
 `mount` runs once for each example element on the page, and the function it returns undoes it; see [how the examples run](/docs/recipes/overview#how-the-examples-run).
+
+### Radiant element
+
+The same behavior as a `RadiantElement`. The markup is authored inside the element and the element finds its parts with `@query`; there is nothing to mount, clean up or run again.
+
+<PrimitiveExample host>
+	<recipe-swipe-card>
+		<div data-box data-card>
+			<span>Your report is ready</span>
+			<button type="button" data-dismiss>
+				Dismiss
+			</button>
+		</div>
+		<button type="button" data-restore hidden>
+			Restore the card
+		</button>
+		<p data-status aria-live="polite">
+			The card is shown
+		</p>
+	</recipe-swipe-card>
+</PrimitiveExample>
+
+```html
+<recipe-swipe-card>
+	<div data-box data-card>
+		<span>Your report is ready</span>
+		<button type="button" data-dismiss>Dismiss</button>
+	</div>
+	<button type="button" data-restore hidden>Restore the card</button>
+	<p data-status aria-live="polite">The card is shown</p>
+</recipe-swipe-card>
+```
+
+```ts
+import { RadiantElement, customElement, onEvent, query } from '@ecopages/radiant';
+import { createPointerDragController } from '@ecopages/radiant-ui/controllers';
+import { resolveSwipeDirection } from '@ecopages/radiant-ui/helpers';
+
+@customElement('recipe-swipe-card')
+export class RecipeSwipeCard extends RadiantElement {
+	@query({ selector: '[data-card]' }) private card!: HTMLElement;
+	@query({ selector: '[data-dismiss]' }) private dismissButton!: HTMLElement;
+	@query({ selector: '[data-restore]' }) private restoreButton!: HTMLElement;
+	@query({ selector: '[data-status]' }) private status!: HTMLElement;
+
+	constructor() {
+		super();
+		createPointerDragController(this, {
+			getTarget: () => this.card,
+			capture: false,
+			canStart: (event) => !(event.target instanceof Element && event.target.closest('button')),
+			onStart: () => {
+				this.card.dataset.dragging = '';
+			},
+			onMove: ({ dx }) => this.follow(dx),
+			onEnd: ({ reason, dx, dy, elapsedMs }) => {
+				delete this.card.dataset.dragging;
+				const direction =
+					reason === 'release'
+						? resolveSwipeDirection(dx, dy, { minVelocity: 0.5, dominance: 2, elapsedMs })
+						: null;
+				if (!direction) {
+					this.follow(0);
+					return;
+				}
+				this.follow(direction === 'left' ? -this.card.offsetWidth : this.card.offsetWidth);
+				Promise.allSettled(this.card.getAnimations().map((animation) => animation.finished)).then(() =>
+					this.setShown(false, `Card dismissed, swiped ${direction}`),
+				);
+			},
+		});
+	}
+
+	private setShown(shown: boolean, message: string): void {
+		this.card.hidden = !shown;
+		this.restoreButton.hidden = shown;
+		this.status.textContent = message;
+		this.card.style.setProperty('--swipe-dx', '0px');
+		this.card.style.setProperty('--swipe-opacity', '1');
+	}
+
+	private follow(dx: number): void {
+		const distance = Math.min(Math.abs(dx) / this.card.offsetWidth, 1);
+		this.card.style.setProperty('--swipe-dx', `${dx}px`);
+		this.card.style.setProperty('--swipe-opacity', `${1 - distance / 2}`);
+	}
+
+	@onEvent({ selector: '[data-dismiss]', type: 'click' })
+	dismiss(): void {
+		this.setShown(false, 'Card dismissed');
+		this.restoreButton.focus();
+	}
+
+	@onEvent({ selector: '[data-restore]', type: 'click' })
+	restore(): void {
+		this.setShown(true, 'The card is shown');
+		this.dismissButton.focus();
+	}
+}
+```
+
+`createPointerDragController(this, ...)` in the constructor attaches the drag when the element connects and destroys it when the element disconnects, and the `@onEvent` listeners for the two buttons follow the same lifecycle. The card, the buttons and the live region are found with `@query`, so the element owns all of them; the pure `resolveSwipeDirection` decision is unchanged.
+
+What the Radiant form removes: the `mount` function and its registration, the cleanup to return and call, and the re-run after a client-side navigation.
