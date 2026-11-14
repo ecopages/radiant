@@ -1,0 +1,121 @@
+---
+title: Popover menu
+description: 'A menu button whose menu opens beside it, moves with the arrow keys and returns focus on close.'
+order: 5
+---
+
+import { PrimitiveExample } from '@/components/primitive-example';
+
+export const config = {
+	dependencies: {
+		components: [PrimitiveExample],
+		scripts: ['./popover-menu.script.ts'],
+	},
+};
+
+# Popover menu
+
+<p class="docs-lede">
+	A button that opens a menu beside it, walked with the arrow keys and closed with Escape or a press outside.
+</p>
+
+## Goal
+
+An actions menu on a row, a card or a toolbar. Opening moves focus into the menu, the arrow keys move between items, and every way of closing it ends with focus back on the button that opened it when the user did not choose to go elsewhere.
+
+## Primitives
+
+- [PopoverController](/docs/controllers/popover) shows the panel beside the button and keeps it positioned. With `onDismiss` set, it also reports an outside press, focus leaving and Escape through a [DismissController](/docs/controllers/dismiss) it owns, so the recipe does not add a second one. `portal: false` keeps the panel where it is.
+- [RovingController](/docs/controllers/roving) gives the menu items one tab stop and moves it with the arrows, Home and End.
+
+Left to the recipe: the open flag, moving focus into the menu on open, and returning focus to the button. The popover reports why it was dismissed and does not restore focus, because that depends on the reason: after Escape or choosing an item the button gets focus, after a press elsewhere the press already moved it.
+
+## Example
+
+Open the menu with the button, move with the arrow keys, choose with Enter, or press Escape to close it.
+
+<PrimitiveExample name="popover-menu">
+	<button type="button" aria-haspopup="menu" aria-expanded="false">
+		Actions
+	</button>
+	<div role="menu" aria-label="Actions" hidden>
+		<button type="button" role="menuitem">
+			Rename
+		</button>
+		<button type="button" role="menuitem">
+			Duplicate
+		</button>
+		<button type="button" role="menuitem">
+			Delete
+		</button>
+	</div>
+	<p data-status aria-live="polite">
+		Menu closed
+	</p>
+</PrimitiveExample>
+
+## Source
+
+```html
+<div data-example="popover-menu">
+	<button type="button" aria-haspopup="menu" aria-expanded="false">Actions</button>
+	<div role="menu" aria-label="Actions" hidden>
+		<button type="button" role="menuitem">Rename</button>
+		<button type="button" role="menuitem">Duplicate</button>
+		<button type="button" role="menuitem">Delete</button>
+	</div>
+	<p data-status aria-live="polite">Menu closed</p>
+</div>
+```
+
+```ts
+import { PopoverController, RovingController } from '@ecopages/radiant-ui/controllers';
+
+const root = document.querySelector('[data-example="popover-menu"]')!;
+const trigger = root.querySelector('button')!;
+const menu = root.querySelector<HTMLElement>('[role="menu"]')!;
+const status = root.querySelector('[data-status]')!;
+const items = [...menu.querySelectorAll<HTMLElement>('[role="menuitem"]')];
+
+let open = false;
+
+const popover = new PopoverController({
+	getAnchor: () => trigger,
+	getFloating: () => menu,
+	getOpen: () => open,
+	getPlacement: () => 'bottom-start',
+	portal: false,
+	onDismiss: (reason) => setOpen(false, reason === 'escape'),
+});
+
+const roving = new RovingController({
+	getItems: () => items,
+	getTarget: () => menu,
+	orientation: 'vertical',
+});
+
+function setOpen(next: boolean, restoreFocus = false): void {
+	open = next;
+	popover.sync();
+	trigger.setAttribute('aria-expanded', String(open));
+	status.textContent = open ? 'Menu open' : 'Menu closed';
+	if (open) {
+		roving.sync();
+		roving.focus(items[0]);
+	} else if (restoreFocus) {
+		trigger.focus();
+	}
+}
+
+popover.attach();
+roving.attach();
+roving.sync();
+
+trigger.addEventListener('click', () => setOpen(!open, true));
+for (const item of items) {
+	item.addEventListener('click', () => {
+		setOpen(false, true);
+		status.textContent = `Chose ${item.textContent}`;
+	});
+}
+```

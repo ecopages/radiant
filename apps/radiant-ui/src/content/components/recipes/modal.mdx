@@ -1,0 +1,118 @@
+---
+title: Modal dialog
+description: 'A dialog that traps focus, locks page scroll and returns focus to its opener when it closes.'
+order: 6
+---
+
+import { PrimitiveExample } from '@/components/primitive-example';
+
+export const config = {
+	dependencies: {
+		components: [PrimitiveExample],
+		scripts: ['./modal.script.ts'],
+	},
+};
+
+# Modal dialog
+
+<p class="docs-lede">
+	A dialog that holds focus and the page still while it is open, and gives both back when it closes.
+</p>
+
+## Goal
+
+A confirmation, a form in an overlay or a lightbox: while it is open the user works only in the dialog. Tab loops inside it, the page behind does not scroll, Escape or a press outside closes it, and focus goes back to the button that opened it.
+
+## Primitives
+
+- [PortalController](/docs/controllers/portal) moves the dialog out of the element it lives in and puts it back on close, so no overflow or stacking context of its parents clips it. Without `getContainer` it goes to `document.body`; the example passes the example frame instead so the frame styles still apply. It also carries the theme of the place it left.
+- [FocusTrapController](/docs/controllers/focus-trap) moves focus into the dialog on attach, loops Tab and Shift+Tab inside it, and returns focus to the previously focused element on destroy.
+- [ScrollLockController](/docs/controllers/scroll-lock) stops the page from scrolling, and counts, so two modals open at once release it only when both are closed.
+- [DismissController](/docs/controllers/dismiss) reports Escape and a press outside the dialog. Focus leaving is not listened to, because the trap already keeps it inside.
+
+Left to the recipe: the open and close function that attaches and destroys the four together, and `aria-modal` and a label on the dialog. None of them makes the rest of the page `inert`; a modal that must also block the pointer on the page or find-in-page sets `inert` itself.
+
+## Example
+
+Open the dialog, press Tab to see focus stay inside it, then close it with the button, Escape or a press outside it.
+
+<PrimitiveExample name="modal">
+	<div data-origin>
+		<button type="button" data-open>
+			Open dialog
+		</button>
+		<div data-box data-dialog role="dialog" aria-modal="true" aria-labelledby="modal-title" hidden>
+			<p id="modal-title">Delete this item?</p>
+			<button type="button" data-confirm>
+				Delete
+			</button>
+			<button type="button" data-close>
+				Cancel
+			</button>
+		</div>
+	</div>
+	<p data-status aria-live="polite">
+		Dialog closed
+	</p>
+</PrimitiveExample>
+
+## Source
+
+```html
+<div data-example="modal">
+	<div data-origin>
+		<button type="button" data-open>Open dialog</button>
+		<div data-box data-dialog role="dialog" aria-modal="true" aria-labelledby="modal-title" hidden>
+			<p id="modal-title">Delete this item?</p>
+			<button type="button" data-confirm>Delete</button>
+			<button type="button" data-close>Cancel</button>
+		</div>
+	</div>
+	<p data-status aria-live="polite">Dialog closed</p>
+</div>
+```
+
+```ts
+import {
+	DismissController,
+	FocusTrapController,
+	PortalController,
+	ScrollLockController,
+} from '@ecopages/radiant-ui/controllers';
+
+const root = document.querySelector<HTMLElement>('[data-example="modal"]')!;
+const opener = root.querySelector<HTMLElement>('[data-open]')!;
+const dialog = root.querySelector<HTMLElement>('[data-dialog]')!;
+const status = root.querySelector('[data-status]')!;
+
+const portal = new PortalController({ getNode: () => dialog, getContainer: () => root });
+const trap = new FocusTrapController({ getSurface: () => dialog });
+const lock = new ScrollLockController();
+const dismiss = new DismissController({
+	getSurface: () => dialog,
+	triggers: ['pointer', 'escape'],
+	onDismiss: () => close('Dialog closed'),
+});
+
+function open(): void {
+	dialog.hidden = false;
+	portal.attach();
+	lock.attach();
+	trap.attach();
+	dismiss.attach();
+	status.textContent = 'Dialog open';
+}
+
+function close(message: string): void {
+	dismiss.destroy();
+	dialog.hidden = true;
+	trap.destroy();
+	lock.destroy();
+	portal.destroy();
+	status.textContent = message;
+}
+
+opener.addEventListener('click', open);
+dialog.querySelector('[data-confirm]')!.addEventListener('click', () => close('Deleted'));
+dialog.querySelector('[data-close]')!.addEventListener('click', () => close('Dialog closed'));
+```
