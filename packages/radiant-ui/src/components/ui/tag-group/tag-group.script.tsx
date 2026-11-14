@@ -4,6 +4,12 @@ import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { createRuiIconX } from '@/lib/icons/x';
 import { uniqueId } from '@/lib/unique-id';
 import { createRovingController, type RovingController } from '../../../controllers/roving-controller';
+import {
+	createSortableController,
+	type SortableChange,
+	type SortableController,
+} from '../../../controllers/sortable-controller';
+import { reorder } from '../../../controllers/sortable-order';
 import { multiValuePropOptions, type ViewMultiValue } from '../shared/multi-value';
 
 export type RuiTagGroupSelectionMode = 'single' | 'multiple';
@@ -16,10 +22,14 @@ export type RuiTagGroupProps = {
 	selectionMode?: RuiTagGroupSelectionMode;
 	/** Disables selection when the parent component owns the selected values. */
 	embedded?: boolean;
+	/** Lets tags be reordered by pointer drag, or by keyboard: Space lifts, arrows move, Space or Enter drops, Escape cancels. */
+	reorderable?: boolean;
 };
 
 export type RuiTagGroupChangeDetail = { value: string[] };
 export type RuiTagGroupRemoveDetail = { value: string };
+/** `from` and `to` are indexes among the tags that take part in keyboard movement (not `hidden`, not `aria-disabled`). */
+export type RuiTagGroupReorderDetail = { value: string; from: number; to: number };
 
 /**
  * `<rui-tag-group>` — a focusable list of tags with optional selection and removal.
@@ -62,8 +72,11 @@ export type RuiTagGroupRemoveDetail = { value: string };
  * @attr {boolean} disabled - Disable selection and removal. Default: `false`.
  * @attr {('single'|'multiple')} selection-mode - Allow one or many selected tags. Default: `multiple`.
  * @attr {boolean} embedded - Disables selection when the parent component owns the selected values. Default: `false`.
+ * @attr {boolean} reorderable - Lets tags be reordered. Default: `false`.
  * @fires rui-change - Emitted when the selected `value` changes; `detail.value` is `string[]`.
  * @fires rui-remove - Emitted when a tag is removed; `detail.value` is the removed tag's value.
+ * @fires rui-reorder - Emitted after a reorder is applied; `detail` is `{ value, from, to }`: the moved tag's value and its
+ * old and new index among the tags that take part in keyboard movement.
  *
  * @remarks
  * Minimum tree: `[data-tag-list]` > `[data-tag][data-value][data-label]` with optional
@@ -72,6 +85,13 @@ export type RuiTagGroupRemoveDetail = { value: string };
  * marker). `resync()` re-reads authored children after in-place mutations.
  * BEM classes live on the view helpers; the host never queries them.
  * Not form-associated: wrap in `rui-field` and read `RuiForm` `onSubmit`.
+ *
+ * With `reorderable`, tags reorder through `SortableController`. Press and drag a tag, or focus it and press Space
+ * to lift it, arrows to move, Space or Enter to drop and Escape to cancel; the host moves the node (or reorders the
+ * `setItems()` list), focuses it, and emits `rui-reorder`. Space lifts instead of selecting, so selection stays on
+ * click and Enter. `value` is the selection and does not change with the order: read the order from the DOM or from
+ * `rui-reorder`. Steps are announced through a visually hidden `[data-tag-announcer]` live region the host appends
+ * to itself on the first announcement. While a tag is lifted the arrows belong to the sort, not to roving focus.
  */
 @customElement('rui-tag-group')
 export class RuiTagGroup extends RadiantElement {
@@ -88,8 +108,13 @@ export class RuiTagGroup extends RadiantElement {
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiTagGroupChangeDetail>;
 
+	@prop({ type: Boolean, reflect: true, defaultValue: false }) reorderable: boolean;
+
 	@event({ name: 'rui-remove', bubbles: true, composed: true })
 	removeEvent: EventEmitter<RuiTagGroupRemoveDetail>;
+
+	@event({ name: 'rui-reorder', bubbles: true, composed: true })
+	reorderEvent: EventEmitter<RuiTagGroupReorderDetail>;
 
 	private readonly uid = uniqueId('rui-tag-group');
 	/**
@@ -98,14 +123,58 @@ export class RuiTagGroup extends RadiantElement {
 	 */
 	@state private derivedItems: RuiTagGroupItem[] | null = null;
 
+	/**
+	 * The value of a reordered tag to focus once the derived list has re-rendered.
+	 *
+	 * @remarks The managed list replaces its chips on every `derivedItems` change, so the moved node is new.
+	 */
+	private focusAfterRender: string | null = null;
+
 	private readonly roving: RovingController;
+	private readonly sortable: SortableController;
 
 	constructor() {
 		super();
 		this.roving = createRovingController(this, {
 			getItems: () => this.getVisibleTags(),
 			getTarget: (): HTMLElement => this,
+			enabled: () => this.sortable.getState() === null,
 		});
+		this.sortable = createSortableController(this, {
+			getContainer: () => this,
+			getItems: () => this.getVisibleTags(),
+			axis: 'both',
+			liftKeys: [' '],
+			enabled: () => this.reorderable && !this.disabled,
+			getLabel: (tag) => this.getTagLabel(tag),
+			announce: (message) => this.announce(message),
+			onChange: (change) => this.reorderTag(change),
+		});
+	}
+
+	private announce(message: string): void {
+		let region = this.querySelector<HTMLElement>('[data-tag-announcer]');
+		if (!region) {
+			region = document.createElement('span');
+			region.setAttribute('data-tag-announcer', '');
+			region.className = 'rui-tag-group__announcer';
+			region.setAttribute('aria-live', 'polite');
+			this.append(region);
+		}
+		region.textContent = message;
+	}
+
+	private reorderTag({ item, from, to }: SortableChange): void {
+		const value = this.getTagValue(item);
+		if (this.derivedItems != null) {
+			this.focusAfterRender = value;
+			this.derivedItems = reorder(this.derivedItems, from, to);
+		} else {
+			const others = this.getVisibleTags().filter((tag) => tag !== item);
+			item.parentElement!.insertBefore(item, others[to] ?? null);
+			this.roving.focus(item);
+		}
+		this.reorderEvent.emit({ value, from, to });
 	}
 
 	private isMultiple(): boolean {
@@ -337,6 +406,11 @@ export class RuiTagGroup extends RadiantElement {
 		this.ensureTagIds();
 		this.syncList();
 		this.syncTags();
+		if (this.focusAfterRender !== null) {
+			const moved = this.getTags().find((tag) => this.getTagValue(tag) === this.focusAfterRender)!;
+			this.focusAfterRender = null;
+			this.roving.focus(moved);
+		}
 	}
 
 	@onEvent({ selector: '[data-tag]', type: 'click' })
@@ -364,6 +438,9 @@ export class RuiTagGroup extends RadiantElement {
 
 	@onEvent({ selector: '[data-tag]', type: 'keydown' })
 	onTagKeydown(event: KeyboardEvent): void {
+		if (event.defaultPrevented) {
+			return;
+		}
 		const current = (event.target as HTMLElement).closest<HTMLElement>('[data-tag]');
 		if (!current) {
 			return;

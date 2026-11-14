@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createRoot, type JsxRenderable } from '@ecopages/jsx';
 import { RuiTag, RuiTagGroup, RuiTagList } from './tag-group';
 import { RuiTagGroup as RuiTagGroupElement } from './tag-group.script';
@@ -302,6 +302,154 @@ describe('RuiTagGroup', () => {
 
 			expect(events).toEqual(['rui-remove']);
 			expect(group.value).toEqual(['tamed']);
+			cleanup();
+		});
+	});
+
+	describe('when reorderable', () => {
+		const tags = [
+			{ value: 'a', label: 'Alpha' },
+			{ value: 'b', label: 'Beta' },
+			{ value: 'c', label: 'Gamma' },
+		];
+
+		const names = (host: HTMLElement) =>
+			[...host.querySelectorAll('[data-tag]')].map((tag) => tag.getAttribute('data-value'));
+
+		const press = (target: Element, key: string) =>
+			target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+
+		const pointer = (target: EventTarget, type: string, x: number) =>
+			target.dispatchEvent(
+				new PointerEvent(type, { bubbles: true, pointerId: 1, button: 0, clientX: x, clientY: 5 }),
+			);
+
+		it('lifts with Space, moves with arrows and drops, then applies the order and focuses the moved tag', async () => {
+			const { host, cleanup } = mount(<RuiTagGroup reorderable tags={tags} />);
+			await settled();
+			const group = host.querySelector('rui-tag-group') as HTMLElement;
+			const reordered: unknown[] = [];
+			group.addEventListener('rui-reorder', (event) => reordered.push((event as CustomEvent).detail));
+			const first = host.querySelector('[data-value="a"]') as HTMLElement;
+
+			first.focus();
+			press(first, ' ');
+			expect(first.getAttribute('data-sortable-state')).toBe('lifted');
+			press(first, 'ArrowRight');
+			press(first, 'ArrowRight');
+			press(first, ' ');
+
+			expect(names(host)).toEqual(['b', 'c', 'a']);
+			expect(reordered).toEqual([{ value: 'a', from: 0, to: 2 }]);
+			expect(document.activeElement).toBe(host.querySelector('[data-value="a"]'));
+			expect(host.querySelector('[data-value="a"]')?.getAttribute('tabindex')).toBe('0');
+			expect(host.querySelector('[aria-live]')?.textContent).toBe('Dropped Alpha, position 3 of 3.');
+			cleanup();
+		});
+
+		it('does not select on the lifting or dropping keys, and still selects with Enter', async () => {
+			const { host, cleanup } = mount(<RuiTagGroup reorderable tags={tags} />);
+			await settled();
+			const group = host.querySelector('rui-tag-group') as HTMLElement & { value: string[] };
+			const first = host.querySelector('[data-value="a"]') as HTMLElement;
+
+			press(first, ' ');
+			press(first, ' ');
+			expect(group.value).toEqual([]);
+			press(first, 'Enter');
+			expect(group.value).toEqual(['a']);
+			cleanup();
+		});
+
+		it('cancels with Escape and leaves the order alone', async () => {
+			const { host, cleanup } = mount(<RuiTagGroup reorderable tags={tags} />);
+			await settled();
+			const group = host.querySelector('rui-tag-group') as HTMLElement;
+			const reordered = vi.fn();
+			group.addEventListener('rui-reorder', reordered);
+			const first = host.querySelector('[data-value="a"]') as HTMLElement;
+
+			first.focus();
+			press(first, ' ');
+			press(first, 'ArrowRight');
+			press(first, 'Escape');
+
+			expect(names(host)).toEqual(['a', 'b', 'c']);
+			expect(reordered).not.toHaveBeenCalled();
+			expect(first.hasAttribute('data-sortable-state')).toBe(false);
+			expect(document.activeElement).toBe(first);
+			cleanup();
+		});
+
+		it('keeps arrow keys for reordering instead of roving focus while a tag is lifted', async () => {
+			const { host, cleanup } = mount(<RuiTagGroup reorderable tags={tags} />);
+			await settled();
+			const first = host.querySelector('[data-value="a"]') as HTMLElement;
+
+			first.focus();
+			press(first, ' ');
+			press(first, 'ArrowRight');
+
+			expect(document.activeElement).toBe(first);
+			expect(first.getAttribute('data-sortable-state')).toBe('lifted');
+			cleanup();
+		});
+
+		it('reorders by pointer drag', async () => {
+			const { host, cleanup } = mount(<RuiTagGroup reorderable tags={tags} />);
+			await settled();
+			const [first, , third] = [...host.querySelectorAll<HTMLElement>('[data-tag]')];
+			const start = first.getBoundingClientRect();
+			const end = third.getBoundingClientRect();
+
+			pointer(first, 'pointerdown', start.left + 2);
+			pointer(document, 'pointermove', end.left + end.width - 2);
+			pointer(document, 'pointerup', end.left + end.width - 2);
+
+			expect(names(host)).toEqual(['b', 'c', 'a']);
+			cleanup();
+		});
+
+		it('reorders a derived list and keeps the new order', async () => {
+			const { host, cleanup } = mount(<RuiTagGroup reorderable tags={[]} />);
+			await settled();
+			const group = host.querySelector('rui-tag-group') as RuiTagGroupElement;
+			group.setItems(tags);
+			await settled();
+			const first = host.querySelector('[data-rui-managed-list] [data-value="a"]') as HTMLElement;
+
+			first.focus();
+			press(first, ' ');
+			press(first, 'ArrowRight');
+			press(first, ' ');
+			await settled();
+
+			expect(names(host)).toEqual(['b', 'a', 'c']);
+			expect(document.activeElement?.getAttribute('data-value')).toBe('a');
+			cleanup();
+		});
+
+		it('does nothing unless reorderable, and Space keeps selecting', async () => {
+			const { host, cleanup } = mount(<RuiTagGroup tags={tags} />);
+			await settled();
+			const group = host.querySelector('rui-tag-group') as HTMLElement & { value: string[] };
+			const first = host.querySelector('[data-value="a"]') as HTMLElement;
+
+			press(first, ' ');
+
+			expect(first.hasAttribute('data-sortable-state')).toBe(false);
+			expect(group.value).toEqual(['a']);
+			cleanup();
+		});
+
+		it('does not lift when the group is disabled', async () => {
+			const { host, cleanup } = mount(<RuiTagGroup reorderable disabled tags={tags} />);
+			await settled();
+			const first = host.querySelector('[data-value="a"]') as HTMLElement;
+
+			press(first, ' ');
+
+			expect(first.hasAttribute('data-sortable-state')).toBe(false);
 			cleanup();
 		});
 	});

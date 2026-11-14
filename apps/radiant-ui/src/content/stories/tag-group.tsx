@@ -6,6 +6,7 @@ export type TagGroupArgs = {
 	selectionMode: RuiTagGroupSelectionMode;
 	disabled: boolean;
 	embedded: boolean;
+	reorderable: boolean;
 };
 
 function parseCsv(value: string): string[] {
@@ -21,6 +22,7 @@ export const meta = {
 		selectionMode: 'multiple',
 		disabled: false,
 		embedded: false,
+		reorderable: false,
 	},
 	argTypes: {
 		value: { control: { type: 'text' } },
@@ -30,6 +32,7 @@ export const meta = {
 		},
 		disabled: { control: { type: 'boolean' } },
 		embedded: { control: { type: 'boolean' } },
+		reorderable: { control: { type: 'boolean' } },
 	},
 	render: (args) => {
 		const tagValues = parseCsv(args.value);
@@ -39,6 +42,7 @@ export const meta = {
 				selectionMode={args.selectionMode}
 				disabled={args.disabled}
 				embedded={args.embedded}
+				reorderable={args.reorderable}
 				label="Skills"
 				tags={tagValues.map((tag) => ({ value: tag, label: tag }))}
 			/>
@@ -49,3 +53,8 @@ export const meta = {
 type Story = DocsStory<TagGroupArgs>;
 
 export const Default: Story = docsStory(meta, { parameters: { docs: { id: 'tag-group/default' } } });
+
+export const Reorderable: Story = docsStory(meta, {
+	args: { reorderable: true, value: 'react' },
+	parameters: { docs: { id: 'tag-group/reorderable' } },
+});
