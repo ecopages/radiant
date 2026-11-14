@@ -43,6 +43,32 @@ describe.each<Form>(['plain', 'radiant'])('sortable list, %s form', (form) => {
 	});
 });
 
+describe.each<Form>(['plain', 'radiant'])('sortable list with a real mouse, %s form', (form) => {
+	test('a mouse drag moves an item below the one it is released over', async () => {
+		const root = await mountForm('sortable-list', form);
+		const items = () => [...root.querySelectorAll('li')];
+		await expect.poll(() => items()).toHaveLength(4);
+
+		await userEvent.dragAndDrop(items()[0], items()[3]);
+
+		expect(texts(items()).indexOf('Plan')).toBeGreaterThan(0);
+		expect(document.querySelector('[data-sortable-placeholder]')).toBeNull();
+	});
+});
+
+describe.each<Form>(['plain', 'radiant'])('board with a real mouse, %s form', (form) => {
+	test('a mouse drag moves a card into another column', async () => {
+		const root = await mountForm('board', form);
+		const columns = () => [...root.querySelectorAll('ul')];
+		await expect.poll(() => columns()).toHaveLength(3);
+
+		await userEvent.dragAndDrop(columns()[0].children[0] as HTMLElement, columns()[2].children[0] as HTMLElement);
+
+		expect(texts(columns()[0].children)).not.toContain('Write the brief');
+		expect(texts(columns()[2].children)).toContain('Write the brief');
+	});
+});
+
 describe.each<Form>(['plain', 'radiant'])('board, %s form', (form) => {
 	test('moves a card between columns by pointer and by keyboard, the card leaving the clipped column', async () => {
 		const root = await mountForm('board', form);

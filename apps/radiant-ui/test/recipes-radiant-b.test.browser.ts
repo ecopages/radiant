@@ -18,6 +18,22 @@ afterEach(() => {
 	document.body.innerHTML = '';
 });
 
+describe.each<Form>(['plain', 'radiant'])('swipe card with a real mouse (%s form)', (form) => {
+	test('a mouse drag across the card dismisses it', async () => {
+		const root = await mountForm('swipe-card', form);
+		const card = root.querySelector<HTMLElement>('[data-card]')!;
+		await expect.poll(() => root.querySelector('[data-card]')).not.toBeNull();
+		const target = document.body.appendChild(document.createElement('div'));
+		const box = card.getBoundingClientRect();
+		target.style.cssText = `position: fixed; top: ${box.top}px; left: ${box.right + 10}px; width: 40px; height: 20px`;
+
+		await userEvent.dragAndDrop(card.querySelector('span')!, target);
+
+		await expect.poll(() => card.hidden).toBe(true);
+		expect(status(root)).toBe('Card dismissed, swiped right');
+	});
+});
+
 describe.each<Form>(['plain', 'radiant'])('swipe card (%s form)', (form) => {
 	const mount = async () => {
 		const root = await mountForm('swipe-card', form);
