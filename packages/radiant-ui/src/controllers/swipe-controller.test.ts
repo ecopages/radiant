@@ -16,7 +16,11 @@ describe('SwipeController on plain elements', () => {
 		return { element, inner, onSwipe, controller };
 	}
 
-	const pointer = (target: EventTarget, type: string, init: { x: number; y: number; id?: number; button?: number; t?: number }) => {
+	const pointer = (
+		target: EventTarget,
+		type: string,
+		init: { x: number; y: number; id?: number; button?: number; t?: number },
+	) => {
 		const event = new PointerEvent(type, {
 			bubbles: true,
 			pointerId: init.id ?? 1,
