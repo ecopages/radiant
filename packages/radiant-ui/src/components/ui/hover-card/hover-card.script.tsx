@@ -177,7 +177,7 @@ export class RuiHoverCard extends RadiantElement {
 	}
 
 	private getFloatingElement(): HTMLElement | null {
-		return this.controller.getFloatingElement() ?? this.contentTarget;
+		return this.controller.getFloatingElement();
 	}
 
 	@bound
@@ -199,10 +199,6 @@ export class RuiHoverCard extends RadiantElement {
 			portal: this.portal,
 		});
 		this.controller.sync();
-		this.syncContentPointerBridge();
-	}
-
-	private syncContentPointerBridge(): void {
 		this.surfaceBridge.attach();
 	}
 
