@@ -13,7 +13,7 @@ import {
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { isIsoInRange, normalizeRange, parseIsoRange, serializeIsoRange } from '@/lib/intl-date';
 import type { RuiCalendarChangeDetail } from '../calendar/calendar.script';
-import { CalendarPopoverController } from '../../../controllers/calendar-popover-controller';
+import { createCalendarPopoverController } from '../../../controllers/calendar-popover-controller';
 import { effectiveVisibleMonths } from '@/lib/viewport/mobile-layout';
 
 export type RuiDateRangePickerProps = {
@@ -143,7 +143,7 @@ export class RuiDateRangePicker extends RadiantElement {
 	@bindTo({ selector: '[data-range-trigger]', attr: 'aria-expanded' })
 	open = false;
 
-	private readonly calendarPopover = new CalendarPopoverController({
+	private readonly calendarPopover = createCalendarPopoverController(this, {
 		getHost: () => this,
 		getAnchor: () => this.getToggle()?.parentElement ?? this,
 		getFloating: () => this.popoverTarget,
@@ -257,13 +257,7 @@ export class RuiDateRangePicker extends RadiantElement {
 	}
 
 	protected override onConnected(): void {
-		this.calendarPopover.connect();
 		this.initialize();
-	}
-
-	override disconnectedCallback(): void {
-		this.calendarPopover.destroy();
-		super.disconnectedCallback();
 	}
 
 	@onUpdated(['value', 'min', 'max', 'disabled', 'readOnly', 'locale', 'visibleMonths'])

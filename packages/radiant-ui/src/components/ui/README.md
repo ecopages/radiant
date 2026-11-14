@@ -66,7 +66,11 @@ Before writing bespoke logic, check `src/controllers` for a controller that alre
 
 When a component only needs the behavior for its connected lifetime and has no use for the controller afterwards, call the factory in the constructor (`createMutationController(this, {...})`) instead of keeping a field. A component that starts and stops a controller itself (field, sidebar-trigger) constructs the class directly and calls `attach()` and `destroy()`.
 
-`MenuTreeController` and the listbox and calendar popover behaviors still create theirs by hand, calling `attach()` themselves.
+- `MenuTreeController` (menu-button, menubar): nested submenu coordination. It has nothing to start on `attach()`; `destroy()` closes open branches and releases their popovers and timers.
+- `ListboxPopoverController` (select, combobox): active-descendant navigation and popover positioning. Positioning does nothing until attached.
+- `CalendarPopoverController` (date-field, date-range-picker): open state, positioning, focus-out dismissal and the mobile layout listener, started on `attach()`.
+
+Each of the three has a `createX(host, config)` factory; owners hold the result in a field initializer and write no teardown. The pure `collection-navigation` helpers they use live beside them. `ListboxHostController` stays in `components/ui/shared`: it holds no resources and reads listbox host types from the catalog.
 
 ## Multi-value `value`
 

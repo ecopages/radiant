@@ -1,4 +1,5 @@
 import { listenMobileLayoutViewport } from '@/lib/viewport/mobile-layout';
+import { bindController, type Controller, type ControllerHost } from './controller';
 import { PopoverController, shouldDismissPopoverFocus } from './popover-controller';
 
 export type CalendarPopoverControllerConfig = {
@@ -20,7 +21,7 @@ export type CalendarPopoverControllerConfig = {
  *
  * @remarks Date-field and date-range-picker keep value commit and selection mode local.
  */
-export class CalendarPopoverController {
+export class CalendarPopoverController implements Controller {
 	private readonly config: CalendarPopoverControllerConfig;
 	private popoverController: PopoverController | null = null;
 	private suppressPopoverDismiss = false;
@@ -30,8 +31,8 @@ export class CalendarPopoverController {
 		this.config = config;
 	}
 
-	/** Starts listening for mobile layout changes until `destroy()`; call it on every connection. */
-	connect(): void {
+	/** Starts listening for mobile layout changes until `destroy()`. */
+	attach(): void {
 		this.disposeMobileLayoutListener?.();
 		this.disposeMobileLayoutListener = listenMobileLayoutViewport(() => {
 			this.config.onLayoutChange();
@@ -137,6 +138,16 @@ export class CalendarPopoverController {
 
 		return this.popoverController;
 	}
+}
+
+/**
+ * Creates a `CalendarPopoverController` that attaches when `host` connects and is destroyed when it disconnects.
+ */
+export function createCalendarPopoverController(
+	host: ControllerHost,
+	config: CalendarPopoverControllerConfig,
+): CalendarPopoverController {
+	return bindController(host, new CalendarPopoverController(config));
 }
 
 /** Focus the calendar's selected day, or the roving tabindex day, or the first available day. */

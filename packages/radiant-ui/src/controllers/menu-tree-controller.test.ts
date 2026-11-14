@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { MenuTreeController } from './menu-tree-controller';
+import { MenuTreeController, createMenuTreeController } from './menu-tree-controller';
 
 function keyEvent(key: string, target: HTMLElement): KeyboardEvent {
 	const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
@@ -180,5 +180,106 @@ describe('MenuTreeController', () => {
 		expect(share.getAttribute('aria-expanded')).toBe('false');
 
 		cleanup();
+	});
+});
+
+describe('MenuTreeController lifecycle on a plain element', () => {
+	const observers: { disconnected: boolean }[] = [];
+
+	class RecordingResizeObserver {
+		record = { disconnected: false };
+		constructor() {
+			observers.push(this.record);
+		}
+		observe(): void {}
+		unobserve(): void {}
+		disconnect(): void {
+			this.record.disconnected = true;
+		}
+	}
+
+	afterEach(() => {
+		vi.unstubAllGlobals();
+		vi.useRealTimers();
+		observers.length = 0;
+	});
+
+	it('releases open submenus and pending timers on destroy, and again on a second destroy', () => {
+		vi.stubGlobal('ResizeObserver', RecordingResizeObserver);
+		vi.useFakeTimers();
+		const { share, print, submenu, printMenu, tree, root } = createTree();
+
+		tree.attach();
+		tree.handleKeydown(keyEvent('ArrowRight', share));
+		expect(share.getAttribute('aria-expanded')).toBe('true');
+		expect(observers).toHaveLength(1);
+
+		tree.handlePointerOver(pointerEvent('pointerover', print));
+		tree.destroy();
+		tree.destroy();
+
+		expect(share.getAttribute('aria-expanded')).toBe('false');
+		expect(submenu.hidden).toBe(true);
+		expect(observers[0].disconnected).toBe(true);
+		vi.advanceTimersByTime(1000);
+		expect(print.getAttribute('aria-expanded')).toBe('false');
+		expect(printMenu.hidden).toBe(true);
+		expect(observers).toHaveLength(1);
+
+		root.remove();
+	});
+
+	it('opens submenus again after destroy and attach', () => {
+		vi.stubGlobal('ResizeObserver', RecordingResizeObserver);
+		const { share, tree, root } = createTree();
+
+		tree.attach();
+		tree.destroy();
+		tree.attach();
+		tree.handleKeydown(keyEvent('ArrowRight', share));
+
+		expect(share.getAttribute('aria-expanded')).toBe('true');
+		expect(observers.at(-1)?.disconnected).toBe(false);
+
+		tree.destroy();
+		root.remove();
+	});
+
+	it('createMenuTreeController attaches on connect and destroys on cleanup', () => {
+		vi.stubGlobal('ResizeObserver', RecordingResizeObserver);
+		const connected: (() => void)[] = [];
+		const cleanup: (() => void)[] = [];
+		const root = document.createElement('div');
+		root.innerHTML = `
+			<div role="menu">
+				<button type="button" role="menuitem">Share</button>
+				<div role="menu" hidden><button type="button" role="menuitem">Email</button></div>
+			</div>
+		`;
+		document.body.append(root);
+		const share = root.querySelector('button') as HTMLElement;
+		const tree = createMenuTreeController(
+			{
+				registerConnectedCallback: (callback) => connected.push(callback),
+				registerCleanupCallback: (callback) => cleanup.push(callback),
+			},
+			{
+				root,
+				getRootMenu: () => root.querySelector('[role="menu"]'),
+				onActivate: vi.fn(),
+				onCloseRoot: vi.fn(),
+			},
+		);
+		tree.sync();
+
+		connected.forEach((callback) => callback());
+		tree.handleKeydown(keyEvent('ArrowRight', share));
+		expect(share.getAttribute('aria-expanded')).toBe('true');
+
+		cleanup.forEach((callback) => callback());
+		expect(share.getAttribute('aria-expanded')).toBe('false');
+		expect(observers[0].disconnected).toBe(true);
+
+		root.remove();
 	});
 });

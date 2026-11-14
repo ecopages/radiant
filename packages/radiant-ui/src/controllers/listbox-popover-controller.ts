@@ -1,3 +1,4 @@
+import { bindController, type Controller, type ControllerHost } from './controller';
 import { PopoverController, shouldDismissPopoverFocus, shouldDismissPopoverPointer } from './popover-controller';
 import {
 	clearCollectionActive,
@@ -35,8 +36,9 @@ export type ListboxKeydownConfig = {
  * @remarks Select and combobox intentionally keep their selection and filtering
  * policies local. This behavior owns only the state machine both controls must
  * agree on: active-descendant navigation, popover positioning, and dismissal.
+ * `syncPopoverPosition()` does nothing until `attach()`, and nothing after `destroy()`.
  */
-export class ListboxPopoverController {
+export class ListboxPopoverController implements Controller {
 	private readonly config: ListboxPopoverControllerConfig;
 	private readonly popoverController: PopoverController;
 	private activeIndex = -1;
@@ -53,6 +55,9 @@ export class ListboxPopoverController {
 			portal: false,
 			matchAnchorWidth: true,
 		});
+	}
+
+	attach(): void {
 		this.popoverController.attach();
 	}
 
@@ -209,4 +214,14 @@ export class ListboxPopoverController {
 	destroy(): void {
 		this.popoverController.destroy();
 	}
+}
+
+/**
+ * Creates a `ListboxPopoverController` that attaches when `host` connects and is destroyed when it disconnects.
+ */
+export function createListboxPopoverController(
+	host: ControllerHost,
+	config: ListboxPopoverControllerConfig,
+): ListboxPopoverController {
+	return bindController(host, new ListboxPopoverController(config));
 }

@@ -3,7 +3,7 @@ import { RadiantElement, customElement, event, onEvent, prop } from '@ecopages/r
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { applyRovingTabindex, navigateRovingTabindex } from '@/lib/roving-tabindex';
 import { PopoverController, shouldDismissPopoverPointer } from '../../../controllers/popover-controller';
-import { MenuTreeController } from '../../../controllers/menu-tree-controller';
+import { createMenuTreeController } from '../../../controllers/menu-tree-controller';
 
 export type RuiMenubarProps = {
 	label?: string;
@@ -73,9 +73,14 @@ export class RuiMenubar extends RadiantElement {
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiMenubarChangeDetail>;
 
+	private readonly menuTree = createMenuTreeController(this, {
+		root: this,
+		getRootMenu: () => this.getOpenMenuSurface(),
+		onActivate: (item) => this.activateItem(item),
+		onCloseRoot: (returnFocus) => this.closeOpenMenu(returnFocus),
+	});
 	private openRoot: HTMLElement | null = null;
 	private popoverController: PopoverController | null = null;
-	private menuTree: MenuTreeController | null = null;
 
 	private getTopItems(): HTMLElement[] {
 		return Array.from(
@@ -90,27 +95,13 @@ export class RuiMenubar extends RadiantElement {
 
 	protected override onConnected(): void {
 		applyRovingTabindex(this.getTopItems(), 0);
-		this.ensureMenuTree().sync();
+		this.menuTree.sync();
 	}
 
 	override disconnectedCallback(): void {
-		this.menuTree?.destroy();
-		this.menuTree = null;
 		this.popoverController?.destroy();
 		this.popoverController = null;
 		super.disconnectedCallback();
-	}
-
-	private ensureMenuTree(): MenuTreeController {
-		if (!this.menuTree) {
-			this.menuTree = new MenuTreeController({
-				root: this,
-				getRootMenu: () => this.getOpenMenuSurface(),
-				onActivate: (item) => this.activateItem(item),
-				onCloseRoot: (returnFocus) => this.closeOpenMenu(returnFocus),
-			});
-		}
-		return this.menuTree;
 	}
 
 	private getOpenMenuAnchor(): HTMLElement | null {
@@ -156,7 +147,7 @@ export class RuiMenubar extends RadiantElement {
 
 	private closeOpenMenu(returnFocus = false): void {
 		if (!this.openRoot) return;
-		this.menuTree?.closeAll();
+		this.menuTree.closeAll();
 		const top = this.openRoot.querySelector<HTMLElement>(':scope > [role="menuitem"]');
 		const menu = this.openRoot.querySelector<HTMLElement>(':scope > [role="menu"]');
 		if (top) top.setAttribute('aria-expanded', 'false');
@@ -177,10 +168,10 @@ export class RuiMenubar extends RadiantElement {
 		menu.hidden = false;
 		this.openRoot = root;
 		this.syncOpenMenuPosition();
-		this.ensureMenuTree().sync();
+		this.menuTree.sync();
 
 		if (focus === 'first') {
-			this.ensureMenuTree().getFocusableItems(menu)[0]?.focus();
+			this.menuTree.getFocusableItems(menu)[0]?.focus();
 		}
 	}
 
@@ -256,7 +247,7 @@ export class RuiMenubar extends RadiantElement {
 		const current = (event.target as HTMLElement).closest('[role="menuitem"]') as HTMLElement | null;
 		if (!menu || !current || !this.contains(menu)) return;
 
-		if (this.ensureMenuTree().handleKeydown(event)) return;
+		if (this.menuTree.handleKeydown(event)) return;
 		if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
 
 		const top = this.getOpenMenuAnchor();
@@ -276,7 +267,7 @@ export class RuiMenubar extends RadiantElement {
 	 */
 	@onEvent({ selector: '[role="menu"] > [role="menuitem"]', type: 'click' })
 	onMenuItemClick(event: Event): void {
-		this.ensureMenuTree().handleClick(event);
+		this.menuTree.handleClick(event);
 	}
 
 	@onEvent({ selector: '[role="menuitem"]', type: 'pointerover' })
@@ -288,17 +279,17 @@ export class RuiMenubar extends RadiantElement {
 			if (currentRoot && currentRoot !== this.openRoot) this.openMenu(top, null);
 			return;
 		}
-		this.ensureMenuTree().handlePointerOver(event);
+		this.menuTree.handlePointerOver(event);
 	}
 
 	@onEvent({ selector: '[role="menuitem"]', type: 'pointerout' })
 	onPointerOut(event: PointerEvent): void {
-		this.ensureMenuTree().handlePointerOut(event);
+		this.menuTree.handlePointerOut(event);
 	}
 
 	@onEvent({ selector: '[role="menuitem"]', type: 'focusout' })
 	onFocusOut(event: FocusEvent): void {
-		this.ensureMenuTree().handleFocusOut(event);
+		this.menuTree.handleFocusOut(event);
 	}
 
 	private activateItem(item: HTMLElement): void {

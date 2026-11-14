@@ -12,7 +12,7 @@ import {
 } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { PopoverController, shouldDismissPopoverPointer } from '../../../controllers/popover-controller';
-import { MenuTreeController } from '../../../controllers/menu-tree-controller';
+import { createMenuTreeController } from '../../../controllers/menu-tree-controller';
 import type { RuiPlacement } from '../../../controllers/placement';
 import { uniqueId } from '@/lib/unique-id';
 
@@ -97,9 +97,14 @@ export class RuiMenuButton extends RadiantElement {
 	@event({ name: 'rui-close', bubbles: true, composed: true })
 	closeEvent: EventEmitter<void>;
 
+	private readonly menuTree = createMenuTreeController(this, {
+		root: this,
+		getRootMenu: () => this.menuTarget,
+		onActivate: (item) => this.activateItem(item),
+		onCloseRoot: (returnFocus) => this.setOpen(false, returnFocus ? 'trigger' : null),
+	});
 	private readonly menuId = uniqueId('rui-menu');
 	private popoverController: PopoverController | null = null;
-	private menuTree: MenuTreeController | null = null;
 	private pendingFocus: 'first' | 'last' | 'trigger' | null = null;
 
 	protected override onConnected(): void {
@@ -107,8 +112,6 @@ export class RuiMenuButton extends RadiantElement {
 	}
 
 	override disconnectedCallback(): void {
-		this.menuTree?.destroy();
-		this.menuTree = null;
 		this.popoverController?.destroy();
 		this.popoverController = null;
 		super.disconnectedCallback();
@@ -116,19 +119,7 @@ export class RuiMenuButton extends RadiantElement {
 
 	private getItems(): HTMLElement[] {
 		if (!this.menuTarget) return [];
-		return this.ensureMenuTree().getFocusableItems(this.menuTarget);
-	}
-
-	private ensureMenuTree(): MenuTreeController {
-		if (!this.menuTree) {
-			this.menuTree = new MenuTreeController({
-				root: this,
-				getRootMenu: () => this.menuTarget,
-				onActivate: (item) => this.activateItem(item),
-				onCloseRoot: (returnFocus) => this.setOpen(false, returnFocus ? 'trigger' : null),
-			});
-		}
-		return this.menuTree;
+		return this.menuTree.getFocusableItems(this.menuTarget);
 	}
 
 	private getSearchInput(): HTMLInputElement | null {
@@ -158,7 +149,7 @@ export class RuiMenuButton extends RadiantElement {
 		this.menuTarget.id = this.menuId;
 		this.triggerTarget.setAttribute('aria-controls', this.menuId);
 		this.triggerTarget.setAttribute('aria-haspopup', 'menu');
-		const menuTree = this.ensureMenuTree();
+		const menuTree = this.menuTree;
 		menuTree.sync();
 		if (!this.open) menuTree.closeAll();
 
@@ -232,27 +223,27 @@ export class RuiMenuButton extends RadiantElement {
 
 	@onEvent({ ref: 'menu', type: 'keydown' })
 	onMenuKeydown(event: KeyboardEvent): void {
-		this.ensureMenuTree().handleKeydown(event);
+		this.menuTree.handleKeydown(event);
 	}
 
 	@onEvent({ ref: 'menu', type: 'pointerover' })
 	onMenuPointerOver(event: PointerEvent): void {
-		this.ensureMenuTree().handlePointerOver(event);
+		this.menuTree.handlePointerOver(event);
 	}
 
 	@onEvent({ ref: 'menu', type: 'pointerout' })
 	onMenuPointerOut(event: PointerEvent): void {
-		this.ensureMenuTree().handlePointerOut(event);
+		this.menuTree.handlePointerOut(event);
 	}
 
 	@onEvent({ ref: 'menu', type: 'focusout' })
 	onMenuFocusOut(event: FocusEvent): void {
-		this.ensureMenuTree().handleFocusOut(event);
+		this.menuTree.handleFocusOut(event);
 	}
 
 	@onEvent({ selector: '[role="menuitem"]', type: 'click' })
 	onItemClick(event: Event): void {
-		this.ensureMenuTree().handleClick(event);
+		this.menuTree.handleClick(event);
 	}
 
 	private activateItem(item: HTMLElement): void {

@@ -1,3 +1,4 @@
+import { bindController, type Controller, type ControllerHost } from './controller';
 import { PopoverController } from './popover-controller';
 import { uniqueId } from '@/lib/unique-id';
 
@@ -5,7 +6,7 @@ const SUBMENU_DELAY = 200;
 const SUBMENU_CLOSE_DELAY = 250;
 const SUBMENU_GAP = 6;
 
-type MenuTreeConfig = {
+export type MenuTreeControllerConfig = {
 	root: HTMLElement;
 	getRootMenu: () => HTMLElement | null;
 	onActivate: (item: HTMLElement) => void;
@@ -25,17 +26,22 @@ type MenuKeyContext = {
  * @remarks Menus remain in light DOM so their ARIA relationship is represented
  * by an immediate menuitem/menu sibling pair. Submenu popovers therefore stay
  * unportaled while this coordinator manages their independent positions.
+ *
+ * `attach()` has nothing to start: submenu popovers and timers exist only while a branch is open, so the
+ * constructor is already inert. `destroy()` closes every open branch and releases its popover and timers.
  */
-export class MenuTreeController {
-	private readonly config: MenuTreeConfig;
+export class MenuTreeController implements Controller {
+	private readonly config: MenuTreeControllerConfig;
 	private readonly popovers = new Map<HTMLElement, PopoverController>();
 	private readonly openMenus = new Set<HTMLElement>();
 	private readonly openTimers = new Map<HTMLElement, ReturnType<typeof setTimeout>>();
 	private readonly closeTimers = new Map<HTMLElement, ReturnType<typeof setTimeout>>();
 
-	constructor(config: MenuTreeConfig) {
+	constructor(config: MenuTreeControllerConfig) {
 		this.config = config;
 	}
+
+	attach(): void {}
 
 	sync(): void {
 		for (const menu of this.getMenus()) {
@@ -330,4 +336,11 @@ export class MenuTreeController {
 		this.openTimers.clear();
 		this.closeTimers.clear();
 	}
+}
+
+/**
+ * Creates a `MenuTreeController` that attaches when `host` connects and is destroyed when it disconnects.
+ */
+export function createMenuTreeController(host: ControllerHost, config: MenuTreeControllerConfig): MenuTreeController {
+	return bindController(host, new MenuTreeController(config));
 }

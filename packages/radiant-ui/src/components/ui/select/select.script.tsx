@@ -5,7 +5,7 @@ import { uniqueId } from '@/lib/unique-id';
 import { findAssociatedLabel, syncFieldLabel } from '../shared/field-label';
 import { ListboxHostController } from '../shared/listbox-host-controller';
 import { getListboxOptionValue } from '../shared/listbox-option';
-import { ListboxPopoverController } from '../../../controllers/listbox-popover-controller';
+import { createListboxPopoverController } from '../../../controllers/listbox-popover-controller';
 import { multiValuePropOptions, type ViewMultiValue } from '../shared/multi-value';
 
 export type RuiSelectSelectionMode = 'single' | 'multiple';
@@ -138,7 +138,7 @@ export class RuiSelect extends RadiantElement {
 		getPopup: () => this.getListboxPopup(),
 		tagGroupSelector: '[data-select-value] rui-tag-group',
 	});
-	private readonly listboxPopover = new ListboxPopoverController({
+	private readonly listboxPopover = createListboxPopoverController(this, {
 		getAnchor: () => this.rootTarget,
 		getFloating: () => this.getListboxPopup(),
 		getOpen: () => this.open,
@@ -492,11 +492,6 @@ export class RuiSelect extends RadiantElement {
 
 	protected override onConnected(): void {
 		this.initialize();
-	}
-
-	override disconnectedCallback(): void {
-		this.listboxPopover.destroy();
-		super.disconnectedCallback();
 	}
 
 	@onUpdated(['value', 'label', 'placeholder', 'disabled', 'triggerKind', 'selectionMode', 'shouldCloseOnSelect'])
