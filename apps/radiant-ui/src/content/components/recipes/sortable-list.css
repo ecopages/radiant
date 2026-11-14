@@ -13,6 +13,7 @@
 	color: var(--on-primary);
 	font-size: 0.875rem;
 	box-shadow: 0 0.5rem 1rem rgb(0 0 0 / 0.25);
+	list-style: none;
 	cursor: grabbing;
 }
 
