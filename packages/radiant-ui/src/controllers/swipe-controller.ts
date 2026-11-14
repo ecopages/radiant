@@ -1,5 +1,5 @@
 import { bindController, type Controller, type ControllerHost } from './controller';
-import { EventListenerController } from './event-listener-controller';
+import { PointerDragController } from './pointer-drag-controller';
 import { resolveSwipeDirection, type SwipeDirection, type SwipeOptions } from './swipe-direction';
 
 /** The target, thresholds and callback of a `SwipeController`. */
@@ -16,41 +16,35 @@ export type SwipeControllerConfig = SwipeOptions & {
  * Reports a swipe on an element: a primary-button press, travel past a threshold, and a release.
  *
  * @remarks
- * Reports once, on release; it does not follow the pointer. A surface that moves with the pointer or decides on
- * speed (the toast) needs a `PointerDragController`. Pointer capture is not taken, so a release outside the element
- * is never seen and the gesture stays pending until the next press or cancel; touch pointers are captured
- * implicitly by the browser. Only the pointer that went down counts, and a pointer cancel or `destroy()` drops the
- * gesture.
+ * Built on `PointerDragController` with capture off: the press, the single followed pointer and the end are its,
+ * and its listeners sit on `document`, so a release outside the element still ends the gesture. Reports once, on
+ * release; it does not follow the pointer. A surface that moves with the pointer or decides on speed (the toast)
+ * needs a `PointerDragController`. A pointer cancel or `destroy()` drops the gesture. Touch pointers are captured
+ * implicitly by the browser.
  */
 export class SwipeController implements Controller {
-	private pointerId: number | null = null;
-	private startX = 0;
-	private startY = 0;
-	private readonly listeners: readonly Controller[];
+	private readonly drag: PointerDragController;
 
 	constructor(private readonly config: SwipeControllerConfig) {
-		const listen = <K extends 'pointerdown' | 'pointerup' | 'pointercancel'>(
-			type: K,
-			listener: (event: HTMLElementEventMap[K]) => void,
-		) => new EventListenerController({ getTarget: config.getTarget, type, listener });
-		this.listeners = [
-			listen('pointerdown', (event) => this.onPointerDown(event)),
-			listen('pointerup', (event) => this.onPointerUp(event)),
-			listen('pointercancel', (event) => this.onPointerCancel(event)),
-		];
+		this.drag = new PointerDragController({
+			getTarget: config.getTarget,
+			capture: false,
+			canStart: (event) => !config.exclude?.(event.target),
+			onEnd: ({ reason, dx, dy, event }) => {
+				const direction = reason === 'release' ? this.resolveDirection(dx, dy) : null;
+				if (direction) {
+					config.onSwipe(direction, event);
+				}
+			},
+		});
 	}
 
 	attach(): void {
-		for (const listener of this.listeners) {
-			listener.attach();
-		}
+		this.drag.attach();
 	}
 
 	destroy(): void {
-		this.pointerId = null;
-		for (const listener of this.listeners) {
-			listener.destroy();
-		}
+		this.drag.destroy();
 	}
 
 	/**
@@ -60,32 +54,6 @@ export class SwipeController implements Controller {
 	 */
 	protected resolveDirection(dx: number, dy: number): SwipeDirection | null {
 		return resolveSwipeDirection(dx, dy, this.config);
-	}
-
-	private onPointerDown(event: PointerEvent): void {
-		if (event.button !== 0 || this.config.exclude?.(event.target)) {
-			return;
-		}
-		this.pointerId = event.pointerId;
-		this.startX = event.clientX;
-		this.startY = event.clientY;
-	}
-
-	private onPointerUp(event: PointerEvent): void {
-		if (this.pointerId !== event.pointerId) {
-			return;
-		}
-		this.pointerId = null;
-		const direction = this.resolveDirection(event.clientX - this.startX, event.clientY - this.startY);
-		if (direction) {
-			this.config.onSwipe(direction, event);
-		}
-	}
-
-	private onPointerCancel(event: PointerEvent): void {
-		if (this.pointerId === event.pointerId) {
-			this.pointerId = null;
-		}
 	}
 }
 

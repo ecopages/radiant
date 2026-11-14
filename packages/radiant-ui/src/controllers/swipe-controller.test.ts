@@ -113,6 +113,18 @@ describe('SwipeController on plain elements', () => {
 		expect(onSwipe).toHaveBeenCalledTimes(1);
 	});
 
+	it('ends the gesture when the pointer is released outside the element, and ignores a later stray release', () => {
+		const { element, onSwipe, controller } = mount();
+		controller.attach();
+
+		pointer(element, 'pointerdown', { x: 200, y: 0 });
+		pointer(document.body, 'pointerup', { x: 60, y: 0 });
+		expect(onSwipe).toHaveBeenCalledTimes(1);
+
+		pointer(element, 'pointerup', { x: 0, y: 0 });
+		expect(onSwipe).toHaveBeenCalledTimes(1);
+	});
+
 	it('drops the gesture on pointer cancel', () => {
 		const { element, onSwipe, controller } = mount();
 		controller.attach();
