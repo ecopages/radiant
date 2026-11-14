@@ -247,11 +247,27 @@ describe('controller page examples', () => {
 		const popup = root.querySelector<HTMLElement>('[data-box]')!;
 
 		await userEvent.click(toggle);
-		await expect.poll(() => document.activeElement).toBe(popup.querySelector('[data-calendar-day]'));
+		const today = popup.querySelector<HTMLElement>('[data-calendar-day][data-today]')!;
+		await expect.poll(() => document.activeElement).toBe(today);
 		expect(popup.hidden).toBe(false);
+		expect(popup.querySelectorAll('[data-weekdays] span')).toHaveLength(7);
+		expect(popup.querySelectorAll('[data-calendar-day]').length).toBeGreaterThanOrEqual(28);
 
 		await userEvent.keyboard('{Escape}');
 		await expect.poll(() => popup.hidden).toBe(true);
+		expect(document.activeElement).toBe(toggle);
+	});
+
+	test('CalendarPopoverController example picks a day, labels the toggle and closes', async () => {
+		const root = await mountExample('calendar-popover');
+		const toggle = root.querySelector('button')!;
+		const popup = root.querySelector<HTMLElement>('[data-box]')!;
+
+		await userEvent.click(toggle);
+		await userEvent.click(popup.querySelector<HTMLElement>('[data-iso$="-01"]')!);
+
+		expect(popup.hidden).toBe(true);
+		expect(toggle.textContent).toMatch(/\b1, \d{4}$/);
 		expect(document.activeElement).toBe(toggle);
 	});
 });
