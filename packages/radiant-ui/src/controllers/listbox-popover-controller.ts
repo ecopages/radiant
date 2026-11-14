@@ -1,12 +1,8 @@
 import { bindController, type Controller, type ControllerHost } from './controller';
 import type { DismissReason } from './dismiss-controller';
 import { PopoverController } from './popover-controller';
-import {
-	clearCollectionActive,
-	getVisibleCollectionOptions,
-	setCollectionActive,
-	wrapCollectionIndex,
-} from './collection-navigation';
+import { wrapCollectionIndex } from './collection-index';
+import { clearCollectionActive, getVisibleCollectionOptions, setCollectionActive } from './collection-navigation';
 
 /** Which option becomes active when the popup opens. */
 export type ListboxActivation = 'first' | 'last' | 'none';
@@ -62,7 +58,7 @@ export class ListboxPopoverController implements Controller {
 			gap: 4,
 			portal: false,
 			matchAnchorWidth: true,
-			onDismiss: (reason, event) => config.onDismiss?.(reason, event),
+			onDismiss: config.onDismiss,
 			dismissOn: ['pointer', 'focus'],
 		});
 	}

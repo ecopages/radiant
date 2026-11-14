@@ -29,6 +29,21 @@ function createBehavior(options: HTMLElement[] = []) {
 }
 
 describe('ListboxPopoverController', () => {
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
+	it('listens on the document for dismissal only when the owner asks for it', () => {
+		const addListener = vi.spyOn(document, 'addEventListener');
+		const { behavior } = createBehavior();
+
+		behavior.attach();
+
+		expect(addListener.mock.calls.map(([type]) => type)).not.toContain('pointerdown');
+		expect(addListener.mock.calls.map(([type]) => type)).not.toContain('focusout');
+		behavior.destroy();
+	});
+
 	it('ensures option ids and tracks active-descendant navigation', () => {
 		const options = [createOption('', 'One'), createOption('', 'Two')];
 		const { behavior, activeHost, setOpen } = createBehavior(options);
