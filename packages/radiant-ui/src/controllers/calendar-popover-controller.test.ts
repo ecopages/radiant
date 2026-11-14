@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { CalendarPopoverController, createCalendarPopoverController } from './calendar-popover-controller';
+import {
+	CalendarPopoverController,
+	createCalendarPopoverController,
+	focusCalendarPickerDay,
+} from './calendar-popover-controller';
 
 describe('CalendarPopoverController on a plain element', () => {
 	const observers: { disconnected: boolean }[] = [];
@@ -90,6 +94,22 @@ describe('CalendarPopoverController on a plain element', () => {
 		host.remove();
 	});
 
+	it('mounts no positioning before attach or after destroy, also when a queued sync runs late', async () => {
+		const { host, config } = mount();
+		const controller = new CalendarPopoverController(config);
+
+		controller.syncPopover();
+		expect(observers).toHaveLength(0);
+
+		controller.attach();
+		controller.setOpen(true);
+		controller.destroy();
+		await Promise.resolve();
+
+		expect(observers.every((record) => record.disconnected)).toBe(true);
+		host.remove();
+	});
+
 	it('closes when focus leaves the host and the popup, unless suppressed or destroyed', async () => {
 		const { host, config } = mount();
 		const outside = document.createElement('button');
@@ -173,5 +193,25 @@ describe('CalendarPopoverController on a plain element', () => {
 		expect(listeners.size).toBe(0);
 
 		host.remove();
+	});
+});
+
+describe('focusCalendarPickerDay', () => {
+	afterEach(() => {
+		vi.unstubAllGlobals();
+		document.body.replaceChildren();
+	});
+
+	it('finds the selected day even when the iso contains a quote', () => {
+		vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => callback(0));
+		const calendar = document.createElement('div');
+		const day = document.createElement('button');
+		day.setAttribute('data-calendar-day', '');
+		day.setAttribute('data-iso', '2024-01-01');
+		calendar.append(day);
+		document.body.append(calendar);
+
+		expect(() => focusCalendarPickerDay(calendar, '2024"]')).not.toThrow();
+		expect(document.activeElement).toBe(day);
 	});
 });

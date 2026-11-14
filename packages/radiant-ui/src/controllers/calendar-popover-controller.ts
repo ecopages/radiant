@@ -1,6 +1,7 @@
-import { listenMobileLayoutViewport } from '@/lib/viewport/mobile-layout';
+import { MOBILE_LAYOUT_MAX_WIDTH_PX } from '@/lib/viewport/mobile-layout';
 import { bindController, type Controller, type ControllerHost } from './controller';
 import { DismissController, type DismissReason } from './dismiss-controller';
+import { EventListenerController } from './event-listener-controller';
 import { PopoverController } from './popover-controller';
 
 /** The getters and callbacks `CalendarPopoverController` reads from the date picker that owns it. */
@@ -28,12 +29,30 @@ export type CalendarPopoverControllerConfig = {
  */
 export class CalendarPopoverController implements Controller {
 	private readonly config: CalendarPopoverControllerConfig;
-	private popoverController: PopoverController | null = null;
-	private disposeMobileLayoutListener: (() => void) | null = null;
+	private readonly popoverController: PopoverController;
+	private readonly mobileLayout: EventListenerController<MediaQueryList, 'change'>;
 	private readonly dismissal: DismissController;
 
 	constructor(config: CalendarPopoverControllerConfig) {
 		this.config = config;
+		this.popoverController = new PopoverController({
+			getAnchor: config.getAnchor,
+			getFloating: config.getFloating,
+			getOpen: config.getOpen,
+			getPlacement: () => 'bottom-start',
+			gap: 4,
+			portal: false,
+		});
+		this.mobileLayout = new EventListenerController({
+			getTarget: () => window.matchMedia(`(max-width: ${MOBILE_LAYOUT_MAX_WIDTH_PX}px)`),
+			type: 'change',
+			listener: () => {
+				this.config.onLayoutChange();
+				if (this.config.getOpen()) {
+					this.syncPopover();
+				}
+			},
+		});
 		this.dismissal = new DismissController({
 			getSurface: () => this.config.getFloating(),
 			getRelated: () => [this.config.getHost()],
@@ -48,13 +67,8 @@ export class CalendarPopoverController implements Controller {
 	/** Starts listening for mobile layout changes until `destroy()`. */
 	attach(): void {
 		this.dismissal.attach();
-		this.disposeMobileLayoutListener?.();
-		this.disposeMobileLayoutListener = listenMobileLayoutViewport(() => {
-			this.config.onLayoutChange();
-			if (this.config.getOpen()) {
-				this.syncPopover();
-			}
-		});
+		this.popoverController.attach();
+		this.mobileLayout.attach();
 	}
 
 	/**
@@ -84,10 +98,8 @@ export class CalendarPopoverController implements Controller {
 
 	destroy(): void {
 		this.dismissal.destroy();
-		this.disposeMobileLayoutListener?.();
-		this.disposeMobileLayoutListener = null;
-		this.popoverController?.destroy();
-		this.popoverController = null;
+		this.mobileLayout.destroy();
+		this.popoverController.destroy();
 	}
 
 	/** Ignores the next focus-out, for a press on the toggle, whose focus change must not close the popup. */
@@ -102,11 +114,7 @@ export class CalendarPopoverController implements Controller {
 		}
 
 		popover.hidden = !this.config.getOpen();
-		const controller = this.ensureController();
-		controller.updateConfig({
-			getOpen: () => this.config.getOpen(),
-		});
-		controller.sync();
+		this.popoverController.sync();
 	}
 
 	focusCalendarDay(): void {
@@ -124,22 +132,6 @@ export class CalendarPopoverController implements Controller {
 		} else {
 			this.setOpen(false);
 		}
-	}
-
-	private ensureController(): PopoverController {
-		if (!this.popoverController) {
-			this.popoverController = new PopoverController({
-				getAnchor: this.config.getAnchor,
-				getFloating: this.config.getFloating,
-				getOpen: this.config.getOpen,
-				getPlacement: () => 'bottom-start',
-				gap: 4,
-				portal: false,
-			});
-			this.popoverController.attach();
-		}
-
-		return this.popoverController;
 	}
 }
 
@@ -179,7 +171,9 @@ export function focusCalendarPickerDay(calendar: HTMLElement | null, iso?: strin
 		}
 
 		const selectedDay = iso
-			? calendar.querySelector<HTMLButtonElement>(`[data-calendar-day][data-iso="${iso}"]:not(:disabled)`)
+			? calendar.querySelector<HTMLButtonElement>(
+					`[data-calendar-day][data-iso="${CSS.escape(iso)}"]:not(:disabled)`,
+				)
 			: null;
 		(
 			selectedDay ??

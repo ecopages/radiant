@@ -22,15 +22,3 @@ export function effectiveVisibleMonths(requested: number): number {
 	}
 	return 1;
 }
-
-/**
- * @returns Cleanup that removes the listener, or `null` when `matchMedia` is unavailable.
- */
-export function listenMobileLayoutViewport(onChange: () => void): (() => void) | null {
-	if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
-		return null;
-	}
-	const mediaQueryList = window.matchMedia(`(max-width: ${MOBILE_LAYOUT_MAX_WIDTH_PX}px)`);
-	mediaQueryList.addEventListener('change', onChange);
-	return () => mediaQueryList.removeEventListener('change', onChange);
-}
