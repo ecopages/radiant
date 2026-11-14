@@ -1,14 +1,6 @@
 import { userEvent } from 'vitest/browser';
 import { afterEach, describe, expect, test } from 'vitest';
-import { mountForm, mountRecipe, type Form } from './mount-recipe';
-
-function pointer(target: Element, type: string, x: number, y: number, timeStamp?: number): void {
-	const event = new PointerEvent(type, { bubbles: true, button: 0, pointerId: 1, clientX: x, clientY: y });
-	if (timeStamp !== undefined) {
-		Object.defineProperty(event, 'timeStamp', { value: timeStamp });
-	}
-	target.dispatchEvent(event);
-}
+import { mountForm, type Form } from './mount-recipe';
 
 const status = (root: HTMLElement) => root.querySelector('[data-status]')!.textContent;
 const texts = (nodes: Iterable<Element>) => [...nodes].map((node) => node.textContent);

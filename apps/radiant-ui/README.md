@@ -131,7 +131,7 @@ Reuse fixtures such as option lists from `src/content/stories/demo-data.ts` when
 - `test/story-previews.test.browser.ts` — complex `render` output smoke tests
 - `test/canvas.test.browser.ts` — client repaint when story context args change
 - `test/controller-examples.test.browser.ts` — one test per controller page example; it mounts the `html` fence of the page and runs the page's `<slug>.script.ts`
-- `test/recipes.test.browser.ts` and `test/recipes-lists.test.browser.ts` — the same for recipe pages, one test per recipe
+- `test/recipes-*.test.browser.ts` — the same for recipe pages, one file per recipe or group of recipes, with `test/mount-recipe.ts` holding the shared mounting helpers
 - `test/mount-example.test.browser.ts` — `mountExample` mounts each element once, re-mounts after the router events and cleans up an element that left the page
 - `test/primitive-example.test.browser.ts` — with the frame CSS loaded: menu items sit in a column and popups sit above the code block that follows
 - `test/recipe-imports.test.ts` — plain recipe scripts import only the `controllers` and `helpers` entries, plus `mountExample`; Radiant element scripts add `@ecopages/radiant` and no mount helper; the page fences match the scripts
@@ -166,7 +166,7 @@ The page's Example section has two `###` headings, `Plain JavaScript` then `Radi
 - **Markup.** The Radiant example renders `<PrimitiveExample host>` around one `<recipe-<slug>>` element with the authored children inside; `host` drops the `name` (there is nothing to mount) and gives the element no box of its own, so its children lay out in the frame and `layout="stack"` still applies. The element fence is the element with its children, without the frame. Ids in the Radiant markup differ from the plain form's (`radiant-fruit-filter`), because both forms are on one page.
 - **Router.** Nothing is registered: a custom element runs `connectedCallback` on every new copy, so the router swapping the page in, or navigating away and back, starts it, and removing the element tears it down.
 - **Fences.** The `ts` fence of the Radiant form is the `.element.ts` file exactly; the plain fence is the `.script.ts` without the `mountExample` import and closing call. `test/recipe-imports.test.ts` compares both and checks the imports.
-- **Tests.** In `test/recipes-lists.test.browser.ts` or `test/recipes.test.browser.ts`, run the shared assertions through `describe.each(['plain', 'radiant'])` and a `mountForm(slug, form)` helper that mounts the first `html` fence and the `.script.ts` (plain) or the second `html` fence and the `.element.ts` (Radiant), then returns the example root. One more test per recipe removes the Radiant element and checks that every listener it added is removed, then adds a fresh copy and checks it works.
+- **Tests.** In a new `test/recipes-<slug>.test.browser.ts`, run the shared assertions through `describe.each(['plain', 'radiant'])` and the `mountForm(slug, form)` helper from `test/mount-recipe.ts` that mounts the first `html` fence and the `.script.ts` (plain) or the second `html` fence and the `.element.ts` (Radiant), then returns the example root. One more test per recipe removes the Radiant element and checks that every listener it added is removed, then adds a fresh copy and checks it works.
 
 Checklist for adding a Radiant form to a recipe:
 
@@ -177,7 +177,7 @@ Checklist for adding a Radiant form to a recipe:
 5. Share the recipe's browser test across both forms and add the teardown test.
 6. Run `pnpm test` and `pnpm run build` and look at the page at 1280px and 390px.
 
-Add a test to `test/controller-examples.test.browser.ts` for every interactive controller example, and to `test/recipes.test.browser.ts` or `test/recipes-lists.test.browser.ts` for a recipe. Descriptions in frontmatter are quoted when they contain a colon.
+Add a test to `test/controller-examples.test.browser.ts` for every interactive controller example, and to a `test/recipes-<slug>.test.browser.ts` for a recipe. Descriptions in frontmatter are quoted when they contain a colon.
 
 ## LLM docs export
 
