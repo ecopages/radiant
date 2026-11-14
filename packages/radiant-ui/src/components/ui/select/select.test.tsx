@@ -66,6 +66,48 @@ describe('RuiSelect', () => {
 		cleanup();
 	});
 
+	it('closes when focus leaves the select', async () => {
+		const { host, cleanup } = mount(
+			<>
+				<RuiSelect options={OPTIONS} placeholder="Animals" />
+				<button type="button">After</button>
+			</>,
+		);
+		await settled();
+		const trigger = host.querySelector('[data-select-trigger]') as HTMLElement;
+		const popup = host.querySelector('[data-select-listbox]') as HTMLElement;
+		const after = host.querySelector(':scope > button') as HTMLButtonElement;
+
+		trigger.click();
+		await settled();
+		trigger.focus();
+		expect(popup.hidden).toBe(false);
+		after.focus();
+		await settled();
+
+		expect(popup.hidden).toBe(true);
+		cleanup();
+	});
+
+	it('stays open while focus moves into the popup', async () => {
+		const { host, cleanup } = mount(<RuiSelect options={OPTIONS} placeholder="Animals" />);
+		await settled();
+		const trigger = host.querySelector('[data-select-trigger]') as HTMLElement;
+		const popup = host.querySelector('[data-select-listbox]') as HTMLElement;
+		const option = host.querySelector('[data-select-listbox] [role="option"]') as HTMLElement;
+
+		trigger.click();
+		await settled();
+		trigger.focus();
+		option.tabIndex = -1;
+		option.focus();
+		await settled();
+
+		expect(document.activeElement).toBe(option);
+		expect(popup.hidden).toBe(false);
+		cleanup();
+	});
+
 	it('keeps the popup open in multiple mode unless shouldCloseOnSelect is set', async () => {
 		const { host, cleanup } = mount(<RuiSelect selectionMode="multiple" options={OPTIONS} placeholder="Animals" />);
 		await settled();
