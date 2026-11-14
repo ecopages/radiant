@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createRoot } from '@ecopages/jsx';
 import { RuiCycleToggle, RuiCycleToggleItem } from './cycle-toggle';
 import { RuiCycleToggle as RuiCycleToggleElement } from './cycle-toggle.script';
@@ -67,5 +67,23 @@ describe('RuiCycleToggle hydration', () => {
 		expect(host.variant).toBe('ghost');
 		expect(button?.className).toContain('rui-button--ghost');
 		expect(button?.className).not.toContain('rui-button--filled');
+	});
+});
+
+describe('RuiCycleToggle child observation', () => {
+	it('resyncs when children change and stops after removal', async () => {
+		const host = document.createElement('rui-cycle-toggle') as RuiCycleToggleElement;
+		document.body.append(host);
+		await settled();
+		const resync = vi.spyOn(host, 'resync');
+
+		host.append(document.createElement('span'));
+		await settled();
+		expect(resync).toHaveBeenCalledTimes(1);
+
+		host.remove();
+		host.append(document.createElement('span'));
+		await settled();
+		expect(resync).toHaveBeenCalledTimes(1);
 	});
 });

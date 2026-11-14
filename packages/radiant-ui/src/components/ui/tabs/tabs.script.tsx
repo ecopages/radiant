@@ -2,6 +2,7 @@ import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, event, onEvent, onUpdated, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { navigateRovingTabindex } from '@/lib/roving-tabindex';
+import { createMutationController } from '../../../controllers/mutation-controller';
 
 export type RuiTabsVariant = 'ghost' | 'boxed';
 
@@ -84,22 +85,17 @@ export class RuiTabs extends RadiantElement {
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiTabsChangeDetail>;
 
-	private childObserver: MutationObserver | null = null;
-
-	override connectedCallback(): void {
-		super.connectedCallback();
-		this.childObserver = new MutationObserver(() => this.resync());
-		this.childObserver.observe(this, { childList: true, subtree: true });
+	constructor() {
+		super();
+		createMutationController(this, {
+			getTarget: () => this,
+			options: { childList: true, subtree: true },
+			onMutate: () => this.resync(),
+		});
 	}
 
 	protected override onConnected(): void {
 		this.resync();
-	}
-
-	override disconnectedCallback(): void {
-		this.childObserver?.disconnect();
-		this.childObserver = null;
-		super.disconnectedCallback();
 	}
 
 	@onUpdated(['value', 'label'])

@@ -3,6 +3,7 @@ import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop 
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { cycleValue } from '@/lib/cycle-value';
 import type { RuiButtonSize, RuiButtonVariant } from '../button/button';
+import { createMutationController } from '../../../controllers/mutation-controller';
 
 export type RuiCycleToggleProps = {
 	/** Active item id (matches `RuiCycleToggleItem` `id`). Defaults to the first enabled item. */
@@ -92,22 +93,17 @@ export class RuiCycleToggle extends RadiantElement {
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiCycleToggleChangeDetail>;
 
-	private childObserver: MutationObserver | null = null;
-
-	override connectedCallback(): void {
-		super.connectedCallback();
-		this.childObserver = new MutationObserver(() => this.resync());
-		this.childObserver.observe(this, { childList: true, subtree: true });
+	constructor() {
+		super();
+		createMutationController(this, {
+			getTarget: () => this,
+			options: { childList: true, subtree: true },
+			onMutate: () => this.resync(),
+		});
 	}
 
 	protected override onConnected(): void {
 		this.resync();
-	}
-
-	override disconnectedCallback(): void {
-		this.childObserver?.disconnect();
-		this.childObserver = null;
-		super.disconnectedCallback();
 	}
 
 	@onUpdated(['value', 'label', 'disabled', 'size', 'variant'])

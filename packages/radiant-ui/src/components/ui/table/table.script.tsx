@@ -4,6 +4,7 @@ import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { applyRovingTabindex } from '@/lib/roving-tabindex';
 import { multiValuePropOptions, type ViewMultiValue } from '../shared/multi-value';
 import type { RuiCheckbox, RuiCheckboxChangeDetail } from '../checkbox/checkbox.script';
+import { createMutationController } from '../../../controllers/mutation-controller';
 
 export type RuiTableSelectionMode = 'none' | 'single' | 'multiple';
 export type RuiTableSortDirection = 'ascending' | 'descending';
@@ -98,24 +99,20 @@ export class RuiTable extends RadiantElement {
 	@event({ name: 'rui-row-action', bubbles: true, composed: true })
 	rowActionEvent: EventEmitter<RuiTableRowActionDetail>;
 
-	private structureObserver?: MutationObserver;
-	private rovingSyncPending = false;
-
-	override connectedCallback(): void {
-		super.connectedCallback();
-		this.observeStructure();
+	constructor() {
+		super();
+		createMutationController(this, {
+			getTarget: () => this,
+			options: { childList: true, subtree: true },
+			onMutate: () => this.queueRovingSync(),
+		});
 	}
+	private rovingSyncPending = false;
 
 	protected override onConnected(): void {
 		this.syncSelectionState();
 		this.syncSorting();
 		this.syncRovingTabindex();
-	}
-
-	override disconnectedCallback(): void {
-		this.structureObserver?.disconnect();
-		this.structureObserver = undefined;
-		super.disconnectedCallback();
 	}
 
 	@onUpdated(['value', 'selectionMode'])
@@ -126,16 +123,6 @@ export class RuiTable extends RadiantElement {
 	@onUpdated(['sortColumn', 'sortDirection'])
 	onSortUpdated(): void {
 		this.syncSorting();
-	}
-
-	private observeStructure(): void {
-		if (typeof MutationObserver === 'undefined') {
-			return;
-		}
-
-		this.structureObserver?.disconnect();
-		this.structureObserver = new MutationObserver(() => this.queueRovingSync());
-		this.structureObserver.observe(this, { childList: true, subtree: true });
 	}
 
 	private queueRovingSync(): void {

@@ -33,6 +33,7 @@ import { fieldContext, type FieldContextValue } from './field-context';
 import type { FieldRules } from '../form/types';
 import { bindVisibleLabel } from '../shared/field-label';
 import { uniqueId } from '@/lib/unique-id';
+import { MutationController } from '../../../controllers/mutation-controller';
 
 /**
  * The JSON-safe subset of `FieldRules` for SSR hydration — a `validate` function can't
@@ -164,7 +165,11 @@ export class RuiField extends RadiantElement {
 	 * JSX can add the control later without reconnecting this field.
 	 */
 	private pendingControlWrite?: { value: unknown };
-	private controlObserver?: MutationObserver;
+	private readonly controlObserver = new MutationController({
+		getTarget: () => this,
+		options: { childList: true, subtree: true },
+		onMutate: () => this.syncField(),
+	});
 
 	/**
 	 * @remarks Registers SSR-prep rules on `fieldProvider` so hydrated fields recover them after a
@@ -437,18 +442,12 @@ export class RuiField extends RadiantElement {
 	 * the field. `syncField` applies `pendingControlWrite` once the host exists.
 	 */
 	private observeControlAppearance(): void {
-		if (this.controlObserver) {
-			return;
-		}
-
-		this.controlObserver = new MutationObserver(() => this.syncField());
-		this.controlObserver.observe(this, { childList: true, subtree: true });
+		this.controlObserver.attach();
 	}
 
 	private clearPendingControlWrite(): void {
 		this.pendingControlWrite = undefined;
-		this.controlObserver?.disconnect();
-		this.controlObserver = undefined;
+		this.controlObserver.destroy();
 	}
 
 	private syncDescriptions(descriptionId: string, errorId: string, errorMessage: string | undefined): string[] {
