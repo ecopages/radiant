@@ -1,7 +1,7 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, event, onEvent, onUpdated, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
-import { applyRovingTabindex, focusRovingItem, navigateRovingTabindex } from '@/lib/roving-tabindex';
+import { createRovingController, type RovingController } from '../../../controllers/roving-controller';
 
 export type RuiTreeProps = {
 	label?: string;
@@ -60,6 +60,18 @@ export class RuiTree extends RadiantElement {
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiTreeChangeDetail>;
 
+	private readonly roving: RovingController;
+
+	constructor() {
+		super();
+		this.roving = createRovingController(this, {
+			getItems: () => this.getVisibleItems(),
+			getTarget: (): HTMLElement => this,
+			orientation: 'vertical',
+			wrap: false,
+		});
+	}
+
 	private getVisibleItems(): HTMLElement[] {
 		return Array.from(this.querySelectorAll<HTMLElement>('[role="treeitem"]')).filter((item) => {
 			let node: HTMLElement | null = item.parentElement;
@@ -99,21 +111,16 @@ export class RuiTree extends RadiantElement {
 	private syncSelection(): void {
 		const items = Array.from(this.querySelectorAll<HTMLElement>('[role="treeitem"]'));
 		const visible = this.getVisibleItems();
-		let activeIndex = 0;
+		let active: HTMLElement | undefined = visible[0];
 
-		items.forEach((item, i) => {
+		items.forEach((item) => {
 			const id = item.getAttribute('data-value') || item.id || '';
 			const selected = Boolean(this.value) && id === this.value;
 			item.setAttribute('aria-selected', String(selected));
-			if (selected) {
-				const vis = visible.indexOf(item);
-				if (vis >= 0) activeIndex = vis;
-			} else if (!this.value && i === 0) {
-				activeIndex = 0;
-			}
+			if (selected && visible.includes(item)) active = item;
 		});
 
-		applyRovingTabindex(visible, activeIndex);
+		this.roving.sync(active);
 	}
 
 	private syncExpanded(): void {
@@ -172,26 +179,12 @@ export class RuiTree extends RadiantElement {
 	}
 
 	private readonly treeKeyHandlers: Record<string, (item: HTMLElement, event: KeyboardEvent) => boolean> = {
-		ArrowDown: this.navigateTreeItem,
-		ArrowUp: this.navigateTreeItem,
-		Home: this.navigateTreeItem,
-		End: this.navigateTreeItem,
 		ArrowRight: this.expandOrEnterChild,
 		ArrowLeft: this.collapseOrFocusParent,
 		'*': this.expandSiblings,
 		Enter: this.toggleAndSelect,
 		' ': this.selectTreeItem,
 	};
-
-	private navigateTreeItem(current: HTMLElement, event: KeyboardEvent): boolean {
-		return navigateRovingTabindex({
-			items: this.getVisibleItems(),
-			current,
-			key: event.key,
-			orientation: 'vertical',
-			wrap: false,
-		}).handled;
-	}
 
 	private expandOrEnterChild(current: HTMLElement): boolean {
 		if (current.getAttribute('aria-expanded') === 'false') {
@@ -234,14 +227,12 @@ export class RuiTree extends RadiantElement {
 
 	private focusAdjacentVisibleItem(current: HTMLElement, direction: 1 | -1): void {
 		const items = this.getVisibleItems();
-		const index = items.indexOf(current);
-		if (items[index + direction]) focusRovingItem(items, index + direction);
+		const next = items[items.indexOf(current) + direction];
+		if (next) this.roving.focus(next);
 	}
 
 	private focusVisibleItem(item: HTMLElement): void {
-		const items = this.getVisibleItems();
-		const index = items.indexOf(item);
-		if (index >= 0) focusRovingItem(items, index);
+		this.roving.focus(item);
 	}
 }
 

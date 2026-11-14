@@ -1,10 +1,10 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, event, onEvent, onUpdated, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
-import { applyRovingTabindex } from '@/lib/roving-tabindex';
 import { multiValuePropOptions, type ViewMultiValue } from '../shared/multi-value';
 import type { RuiCheckbox, RuiCheckboxChangeDetail } from '../checkbox/checkbox.script';
 import { createMutationController } from '../../../controllers/mutation-controller';
+import { createRovingController, type RovingController } from '../../../controllers/roving-controller';
 
 export type RuiTableSelectionMode = 'none' | 'single' | 'multiple';
 export type RuiTableSortDirection = 'ascending' | 'descending';
@@ -99,8 +99,15 @@ export class RuiTable extends RadiantElement {
 	@event({ name: 'rui-row-action', bubbles: true, composed: true })
 	rowActionEvent: EventEmitter<RuiTableRowActionDetail>;
 
+	private readonly roving: RovingController;
+
 	constructor() {
 		super();
+		this.roving = createRovingController(this, {
+			getItems: () => this.getFocusableCells(),
+			getTarget: (): HTMLElement => this,
+			orientation: 'none',
+		});
 		createMutationController(this, {
 			getTarget: () => this,
 			options: { childList: true, subtree: true },
@@ -175,12 +182,7 @@ export class RuiTable extends RadiantElement {
 	}
 
 	private getActiveCellPosition(): { rowId: string; columnIndex: number } | null {
-		const cells = this.getFocusableCells();
-		const activeIndex = cells.findIndex((cell) => cell.tabIndex === 0);
-		const activeCell =
-			activeIndex >= 0
-				? cells[activeIndex]
-				: (this.querySelector<HTMLElement>('[data-table-cell]:focus') ?? null);
+		const activeCell = this.roving.getActive() ?? this.querySelector<HTMLElement>('[data-table-cell]:focus');
 		if (!activeCell) {
 			return null;
 		}
@@ -232,25 +234,11 @@ export class RuiTable extends RadiantElement {
 	}
 
 	private syncRovingTabindex(): void {
-		const cells = this.getFocusableCells();
-		if (cells.length === 0) {
-			return;
-		}
-
 		const position = this.getActiveCellPosition();
-		let activeIndex = cells.findIndex((cell) => cell.tabIndex === 0);
-		if (position) {
-			const row = this.getRows().find((candidate) => candidate.getAttribute('data-table-row') === position.rowId);
-			if (row) {
-				const target = this.getRowCells(row)[position.columnIndex];
-				const index = target ? cells.indexOf(target) : -1;
-				if (index >= 0) {
-					activeIndex = index;
-				}
-			}
-		}
-
-		applyRovingTabindex(cells, activeIndex >= 0 ? activeIndex : 0);
+		const row = position
+			? this.getRows().find((candidate) => candidate.getAttribute('data-table-row') === position.rowId)
+			: undefined;
+		this.roving.sync(row && position ? this.getRowCells(row)[position.columnIndex] : undefined);
 	}
 
 	private syncSorting(): void {
@@ -302,16 +290,13 @@ export class RuiTable extends RadiantElement {
 	}
 
 	private focusCell(row: HTMLElement, columnIndex: number): void {
-		const cells = this.getFocusableCells();
 		const rowCells = this.getRowCells(row);
 		const target = rowCells[Math.min(Math.max(columnIndex, 0), rowCells.length - 1)];
-		const index = cells.indexOf(target);
-		if (index < 0) {
+		if (!target || !this.getFocusableCells().includes(target)) {
 			return;
 		}
 
-		applyRovingTabindex(cells, index);
-		target.focus();
+		this.roving.focus(target);
 		target.scrollIntoView({ block: 'nearest', inline: 'nearest' });
 	}
 
