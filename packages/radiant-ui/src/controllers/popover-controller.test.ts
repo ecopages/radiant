@@ -150,8 +150,8 @@ describe('PopoverController attached to a plain element', () => {
 		controller.destroy();
 		controller.destroy();
 
-		expect(removeListener).toHaveBeenCalledWith('resize', resizeListener);
-		expect(removeListener).toHaveBeenCalledWith('scroll', scrollListener, true);
+		expect(removeListener).toHaveBeenCalledWith('resize', resizeListener, undefined);
+		expect(removeListener).toHaveBeenCalledWith('scroll', scrollListener, { capture: true });
 		expect(observers[0].disconnected).toBe(true);
 
 		controller.sync();

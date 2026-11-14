@@ -28,6 +28,8 @@ import {
 } from './toast-context';
 import { collapsedStackHeight, expandedStackHeight, expandedToastOffset } from './stack-layout';
 import { toastState } from './toast-state';
+import { EventListenerController } from '../../../controllers/event-listener-controller';
+import { ResizeController } from '../../../controllers/resize-controller';
 import { RuiToast } from './toast.script';
 
 /**
@@ -185,9 +187,19 @@ export class RuiToaster extends RadiantElement {
 	private expanded = false;
 	private interacting = false;
 	private unsubscribe: (() => void) | null = null;
-	private visibilityHandler: (() => void) | null = null;
+	private readonly visibilityListener = new EventListenerController({
+		getTarget: () => document,
+		type: 'visibilitychange',
+		listener: () => this.syncPauseState(),
+	});
+	private readonly pointerReleaseListener = new EventListenerController({
+		getTarget: () => document,
+		type: ['pointerup', 'pointercancel'],
+		listener: () => this.onPointerUp(),
+		options: { once: true },
+	});
 	private readonly heights = new Map<string, number>();
-	private readonly observers = new Map<string, ResizeObserver>();
+	private readonly observers = new Map<string, ResizeController>();
 	private layoutFrame: number | null = null;
 	/** Prevents ResizeObserver re-entry while temporarily unclipping hosts to measure. */
 	private measuring = false;
@@ -204,19 +216,14 @@ export class RuiToaster extends RadiantElement {
 			}
 			this.scheduleLayoutSync();
 		});
-		this.visibilityHandler = () => this.syncPauseState();
-		document.addEventListener('visibilitychange', this.visibilityHandler);
+		this.visibilityListener.attach();
 	}
 
 	override disconnectedCallback(): void {
 		this.unsubscribe?.();
 		this.unsubscribe = null;
-		if (this.visibilityHandler) {
-			document.removeEventListener('visibilitychange', this.visibilityHandler);
-			this.visibilityHandler = null;
-		}
-		document.removeEventListener('pointerup', this.onPointerUp);
-		document.removeEventListener('pointercancel', this.onPointerUp);
+		this.visibilityListener.destroy();
+		this.pointerReleaseListener.destroy();
 		if (this.layoutFrame != null) cancelAnimationFrame(this.layoutFrame);
 		if (this.announcementTimer != null) clearTimeout(this.announcementTimer);
 		this.announcementTimer = null;
@@ -373,7 +380,7 @@ export class RuiToaster extends RadiantElement {
 	}
 
 	private resetLayoutState(): void {
-		for (const observer of this.observers.values()) observer.disconnect();
+		for (const observer of this.observers.values()) observer.destroy();
 		this.observers.clear();
 		this.heights.clear();
 		this.expanded = false;
@@ -453,14 +460,17 @@ export class RuiToaster extends RadiantElement {
 			const target = el.getRef<HTMLElement>('toast') ?? el;
 
 			if (!this.observers.has(id)) {
-				const observer = new ResizeObserver(() => {
-					if (this.measuring) return;
-					const height = this.measureToast(el);
-					if (this.heights.get(id) === height) return;
-					this.heights.set(id, height);
-					this.patchStackLayout();
+				const observer = new ResizeController({
+					getTargets: () => [target],
+					onResize: () => {
+						if (this.measuring) return;
+						const height = this.measureToast(el);
+						if (this.heights.get(id) === height) return;
+						this.heights.set(id, height);
+						this.patchStackLayout();
+					},
 				});
-				observer.observe(target);
+				observer.attach();
 				this.observers.set(id, observer);
 			}
 
@@ -469,7 +479,7 @@ export class RuiToaster extends RadiantElement {
 
 		for (const [id, observer] of [...this.observers]) {
 			if (seen.has(id)) continue;
-			observer.disconnect();
+			observer.destroy();
 			this.observers.delete(id);
 			this.heights.delete(id);
 		}
@@ -580,13 +590,13 @@ export class RuiToaster extends RadiantElement {
 		this.interacting = true;
 		this.expanded = true;
 		this.syncPauseState();
-		document.addEventListener('pointerup', this.onPointerUp, { once: true });
-		document.addEventListener('pointercancel', this.onPointerUp, { once: true });
+		this.pointerReleaseListener.attach();
 	}
 
 	/** End interaction; collapse only when the pointer is no longer over the toaster. */
 	@bound
 	private onPointerUp(): void {
+		this.pointerReleaseListener.destroy();
 		if (!this.interacting) return;
 		this.interacting = false;
 		const list = this.listTarget;

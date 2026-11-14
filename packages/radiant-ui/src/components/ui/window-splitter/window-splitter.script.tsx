@@ -11,6 +11,7 @@ import {
 	query,
 } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
+import { EventListenerController } from '../../../controllers/event-listener-controller';
 
 export type RuiWindowSplitterProps = {
 	/** Primary pane size as a percentage. Default: `50`. */
@@ -108,6 +109,14 @@ export class RuiWindowSplitter extends RadiantElement {
 	changeEvent: EventEmitter<RuiWindowSplitterChangeDetail>;
 
 	private dragging = false;
+	private readonly dragListeners = [
+		new EventListenerController({
+			getTarget: () => document,
+			type: 'pointermove',
+			listener: (event) => this.onPointerMove(event as PointerEvent),
+		}),
+		new EventListenerController({ getTarget: () => document, type: 'pointerup', listener: () => this.onPointerUp() }),
+	];
 
 	protected override onConnected(): void {
 		this.clampValue();
@@ -116,8 +125,9 @@ export class RuiWindowSplitter extends RadiantElement {
 	}
 
 	override disconnectedCallback(): void {
-		document.removeEventListener('pointermove', this.onPointerMove);
-		document.removeEventListener('pointerup', this.onPointerUp);
+		for (const controller of this.dragListeners) {
+			controller.destroy();
+		}
 		super.disconnectedCallback();
 	}
 
@@ -198,8 +208,9 @@ export class RuiWindowSplitter extends RadiantElement {
 	onPointerDown(event: PointerEvent): void {
 		this.dragging = true;
 		this.separatorTarget?.setPointerCapture(event.pointerId);
-		document.addEventListener('pointermove', this.onPointerMove);
-		document.addEventListener('pointerup', this.onPointerUp);
+		for (const controller of this.dragListeners) {
+			controller.attach();
+		}
 	}
 
 	@bound
@@ -216,8 +227,9 @@ export class RuiWindowSplitter extends RadiantElement {
 	@bound
 	onPointerUp(): void {
 		this.dragging = false;
-		document.removeEventListener('pointermove', this.onPointerMove);
-		document.removeEventListener('pointerup', this.onPointerUp);
+		for (const controller of this.dragListeners) {
+			controller.destroy();
+		}
 	}
 }
 

@@ -1,4 +1,5 @@
 import { RuiDialog } from './dialog.script';
+import { EventListenerController } from '../../../controllers/event-listener-controller';
 import { createRuiIconX } from '@/lib/icons/x';
 import {
 	RUI_DIALOG_ACTION_EVENT,
@@ -22,6 +23,7 @@ export type InstallDialogsOptions = {
 };
 
 let installed = false;
+let documentListeners: EventListenerController[] = [];
 let mountParent: ParentNode | null = null;
 let hostDialog: RuiDialog | null = null;
 let openId: string | null = null;
@@ -336,11 +338,19 @@ export function installDialogs(options: InstallDialogsOptions = {}): () => void 
 	installed = true;
 	mountParent = options.mount ?? document.body;
 
-	document.addEventListener(RUI_DIALOG_OPEN_EVENT, onOpenEvent);
-	document.addEventListener(RUI_DIALOG_CLOSE_EVENT, onCloseEvent);
-	document.addEventListener(RUI_DIALOG_TOGGLE_EVENT, onToggleEvent);
-	document.addEventListener('click', onDocumentClick);
-	document.addEventListener('rui-close', onRuiClose);
+	const listeners: Array<[string, EventListener]> = [
+		[RUI_DIALOG_OPEN_EVENT, onOpenEvent],
+		[RUI_DIALOG_CLOSE_EVENT, onCloseEvent],
+		[RUI_DIALOG_TOGGLE_EVENT, onToggleEvent],
+		['click', onDocumentClick],
+		['rui-close', onRuiClose],
+	];
+	documentListeners = listeners.map(
+		([type, listener]) => new EventListenerController({ getTarget: () => document, type, listener }),
+	);
+	for (const controller of documentListeners) {
+		controller.attach();
+	}
 
 	return uninstallDialogs;
 }
@@ -357,11 +367,10 @@ export function uninstallDialogs(): void {
 		return;
 	}
 
-	document.removeEventListener(RUI_DIALOG_OPEN_EVENT, onOpenEvent);
-	document.removeEventListener(RUI_DIALOG_CLOSE_EVENT, onCloseEvent);
-	document.removeEventListener(RUI_DIALOG_TOGGLE_EVENT, onToggleEvent);
-	document.removeEventListener('click', onDocumentClick);
-	document.removeEventListener('rui-close', onRuiClose);
+	for (const controller of documentListeners) {
+		controller.destroy();
+	}
+	documentListeners = [];
 
 	destroyHostDialog();
 	mountParent = null;

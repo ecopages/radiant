@@ -1,3 +1,5 @@
+import { EventListenerController } from './event-listener-controller';
+import { ResizeController } from './resize-controller';
 import type { RuiPlacement } from './placement';
 
 type Side = 'top' | 'right' | 'bottom' | 'left';
@@ -258,16 +260,23 @@ export function attachFloating({
 
 	update();
 
-	window.addEventListener('resize', update);
-	window.addEventListener('scroll', update, true);
-
-	const observer = new ResizeObserver(update);
-	observer.observe(anchor);
-	observer.observe(floating);
+	const controllers = [
+		new EventListenerController({ getTarget: () => window, type: 'resize', listener: update }),
+		new EventListenerController({
+			getTarget: () => window,
+			type: 'scroll',
+			listener: update,
+			options: { capture: true },
+		}),
+		new ResizeController({ getTargets: () => [anchor, floating], onResize: update }),
+	];
+	for (const controller of controllers) {
+		controller.attach();
+	}
 
 	return () => {
-		window.removeEventListener('resize', update);
-		window.removeEventListener('scroll', update, true);
-		observer.disconnect();
+		for (const controller of controllers) {
+			controller.destroy();
+		}
 	};
 }

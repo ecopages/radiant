@@ -61,6 +61,8 @@ Before writing bespoke logic, check `src/controllers` for a controller that alre
 
 - `PopoverController` (popover, hover-card): portal mount, floating position and teardown.
 - `MutationController`: a `MutationObserver` on the node `getTarget()` returns. Attaching again with another target moves it. Used by tabs, cycle-toggle, table, field and sidebar-trigger.
+- `ResizeController`: a `ResizeObserver` on the elements `getTargets()` returns. Used by the toaster (one per toast) and floating positioning.
+- `EventListenerController`: one or more event types on the target `getTarget()` returns (`document`, `window` or an element), with `once`, `passive` and `capture` options. For listeners added and removed at runtime, such as a drag; use core's `@onEvent({ document: true })` when the listener lives as long as the element. Used by the toaster, sidebar, toc, window-splitter, dialog registry and floating positioning.
 
 When a component only needs the behavior for its connected lifetime and has no use for the controller afterwards, call the factory in the constructor (`createMutationController(this, {...})`) instead of keeping a field. A component that starts and stops a controller itself (field, sidebar-trigger) constructs the class directly and calls `attach()` and `destroy()`.
 
@@ -151,7 +153,7 @@ Do not write `connectedCallback` + `queueMicrotask(sync)` boilerplate. Override 
 
 Do not confuse this with `registerConnectedCallback()` on the reactive host: those callbacks run synchronously at the start of `connectedCallback`, before attribute catch-up. Post-sync work belongs on `onConnected()`.
 
-Keep synchronous setup (event listeners, MutationObservers) in `connectedCallback`, and keep behavioral deferrals (focus moves, dismiss suppression) as explicit microtasks at their trigger sites.
+Keep synchronous setup that no controller covers (event listeners, observers) in `connectedCallback`, and keep behavioral deferrals (focus moves, dismiss suppression) as explicit microtasks at their trigger sites.
 
 When a view peels a prop to seed pre-hydration output (inner control state, accessible names, shell classes), take a non-obvious default from a constant exported by the script file (`CHECKBOX_DEFAULT_VALUE`, `CAROUSEL_DEFAULTS`, `HOVER_CARD_DEFAULT_CONTENT_LABEL`) — never re-declare the literal. Do not mirror trivial defaults (`false`, `''`, `0`): an omitted attribute already hydrates to those.
 

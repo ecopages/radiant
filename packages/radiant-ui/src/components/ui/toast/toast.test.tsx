@@ -48,6 +48,21 @@ async function expectAnnouncement(host: ParentNode, text: string): Promise<void>
 }
 
 describe('rui-toaster', () => {
+	it('removes its document listeners when it disconnects', () => {
+		const add = vi.spyOn(document, 'addEventListener');
+		const remove = vi.spyOn(document, 'removeEventListener');
+		const toaster = document.createElement('rui-toaster') as HTMLElement;
+		document.body.append(toaster);
+		const added = add.mock.calls.filter(([type]) => type === 'visibilitychange');
+		expect(added).toHaveLength(1);
+
+		toaster.remove();
+		expect(remove.mock.calls.filter(([type]) => type === 'visibilitychange')).toHaveLength(1);
+		expect(remove.mock.calls.find(([type]) => type === 'visibilitychange')?.[1]).toBe(added[0][1]);
+		add.mockRestore();
+		remove.mockRestore();
+	});
+
 	afterEach(() => {
 		toast.dismiss();
 		toast.clear();

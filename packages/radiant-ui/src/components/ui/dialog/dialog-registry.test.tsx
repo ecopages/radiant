@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createRoot, type JsxRenderable, type JsxRoot } from '@ecopages/jsx';
 import { userEvent } from 'storybook/test';
 import {
@@ -49,6 +49,21 @@ function getDialogRoot(dialog: HTMLElement): HTMLElement {
 describe('dialog registry', () => {
 	afterEach(() => {
 		uninstallDialogs();
+	});
+
+	it('removes every document listener it added on uninstall', () => {
+		const add = vi.spyOn(document, 'addEventListener');
+		const remove = vi.spyOn(document, 'removeEventListener');
+		installDialogs();
+		const added = add.mock.calls.map(([type, listener]) => [type, listener]);
+		expect(added).toHaveLength(5);
+
+		uninstallDialogs();
+		uninstallDialogs();
+		const removed = remove.mock.calls.map(([type, listener]) => [type, listener]);
+		expect(removed).toEqual(added);
+		add.mockRestore();
+		remove.mockRestore();
 	});
 
 	it('opens a named dialog via openDialog(id)', async () => {
