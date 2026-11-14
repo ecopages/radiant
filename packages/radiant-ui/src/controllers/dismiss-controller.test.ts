@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { PortalController } from './portal-controller';
 import { DismissController, createDismissController, type DismissReason } from './dismiss-controller';
 
 describe('DismissController on plain elements', () => {
-	const controllers: DismissController[] = [];
+	const controllers: { destroy(): void }[] = [];
 
 	afterEach(() => {
 		controllers.splice(0).forEach((controller) => controller.destroy());
@@ -285,5 +286,64 @@ describe('DismissController on plain elements', () => {
 		pointerDown(outside);
 		expect(onDismiss).toHaveBeenCalledTimes(1);
 		controller.destroy();
+	});
+
+	describe('a popup portaled out of the surface', () => {
+		function mountPortaled(originIsInside: boolean) {
+			const { surface, outside, onDismiss, controller } = mount();
+			const elsewhere = document.createElement('div');
+			document.body.append(elsewhere);
+			const popup = document.createElement('div');
+			const option = document.createElement('button');
+			const nested = document.createElement('div');
+			const nestedOption = document.createElement('button');
+			popup.append(option);
+			nested.append(nestedOption);
+			(originIsInside ? surface : elsewhere).append(popup);
+			const portal = new PortalController({ getNode: () => popup });
+			portal.attach();
+			controllers.push(portal);
+			controller.attach();
+			return { surface, outside, onDismiss, controller, popup, option, nested, nestedOption, portal };
+		}
+
+		it('counts a press and a focus change inside it as inside when its origin is inside the surface', () => {
+			const { surface, option, outside, onDismiss, controller } = mountPortaled(true);
+			expect(surface.contains(option)).toBe(false);
+
+			pointerDown(option);
+			focusOut(surface.querySelector('button')!, option);
+			expect(onDismiss).not.toHaveBeenCalled();
+			expect(controller.contains(option)).toBe(true);
+
+			pointerDown(outside);
+			expect(onDismiss).toHaveBeenCalledTimes(1);
+		});
+
+		it('follows the origin through a popup portaled out of another portaled popup', () => {
+			const { popup, nested, nestedOption, onDismiss } = mountPortaled(true);
+			popup.append(nested);
+			const inner = new PortalController({ getNode: () => nested });
+			inner.attach();
+			controllers.push(inner);
+
+			pointerDown(nestedOption);
+			expect(onDismiss).not.toHaveBeenCalled();
+		});
+
+		it('still dismisses for a portaled popup whose origin is elsewhere', () => {
+			const { option, onDismiss } = mountPortaled(false);
+
+			pointerDown(option);
+			expect(onDismiss).toHaveBeenCalledTimes(1);
+		});
+
+		it('stops counting the popup as inside once its portal is destroyed', () => {
+			const { option, portal, controller } = mountPortaled(true);
+			portal.destroy();
+			document.body.append(option);
+
+			expect(controller.contains(option)).toBe(false);
+		});
 	});
 });
