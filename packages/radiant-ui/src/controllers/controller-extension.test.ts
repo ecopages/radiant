@@ -154,6 +154,8 @@ describe('extending a controller through its protected hooks', () => {
 		key();
 		expect(onMove).toHaveBeenCalledWith(items[2], expect.any(KeyboardEvent));
 		expect(roving.getActive()).toBe(items[2]);
+		expect(document.activeElement).toBe(items[2]);
+		expect(items.map((item) => item.tabIndex)).toEqual([-1, -1, 0, -1]);
 
 		disconnect();
 		key();

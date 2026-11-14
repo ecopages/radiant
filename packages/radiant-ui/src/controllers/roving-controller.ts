@@ -1,5 +1,6 @@
 import { navigateRovingTabindex, type RovingNavResult, type RovingOrientation } from '@/lib/roving-tabindex';
 import { bindController, type Controller, type ControllerHost } from './controller';
+import { closestItem } from './closest-item';
 import { EventListenerController } from './event-listener-controller';
 
 /** The items, key target, orientation and callbacks of a `RovingController`. */
@@ -106,7 +107,8 @@ export class RovingController implements Controller {
 	 * Moves focus from `current` as `key` says, with the configured orientation and wrap.
 	 *
 	 * @remarks For a key the component decides to route itself, such as Left/Right on an open menu that switches the
-	 * menubar's top-level item. Returns `{ handled: false }` for `orientation: 'none'`.
+	 * menubar's top-level item. Returns `{ handled: false }` for `orientation: 'none'`. A handled result makes its
+	 * item the tab stop and focuses it, also when `resolveNext` is overridden.
 	 */
 	navigate(current: HTMLElement | null, key: string): RovingNavResult {
 		const { orientation = 'horizontal', wrap = true } = this.config;
@@ -115,7 +117,7 @@ export class RovingController implements Controller {
 		}
 		const result = this.resolveNext(this.config.getItems(), current, key, orientation, wrap);
 		if (result.handled) {
-			this.active = result.item;
+			this.focus(result.item);
 		}
 		return result;
 	}
@@ -155,26 +157,11 @@ export class RovingController implements Controller {
 		}
 	}
 
-	private findItem(items: HTMLElement[], target: EventTarget | null): HTMLElement | null {
-		const root = this.config.getTarget();
-		let node = target instanceof Element ? target : null;
-		while (node) {
-			if (node instanceof HTMLElement && items.includes(node)) {
-				return node;
-			}
-			if (node === root) {
-				return null;
-			}
-			node = node.parentElement;
-		}
-		return null;
-	}
-
 	private onKeydown(event: KeyboardEvent): void {
 		if (this.config.enabled?.() === false) {
 			return;
 		}
-		const current = this.findItem(this.config.getItems(), event.target);
+		const current = closestItem(event.target, this.config.getItems(), this.config.getTarget());
 		const result = this.navigate(current, event.key);
 		if (!result.handled) {
 			return;
@@ -188,7 +175,7 @@ export class RovingController implements Controller {
 			return;
 		}
 		const items = this.config.getItems();
-		const item = this.findItem(items, event.target);
+		const item = closestItem(event.target, items, this.config.getTarget());
 		if (item && item !== this.active) {
 			this.apply(items, item);
 		}
