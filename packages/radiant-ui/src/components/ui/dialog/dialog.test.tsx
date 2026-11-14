@@ -62,6 +62,18 @@ describe('RuiDialog host alert', () => {
 		expect(document.activeElement).toBe(confirm);
 	});
 
+	it('pulls focus on a control outside the actions back into the alert loop', async () => {
+		const host = mount(alertDialog());
+		await settled();
+		const dialog = host.querySelector('rui-dialog') as DialogEl;
+		dialog.alert = true;
+		await settled();
+
+		(host.querySelector('[data-test-link]') as HTMLElement).focus();
+		await userEvent.tab({ shift: true });
+		expect(document.activeElement).toBe(host.querySelector('[data-test-confirm]'));
+	});
+
 	it('keeps every focusable in the loop when alert is off', async () => {
 		const host = mount(alertDialog());
 		await settled();
@@ -177,6 +189,39 @@ describe('RuiDialog focus handling', () => {
 		(host.querySelector('#x2') as HTMLElement).focus();
 		await userEvent.tab();
 		expect(document.activeElement).toBe(host.querySelector('#x1'));
+	});
+});
+
+describe('RuiDialog scroll lock', () => {
+	afterEach(() => {
+		document.body.innerHTML = '';
+		document.documentElement.removeAttribute('style');
+	});
+
+	it('locks page scroll while open and releases it on close and on removal', async () => {
+		const host = mount(
+			<>
+				<RuiDialog label="A" id="a" />
+				<RuiDialog label="B" id="b" />
+			</>,
+		);
+		await settled();
+		const a = host.querySelector('#a') as DialogEl;
+		const b = host.querySelector('#b') as DialogEl;
+		expect(document.documentElement.style.overflow).toBe('');
+
+		a.open = true;
+		b.open = true;
+		await settled();
+		expect(document.documentElement.style.overflow).toBe('hidden');
+
+		a.open = false;
+		await settled();
+		expect(document.documentElement.style.overflow).toBe('hidden');
+
+		b.remove();
+		await settled();
+		expect(document.documentElement.style.overflow).toBe('');
 	});
 });
 

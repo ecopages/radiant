@@ -1,5 +1,7 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
 import { createDismissController } from '../../../controllers/dismiss-controller';
+import { FocusTrapController } from '../../../controllers/focus-trap-controller';
+import { ScrollLockController } from '../../../controllers/scroll-lock-controller';
 import {
 	RadiantElement,
 	bindTo,
@@ -93,6 +95,7 @@ export class RuiDialog extends RadiantElement {
 			},
 			triggers: ['escape'],
 		});
+		this.registerCleanupCallback(() => this.release());
 	}
 
 	declare readonly [JSX_PROPS]?: RuiDialogProps;
@@ -111,8 +114,13 @@ export class RuiDialog extends RadiantElement {
 	@event({ name: 'rui-close', bubbles: true, composed: true })
 	closeEvent: EventEmitter<RuiDialogCloseDetail>;
 
-	private previouslyFocused: HTMLElement | null = null;
 	private lastOpen = false;
+	private readonly focusTrap = new FocusTrapController({
+		getSurface: () => this.dialogTarget,
+		getFocusable: () => this.getFocusable(),
+		getStrict: () => this.alert,
+	});
+	private readonly scrollLock = new ScrollLockController();
 	private readonly uid = uniqueId('rui-dialog');
 
 	private get titleId(): string {
@@ -134,8 +142,8 @@ export class RuiDialog extends RadiantElement {
 
 	/**
 	 * @remarks
-	 * Focus is captured and restored only when `open` actually changes; a `label` update while
-	 * open must not overwrite `previouslyFocused` with an element inside the dialog.
+	 * The focus trap and scroll lock start and stop only when `open` actually changes; a `label` update while
+	 * open must not restart the trap, which would remember an element inside the dialog as the one to restore.
 	 */
 	@bound
 	@onUpdated(['open', 'label'])
@@ -168,17 +176,22 @@ export class RuiDialog extends RadiantElement {
 		this.lastOpen = this.open;
 
 		if (this.open) {
-			this.previouslyFocused = document.activeElement as HTMLElement | null;
-			queueMicrotask(() => this.focusInitial());
+			this.focusTrap.attach();
+			this.scrollLock.attach();
 		} else {
-			this.previouslyFocused?.focus?.();
-			this.previouslyFocused = null;
+			this.release();
 		}
 	}
 
-	private focusInitial(): void {
-		const focusable = this.getFocusable();
-		(focusable[0] ?? this.dialogTarget)?.focus();
+	/**
+	 * @remarks
+	 * Also runs when the element disconnects while open, so the page does not stay locked. `lastOpen` resets so a
+	 * reconnected open dialog traps and locks again.
+	 */
+	private release(): void {
+		this.lastOpen = false;
+		this.focusTrap.destroy();
+		this.scrollLock.destroy();
 	}
 
 	/**
@@ -211,45 +224,6 @@ export class RuiDialog extends RadiantElement {
 
 		this.open = false;
 		this.closeEvent.emit({ reason });
-	}
-
-	@onEvent({ document: true, type: 'keydown' })
-	onDocumentKeydown(event: KeyboardEvent): void {
-		if (!this.open) {
-			return;
-		}
-
-		if (event.key === 'Tab') {
-			this.trapTab(event);
-		}
-	}
-
-	private trapTab(event: KeyboardEvent): void {
-		const active = document.activeElement as HTMLElement | null;
-		if (!active || !this.dialogTarget?.contains(active)) {
-			return;
-		}
-
-		const focusable = this.getFocusable();
-		if (!focusable.length) {
-			event.preventDefault();
-			this.dialogTarget?.focus();
-			return;
-		}
-
-		const first = focusable[0];
-		const last = focusable[focusable.length - 1];
-
-		if (this.alert && !focusable.includes(active)) {
-			event.preventDefault();
-			(event.shiftKey ? last : first).focus();
-		} else if (event.shiftKey && active === first) {
-			event.preventDefault();
-			last.focus();
-		} else if (!event.shiftKey && active === last) {
-			event.preventDefault();
-			first.focus();
-		}
 	}
 
 	@onEvent({ ref: 'backdrop', type: 'click' })
