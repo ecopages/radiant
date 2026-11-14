@@ -1,5 +1,6 @@
 import { userEvent } from 'vitest/browser';
 import { afterEach, describe, expect, test } from 'vitest';
+import { syncExamples } from '../src/components/primitive-example/mount-example';
 
 const pages = import.meta.glob('../src/content/components/controllers/*.mdx', {
 	query: '?raw',
@@ -10,13 +11,14 @@ const scripts = import.meta.glob('../src/content/components/controllers/*.script
 
 /**
  * Mounts the markup a controller page documents and runs the script it documents, so the page and the example
- * cannot drift apart.
+ * cannot drift apart. A script module runs once, so `syncExamples` mounts the fresh markup of later tests.
  */
 async function mountExample(slug: string): Promise<HTMLElement> {
 	const page = pages[`../src/content/components/controllers/${slug}.mdx`]!;
 	const markup = page.match(/```html\n([\s\S]*?)\n```/)![1];
 	document.body.innerHTML = markup;
 	await scripts[`../src/content/components/controllers/${slug}.script.ts`]!();
+	syncExamples();
 	return document.querySelector<HTMLElement>(`[data-example="${slug}"]`)!;
 }
 

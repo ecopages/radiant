@@ -50,15 +50,20 @@ One button is tabbable. Focus it and press ArrowRight, ArrowLeft, Home or End to
 ```ts
 import { RovingController } from '@ecopages/radiant-ui/controllers';
 
-const toolbar = document.querySelector<HTMLElement>('[data-example="roving"] [role="toolbar"]')!;
+export function mount(root: HTMLElement): () => void {
+	const toolbar = root.querySelector<HTMLElement>('[role="toolbar"]')!;
 
-const roving = new RovingController({
-	getItems: () => [...toolbar.querySelectorAll('button')],
-	getTarget: () => toolbar,
-});
-roving.attach();
-roving.sync();
+	const roving = new RovingController({
+		getItems: () => [...toolbar.querySelectorAll('button')],
+		getTarget: () => toolbar,
+	});
+	roving.attach();
+	roving.sync();
+	return () => roving.destroy();
+}
 ```
+
+`mount` runs once for each example element on the page, and the function it returns undoes it; see [how the examples run](/docs/controllers/overview#how-the-examples-run).
 
 ## Config
 

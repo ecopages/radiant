@@ -1,11 +1,16 @@
 import { SwipeController } from '@ecopages/radiant-ui/controllers';
+import { mountExample } from '../../../components/primitive-example/mount-example';
 
-const root = document.querySelector('[data-example="swipe"]')!;
-const box = root.querySelector<HTMLElement>('[data-box]')!;
-const status = root.querySelector('[data-status]')!;
+export function mount(root: HTMLElement): () => void {
+	const box = root.querySelector<HTMLElement>('[data-box]')!;
+	const status = root.querySelector('[data-status]')!;
 
-const swipe = new SwipeController({
-	getTarget: () => box,
-	onSwipe: (direction) => (status.textContent = `Swiped ${direction}`),
-});
-swipe.attach();
+	const swipe = new SwipeController({
+		getTarget: () => box,
+		onSwipe: (direction) => (status.textContent = `Swiped ${direction}`),
+	});
+	swipe.attach();
+	return () => swipe.destroy();
+}
+
+mountExample('swipe', mount);

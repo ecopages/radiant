@@ -55,3 +55,9 @@ The same entry exports functions that touch elements. They have no page of their
 | `applyRovingTabindex`, `focusRovingItem`, `navigateRovingTabindex`                                            | The roving tabindex functions `RovingController` composes.                                                        | One-off roving navigation without a controller.         |
 | `getVisibleCollectionOptions`, `setCollectionActive`, `clearCollectionActive`                                 | `aria-activedescendant` and `data-active` bookkeeping for option collections.                                     | Active-descendant lists outside the listbox controller. |
 | `SORTABLE_*_ATTRIBUTE`, `SORTABLE_OFFSET_PROPERTIES`                                                          | The `data-sortable-*` attributes and `--sortable-dx` and `--sortable-dy` the sortable sets.                       | Styling a sortable.                                     |
+
+## How the examples run
+
+Each example on these pages is a `mount(root)` function in the page's script. It receives one `[data-example="<name>"]` element, wires the controllers to that element and returns the function that undoes it, which is where `destroy()` goes. A controller that listens on `document` or `window` must be destroyed there, or it keeps listening after the example is gone.
+
+The page script ends with a call to `mountExample`, which the code blocks leave out. It mounts each matching element once when the page loads and again for the new elements the router swaps in (`eco:page-load` and `eco:after-swap`), and it runs the returned function for an element that left the page. A script is a module and runs once per tab, so the page cannot rely on it running again after a navigation.

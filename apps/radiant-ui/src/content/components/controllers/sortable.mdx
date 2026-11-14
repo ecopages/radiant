@@ -54,22 +54,26 @@ Drag an item, or focus it and press Space, move it with the arrow keys and press
 ```ts
 import { SortableController } from '@ecopages/radiant-ui/controllers';
 
-const root = document.querySelector('[data-example="sortable"]')!;
-const list = root.querySelector('ul')!;
-const status = root.querySelector('[data-status]')!;
+export function mount(root: HTMLElement): () => void {
+	const list = root.querySelector('ul')!;
+	const status = root.querySelector('[data-status]')!;
 
-const sortable = new SortableController({
-	getContainer: () => list,
-	getItems: () => [...list.children] as HTMLElement[],
-	announce: (message) => (status.textContent = message),
-	onChange: ({ item, to }) => {
-		const others = [...list.children].filter((child) => child !== item);
-		list.insertBefore(item, others[to] ?? null);
-		item.focus();
-	},
-});
-sortable.attach();
+	const sortable = new SortableController({
+		getContainer: () => list,
+		getItems: () => [...list.children] as HTMLElement[],
+		announce: (message) => (status.textContent = message),
+		onChange: ({ item, to }) => {
+			const others = [...list.children].filter((child) => child !== item);
+			list.insertBefore(item, others[to] ?? null);
+			item.focus();
+		},
+	});
+	sortable.attach();
+	return () => sortable.destroy();
+}
 ```
+
+`mount` runs once for each example element on the page, and the function it returns undoes it; see [how the examples run](/docs/controllers/overview#how-the-examples-run).
 
 ## Config
 

@@ -58,26 +58,30 @@ The button opens the popup and focuses its first available day. Escape from insi
 ```ts
 import { CalendarPopoverController } from '@ecopages/radiant-ui/controllers';
 
-const root = document.querySelector<HTMLElement>('[data-example="calendar-popover"]')!;
-const toggle = root.querySelector('button')!;
-const popup = root.querySelector<HTMLElement>('[data-box]')!;
+export function mount(root: HTMLElement): () => void {
+	const toggle = root.querySelector('button')!;
+	const popup = root.querySelector<HTMLElement>('[data-box]')!;
 
-let open = false;
-const picker = new CalendarPopoverController({
-	getHost: () => root,
-	getAnchor: () => toggle,
-	getFloating: () => popup,
-	getOpen: () => open,
-	getCalendar: () => popup,
-	getFocusIso: () => undefined,
-	getToggle: () => toggle,
-	setOpenState: (next) => (open = next),
-	onLayoutChange: () => {},
-});
-picker.attach();
+	let open = false;
+	const picker = new CalendarPopoverController({
+		getHost: () => root,
+		getAnchor: () => toggle,
+		getFloating: () => popup,
+		getOpen: () => open,
+		getCalendar: () => popup,
+		getFocusIso: () => undefined,
+		getToggle: () => toggle,
+		setOpenState: (next) => (open = next),
+		onLayoutChange: () => {},
+	});
+	picker.attach();
 
-toggle.addEventListener('click', () => picker.setOpen(!open));
+	toggle.addEventListener('click', () => picker.setOpen(!open));
+	return () => picker.destroy();
+}
 ```
+
+`mount` runs once for each example element on the page, and the function it returns undoes it; see [how the examples run](/docs/controllers/overview#how-the-examples-run).
 
 ## Config
 

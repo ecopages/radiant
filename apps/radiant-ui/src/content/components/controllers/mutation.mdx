@@ -50,21 +50,25 @@ The list is observed for added children. Add item appends an `li` and the callba
 ```ts
 import { MutationController } from '@ecopages/radiant-ui/controllers';
 
-const root = document.querySelector('[data-example="mutation"]')!;
-const list = root.querySelector('ul')!;
-const status = root.querySelector('[data-status]')!;
+export function mount(root: HTMLElement): () => void {
+	const list = root.querySelector('ul')!;
+	const status = root.querySelector('[data-status]')!;
 
-const observer = new MutationController({
-	getTarget: () => list,
-	options: { childList: true },
-	onMutate: () => (status.textContent = `${list.children.length} items`),
-});
-observer.attach();
+	const observer = new MutationController({
+		getTarget: () => list,
+		options: { childList: true },
+		onMutate: () => (status.textContent = `${list.children.length} items`),
+	});
+	observer.attach();
 
-root.querySelector('button')!.addEventListener('click', () =>
-	list.insertAdjacentHTML('beforeend', '<li>New item</li>'),
-);
+	root.querySelector('button')!.addEventListener('click', () =>
+		list.insertAdjacentHTML('beforeend', '<li>New item</li>'),
+	);
+	return () => observer.destroy();
+}
 ```
+
+`mount` runs once for each example element on the page, and the function it returns undoes it; see [how the examples run](/docs/controllers/overview#how-the-examples-run).
 
 ## Config
 

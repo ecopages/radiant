@@ -46,23 +46,27 @@ The box follows the pointer by the reported `dx` and `dy` and snaps back when th
 ```ts
 import { PointerDragController } from '@ecopages/radiant-ui/controllers';
 
-const root = document.querySelector('[data-example="pointer-drag"]')!;
-const handle = root.querySelector<HTMLElement>('[data-box]')!;
-const status = root.querySelector('[data-status]')!;
+export function mount(root: HTMLElement): () => void {
+	const handle = root.querySelector<HTMLElement>('[data-box]')!;
+	const status = root.querySelector('[data-status]')!;
 
-const drag = new PointerDragController({
-	getTarget: () => handle,
-	onMove: ({ dx, dy }) => {
-		handle.style.transform = `translate(${dx}px, ${dy}px)`;
-		status.textContent = `Moved ${dx}, ${dy}`;
-	},
-	onEnd: ({ reason }) => {
-		handle.style.transform = '';
-		status.textContent = `Ended: ${reason}`;
-	},
-});
-drag.attach();
+	const drag = new PointerDragController({
+		getTarget: () => handle,
+		onMove: ({ dx, dy }) => {
+			handle.style.transform = `translate(${dx}px, ${dy}px)`;
+			status.textContent = `Moved ${dx}, ${dy}`;
+		},
+		onEnd: ({ reason }) => {
+			handle.style.transform = '';
+			status.textContent = `Ended: ${reason}`;
+		},
+	});
+	drag.attach();
+	return () => drag.destroy();
+}
 ```
+
+`mount` runs once for each example element on the page, and the function it returns undoes it; see [how the examples run](/docs/controllers/overview#how-the-examples-run).
 
 ## Config
 
