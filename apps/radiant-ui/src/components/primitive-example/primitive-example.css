@@ -44,6 +44,11 @@
 	user-select: none;
 }
 
+.primitive-example :where([data-example='sortable'] li) {
+	touch-action: none;
+	user-select: none;
+}
+
 .primitive-example :where([data-scroller]) {
 	flex-basis: 100%;
 	height: 6rem;

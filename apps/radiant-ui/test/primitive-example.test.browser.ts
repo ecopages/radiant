@@ -94,3 +94,13 @@ describe('example frame stacking', () => {
 		expectOnTop(root.querySelector('[role="menu"]')!);
 	});
 });
+
+describe('example frame touch dragging', () => {
+	test('the sortable controller example items do not scroll the page or select text under a drag', async () => {
+		const root = await mountFramed('controllers', 'sortable');
+
+		const item = getComputedStyle(root.querySelector('li')!);
+		expect(item.touchAction).toBe('none');
+		expect(item.userSelect).toBe('none');
+	});
+});
