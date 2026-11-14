@@ -12,6 +12,8 @@ export function mount(root: HTMLElement): () => void {
 		getFloating: () => popup,
 		getOpen: () => open,
 		getCalendar: () => popup,
+		portal: true,
+		getPortalContainer: () => root,
 		getFocusIso: () => undefined,
 		getToggle: () => toggle,
 		setOpenState: (next) => (open = next),

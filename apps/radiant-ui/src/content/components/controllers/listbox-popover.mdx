@@ -27,7 +27,7 @@ import { ListboxPopoverController, createListboxPopoverController } from '@ecopa
 
 ## Try it
 
-ArrowDown on the input opens the list, the arrows move the active option (`data-active` and `aria-activedescendant`), Enter picks it and Escape closes. Selection and filtering stay with the owner; the controller owns the state machine both controls must agree on.
+ArrowDown on the input opens the list, the arrows move the active option (`data-active` and `aria-activedescendant`), Enter picks it and Escape closes. Selection and filtering stay with the owner; the controller owns the state machine both controls must agree on. `portal` moves the list while it is open, here into the example frame so the frame styles still reach it.
 
 <PrimitiveExample name="listbox-popover">
 	<input type="text" role="combobox" aria-controls="fruit-list" aria-expanded="false" placeholder="Pick a fruit" />
@@ -64,6 +64,8 @@ export function mount(root: HTMLElement): () => void {
 		getOptions: () => [...listbox.querySelectorAll<HTMLElement>('[role="option"]')],
 		getActiveDescendantHost: () => input,
 		getOptionIdPrefix: () => 'fruit',
+		portal: true,
+		getPortalContainer: () => root,
 		onDismiss: () => setOpen(false),
 	});
 	listboxPopover.attach();
@@ -106,13 +108,17 @@ export function mount(root: HTMLElement): () => void {
 | `getOptions`              | All options, hidden ones included.                                                                                                                  |
 | `getActiveDescendantHost` | The element that receives `aria-activedescendant`.                                                                                                  |
 | `getOptionIdPrefix`       | The prefix for option ids minted when an option has none.                                                                                           |
+| `portal`                  | Move the popup out of its place while open. Default `false`; `updateConfig({ portal })` changes it.                                                 |
+| `getPortalContainer`      | Where a portaled popup goes, read each time it opens. `document.body` when omitted or when it returns `null`.                                       |
 | `onDismiss`               | Called on a pointer press outside the anchor and popup, or focus leaving them. Escape stays with the owner's key handling, through `handleKeydown`. |
 
 ## Lifecycle
 
-`attach()` attaches the popover that positions the popup (below the anchor, the anchor width, not portaled); call `syncPopoverPosition()` whenever the open state changes. `destroy()` destroys it. The rest is state and keys: `ensureOptionIds()`, `setActiveOption(index)`, `clearActiveOption()`, `moveActive(direction, onOpen)` and `handleKeydown(event, policy)`, where the policy says what Space, Enter, Tab and Escape do and receives `onOpen`, `onClose` and `onSelectActive`.
+`attach()` attaches the popover that positions the popup (below the anchor, the anchor width, in place unless `portal` is set); call `syncPopoverPosition()` whenever the open state changes. `destroy()` destroys it. The rest is state and keys: `ensureOptionIds()`, `setActiveOption(index)`, `clearActiveOption()`, `moveActive(direction, onOpen)` and `handleKeydown(event, policy)`, where the policy says what Space, Enter, Tab and Escape do and receives `onOpen`, `onClose` and `onSelectActive`.
 
 With a host, `createListboxPopoverController(host, config)` does the same on connect and disconnect; see [bindController](/docs/controllers/bind-controller).
+
+A portaled popup is no longer inside the element that owns it, so the owner must hold a reference to it and listen on it directly, not through a delegated listener on the host. Option clicks and keys inside the popup do not reach the host while it is portaled.
 
 ## Protected hooks
 

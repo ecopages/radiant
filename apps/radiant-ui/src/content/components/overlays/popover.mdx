@@ -111,6 +111,7 @@ The popover surface maps to **semantic surface roles**, never Tailwind palette s
 | `open` | `boolean` | `false` | Whether the popover is open (controlled). |
 | `placement` | `RuiPlacement` | `bottom` | Placement relative to the anchor. |
 | `portal` | `boolean` | `true` | Teleport the surface to `document.body`. |
+| `portal-container` | `string` | | CSS selector of the element a portaled surface goes to instead of `document.body`, resolved each time it opens. The `portalContainer` property also takes an element or a function that returns one. |
 | `match-anchor-width` | `boolean` | `false` | Match the anchor width (dropdown menus). |
 | `offset` | `number` | `8` | Gap between anchor and surface in px. |
 | `anchor` | `string` | `''` | CSS selector for an external anchor. |

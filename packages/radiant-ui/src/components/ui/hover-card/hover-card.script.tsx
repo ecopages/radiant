@@ -17,6 +17,11 @@ import { notePreviewClosed, notePreviewOpened, resolvePreviewOpenDelay } from '.
 import { createEventListenerController } from '../../../controllers/event-listener-controller';
 import { createPopoverController } from '../../../controllers/popover-controller';
 import type { RuiPlacement } from '../../../controllers/placement';
+import {
+	portalContainerPropOptions,
+	resolvePortalContainer,
+	type RuiPortalContainer,
+} from '../shared/portal-container';
 
 export type RuiHoverCardOpenChangeDetail = {
 	open: boolean;
@@ -33,6 +38,8 @@ export type RuiHoverCardProps = {
 	closeDelay?: number;
 	/** Teleport the surface to `document.body`. Default: `true`. */
 	portal?: boolean;
+	/** CSS selector of the element a portaled surface goes to instead of `document.body`, resolved when it opens. */
+	portalContainer?: string;
 	/** Suppress hover/focus preview interactions. */
 	disabled?: boolean;
 	/** Accessible name for the preview dialog. Default: `Preview`. */
@@ -86,6 +93,7 @@ const LONG_PRESS_MS = 500;
  * @attr {number} delay - Show delay in ms. Default: `600`.
  * @attr {number} close-delay - Hide delay in ms after pointer/focus leaves. Default: `200`.
  * @attr {boolean} portal - Teleport the surface to `document.body`. Default: `true`.
+ * @attr {string} portal-container - CSS selector of the element a portaled surface goes to instead of `document.body`, resolved each time it opens. The `portalContainer` property also takes an element or a function that returns one.
  * @attr {boolean} disabled - Suppress hover/focus preview interactions. Default: `false`.
  * @attr {string} content-label - Accessible name for the preview dialog. Default: `Preview`.
  * @fires rui-open-change - Emitted when open state changes; `detail.open`.
@@ -110,6 +118,7 @@ export class RuiHoverCard extends RadiantElement {
 	@prop({ type: Number, defaultValue: 600 }) delay: number;
 	@prop({ type: Number, defaultValue: 200 }) closeDelay: number;
 	@prop({ type: Boolean, defaultValue: true }) portal: boolean;
+	@prop(portalContainerPropOptions) portalContainer: RuiPortalContainer | null;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) disabled: boolean;
 
 	@prop({ type: String, attribute: 'content-label', reflect: true, defaultValue: HOVER_CARD_DEFAULT_CONTENT_LABEL })
@@ -127,6 +136,7 @@ export class RuiHoverCard extends RadiantElement {
 		getFloating: () => this.contentTarget,
 		getOpen: () => this.open,
 		getPlacement: () => this.placement,
+		getPortalContainer: () => resolvePortalContainer(this.portalContainer),
 		onDismiss: (_reason, event) => this.dismissWithEscape(event),
 		dismissOn: ['escape'],
 	});

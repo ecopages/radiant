@@ -79,6 +79,31 @@ describe('CalendarPopoverController on a plain element', () => {
 		host.remove();
 	});
 
+	it('keeps the popup in place by default and portals it into the container when asked', () => {
+		const { host, config } = mount();
+		const floating = config.getFloating();
+		const frame = document.createElement('div');
+		document.body.append(frame);
+		const controller = new CalendarPopoverController({ ...config, portal: true, getPortalContainer: () => frame });
+		const inPlace = new CalendarPopoverController(config);
+
+		inPlace.attach();
+		inPlace.syncPopover();
+		expect(floating.parentNode).toBe(host);
+		inPlace.destroy();
+
+		controller.attach();
+		controller.syncPopover();
+		expect(floating.parentNode).toBe(frame);
+
+		controller.updateConfig({ portal: false });
+		controller.syncPopover();
+		expect(floating.parentNode).toBe(host);
+		controller.destroy();
+		frame.remove();
+		host.remove();
+	});
+
 	it('releases the popover positioning on destroy', () => {
 		const { host, config } = mount();
 		const controller = new CalendarPopoverController(config);

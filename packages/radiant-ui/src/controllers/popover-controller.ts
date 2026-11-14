@@ -13,7 +13,11 @@ export type PopoverControllerConfig = {
 	gap?: number;
 	portal?: boolean;
 	matchAnchorWidth?: boolean;
-	portalContainer?: ParentNode;
+	/**
+	 * Where the surface goes while it is open. Read each time the popover opens, so a container that exists only
+	 * later still works. `document.body` when omitted or when it returns `null`.
+	 */
+	getPortalContainer?: () => ParentNode | null;
 	/**
 	 * Called when the user dismisses the open popover. Dismissal listens only when this is set, and only while
 	 * `getOpen()` is true. Read in `attach()`, so `updateConfig` cannot change it.
@@ -47,7 +51,7 @@ export class PopoverController implements Controller {
 		this.config = config;
 		this.portal = new PortalController({
 			getNode: () => this.resolveFloating(),
-			getContainer: () => this.config.portalContainer ?? document.body,
+			getContainer: () => this.config.getPortalContainer?.() ?? document.body,
 		});
 		this.dismissal = new DismissController({
 			getSurface: () => this.resolveFloating(),

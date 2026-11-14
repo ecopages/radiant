@@ -14,6 +14,12 @@ import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { isIsoInRange, normalizeRange, parseIsoRange, serializeIsoRange } from '@/lib/intl-date';
 import type { RuiCalendarChangeDetail } from '../calendar/calendar.script';
 import { createCalendarPopoverController } from '../../../controllers/calendar-popover-controller';
+import { createEventListenerController } from '../../../controllers/event-listener-controller';
+import {
+	portalContainerPropOptions,
+	resolvePortalContainer,
+	type RuiPortalContainer,
+} from '../shared/portal-container';
 import { effectiveVisibleMonths } from '@/lib/viewport/mobile-layout';
 
 export type RuiDateRangePickerProps = {
@@ -27,6 +33,10 @@ export type RuiDateRangePickerProps = {
 	endName?: string;
 	name?: string;
 	visibleMonths?: number;
+	/** Render the calendar popup in `document.body`, or in `portalContainer`, while it is open. Default: `false`. */
+	portal?: boolean;
+	/** CSS selector of the element a portaled popup goes to, resolved when the popup opens. */
+	portalContainer?: string;
 };
 
 export type RuiDateRangePickerChangeDetail = {
@@ -78,26 +88,24 @@ export type RuiDateRangePickerChangeDetail = {
  * @attr {string} start-name - Form field name on the nested start `rui-date-input`. Default: `''`.
  * @attr {string} end-name - Form field name on the nested end `rui-date-input`. Default: `''`.
  * @attr {number} visible-months - Month grids shown in the range calendar popover (adapts to 1 on screens under 640px). Default: `2`.
+ * @attr {boolean} portal - Render the calendar popup in `document.body`, or in `portal-container`, while it is open. Default: `false`.
+ * @attr {string} portal-container - CSS selector of the element a portaled popup goes to, resolved each time it opens. The `portalContainer` property also takes an element or a function that returns one.
  * @fires rui-change - Emitted when a valid range is committed, or when a committed range is cleared; detail carries `value` and the sorted `start` and `end` (start is never after end).
  */
 @customElement('rui-date-range-picker')
 export class RuiDateRangePicker extends RadiantElement {
 	declare readonly [JSX_PROPS]?: RuiDateRangePickerProps;
-	@prop({ type: String, reflect: true, defaultValue: '' })
-	@bindTo({ selector: '[data-range-calendar]', attr: 'value' })
-	value: string;
+	@prop({ type: String, reflect: true, defaultValue: '' }) value: string;
 	@prop({ type: String, defaultValue: '' })
 	@bindTo([
 		{ selector: '[data-range-start]', attr: 'min' },
 		{ selector: '[data-range-end]', attr: 'min' },
-		{ selector: '[data-range-calendar]', attr: 'min' },
 	])
 	min: string;
 	@prop({ type: String, defaultValue: '' })
 	@bindTo([
 		{ selector: '[data-range-start]', attr: 'max' },
 		{ selector: '[data-range-end]', attr: 'max' },
-		{ selector: '[data-range-calendar]', attr: 'max' },
 	])
 	max: string;
 
@@ -105,7 +113,6 @@ export class RuiDateRangePicker extends RadiantElement {
 	@bindTo([
 		{ selector: '[data-range-start]', bool: 'disabled' },
 		{ selector: '[data-range-end]', bool: 'disabled' },
-		{ selector: '[data-range-calendar]', bool: 'disabled' },
 	])
 	disabled: boolean;
 
@@ -120,7 +127,6 @@ export class RuiDateRangePicker extends RadiantElement {
 	@bindTo([
 		{ selector: '[data-range-start]', attr: 'locale' },
 		{ selector: '[data-range-end]', attr: 'locale' },
-		{ selector: '[data-range-calendar]', attr: 'locale' },
 	])
 	locale: string;
 
@@ -135,6 +141,8 @@ export class RuiDateRangePicker extends RadiantElement {
 	@prop({ type: String, defaultValue: '' }) name: string;
 	@prop({ type: Number, attribute: 'visible-months', defaultValue: 2 })
 	visibleMonths: number;
+	@prop({ type: Boolean, defaultValue: false }) portal: boolean;
+	@prop(portalContainerPropOptions) portalContainer: RuiPortalContainer | null;
 
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiDateRangePickerChangeDetail>;
@@ -155,9 +163,21 @@ export class RuiDateRangePicker extends RadiantElement {
 			this.open = next;
 		},
 		onLayoutChange: () => this.syncCalendar(),
+		getPortalContainer: () => resolvePortalContainer(this.portalContainer),
 	});
 
-	@query({ ref: 'popover' }) popoverTarget: HTMLElement | null;
+	/** @remarks Cached because a portaled popup is no longer inside the host to be found again. */
+	@query({ ref: 'popover', cache: true }) popoverTarget: HTMLElement | null;
+
+	/** @remarks The popup is a separate listener target, not host delegation, because a portaled popup is outside the host and its events never bubble through it. */
+	constructor() {
+		super();
+		createEventListenerController(this, {
+			getTarget: () => this.popoverTarget,
+			type: ['mousedown', 'rui-change'],
+			listener: (event) => this.onPopupEvent(event),
+		});
+	}
 
 	private get isoValue(): string {
 		return this.value ?? '';
@@ -176,7 +196,7 @@ export class RuiDateRangePicker extends RadiantElement {
 	}
 
 	private getCalendar(): HTMLElement | null {
-		return this.querySelector<HTMLElement>('[data-range-calendar]');
+		return this.popoverTarget?.querySelector<HTMLElement>('[data-range-calendar]') ?? null;
 	}
 
 	private readInputIso(target: 'start' | 'end'): string {
@@ -245,11 +265,21 @@ export class RuiDateRangePicker extends RadiantElement {
 		if (!calendar) {
 			return;
 		}
+		calendar.setAttribute('value', this.value);
+		calendar.setAttribute('min', this.min);
+		calendar.setAttribute('max', this.max);
+		calendar.setAttribute('locale', this.locale);
+		calendar.toggleAttribute('disabled', this.disabled);
 		calendar.setAttribute('selection-mode', 'range');
 		calendar.setAttribute('visible-months', String(effectiveVisibleMonths(this.visibleMonths)));
 	}
 
+	private syncPortal(): void {
+		this.calendarPopover.updateConfig({ portal: this.portal });
+	}
+
 	private initialize(): void {
+		this.syncPortal();
 		this.projectCompleteRangeOntoInputs();
 		this.syncToggle();
 		this.syncCalendar();
@@ -260,8 +290,9 @@ export class RuiDateRangePicker extends RadiantElement {
 		this.initialize();
 	}
 
-	@onUpdated(['value', 'min', 'max', 'disabled', 'readOnly', 'locale', 'visibleMonths'])
+	@onUpdated(['value', 'min', 'max', 'disabled', 'readOnly', 'locale', 'visibleMonths', 'portal'])
 	onPropsUpdated(): void {
+		this.syncPortal();
 		this.projectCompleteRangeOntoInputs();
 		this.syncToggle();
 		this.syncCalendar();
@@ -307,15 +338,12 @@ export class RuiDateRangePicker extends RadiantElement {
 		this.calendarPopover.setOpen(!this.open);
 	}
 
-	@onEvent({ selector: '[data-range-popover]', type: 'mousedown' })
-	onPopoverMouseDown(event: Event): void {
-		event.preventDefault();
-	}
-
-	@onEvent({ selector: '[data-range-calendar]', type: 'rui-change' })
-	onCalendarChange(event: Event): void {
-		const target = event.target;
-		if (!(target instanceof HTMLElement) || !target.matches('[data-range-calendar]')) {
+	private onPopupEvent(event: Event): void {
+		if (event.type === 'mousedown') {
+			event.preventDefault();
+			return;
+		}
+		if (event.target !== this.getCalendar()) {
 			return;
 		}
 

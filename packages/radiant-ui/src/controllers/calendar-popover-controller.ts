@@ -13,6 +13,10 @@ export type CalendarPopoverControllerConfig = {
 	getCalendar: () => HTMLElement | null;
 	getFocusIso: () => string | undefined;
 	getToggle: () => HTMLElement | null;
+	/** Whether the popup moves out of its place while open. Defaults to `false`; `updateConfig` changes it. */
+	portal?: boolean;
+	/** Where a portaled popup goes. Read each time the popup opens; `document.body` when omitted or `null`. */
+	getPortalContainer?: () => ParentNode | null;
 	/** Writes the host's `open` state. */
 	setOpenState: (next: boolean) => void;
 	/** Called when the mobile layout viewport changes, before the open popover is repositioned. */
@@ -41,7 +45,8 @@ export class CalendarPopoverController implements Controller {
 			getOpen: config.getOpen,
 			getPlacement: () => 'bottom-start',
 			gap: 4,
-			portal: false,
+			portal: config.portal ?? false,
+			getPortalContainer: config.getPortalContainer,
 		});
 		this.mobileLayout = new EventListenerController({
 			getTarget: () => window.matchMedia(`(max-width: ${MOBILE_LAYOUT_MAX_WIDTH_PX}px)`),
@@ -62,6 +67,11 @@ export class CalendarPopoverController implements Controller {
 			settleFocus: true,
 			escapeScope: 'tree',
 		});
+	}
+
+	/** Changes whether the popup portals, from the next `syncPopover()`. */
+	updateConfig(patch: Pick<CalendarPopoverControllerConfig, 'portal'>): void {
+		this.popoverController.updateConfig({ portal: patch.portal ?? false });
 	}
 
 	/** Starts listening for mobile layout changes until `destroy()`. */

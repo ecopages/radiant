@@ -13,6 +13,8 @@ export function mount(root: HTMLElement): () => void {
 		getOptions: () => [...listbox.querySelectorAll<HTMLElement>('[role="option"]')],
 		getActiveDescendantHost: () => input,
 		getOptionIdPrefix: () => 'fruit',
+		portal: true,
+		getPortalContainer: () => root,
 		onDismiss: () => setOpen(false),
 	});
 	listboxPopover.attach();
