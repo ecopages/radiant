@@ -24,9 +24,9 @@ A notification, a suggestion or a message in a feed that the user clears with a 
 ## Primitives
 
 - [PointerDragController](/docs/controllers/pointer-drag) reports the drag, so the card follows the pointer: the recipe writes `--swipe-dx` and `--swipe-opacity` on it and the CSS translates and fades it, with no transition while `data-dragging` is set and a transition on release. Its `canStart` keeps a press on the button from starting a drag.
-- [resolveSwipeDirection](/docs/helpers/decisions) decides on release from the drag's `dx`, `dy` and the time since the press: a long drag counts, and so does a short quick flick (`minVelocity`) as long as it is clearly sideways (`dominance`). Past the decision the card flies out and is dismissed; otherwise it springs back.
+- [resolveSwipeDirection](/docs/helpers/decisions) decides on release from the drag's `dx`, `dy` and `elapsedMs`: a long drag counts, and so does a short quick flick (`minVelocity`) as long as it is clearly sideways (`dominance`). Past the decision the card flies out and is dismissed; otherwise it springs back.
 
-The recipe uses one `PointerDragController` and the pure decision rather than a second `SwipeController` on the same card: `SwipeController` is itself a `PointerDragController`, so two would listen for the same press twice and finish in an order the recipe does not control. The time comes from the `timeStamp` of the press and the release, which the recipe keeps in `onStart`.
+The recipe uses one `PointerDragController` and the pure decision rather than a second `SwipeController` on the same card: `SwipeController` is itself a `PointerDragController`, so two would listen for the same press twice and finish in an order the recipe does not control. The time comes from the `elapsedMs` of the drag's end.
 
 Left to the recipe: what dismissing does (here it waits for the fly-out animation, hides the card and says so in a live region) and moving focus on to the restore button, since the focused element just left the page. A card that only needs the decision and no feedback uses [SwipeController](/docs/controllers/swipe).
 
@@ -71,7 +71,6 @@ export function mount(root: HTMLElement): () => void {
 	const dismissButton = root.querySelector<HTMLElement>('[data-dismiss]')!;
 	const restoreButton = root.querySelector<HTMLElement>('[data-restore]')!;
 	const status = root.querySelector('[data-status]')!;
-	let pressedAt = 0;
 
 	function setShown(shown: boolean, message: string): void {
 		card.hidden = !shown;
@@ -91,16 +90,15 @@ export function mount(root: HTMLElement): () => void {
 		getTarget: () => card,
 		capture: false,
 		canStart: (event) => !(event.target instanceof Element && event.target.closest('button')),
-		onStart: ({ event }) => {
-			pressedAt = event.timeStamp;
+		onStart: () => {
 			card.dataset.dragging = '';
 		},
 		onMove: ({ dx }) => follow(dx),
-		onEnd: ({ reason, dx, dy, event }) => {
+		onEnd: ({ reason, dx, dy, elapsedMs }) => {
 			delete card.dataset.dragging;
 			const direction =
 				reason === 'release'
-					? resolveSwipeDirection(dx, dy, { minVelocity: 0.5, dominance: 2, elapsedMs: event.timeStamp - pressedAt })
+					? resolveSwipeDirection(dx, dy, { minVelocity: 0.5, dominance: 2, elapsedMs })
 					: null;
 			if (!direction) {
 				follow(0);

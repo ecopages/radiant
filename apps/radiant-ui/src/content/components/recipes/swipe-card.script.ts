@@ -7,7 +7,6 @@ export function mount(root: HTMLElement): () => void {
 	const dismissButton = root.querySelector<HTMLElement>('[data-dismiss]')!;
 	const restoreButton = root.querySelector<HTMLElement>('[data-restore]')!;
 	const status = root.querySelector('[data-status]')!;
-	let pressedAt = 0;
 
 	function setShown(shown: boolean, message: string): void {
 		card.hidden = !shown;
@@ -27,16 +26,15 @@ export function mount(root: HTMLElement): () => void {
 		getTarget: () => card,
 		capture: false,
 		canStart: (event) => !(event.target instanceof Element && event.target.closest('button')),
-		onStart: ({ event }) => {
-			pressedAt = event.timeStamp;
+		onStart: () => {
 			card.dataset.dragging = '';
 		},
 		onMove: ({ dx }) => follow(dx),
-		onEnd: ({ reason, dx, dy, event }) => {
+		onEnd: ({ reason, dx, dy, elapsedMs }) => {
 			delete card.dataset.dragging;
 			const direction =
 				reason === 'release'
-					? resolveSwipeDirection(dx, dy, { minVelocity: 0.5, dominance: 2, elapsedMs: event.timeStamp - pressedAt })
+					? resolveSwipeDirection(dx, dy, { minVelocity: 0.5, dominance: 2, elapsedMs })
 					: null;
 			if (!direction) {
 				follow(0);
