@@ -32,6 +32,8 @@ Catalog terms: `packages/radiant-ui/src/components/ui/README.md`. Docs page mech
 
 **Skip the light-DOM contract** for Native presentational helpers with no coordinating script (`RuiButton`, `RuiInput`, `RuiChip`, …). For Derived Tree hosts, document `render()` ownership and generated targets; do not tell authors to stamp the inner list.
 
+Controller, helper and recipe pages are not catalog components and do not follow this skill; see "Controllers, helpers and recipes" in `apps/radiant-ui/README.md`.
+
 ## Protocol
 
 Work one component at a time. Do not invent targets, roles, or examples.

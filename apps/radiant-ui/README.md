@@ -130,12 +130,23 @@ Reuse fixtures such as option lists from `src/content/stories/demo-data.ts` when
 
 - `test/story-previews.test.browser.ts` — complex `render` output smoke tests
 - `test/canvas.test.browser.ts` — client repaint when story context args change
+- `test/controller-examples.test.browser.ts` — one test per controller page example; it mounts the `html` fence of the page and runs the page's `<slug>.script.ts`
 - `test/mdx-code-copy.test.browser.ts` — the copy button is a sibling of `pre`
 - `src/layouts/base-layout/code-copy.test.browser.ts` — the click handler copies from `data-rehype-pretty-copy`, keeps the accessible name "Copy code" and announces the result through the base layout's `role="status"` region
 
 Add a render test when a story layout is easy to regress (trees, sidebars, overlays).
 
 `*.test.ts` files run on Node and own server rendering. `*.test.browser.ts` files run in Chromium through Vitest browser mode. A component that is server-rendered and then hydrated is split in two: a `*.ssr.test.ts` writes its markup to `__snapshots__/`, and the browser test hydrates that snapshot.
+
+## Controllers, helpers and recipes
+
+Three sections sit after the component sections: `controllers`, `helpers` and `recipes` (`DOCS_SECTION_ORDER` in `src/content/components.ts`). They are not catalog components, so `NON_COMPONENT_SECTIONS` keeps them out of the component count, the home page groups and the theme lab. Each folder under `src/content/components/` has an `overview.mdx` with `order: 0`.
+
+- **Controller page** (`controllers/<slug>.mdx`): lede, import line, the example, config table, lifecycle and protected hooks. The example is `<PrimitiveExample name="<slug>">` (`src/components/primitive-example`) around plain elements, plus `controllers/<slug>.script.ts` listed in the page's `config.dependencies.scripts`. The page shows the markup in an `html` fence wrapped in `<div data-example="<slug>">` and the script in a `ts` fence; keep both identical to what runs. The frame styles the plain elements and `data-box`, `data-status` hooks from the theme variables, so add no colors of your own.
+- **Helper page** (`helpers/<slug>.mdx`): `<HelperResults rows={[{ code, result }]} />` lists calls with results computed while the page renders, so the output cannot drift from the helper.
+- **Recipe page** (`recipes/<slug>.mdx`): the shape is described in `recipes/overview.mdx`. A recipe's example follows the controller page pattern; its full source goes in a fence.
+
+Add a test to `test/controller-examples.test.browser.ts` for every interactive example. Descriptions in frontmatter are quoted when they contain a colon.
 
 ## LLM docs export
 
