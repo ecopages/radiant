@@ -32,7 +32,12 @@ describe('roving-tabindex', () => {
 		expect(horizontal).toEqual({ handled: true, index: 1, item: items[1] });
 		expect(navigateRovingTabindex({ items, current: items[1], key: 'ArrowDown' })).toEqual({ handled: false });
 
-		const vertical = navigateRovingTabindex({ items, current: items[1], key: 'ArrowDown', orientation: 'vertical' });
+		const vertical = navigateRovingTabindex({
+			items,
+			current: items[1],
+			key: 'ArrowDown',
+			orientation: 'vertical',
+		});
 		expect(vertical).toMatchObject({ handled: true, index: 2 });
 		expect(
 			navigateRovingTabindex({ items, current: items[1], key: 'ArrowRight', orientation: 'vertical' }),

@@ -162,7 +162,8 @@ describe('RuiTable single selection with Space', () => {
 
 		const rowCells = (id: string) =>
 			Array.from(host.querySelectorAll<HTMLElement>(`[data-table-row="${id}"] [data-table-cell]`));
-		const stops = () => Array.from(host.querySelectorAll<HTMLElement>('[data-table-row] [data-table-cell]')).map((c) => c.tabIndex);
+		const stops = () =>
+			Array.from(host.querySelectorAll<HTMLElement>('[data-table-row] [data-table-cell]')).map((c) => c.tabIndex);
 		expect(stops()).toEqual([0, -1, -1, -1]);
 
 		const first = rowCells('aloe')[0];

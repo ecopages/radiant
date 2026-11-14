@@ -27,7 +27,7 @@ export type RovingControllerConfig = {
  * `lib/roving-tabindex` and stay usable alone.
  *
  * Selection is the component's: moving focus does not select. Use `onMove` to select on move (tabs with automatic
- * activation, a single-select listbox). Keys outside the configured axis and Home/End are the only ones consumed
+ * activation, a single-select listbox). Only the arrows of the configured axis and Home/End are consumed
  * (`preventDefault`), so Enter, Space, typeahead and expand/collapse keys stay with the component. A key pressed on
  * an element that is not an item, or inside a nested collection, is ignored.
  *
