@@ -1,0 +1,89 @@
+[data-example='calendar-events'].primitive-example {
+	flex-direction: column;
+	align-items: stretch;
+}
+
+[data-example='calendar-events'] :where(input) {
+	padding: var(--space-1) var(--space-3);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-control);
+	background: var(--surface);
+	color: var(--on-surface);
+	font: inherit;
+}
+
+[data-example='calendar-events'] :where([data-title]) {
+	margin: 0;
+	font-size: 1rem;
+}
+
+[data-example='calendar-events'] :where([data-grid]) {
+	display: grid;
+	grid-template-columns: repeat(7, minmax(0, 1fr));
+	gap: var(--space-1);
+}
+
+[data-example='calendar-events'] :where([role='row']) {
+	display: contents;
+}
+
+[data-example='calendar-events'] :where([role='columnheader']) {
+	font-weight: normal;
+	color: var(--on-surface-container-low);
+	font-size: 0.75rem;
+	text-align: center;
+}
+
+[data-example='calendar-events'] :where([role='gridcell']) {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-1);
+	min-height: 5rem;
+	padding: var(--space-1);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-control);
+	background: var(--surface);
+	color: var(--on-surface);
+}
+
+[data-example='calendar-events'] :where([data-outside]) {
+	background: transparent;
+	color: var(--on-surface-container-low);
+}
+
+[data-example='calendar-events'] :where([data-sortable-over]) {
+	border-color: var(--primary);
+}
+
+[data-example='calendar-events'] :where([data-day]) {
+	font-size: 0.75rem;
+}
+
+[data-example='calendar-events'] :where([data-event]) {
+	padding: 0 var(--space-1);
+	border-radius: var(--radius-control);
+	background: var(--surface-container);
+	color: var(--on-surface-container);
+	cursor: grab;
+	touch-action: none;
+	user-select: none;
+}
+
+[data-example='calendar-events'] :where([data-event][data-sortable-state='lifted']) {
+	background: var(--primary);
+	color: var(--on-primary);
+	transform: translate(var(--sortable-dx, 0), var(--sortable-dy, 0));
+}
+
+[data-example='calendar-events'] :where([data-sortable-drop='before']) {
+	box-shadow: 0 -2px 0 var(--primary);
+}
+
+[data-example='calendar-events'] :where([data-sortable-drop='after']) {
+	box-shadow: 0 2px 0 var(--primary);
+}
+
+[data-example='calendar-events'] :where([role='gridcell']:focus-visible, [data-event]:focus-visible) {
+	outline: 2px solid var(--focus-ring);
+	outline-offset: 1px;
+}
