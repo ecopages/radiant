@@ -131,6 +131,8 @@ Reuse fixtures such as option lists from `src/content/stories/demo-data.ts` when
 - `test/story-previews.test.browser.ts` — complex `render` output smoke tests
 - `test/canvas.test.browser.ts` — client repaint when story context args change
 - `test/controller-examples.test.browser.ts` — one test per controller page example; it mounts the `html` fence of the page and runs the page's `<slug>.script.ts`
+- `test/recipes.test.browser.ts` and `test/recipes-lists.test.browser.ts` — the same for recipe pages, one test per recipe
+- `test/recipe-imports.test.ts` — recipe scripts import only the `controllers` and `helpers` entries
 - `test/mdx-code-copy.test.browser.ts` — the copy button is a sibling of `pre`
 - `src/layouts/base-layout/code-copy.test.browser.ts` — the click handler copies from `data-rehype-pretty-copy`, keeps the accessible name "Copy code" and announces the result through the base layout's `role="status"` region
 
@@ -146,7 +148,7 @@ Three sections sit after the component sections: `controllers`, `helpers` and `r
 - **Helper page** (`helpers/<slug>.mdx`): `<HelperResults rows={[{ code, result }]} />` lists calls with results computed while the page renders, so the output cannot drift from the helper.
 - **Recipe page** (`recipes/<slug>.mdx`): the shape is described in `recipes/overview.mdx`. A recipe's example follows the controller page pattern; its full source goes in a fence.
 
-Add a test to `test/controller-examples.test.browser.ts` for every interactive example. Descriptions in frontmatter are quoted when they contain a colon.
+Add a test to `test/controller-examples.test.browser.ts` for every interactive controller example, and to `test/recipes.test.browser.ts` or `test/recipes-lists.test.browser.ts` for a recipe. Descriptions in frontmatter are quoted when they contain a colon.
 
 ## LLM docs export
 

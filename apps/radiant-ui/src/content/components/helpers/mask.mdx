@@ -44,7 +44,7 @@ import {
 
 ## Pattern masks
 
-In a pattern `0` is a digit slot and other characters are literals. `parseMaskPattern` turns a pattern into tokens that `formatWithMask` and `extractMaskInput` use.
+In a pattern `0` is a digit slot, `a` a letter and `*` any character; `{text}` is fixed text that counts as input, `[...]` an optional section and `\` escapes the next character. Other characters are literals. `parseMaskPattern` turns a pattern into tokens that `formatWithMask` and `extractMaskInput` use.
 
 <HelperResults
 	rows={[

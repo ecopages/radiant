@@ -102,14 +102,18 @@ Create one `SortableGroup`, pass it as `group` to the controller of every contai
 
 ```ts
 const group = new SortableGroup();
-const sortable = (list: HTMLElement) =>
-	new SortableController({
+const sortable = (list: HTMLElement) => {
+	const controller = new SortableController({
 		group,
 		getContainer: () => list,
 		getItems: () => [...list.children] as HTMLElement[],
-		onChange: ({ item, to, toContainer }) =>
-			toContainer.insertBefore(item, [...toContainer.children].filter((el) => el !== item)[to] ?? null),
+		onChange: ({ item, to, toContainer }) => {
+			toContainer.insertBefore(item, [...toContainer.children].filter((el) => el !== item)[to] ?? null);
+		},
 	});
+	controller.attach();
+	return controller;
+};
 ```
 
 ## Protected hooks

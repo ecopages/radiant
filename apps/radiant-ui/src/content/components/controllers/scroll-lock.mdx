@@ -71,8 +71,8 @@ It takes no configuration: `createScrollLockController(host)` and `new ScrollLoc
 
 `attach()` sets `overflow: hidden` on the root element and pads the body by the scrollbar width that disappears. Every controller counts as one holder of one page-wide lock, so nested modals can each attach and the page scrolls again only after the last of them destroys. Attaching or destroying twice changes nothing. Only the page scrolls less: a scroll container inside the modal keeps scrolling.
 
-With a host, `createScrollLockController(host, config)` does the same on connect and disconnect; see [bindController](/docs/controllers/bind-controller).
+With a host, `createScrollLockController(host)` does the same on connect and disconnect; see [bindController](/docs/controllers/bind-controller).
 
 ## Protected hooks
 
-None. Change behavior through the config callbacks.
+None. It decides nothing an owner would change.

@@ -17,7 +17,7 @@ import { cycleValue } from '@ecopages/radiant-ui/helpers';
 cycleValue(['light', 'dark', 'system'], 'system'); // 'light'
 ```
 
-Nothing in the entry touches the DOM at import time or when called, so helpers run on the server and in tests. Anything that reads or sets DOM state is a [controller](/docs/controllers/overview) utility instead. The entry is tree-shakeable. Every export has a TSDoc example, and each page below shows the results of real calls, computed when the docs are built.
+Nothing in the entry touches the DOM at import time or when called, so helpers run on the server and in tests. Anything that reads or sets DOM state is a [controller](/docs/controllers/overview) utility instead. The entry is tree-shakeable. Exports whose result is not obvious carry a TSDoc example, and each page below shows the results of real calls, computed when the docs are built.
 
 Use a helper, not a controller, for anything that only maps input to output.
 

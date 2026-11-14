@@ -12,10 +12,7 @@ const listboxPopover = new ListboxPopoverController({
 	getOptions: () => [...listbox.querySelectorAll<HTMLElement>('[role="option"]')],
 	getActiveDescendantHost: () => input,
 	getOptionIdPrefix: () => 'fruit',
-	onDismiss: () => {
-		open = false;
-		listboxPopover.syncPopoverPosition();
-	},
+	onDismiss: () => setOpen(false),
 });
 listboxPopover.attach();
 listboxPopover.ensureOptionIds();
