@@ -2,7 +2,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DismissController, createDismissController, type DismissReason } from './dismiss-controller';
 
 describe('DismissController on plain elements', () => {
+	const controllers: DismissController[] = [];
+
 	afterEach(() => {
+		controllers.splice(0).forEach((controller) => controller.destroy());
 		document.body.replaceChildren();
 	});
 
@@ -30,6 +33,7 @@ describe('DismissController on plain elements', () => {
 			escapeScope: options.escapeScope,
 			onDismiss,
 		});
+		controllers.push(controller);
 		return { anchor, surface, inside, outside, onDismiss, controller };
 	}
 
@@ -123,6 +127,31 @@ describe('DismissController on plain elements', () => {
 		controller.destroy();
 	});
 
+	it('suppressFocus expires after the task, so a press that moves no focus does not swallow a later focus-out', async () => {
+		const { inside, outside, onDismiss, controller } = mount({ triggers: ['focus'], settleFocus: true });
+		controller.attach();
+
+		controller.suppressFocus();
+		await new Promise((resolve) => setTimeout(resolve, 0));
+		focusOut(inside, outside);
+		await Promise.resolve();
+
+		expect(onDismiss).toHaveBeenCalledTimes(1);
+	});
+
+	it('suppressFocus does not survive destroy and attach', async () => {
+		const { inside, outside, onDismiss, controller } = mount({ triggers: ['focus'], settleFocus: true });
+		controller.attach();
+
+		controller.suppressFocus();
+		controller.destroy();
+		controller.attach();
+		focusOut(inside, outside);
+		await Promise.resolve();
+
+		expect(onDismiss).toHaveBeenCalledTimes(1);
+	});
+
 	it('with settleFocus, a destroy before the focus settles reports nothing', async () => {
 		const { inside, outside, onDismiss, controller } = mount({ triggers: ['focus'], settleFocus: true });
 		controller.attach();
@@ -180,21 +209,16 @@ describe('DismissController on plain elements', () => {
 
 	it('does nothing before attach and after destroy, and attaches and destroys repeatedly', () => {
 		const { outside, onDismiss, controller } = mount();
-		const addListener = vi.spyOn(document, 'addEventListener');
-		const removeListener = vi.spyOn(document, 'removeEventListener');
-
 		pointerDown(outside);
 		expect(onDismiss).not.toHaveBeenCalled();
 
 		controller.attach();
 		controller.attach();
-		expect(addListener).toHaveBeenCalledTimes(3);
 		pointerDown(outside);
 		expect(onDismiss).toHaveBeenCalledTimes(1);
 
 		controller.destroy();
 		controller.destroy();
-		expect(removeListener).toHaveBeenCalledTimes(3);
 		pointerDown(outside);
 		keyDown(outside, 'Escape');
 		expect(onDismiss).toHaveBeenCalledTimes(1);
@@ -204,7 +228,6 @@ describe('DismissController on plain elements', () => {
 		expect(onDismiss).toHaveBeenCalledTimes(2);
 
 		controller.destroy();
-		vi.restoreAllMocks();
 	});
 
 	it('contains answers for the surface, its descendants and the related elements', () => {

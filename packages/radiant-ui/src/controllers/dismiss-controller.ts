@@ -43,6 +43,7 @@ export class DismissController implements Controller {
 	private readonly listeners: Controller[] = [];
 	private attached = false;
 	private focusSuppressed = false;
+	private suppressTimer: ReturnType<typeof setTimeout> | undefined;
 
 	constructor(private readonly config: DismissControllerConfig) {
 		const triggers = config.triggers ?? ALL_TRIGGERS;
@@ -73,6 +74,7 @@ export class DismissController implements Controller {
 	}
 
 	attach(): void {
+		this.clearSuppression();
 		this.attached = true;
 		for (const listener of this.listeners) {
 			listener.attach();
@@ -80,6 +82,7 @@ export class DismissController implements Controller {
 	}
 
 	destroy(): void {
+		this.clearSuppression();
 		this.attached = false;
 		for (const listener of this.listeners) {
 			listener.destroy();
@@ -89,9 +92,20 @@ export class DismissController implements Controller {
 	/**
 	 * Ignores the next focus-out, for a pointer press on an element whose focus change is not a dismissal, such as
 	 * the trigger that toggles the surface.
+	 *
+	 * @remarks
+	 * Expires at the end of the task, so a press that moves no focus (Safari does not focus a button on press) does
+	 * not swallow a later Tab out of the surface.
 	 */
 	suppressFocus(): void {
+		this.clearSuppression();
 		this.focusSuppressed = true;
+		this.suppressTimer = setTimeout(() => this.clearSuppression(), 0);
+	}
+
+	private clearSuppression(): void {
+		clearTimeout(this.suppressTimer);
+		this.focusSuppressed = false;
 	}
 
 	/** Whether `node` is the surface, inside it, or one of the related elements or inside one. */
@@ -144,7 +158,7 @@ export class DismissController implements Controller {
 
 	private reportFocus(next: EventTarget | null, event: FocusEvent): void {
 		if (this.focusSuppressed) {
-			this.focusSuppressed = false;
+			this.clearSuppression();
 			return;
 		}
 		if (this.isOpen() && this.isOutside(next)) {
