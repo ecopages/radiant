@@ -1,10 +1,11 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, onEvent, prop } from '@ecopages/radiant';
 import { queryRovingTabindexItems } from '@/lib/focusable-elements';
-import { applyRovingTabindex, navigateRovingTabindex } from '@/lib/roving-tabindex';
+import { navigateRovingTabindex } from '@/lib/roving-tabindex';
 import { uniqueId } from '@/lib/unique-id';
 import { createDismissController } from '../../../controllers/dismiss-controller';
 import { createPopoverController } from '../../../controllers/popover-controller';
+import { createRovingController, type RovingController } from '../../../controllers/roving-controller';
 
 export type RuiNavigationMenuProps = {
 	label?: string;
@@ -116,8 +117,16 @@ export class RuiNavigationMenu extends RadiantElement {
 	private openTimer: ReturnType<typeof setTimeout> | null = null;
 	private closeTimer: ReturnType<typeof setTimeout> | null = null;
 
+	private readonly roving: RovingController;
+
 	constructor() {
 		super();
+		this.roving = createRovingController(this, {
+			getItems: () => this.getBarItems(),
+			getTarget: (): HTMLElement => this,
+			wrap: false,
+			onMove: (item) => this.syncMenuToBarItem(item),
+		});
 		createDismissController(this, {
 			getSurface: () => this.getOpenPanel(),
 			getRelated: () => [this],
@@ -133,7 +142,7 @@ export class RuiNavigationMenu extends RadiantElement {
 
 	protected override onConnected(): void {
 		this.syncPanels();
-		this.syncBarRovingTabindex();
+		this.roving.sync();
 		this.syncPopover();
 	}
 
@@ -151,15 +160,6 @@ export class RuiNavigationMenu extends RadiantElement {
 
 	private getBarItems(): HTMLElement[] {
 		return Array.from(this.querySelectorAll<HTMLElement>('[data-navigation-item]'));
-	}
-
-	private syncBarRovingTabindex(): void {
-		const items = this.getBarItems();
-		const activeIndex = Math.max(
-			0,
-			items.findIndex((item) => item.tabIndex === 0 || item === document.activeElement),
-		);
-		applyRovingTabindex(items, activeIndex);
 	}
 
 	private isBarTrigger(item: HTMLElement): boolean {
@@ -451,34 +451,21 @@ export class RuiNavigationMenu extends RadiantElement {
 	@onEvent({ selector: '[data-navigation-item]', type: 'keydown' })
 	onBarItemKeydown(event: KeyboardEvent): void {
 		const item = (event.target as HTMLElement).closest<HTMLElement>('[data-navigation-item]');
-		if (!item || this.handleBarTriggerKeydown(event, item)) return;
-
-		const result = navigateRovingTabindex({
-			items: this.getBarItems(),
-			current: item,
-			key: event.key,
-			orientation: 'horizontal',
-			wrap: false,
-		});
-
-		if (!result.handled) return;
-		event.preventDefault();
-		this.syncMenuToBarItem(result.item);
+		if (item) this.handleBarTriggerKeydown(event, item);
 	}
 
-	private handleBarTriggerKeydown(event: KeyboardEvent, item: HTMLElement): boolean {
+	private handleBarTriggerKeydown(event: KeyboardEvent, item: HTMLElement): void {
 		const value = item.getAttribute('data-value');
-		if (!this.isBarTrigger(item) || !value) return false;
+		if (!this.isBarTrigger(item) || !value) return;
 		if (event.key === 'Enter' || event.key === ' ') {
 			event.preventDefault();
 			this.openPanel(value);
-			return true;
+			return;
 		}
-		if (event.key !== 'ArrowDown') return false;
+		if (event.key !== 'ArrowDown') return;
 		event.preventDefault();
 		if (this.openValue === value) this.focusPanelEntry(value);
 		else this.openPanel(value);
-		return true;
 	}
 
 	private syncMenuToBarItem(item: HTMLElement): void {
@@ -488,6 +475,11 @@ export class RuiNavigationMenu extends RadiantElement {
 		else this.closeMenu(false);
 	}
 
+	/**
+	 * @remarks Panel content is not a roving collection: its focusables keep their own tab order and ArrowUp/Down only
+	 * move focus between them, with the panel's items changing per open panel. It uses the pure
+	 * `navigateRovingTabindex` and no `RovingController`, which would take over their tabindex.
+	 */
 	@onEvent({ selector: '[data-navigation-panel]', type: 'keydown' })
 	onPanelKeydown(event: KeyboardEvent): void {
 		const target = event.target;
