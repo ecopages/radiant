@@ -2,7 +2,7 @@ import { bindController, type Controller, type ControllerHost } from './controll
 import { DismissController, type DismissReason } from './dismiss-controller';
 import { attachFloating } from './floating-position';
 import type { RuiPlacement } from './placement';
-import { PortalController } from './portal';
+import { PortalController } from './portal-controller';
 
 /** The anchor, floating surface, open state and placement a `PopoverController` reads from its owner. */
 export type PopoverControllerConfig = {

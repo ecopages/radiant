@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import type { ControllerHost } from './controller';
-import { PortalController, createPortalController } from './portal';
+import { PortalController, createPortalController } from './portal-controller';
 
 describe('PortalController', () => {
 	afterEach(() => {
