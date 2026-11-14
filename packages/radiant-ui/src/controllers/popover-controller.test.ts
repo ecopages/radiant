@@ -232,4 +232,31 @@ describe('PopoverController portal theming', () => {
 		expect(floating.parentNode).toBe(host);
 		expect(floating.classList.contains('dark')).toBe(false);
 	});
+
+	it('portals the surface the config returns now when it changes while open, and puts the old one back', () => {
+		const host = document.createElement('section');
+		const anchor = document.createElement('button');
+		const first = document.createElement('div');
+		const second = document.createElement('div');
+		host.append(anchor, first, second);
+		document.body.append(host);
+		const controller = new PopoverController({
+			getAnchor: () => anchor,
+			getFloating: () => first,
+			getOpen: () => true,
+			getPlacement: () => 'bottom',
+		});
+
+		controller.attach();
+		controller.sync();
+		expect(first.parentNode).toBe(document.body);
+
+		controller.updateConfig({ getFloating: () => second });
+		controller.sync();
+
+		expect(first.parentNode).toBe(host);
+		expect(second.parentNode).toBe(document.body);
+
+		controller.destroy();
+	});
 });

@@ -56,6 +56,27 @@ describe('PortalController', () => {
 		expect(node.parentNode).toBe(origin);
 	});
 
+	it('moves to the node the getter returns when attached again, putting the old one back', () => {
+		const first = setup();
+		const second = setup();
+		let current: HTMLElement | null = first.node;
+		const portal = new PortalController({ getNode: () => current });
+
+		portal.attach();
+		current = second.node;
+		portal.attach();
+
+		expect([...first.origin.children]).toEqual([first.before, first.node, first.after]);
+		expect(second.node.parentNode).toBe(document.body);
+		expect([...second.origin.children]).toEqual([second.before, second.after]);
+
+		current = null;
+		portal.attach();
+
+		expect(portal.isMounted).toBe(false);
+		expect([...second.origin.children]).toEqual([second.before, second.node, second.after]);
+	});
+
 	it('mounts nothing while the getter has no node yet', () => {
 		const portal = new PortalController({ getNode: () => null });
 
