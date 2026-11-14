@@ -79,6 +79,21 @@ describe('mountExample after the router swaps the page', () => {
 		expect(root.querySelector('[data-status]')!.textContent).toBe('Pressed a');
 	});
 
+	test('an element the router morphs into another example is mounted again under its new name', async () => {
+		const root = await load('swipe');
+		document.dispatchEvent(new CustomEvent('eco:after-swap'));
+		await scripts['../src/content/components/controllers/pointer-drag.script.ts']!();
+
+		root.innerHTML = markup('pointer-drag').match(/<div data-example="pointer-drag">([\s\S]*)<\/div>$/)![1]!;
+		root.dataset.example = 'pointer-drag';
+		document.dispatchEvent(new CustomEvent('eco:after-swap'));
+		const handle = root.querySelector<HTMLElement>('[data-box]')!;
+		press(handle, 'pointerdown', 10);
+		press(handle, 'pointermove', 40);
+
+		expect(handle.style.transform).toBe('translate(30px, 0px)');
+	});
+
 	test('the dismiss controller of the copy that left the page does not report an outside press', async () => {
 		const removed = await load('dismiss');
 		const removedStatus = removed.querySelector('[data-status]')!;
