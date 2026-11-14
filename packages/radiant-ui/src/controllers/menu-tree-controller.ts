@@ -28,8 +28,9 @@ type MenuKeyContext = {
  * by an immediate menuitem/menu sibling pair. Submenu popovers therefore stay
  * unportaled while this coordinator manages their independent positions.
  *
- * `attach()` has nothing to start: submenu popovers and timers exist only while a branch is open, so the
- * constructor is already inert. `destroy()` closes every open branch and releases its popover and timers.
+ * `attach()` starts no listener: submenu popovers and timers exist only while a branch is open, and the owner
+ * routes events to the `handle*` methods. A submenu opens only while attached, so an event the owner routes late,
+ * after `destroy()`, opens nothing. `destroy()` closes every open branch and releases its popover and timers.
  */
 export class MenuTreeController implements Controller {
 	private readonly config: MenuTreeControllerConfig;
@@ -37,18 +38,15 @@ export class MenuTreeController implements Controller {
 	private readonly openMenus = new Set<HTMLElement>();
 	private readonly openTimers = new Map<HTMLElement, ReturnType<typeof setTimeout>>();
 	private readonly closeTimers = new Map<HTMLElement, ReturnType<typeof setTimeout>>();
+	private attached = false;
 
 	constructor(config: MenuTreeControllerConfig) {
 		this.config = config;
 	}
 
-	/**
-	 * @remarks
-	 * Intentionally empty: the controller holds no listener or observer of its own. Submenu popovers and timers
-	 * exist only while a branch is open, and the owner routes events to the `handle*` methods. The method exists
-	 * so the controller satisfies `Controller` and a destroyed one can be attached again.
-	 */
-	attach(): void {}
+	attach(): void {
+		this.attached = true;
+	}
 
 	sync(): void {
 		for (const menu of this.getMenus()) {
@@ -219,6 +217,7 @@ export class MenuTreeController implements Controller {
 	}
 
 	destroy(): void {
+		this.attached = false;
 		this.closeAll();
 		for (const controller of this.popovers.values()) controller.destroy();
 		this.popovers.clear();
@@ -226,7 +225,7 @@ export class MenuTreeController implements Controller {
 
 	private openSubmenu(item: HTMLElement, focusFirst: boolean): void {
 		const submenu = this.getSubmenu(item);
-		if (!submenu || this.isDisabled(item)) return;
+		if (!this.attached || !submenu || this.isDisabled(item)) return;
 
 		this.cancelOpenFor(item);
 		this.cancelCloseFor(item);

@@ -51,6 +51,7 @@ function createTree() {
 		onActivate,
 		onCloseRoot,
 	});
+	tree.attach();
 	tree.sync();
 
 	return {
@@ -225,6 +226,24 @@ describe('MenuTreeController lifecycle on a plain element', () => {
 		expect(print.getAttribute('aria-expanded')).toBe('false');
 		expect(printMenu.hidden).toBe(true);
 		expect(observers).toHaveLength(1);
+
+		root.remove();
+	});
+
+	it('opens nothing for an event routed after destroy', () => {
+		vi.stubGlobal('ResizeObserver', RecordingResizeObserver);
+		vi.useFakeTimers();
+		const { share, print, submenu, tree, root } = createTree();
+
+		tree.destroy();
+		tree.handleClick(clickEvent(share));
+		tree.handlePointerOver(pointerEvent('pointerover', print));
+		vi.advanceTimersByTime(1000);
+
+		expect(share.getAttribute('aria-expanded')).toBe('false');
+		expect(submenu.hidden).toBe(true);
+		expect(print.getAttribute('aria-expanded')).toBe('false');
+		expect(observers).toHaveLength(0);
 
 		root.remove();
 	});
