@@ -151,15 +151,18 @@ export class RuiDateField extends RadiantElement {
 	/** @remarks Cached because a portaled popup is no longer inside the host to be found again. */
 	@query({ ref: 'popover', cache: true }) popoverTarget: HTMLElement | null;
 
-	/** @remarks The popup is a separate listener target, not host delegation, because a portaled popup is outside the host and its events never bubble through it. */
-	constructor() {
-		super();
-		createEventListenerController(this, {
-			getTarget: () => this.popoverTarget,
-			type: ['mousedown', 'rui-change'],
-			listener: (event) => this.onPopupEvent(event),
-		});
-	}
+	/**
+	 * The popup is a separate listener target, not host delegation, because a portaled popup is outside the host
+	 * and its events never bubble through it.
+	 *
+	 * @remarks It first attaches as the element connects, which can be before its children exist (markup added
+	 * after the element is in the document), so each opening attaches it again to resolve the popup that exists now.
+	 */
+	private readonly popupListener = createEventListenerController(this, {
+		getTarget: () => this.popoverTarget,
+		type: ['mousedown', 'rui-change'],
+		listener: (event) => this.onPopupEvent(event),
+	});
 
 	private get isoValue(): string {
 		return this.value ?? '';
@@ -257,6 +260,9 @@ export class RuiDateField extends RadiantElement {
 
 	@onUpdated(['open'])
 	onOpenUpdated(): void {
+		if (this.open) {
+			this.popupListener.attach();
+		}
 		this.syncToggle();
 		this.calendarPopover.syncPopover();
 	}

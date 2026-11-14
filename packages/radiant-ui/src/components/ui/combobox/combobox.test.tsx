@@ -187,4 +187,23 @@ describe('RuiCombobox', () => {
 		expect(combobox.value).toEqual(before);
 		cleanup();
 	});
+
+	it('wires the popup when its children are added after the element connects', async () => {
+		const { host: source, cleanup: cleanupSource } = mount(<RuiCombobox options={OPTIONS} placeholder="Country" />);
+		await settled();
+		const markup = (source.querySelector('rui-combobox') as RuiComboboxElement).innerHTML;
+		cleanupSource();
+
+		const combobox = document.createElement('rui-combobox') as RuiComboboxElement;
+		document.body.append(combobox);
+		combobox.innerHTML = markup;
+		await settled();
+
+		(combobox.querySelector('[data-combobox-trigger]') as HTMLElement).click();
+		await settled();
+		(combobox.querySelector('[role="option"][data-value="it"]') as HTMLElement).click();
+		await settled();
+
+		expect(combobox.value).toEqual(['it']);
+	});
 });

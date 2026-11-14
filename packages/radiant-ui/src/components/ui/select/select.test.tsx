@@ -311,4 +311,23 @@ describe('RuiSelect', () => {
 		expect(document.activeElement).toBe(trigger);
 		cleanup();
 	});
+
+	it('wires the popup when its children are added after the element connects', async () => {
+		const { host: source, cleanup: cleanupSource } = mount(<RuiSelect options={OPTIONS} label="Pets" />);
+		await settled();
+		const markup = (source.querySelector('rui-select') as RuiSelectElement).innerHTML;
+		cleanupSource();
+
+		const select = document.createElement('rui-select') as RuiSelectElement;
+		document.body.append(select);
+		select.innerHTML = markup;
+		await settled();
+
+		(select.querySelector('[data-select-trigger]') as HTMLElement).click();
+		await settled();
+		(select.querySelector('[role="option"][data-value="dog"]') as HTMLElement).click();
+		await settled();
+
+		expect(select.value).toEqual(['dog']);
+	});
 });
