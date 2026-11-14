@@ -1,0 +1,41 @@
+---
+title: Text filter
+description: 'Case- and accent-insensitive contains, for filtering a list as the user types.'
+order: 6
+---
+
+import { HelperResults } from '@/components/primitive-example/helper-results';
+import { textContains } from '@ecopages/radiant-ui/helpers';
+
+# Text filter
+
+<p class="docs-lede">Case- and accent-insensitive contains, for filtering a list as the user types.</p>
+
+Reach for it to filter options while the user types. The helpers are pure: no DOM at import time or in the call path, so they run on the server and in tests. Each result below is computed when the page is built, by running the call shown.
+
+## Import
+
+```ts
+import { textContains, TextFilterSensitivity } from '@ecopages/radiant-ui/helpers';
+```
+
+## Sensitivity
+
+`base` (default) ignores case and accents, `accent` ignores case only, `case` is a literal substring match. An empty query matches everything.
+
+<HelperResults
+	rows={[
+		{ code: "textContains('Crème brûlée', 'creme')", result: textContains('Crème brûlée', 'creme') },
+		{
+			code: "textContains('Crème brûlée', 'creme', 'accent')",
+			result: textContains('Crème brûlée', 'creme', 'accent'),
+		},
+		{
+			code: "textContains('Crème brûlée', 'crème', 'accent')",
+			result: textContains('Crème brûlée', 'crème', 'accent'),
+		},
+		{ code: "textContains('Crème brûlée', 'brûl', 'case')", result: textContains('Crème brûlée', 'brûl', 'case') },
+		{ code: "textContains('Crème brûlée', 'brul', 'case')", result: textContains('Crème brûlée', 'brul', 'case') },
+		{ code: "textContains('Crème brûlée', '')", result: textContains('Crème brûlée', '') },
+	]}
+/>

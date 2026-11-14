@@ -1,0 +1,67 @@
+---
+title: Ordering
+description: 'Where a dragged item lands, and key-driven moves, computed from rectangles.'
+order: 9
+---
+
+import { HelperResults } from '@/components/primitive-example/helper-results';
+import {
+	reorder,
+	resolveSortIndex,
+	resolveInsertIndex,
+	resolveSortKeyIndex,
+	resolveContainerKeyIndex,
+	findRectIndex,
+} from '@ecopages/radiant-ui/helpers';
+
+export const rects = [
+	{ top: 0, left: 0, width: 100, height: 20 },
+	{ top: 20, left: 0, width: 100, height: 20 },
+	{ top: 40, left: 0, width: 100, height: 20 },
+];
+
+# Ordering
+
+<p class="docs-lede">Where a dragged item lands, and key-driven moves, computed from rectangles.</p>
+
+Reach for it for your own drag logic, or to apply the change a sortable reports. The helpers are pure: no DOM at import time or in the call path, so they run on the server and in tests. Each result below is computed when the page is built, by running the call shown.
+
+## Import
+
+```ts
+import {
+	reorder,
+	resolveSortIndex,
+	resolveInsertIndex,
+	resolveSortKeyIndex,
+	resolveContainerKeyIndex,
+	findRectIndex,
+	SortableRect,
+	SortableAxis,
+} from '@ecopages/radiant-ui/helpers';
+```
+
+## Order
+
+`reorder` computes the new array from an `onChange` of [SortableController](/docs/controllers/sortable). The `resolve*` functions take item rectangles (`{ top, left, width, height }`) and a pointer point.
+
+```ts
+const rects = [
+	{ top: 0, left: 0, width: 100, height: 20 },
+	{ top: 20, left: 0, width: 100, height: 20 },
+	{ top: 40, left: 0, width: 100, height: 20 },
+];
+```
+
+<HelperResults
+	rows={[
+		{ code: "reorder(['a', 'b', 'c'], 0, 2)", result: reorder(['a', 'b', 'c'], 0, 2) },
+		{ code: 'resolveSortIndex(rects, 0, { x: 50, y: 55 })', result: resolveSortIndex(rects, 0, { x: 50, y: 55 }) },
+		{ code: 'resolveInsertIndex(rects, { x: 50, y: 25 })', result: resolveInsertIndex(rects, { x: 50, y: 25 }) },
+		{ code: 'findRectIndex(rects, { x: 50, y: 45 })', result: findRectIndex(rects, { x: 50, y: 45 }) },
+		{ code: "resolveSortKeyIndex('ArrowDown', 0, 3)", result: resolveSortKeyIndex('ArrowDown', 0, 3) },
+		{ code: "resolveSortKeyIndex('End', 0, 3)", result: resolveSortKeyIndex('End', 0, 3) },
+		{ code: "resolveSortKeyIndex('a', 0, 3)", result: resolveSortKeyIndex('a', 0, 3) },
+		{ code: "resolveContainerKeyIndex('PageDown', 0, 2)", result: resolveContainerKeyIndex('PageDown', 0, 2) },
+	]}
+/>

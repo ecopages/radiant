@@ -1,0 +1,82 @@
+---
+title: Masks
+description: 'Pattern masks such as (000) 000-0000 and locale date masks.'
+order: 3
+---
+
+import { HelperResults } from '@/components/primitive-example/helper-results';
+import {
+	applyInputMask,
+	parseMaskPattern,
+	formatWithMask,
+	extractMaskInput,
+	maskToPlaceholder,
+	buildDateMaskPattern,
+	applyDateMask,
+	getDefaultDatePlaceholder,
+	maskedDigitsToParts,
+	partsToDate,
+} from '@ecopages/radiant-ui/helpers';
+
+# Masks
+
+<p class="docs-lede">Pattern masks such as (000) 000-0000 and locale date masks.</p>
+
+Reach for them for formatted text input. The helpers are pure: no DOM at import time or in the call path, so they run on the server and in tests. Each result below is computed when the page is built, by running the call shown.
+
+## Import
+
+```ts
+import {
+	applyInputMask,
+	parseMaskPattern,
+	formatWithMask,
+	extractMaskInput,
+	maskToPlaceholder,
+	maskInputSlotCount,
+	buildDateMaskPattern,
+	applyDateMask,
+	getDefaultDatePlaceholder,
+	maskedDigitsToParts,
+	partsToDate,
+} from '@ecopages/radiant-ui/helpers';
+```
+
+## Pattern masks
+
+In a pattern `0` is a digit slot and other characters are literals. `parseMaskPattern` turns a pattern into tokens that `formatWithMask` and `extractMaskInput` use.
+
+<HelperResults
+	rows={[
+		{
+			code: "applyInputMask('5551234567', '(000) 000-0000')",
+			result: applyInputMask('5551234567', '(000) 000-0000'),
+		},
+		{ code: "maskToPlaceholder('(000) 000-0000')", result: maskToPlaceholder('(000) 000-0000') },
+		{
+			code: "formatWithMask('12345', parseMaskPattern('+00 000'))",
+			result: formatWithMask('12345', parseMaskPattern('+00 000')),
+		},
+		{
+			code: "extractMaskInput('+12 345', parseMaskPattern('+00 000'))",
+			result: extractMaskInput('+12 345', parseMaskPattern('+00 000')),
+		},
+	]}
+/>
+
+## Date masks
+
+The mask and placeholder come from the locale, and typed digits map back to a date in the locale's field order.
+
+<HelperResults
+	rows={[
+		{ code: "buildDateMaskPattern('en-US')", result: buildDateMaskPattern('en-US') },
+		{ code: "getDefaultDatePlaceholder('en-US')", result: getDefaultDatePlaceholder('en-US') },
+		{ code: "applyDateMask('08212002', '00/00/0000')", result: applyDateMask('08212002', '00/00/0000') },
+		{ code: "maskedDigitsToParts('08212002', 'en-US')", result: maskedDigitsToParts('08212002', 'en-US') },
+		{
+			code: 'partsToDate({ year: 2002, month: 8, day: 21 })',
+			result: partsToDate({ year: 2002, month: 8, day: 21 }),
+		},
+	]}
+/>
