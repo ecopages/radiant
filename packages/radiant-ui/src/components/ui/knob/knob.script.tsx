@@ -2,7 +2,7 @@ import type { JSX_PROPS } from '@ecopages/jsx';
 import { bindTo, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import { FormAssociatedElement, type FormValue } from '@ecopages/radiant/form-associated-element';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
-import { createPointerDragController } from '@/controllers/pointer-drag-controller';
+import { createPointerDragController } from '../../../controllers/pointer-drag-controller';
 import { createNumericRange, valueFromSliderKey, valuesAlignOnStep } from '../shared/numeric-range';
 import { createKnobRing, knobValueFromPointer } from './knob-geometry';
 
@@ -147,23 +147,21 @@ export class RuiKnob extends FormAssociatedElement {
 	private lastEmitted: number | null = null;
 	private rangeCommitQueued = false;
 
-	constructor() {
-		super();
-		createPointerDragController(this, {
-			getTarget: () => this.controlTarget,
-			canStart: () => !this.effectiveDisabled && !this.readOnly,
-			onStart: ({ event }) => {
-				this.lastEmitted = this.value;
-				this.controlTarget?.setAttribute('data-dragging', '');
-				this.commitFromPointer(event);
-				event.preventDefault();
-			},
-			onMove: ({ event }) => this.commitFromPointer(event),
-			onEnd: () => this.controlTarget?.removeAttribute('data-dragging'),
-		});
-	}
+	private readonly controlDrag = createPointerDragController(this, {
+		getTarget: () => this.controlTarget,
+		canStart: () => !this.effectiveDisabled && !this.readOnly,
+		onStart: ({ event }) => {
+			this.lastEmitted = this.value;
+			this.controlTarget?.setAttribute('data-dragging', '');
+			this.commitFromPointer(event);
+			event.preventDefault();
+		},
+		onMove: ({ event }) => this.commitFromPointer(event),
+		onEnd: () => this.controlTarget?.removeAttribute('data-dragging'),
+	});
 
 	protected override onConnected(): void {
+		this.controlDrag.attach();
 		this.syncPresentation();
 	}
 
@@ -313,15 +311,10 @@ export class RuiKnob extends FormAssociatedElement {
 	}
 
 	private commitFromPointer(event: PointerEvent): void {
-		const control = this.controlTarget;
-		if (!control) {
-			return;
-		}
-
 		const value = knobValueFromPointer(
 			event.clientX,
 			event.clientY,
-			control.getBoundingClientRect(),
+			this.controlTarget!.getBoundingClientRect(),
 			this.numericRange,
 		);
 		if (value != null) {

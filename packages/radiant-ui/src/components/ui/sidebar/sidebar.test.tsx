@@ -399,6 +399,42 @@ describe('RuiSidebar composition', () => {
 		cleanup();
 	});
 
+	it('resizes with a handle that arrives after the host connected', async () => {
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		root.render(
+			<RuiSidebar
+				id="primary-sidebar"
+				collapsible="off"
+				defaultWidth={220}
+				resizable
+				mobileBreakpoint={0}
+				label="Primary"
+			>
+				<span>content</span>
+			</RuiSidebar>,
+		);
+		await settled();
+		const sidebar = container.querySelector('rui-sidebar') as HTMLElement;
+		const children = [...sidebar.childNodes];
+		sidebar.replaceChildren();
+		document.body.append(sidebar);
+		sidebar.append(...children);
+		await settled();
+
+		const handle = sidebar.querySelector('[data-ref="handle"]') as HTMLElement;
+		const pointer = (target: EventTarget, type: string, x: number) =>
+			target.dispatchEvent(new PointerEvent(type, { bubbles: true, pointerId: 1, button: 0, clientX: x }));
+		const start = Number.parseFloat(paneWidthVar(sidebar));
+		pointer(handle, 'pointerdown', 100);
+		pointer(document, 'pointermove', 140);
+		pointer(document, 'pointerup', 140);
+
+		expect(Number.parseFloat(paneWidthVar(sidebar))).toBe(start + 40);
+		root.unmount();
+		sidebar.remove();
+	});
+
 	it('reflects the right-side orientation', async () => {
 		const { host, cleanup } = mount(
 			<RuiSidebar id="primary-sidebar" side="right" mobileBreakpoint={0} label="Primary">
