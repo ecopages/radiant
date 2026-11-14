@@ -208,7 +208,7 @@ describe('controller page examples', () => {
 		await userEvent.keyboard(' ');
 
 		expect(names()).toEqual(['Build', 'Plan', 'Ship']);
-		expect(status(root).textContent).not.toContain('Focus an item');
+		expect(status(root).textContent).toBe('Dropped Plan, position 2 of 3.');
 	});
 
 	test('ListboxPopoverController opens on ArrowDown, moves the active option and picks it with Enter', async () => {
