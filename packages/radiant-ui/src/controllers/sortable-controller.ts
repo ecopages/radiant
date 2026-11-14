@@ -1,13 +1,17 @@
 import { bindController, type Controller, type ControllerHost } from './controller';
 import { closestItem } from './closest-item';
 import { EventListenerController } from './event-listener-controller';
+import { PortalController } from './portal-controller';
 import { PointerDragController, type PointerDragInfo, type PointerDragEnd } from './pointer-drag-controller';
 import type { SortableGroup, SortableMember } from './sortable-group';
 import { DEFAULT_SORTABLE_MESSAGES, type SortableMessageContext, type SortableMessages } from './sortable-messages';
 import {
 	findRectIndex,
 	resolveContainerKeyIndex,
+	resolveGrabOffset,
 	resolveInsertIndex,
+	resolvePlaceholderSlot,
+	resolvePreviewPosition,
 	resolveSortIndex,
 	resolveSortKeyIndex,
 	type SortableAxis,
@@ -22,7 +26,9 @@ export const SORTABLE_DROP_ATTRIBUTE = 'data-sortable-drop';
 export const SORTABLE_ACTIVE_ATTRIBUTE = 'data-sortable-active';
 /** Set on another container of the group while the lifted item is over it. */
 export const SORTABLE_OVER_ATTRIBUTE = 'data-sortable-over';
-/** Custom properties on the lifted item: how far the pointer moved since the press, in px. Pointer sorts only. */
+/** Set on the placeholder that holds the lifted item's slot while `preview` is on. */
+export const SORTABLE_PLACEHOLDER_ATTRIBUTE = 'data-sortable-placeholder';
+/** Custom properties on the lifted item: how far the pointer moved since the press, in px. Pointer sorts only, and not with `preview`. */
 export const SORTABLE_OFFSET_PROPERTIES = { x: '--sortable-dx', y: '--sortable-dy' } as const;
 
 /** How the sort was driven. */
@@ -49,7 +55,15 @@ export type SortableState = SortableChange;
 export type SortableControllerConfig = {
 	/** The element that holds the items; it receives the press and the keys. Resolved on every `attach()`. */
 	getContainer: () => HTMLElement | null;
-	/** Read on every event, in document order, so the list can change without telling the controller. */
+	/**
+	 * Read on every event, in document order, so the list can change without telling the controller.
+	 *
+	 * @remarks
+	 * With `preview` the placeholder is a child of the container during a sort and the lifted item is not. The
+	 * controller drops the placeholder and the lifted item from what it reads, so `getItems` may return the live
+	 * children; the owner must not re-render the lists until the sort ends. `onChange` runs after the item is back
+	 * in its original place and the placeholder is gone, so a handler written without `preview` works as it is.
+	 */
 	getItems: () => HTMLElement[];
 	/** The containers that can exchange items. Without it items only reorder within this container. */
 	group?: SortableGroup;
@@ -69,6 +83,25 @@ export type SortableControllerConfig = {
 	axis?: SortableAxis;
 	/** Pointer travel in px before a press becomes a drag, so a click still clicks. Default `4`. */
 	threshold?: number;
+	/**
+	 * Lifts the item out of its container into a layer while it is sorted, where it follows the pointer, and keeps a
+	 * placeholder in its slot. Default `false`: the item stays in place and only gets attributes.
+	 *
+	 * @remarks
+	 * The item is moved by `PortalController`, so it keeps the theme variables of its ancestors and returns to its
+	 * place when the sort ends, before `onChange` runs. The controller sets only geometry on the preview (`position`,
+	 * `left`, `top`, `width`, `height`, `pointer-events`); the owner styles `[data-sortable-state='lifted']` and
+	 * `[data-sortable-placeholder]`. See `getItems` for what the lists hold during the sort.
+	 */
+	preview?: boolean;
+	/** Where the preview goes. Resolved on every lift. Default `document.body`. Only with `preview`. */
+	getPreviewLayer?: () => ParentNode;
+	/**
+	 * Builds the placeholder that holds the slot. Only with `preview`.
+	 *
+	 * @remarks Default: an empty `div`. Return an element of the kind the container allows (an `li` in a `ul`), or a clone. Either way it gets the item's width and height, `data-sortable-placeholder` and `aria-hidden`.
+	 */
+	createPlaceholder?: (item: HTMLElement) => HTMLElement;
 	/** Return `false` to ignore presses and keys. */
 	enabled?: () => boolean;
 	/** The name announced for an item. Default: its trimmed `textContent`. */
@@ -87,7 +120,20 @@ export type SortableControllerConfig = {
 
 type Candidate = { item: HTMLElement; from: number };
 
+/** What `preview` puts in place for a sort: the placeholder, the portal and the geometry it restores. */
+type Preview = {
+	placeholder: HTMLElement;
+	portal: PortalController;
+	grab: { x: number; y: number };
+	saved: Map<string, string>;
+	/** Keys and focus loss of the item once it left the container. */
+	keys: EventListenerController<HTMLElement, 'keydown' | 'focusout'>;
+};
+
+const PREVIEW_PROPERTIES = ['position', 'left', 'top', 'width', 'height', 'pointer-events', 'margin', 'box-sizing'];
+
 type Session = Omit<SortableChange, 'toContainer'> & {
+	preview: Preview | null;
 	items: HTMLElement[];
 	/** The container the item is over now, and its items. */
 	target: SortableMember;
@@ -135,7 +181,7 @@ const DEFAULT_LIFT_KEYS = [' ', 'Enter'];
  * ```
  *
  * @remarks
- * The controller never moves a node. It follows the drag, works out where the item would land, and on drop calls
+ * The controller never applies a move (with `preview` it only moves the lifted item aside, see below). It follows the drag, works out where the item would land, and on drop calls
  * `onChange({ item, from, to, source, fromContainer, toContainer })` for the owner to apply (`reorder` in
  * `sortable-order` computes a new array); returning `false` refuses the move. While a sort runs it only sets state
  * for CSS to draw: `data-sortable-active` on the container the item came from, `data-sortable-over` on another
@@ -172,12 +218,25 @@ const DEFAULT_LIFT_KEYS = [' ', 'Enter'];
  * container while the pointer nears its edge (the owner scrolls and the rects update on the next move), and
  * right-to-left arrow flipping (see `resolveSortKeyIndex`).
  *
+ * Preview: with `preview` the lifted item leaves its container while it is sorted. A placeholder (`createPlaceholder`,
+ * marked `data-sortable-placeholder`) takes its place and moves to the target slot, across the containers of a
+ * group; the item goes to `getPreviewLayer()` (default `document.body`) through `PortalController`, positioned
+ * `fixed` at the pointer minus the grip it was pressed with, or on the placeholder for a keyboard sort. Geometry is
+ * all the controller styles; colors, shadow, z-index and the look of the placeholder are the owner's CSS. The
+ * container and the other lists are read without the placeholder and the lifted item, and `from` in
+ * `resolveTargetIndex` is `null`. When the sort ends, by drop, cancel or `destroy()`, the item is back in its
+ * original place and the placeholder removed before `onChange` runs, so the owner applies the change exactly as
+ * without `preview`. Do not re-render or reorder the lists while a sort runs. Keys reach the item in the layer
+ * through a listener on the item itself, and it keeps focus (also back in place on a cancel).
+ *
  * The constructor reads nothing. `destroy()` ends a sort in progress without calling `onChange` or announcing,
  * and leaves the group.
  */
 export class SortableController implements Controller {
 	private candidate: Candidate | null = null;
 	private session: Session | null = null;
+	/** True while the controller itself moves the lifted item, so the focus change that causes is not a focus loss. */
+	private moving = false;
 
 	private readonly pointer: PointerDragController;
 	private readonly keys: EventListenerController<HTMLElement, 'keydown' | 'focusout'>;
@@ -200,14 +259,16 @@ export class SortableController implements Controller {
 		this.keys = new EventListenerController<HTMLElement, 'keydown' | 'focusout'>({
 			getTarget: config.getContainer,
 			type: ['keydown', 'focusout'],
-			listener: (event) => {
-				if (event instanceof KeyboardEvent) {
-					this.onKeydown(event);
-				} else {
-					this.onFocusOut(event);
-				}
-			},
+			listener: (event) => this.onKeyOrFocus(event),
 		});
+	}
+
+	private onKeyOrFocus(event: KeyboardEvent | FocusEvent): void {
+		if (event instanceof KeyboardEvent) {
+			this.onKeydown(event);
+		} else {
+			this.onFocusOut(event);
+		}
 	}
 
 	attach(): void {
@@ -262,25 +323,44 @@ export class SortableController implements Controller {
 		if (!session) {
 			return;
 		}
-		session.item.style.setProperty(SORTABLE_OFFSET_PROPERTIES.x, `${info.dx}px`);
-		session.item.style.setProperty(SORTABLE_OFFSET_PROPERTIES.y, `${info.dy}px`);
 		const point = { x: info.x, y: info.y };
+		const { preview } = session;
+		if (preview) {
+			const { left, top } = resolvePreviewPosition(point, preview.grab);
+			session.item.style.setProperty('left', `${left}px`);
+			session.item.style.setProperty('top', `${top}px`);
+		} else {
+			session.item.style.setProperty(SORTABLE_OFFSET_PROPERTIES.x, `${info.dx}px`);
+			session.item.style.setProperty(SORTABLE_OFFSET_PROPERTIES.y, `${info.dy}px`);
+		}
 		const eligible = this.eligibleTargets(session);
 		const hovered = findRectIndex(
 			eligible.map((member) => member.getContainer()!.getBoundingClientRect()),
 			point,
 		);
 		const target = hovered === -1 ? session.target : eligible[hovered];
-		const items = target === this.member ? session.items : target.getItems();
-		const rects = items.map((item) => item.getBoundingClientRect());
-		const from = target === this.member ? session.from : null;
+		const items = this.itemsOf(session, target);
+		const rects = (preview ? items.filter((item) => item !== session.item) : items).map((item) =>
+			item.getBoundingClientRect(),
+		);
+		const from = target === this.member && !preview ? session.from : null;
 		this.place(session, target, items, this.resolveTargetIndex(rects, from, point));
+	}
+
+	/**
+	 * The items of `target` during the sort: the snapshot taken at the lift for this container, which includes the
+	 * lifted item, and what `getItems` returns for another container without the placeholder.
+	 */
+	private itemsOf(session: Session, target: SortableMember): HTMLElement[] {
+		return target === this.member
+			? session.items
+			: target.getItems().filter((item) => item !== session.preview?.placeholder);
 	}
 
 	/**
 	 * Decides the index the lifted item takes from where the pointer is. Runs on every pointer move of a sort, over the rects of the items of the container under the pointer.
 	 *
-	 * @remarks Override to snap to a grid or change where a neighbour gives way. `from` is the item's own index when it is over its own container (its rect is in `rects`), and `null` over another container of the group. Return an index in the reordered list: `0` to `rects.length - 1` over the own container, `0` to `rects.length` over another. The default is `resolveSortIndex` and `resolveInsertIndex` with the configured axis.
+	 * @remarks Override to snap to a grid or change where a neighbour gives way. `from` is the item's own index when it is over its own container (its rect is in `rects`), and `null` over another container of the group. Return an index in the reordered list: `0` to `rects.length - 1` over the own container, `0` to `rects.length` over another. With `preview` the lifted item has left its container, so its rect is never in `rects` and `from` is always `null`: `rects` are the other items and the range is `0` to `rects.length`. The default is `resolveSortIndex` and `resolveInsertIndex` with the configured axis.
 	 */
 	protected resolveTargetIndex(
 		rects: readonly SortableRect[],
@@ -303,7 +383,9 @@ export class SortableController implements Controller {
 
 	private liftPastThreshold(info: PointerDragInfo): Session | null {
 		const threshold = this.config.threshold ?? DEFAULT_THRESHOLD_PX;
-		return Math.hypot(info.dx, info.dy) < threshold ? null : this.lift(this.candidate!, 'pointer');
+		return Math.hypot(info.dx, info.dy) < threshold
+			? null
+			: this.lift(this.candidate!, 'pointer', { x: info.startX, y: info.startY });
 	}
 
 	private onPointerEnd(end: PointerDragEnd): void {
@@ -378,7 +460,7 @@ export class SortableController implements Controller {
 		}
 		const target = eligible[next];
 		if (target !== session.target) {
-			const items = target === this.member ? session.items : target.getItems();
+			const items = this.itemsOf(session, target);
 			const slots = target === this.member ? items.length - 1 : items.length;
 			this.place(session, target, items, Math.min(session.to, slots));
 		}
@@ -397,12 +479,16 @@ export class SortableController implements Controller {
 
 	private onFocusOut(event: FocusEvent): void {
 		const session = this.session;
-		if (session?.source === 'keyboard' && !session.item.contains(event.relatedTarget as Node | null)) {
+		if (
+			!this.moving &&
+			session?.source === 'keyboard' &&
+			!session.item.contains(event.relatedTarget as Node | null)
+		) {
 			this.cancel(session);
 		}
 	}
 
-	private lift({ item, from }: Candidate, source: SortableSource): Session {
+	private lift({ item, from }: Candidate, source: SortableSource, press = { x: 0, y: 0 }): Session {
 		const fromContainer = this.config.getContainer()!;
 		const items = this.config.getItems();
 		const session: Session = {
@@ -414,12 +500,98 @@ export class SortableController implements Controller {
 			fromContainer,
 			target: this.member,
 			targetItems: items,
+			preview: null,
 		};
 		this.session = session;
+		if (this.config.preview) {
+			session.preview = this.mountPreview(session, press);
+		}
 		item.setAttribute(SORTABLE_STATE_ATTRIBUTE, 'lifted');
 		fromContainer.setAttribute(SORTABLE_ACTIVE_ATTRIBUTE, '');
 		this.announce('lift', this.context(session));
 		return session;
+	}
+
+	/**
+	 * Swaps the item for a placeholder and moves it to the layer.
+	 *
+	 * @remarks
+	 * The item loses focus when it moves, and a keyboard sort needs it back: the keys now reach the item itself,
+	 * not the container, so `keys` listens on it. `moving` keeps that blur from counting as focus leaving.
+	 */
+	private mountPreview(session: Session, press: { x: number; y: number }): Preview {
+		const { item } = session;
+		const rect = item.getBoundingClientRect();
+		const placeholder = this.config.createPlaceholder?.(item) ?? document.createElement('div');
+		placeholder.style.setProperty('box-sizing', 'border-box');
+		placeholder.style.setProperty('width', `${rect.width}px`);
+		placeholder.style.setProperty('height', `${rect.height}px`);
+		placeholder.setAttribute(SORTABLE_PLACEHOLDER_ATTRIBUTE, '');
+		placeholder.setAttribute('aria-hidden', 'true');
+		const preview: Preview = {
+			placeholder,
+			portal: new PortalController({ getNode: () => item, getContainer: this.config.getPreviewLayer }),
+			grab: resolveGrabOffset(rect, press),
+			saved: new Map(PREVIEW_PROPERTIES.map((name) => [name, item.style.getPropertyValue(name)])),
+			keys: new EventListenerController({
+				getTarget: () => item,
+				type: ['keydown', 'focusout'],
+				listener: (event) => this.onKeyOrFocus(event),
+			}),
+		};
+		item.before(placeholder);
+		this.keepFocus(() => preview.portal.attach());
+		const geometry = { position: 'fixed', margin: '0', 'box-sizing': 'border-box', 'pointer-events': 'none' };
+		for (const [name, value] of Object.entries(geometry)) {
+			item.style.setProperty(name, value);
+		}
+		item.style.setProperty('width', `${rect.width}px`);
+		item.style.setProperty('height', `${rect.height}px`);
+		item.style.setProperty('left', `${rect.left}px`);
+		item.style.setProperty('top', `${rect.top}px`);
+		preview.keys.attach();
+		return preview;
+	}
+
+	private unmountPreview(session: Session, preview: Preview): void {
+		const { item } = session;
+		preview.keys.destroy();
+		for (const [name, value] of preview.saved) {
+			if (value) {
+				item.style.setProperty(name, value);
+			} else {
+				item.style.removeProperty(name);
+			}
+		}
+		this.keepFocus(() => preview.portal.destroy());
+		preview.placeholder.remove();
+	}
+
+	/** Runs a move of the lifted item and gives focus back to what had it. */
+	private keepFocus(move: () => void): void {
+		const focused = document.activeElement;
+		this.moving = true;
+		move();
+		if (focused instanceof HTMLElement && focused.isConnected && document.activeElement !== focused) {
+			focused.focus({ preventScroll: true });
+		}
+		this.moving = false;
+	}
+
+	/** Puts the placeholder in the slot of the item's target index, and a keyboard preview on top of it. */
+	private movePlaceholder(session: Session, preview: Preview): void {
+		const others = session.targetItems.filter((item) => item !== session.item);
+		const slot = resolvePlaceholderSlot(others.length, session.to);
+		if (slot) {
+			others[slot.index][slot.side === 'before' ? 'before' : 'after'](preview.placeholder);
+		} else {
+			session.target.getContainer()!.append(preview.placeholder);
+		}
+		if (session.source === 'keyboard') {
+			const rect = preview.placeholder.getBoundingClientRect();
+			session.item.style.setProperty('left', `${rect.left}px`);
+			session.item.style.setProperty('top', `${rect.top}px`);
+		}
 	}
 
 	private place(session: Session, target: SortableMember, items: HTMLElement[], to: number): void {
@@ -435,6 +607,9 @@ export class SortableController implements Controller {
 		session.to = to;
 		if (target !== this.member) {
 			target.getContainer()!.setAttribute(SORTABLE_OVER_ATTRIBUTE, '');
+		}
+		if (session.preview) {
+			this.movePlaceholder(session, session.preview);
 		}
 		this.markLanding(session);
 		this.announce('move', this.context(session));
@@ -484,6 +659,9 @@ export class SortableController implements Controller {
 			item.removeAttribute(SORTABLE_DROP_ATTRIBUTE);
 		}
 		session.target.getContainer()!.removeAttribute(SORTABLE_OVER_ATTRIBUTE);
+		if (session.preview) {
+			this.unmountPreview(session, session.preview);
+		}
 		session.item.removeAttribute(SORTABLE_STATE_ATTRIBUTE);
 		session.item.style.removeProperty(SORTABLE_OFFSET_PROPERTIES.x);
 		session.item.style.removeProperty(SORTABLE_OFFSET_PROPERTIES.y);
