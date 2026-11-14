@@ -164,3 +164,44 @@ describe('carousel transition validation', () => {
 		expect(host.querySelector('[data-ref="root"]')!.classList.contains('rui-carousel--fade')).toBe(true);
 	});
 });
+
+describe('carousel swipe', () => {
+	const swipe = (viewport: Element, from: number, to: number) => {
+		const init = { bubbles: true, pointerId: 1, button: 0, clientY: 0 };
+		viewport.dispatchEvent(new PointerEvent('pointerdown', { ...init, clientX: from }));
+		viewport.dispatchEvent(new PointerEvent('pointerup', { ...init, clientX: to }));
+	};
+
+	it('moves to the next slide on a left swipe and back on a right swipe', async () => {
+		const host = await mountCarousel(1);
+		const viewport = host.querySelector('[data-ref="viewport"]')!;
+
+		swipe(viewport, 200, 100);
+		expect(host.index).toBe(1);
+		swipe(viewport, 100, 200);
+		expect(host.index).toBe(0);
+	});
+
+	it('flips the direction in a right-to-left carousel', async () => {
+		const host = await mountCarousel(1);
+		host.dir = 'rtl';
+		const viewport = host.querySelector('[data-ref="viewport"]')!;
+
+		swipe(viewport, 100, 200);
+		expect(host.index).toBe(1);
+	});
+
+	it('ignores a swipe that starts on a button and stops listening once disconnected', async () => {
+		const host = await mountCarousel(1);
+		const viewport = host.querySelector('[data-ref="viewport"]')!;
+		const button = document.createElement('button');
+		viewport.append(button);
+
+		swipe(button, 200, 100);
+		expect(host.index).toBe(0);
+
+		host.remove();
+		swipe(viewport, 200, 100);
+		expect(host.index).toBe(0);
+	});
+});
