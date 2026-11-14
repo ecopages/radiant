@@ -15,15 +15,19 @@ Recipes are listed in this section, below this page. A component is a compositio
 
 ## What a recipe page contains
 
-Every recipe page has the same four parts, in this order:
+Every recipe page has the same four parts, in this order. The example and the source each come in two forms, plain JavaScript and a Radiant element:
 
 1. **Goal.** The behavior in one or two sentences, and when you would want it.
 2. **Primitives.** Each controller and helper the recipe composes and why that one, one line apiece, linked to its page. A recipe states which decision it left to a config callback, a protected hook or its own code.
-3. **Example.** The recipe running on the page, in plain elements, styled from the theme variables so it follows the active theme.
-4. **Source.** The full code of the example, complete enough to paste into a project: imports, markup and script.
+3. **Example.** The recipe running on the page twice, as plain JavaScript and as a Radiant element, in plain elements styled from the theme variables so it follows the active theme.
+4. **Source.** The full code of each form, complete enough to paste into a project: imports, markup and script or element.
 
 The rule of [Composing a component](/docs/getting-started/composing) holds in every recipe: keep each controller in a variable you own, configure it with getters and callbacks, and extend a controller through its protected hooks rather than reimplementing it.
 
 ## How the examples run
 
 The source of a recipe is a `mount(root)` function: it wires the controllers to one `[data-example="<name>"]` element and returns the function that undoes it, which destroys every controller it created. The page script that registers `mount` with the docs site is left out of the code block; in your own project call `mount` where the element is created and the returned function where it is removed. See [How the examples run](/docs/controllers/overview#how-the-examples-run).
+
+## Plain and Radiant forms
+
+The plain form is the controllers with nothing else: one function, no framework, so you can see exactly what is composed. The Radiant form is how a Radiant component uses the same controllers: a `RadiantElement` calls `createX(this, config)`, and the controller attaches when the element connects and is destroyed when it disconnects. Compared with the plain form, the Radiant form has no `mount` function to call, no cleanup to return and call, and nothing to run again after a client-side navigation, because a custom element starts itself on every copy of it that enters the page. The two forms compose the same controllers and behave the same; the prose of each page says what differs.

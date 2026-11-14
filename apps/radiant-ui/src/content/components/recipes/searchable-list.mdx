@@ -9,7 +9,7 @@ import { PrimitiveExample } from '@/components/primitive-example';
 export const config = {
 	dependencies: {
 		components: [PrimitiveExample],
-		scripts: ['./searchable-list.script.ts'],
+		scripts: ['./searchable-list.script.ts', './searchable-list.element.ts'],
 	},
 };
 
@@ -32,7 +32,11 @@ Left to the recipe: reading the query, hiding the items that do not match, the D
 
 ## Example
 
-Type to filter, press ArrowDown to move into the list, use the arrow keys, and press Enter to choose.
+Type to filter, press ArrowDown to move into the list, use the arrow keys, and press Enter to choose. The two forms below behave the same.
+
+### Plain JavaScript
+
+A `mount` function wires the controllers to one element and returns the cleanup that undoes it.
 
 <PrimitiveExample name="searchable-list" layout="stack">
 	<label for="fruit-filter">Filter fruit</label>
@@ -48,8 +52,6 @@ Type to filter, press ArrowDown to move into the list, use the arrow keys, and p
 		5 of 5 shown
 	</p>
 </PrimitiveExample>
-
-## Source
 
 ```html
 <div data-example="searchable-list">
@@ -114,3 +116,101 @@ export function mount(root: HTMLElement): () => void {
 ```
 
 `mount` runs once for each example element on the page, and the function it returns undoes it; see [how the examples run](/docs/recipes/overview#how-the-examples-run).
+
+### Radiant element
+
+The same behavior as a `RadiantElement`. The markup is authored inside the element and the element finds its parts with `@query`; there is nothing to mount, clean up or run again.
+
+<PrimitiveExample host layout="stack">
+	<recipe-searchable-list>
+		<label for="radiant-fruit-filter">Filter fruit</label>
+		<input id="radiant-fruit-filter" type="search" placeholder="Type a fruit" />
+		<ul aria-label="Fruit">
+			<li>Apple</li>
+			<li>Apricot</li>
+			<li>Banana</li>
+			<li>Cherry</li>
+			<li>Date</li>
+		</ul>
+		<p data-status aria-live="polite">
+			5 of 5 shown
+		</p>
+	</recipe-searchable-list>
+</PrimitiveExample>
+
+```html
+<recipe-searchable-list>
+	<label for="radiant-fruit-filter">Filter fruit</label>
+	<input id="radiant-fruit-filter" type="search" placeholder="Type a fruit" />
+	<ul aria-label="Fruit">
+		<li>Apple</li>
+		<li>Apricot</li>
+		<li>Banana</li>
+		<li>Cherry</li>
+		<li>Date</li>
+	</ul>
+	<p data-status aria-live="polite">5 of 5 shown</p>
+</recipe-searchable-list>
+```
+
+```ts
+import { RadiantElement, customElement, onEvent, query } from '@ecopages/radiant';
+import { createRovingController } from '@ecopages/radiant-ui/controllers';
+import { textContains } from '@ecopages/radiant-ui/helpers';
+
+@customElement('recipe-searchable-list')
+export class RecipeSearchableList extends RadiantElement {
+	@query({ selector: 'input' }) private input!: HTMLInputElement;
+	@query({ selector: 'ul' }) private list!: HTMLElement;
+	@query({ selector: '[data-status]' }) private status!: HTMLElement;
+
+	private readonly roving = createRovingController(this, {
+		getItems: () => this.visible,
+		getTarget: () => this.list,
+		orientation: 'vertical',
+		wrap: false,
+	});
+
+	private get all(): HTMLElement[] {
+		return [...this.list.children] as HTMLElement[];
+	}
+
+	private get visible(): HTMLElement[] {
+		return this.all.filter((item) => !item.hidden);
+	}
+
+	override onConnected(): void {
+		this.roving.sync();
+	}
+
+	@onEvent({ selector: 'input', type: 'input' })
+	filter(): void {
+		for (const item of this.all) {
+			item.hidden = !textContains(item.textContent, this.input.value);
+		}
+		this.roving.sync();
+		const shown = this.visible.length;
+		this.status.textContent = shown === 0 ? 'No matches' : `${shown} of ${this.all.length} shown`;
+	}
+
+	@onEvent({ selector: 'input', type: 'keydown' })
+	enterList(event: KeyboardEvent): void {
+		const first = this.visible[0];
+		if (event.key === 'ArrowDown' && first) {
+			event.preventDefault();
+			this.roving.focus(first);
+		}
+	}
+
+	@onEvent({ selector: 'ul', type: 'keydown' })
+	choose(event: KeyboardEvent): void {
+		if (event.key === 'Enter' && event.target instanceof HTMLElement) {
+			this.status.textContent = `Chose ${event.target.textContent}`;
+		}
+	}
+}
+```
+
+`createRovingController(this, ...)` attaches the controller when the element connects and destroys it when the element disconnects, and `@onEvent` listeners follow the same lifecycle. So removing the element undoes everything, and the router adding a copy on another page starts it again without a mount call. `sync()` goes in `onConnected` because the items exist only after the element has its children.
+
+What the Radiant form removes: the `mount` function and its registration, the cleanup to return and call, and the re-run after a client-side navigation.

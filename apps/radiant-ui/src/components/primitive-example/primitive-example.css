@@ -134,6 +134,10 @@
 	display: none;
 }
 
+.primitive-example[data-host] > :where(*) {
+	display: contents;
+}
+
 .primitive-example[data-layout='stack'] {
 	flex-direction: column;
 	flex-wrap: nowrap;
