@@ -164,13 +164,15 @@ describe('RovingController on plain elements', () => {
 		controller.destroy();
 	});
 
-	it('ignores keys while enabled returns false', () => {
+	it('ignores keys and focus while enabled returns false', () => {
 		let enabled = false;
 		const { items, controller } = mount({ enabled: () => enabled });
 		controller.attach();
 		controller.sync();
 
 		expect(press(items[0], 'ArrowRight').defaultPrevented).toBe(false);
+		expect(controller.getActive()).toBe(items[0]);
+		items[2].focus();
 		expect(controller.getActive()).toBe(items[0]);
 
 		enabled = true;

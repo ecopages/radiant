@@ -11,7 +11,7 @@ export type RovingControllerConfig = {
 	orientation?: RovingOrientation | 'none';
 	/** Wrap past the first or last item. Default `true`. */
 	wrap?: boolean;
-	/** Return `false` to ignore keys, such as an embedded collection whose owner handles focus. */
+	/** Return `false` to ignore keys and focus, such as an embedded collection whose owner handles focus. */
 	enabled?: () => boolean;
 	/** Called after a key moved focus to `item`, so the component can select it or open its menu. */
 	onMove?: (item: HTMLElement, event: KeyboardEvent) => void;
@@ -168,6 +168,9 @@ export class RovingController implements Controller {
 	}
 
 	private onFocusIn(event: FocusEvent): void {
+		if (this.config.enabled?.() === false) {
+			return;
+		}
 		const items = this.config.getItems();
 		const item = this.findItem(items, event.target);
 		if (item && item !== this.active) {
