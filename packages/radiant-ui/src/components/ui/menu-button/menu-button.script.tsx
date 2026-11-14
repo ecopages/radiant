@@ -98,7 +98,7 @@ export class RuiMenuButton extends RadiantElement {
 	closeEvent: EventEmitter<void>;
 
 	private readonly menuTree = createMenuTreeController(this, {
-		root: this,
+		getRoot: () => this,
 		getRootMenu: () => this.menuTarget,
 		onActivate: (item) => this.activateItem(item),
 		onCloseRoot: (returnFocus) => this.setOpen(false, returnFocus ? 'trigger' : null),

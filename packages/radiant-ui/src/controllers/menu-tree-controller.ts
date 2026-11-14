@@ -8,7 +8,8 @@ const SUBMENU_GAP = 6;
 
 /** The root menu and the callbacks a `MenuTreeController` reports activation and closing to. */
 export type MenuTreeControllerConfig = {
-	root: HTMLElement;
+	/** The element whose descendants hold the menus. */
+	getRoot: () => HTMLElement;
 	getRootMenu: () => HTMLElement | null;
 	onActivate: (item: HTMLElement) => void;
 	onCloseRoot: (returnFocus: boolean) => void;
@@ -286,7 +287,7 @@ export class MenuTreeController implements Controller {
 	}
 
 	private getMenus(): HTMLElement[] {
-		return Array.from(this.config.root.querySelectorAll<HTMLElement>('[role="menu"]'));
+		return Array.from(this.config.getRoot().querySelectorAll<HTMLElement>('[role="menu"]'));
 	}
 
 	private getRootMenu(): HTMLElement | null {
@@ -302,7 +303,7 @@ export class MenuTreeController implements Controller {
 	private getDirectItem(target: EventTarget | null): HTMLElement | null {
 		if (!(target instanceof HTMLElement)) return null;
 		const item = target.closest<HTMLElement>('[role="menuitem"]');
-		return item && item.closest('[role="menu"]') && this.config.root.contains(item) ? item : null;
+		return item && item.closest('[role="menu"]') && this.config.getRoot().contains(item) ? item : null;
 	}
 
 	private getSubmenu(item: HTMLElement): HTMLElement | null {
@@ -356,7 +357,7 @@ export class MenuTreeController implements Controller {
  * ```ts
  * // in a RadiantElement subclass
  * private readonly tree = createMenuTreeController(this, {
- *   root: this,
+ *   getRoot: () => this,
  *   getRootMenu: () => this.querySelector<HTMLElement>('[role="menu"]'),
  *   onActivate: (item) => this.choose(item),
  *   onCloseRoot: (returnFocus) => this.close(returnFocus),

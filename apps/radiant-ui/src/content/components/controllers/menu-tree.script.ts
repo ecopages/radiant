@@ -5,7 +5,7 @@ const menu = root.querySelector<HTMLElement>('[role="menu"]')!;
 const status = root.querySelector('[data-status]')!;
 
 const tree = new MenuTreeController({
-	root,
+	getRoot: () => root,
 	getRootMenu: () => menu,
 	onActivate: (item) => (status.textContent = `Chose ${item.textContent}`),
 	onCloseRoot: () => tree.closeAll(),

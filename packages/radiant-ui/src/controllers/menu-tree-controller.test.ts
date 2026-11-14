@@ -46,7 +46,7 @@ function createTree() {
 	const onActivate = vi.fn();
 	const onCloseRoot = vi.fn();
 	const tree = new MenuTreeController({
-		root,
+		getRoot: () => root,
 		getRootMenu: () => rootMenu,
 		onActivate,
 		onCloseRoot,
@@ -264,6 +264,36 @@ describe('MenuTreeController lifecycle on a plain element', () => {
 		root.remove();
 	});
 
+	it('reads the root on every event, so an item outside the current root is ignored', () => {
+		const first = document.createElement('div');
+		const second = document.createElement('div');
+		first.innerHTML = '<div role="menu"><button type="button" role="menuitem">One</button></div>';
+		second.innerHTML = '<div role="menu"><button type="button" role="menuitem">Two</button></div>';
+		document.body.append(first, second);
+		const one = first.querySelector('button') as HTMLElement;
+		const two = second.querySelector('button') as HTMLElement;
+		let root = first;
+		const onActivate = vi.fn();
+		const tree = new MenuTreeController({
+			getRoot: () => root,
+			getRootMenu: () => root.querySelector('[role="menu"]'),
+			onActivate,
+			onCloseRoot: vi.fn(),
+		});
+		tree.attach();
+
+		expect(tree.handleClick(clickEvent(two))).toBe(false);
+		root = second;
+		expect(tree.handleClick(clickEvent(two))).toBe(true);
+		expect(tree.handleClick(clickEvent(one))).toBe(false);
+		expect(onActivate).toHaveBeenCalledTimes(1);
+		expect(onActivate).toHaveBeenCalledWith(two);
+
+		tree.destroy();
+		first.remove();
+		second.remove();
+	});
+
 	it('createMenuTreeController attaches on connect and destroys on cleanup', () => {
 		vi.stubGlobal('ResizeObserver', RecordingResizeObserver);
 		const connected: (() => void)[] = [];
@@ -283,7 +313,7 @@ describe('MenuTreeController lifecycle on a plain element', () => {
 				registerCleanupCallback: (callback) => cleanup.push(callback),
 			},
 			{
-				root,
+				getRoot: () => root,
 				getRootMenu: () => root.querySelector('[role="menu"]'),
 				onActivate: vi.fn(),
 				onCloseRoot: vi.fn(),

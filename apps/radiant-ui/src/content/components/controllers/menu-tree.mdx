@@ -71,7 +71,7 @@ const menu = root.querySelector<HTMLElement>('[role="menu"]')!;
 const status = root.querySelector('[data-status]')!;
 
 const tree = new MenuTreeController({
-	root,
+	getRoot: () => root,
 	getRootMenu: () => menu,
 	onActivate: (item) => (status.textContent = `Chose ${item.textContent}`),
 	onCloseRoot: () => tree.closeAll(),
@@ -87,7 +87,7 @@ menu.addEventListener('keydown', (event) => tree.handleKeydown(event));
 
 | Option        | Description                                                                |
 | ------------- | -------------------------------------------------------------------------- |
-| `root`        | The element whose descendants hold the menus.                              |
+| `getRoot`     | The element whose descendants hold the menus, read on every event.         |
 | `getRootMenu` | The top-level menu.                                                        |
 | `onActivate`  | Called with a leaf item the user activates by click, Enter or Space.       |
 | `onCloseRoot` | Called for Escape (`true`, return focus to the trigger) and Tab (`false`). |

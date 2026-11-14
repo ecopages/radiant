@@ -75,7 +75,7 @@ export class RuiMenubar extends RadiantElement {
 	changeEvent: EventEmitter<RuiMenubarChangeDetail>;
 
 	private readonly menuTree = createMenuTreeController(this, {
-		root: this,
+		getRoot: () => this,
 		getRootMenu: () => this.getOpenMenuSurface(),
 		onActivate: (item) => this.activateItem(item),
 		onCloseRoot: (returnFocus) => this.closeOpenMenu(returnFocus),
