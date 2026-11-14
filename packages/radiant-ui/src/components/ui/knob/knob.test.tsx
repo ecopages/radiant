@@ -52,6 +52,28 @@ describe('rui-knob pointer drag', () => {
 		expect(changes.length).toBeGreaterThan(0);
 	});
 
+	it('follows a control that arrives after the host connected', async () => {
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		root.render(<RuiKnob value={0} min={0} max={100} />);
+		await customElements.whenDefined('rui-knob');
+		const knob = container.querySelector('rui-knob') as RuiKnobElement;
+		const children = [...knob.childNodes];
+		knob.replaceChildren();
+		document.body.append(knob);
+		knob.append(...children);
+		await new Promise((resolve) => setTimeout(resolve, 0));
+		cleanups.push(() => root.unmount());
+
+		const control = knob.querySelector('[data-ref="control"]') as HTMLElement;
+		const rect = control.getBoundingClientRect();
+		const center = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+		pointer(control, 'pointerdown', center.x + rect.width / 2, center.y);
+
+		expect(control.hasAttribute('data-dragging')).toBe(true);
+		pointer(document, 'pointerup', center.x + rect.width / 2, center.y);
+	});
+
 	it('ignores a press while disabled', async () => {
 		const { knob, control, center, radius } = await mountKnob();
 		knob.disabled = true;

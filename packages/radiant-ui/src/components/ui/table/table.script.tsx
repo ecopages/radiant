@@ -4,7 +4,7 @@ import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { multiValuePropOptions, type ViewMultiValue } from '../shared/multi-value';
 import type { RuiCheckbox, RuiCheckboxChangeDetail } from '../checkbox/checkbox.script';
 import { createMutationController } from '../../../controllers/mutation-controller';
-import { createRovingController, type RovingController } from '../../../controllers/roving-controller';
+import { createRovingController } from '../../../controllers/roving-controller';
 
 export type RuiTableSelectionMode = 'none' | 'single' | 'multiple';
 export type RuiTableSortDirection = 'ascending' | 'descending';
@@ -99,22 +99,21 @@ export class RuiTable extends RadiantElement {
 	@event({ name: 'rui-row-action', bubbles: true, composed: true })
 	rowActionEvent: EventEmitter<RuiTableRowActionDetail>;
 
-	private readonly roving: RovingController;
+	private rovingSyncPending = false;
+	private readonly roving = createRovingController(this, {
+		getItems: () => this.getFocusableCells(),
+		getTarget: (): HTMLElement => this,
+		orientation: 'none',
+	});
 
 	constructor() {
 		super();
-		this.roving = createRovingController(this, {
-			getItems: () => this.getFocusableCells(),
-			getTarget: (): HTMLElement => this,
-			orientation: 'none',
-		});
 		createMutationController(this, {
 			getTarget: () => this,
 			options: { childList: true, subtree: true },
 			onMutate: () => this.queueRovingSync(),
 		});
 	}
-	private rovingSyncPending = false;
 
 	protected override onConnected(): void {
 		this.syncSelectionState();

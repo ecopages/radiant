@@ -4,7 +4,7 @@ import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { createDismissController } from '../../../controllers/dismiss-controller';
 import { createPopoverController } from '../../../controllers/popover-controller';
 import { createMenuTreeController } from '../../../controllers/menu-tree-controller';
-import { createRovingController, type RovingController } from '../../../controllers/roving-controller';
+import { createRovingController } from '../../../controllers/roving-controller';
 
 export type RuiMenubarProps = {
 	label?: string;
@@ -103,19 +103,18 @@ export class RuiMenubar extends RadiantElement {
 		return root?.querySelector<HTMLElement>(':scope > [role="menu"]') ?? null;
 	}
 
-	private readonly roving: RovingController;
+	private readonly roving = createRovingController(this, {
+		getItems: () => this.getTopItems(),
+		getTarget: (): HTMLElement => this,
+		onMove: (item) => {
+			if (!this.openRoot) return;
+			if (this.getMenuFor(item)) this.openMenu(item, 'first');
+			else this.closeOpenMenu();
+		},
+	});
 
 	constructor() {
 		super();
-		this.roving = createRovingController(this, {
-			getItems: () => this.getTopItems(),
-			getTarget: (): HTMLElement => this,
-			onMove: (item) => {
-				if (!this.openRoot) return;
-				if (this.getMenuFor(item)) this.openMenu(item, 'first');
-				else this.closeOpenMenu();
-			},
-		});
 		createDismissController(this, {
 			getSurface: () => this.getOpenMenuSurface(),
 			getRelated: () => [this],

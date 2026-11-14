@@ -1,7 +1,7 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, event, onEvent, onUpdated, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
-import { createRovingController, type RovingController } from '../../../controllers/roving-controller';
+import { createRovingController } from '../../../controllers/roving-controller';
 
 export type RuiTreegridProps = {
 	label?: string;
@@ -81,16 +81,11 @@ export class RuiTreegrid extends RadiantElement {
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiTreegridChangeDetail>;
 
-	private readonly roving: RovingController;
-
-	constructor() {
-		super();
-		this.roving = createRovingController(this, {
-			getItems: () => this.getVisibleCells(),
-			getTarget: (): HTMLElement => this,
-			orientation: 'none',
-		});
-	}
+	private readonly roving = createRovingController(this, {
+		getItems: () => this.getVisibleCells(),
+		getTarget: (): HTMLElement => this,
+		orientation: 'none',
+	});
 
 	private getDataRows(): HTMLElement[] {
 		return Array.from(this.querySelectorAll<HTMLElement>('[role="row"][data-row-id]'));

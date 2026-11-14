@@ -3,12 +3,8 @@ import { RadiantElement, customElement, event, onEvent, onUpdated, prop, state }
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { createRuiIconX } from '@/lib/icons/x';
 import { uniqueId } from '@/lib/unique-id';
-import { createRovingController, type RovingController } from '../../../controllers/roving-controller';
-import {
-	createSortableController,
-	type SortableChange,
-	type SortableController,
-} from '../../../controllers/sortable-controller';
+import { createRovingController } from '../../../controllers/roving-controller';
+import { createSortableController, type SortableChange } from '../../../controllers/sortable-controller';
 import { reorder } from '../../../controllers/sortable-order';
 import { multiValuePropOptions, type ViewMultiValue } from '../shared/multi-value';
 
@@ -130,29 +126,28 @@ export class RuiTagGroup extends RadiantElement {
 	 */
 	private focusAfterRender: string | null = null;
 
-	private readonly roving: RovingController;
-	private readonly sortable: SortableController;
+	private readonly roving = createRovingController(this, {
+		getItems: () => this.getVisibleTags(),
+		getTarget: (): HTMLElement => this,
+		enabled: () => this.sortable.getState() === null,
+	});
+	private readonly sortable = createSortableController(this, {
+		getContainer: () => this,
+		getItems: () => this.getVisibleTags(),
+		axis: 'both',
+		liftKeys: [' '],
+		enabled: () => this.reorderable && !this.disabled,
+		getLabel: (tag) => this.getTagLabel(tag),
+		announce: (message) => this.announce(message),
+		onChange: (change) => this.reorderTag(change),
+	});
 
-	constructor() {
-		super();
-		this.roving = createRovingController(this, {
-			getItems: () => this.getVisibleTags(),
-			getTarget: (): HTMLElement => this,
-			enabled: () => this.sortable.getState() === null,
-		});
-		this.sortable = createSortableController(this, {
-			getContainer: () => this,
-			getItems: () => this.getVisibleTags(),
-			axis: 'both',
-			liftKeys: [' '],
-			enabled: () => this.reorderable && !this.disabled,
-			getLabel: (tag) => this.getTagLabel(tag),
-			announce: (message) => this.announce(message),
-			onChange: (change) => this.reorderTag(change),
-		});
-	}
-
-	private announce(message: string): void {
+	/**
+	 * The polite live region for reorder messages.
+	 *
+	 * @remarks Created when `reorderable` is on, before the first message: a screen reader ignores a live region that is inserted already holding text.
+	 */
+	private ensureAnnouncer(): HTMLElement {
 		let region = this.querySelector<HTMLElement>('[data-tag-announcer]');
 		if (!region) {
 			region = document.createElement('span');
@@ -161,7 +156,11 @@ export class RuiTagGroup extends RadiantElement {
 			region.setAttribute('aria-live', 'polite');
 			this.append(region);
 		}
-		region.textContent = message;
+		return region;
+	}
+
+	private announce(message: string): void {
+		this.ensureAnnouncer().textContent = message;
 	}
 
 	private reorderTag({ item, from, to }: SortableChange): void {
@@ -316,6 +315,9 @@ export class RuiTagGroup extends RadiantElement {
 	}
 
 	private initialize(): void {
+		if (this.reorderable) {
+			this.ensureAnnouncer();
+		}
 		this.syncManagedList();
 		this.ensureTagIds();
 		this.syncList();
@@ -326,8 +328,11 @@ export class RuiTagGroup extends RadiantElement {
 		this.initialize();
 	}
 
-	@onUpdated(['value', 'label', 'disabled', 'selectionMode', 'embedded', 'derivedItems'])
+	@onUpdated(['value', 'label', 'disabled', 'selectionMode', 'embedded', 'derivedItems', 'reorderable'])
 	onPropsUpdated(): void {
+		if (this.reorderable) {
+			this.ensureAnnouncer();
+		}
 		this.syncManagedList();
 		this.syncList();
 		this.syncTags();
@@ -442,7 +447,11 @@ export class RuiTagGroup extends RadiantElement {
 			return;
 		}
 		const current = (event.target as HTMLElement).closest<HTMLElement>('[data-tag]');
-		if (!current) {
+		if (!current || this.sortable.getState() !== null) {
+			return;
+		}
+
+		if (event.key === ' ' && this.reorderable && !this.disabled) {
 			return;
 		}
 

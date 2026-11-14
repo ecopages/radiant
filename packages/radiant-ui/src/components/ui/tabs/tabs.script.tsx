@@ -2,7 +2,7 @@ import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, event, onEvent, onUpdated, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { createMutationController } from '../../../controllers/mutation-controller';
-import { createRovingController, type RovingController } from '../../../controllers/roving-controller';
+import { createRovingController } from '../../../controllers/roving-controller';
 
 export type RuiTabsVariant = 'ghost' | 'boxed';
 
@@ -85,17 +85,16 @@ export class RuiTabs extends RadiantElement {
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiTabsChangeDetail>;
 
-	private readonly roving: RovingController;
+	private readonly roving = createRovingController(this, {
+		getItems: () => this.getTabs(),
+		getTarget: (): HTMLElement => this,
+		onMove: (tab) => {
+			if (this.automatic) this.activateTab(tab);
+		},
+	});
 
 	constructor() {
 		super();
-		this.roving = createRovingController(this, {
-			getItems: () => this.getTabs(),
-			getTarget: (): HTMLElement => this,
-			onMove: (tab) => {
-				if (this.automatic) this.activateTab(tab);
-			},
-		});
 		createMutationController(this, {
 			getTarget: () => this,
 			options: { childList: true, subtree: true },

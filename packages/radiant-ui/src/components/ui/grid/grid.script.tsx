@@ -1,6 +1,6 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, onEvent, prop } from '@ecopages/radiant';
-import { createRovingController, type RovingController } from '../../../controllers/roving-controller';
+import { createRovingController } from '../../../controllers/roving-controller';
 
 export type RuiGridProps = {
 	label?: string;
@@ -41,16 +41,11 @@ export class RuiGrid extends RadiantElement {
 
 	@prop({ type: String, defaultValue: '' }) label: string;
 
-	private readonly roving: RovingController;
-
-	constructor() {
-		super();
-		this.roving = createRovingController(this, {
-			getItems: () => Array.from(this.querySelectorAll<HTMLElement>('[role="gridcell"]')),
-			getTarget: (): HTMLElement => this,
-			orientation: 'none',
-		});
-	}
+	private readonly roving = createRovingController(this, {
+		getItems: () => Array.from(this.querySelectorAll<HTMLElement>('[role="gridcell"]')),
+		getTarget: (): HTMLElement => this,
+		orientation: 'none',
+	});
 
 	protected override onConnected(): void {
 		this.roving.sync();

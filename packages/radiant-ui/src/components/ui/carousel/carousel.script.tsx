@@ -1,6 +1,6 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, bindTo, customElement, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
-import { createSwipeController } from '@/controllers/swipe-controller';
+import { createSwipeController } from '../../../controllers/swipe-controller';
 import { uniqueId } from '@/lib/unique-id';
 import { CarouselAutoplay } from './carousel-autoplay';
 import {
@@ -187,19 +187,17 @@ export class RuiCarousel extends RadiantElement {
 		onRunningChange: () => this.syncAriaLive(),
 	});
 
-	constructor() {
-		super();
-		createSwipeController(this, {
-			getTarget: () => this.viewportTarget,
-			exclude: (target) => this.isSwipeExcludedTarget(target),
-			onSwipe: (direction) => {
-				const forward = getComputedStyle(this).direction === 'rtl' ? 'right' : 'left';
-				this.userNavigate(direction === forward ? 1 : -1);
-			},
-		});
-	}
+	private readonly viewportSwipe = createSwipeController(this, {
+		getTarget: () => this.viewportTarget,
+		exclude: (target) => this.isSwipeExcludedTarget(target),
+		onSwipe: (direction) => {
+			const forward = getComputedStyle(this).direction === 'rtl' ? 'right' : 'left';
+			this.userNavigate(direction === forward ? 1 : -1);
+		},
+	});
 
 	protected override onConnected(): void {
+		this.viewportSwipe.attach();
 		if (this.autoplay && this.prefersReducedMotion()) {
 			this.paused = true;
 		}

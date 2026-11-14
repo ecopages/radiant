@@ -88,10 +88,24 @@ export class RuiToc extends RadiantElement<RuiTocBindings> {
 
 	private headings: HTMLElement[] = [];
 	private scrollRoot: HTMLElement | Window | null = null;
-	private scrollListener: Controller | null = null;
 	private navigationListener: Controller | null = null;
 	private pendingScrollTargetId: string | null = null;
 	private scrollRafPending = false;
+	private readonly scrollListener = new EventListenerController({
+		getTarget: () => this.scrollRoot ?? window,
+		type: 'scroll',
+		listener: () => {
+			if (this.scrollRafPending) {
+				return;
+			}
+			this.scrollRafPending = true;
+			requestAnimationFrame(() => {
+				this.updateActiveHeading();
+				this.scrollRafPending = false;
+			});
+		},
+		options: { passive: true },
+	});
 	private readonly scrollOffsetTolerance = 4;
 
 	private readConfiguredProp(propValue: string, attributeName: string): string {
@@ -222,29 +236,11 @@ export class RuiToc extends RadiantElement<RuiTocBindings> {
 			return;
 		}
 
-		const onScroll = () => {
-			if (this.scrollRafPending) {
-				return;
-			}
-			this.scrollRafPending = true;
-			requestAnimationFrame(() => {
-				this.updateActiveHeading();
-				this.scrollRafPending = false;
-			});
-		};
-
-		this.scrollListener = new EventListenerController({
-			getTarget: () => this.scrollRoot ?? window,
-			type: 'scroll',
-			listener: onScroll,
-			options: { passive: true },
-		});
 		this.scrollListener.attach();
 	}
 
 	private detachScrollListener(): void {
-		this.scrollListener?.destroy();
-		this.scrollListener = null;
+		this.scrollListener.destroy();
 	}
 
 	private isScrollAtBottom(): boolean {

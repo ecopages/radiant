@@ -14,7 +14,6 @@ import { isServer } from '@ecopages/radiant/is-server';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { parseCommaSeparated } from '@/lib/comma-separated';
 import { SIDEBAR_MOBILE_BREAKPOINT_PX } from '@/lib/viewport/breakpoints';
-import { createDismissController } from '../../../controllers/dismiss-controller';
 import type { Controller } from '../../../controllers/controller';
 import { EventListenerController, createEventListenerController } from '../../../controllers/event-listener-controller';
 import { createPointerDragController } from '../../../controllers/pointer-drag-controller';
@@ -198,6 +197,19 @@ export class RuiSidebar extends RadiantElement {
 	});
 
 	private dragStartSize = 0;
+
+	private readonly handleDrag = createPointerDragController(this, {
+		getTarget: () => this.handleTarget,
+		canStart: () => this.collapsible === 'off',
+		onStart: ({ event }) => {
+			event.preventDefault();
+			this.dragStartSize = this.paneWidth();
+		},
+		onMove: ({ dx, dy }) => {
+			const travel = isHorizontalSide(this.side) ? dx : dy;
+			this.applyWidth(this.dragStartSize + (this.side === 'right' ? -travel : travel), true);
+		},
+	});
 	private navigationListeners: Controller[] = [];
 
 	/** @remarks Set by the first update cycle so later cycles never scroll. */
@@ -229,32 +241,8 @@ export class RuiSidebar extends RadiantElement {
 		this.attachNavigationListeners();
 	}
 
-	constructor() {
-		super();
-		createPointerDragController(this, {
-			getTarget: () => this.handleTarget,
-			canStart: () => this.collapsible === 'off',
-			onStart: ({ event }) => {
-				event.preventDefault();
-				this.dragStartSize = this.paneWidth();
-			},
-			onMove: ({ dx, dy }) => {
-				const travel = isHorizontalSide(this.side) ? dx : dy;
-				this.applyWidth(this.dragStartSize + (this.side === 'right' ? -travel : travel), true);
-			},
-		});
-		createDismissController(this, {
-			getSurface: () => null,
-			getOpen: () => this.isMobile && this.isOpen(),
-			onDismiss: (_reason, event) => {
-				event.preventDefault();
-				this.setOpen(false);
-			},
-			triggers: ['escape'],
-		});
-	}
-
 	protected override onConnected(): void {
+		this.handleDrag.attach();
 		this.ensureWidthInitialized();
 		this.openControlled = this.open !== undefined;
 		this.bindMobileMediaQuery();
@@ -587,6 +575,12 @@ export class RuiSidebar extends RadiantElement {
 	@onEvent({ document: true, type: 'keydown' })
 	onHostKeydown(event: Event): void {
 		const keyboardEvent = event as KeyboardEvent;
+		if (keyboardEvent.key === 'Escape' && this.isMobile && this.isOpen()) {
+			keyboardEvent.preventDefault();
+			this.setOpen(false);
+			return;
+		}
+
 		if (isModifierPressed(keyboardEvent) && keyboardEvent.key.toLowerCase() === KEYBOARD_SHORTCUT) {
 			keyboardEvent.preventDefault();
 			this.toggle();

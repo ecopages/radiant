@@ -225,6 +225,57 @@ describe('RuiDialog scroll lock', () => {
 	});
 });
 
+describe('RuiDialog disconnect while open', () => {
+	afterEach(() => {
+		document.body.innerHTML = '';
+		document.documentElement.removeAttribute('style');
+	});
+
+	async function openFromOpener() {
+		const opener = document.createElement('button');
+		document.body.append(opener);
+		opener.focus();
+		const host = mount(
+			<RuiDialog label="A" id="a">
+				<RuiDialogBody>Sure?</RuiDialogBody>
+				<RuiDialogActions>
+					<RuiDialogClose>Cancel</RuiDialogClose>
+				</RuiDialogActions>
+			</RuiDialog>,
+		);
+		await settled();
+		const dialog = host.querySelector('rui-dialog') as DialogEl;
+		dialog.open = true;
+		await settled();
+		return { opener, dialog };
+	}
+
+	it('returns focus to the opener when the open dialog is removed', async () => {
+		const { opener, dialog } = await openFromOpener();
+		expect(dialog.contains(document.activeElement)).toBe(true);
+
+		dialog.remove();
+		await settled();
+
+		expect(document.activeElement).toBe(opener);
+	});
+
+	it('traps focus and locks scroll again when the open dialog is reconnected', async () => {
+		const { opener, dialog } = await openFromOpener();
+		const parent = dialog.parentElement!;
+		dialog.remove();
+		await settled();
+		expect(document.documentElement.style.overflow).toBe('');
+		opener.focus();
+
+		parent.append(dialog);
+		await settled();
+
+		expect(document.documentElement.style.overflow).toBe('hidden');
+		expect(dialog.contains(document.activeElement)).toBe(true);
+	});
+});
+
 describe('RuiDialogClose label', () => {
 	afterEach(() => {
 		document.body.innerHTML = '';

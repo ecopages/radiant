@@ -2,7 +2,7 @@ import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { uniqueId } from '@/lib/unique-id';
-import { createRovingController, type RovingController } from '../../../controllers/roving-controller';
+import { createRovingController } from '../../../controllers/roving-controller';
 import { syncFieldLabel } from '../shared/field-label';
 import { getListboxOptionValue } from '../shared/listbox-option';
 import { multiValuePropOptions, type ViewMultiValue } from '../shared/multi-value';
@@ -106,20 +106,15 @@ export class RuiListbox extends RadiantElement {
 	changeEvent: EventEmitter<RuiListboxChangeDetail>;
 
 	private readonly uid = uniqueId('rui-listbox');
-	private readonly roving: RovingController;
-
-	constructor() {
-		super();
-		this.roving = createRovingController(this, {
-			getItems: () => this.getOptions(),
-			getTarget: (): HTMLElement => this,
-			orientation: 'vertical',
-			enabled: () => !this.embedded,
-			onMove: (option) => {
-				if (this.selectionMode !== 'multiple') this.select(option);
-			},
-		});
-	}
+	private readonly roving = createRovingController(this, {
+		getItems: () => this.getOptions(),
+		getTarget: (): HTMLElement => this,
+		orientation: 'vertical',
+		enabled: () => !this.embedded,
+		onMove: (option) => {
+			if (this.selectionMode !== 'multiple') this.select(option);
+		},
+	});
 
 	protected override onConnected(): void {
 		this.syncLabel();

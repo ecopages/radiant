@@ -354,10 +354,43 @@ describe('RuiTagGroup', () => {
 			const first = host.querySelector('[data-value="a"]') as HTMLElement;
 
 			press(first, ' ');
-			press(first, ' ');
+			expect(first.getAttribute('data-sortable-state')).toBe('lifted');
+			expect(group.value).toEqual([]);
+			press(first, 'Enter');
+			expect(first.hasAttribute('data-sortable-state')).toBe(false);
 			expect(group.value).toEqual([]);
 			press(first, 'Enter');
 			expect(group.value).toEqual(['a']);
+			cleanup();
+		});
+
+		it('does not remove a lifted tag with Backspace or Delete', async () => {
+			const { host, cleanup } = mount(<RuiTagGroup reorderable tags={tags} />);
+			await settled();
+			const group = host.querySelector('rui-tag-group') as HTMLElement;
+			const removed = vi.fn();
+			group.addEventListener('rui-remove', removed);
+			const first = host.querySelector('[data-value="a"]') as HTMLElement;
+
+			press(first, ' ');
+			press(first, 'Backspace');
+			press(first, 'Delete');
+
+			expect(removed).not.toHaveBeenCalled();
+			expect(first.getAttribute('data-sortable-state')).toBe('lifted');
+			cleanup();
+		});
+
+		it('has its live region before the first message', async () => {
+			const { host, cleanup } = mount(<RuiTagGroup reorderable tags={tags} />);
+			await settled();
+
+			const region = host.querySelector('[aria-live]');
+			expect(region).not.toBeNull();
+			expect(region?.textContent).toBe('');
+			press(host.querySelector('[data-value="a"]') as HTMLElement, ' ');
+			expect(host.querySelector('[aria-live]')).toBe(region);
+			expect(region?.textContent).not.toBe('');
 			cleanup();
 		});
 

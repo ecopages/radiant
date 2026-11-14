@@ -165,6 +165,10 @@ export class RuiField extends RadiantElement {
 	 * JSX can add the control later without reconnecting this field.
 	 */
 	private pendingControlWrite?: { value: unknown };
+	/**
+	 * @remarks JSX can insert the control after `register()` without reconnecting
+	 * the field. Attached while a write is pending: `syncField` applies `pendingControlWrite` once the host exists.
+	 */
 	private readonly controlObserver = new MutationController({
 		getTarget: () => this,
 		options: { childList: true, subtree: true },
@@ -296,7 +300,7 @@ export class RuiField extends RadiantElement {
 						return;
 					}
 					this.pendingControlWrite = { value };
-					this.observeControlAppearance();
+					this.controlObserver.attach();
 				},
 			});
 			this.syncField();
@@ -435,14 +439,6 @@ export class RuiField extends RadiantElement {
 		if (fieldName) {
 			this.currentFormContext?.actions.handleFieldChange(fieldName);
 		}
-	}
-
-	/**
-	 * @remarks JSX can insert the control after `register()` without reconnecting
-	 * the field. `syncField` applies `pendingControlWrite` once the host exists.
-	 */
-	private observeControlAppearance(): void {
-		this.controlObserver.attach();
 	}
 
 	private clearPendingControlWrite(): void {

@@ -2,7 +2,7 @@ import type { JSX_PROPS } from '@ecopages/jsx';
 import { bindTo, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import { FormAssociatedElement, type FormValue } from '@ecopages/radiant/form-associated-element';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
-import { createPointerDragController } from '@/controllers/pointer-drag-controller';
+import { createPointerDragController } from '../../../controllers/pointer-drag-controller';
 import { numberArrayTransform, type ViewNumericValue } from '../shared/multi-value';
 import {
 	createNumericRange,
@@ -343,18 +343,16 @@ export class RuiSlider extends FormAssociatedElement {
 	private pending: number[] | null = null;
 	private lastEmitted = '';
 
-	constructor() {
-		super();
-		createPointerDragController(this, {
-			getTarget: () => this.rangeTrack,
-			canStart: () => !this.effectiveDisabled && !this.readOnly,
-			onStart: ({ event }) => this.startDrag(event),
-			onMove: ({ event }) => this.dragTo(event),
-			onEnd: ({ reason }) => (reason === 'release' ? this.commit() : this.revert()),
-		});
-	}
+	private readonly trackDrag = createPointerDragController(this, {
+		getTarget: () => this.rangeTrack,
+		canStart: () => !this.effectiveDisabled && !this.readOnly,
+		onStart: ({ event }) => this.startDrag(event),
+		onMove: ({ event }) => this.dragTo(event),
+		onEnd: ({ reason }) => (reason === 'release' ? this.commit() : this.revert()),
+	});
 
 	protected override onConnected(): void {
+		this.trackDrag.attach();
 		this.adoptLegacyRangeAttributes();
 		this.syncChrome();
 		this.syncValues(this.committedValues());

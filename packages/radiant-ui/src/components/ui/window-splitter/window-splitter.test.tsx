@@ -140,4 +140,28 @@ describe('RuiWindowSplitter input handling', () => {
 		expect(splitter.value).toBe(80);
 		cleanup();
 	});
+
+	it('drags a separator that arrives after the host connected', async () => {
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		root.render(<RuiWindowSplitter primary="A" secondary="B" />);
+		await settled();
+		const splitter = container.querySelector('rui-window-splitter') as RuiWindowSplitterElement;
+		const children = [...splitter.childNodes];
+		splitter.replaceChildren();
+		document.body.append(splitter);
+		splitter.append(...children);
+		await settled();
+
+		const separator = splitter.querySelector('[data-ref="separator"]') as HTMLElement;
+		const rect = splitter.getBoundingClientRect();
+		separator.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 1, bubbles: true }));
+		document.dispatchEvent(
+			new PointerEvent('pointermove', { pointerId: 1, clientX: rect.left + rect.width * 0.7 }),
+		);
+		document.dispatchEvent(new PointerEvent('pointerup', { pointerId: 1 }));
+
+		expect(splitter.value).toBeCloseTo(70, 0);
+		root.unmount();
+	});
 });
