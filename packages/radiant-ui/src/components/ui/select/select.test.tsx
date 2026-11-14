@@ -47,6 +47,25 @@ describe('RuiSelect', () => {
 		document.body.innerHTML = '';
 	});
 
+	it('sizes and positions the popup to its trigger again after the element is moved and reconnected', async () => {
+		const { host, cleanup } = mount(<RuiSelect options={OPTIONS} placeholder="Animals" />);
+		await settled();
+		const select = host.querySelector('rui-select') as HTMLElement;
+
+		select.remove();
+		host.append(select);
+		await settled();
+
+		const trigger = select.querySelector('[data-select-trigger]') as HTMLElement;
+		const popup = select.querySelector('[data-select-listbox]') as HTMLElement;
+		trigger.click();
+		await settled();
+
+		expect(popup.hidden).toBe(false);
+		expect(popup.style.width).toBe(`${trigger.offsetWidth}px`);
+		cleanup();
+	});
+
 	it('keeps the popup open in multiple mode unless shouldCloseOnSelect is set', async () => {
 		const { host, cleanup } = mount(<RuiSelect selectionMode="multiple" options={OPTIONS} placeholder="Animals" />);
 		await settled();
