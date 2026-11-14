@@ -60,6 +60,31 @@ describe('PointerDragController on plain elements', () => {
 		expect(onStart).not.toHaveBeenCalled();
 	});
 
+	it('starts only for presses inside the handle, resolved at press time', () => {
+		let handle: HTMLElement | null = null;
+		const { element, other, onStart, controller } = mount({ getHandle: () => handle });
+		controller.attach();
+
+		fire(element, 'pointerdown');
+		expect(onStart).not.toHaveBeenCalled();
+
+		handle = document.createElement('span');
+		element.append(handle);
+		fire(other, 'pointerdown');
+		fire(element, 'pointerdown');
+		expect(onStart).not.toHaveBeenCalled();
+
+		fire(handle, 'pointerdown');
+		expect(onStart).toHaveBeenCalledTimes(1);
+		fire(handle, 'pointerup');
+
+		handle.remove();
+		handle = document.createElement('span');
+		element.append(handle);
+		fire(handle, 'pointerdown');
+		expect(onStart).toHaveBeenCalledTimes(2);
+	});
+
 	it('captures the pointer and reports start with the press position', () => {
 		const { element, setCapture, onStart, controller } = mount();
 		controller.attach();

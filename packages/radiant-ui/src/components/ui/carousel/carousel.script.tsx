@@ -187,17 +187,20 @@ export class RuiCarousel extends RadiantElement {
 		onRunningChange: () => this.syncAriaLive(),
 	});
 
-	private readonly viewportSwipe = createSwipeController(this, {
-		getTarget: () => this.viewportTarget,
-		exclude: (target) => this.isSwipeExcludedTarget(target),
-		onSwipe: (direction) => {
-			const forward = getComputedStyle(this).direction === 'rtl' ? 'right' : 'left';
-			this.userNavigate(direction === forward ? 1 : -1);
-		},
-	});
+	constructor() {
+		super();
+		createSwipeController(this, {
+			getTarget: (): HTMLElement => this,
+			getHandle: () => this.viewportTarget,
+			exclude: (target) => this.isSwipeExcludedTarget(target),
+			onSwipe: (direction) => {
+				const forward = getComputedStyle(this).direction === 'rtl' ? 'right' : 'left';
+				this.userNavigate(direction === forward ? 1 : -1);
+			},
+		});
+	}
 
 	protected override onConnected(): void {
-		this.viewportSwipe.attach();
 		if (this.autoplay && this.prefersReducedMotion()) {
 			this.paused = true;
 		}

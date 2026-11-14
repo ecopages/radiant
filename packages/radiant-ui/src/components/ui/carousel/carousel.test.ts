@@ -193,6 +193,26 @@ describe('carousel swipe', () => {
 		expect(host.index).toBe(1);
 	});
 
+	it.each(['replaced', 'removed and added back later'])(
+		'swipes a viewport that is %s after connect',
+		async (change) => {
+			const host = await mountCarousel(1);
+			const viewport = host.querySelector<HTMLElement>('[data-ref="viewport"]')!;
+			const fresh = viewport.cloneNode(true) as HTMLElement;
+			if (change === 'replaced') {
+				viewport.replaceWith(fresh);
+			} else {
+				const marker = document.createComment('');
+				viewport.replaceWith(marker);
+				await new Promise((resolve) => setTimeout(resolve, 0));
+				marker.replaceWith(fresh);
+			}
+
+			swipe(fresh, 200, 100);
+			expect(host.index).toBe(1);
+		},
+	);
+
 	it('flips the direction in a right-to-left carousel', async () => {
 		const host = await mountCarousel(1);
 		host.dir = 'rtl';

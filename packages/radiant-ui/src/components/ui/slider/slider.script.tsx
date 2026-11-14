@@ -343,16 +343,19 @@ export class RuiSlider extends FormAssociatedElement {
 	private pending: number[] | null = null;
 	private lastEmitted = '';
 
-	private readonly trackDrag = createPointerDragController(this, {
-		getTarget: () => this.rangeTrack,
-		canStart: () => !this.effectiveDisabled && !this.readOnly,
-		onStart: ({ event }) => this.startDrag(event),
-		onMove: ({ event }) => this.dragTo(event),
-		onEnd: ({ reason }) => (reason === 'release' ? this.commit() : this.revert()),
-	});
+	constructor() {
+		super();
+		createPointerDragController(this, {
+			getTarget: (): HTMLElement => this,
+			getHandle: () => this.rangeTrack,
+			canStart: () => !this.effectiveDisabled && !this.readOnly,
+			onStart: ({ event }) => this.startDrag(event),
+			onMove: ({ event }) => this.dragTo(event),
+			onEnd: ({ reason }) => (reason === 'release' ? this.commit() : this.revert()),
+		});
+	}
 
 	protected override onConnected(): void {
-		this.trackDrag.attach();
 		this.adoptLegacyRangeAttributes();
 		this.syncChrome();
 		this.syncValues(this.committedValues());

@@ -141,6 +141,32 @@ describe('RuiWindowSplitter input handling', () => {
 		cleanup();
 	});
 
+	it.each(['replaced', 'removed and added back later'])(
+		'drags a separator that is %s after connect',
+		async (change) => {
+			const { splitter, separator, cleanup } = await mountSplitter();
+			const fresh = separator.cloneNode(true) as HTMLElement;
+			if (change === 'replaced') {
+				separator.replaceWith(fresh);
+			} else {
+				const marker = document.createComment('');
+				separator.replaceWith(marker);
+				await settled();
+				marker.replaceWith(fresh);
+			}
+
+			const rect = splitter.getBoundingClientRect();
+			fresh.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 1, bubbles: true }));
+			document.dispatchEvent(
+				new PointerEvent('pointermove', { pointerId: 1, clientX: rect.left + rect.width * 0.7 }),
+			);
+			document.dispatchEvent(new PointerEvent('pointerup', { pointerId: 1 }));
+
+			expect(splitter.value).toBeCloseTo(70, 0);
+			cleanup();
+		},
+	);
+
 	it('drags a separator that arrives after the host connected', async () => {
 		const container = document.createElement('div');
 		const root = createRoot(container);

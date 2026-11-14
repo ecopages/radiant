@@ -198,18 +198,22 @@ export class RuiSidebar extends RadiantElement {
 
 	private dragStartSize = 0;
 
-	private readonly handleDrag = createPointerDragController(this, {
-		getTarget: () => this.handleTarget,
-		canStart: () => this.collapsible === 'off',
-		onStart: ({ event }) => {
-			event.preventDefault();
-			this.dragStartSize = this.paneWidth();
-		},
-		onMove: ({ dx, dy }) => {
-			const travel = isHorizontalSide(this.side) ? dx : dy;
-			this.applyWidth(this.dragStartSize + (this.side === 'right' ? -travel : travel), true);
-		},
-	});
+	constructor() {
+		super();
+		createPointerDragController(this, {
+			getTarget: (): HTMLElement => this,
+			getHandle: () => this.handleTarget,
+			canStart: () => this.collapsible === 'off',
+			onStart: ({ event }) => {
+				event.preventDefault();
+				this.dragStartSize = this.paneWidth();
+			},
+			onMove: ({ dx, dy }) => {
+				const travel = isHorizontalSide(this.side) ? dx : dy;
+				this.applyWidth(this.dragStartSize + (this.side === 'right' ? -travel : travel), true);
+			},
+		});
+	}
 	private navigationListeners: Controller[] = [];
 
 	/** @remarks Set by the first update cycle so later cycles never scroll. */
@@ -242,7 +246,6 @@ export class RuiSidebar extends RadiantElement {
 	}
 
 	protected override onConnected(): void {
-		this.handleDrag.attach();
 		this.ensureWidthInitialized();
 		this.openControlled = this.open !== undefined;
 		this.bindMobileMediaQuery();

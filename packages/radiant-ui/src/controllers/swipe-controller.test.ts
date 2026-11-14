@@ -113,6 +113,21 @@ describe('SwipeController on plain elements', () => {
 		expect(onSwipe).toHaveBeenCalledTimes(1);
 	});
 
+	it('swipes only from inside the handle, resolved at press time', () => {
+		let handle: HTMLElement | null = null;
+		const { inner, element, onSwipe, controller } = mount({ getHandle: () => handle });
+		controller.attach();
+
+		pointer(inner, 'pointerdown', { x: 200, y: 0 });
+		pointer(element, 'pointerup', { x: 60, y: 0 });
+		expect(onSwipe).not.toHaveBeenCalled();
+
+		handle = inner;
+		pointer(inner, 'pointerdown', { x: 200, y: 0 });
+		pointer(element, 'pointerup', { x: 60, y: 0 });
+		expect(onSwipe).toHaveBeenCalledTimes(1);
+	});
+
 	it('ends the gesture when the pointer is released outside the element, and ignores a later stray release', () => {
 		const { element, onSwipe, controller } = mount();
 		controller.attach();

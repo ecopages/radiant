@@ -38,6 +38,15 @@ export type PointerDragEnd = PointerDragInfo & {
 export type PointerDragControllerConfig = {
 	/** Where a press starts a drag and where the pointer is captured; resolved on every `attach()`. */
 	getTarget: () => HTMLElement | null;
+	/**
+	 * Limits presses to this element's subtree; resolved on every press.
+	 *
+	 * @remarks
+	 * Lets `getTarget` be the host, which always exists, while a child that a re-render can replace or that is added
+	 * after connect (a track, a handle) stays the only place a drag starts. `null` means the child is absent and no
+	 * press starts a drag.
+	 */
+	getHandle?: () => Element | null;
 	/** Refuses a press (disabled or read-only control, a child that handles its own presses). The primary button is already required. */
 	canStart?: (event: PointerEvent) => boolean;
 	/**
@@ -122,9 +131,12 @@ export class PointerDragController implements Controller {
 	/**
 	 * Decides whether a press starts a drag. Runs on every `pointerdown` on the target while no drag is running.
 	 *
-	 * @remarks Override to change which presses count, such as also taking the middle button. The default accepts the primary button when `canStart` does not refuse.
+	 * @remarks Override to change which presses count, such as also taking the middle button. The default accepts the primary button on the `getHandle` subtree when `canStart` does not refuse.
 	 */
 	protected acceptsPress(event: PointerEvent): boolean {
+		if (this.config.getHandle && !this.config.getHandle()?.contains(event.target as Node)) {
+			return false;
+		}
 		return event.button === 0 && this.config.canStart?.(event) !== false;
 	}
 

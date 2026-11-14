@@ -147,21 +147,24 @@ export class RuiKnob extends FormAssociatedElement {
 	private lastEmitted: number | null = null;
 	private rangeCommitQueued = false;
 
-	private readonly controlDrag = createPointerDragController(this, {
-		getTarget: () => this.controlTarget,
-		canStart: () => !this.effectiveDisabled && !this.readOnly,
-		onStart: ({ event }) => {
-			this.lastEmitted = this.value;
-			this.controlTarget?.setAttribute('data-dragging', '');
-			this.commitFromPointer(event);
-			event.preventDefault();
-		},
-		onMove: ({ event }) => this.commitFromPointer(event),
-		onEnd: () => this.controlTarget?.removeAttribute('data-dragging'),
-	});
+	constructor() {
+		super();
+		createPointerDragController(this, {
+			getTarget: (): HTMLElement => this,
+			getHandle: () => this.controlTarget,
+			canStart: () => !this.effectiveDisabled && !this.readOnly,
+			onStart: ({ event }) => {
+				this.lastEmitted = this.value;
+				this.controlTarget?.setAttribute('data-dragging', '');
+				this.commitFromPointer(event);
+				event.preventDefault();
+			},
+			onMove: ({ event }) => this.commitFromPointer(event),
+			onEnd: () => this.controlTarget?.removeAttribute('data-dragging'),
+		});
+	}
 
 	protected override onConnected(): void {
-		this.controlDrag.attach();
 		this.syncPresentation();
 	}
 

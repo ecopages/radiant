@@ -74,6 +74,27 @@ describe('rui-knob pointer drag', () => {
 		pointer(document, 'pointerup', center.x + rect.width / 2, center.y);
 	});
 
+	it.each(['replaced', 'removed and added back later'])(
+		'drags a control that is %s after connect',
+		async (change) => {
+			const { knob, control, center, radius } = await mountKnob();
+			const fresh = control.cloneNode(true) as HTMLElement;
+			if (change === 'replaced') {
+				control.replaceWith(fresh);
+			} else {
+				const marker = document.createComment('');
+				control.replaceWith(marker);
+				await new Promise((resolve) => setTimeout(resolve, 0));
+				marker.replaceWith(fresh);
+			}
+
+			pointer(fresh, 'pointerdown', center.x + radius, center.y);
+			pointer(document, 'pointerup', center.x + radius, center.y);
+
+			expect(knob.value).toBeGreaterThan(0);
+		},
+	);
+
 	it('ignores a press while disabled', async () => {
 		const { knob, control, center, radius } = await mountKnob();
 		knob.disabled = true;

@@ -6,6 +6,8 @@ import { resolveSwipeDirection, type SwipeDirection, type SwipeOptions } from '.
 export type SwipeControllerConfig = SwipeOptions & {
 	/** Resolved on every `attach()`; `null` listens to nothing. */
 	getTarget: () => HTMLElement | null;
+	/** Limits gestures to this element's subtree, resolved on every press; see `PointerDragControllerConfig.getHandle`. */
+	getHandle?: () => Element | null;
 	/** A gesture that starts on a target this returns `true` for is ignored, such as a button inside the surface. */
 	exclude?: (target: EventTarget | null) => boolean;
 	/** Called on the pointer-up that ends a swipe, with the direction of travel from the press point. */
@@ -28,6 +30,7 @@ export class SwipeController implements Controller {
 	constructor(private readonly config: SwipeControllerConfig) {
 		this.drag = new PointerDragController({
 			getTarget: config.getTarget,
+			getHandle: config.getHandle,
 			capture: false,
 			canStart: (event) => !config.exclude?.(event.target),
 			onEnd: ({ reason, dx, dy, event }) => {

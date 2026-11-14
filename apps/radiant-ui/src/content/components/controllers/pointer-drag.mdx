@@ -66,14 +66,15 @@ drag.attach();
 
 ## Config
 
-| Option      | Description                                                                                                                               |
-| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `getTarget` | Where a press starts a drag and where the pointer is captured. Resolved on every `attach()`.                                              |
-| `canStart`  | Refuses a press, such as a disabled control. The primary button is already required.                                                      |
-| `capture`   | Capture the pointer on the target. Default `true`. Set `false` when the target is a container whose children must keep receiving `click`. |
-| `onStart`   | Called on the accepted press, after capture.                                                                                              |
-| `onMove`    | Called on every move with the position, the delta from the press and `elementUnderPointer()`.                                             |
-| `onEnd`     | Called once per drag, however it ends: `release`, `cancel` or `destroy`.                                                                  |
+| Option      | Description                                                                                                                                                                                                                 |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `getTarget` | Where a press starts a drag and where the pointer is captured. Resolved on every `attach()`.                                                                                                                                |
+| `getHandle` | Limits presses to this element's subtree, resolved on every press. Pass the host as `getTarget` and a child that a re-render can replace or that arrives after connect as `getHandle`. `null` means no press starts a drag. |
+| `canStart`  | Refuses a press, such as a disabled control. The primary button is already required.                                                                                                                                        |
+| `capture`   | Capture the pointer on the target. Default `true`. Set `false` when the target is a container whose children must keep receiving `click`.                                                                                   |
+| `onStart`   | Called on the accepted press, after capture.                                                                                                                                                                                |
+| `onMove`    | Called on every move with the position, the delta from the press and `elementUnderPointer()`.                                                                                                                               |
+| `onEnd`     | Called once per drag, however it ends: `release`, `cancel` or `destroy`.                                                                                                                                                    |
 
 ## Lifecycle
 
@@ -85,6 +86,6 @@ With a host, `createPointerDragController(host, config)` does the same on connec
 
 Extend the class and override these to change how it decides. A component never extends a controller; a subclass is registered with `bindController`.
 
-| Hook                  | Description                                                                                                                                                                                                                                                       |
-| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `acceptsPress(event)` | Decides whether a press starts a drag. Runs on every `pointerdown` on the target while no drag is running. Override to change which presses count, such as also taking the middle button. The default accepts the primary button when `canStart` does not refuse. |
+| Hook                  | Description                                                                                                                                                                                                                                                                                  |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `acceptsPress(event)` | Decides whether a press starts a drag. Runs on every `pointerdown` on the target while no drag is running. Override to change which presses count, such as also taking the middle button. The default accepts the primary button on the `getHandle` subtree when `canStart` does not refuse. |

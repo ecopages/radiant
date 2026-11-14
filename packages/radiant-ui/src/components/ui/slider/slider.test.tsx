@@ -34,6 +34,30 @@ describe('RuiSlider pointer drag', () => {
 		document.body.innerHTML = '';
 	});
 
+	it.each(['replaced', 'removed and added back later'])('drags a track that is %s after connect', async (change) => {
+		const { host, cleanup } = mount(<RuiSlider value={0} min={0} max={100} />);
+		await settled();
+		const slider = host.querySelector('rui-slider') as RuiSliderElement;
+		const track = slider.querySelector('[data-ref="rangeTrack"]') as HTMLElement;
+		const fresh = track.cloneNode(true) as HTMLElement;
+		if (change === 'replaced') {
+			track.replaceWith(fresh);
+		} else {
+			const marker = document.createComment('');
+			track.replaceWith(marker);
+			await settled();
+			marker.replaceWith(fresh);
+		}
+
+		const rect = fresh.getBoundingClientRect();
+		const init = { bubbles: true, pointerId: 1, button: 0, clientY: rect.top + rect.height / 2 };
+		fresh.dispatchEvent(new PointerEvent('pointerdown', { ...init, clientX: rect.left + rect.width * 0.5 }));
+		document.dispatchEvent(new PointerEvent('pointerup', { ...init, clientX: rect.left + rect.width * 0.5 }));
+
+		expect(slider.value[0]).toBeGreaterThan(30);
+		cleanup();
+	});
+
 	it('drags a track that arrives after the host connected', async () => {
 		const container = document.createElement('div');
 		const root = createRoot(container);

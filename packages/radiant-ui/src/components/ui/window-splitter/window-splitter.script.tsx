@@ -98,13 +98,16 @@ export class RuiWindowSplitter extends RadiantElement {
 	@event({ name: 'rui-splitter-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiWindowSplitterChangeDetail>;
 
-	private readonly separatorDrag = createPointerDragController(this, {
-		getTarget: () => this.separatorTarget,
-		onMove: ({ x, y }) => this.dragTo(x, y),
-	});
+	constructor() {
+		super();
+		createPointerDragController(this, {
+			getTarget: (): HTMLElement => this,
+			getHandle: () => this.separatorTarget,
+			onMove: ({ x, y }) => this.dragTo(x, y),
+		});
+	}
 
 	protected override onConnected(): void {
-		this.separatorDrag.attach();
 		this.clampValue();
 		this.syncSeparatorPresentation();
 		this.applySize();
