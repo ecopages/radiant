@@ -1,0 +1,195 @@
+import { bindController, type Controller, type ControllerHost } from './controller';
+import { EventListenerController } from './event-listener-controller';
+
+/** What dismissed a surface: a pointer press outside it, focus leaving it, or Escape. */
+export type DismissReason = 'pointer' | 'focus' | 'escape';
+
+/** What `DismissController` watches, which triggers it hears and what it calls back. */
+export type DismissControllerConfig = {
+	/** The surface being dismissed (popover content, dialog panel, drawer). */
+	getSurface: () => HTMLElement | null;
+	/** Elements outside the surface that still count as inside, such as the trigger. */
+	getRelated?: () => readonly (HTMLElement | null)[];
+	/** Reports nothing while this returns `false`. Defaults to always open. */
+	getOpen?: () => boolean;
+	onDismiss: (reason: DismissReason, event: Event) => void;
+	/** Which triggers to listen for. Defaults to all of them. */
+	triggers?: readonly DismissReason[];
+	/**
+	 * Judges a focus-out one microtask later and, when `relatedTarget` is `null`, by `document.activeElement`.
+	 * For surfaces that contain elements that take focus after the old one blurs.
+	 */
+	settleFocus?: boolean;
+	/**
+	 * Where Escape counts. `document` (default) hears it from anywhere; `tree` only when the key event starts inside
+	 * the surface or a related element, for a widget that must ignore Escape while focus is elsewhere.
+	 */
+	escapeScope?: 'document' | 'tree';
+};
+
+const ALL_TRIGGERS: readonly DismissReason[] = ['pointer', 'focus', 'escape'];
+
+/**
+ * Calls back when the user dismisses a surface: a pointer press outside it, focus leaving it, or Escape.
+ *
+ * @remarks
+ * Works on any surface, with or without a popover. The surface and its related elements are read through getters
+ * on every event, so they may change while attached. All listeners sit on `document`: a focus change inside the
+ * surface or its related elements is ignored, and focus moving to nothing (`relatedTarget` is `null`) counts as
+ * leaving. Escape is reported wherever it happens in the document; the callback decides whether to stop it or
+ * restore focus.
+ */
+export class DismissController implements Controller {
+	private readonly listeners: Controller[] = [];
+	private attached = false;
+	private focusSuppressed = false;
+	private suppressTimer: ReturnType<typeof setTimeout> | undefined;
+
+	constructor(private readonly config: DismissControllerConfig) {
+		const triggers = config.triggers ?? ALL_TRIGGERS;
+		const getTarget = () => document;
+		if (triggers.includes('pointer')) {
+			this.listeners.push(
+				new EventListenerController({
+					getTarget,
+					type: 'pointerdown',
+					listener: (event) => this.onPointerDown(event),
+				}),
+			);
+		}
+		if (triggers.includes('focus')) {
+			this.listeners.push(
+				new EventListenerController({
+					getTarget,
+					type: 'focusout',
+					listener: (event) => this.onFocusOut(event),
+				}),
+			);
+		}
+		if (triggers.includes('escape')) {
+			this.listeners.push(
+				new EventListenerController({ getTarget, type: 'keydown', listener: (event) => this.onKeyDown(event) }),
+			);
+		}
+	}
+
+	attach(): void {
+		this.clearSuppression();
+		this.attached = true;
+		for (const listener of this.listeners) {
+			listener.attach();
+		}
+	}
+
+	destroy(): void {
+		this.clearSuppression();
+		this.attached = false;
+		for (const listener of this.listeners) {
+			listener.destroy();
+		}
+	}
+
+	/**
+	 * Ignores the next focus-out, for a pointer press on an element whose focus change is not a dismissal, such as
+	 * the trigger that toggles the surface.
+	 *
+	 * @remarks
+	 * Expires at the end of the task, so a press that moves no focus (Safari does not focus a button on press) does
+	 * not swallow a later Tab out of the surface.
+	 */
+	suppressFocus(): void {
+		this.clearSuppression();
+		this.focusSuppressed = true;
+		this.suppressTimer = setTimeout(() => this.clearSuppression(), 0);
+	}
+
+	private clearSuppression(): void {
+		clearTimeout(this.suppressTimer);
+		this.focusSuppressed = false;
+	}
+
+	/** Whether `node` is the surface, inside it, or one of the related elements or inside one. */
+	contains(node: Node | null): boolean {
+		return node !== null && this.isInside(node);
+	}
+
+	/**
+	 * Decides what counts as inside. Runs for every pointer press, focus change and Escape that `contains` and `isOutside` judge, and for those methods when an owner calls them.
+	 *
+	 * @remarks Override to widen or narrow the inside, such as a surface that counts a neighbouring toolbar. The default is the surface and the related elements, and anything inside them.
+	 */
+	protected isInside(node: Node): boolean {
+		if (this.config.getSurface()?.contains(node)) {
+			return true;
+		}
+		return (this.config.getRelated?.() ?? []).some((related) => related?.contains(node));
+	}
+
+	/** Whether `target` is not a node, or is outside the surface and its related elements. */
+	isOutside(target: EventTarget | null): boolean {
+		return !(target instanceof Node) || !this.contains(target);
+	}
+
+	private isOpen(): boolean {
+		return this.config.getOpen?.() ?? true;
+	}
+
+	private onPointerDown(event: PointerEvent): void {
+		if (this.isOpen() && this.isOutside(event.target)) {
+			this.config.onDismiss('pointer', event);
+		}
+	}
+
+	private onFocusOut(event: FocusEvent): void {
+		if (this.isOutside(event.target)) {
+			return;
+		}
+		const { relatedTarget } = event;
+		if (!this.config.settleFocus) {
+			this.reportFocus(relatedTarget, event);
+			return;
+		}
+		queueMicrotask(() => {
+			if (this.attached) {
+				this.reportFocus(relatedTarget instanceof Node ? relatedTarget : document.activeElement, event);
+			}
+		});
+	}
+
+	private reportFocus(next: EventTarget | null, event: FocusEvent): void {
+		if (this.focusSuppressed) {
+			this.clearSuppression();
+			return;
+		}
+		if (this.isOpen() && this.isOutside(next)) {
+			this.config.onDismiss('focus', event);
+		}
+	}
+
+	private onKeyDown(event: KeyboardEvent): void {
+		if (this.config.escapeScope === 'tree' && this.isOutside(event.target)) {
+			return;
+		}
+		if (this.isOpen() && event.key === 'Escape') {
+			this.config.onDismiss('escape', event);
+		}
+	}
+}
+
+/**
+ * Creates a `DismissController` that attaches when `host` connects and is destroyed when it disconnects.
+ *
+ * @example
+ * ```ts
+ * // in a RadiantElement subclass
+ * createDismissController(this, {
+ *   getSurface: () => this.panel,
+ *   getRelated: () => [this.trigger],
+ *   getOpen: () => this.open,
+ *   onDismiss: () => (this.open = false),
+ * });
+ * ```
+ */
+export function createDismissController(host: ControllerHost, config: DismissControllerConfig): DismissController {
+	return bindController(host, new DismissController(config));
+}

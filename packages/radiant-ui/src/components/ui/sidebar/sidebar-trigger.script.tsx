@@ -1,5 +1,6 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, bindTo, customElement, onEvent, onUpdated, prop, query, state } from '@ecopages/radiant';
+import { MutationController } from '../../../controllers/mutation-controller';
 
 export type RuiSidebarTriggerPlacement = 'header' | 'inset';
 
@@ -104,7 +105,11 @@ export class RuiSidebarTrigger extends RadiantElement {
 	@state @bindTo({ attr: 'data-sidebar-collapsible' }) sidebarCollapsible: string | null = null;
 
 	/** @remarks Single sync channel: covers toggles, mobile flips, and collapsible changes. */
-	private sidebarObserver: MutationObserver | null = null;
+	private readonly sidebarObserver = new MutationController({
+		getTarget: () => this.attachedSidebar,
+		options: { attributes: true, attributeFilter: ['data-state', 'data-mobile', 'data-collapsible'] },
+		onMutate: () => this.applyState(),
+	});
 	private attachedSidebar: HTMLElement | null = null;
 
 	/**
@@ -156,13 +161,7 @@ export class RuiSidebarTrigger extends RadiantElement {
 			this.detachFromSidebar();
 			if (sidebar) {
 				this.attachedSidebar = sidebar;
-				if (typeof MutationObserver === 'function') {
-					this.sidebarObserver = new MutationObserver(() => this.applyState());
-					this.sidebarObserver.observe(sidebar, {
-						attributes: true,
-						attributeFilter: ['data-state', 'data-mobile', 'data-collapsible'],
-					});
-				}
+				this.sidebarObserver.attach();
 			}
 		}
 		const controls = sidebar?.id || this.controls;
@@ -175,9 +174,8 @@ export class RuiSidebarTrigger extends RadiantElement {
 	}
 
 	private detachFromSidebar(): void {
-		this.sidebarObserver?.disconnect();
+		this.sidebarObserver.destroy();
 		this.attachedSidebar = null;
-		this.sidebarObserver = null;
 	}
 
 	private applyState(): void {

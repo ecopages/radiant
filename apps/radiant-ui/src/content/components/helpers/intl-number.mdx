@@ -1,0 +1,67 @@
+---
+title: Numbers
+description: 'Locale-aware number formatting and parsing, and step snapping.'
+order: 4
+---
+
+import { HelperResults } from '@/components/primitive-example/helper-results';
+import {
+	formatNumber,
+	parseNumber,
+	parseFormatOptions,
+	snapToStep,
+	isWithinRange,
+	isOnStep,
+} from '@ecopages/radiant-ui/helpers';
+
+# Numbers
+
+<p class="docs-lede">Locale-aware number formatting and parsing, and step snapping.</p>
+
+Reach for them for number fields and steppers. The helpers are pure: no DOM at import time or in the call path, so they run on the server and in tests. Each result below is computed when the page is built, by running the call shown.
+
+## Import
+
+```ts
+import {
+	formatNumber,
+	parseNumber,
+	getNumberFormatter,
+	parseFormatOptions,
+	resolveLocale,
+	snapToStep,
+	isWithinRange,
+	isOnStep,
+} from '@ecopages/radiant-ui/helpers';
+```
+
+## Format and parse
+
+`formatNumber` returns `''` for a value that is not finite. `parseNumber` returns `null` for empty input. It drops every character except digits, `.` and `-` before converting, so text with no digits gives `0`, not `null`. Both take a locale and optional `Intl.NumberFormat` options; `parseFormatOptions` reads those options from a JSON string.
+
+<HelperResults
+	rows={[
+		{ code: "formatNumber(1234.5, 'de-DE')", result: formatNumber(1234.5, 'de-DE') },
+		{
+			code: "formatNumber(0.256, 'en-US', { style: 'percent' })",
+			result: formatNumber(0.256, 'en-US', { style: 'percent' }),
+		},
+		{ code: "parseNumber('1.234,5', 'de-DE')", result: parseNumber('1.234,5', 'de-DE') },
+		{ code: "parseNumber('', 'en-US')", result: parseNumber('', 'en-US') },
+		{ code: "parseNumber('abc', 'en-US')", result: parseNumber('abc', 'en-US') },
+		{ code: 'parseFormatOptions(\'{"style":"percent"}\')', result: parseFormatOptions('{"style":"percent"}') },
+	]}
+/>
+
+## Steps
+
+Snap a value to the nearest step within bounds, and check a value against them.
+
+<HelperResults
+	rows={[
+		{ code: 'snapToStep(7, 0, 100, 5)', result: snapToStep(7, 0, 100, 5) },
+		{ code: 'isOnStep(15, 0, 5)', result: isOnStep(15, 0, 5) },
+		{ code: 'isOnStep(16, 0, 5)', result: isOnStep(16, 0, 5) },
+		{ code: 'isWithinRange(5, 0, 10)', result: isWithinRange(5, 0, 10) },
+	]}
+/>

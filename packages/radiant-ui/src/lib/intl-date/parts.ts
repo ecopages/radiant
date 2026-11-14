@@ -14,6 +14,11 @@ const REFERENCE_DATE = new Date(2001, 8, 3);
 /**
  * Uses `formatToParts()` on a fixed reference date to discover the locale's
  * year/month/day field order (e.g. MDY for en-US, DMY for en-GB, YMD for ja-JP).
+ *
+ * @example
+ * ```ts
+ * getDatePartOrder('en-GB'); // ['day', 'month', 'year']
+ * ```
  */
 export function getDatePartOrder(locale: IntlLocale): DatePartType[] {
 	const parts = getDateTimeFormat(locale, {
@@ -27,7 +32,14 @@ export function getDatePartOrder(locale: IntlLocale): DatePartType[] {
 		.map((part) => part.type as DatePartType);
 }
 
-/** Literal separators between numeric date parts for the locale (e.g. `['/']` for en-US). */
+/**
+ * Literal separators between numeric date parts for the locale (e.g. `['/']` for en-US).
+ *
+ * @example
+ * ```ts
+ * getDateSeparators('en-US'); // ['/', '/']
+ * ```
+ */
 export function getDateSeparators(locale: IntlLocale): string[] {
 	const parts = getDateTimeFormat(locale, {
 		year: 'numeric',
@@ -67,6 +79,12 @@ function buildDateFromParts(parts: Record<DatePartType, number>): Date | null {
  *
  * Accepts ISO `YYYY-MM-DD`, masked numeric input (`08/21/2002`), locale-ordered
  * numeric input (`9/3/2026`), and text month names (`Aug 21, 2002`).
+ *
+ * @example
+ * ```ts
+ * parseLocaleDateString('21/08/2002', 'en-GB'); // Date for 21 August 2002
+ * parseLocaleDateString('Aug 21, 2002', 'en-US'); // the same date
+ * ```
  */
 export function parseLocaleDateString(input: string | null | undefined, locale: IntlLocale): Date | null {
 	const trimmed = (input ?? '').trim();

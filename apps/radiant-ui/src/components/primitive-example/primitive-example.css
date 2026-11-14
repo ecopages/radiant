@@ -1,0 +1,106 @@
+.primitive-example {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--space-3);
+	margin-block: var(--space-4) var(--space-6);
+	padding: var(--space-4);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-container);
+	background: var(--surface-container-low);
+	color: var(--on-surface-container-low);
+	font-size: 0.875rem;
+}
+
+.primitive-example :where(button) {
+	padding: var(--space-1) var(--space-3);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-control);
+	background: var(--surface);
+	color: var(--on-surface);
+	font: inherit;
+	cursor: pointer;
+}
+
+.primitive-example :where(button:focus-visible, [tabindex]:focus-visible) {
+	outline: 2px solid var(--focus-ring);
+	outline-offset: 2px;
+}
+
+.primitive-example :where(button[aria-pressed='true'], [data-active], [data-sortable-state='lifted']) {
+	background: var(--primary);
+	color: var(--on-primary);
+}
+
+.primitive-example :where([data-box]) {
+	padding: var(--space-3) var(--space-4);
+	border: 1px dashed var(--border);
+	border-radius: var(--radius-control);
+	background: var(--surface);
+	color: var(--on-surface);
+	touch-action: none;
+	user-select: none;
+}
+
+.primitive-example :where([data-scroller]) {
+	flex-basis: 100%;
+	height: 6rem;
+	margin: 0;
+	padding: var(--space-2) var(--space-4);
+	overflow-y: auto;
+	list-style: none;
+	border: 1px solid var(--border);
+	border-radius: var(--radius-control);
+	background: var(--surface);
+	color: var(--on-surface);
+}
+
+.primitive-example :where([data-status]) {
+	margin: 0;
+	flex-basis: 100%;
+	color: var(--on-surface-container-low);
+}
+
+.primitive-example :where(ul) {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-1);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.primitive-example :where(li) {
+	padding: var(--space-1) var(--space-3);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-control);
+	background: var(--surface);
+	color: var(--on-surface);
+}
+
+.primitive-example :where([data-sortable-drop='before']) {
+	box-shadow: 0 -2px 0 var(--primary);
+}
+
+.primitive-example :where([data-sortable-drop='after']) {
+	box-shadow: 0 2px 0 var(--primary);
+}
+
+.primitive-example :where([role='listbox'], [role='menu']) {
+	margin: 0;
+	padding: var(--space-1);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-control);
+	background: var(--surface-container);
+	color: var(--on-surface-container);
+	list-style: none;
+}
+
+.primitive-example :where([role='option'][data-active], [role='menuitem']:focus-visible) {
+	background: var(--primary);
+	color: var(--on-primary);
+}
+
+.primitive-example :where([hidden]) {
+	display: none;
+}

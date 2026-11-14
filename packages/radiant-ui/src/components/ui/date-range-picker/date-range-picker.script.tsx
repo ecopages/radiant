@@ -13,7 +13,7 @@ import {
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { isIsoInRange, normalizeRange, parseIsoRange, serializeIsoRange } from '@/lib/intl-date';
 import type { RuiCalendarChangeDetail } from '../calendar/calendar.script';
-import { CalendarPopoverBehavior } from '../shared/calendar-popover-behavior';
+import { createCalendarPopoverController } from '../../../controllers/calendar-popover-controller';
 import { effectiveVisibleMonths } from '@/lib/viewport/mobile-layout';
 
 export type RuiDateRangePickerProps = {
@@ -143,7 +143,7 @@ export class RuiDateRangePicker extends RadiantElement {
 	@bindTo({ selector: '[data-range-trigger]', attr: 'aria-expanded' })
 	open = false;
 
-	private readonly calendarPopover = new CalendarPopoverBehavior({
+	private readonly calendarPopover = createCalendarPopoverController(this, {
 		getHost: () => this,
 		getAnchor: () => this.getToggle()?.parentElement ?? this,
 		getFloating: () => this.popoverTarget,
@@ -257,13 +257,7 @@ export class RuiDateRangePicker extends RadiantElement {
 	}
 
 	protected override onConnected(): void {
-		this.calendarPopover.connect();
 		this.initialize();
-	}
-
-	override disconnectedCallback(): void {
-		this.calendarPopover.destroy();
-		super.disconnectedCallback();
 	}
 
 	@onUpdated(['value', 'min', 'max', 'disabled', 'readOnly', 'locale', 'visibleMonths'])
@@ -331,31 +325,6 @@ export class RuiDateRangePicker extends RadiantElement {
 		}
 		this.commitRange(detail.start, detail.end);
 		this.calendarPopover.closeAndRestoreFocus();
-	}
-
-	@onEvent({
-		selector: '[data-range-start], [data-range-end], [data-range-trigger], [data-range-calendar]',
-		type: 'keydown',
-	})
-	onRootKeydown(event: KeyboardEvent): void {
-		if (event.key === 'Escape' && this.open) {
-			event.preventDefault();
-			const insidePopover =
-				event.target instanceof Node && this.querySelector('[data-range-popover]')?.contains(event.target);
-			if (insidePopover) {
-				this.calendarPopover.closeAndRestoreFocus();
-			} else {
-				this.calendarPopover.setOpen(false);
-			}
-		}
-	}
-
-	@onEvent({
-		selector: '[data-range-start], [data-range-end], [data-range-trigger], [data-range-popover]',
-		type: 'focusout',
-	})
-	onRootFocusOut(event: FocusEvent): void {
-		this.calendarPopover.handleFocusOut(event, () => this.calendarPopover.setOpen(false));
 	}
 }
 

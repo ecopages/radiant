@@ -1,16 +1,7 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
-import {
-	RadiantElement,
-	bindTo,
-	bound,
-	customElement,
-	event,
-	onEvent,
-	onUpdated,
-	prop,
-	query,
-} from '@ecopages/radiant';
+import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
+import { createPointerDragController } from '../../../controllers/pointer-drag-controller';
 
 export type RuiWindowSplitterProps = {
 	/** Primary pane size as a percentage. Default: `50`. */
@@ -107,18 +98,19 @@ export class RuiWindowSplitter extends RadiantElement {
 	@event({ name: 'rui-splitter-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiWindowSplitterChangeDetail>;
 
-	private dragging = false;
+	constructor() {
+		super();
+		createPointerDragController(this, {
+			getTarget: (): HTMLElement => this,
+			getHandle: () => this.separatorTarget,
+			onMove: ({ x, y }) => this.dragTo(x, y),
+		});
+	}
 
 	protected override onConnected(): void {
 		this.clampValue();
 		this.syncSeparatorPresentation();
 		this.applySize();
-	}
-
-	override disconnectedCallback(): void {
-		document.removeEventListener('pointermove', this.onPointerMove);
-		document.removeEventListener('pointerup', this.onPointerUp);
-		super.disconnectedCallback();
 	}
 
 	@onUpdated(['value', 'orientation'])
@@ -194,30 +186,13 @@ export class RuiWindowSplitter extends RadiantElement {
 		this.changeEvent.emit({ value: next });
 	}
 
-	@onEvent({ ref: 'separator', type: 'pointerdown' })
-	onPointerDown(event: PointerEvent): void {
-		this.dragging = true;
-		this.separatorTarget?.setPointerCapture(event.pointerId);
-		document.addEventListener('pointermove', this.onPointerMove);
-		document.addEventListener('pointerup', this.onPointerUp);
-	}
-
-	@bound
-	onPointerMove(event: PointerEvent): void {
-		if (!this.dragging) return;
+	private dragTo(x: number, y: number): void {
 		const rect = this.getBoundingClientRect();
 		if (this.orientation === 'vertical') {
-			this.updateValue(clampSplitterValue(((event.clientY - rect.top) / rect.height) * 100));
+			this.updateValue(clampSplitterValue(((y - rect.top) / rect.height) * 100));
 		} else {
-			this.updateValue(clampSplitterValue(((event.clientX - rect.left) / rect.width) * 100));
+			this.updateValue(clampSplitterValue(((x - rect.left) / rect.width) * 100));
 		}
-	}
-
-	@bound
-	onPointerUp(): void {
-		this.dragging = false;
-		document.removeEventListener('pointermove', this.onPointerMove);
-		document.removeEventListener('pointerup', this.onPointerUp);
 	}
 }
 

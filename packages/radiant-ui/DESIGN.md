@@ -163,6 +163,8 @@ Size variants should **set** the same variable on that root (`--rui-avatar-size`
 
 Do not declare the same public property on a descendant: that assignment wins over an inherited host override.
 
+A portaled surface leaves its ancestors, so `PortalController` carries their `dark` class, `data-theme` attribute and inline `--rui-*` custom properties onto it while it is portaled; ancestor stylesheet rules do not travel, which is why a portaled surface's defaults and overrides live on the surface class.
+
 `:root` remaps of `--rui-*` knobs do **not** win when the host/surface also assigns the property. Tell consumers to override on the host or surface. Global mood still goes through theme roles (`--primary`, `--space-inset`).
 
 ### What to expose

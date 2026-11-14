@@ -1,0 +1,95 @@
+---
+title: DismissController
+description: 'Reports a pointer press outside a surface, focus leaving it, or Escape.'
+order: 5
+---
+
+import { PrimitiveExample } from '@/components/primitive-example';
+
+export const config = {
+	dependencies: {
+		components: [PrimitiveExample],
+		scripts: ['./dismiss.script.ts'],
+	},
+};
+
+# DismissController
+
+<p class="docs-lede">Reports a pointer press outside a surface, focus leaving it, or Escape.</p>
+
+Reach for it for a dialog, drawer or popup that closes itself.
+
+## Import
+
+```ts
+import { DismissController, createDismissController } from '@ecopages/radiant-ui/controllers';
+```
+
+## Try it
+
+Pressing anywhere outside the panel, or pressing Escape, reports the reason and hides it. The button is a related element: it counts as inside, so pressing it does not dismiss.
+
+<PrimitiveExample name="dismiss">
+	<div data-box>Press outside me, or press Escape</div>
+	<button type="button">Reopen</button>
+	<p data-status>Open</p>
+</PrimitiveExample>
+
+```html
+<div data-example="dismiss">
+	<div data-box>Press outside me, or press Escape</div>
+	<button type="button">Reopen</button>
+	<p data-status>Open</p>
+</div>
+```
+
+```ts
+import { DismissController } from '@ecopages/radiant-ui/controllers';
+
+const root = document.querySelector('[data-example="dismiss"]')!;
+const panel = root.querySelector<HTMLElement>('[data-box]')!;
+const reopen = root.querySelector('button')!;
+const status = root.querySelector('[data-status]')!;
+
+const dismiss = new DismissController({
+	getSurface: () => panel,
+	getRelated: () => [reopen],
+	getOpen: () => !panel.hidden,
+	onDismiss: (reason) => {
+		panel.hidden = true;
+		status.textContent = `Dismissed by ${reason}`;
+	},
+});
+dismiss.attach();
+
+reopen.addEventListener('click', () => {
+	panel.hidden = false;
+	status.textContent = 'Open';
+});
+```
+
+## Config
+
+| Option        | Description                                                                                                                     |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `getSurface`  | The surface being dismissed.                                                                                                    |
+| `getRelated`  | Elements outside the surface that still count as inside, such as the trigger.                                                   |
+| `getOpen`     | Nothing is reported while this returns `false`. Defaults to always open.                                                        |
+| `onDismiss`   | Receives the reason (`pointer`, `focus` or `escape`) and the event.                                                             |
+| `triggers`    | Which reasons to listen for. Defaults to all three.                                                                             |
+| `settleFocus` | Judge a focus-out one microtask later, for surfaces whose contents take focus after the old element blurs.                      |
+| `escapeScope` | `document` (default) hears Escape from anywhere; `tree` only when the key event starts inside the surface or a related element. |
+
+## Lifecycle
+
+`attach()` adds the listeners on `document`; `destroy()` removes them. The surface and related elements are read on every event, so they may change while attached. The controller also has `contains(node)`, `isOutside(target)` and `suppressFocus()`, which skips the next focus-out for a press whose focus change is not a dismissal.
+
+With a host, `createDismissController(host, config)` does the same on connect and disconnect; see [bindController](/docs/controllers/bind-controller).
+
+## Protected hooks
+
+Extend the class and override these to change how it decides. A component never extends a controller; a subclass is registered with `bindController`.
+
+| Hook             | Description                                                                                                                                                                                      |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `isInside(node)` | Decides what counts as inside. Override to widen or narrow it, such as a surface that counts a neighbouring toolbar. The default is the surface, the related elements, and anything inside them. |

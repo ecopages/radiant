@@ -3,7 +3,7 @@ import {
 	formatNumericValue,
 	resolveValuePrecision,
 	type NumericRange,
-} from '../shared/numeric-range';
+} from '@/lib/numeric-range';
 
 export const KNOB_START_ANGLE = 120;
 export const KNOB_ARC_ANGLE = 300;

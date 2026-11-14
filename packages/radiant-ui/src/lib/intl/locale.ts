@@ -1,3 +1,6 @@
+/**
+ * A BCP 47 tag, a list of them, or `undefined` for the runtime default.
+ */
 export type IntlLocale = string | string[] | undefined;
 
 /** Parses the public comma-separated locale fallback syntax into Intl input. */

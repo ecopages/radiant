@@ -17,11 +17,17 @@
 
 export type MaskInputKind = 'digit' | 'letter' | 'any';
 
+/**
+ * One element of a parsed mask: an input slot, a fixed text or an optional section.
+ */
 export type MaskToken =
 	| { type: 'literal'; value: string }
 	| { type: 'fixed'; value: string }
 	| { type: 'input'; definition: string; kind: MaskInputKind; pattern?: RegExp; optional?: boolean };
 
+/**
+ * Custom slot characters, mapped to an input kind or a regular expression.
+ */
 export type MaskDefinitions = Record<string, MaskInputKind | RegExp>;
 
 const DEFAULT_DEFINITIONS: Record<string, MaskInputKind> = {
@@ -146,11 +152,21 @@ export function parseMaskPattern(pattern: string, definitions?: MaskDefinitions)
 	return parseMaskPatternInternal(pattern, definitions);
 }
 
+/**
+ * How many characters a mask takes; `requiredOnly` leaves out optional sections.
+ */
 export function maskInputSlotCount(tokens: MaskToken[], options: { requiredOnly?: boolean } = {}): number {
 	return tokens.filter((token) => token.type === 'input' && (!options.requiredOnly || !token.optional)).length;
 }
 
-/** Placeholder using IMask's default `_` for input slots. */
+/**
+ * Placeholder using IMask's default `_` for input slots.
+ *
+ * @example
+ * ```ts
+ * maskToPlaceholder('(000) 000-0000'); // '(___) ___-____'
+ * ```
+ */
 export function maskToPlaceholder(pattern: string, definitions?: MaskDefinitions): string {
 	const tokens = parseMaskPattern(pattern, definitions);
 	let result = '';
@@ -166,7 +182,14 @@ export function maskToPlaceholder(pattern: string, definitions?: MaskDefinitions
 	return result;
 }
 
-/** Extracts user-typed characters from a masked value (skips fixed segments and literals). */
+/**
+ * Extracts user-typed characters from a masked value (skips fixed segments and literals).
+ *
+ * @example
+ * ```ts
+ * extractMaskInput('+12 345', parseMaskPattern('+00 000')); // '12345'
+ * ```
+ */
 export function extractMaskInput(masked: string, tokens: MaskToken[]): string {
 	let input = '';
 	let cursor = 0;
@@ -197,6 +220,11 @@ export function extractMaskInput(masked: string, tokens: MaskToken[]): string {
  * Formats extracted input characters into a masked display string.
  *
  * Returns `''` when `input` is empty.
+ *
+ * @example
+ * ```ts
+ * formatWithMask('12345', parseMaskPattern('+00 000')); // '+12 345'
+ * ```
  */
 export function formatWithMask(input: string, tokens: MaskToken[]): string {
 	if (!input) {
@@ -252,7 +280,14 @@ function looseInputFromRaw(raw: string, tokens: MaskToken[]): string {
 	return loose;
 }
 
-/** Normalizes user input to a masked display value. */
+/**
+ * Normalizes user input to a masked display value.
+ *
+ * @example
+ * ```ts
+ * applyInputMask('5551234567', '(000) 000-0000'); // '(555) 123-4567'
+ * ```
+ */
 export function applyInputMask(raw: string, pattern: string, definitions?: MaskDefinitions): string {
 	const tokens = parseMaskPattern(pattern, definitions);
 	const capacity = maskInputSlotCount(tokens);

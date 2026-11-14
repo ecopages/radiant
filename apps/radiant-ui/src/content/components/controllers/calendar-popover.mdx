@@ -1,0 +1,104 @@
+---
+title: CalendarPopoverController
+description: 'Open state, positioning, focus-out dismissal and mobile layout for a calendar popup.'
+order: 16
+---
+
+import { PrimitiveExample } from '@/components/primitive-example';
+
+export const config = {
+	dependencies: {
+		components: [PrimitiveExample],
+		scripts: ['./calendar-popover.script.ts'],
+	},
+};
+
+# CalendarPopoverController
+
+<p class="docs-lede">Open state, positioning, focus-out dismissal and mobile layout for a calendar popup.</p>
+
+Reach for it for a date picker popup around a calendar.
+
+## Import
+
+```ts
+import {
+	CalendarPopoverController,
+	createCalendarPopoverController,
+	focusCalendarPickerDay,
+} from '@ecopages/radiant-ui/controllers';
+```
+
+## Try it
+
+The button opens the popup and focuses its first available day. Escape from inside the popup closes it and returns focus to the button; focus leaving the host closes it without moving focus.
+
+<PrimitiveExample name="calendar-popover">
+	<button type="button">Pick a date</button>
+	<div data-box hidden>
+		<button type="button" data-calendar-day data-iso="2026-11-14">
+			14
+		</button>
+		<button type="button" data-calendar-day data-iso="2026-11-15">
+			15
+		</button>
+	</div>
+</PrimitiveExample>
+
+```html
+<div data-example="calendar-popover">
+	<button type="button">Pick a date</button>
+	<div data-box hidden>
+		<button type="button" data-calendar-day data-iso="2026-11-14">14</button>
+		<button type="button" data-calendar-day data-iso="2026-11-15">15</button>
+	</div>
+</div>
+```
+
+```ts
+import { CalendarPopoverController } from '@ecopages/radiant-ui/controllers';
+
+const root = document.querySelector<HTMLElement>('[data-example="calendar-popover"]')!;
+const toggle = root.querySelector('button')!;
+const popup = root.querySelector<HTMLElement>('[data-box]')!;
+
+let open = false;
+const picker = new CalendarPopoverController({
+	getHost: () => root,
+	getAnchor: () => toggle,
+	getFloating: () => popup,
+	getOpen: () => open,
+	getCalendar: () => popup,
+	getFocusIso: () => undefined,
+	getToggle: () => toggle,
+	setOpenState: (next) => (open = next),
+	onLayoutChange: () => {},
+});
+picker.attach();
+
+toggle.addEventListener('click', () => picker.setOpen(!open));
+```
+
+## Config
+
+| Option           | Description                                                                           |
+| ---------------- | ------------------------------------------------------------------------------------- |
+| `getHost`        | The picker element. Focus inside it, or the popup, is inside.                         |
+| `getAnchor`      | The element the popup sits beside.                                                    |
+| `getFloating`    | The popup.                                                                            |
+| `getOpen`        | Whether the popup is open.                                                            |
+| `getCalendar`    | The element that holds the `[data-calendar-day]` buttons.                             |
+| `getFocusIso`    | The `YYYY-MM-DD` day to focus on open; the first available day when `undefined`.      |
+| `getToggle`      | The button that receives focus when the popup closes from inside.                     |
+| `setOpenState`   | Writes the host's `open` state.                                                       |
+| `onLayoutChange` | Called when the mobile layout viewport changes, before an open popup is repositioned. |
+
+## Lifecycle
+
+`attach()` starts the dismissal and a mobile layout listener; `destroy()` removes both and the popover. `setOpen(next)` writes the state, positions the popup and, on open, focuses the calendar day. Also `closeAndRestoreFocus()`, `suppressDismiss()` (skip the next focus-out, for a press on the toggle) and `syncPopover()`. `focusCalendarPickerDay(calendar, iso)` is the focus step on its own.
+
+With a host, `createCalendarPopoverController(host, config)` does the same on connect and disconnect; see [bindController](/docs/controllers/bind-controller).
+
+## Protected hooks
+
+None. Value commit and selection mode stay in the date picker.

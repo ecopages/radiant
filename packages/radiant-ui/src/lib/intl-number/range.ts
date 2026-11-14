@@ -5,6 +5,11 @@
  * When `min` is non-finite (NumberField default `-Infinity`), use `0` as the
  * step origin. `Math.round((value - (-Infinity)) / step)` is `NaN` and would
  * collapse every stepper commit to an invalid number.
+ *
+ * @example
+ * ```ts
+ * snapToStep(7, 0, 100, 5); // 5
+ * ```
  */
 export function snapToStep(value: number, min: number, max: number, step: number): number {
 	if (!Number.isFinite(value)) {
@@ -31,10 +36,21 @@ function clampToRange(value: number, min: number, max: number): number {
 	return next;
 }
 
+/**
+ * Whether `value` lies in `[min, max]`.
+ */
 export function isWithinRange(value: number, min: number, max: number): boolean {
 	return value >= min && value <= max;
 }
 
+/**
+ * Whether `value` sits on a step counted from `min`, or from 0 when `min` is not finite.
+ *
+ * @example
+ * ```ts
+ * isOnStep(15, 0, 5); // true
+ * ```
+ */
 export function isOnStep(value: number, min: number, step: number): boolean {
 	const origin = Number.isFinite(min) ? min : 0;
 	return (

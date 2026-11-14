@@ -1,8 +1,8 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
-import { navigateRovingTabindex } from '@/lib/roving-tabindex';
 import { uniqueId } from '@/lib/unique-id';
+import { createRovingController } from '../../../controllers/roving-controller';
 import { syncFieldLabel } from '../shared/field-label';
 import { getListboxOptionValue } from '../shared/listbox-option';
 import { multiValuePropOptions, type ViewMultiValue } from '../shared/multi-value';
@@ -106,6 +106,15 @@ export class RuiListbox extends RadiantElement {
 	changeEvent: EventEmitter<RuiListboxChangeDetail>;
 
 	private readonly uid = uniqueId('rui-listbox');
+	private readonly roving = createRovingController(this, {
+		getItems: () => this.getOptions(),
+		getTarget: (): HTMLElement => this,
+		orientation: 'vertical',
+		enabled: () => !this.embedded,
+		onMove: (option) => {
+			if (this.selectionMode !== 'multiple') this.select(option);
+		},
+	});
 
 	protected override onConnected(): void {
 		this.syncLabel();
@@ -142,13 +151,6 @@ export class RuiListbox extends RadiantElement {
 		this.value = values;
 	}
 
-	private tabIndexFor(option: HTMLElement, tabStop: HTMLElement | undefined): number {
-		if (this.embedded) {
-			return -1;
-		}
-		return option === tabStop ? 0 : -1;
-	}
-
 	private sync(): void {
 		const options = this.getOptions();
 		const selected = new Set(this.getSelectedValues());
@@ -156,8 +158,12 @@ export class RuiListbox extends RadiantElement {
 		for (const option of options) {
 			const isSelected = selected.has(getListboxOptionValue(option));
 			option.setAttribute('aria-selected', String(isSelected));
-			option.tabIndex = this.tabIndexFor(option, tabStop);
 		}
+		if (this.embedded) {
+			for (const option of options) option.tabIndex = -1;
+			return;
+		}
+		this.roving.sync(tabStop);
 	}
 
 	private select(option: HTMLElement): void {
@@ -191,7 +197,6 @@ export class RuiListbox extends RadiantElement {
 		if (this.embedded) {
 			return;
 		}
-		const options = this.getOptions();
 		const current = (event.target as HTMLElement).closest('[role="option"]') as HTMLElement | null;
 		if (!current) return;
 
@@ -200,21 +205,6 @@ export class RuiListbox extends RadiantElement {
 			this.select(current);
 			return;
 		}
-
-		const result = navigateRovingTabindex({
-			items: options,
-			current,
-			key: event.key,
-			orientation: 'vertical',
-		});
-		if (!result.handled) return;
-
-		event.preventDefault();
-		if (this.selectionMode === 'multiple') {
-			result.item.focus();
-			return;
-		}
-		this.select(result.item);
 	}
 }
 

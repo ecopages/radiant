@@ -2,7 +2,6 @@ import type { JSX_PROPS } from '@ecopages/jsx';
 import {
 	RadiantElement,
 	bindTo,
-	bound,
 	customElement,
 	event,
 	onEvent,
@@ -15,6 +14,9 @@ import { isServer } from '@ecopages/radiant/is-server';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { parseCommaSeparated } from '@/lib/comma-separated';
 import { SIDEBAR_MOBILE_BREAKPOINT_PX } from '@/lib/viewport/breakpoints';
+import type { Controller } from '../../../controllers/controller';
+import { EventListenerController, createEventListenerController } from '../../../controllers/event-listener-controller';
+import { createPointerDragController } from '../../../controllers/pointer-drag-controller';
 
 export type RuiSidebarVariant = 'sidebar' | 'inset';
 export type RuiSidebarSide = 'left' | 'right';
@@ -188,12 +190,31 @@ export class RuiSidebar extends RadiantElement {
 	@bindTo([{ attr: 'data-mobile' }, { ref: 'root', attr: 'data-mobile' }])
 	isMobile = false;
 	private mediaQuery: MediaQueryList | null = null;
-	private readonly mediaListener = (event: MediaQueryListEvent): void => this.setMobile(event.matches);
+	private readonly mediaListener = createEventListenerController(this, {
+		getTarget: () => this.mediaQuery,
+		type: 'change',
+		listener: (event) => this.setMobile(event.matches),
+	});
 
-	private dragging = false;
-	private dragStartCoord = 0;
 	private dragStartSize = 0;
-	private navigationCleanups: Array<() => void> = [];
+
+	constructor() {
+		super();
+		createPointerDragController(this, {
+			getTarget: (): HTMLElement => this,
+			getHandle: () => this.handleTarget,
+			canStart: () => this.collapsible === 'off',
+			onStart: ({ event }) => {
+				event.preventDefault();
+				this.dragStartSize = this.paneWidth();
+			},
+			onMove: ({ dx, dy }) => {
+				const travel = isHorizontalSide(this.side) ? dx : dy;
+				this.applyWidth(this.dragStartSize + (this.side === 'right' ? -travel : travel), true);
+			},
+		});
+	}
+	private navigationListeners: Controller[] = [];
 
 	/** @remarks Set by the first update cycle so later cycles never scroll. */
 	private didScrollActiveOnMount = false;
@@ -252,8 +273,6 @@ export class RuiSidebar extends RadiantElement {
 	}
 
 	override disconnectedCallback(): void {
-		this.endDrag();
-		this.unbindMobileMediaQuery();
 		this.detachNavigationListeners();
 		this.mobileReady = false;
 		super.disconnectedCallback();
@@ -400,40 +419,37 @@ export class RuiSidebar extends RadiantElement {
 			return;
 		}
 
-		const handler = () => this.syncActiveLinks(false);
-		window.addEventListener('popstate', handler);
-		this.navigationCleanups.push(() => window.removeEventListener('popstate', handler));
-
-		if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
-			for (const eventName of parseCommaSeparated(this.navigationEvents)) {
-				document.addEventListener(eventName, handler);
-				this.navigationCleanups.push(() => document.removeEventListener(eventName, handler));
-			}
+		const listener = () => this.syncActiveLinks(false);
+		this.navigationListeners = [
+			new EventListenerController({ getTarget: () => window, type: 'popstate', listener }),
+			new EventListenerController({
+				getTarget: () => document,
+				type: parseCommaSeparated(this.navigationEvents),
+				listener,
+			}),
+		];
+		for (const controller of this.navigationListeners) {
+			controller.attach();
 		}
 	}
 
 	private detachNavigationListeners(): void {
-		for (const cleanup of this.navigationCleanups) {
-			cleanup();
+		for (const controller of this.navigationListeners) {
+			controller.destroy();
 		}
-		this.navigationCleanups = [];
-	}
-
-	private unbindMobileMediaQuery(): void {
-		this.mediaQuery?.removeEventListener('change', this.mediaListener);
-		this.mediaQuery = null;
+		this.navigationListeners = [];
 	}
 
 	private bindMobileMediaQuery(): void {
-		this.unbindMobileMediaQuery();
-
 		if (this.mobileBreakpoint <= 0 || !isMediaQuerySupported()) {
+			this.mediaQuery = null;
+			this.mediaListener.attach();
 			this.setMobile(false);
 			return;
 		}
 
 		this.mediaQuery = window.matchMedia(`(max-width: ${this.mobileBreakpoint - 1}px)`);
-		this.mediaQuery.addEventListener('change', this.mediaListener);
+		this.mediaListener.attach();
 		this.setMobile(this.mediaQuery.matches);
 	}
 
@@ -518,47 +534,6 @@ export class RuiSidebar extends RadiantElement {
 		this.syncPresentation();
 		this.syncPaneWidthVar();
 		this.toggleEvent.emit({ open: next, state: paneState });
-	}
-
-	private beginDrag(event: PointerEvent): void {
-		if (event.button !== 0) return;
-		if (this.collapsible !== 'off') return;
-		this.dragging = true;
-		const horizontal = isHorizontalSide(this.side);
-		this.dragStartCoord = horizontal ? event.clientX : event.clientY;
-		this.dragStartSize = this.paneWidth();
-		this.handleTarget?.setPointerCapture(event.pointerId);
-		document.addEventListener('pointermove', this.onPointerMove);
-		document.addEventListener('pointerup', this.onPointerUp);
-		document.addEventListener('pointercancel', this.onPointerUp);
-	}
-
-	private endDrag(): void {
-		if (!this.dragging) return;
-		this.dragging = false;
-		document.removeEventListener('pointermove', this.onPointerMove);
-		document.removeEventListener('pointerup', this.onPointerUp);
-		document.removeEventListener('pointercancel', this.onPointerUp);
-	}
-
-	@bound
-	private onPointerMove(event: PointerEvent): void {
-		if (!this.dragging) return;
-		const horizontal = isHorizontalSide(this.side);
-		const coord = horizontal ? event.clientX : event.clientY;
-		const delta = this.side === 'right' ? this.dragStartCoord - coord : coord - this.dragStartCoord;
-		this.applyWidth(this.dragStartSize + delta, true);
-	}
-
-	@bound
-	private onPointerUp(): void {
-		this.endDrag();
-	}
-
-	@onEvent({ ref: 'handle', type: 'pointerdown' })
-	onHandlePointerDown(event: Event): void {
-		event.preventDefault();
-		this.beginDrag(event as PointerEvent);
 	}
 
 	@onEvent({ ref: 'handle', type: 'keydown' })

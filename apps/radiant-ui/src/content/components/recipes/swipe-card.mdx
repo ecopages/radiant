@@ -1,0 +1,92 @@
+---
+title: Swipe to dismiss
+description: 'A card dismissed by a left or right swipe, with a button for everyone who cannot swipe.'
+order: 4
+---
+
+import { PrimitiveExample } from '@/components/primitive-example';
+
+export const config = {
+	dependencies: {
+		components: [PrimitiveExample],
+		scripts: ['./swipe-card.script.ts'],
+	},
+};
+
+# Swipe to dismiss
+
+<p class="docs-lede">A card the user dismisses with a horizontal swipe, and with a button that does the same.</p>
+
+## Goal
+
+A notification, a suggestion or a message in a feed that the user clears with a gesture. A gesture is never the only way: the button is the keyboard and assistive technology path, and both paths end in the same function.
+
+## Primitives
+
+- [SwipeController](/docs/controllers/swipe) reports a left or right swipe on release. Its `exclude` keeps a press on the button from starting a swipe.
+
+Left to the recipe: what dismissing does (here it hides the card and says so in a live region) and moving focus on to the restore button, since the focused element just left the page. The card follows no pointer while it is dragged; a card that slides with the finger needs [PointerDragController](/docs/controllers/pointer-drag) instead.
+
+## Example
+
+Press on the card, move sideways at least 48 px and release, or press the Dismiss button.
+
+<PrimitiveExample name="swipe-card">
+	<div data-box data-card>
+		<span>Your report is ready</span>
+		<button type="button" data-dismiss>
+			Dismiss
+		</button>
+	</div>
+	<button type="button" data-restore hidden>
+		Restore the card
+	</button>
+	<p data-status aria-live="polite">
+		The card is shown
+	</p>
+</PrimitiveExample>
+
+## Source
+
+```html
+<div data-example="swipe-card">
+	<div data-box data-card>
+		<span>Your report is ready</span>
+		<button type="button" data-dismiss>Dismiss</button>
+	</div>
+	<button type="button" data-restore hidden>Restore the card</button>
+	<p data-status aria-live="polite">The card is shown</p>
+</div>
+```
+
+```ts
+import { SwipeController } from '@ecopages/radiant-ui/controllers';
+
+const root = document.querySelector('[data-example="swipe-card"]')!;
+const card = root.querySelector<HTMLElement>('[data-card]')!;
+const dismissButton = root.querySelector<HTMLElement>('[data-dismiss]')!;
+const restoreButton = root.querySelector<HTMLElement>('[data-restore]')!;
+const status = root.querySelector('[data-status]')!;
+
+function setShown(shown: boolean, message: string): void {
+	card.hidden = !shown;
+	restoreButton.hidden = shown;
+	status.textContent = message;
+}
+
+const swipe = new SwipeController({
+	getTarget: () => card,
+	exclude: (target) => target instanceof Element && target.closest('button') !== null,
+	onSwipe: (direction) => setShown(false, `Card dismissed, swiped ${direction}`),
+});
+swipe.attach();
+
+dismissButton.addEventListener('click', () => {
+	setShown(false, 'Card dismissed');
+	restoreButton.focus();
+});
+restoreButton.addEventListener('click', () => {
+	setShown(true, 'The card is shown');
+	dismissButton.focus();
+});
+```

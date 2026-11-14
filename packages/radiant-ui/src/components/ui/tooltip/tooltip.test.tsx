@@ -42,4 +42,23 @@ describe('RuiTooltip', () => {
 
 		await vi.waitFor(() => expect(surface?.textContent).toBe('Saved'));
 	});
+
+	it('closes an open tooltip on Escape', async () => {
+		const container = document.createElement('div');
+		document.body.append(container);
+		createRoot(container).render(
+			<RuiTooltip content="Save your changes">
+				<button type="button">Save</button>
+			</RuiTooltip>,
+		);
+		const button = container.querySelector('button') as HTMLButtonElement;
+		const surface = container.querySelector('[role="tooltip"]') as HTMLElement;
+		await vi.waitFor(() => expect(button.getAttribute('aria-describedby')).toBeTruthy());
+
+		button.focus();
+		await vi.waitFor(() => expect(surface.hidden).toBe(false));
+
+		document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+		await vi.waitFor(() => expect(surface.hidden).toBe(true));
+	});
 });

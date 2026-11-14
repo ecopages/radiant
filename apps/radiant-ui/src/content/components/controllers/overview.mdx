@@ -1,0 +1,57 @@
+---
+title: Overview
+description: The stateful behaviors Radiant UI components are built from, each usable on its own with a few lines.
+order: 0
+---
+
+# Controllers
+
+<p class="docs-lede">
+	A controller is a small class that adds one behavior to an element: listening, dismissing, positioning, moving
+	focus, dragging. Radiant UI components are assembled from them, and so can yours be.
+</p>
+
+Controllers need a browser. Pure logic with no DOM (dates, masks, numbers, ordering math) is in [Helpers](/docs/helpers/overview). Both entries are tree-shakeable: a bundle contains only what it imports.
+
+```ts
+import { createSwipeController } from '@ecopages/radiant-ui/controllers';
+```
+
+## The shape of a controller
+
+Every controller is a plain class with `attach()` and `destroy()`. The constructor does nothing; `attach()` starts work and `destroy()` ends all of it, and both are safe to call again. Each class has a `createX(host, config)` factory that attaches on connect and destroys on disconnect, where `host` is a `RadiantElement` or anything with `registerConnectedCallback` and `registerCleanupCallback`. Without a host, construct the class and call `attach()` and `destroy()`, as the examples on these pages do. See [bindController](/docs/controllers/bind-controller).
+
+Config is getters (`getItems`, `getTarget`) and callbacks (`onChange`), so the element keeps its own state and the controller never reaches into it. Where a decision may need to differ, a controller documents a `protected` hook; see [Composing a component](/docs/getting-started/composing).
+
+## Controllers
+
+| Controller                                                      | What it does                                                                                                                         | Reach for it when                                                                  |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| [bindController](/docs/controllers/bind-controller)             | The contract and the connect and cleanup wiring behind every factory.                                                                | You write a new controller, or hold one without a factory.                         |
+| [EventListenerController](/docs/controllers/event-listener)     | Listens to event types on a target while attached; typed from target and type.                                                       | Listeners on `document` or `window`, added and removed at runtime, or with `once`. |
+| [MutationController](/docs/controllers/mutation)                | A `MutationObserver` on a node.                                                                                                      | You react to children or attributes changing.                                      |
+| [ResizeController](/docs/controllers/resize)                    | A `ResizeObserver` on elements.                                                                                                      | You react to an element changing size.                                             |
+| [DismissController](/docs/controllers/dismiss)                  | Reports a pointer press outside a surface, focus leaving it, or Escape.                                                              | A dialog, drawer or popup that closes itself.                                      |
+| [PopoverController](/docs/controllers/popover)                  | Portal mount, floating position, dismissal and teardown of a popup.                                                                  | A popup, hover card or menu panel beside an anchor.                                |
+| [PortalController](/docs/controllers/portal)                    | Moves a node into `document.body` (or a container) and carries the origin theme.                                                     | A surface that must escape clipping or stacking contexts.                          |
+| [FocusTrapController](/docs/controllers/focus-trap)             | Keeps Tab inside a modal surface and returns focus on destroy.                                                                       | A modal dialog.                                                                    |
+| [ScrollLockController](/docs/controllers/scroll-lock)           | Locks page scroll, counted across controllers.                                                                                       | A modal that must stop the page scrolling.                                         |
+| [RovingController](/docs/controllers/roving)                    | Roving tabindex with arrows, Home and End over the items you return.                                                                 | Tabs, toolbars, lists and grids with one tab stop.                                 |
+| [SwipeController](/docs/controllers/swipe)                      | Reports a left, right, up or down swipe on release.                                                                                  | A carousel or pager.                                                               |
+| [PointerDragController](/docs/controllers/pointer-drag)         | Pointer capture, move, end and cancel, with position, delta and the element under the pointer.                                       | A slider, splitter, resize handle or free-form drag.                               |
+| [SortableController](/docs/controllers/sortable)                | Reorders items, or moves them between containers, by pointer or keyboard with announcements. It never moves a node: `onChange` does. | A reorderable list or board, including drag between lists.                         |
+| [ListboxPopoverController](/docs/controllers/listbox-popover)   | Active-descendant navigation and popup positioning for a listbox.                                                                    | A select or combobox you build from options.                                       |
+| [MenuTreeController](/docs/controllers/menu-tree)               | Nested submenu coordination: timers, keyboard, popovers.                                                                             | A menu button or menubar with submenus.                                            |
+| [CalendarPopoverController](/docs/controllers/calendar-popover) | Open state, positioning, focus-out dismissal and mobile layout for a calendar popup.                                                 | A date picker popup around a calendar.                                             |
+
+## DOM utilities
+
+The same entry exports functions that touch elements. They have no page of their own; the TSDoc of each says how to use it.
+
+| Export                                                                                                        | What it does                                                                                                      | Reach for it when                                       |
+| ------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| `applyFloatingPosition`, `attachFloating`                                                                     | Floating placement with flip and clamping, applied to an element and kept on scroll and resize.                   | You position a surface without a popover.               |
+| `queryFocusableCandidates`, `getFocusableElements`, `findFirstFocusableCandidate`, `queryRovingTabindexItems` | Query focusable descendants; `getFocusableElements` also skips hidden ones (needs layout).                        | Custom focus loops and initial focus.                   |
+| `applyRovingTabindex`, `focusRovingItem`, `navigateRovingTabindex`                                            | The roving tabindex functions `RovingController` composes.                                                        | One-off roving navigation without a controller.         |
+| `getVisibleCollectionOptions`, `setCollectionActive`, `clearCollectionActive`                                 | `aria-activedescendant` and `data-active` bookkeeping for option collections.                                     | Active-descendant lists outside the listbox controller. |
+| `SORTABLE_*_ATTRIBUTE`, `SORTABLE_OFFSET_PROPERTIES`                                                          | The `data-sortable-*` attributes and `--sortable-dx` and `--sortable-dy` the sortable sets.                       | Styling a sortable.                                     |

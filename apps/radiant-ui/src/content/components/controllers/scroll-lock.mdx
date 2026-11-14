@@ -1,0 +1,103 @@
+---
+title: ScrollLockController
+description: 'Locks scroll on the page or a scroll container without shifting the layout, counted across controllers.'
+order: 9
+---
+
+import { PrimitiveExample } from '@/components/primitive-example';
+
+export const config = {
+	dependencies: {
+		components: [PrimitiveExample],
+		scripts: ['./scroll-lock.script.ts'],
+	},
+};
+
+# ScrollLockController
+
+<p class="docs-lede">Locks scroll on the page or a scroll container without shifting the layout, counted across controllers.</p>
+
+Reach for it for a modal that must stop the page, or a scroll container, from scrolling.
+
+## Import
+
+```ts
+import { ScrollLockController, createScrollLockController } from '@ecopages/radiant-ui/controllers';
+```
+
+## Try it
+
+Each press attaches or destroys the controller. This page is an app shell: the document never scrolls and the article column does, so a lock on the page would show nothing here. The example passes the list as the target, so while locked the list has `overflow: hidden` and the wheel and the scrollbar do nothing.
+
+<PrimitiveExample name="scroll-lock">
+	<button type="button">Lock scrolling</button>
+	<ul data-scroller>
+		<li>Line 1</li>
+		<li>Line 2</li>
+		<li>Line 3</li>
+		<li>Line 4</li>
+		<li>Line 5</li>
+		<li>Line 6</li>
+		<li>Line 7</li>
+		<li>Line 8</li>
+	</ul>
+	<p data-status>The list scrolls</p>
+</PrimitiveExample>
+
+```html
+<div data-example="scroll-lock">
+	<button type="button">Lock scrolling</button>
+	<ul data-scroller>
+		<li>Line 1</li>
+		<li>Line 2</li>
+		<li>Line 3</li>
+		<li>Line 4</li>
+		<li>Line 5</li>
+		<li>Line 6</li>
+		<li>Line 7</li>
+		<li>Line 8</li>
+	</ul>
+	<p data-status>The list scrolls</p>
+</div>
+```
+
+```ts
+import { ScrollLockController } from '@ecopages/radiant-ui/controllers';
+
+const root = document.querySelector('[data-example="scroll-lock"]')!;
+const toggle = root.querySelector('button')!;
+const scroller = root.querySelector<HTMLElement>('[data-scroller]')!;
+const status = root.querySelector('[data-status]')!;
+
+const lock = new ScrollLockController({ getTarget: () => scroller });
+let locked = false;
+
+toggle.addEventListener('click', () => {
+	locked = !locked;
+	if (locked) {
+		lock.attach();
+	} else {
+		lock.destroy();
+	}
+	toggle.textContent = locked ? 'Unlock scrolling' : 'Lock scrolling';
+	status.textContent = locked ? 'The list does not scroll' : 'The list scrolls';
+});
+```
+
+## Config
+
+| Option      | Meaning                                                                                                              |
+| ----------- | -------------------------------------------------------------------------------------------------------------------- |
+| `getTarget` | The element that scrolls, read on `attach()`. Defaults to the root element, which is the page. Optional.             |
+
+`new ScrollLockController()` locks the page. Pass `getTarget` when your page is a fixed-height frame with an inner scroll container, as this documentation site is.
+
+## Lifecycle
+
+`attach()` sets `overflow: hidden` on the target, the root element by default, and pads by the scrollbar width that disappears (the body for the page, the container itself otherwise). Every controller counts as one holder of its target, so nested modals can each attach and the target scrolls again only after the last of them destroys. Locks on different targets are independent. Attaching or destroying twice changes nothing. A scroll container inside the modal keeps scrolling.
+
+With a host, `createScrollLockController(host, config?)` does the same on connect and disconnect; see [bindController](/docs/controllers/bind-controller).
+
+## Protected hooks
+
+None. It decides nothing an owner would change.

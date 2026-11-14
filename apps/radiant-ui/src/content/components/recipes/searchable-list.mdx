@@ -1,0 +1,109 @@
+---
+title: Searchable list
+description: 'A list filtered as you type, then walked with the arrow keys.'
+order: 3
+---
+
+import { PrimitiveExample } from '@/components/primitive-example';
+
+export const config = {
+	dependencies: {
+		components: [PrimitiveExample],
+		scripts: ['./searchable-list.script.ts'],
+	},
+};
+
+# Searchable list
+
+<p class="docs-lede">A search field that narrows a list as you type, and arrow keys that walk what is left.</p>
+
+## Goal
+
+A command list, a country picker or a long settings page: type to narrow, press the Down arrow to leave the field and walk the matches, press Enter to choose. The list is always on the page, so there is no popup to open or close.
+
+## Primitives
+
+- [textContains](/docs/helpers/text-filter) decides whether an item matches. It ignores case and accents by default, so `creme` finds `Crème brûlée`.
+- [RovingController](/docs/controllers/roving) gives the visible matches one tab stop and moves it with the arrows. `getItems` returns only the visible items, so the arrows skip what the filter hid and `sync()` after each filter keeps the tab stop on a visible item.
+
+[ListboxPopoverController](/docs/controllers/listbox-popover) is not used. It is for a combobox: a field that keeps focus while a popup of options is navigated with `aria-activedescendant`. A list that is already on the page needs no popup, and moving real focus with the roving controller is less code.
+
+Left to the recipe: reading the query, hiding the items that do not match, the Down arrow that moves from the field to the list, and what choosing does.
+
+## Example
+
+Type to filter, press ArrowDown to move into the list, use the arrow keys, and press Enter to choose.
+
+<PrimitiveExample name="searchable-list">
+	<input type="search" aria-label="Filter fruit" placeholder="Filter fruit" />
+	<ul aria-label="Fruit">
+		<li>Apple</li>
+		<li>Apricot</li>
+		<li>Banana</li>
+		<li>Cherry</li>
+		<li>Date</li>
+	</ul>
+	<p data-status aria-live="polite">
+		5 of 5 shown
+	</p>
+</PrimitiveExample>
+
+## Source
+
+```html
+<div data-example="searchable-list">
+	<input type="search" aria-label="Filter fruit" placeholder="Filter fruit" />
+	<ul aria-label="Fruit">
+		<li>Apple</li>
+		<li>Apricot</li>
+		<li>Banana</li>
+		<li>Cherry</li>
+		<li>Date</li>
+	</ul>
+	<p data-status aria-live="polite">5 of 5 shown</p>
+</div>
+```
+
+```ts
+import { RovingController } from '@ecopages/radiant-ui/controllers';
+import { textContains } from '@ecopages/radiant-ui/helpers';
+
+const root = document.querySelector('[data-example="searchable-list"]')!;
+const input = root.querySelector('input')!;
+const list = root.querySelector('ul')!;
+const status = root.querySelector('[data-status]')!;
+
+const all = [...list.children] as HTMLElement[];
+const visible = () => all.filter((item) => !item.hidden);
+
+const roving = new RovingController({
+	getItems: visible,
+	getTarget: () => list,
+	orientation: 'vertical',
+	wrap: false,
+});
+roving.attach();
+roving.sync();
+
+input.addEventListener('input', () => {
+	for (const item of all) {
+		item.hidden = !textContains(item.textContent, input.value);
+	}
+	roving.sync();
+	status.textContent = `${visible().length} of ${all.length} shown`;
+});
+
+input.addEventListener('keydown', (event) => {
+	const first = visible()[0];
+	if (event.key === 'ArrowDown' && first) {
+		event.preventDefault();
+		roving.focus(first);
+	}
+});
+
+list.addEventListener('keydown', (event) => {
+	if (event.key === 'Enter' && event.target instanceof HTMLElement) {
+		status.textContent = `Chose ${event.target.textContent}`;
+	}
+});
+```

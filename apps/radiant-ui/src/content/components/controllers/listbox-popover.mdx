@@ -1,0 +1,115 @@
+---
+title: ListboxPopoverController
+description: 'Active-descendant navigation and popup positioning for a listbox.'
+order: 14
+---
+
+import { PrimitiveExample } from '@/components/primitive-example';
+
+export const config = {
+	dependencies: {
+		components: [PrimitiveExample],
+		scripts: ['./listbox-popover.script.ts'],
+	},
+};
+
+# ListboxPopoverController
+
+<p class="docs-lede">Active-descendant navigation and popup positioning for a listbox.</p>
+
+Reach for it for a select or combobox you build from options.
+
+## Import
+
+```ts
+import { ListboxPopoverController, createListboxPopoverController } from '@ecopages/radiant-ui/controllers';
+```
+
+## Try it
+
+ArrowDown on the input opens the list, the arrows move the active option (`data-active` and `aria-activedescendant`), Enter picks it and Escape closes. Selection and filtering stay with the owner; the controller owns the state machine both controls must agree on.
+
+<PrimitiveExample name="listbox-popover">
+	<input type="text" role="combobox" aria-controls="fruit-list" aria-expanded="false" placeholder="Pick a fruit" />
+	<ul id="fruit-list" role="listbox" hidden>
+		<li role="option">Apple</li>
+		<li role="option">Banana</li>
+		<li role="option">Cherry</li>
+	</ul>
+</PrimitiveExample>
+
+```html
+<div data-example="listbox-popover">
+	<input type="text" role="combobox" aria-controls="fruit-list" aria-expanded="false" placeholder="Pick a fruit" />
+	<ul id="fruit-list" role="listbox" hidden>
+		<li role="option">Apple</li>
+		<li role="option">Banana</li>
+		<li role="option">Cherry</li>
+	</ul>
+</div>
+```
+
+```ts
+import { ListboxPopoverController } from '@ecopages/radiant-ui/controllers';
+
+const root = document.querySelector('[data-example="listbox-popover"]')!;
+const input = root.querySelector('input')!;
+const listbox = root.querySelector<HTMLElement>('[role="listbox"]')!;
+
+let open = false;
+const listboxPopover = new ListboxPopoverController({
+	getAnchor: () => input,
+	getFloating: () => listbox,
+	getOpen: () => open,
+	getOptions: () => [...listbox.querySelectorAll<HTMLElement>('[role="option"]')],
+	getActiveDescendantHost: () => input,
+	getOptionIdPrefix: () => 'fruit',
+	onDismiss: () => setOpen(false),
+});
+listboxPopover.attach();
+listboxPopover.ensureOptionIds();
+
+const setOpen = (next: boolean) => {
+	open = next;
+	input.setAttribute('aria-expanded', String(next));
+	listboxPopover.syncPopoverPosition();
+};
+
+input.addEventListener('keydown', (event) =>
+	listboxPopover.handleKeydown(event, {
+		isOpen: open,
+		canUseSpace: false,
+		closesOnTab: true,
+		enterWhenClosed: 'open',
+		enterWithoutActive: 'close',
+		onOpen: () => setOpen(true),
+		onClose: () => setOpen(false),
+		onSelectActive: () => {
+			input.value = listbox.querySelector('[data-active]')!.textContent!;
+			setOpen(false);
+		},
+	}),
+);
+```
+
+## Config
+
+| Option                    | Description                                                                                                                                         |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `getAnchor`               | The element the popup sits beside, usually the input or trigger.                                                                                    |
+| `getFloating`             | The popup.                                                                                                                                          |
+| `getOpen`                 | Whether the popup is open.                                                                                                                          |
+| `getOptions`              | All options, hidden ones included.                                                                                                                  |
+| `getActiveDescendantHost` | The element that receives `aria-activedescendant`.                                                                                                  |
+| `getOptionIdPrefix`       | The prefix for option ids minted when an option has none.                                                                                           |
+| `onDismiss`               | Called on a pointer press outside the anchor and popup, or focus leaving them. Escape stays with the owner's key handling, through `handleKeydown`. |
+
+## Lifecycle
+
+`attach()` attaches the popover that positions the popup (below the anchor, the anchor width, not portaled); call `syncPopoverPosition()` whenever the open state changes. `destroy()` destroys it. The rest is state and keys: `ensureOptionIds()`, `setActiveOption(index)`, `clearActiveOption()`, `moveActive(direction, onOpen)` and `handleKeydown(event, policy)`, where the policy says what Space, Enter, Tab and Escape do and receives `onOpen`, `onClose` and `onSelectActive`.
+
+With a host, `createListboxPopoverController(host, config)` does the same on connect and disconnect; see [bindController](/docs/controllers/bind-controller).
+
+## Protected hooks
+
+None. Select and combobox keep selection and filtering local, so the decisions that differ are the callbacks and the policy passed to `handleKeydown`.

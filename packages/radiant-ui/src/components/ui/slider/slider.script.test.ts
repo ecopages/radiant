@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createNumericRange } from '../shared/numeric-range';
+import { createNumericRange } from '@/lib/numeric-range';
 import {
 	constrainSliderPair,
 	formatSliderReadout,

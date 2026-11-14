@@ -1,0 +1,91 @@
+---
+title: PointerDragController
+description: 'Pointer capture, move, end and cancel; reports position, delta and the element under the pointer.'
+order: 12
+---
+
+import { PrimitiveExample } from '@/components/primitive-example';
+
+export const config = {
+	dependencies: {
+		components: [PrimitiveExample],
+		scripts: ['./pointer-drag.script.ts'],
+	},
+};
+
+# PointerDragController
+
+<p class="docs-lede">
+	Pointer capture, move, end and cancel; reports position, delta and the element under the pointer.
+</p>
+
+Reach for it for a slider, splitter, resize handle or free-form drag.
+
+## Import
+
+```ts
+import { PointerDragController, createPointerDragController } from '@ecopages/radiant-ui/controllers';
+```
+
+## Try it
+
+The box follows the pointer by the reported `dx` and `dy` and snaps back when the drag ends, with the reason.
+
+<PrimitiveExample name="pointer-drag">
+	<div data-box>Drag me</div>
+	<p data-status>Not dragged</p>
+</PrimitiveExample>
+
+```html
+<div data-example="pointer-drag">
+	<div data-box>Drag me</div>
+	<p data-status>Not dragged</p>
+</div>
+```
+
+```ts
+import { PointerDragController } from '@ecopages/radiant-ui/controllers';
+
+const root = document.querySelector('[data-example="pointer-drag"]')!;
+const handle = root.querySelector<HTMLElement>('[data-box]')!;
+const status = root.querySelector('[data-status]')!;
+
+const drag = new PointerDragController({
+	getTarget: () => handle,
+	onMove: ({ dx, dy }) => {
+		handle.style.transform = `translate(${dx}px, ${dy}px)`;
+		status.textContent = `Moved ${dx}, ${dy}`;
+	},
+	onEnd: ({ reason }) => {
+		handle.style.transform = '';
+		status.textContent = `Ended: ${reason}`;
+	},
+});
+drag.attach();
+```
+
+## Config
+
+| Option      | Description                                                                                                                                                                                                                 |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `getTarget` | Where a press starts a drag and where the pointer is captured. Resolved on every `attach()`.                                                                                                                                |
+| `getHandle` | Limits presses to this element's subtree, resolved on every press. Pass the host as `getTarget` and a child that a re-render can replace or that arrives after connect as `getHandle`. `null` means no press starts a drag. |
+| `canStart`  | Refuses a press, such as a disabled control. The primary button is already required.                                                                                                                                        |
+| `capture`   | Capture the pointer on the target. Default `true`. Set `false` when the target is a container whose children must keep receiving `click`.                                                                                   |
+| `onStart`   | Called on the accepted press, after capture.                                                                                                                                                                                |
+| `onMove`    | Called on every move with the position, the delta from the press and `elementUnderPointer()`.                                                                                                                               |
+| `onEnd`     | Called once per drag, however it ends: `release`, `cancel` or `destroy`.                                                                                                                                                    |
+
+## Lifecycle
+
+`attach()` listens for `pointerdown` on the target. A press starts a drag; move, up and cancel are then listened for on `document` until the end, so the drag keeps tracking when the pointer leaves the target. `destroy()` during a drag releases capture, drops the listeners and reports `onEnd` with reason `destroy`. Give the draggable part `touch-action: none` in CSS for touch.
+
+With a host, `createPointerDragController(host, config)` does the same on connect and disconnect; see [bindController](/docs/controllers/bind-controller).
+
+## Protected hooks
+
+Extend the class and override these to change how it decides. A component never extends a controller; a subclass is registered with `bindController`.
+
+| Hook                  | Description                                                                                                                                                                                                                                                                                  |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `acceptsPress(event)` | Decides whether a press starts a drag. Runs on every `pointerdown` on the target while no drag is running. Override to change which presses count, such as also taking the middle button. The default accepts the primary button on the `getHandle` subtree when `canStart` does not refuse. |

@@ -1,0 +1,89 @@
+---
+title: FocusTrapController
+description: 'Keeps Tab inside a modal surface and returns focus on destroy.'
+order: 8
+---
+
+import { PrimitiveExample } from '@/components/primitive-example';
+
+export const config = {
+	dependencies: {
+		components: [PrimitiveExample],
+		scripts: ['./focus-trap.script.ts'],
+	},
+};
+
+# FocusTrapController
+
+<p class="docs-lede">Keeps Tab inside a modal surface and returns focus on destroy.</p>
+
+Reach for it for a modal dialog.
+
+## Import
+
+```ts
+import { FocusTrapController, createFocusTrapController } from '@ecopages/radiant-ui/controllers';
+```
+
+## Try it
+
+Trap focus moves focus into the panel. Tab on Last wraps to First and Shift+Tab on First wraps to Last. Release focus returns focus to the button.
+
+<PrimitiveExample name="focus-trap">
+	<button type="button" data-toggle>
+		Trap focus
+	</button>
+	<div data-box>
+		<button type="button">First</button>
+		<button type="button">Last</button>
+	</div>
+</PrimitiveExample>
+
+```html
+<div data-example="focus-trap">
+	<button type="button" data-toggle>Trap focus</button>
+	<div data-box>
+		<button type="button">First</button>
+		<button type="button">Last</button>
+	</div>
+</div>
+```
+
+```ts
+import { FocusTrapController } from '@ecopages/radiant-ui/controllers';
+
+const root = document.querySelector('[data-example="focus-trap"]')!;
+const panel = root.querySelector<HTMLElement>('[data-box]')!;
+const toggle = root.querySelector('[data-toggle]')!;
+
+const trap = new FocusTrapController({ getSurface: () => panel });
+let trapped = false;
+
+toggle.addEventListener('click', () => {
+	trapped = !trapped;
+	if (trapped) {
+		trap.attach();
+	} else {
+		trap.destroy();
+	}
+	toggle.textContent = trapped ? 'Release focus' : 'Trap focus';
+});
+```
+
+## Config
+
+| Option         | Description                                                                                                                                                                  |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `getSurface`   | The modal surface. `null` traps nothing.                                                                                                                                     |
+| `getFocusable` | The elements Tab loops over, in order. Defaults to the focusable descendants of the surface.                                                                                 |
+| `getStrict`    | Whether focus inside the surface but outside the loop (the surface itself, a `tabindex="-1"` node) is pulled into the loop on Tab. Read on every key press. Default `false`. |
+
+## Lifecycle
+
+`attach()` remembers the focused element, listens for Tab on `document` and, in a microtask, focuses the first focusable element of the surface (or the surface). `destroy()` stops listening and returns focus to the remembered element. A Tab with focus outside the surface is left alone. Making the rest of the page `inert` is not part of it.
+
+With a host, `createFocusTrapController(host, config)` does the same on connect and disconnect; see [bindController](/docs/controllers/bind-controller).
+
+## Protected hooks
+
+None. Change behavior through the config callbacks.

@@ -112,6 +112,14 @@ function buildExportsMap(components: string[]): Record<string, unknown> {
 			types: './dist/aria.d.ts',
 			import: './dist/aria.js',
 		},
+		'./controllers': {
+			types: './dist/controllers.d.ts',
+			import: './dist/controllers.js',
+		},
+		'./helpers': {
+			types: './dist/helpers.d.ts',
+			import: './dist/helpers.js',
+		},
 		'./icons': {
 			types: './dist/lib/icons/index.d.ts',
 			import: './dist/lib/icons/index.js',

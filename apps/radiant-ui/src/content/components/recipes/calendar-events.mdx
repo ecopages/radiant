@@ -1,0 +1,152 @@
+---
+title: Calendar of events
+description: 'A month grid of draggable events with a filter, built from the date helpers, text filter, roving and sortable controllers.'
+order: 1
+---
+
+import { PrimitiveExample } from '@/components/primitive-example';
+
+export const config = {
+	dependencies: {
+		components: [PrimitiveExample],
+		scripts: ['./calendar-events.script.ts'],
+		stylesheets: ['./calendar-events.css'],
+	},
+};
+
+# Calendar of events
+
+<p class="docs-lede">
+	A month of days, each holding events you can drag to another day, and a filter that narrows them.
+</p>
+
+## Goal
+
+Reach for this shape for a planner, a schedule or a board whose columns are dates. The page imports only from `@ecopages/radiant-ui/controllers` and `@ecopages/radiant-ui/helpers`.
+
+## Primitives
+
+- [`buildCalendarMonth`, `getWeekStartsOn`, `getWeekdayLabels`, `formatMonthYear`, `formatDisplayDate`](/docs/helpers/intl-date) build the weeks, the week start, the headers and the day names for the locale, so the grid has no date arithmetic of its own.
+- [`textContains`](/docs/helpers/text-filter) decides which events match the filter, ignoring case and accents.
+- [`SortableController`](/docs/controllers/sortable) with one [`SortableGroup`](/docs/controllers/sortable#moving-between-lists) makes every day a container events move between. It handles the pointer drag, the keyboard path (Space lifts, the arrows move within the day, PageDown and PageUp move to the next and previous day) and the announcements. It never moves a node: `onChange` applies the move to the owner's list of events and renders again.
+- [`RovingController`](/docs/controllers/roving) keeps the days to one tab stop. With `orientation: 'none'` it handles no keys, so the script maps the arrows to a step of one day or one week and calls `focus()`.
+
+The recipe decides three things itself: how an event is stored (an `iso` date per event), what the filter does to a day (it leaves non-matching events out), and which keys enter and leave a day (Enter focuses its first event, Escape returns to the day).
+
+## Example
+
+Drag an event to another day. With the keyboard, move between days with the arrow keys, press Enter to focus the first event of a day, press Space to lift it, use the arrows to reorder it within the day and PageDown or PageUp to move it to the next or previous day, then press Space to drop. Typing in the filter hides the events that do not match.
+
+<PrimitiveExample name="calendar-events">
+	<input type="search" placeholder="Filter events" aria-label="Filter events" />
+	<h3 data-title></h3>
+	<div data-grid role="grid" aria-label="Events by day"></div>
+	<p data-status aria-live="polite">
+		Focus a day, press Enter, then Space to lift an event
+	</p>
+</PrimitiveExample>
+
+## Source
+
+```html
+<div data-example="calendar-events">
+	<input type="search" placeholder="Filter events" aria-label="Filter events" />
+	<h3 data-title></h3>
+	<div data-grid role="grid" aria-label="Events by day"></div>
+	<p data-status aria-live="polite">Focus a day, press Enter, then Space to lift an event</p>
+</div>
+```
+
+```ts
+import { RovingController, SortableController, SortableGroup } from '@ecopages/radiant-ui/controllers';
+import {
+	buildCalendarMonth,
+	formatDisplayDate,
+	formatMonthYear,
+	getWeekdayLabels,
+	getWeekStartsOn,
+	textContains,
+} from '@ecopages/radiant-ui/helpers';
+
+const root = document.querySelector('[data-example="calendar-events"]')!;
+const filter = root.querySelector('input')!;
+const grid = root.querySelector<HTMLElement>('[data-grid]')!;
+const status = root.querySelector('[data-status]')!;
+
+const locale = 'en-US';
+const month = new Date(2026, 10, 1);
+const events = [
+	{ id: 'review', iso: '2026-11-03', title: 'Design review' },
+	{ id: 'standup', iso: '2026-11-03', title: 'Standup' },
+	{ id: 'launch', iso: '2026-11-12', title: 'Launch day' },
+	{ id: 'retro', iso: '2026-11-19', title: 'Retro' },
+];
+
+root.querySelector('[data-title]')!.textContent = formatMonthYear(month, locale);
+const headers = getWeekdayLabels(locale, getWeekStartsOn(locale)).map((label) => `<b role="columnheader">${label}</b>`);
+grid.insertAdjacentHTML('beforeend', `<div role="row">${headers.join('')}</div>`);
+
+const cells: HTMLElement[] = buildCalendarMonth(month.getFullYear(), month.getMonth(), { locale }).flatMap((week) => {
+	const row = grid.appendChild(document.createElement('div'));
+	row.setAttribute('role', 'row');
+	return week.map(({ iso, date, inMonth }) => {
+		const cell = row.appendChild(document.createElement('div'));
+		cell.setAttribute('role', 'gridcell');
+		cell.setAttribute('aria-label', formatDisplayDate(date, locale, 'full'));
+		cell.dataset.iso = iso;
+		cell.dataset.day = String(date.getDate());
+		cell.toggleAttribute('data-outside', !inMonth);
+		return cell;
+	});
+});
+
+const visible = (iso: string) => events.filter((event) => event.iso === iso && textContains(event.title, filter.value));
+
+function render(): void {
+	for (const cell of cells) {
+		const items = visible(cell.dataset.iso!).map(
+			({ id, title }) => `<div data-event="${id}" tabindex="-1">${title}</div>`,
+		);
+		cell.innerHTML = `<span data-day aria-hidden="true">${cell.dataset.day}</span>${items.join('')}`;
+	}
+}
+
+const group = new SortableGroup();
+for (const cell of cells) {
+	new SortableController({
+		group,
+		getContainer: () => cell,
+		getItems: () => [...cell.querySelectorAll<HTMLElement>('[data-event]')],
+		announce: (message) => (status.textContent = message),
+		onChange: ({ item, to, toContainer }) => {
+			const moved = events.find((event) => event.id === item.dataset.event)!;
+			events.splice(events.indexOf(moved), 1);
+			moved.iso = toContainer.dataset.iso!;
+			const next = visible(moved.iso)[to];
+			events.splice(next ? events.indexOf(next) : events.length, 0, moved);
+			render();
+			grid.querySelector<HTMLElement>(`[data-event="${moved.id}"]`)!.focus();
+		},
+	}).attach();
+}
+
+const roving = new RovingController({ getItems: () => cells, getTarget: () => grid, orientation: 'none' });
+const steps: Record<string, number> = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 };
+grid.addEventListener('keydown', (event) => {
+	const target = event.target as HTMLElement;
+	if (target.hasAttribute('data-event')) {
+		if (event.key === 'Escape') target.closest<HTMLElement>('[role="gridcell"]')!.focus();
+		return;
+	}
+	const next = cells[cells.indexOf(target) + (steps[event.key] ?? 0)];
+	if (event.key === 'Enter') target.querySelector<HTMLElement>('[data-event]')?.focus();
+	else if (steps[event.key] && next) roving.focus(next);
+	else return;
+	event.preventDefault();
+});
+
+filter.addEventListener('input', render);
+render();
+roving.attach();
+roving.sync();
+```

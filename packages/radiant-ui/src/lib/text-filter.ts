@@ -1,9 +1,18 @@
+/**
+ * Which differences count: `base` ignores case and accents, `accent` ignores case only, `case` compares exactly.
+ */
 export type TextFilterSensitivity = 'base' | 'accent' | 'case';
 
 /**
  * Case- and accent-insensitive "contains" matcher for autocomplete filtering.
  *
  * @remarks `base` ignores case; `case` is a literal substring match.
+ *
+ * @example
+ * ```ts
+ * textContains('Crème brûlée', 'creme'); // true
+ * textContains('Crème brûlée', 'creme', 'accent'); // false
+ * ```
  */
 export function textContains(text: string, query: string, sensitivity: TextFilterSensitivity = 'base'): boolean {
 	if (!query) {

@@ -364,6 +364,116 @@ describe('RuiSidebar composition', () => {
 		cleanup();
 	});
 
+	it.each([
+		['left', 40, 1],
+		['right', 40, -1],
+	] as const)('resizes the %s pane with a pointer drag and stops on release', async (side, travel, sign) => {
+		const { host, cleanup } = mount(
+			<RuiSidebar
+				id="primary-sidebar"
+				side={side}
+				collapsible="off"
+				defaultWidth={220}
+				resizable
+				mobileBreakpoint={0}
+				label="Primary"
+			>
+				<span>content</span>
+			</RuiSidebar>,
+		);
+		await settled();
+		const handle = host.querySelector('[data-ref="handle"]') as HTMLElement;
+		const pointer = (target: EventTarget, type: string, x: number) =>
+			target.dispatchEvent(new PointerEvent(type, { bubbles: true, pointerId: 1, button: 0, clientX: x }));
+
+		const start = Number.parseFloat(paneWidthVar(host));
+		const expected = `${start + sign * travel}px`;
+		pointer(handle, 'pointerdown', 100);
+		pointer(document, 'pointermove', 100 + travel);
+		expect(paneWidthVar(host)).toBe(expected);
+
+		pointer(document, 'pointerup', 100 + travel);
+		pointer(document, 'pointermove', 100 + travel * 2);
+		expect(paneWidthVar(host)).toBe(expected);
+
+		cleanup();
+	});
+
+	it('resizes with a handle that arrives after the host connected', async () => {
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		root.render(
+			<RuiSidebar
+				id="primary-sidebar"
+				collapsible="off"
+				defaultWidth={220}
+				resizable
+				mobileBreakpoint={0}
+				label="Primary"
+			>
+				<span>content</span>
+			</RuiSidebar>,
+		);
+		await settled();
+		const sidebar = container.querySelector('rui-sidebar') as HTMLElement;
+		const children = [...sidebar.childNodes];
+		sidebar.replaceChildren();
+		document.body.append(sidebar);
+		sidebar.append(...children);
+		await settled();
+
+		const handle = sidebar.querySelector('[data-ref="handle"]') as HTMLElement;
+		const pointer = (target: EventTarget, type: string, x: number) =>
+			target.dispatchEvent(new PointerEvent(type, { bubbles: true, pointerId: 1, button: 0, clientX: x }));
+		const start = Number.parseFloat(paneWidthVar(sidebar));
+		pointer(handle, 'pointerdown', 100);
+		pointer(document, 'pointermove', 140);
+		pointer(document, 'pointerup', 140);
+
+		expect(Number.parseFloat(paneWidthVar(sidebar))).toBe(start + 40);
+		root.unmount();
+		sidebar.remove();
+	});
+
+	it.each(['replaced', 'removed and added back later'])(
+		'resizes with a handle that is %s after connect',
+		async (change) => {
+			const { host, cleanup } = mount(
+				<RuiSidebar
+					id="primary-sidebar"
+					collapsible="off"
+					defaultWidth={220}
+					resizable
+					mobileBreakpoint={0}
+					label="Primary"
+				>
+					<span>content</span>
+				</RuiSidebar>,
+			);
+			await settled();
+			const handle = host.querySelector('[data-ref="handle"]') as HTMLElement;
+			const fresh = handle.cloneNode(true) as HTMLElement;
+			if (change === 'replaced') {
+				handle.replaceWith(fresh);
+			} else {
+				const marker = document.createComment('');
+				handle.replaceWith(marker);
+				await settled();
+				marker.replaceWith(fresh);
+			}
+			const pointer = (target: EventTarget, type: string, x: number) =>
+				target.dispatchEvent(new PointerEvent(type, { bubbles: true, pointerId: 1, button: 0, clientX: x }));
+
+			const start = Number.parseFloat(paneWidthVar(host));
+			pointer(fresh, 'pointerdown', 100);
+			pointer(document, 'pointermove', 140);
+			pointer(document, 'pointerup', 140);
+
+			expect(Number.parseFloat(paneWidthVar(host))).toBe(start + 40);
+			cleanup();
+		},
+	);
+
 	it('reflects the right-side orientation', async () => {
 		const { host, cleanup } = mount(
 			<RuiSidebar id="primary-sidebar" side="right" mobileBreakpoint={0} label="Primary">

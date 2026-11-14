@@ -1,0 +1,25 @@
+---
+title: Overview
+description: Worked compositions of several controllers and helpers into one behavior, each with a runnable example and its full source.
+order: 0
+---
+
+# Recipes
+
+<p class="docs-lede">
+	A recipe builds one behavior from several small primitives, so you can copy the composition instead of rediscovering
+	it.
+</p>
+
+Recipes are listed in this section, below this page. A component is a composition of [controllers](/docs/controllers/overview) and [helpers](/docs/helpers/overview); a recipe shows one such composition end to end without the weight of a catalog component.
+
+## What a recipe page contains
+
+Every recipe page has the same four parts, in this order:
+
+1. **Goal.** The behavior in one or two sentences, and when you would want it.
+2. **Primitives.** Each controller and helper the recipe composes and why that one, one line apiece, linked to its page. A recipe states which decision it left to a config callback, a protected hook or its own code.
+3. **Example.** The recipe running on the page, in plain elements, styled from the theme variables so it follows the active theme.
+4. **Source.** The full code of the example, complete enough to paste into a project: imports, markup and script.
+
+The rule of [Composing a component](/docs/getting-started/composing) holds in every recipe: keep each controller in a variable you own, configure it with getters and callbacks, and extend a controller through its protected hooks rather than reimplementing it.

@@ -1,4 +1,12 @@
-/** Parses an ISO `YYYY-MM-DD` string into a local-midnight `Date`, or `null` when invalid. */
+/**
+ * Parses an ISO `YYYY-MM-DD` string into a local-midnight `Date`, or `null` when invalid.
+ *
+ * @example
+ * ```ts
+ * isoToDate('2026-11-14'); // Date at local midnight
+ * isoToDate('2026-02-30'); // null
+ * ```
+ */
 export function isoToDate(iso: string | null | undefined): Date | null {
 	if (iso == null) {
 		return null;
@@ -20,7 +28,14 @@ export function isoToDate(iso: string | null | undefined): Date | null {
 	return date;
 }
 
-/** Serializes a local calendar date to ISO `YYYY-MM-DD`. */
+/**
+ * Serializes a local calendar date to ISO `YYYY-MM-DD`.
+ *
+ * @example
+ * ```ts
+ * dateToIso(new Date(2026, 10, 14)); // '2026-11-14'
+ * ```
+ */
 export function dateToIso(date: Date): string {
 	const year = date.getFullYear();
 	const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -28,7 +43,14 @@ export function dateToIso(date: Date): string {
 	return `${year}-${month}-${day}`;
 }
 
-/** Returns true when `iso` falls within optional `min` / `max` bounds (inclusive). */
+/**
+ * Returns true when `iso` falls within optional `min` / `max` bounds (inclusive).
+ *
+ * @example
+ * ```ts
+ * isIsoInRange('2026-11-14', '2026-11-01', '2026-11-30'); // true
+ * ```
+ */
 export function isIsoInRange(iso: string, min?: string, max?: string): boolean {
 	if (min && iso < min) {
 		return false;

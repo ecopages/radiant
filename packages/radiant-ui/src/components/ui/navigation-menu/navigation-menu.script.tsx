@@ -1,9 +1,11 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, onEvent, prop } from '@ecopages/radiant';
-import { queryRovingTabindexItems } from '@/lib/focusable-elements';
-import { applyRovingTabindex, navigateRovingTabindex } from '@/lib/roving-tabindex';
+import { queryRovingTabindexItems } from '../../../controllers/focusable-elements';
+import { navigateRovingTabindex } from '../../../controllers/roving-tabindex';
 import { uniqueId } from '@/lib/unique-id';
-import { PopoverController, shouldDismissPopoverPointer } from '../shared/popover-controller';
+import { createDismissController } from '../../../controllers/dismiss-controller';
+import { createPopoverController } from '../../../controllers/popover-controller';
+import { createRovingController } from '../../../controllers/roving-controller';
 
 export type RuiNavigationMenuProps = {
 	label?: string;
@@ -102,20 +104,49 @@ export class RuiNavigationMenu extends RadiantElement {
 	closeDelay: number;
 
 	private openValue: string | null = null;
-	private popoverController: PopoverController | null = null;
+	private readonly popoverController = createPopoverController(this, {
+		getAnchor: () => this.getOpenTrigger(),
+		getFloating: () => this.getOpenPanel(),
+		getOpen: () => Boolean(this.openValue),
+		getPlacement: () => 'bottom-start',
+		gap: NAVIGATION_MENU_GAP,
+		portal: false,
+		onDismiss: () => this.closeMenu(),
+		dismissOn: ['pointer'],
+	});
 	private openTimer: ReturnType<typeof setTimeout> | null = null;
 	private closeTimer: ReturnType<typeof setTimeout> | null = null;
 
+	private readonly roving = createRovingController(this, {
+		getItems: () => this.getBarItems(),
+		getTarget: (): HTMLElement => this,
+		wrap: false,
+		onMove: (item) => this.syncMenuToBarItem(item),
+	});
+
+	constructor() {
+		super();
+		createDismissController(this, {
+			getSurface: () => this.getOpenPanel(),
+			getRelated: () => [this],
+			getOpen: () => Boolean(this.openValue),
+			onDismiss: (_reason, event) => {
+				event.preventDefault();
+				this.closeMenu(true);
+			},
+			triggers: ['escape'],
+			escapeScope: 'tree',
+		});
+	}
+
 	protected override onConnected(): void {
 		this.syncPanels();
-		this.syncBarRovingTabindex();
+		this.roving.sync();
 		this.syncPopover();
 	}
 
 	override disconnectedCallback(): void {
 		this.clearHoverTimers();
-		this.popoverController?.destroy();
-		this.popoverController = null;
 		super.disconnectedCallback();
 	}
 
@@ -128,15 +159,6 @@ export class RuiNavigationMenu extends RadiantElement {
 
 	private getBarItems(): HTMLElement[] {
 		return Array.from(this.querySelectorAll<HTMLElement>('[data-navigation-item]'));
-	}
-
-	private syncBarRovingTabindex(): void {
-		const items = this.getBarItems();
-		const activeIndex = Math.max(
-			0,
-			items.findIndex((item) => item.tabIndex === 0 || item === document.activeElement),
-		);
-		applyRovingTabindex(items, activeIndex);
 	}
 
 	private isBarTrigger(item: HTMLElement): boolean {
@@ -230,28 +252,8 @@ export class RuiNavigationMenu extends RadiantElement {
 		}
 	}
 
-	private ensurePopoverController(): PopoverController {
-		if (!this.popoverController) {
-			this.popoverController = new PopoverController({
-				getAnchor: () => this.getOpenTrigger(),
-				getFloating: () => this.getOpenPanel(),
-				getOpen: () => Boolean(this.openValue),
-				getPlacement: () => 'bottom-start',
-				gap: NAVIGATION_MENU_GAP,
-				portal: false,
-			});
-		}
-		return this.popoverController;
-	}
-
 	private syncPopover(): void {
-		const controller = this.ensurePopoverController();
-		controller.updateConfig({
-			getAnchor: () => this.getOpenTrigger(),
-			getFloating: () => this.getOpenPanel(),
-			getOpen: () => Boolean(this.openValue),
-		});
-		controller.sync();
+		this.popoverController.sync();
 	}
 
 	private closeMenu(returnFocus = false): void {
@@ -307,7 +309,7 @@ export class RuiNavigationMenu extends RadiantElement {
 		if (!(node instanceof Node)) {
 			return false;
 		}
-		return !shouldDismissPopoverPointer(this.getOpenTrigger(), this.getOpenPanel(), node);
+		return this.popoverController.contains(node);
 	}
 
 	private triggerValueFromEvent(event: Event): string | null {
@@ -358,43 +360,6 @@ export class RuiNavigationMenu extends RadiantElement {
 			this.closeTimer = null;
 			this.closeMenu();
 		}, delay);
-	}
-
-	@onEvent({ document: true, type: 'pointerdown' })
-	onDocumentPointerDown(event: PointerEvent): void {
-		if (!this.openValue) {
-			return;
-		}
-
-		if (this.pointerIsInOpenMenu(event.target)) {
-			return;
-		}
-
-		this.closeMenu();
-	}
-
-	@onEvent({ document: true, type: 'keydown' })
-	onDocumentKeydown(event: KeyboardEvent): void {
-		if (event.key !== 'Escape' || !this.openValue) {
-			return;
-		}
-
-		const active = document.activeElement;
-		const panel = this.getOpenPanel();
-		if (active && !this.contains(active) && !(panel && panel.contains(active))) {
-			return;
-		}
-
-		event.preventDefault();
-		this.closeMenu(true);
-	}
-
-	@onEvent({ ref: 'root', type: 'keydown' })
-	onRootKeydown(event: KeyboardEvent): void {
-		if (event.key === 'Escape' && this.openValue) {
-			event.preventDefault();
-			this.closeMenu(true);
-		}
 	}
 
 	@onEvent({ selector: '[data-navigation-trigger]', type: 'click' })
@@ -485,42 +450,21 @@ export class RuiNavigationMenu extends RadiantElement {
 	@onEvent({ selector: '[data-navigation-item]', type: 'keydown' })
 	onBarItemKeydown(event: KeyboardEvent): void {
 		const item = (event.target as HTMLElement).closest<HTMLElement>('[data-navigation-item]');
-		if (!item || this.handleBarTriggerKeydown(event, item)) return;
-
-		const result = navigateRovingTabindex({
-			items: this.getBarItems(),
-			current: item,
-			key: event.key,
-			orientation: 'horizontal',
-			wrap: false,
-		});
-
-		if (!result.handled) return;
-		event.preventDefault();
-		this.syncMenuToBarItem(result.item);
+		if (item) this.handleBarTriggerKeydown(event, item);
 	}
 
-	private handleBarTriggerKeydown(event: KeyboardEvent, item: HTMLElement): boolean {
-		if (event.key === 'Escape') {
-			if (this.openValue) {
-				event.preventDefault();
-				this.closeMenu(true);
-			}
-			return true;
-		}
-
+	private handleBarTriggerKeydown(event: KeyboardEvent, item: HTMLElement): void {
 		const value = item.getAttribute('data-value');
-		if (!this.isBarTrigger(item) || !value) return false;
+		if (!this.isBarTrigger(item) || !value) return;
 		if (event.key === 'Enter' || event.key === ' ') {
 			event.preventDefault();
 			this.openPanel(value);
-			return true;
+			return;
 		}
-		if (event.key !== 'ArrowDown') return false;
+		if (event.key !== 'ArrowDown') return;
 		event.preventDefault();
 		if (this.openValue === value) this.focusPanelEntry(value);
 		else this.openPanel(value);
-		return true;
 	}
 
 	private syncMenuToBarItem(item: HTMLElement): void {
@@ -530,6 +474,11 @@ export class RuiNavigationMenu extends RadiantElement {
 		else this.closeMenu(false);
 	}
 
+	/**
+	 * @remarks Panel content is not a roving collection: its focusables keep their own tab order and ArrowUp/Down only
+	 * move focus between them, with the panel's items changing per open panel. It uses the pure
+	 * `navigateRovingTabindex` and no `RovingController`, which would take over their tabindex.
+	 */
 	@onEvent({ selector: '[data-navigation-panel]', type: 'keydown' })
 	onPanelKeydown(event: KeyboardEvent): void {
 		const target = event.target;
@@ -549,12 +498,6 @@ export class RuiNavigationMenu extends RadiantElement {
 
 		const active = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 		if (!active || !panel.contains(active)) {
-			return;
-		}
-
-		if (event.key === 'Escape') {
-			event.preventDefault();
-			this.closeMenu(true);
 			return;
 		}
 

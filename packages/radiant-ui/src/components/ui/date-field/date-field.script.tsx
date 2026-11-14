@@ -15,7 +15,7 @@ import { effectiveVisibleMonths } from '@/lib/viewport/mobile-layout';
 import { uniqueId } from '@/lib/unique-id';
 import type { RuiCalendarChangeDetail } from '../calendar/calendar.script';
 import type { RuiDateInputChangeDetail } from '../date-input/date-input.script';
-import { CalendarPopoverBehavior } from '../shared/calendar-popover-behavior';
+import { createCalendarPopoverController } from '../../../controllers/calendar-popover-controller';
 import { syncFieldLabel } from '../shared/field-label';
 
 export type RuiDateFieldProps = {
@@ -134,7 +134,7 @@ export class RuiDateField extends RadiantElement {
 	open = false;
 
 	private readonly uid = uniqueId('rui-date-field');
-	private readonly calendarPopover = new CalendarPopoverBehavior({
+	private readonly calendarPopover = createCalendarPopoverController(this, {
 		getHost: () => this,
 		getAnchor: () => this.getToggle()?.parentElement ?? this,
 		getFloating: () => this.popoverTarget,
@@ -222,13 +222,7 @@ export class RuiDateField extends RadiantElement {
 	}
 
 	protected override onConnected(): void {
-		this.calendarPopover.connect();
 		this.initialize();
-	}
-
-	override disconnectedCallback(): void {
-		this.calendarPopover.destroy();
-		super.disconnectedCallback();
 	}
 
 	@onUpdated(['value', 'min', 'max', 'label', 'disabled', 'readOnly', 'locale', 'visibleMonths'])
@@ -262,14 +256,6 @@ export class RuiDateField extends RadiantElement {
 		this.value = typeof value === 'string' ? value : '';
 	}
 
-	@onEvent({
-		selector: '[data-date-field-input], [data-date-field-trigger], [data-date-field-popover]',
-		type: 'focusout',
-	})
-	onRootFocusOut(event: FocusEvent): void {
-		this.calendarPopover.handleFocusOut(event, () => this.calendarPopover.setOpen(false));
-	}
-
 	@onEvent({ ref: 'trigger', type: 'pointerdown' })
 	onTriggerPointerDown(): void {
 		this.calendarPopover.suppressDismiss();
@@ -301,23 +287,6 @@ export class RuiDateField extends RadiantElement {
 		}
 		this.commitValue(detail.value);
 		this.calendarPopover.closeAndRestoreFocus();
-	}
-
-	@onEvent({
-		selector: '[data-date-field-input], [data-date-field-trigger], [data-date-field-calendar]',
-		type: 'keydown',
-	})
-	onRootKeydown(event: KeyboardEvent): void {
-		if (event.key === 'Escape' && this.open) {
-			event.preventDefault();
-			const insidePopover =
-				event.target instanceof Node && this.querySelector('[data-date-field-popover]')?.contains(event.target);
-			if (insidePopover) {
-				this.calendarPopover.closeAndRestoreFocus();
-			} else {
-				this.calendarPopover.setOpen(false);
-			}
-		}
 	}
 }
 

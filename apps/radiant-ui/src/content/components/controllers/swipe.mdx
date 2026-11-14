@@ -1,0 +1,81 @@
+---
+title: SwipeController
+description: 'Reports a left, right, up or down swipe on release.'
+order: 11
+---
+
+import { PrimitiveExample } from '@/components/primitive-example';
+
+export const config = {
+	dependencies: {
+		components: [PrimitiveExample],
+		scripts: ['./swipe.script.ts'],
+	},
+};
+
+# SwipeController
+
+<p class="docs-lede">Reports a left, right, up or down swipe on release.</p>
+
+Reach for it for a carousel or pager.
+
+## Import
+
+```ts
+import { SwipeController, createSwipeController } from '@ecopages/radiant-ui/controllers';
+```
+
+## Try it
+
+Press on the box, move at least 48 px sideways and release. The callback reports the direction.
+
+<PrimitiveExample name="swipe">
+	<div data-box>Swipe me</div>
+	<p data-status>No swipe yet</p>
+</PrimitiveExample>
+
+```html
+<div data-example="swipe">
+	<div data-box>Swipe me</div>
+	<p data-status>No swipe yet</p>
+</div>
+```
+
+```ts
+import { SwipeController } from '@ecopages/radiant-ui/controllers';
+
+const root = document.querySelector('[data-example="swipe"]')!;
+const box = root.querySelector<HTMLElement>('[data-box]')!;
+const status = root.querySelector('[data-status]')!;
+
+const swipe = new SwipeController({
+	getTarget: () => box,
+	onSwipe: (direction) => (status.textContent = `Swiped ${direction}`),
+});
+swipe.attach();
+```
+
+## Config
+
+| Option      | Description                                                                                                                                               |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `getTarget` | Resolved on every `attach()`. `null` listens to nothing.                                                                                                  |
+| `axis`      | Which travel counts: `x` (default), `y` or `both`.                                                                                                        |
+| `threshold` | Minimum travel in px along the swipe axis. Default 48.                                                                                                    |
+| `getHandle` | Limits gestures to this element's subtree, resolved on every press; use it with the host as `getTarget` when the surface is a child that can be replaced. |
+| `exclude`   | A gesture that starts on a target this returns `true` for is ignored, such as a button inside the surface.                                                |
+| `onSwipe`   | Called on the pointer-up that ends a swipe, with the direction and the event.                                                                             |
+
+## Lifecycle
+
+`attach()` listens for a press on the target; release and cancel are then listened for on `document`, so a release outside the element still ends the gesture. It reports once, on release, and does not follow the pointer; a surface that moves with the pointer needs [PointerDragController](/docs/controllers/pointer-drag). A cancel or `destroy()` drops a gesture in progress, and `destroy()` removes the listeners.
+
+With a host, `createSwipeController(host, config)` does the same on connect and disconnect; see [bindController](/docs/controllers/bind-controller).
+
+## Protected hooks
+
+Extend the class and override these to change how it decides. A component never extends a controller; a subclass is registered with `bindController`.
+
+| Hook                       | Description                                                                                                                                                                                                             |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `resolveDirection(dx, dy)` | Decides which swipe, if any, a gesture was. Runs on the pointer-up with the travel from the press point. Return `null` for no swipe. The default is `resolveSwipeDirection` with the configured `axis` and `threshold`. |
