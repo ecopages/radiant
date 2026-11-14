@@ -20,6 +20,8 @@ export const config = {
 	A month of days, each holding events you can drag to another day, and a filter that narrows them.
 </p>
 
+## Goal
+
 Reach for this shape for a planner, a schedule or a board whose columns are dates. The page imports only from `@ecopages/radiant-ui/controllers` and `@ecopages/radiant-ui/helpers`.
 
 ## Primitives
@@ -31,7 +33,7 @@ Reach for this shape for a planner, a schedule or a board whose columns are date
 
 The recipe decides three things itself: how an event is stored (an `iso` date per event), what the filter does to a day (it leaves non-matching events out), and which keys enter and leave a day (Enter focuses its first event, Escape returns to the day).
 
-## Try it
+## Example
 
 Drag an event to another day. With the keyboard, move between days with the arrow keys, press Enter to focus the first event of a day, press Space to lift it, use the arrows to reorder it within the day and PageDown or PageUp to move it to the next or previous day, then press Space to drop. Typing in the filter hides the events that do not match.
 
