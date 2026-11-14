@@ -26,9 +26,9 @@ export type PointerDragInfo = {
 };
 
 /** How a drag ended: pointer up, the browser took the pointer, or the controller was destroyed. */
-/** The last position of a drag and how it ended. */
 export type PointerDragEndReason = 'release' | 'cancel' | 'destroy';
 
+/** The last position of a drag and how it ended. */
 export type PointerDragEnd = PointerDragInfo & {
 	/** `release`: pointer up. `cancel`: the browser took the pointer. `destroy`: the controller was torn down mid-drag. */
 	reason: PointerDragEndReason;
