@@ -1,15 +1,17 @@
-[data-example='board'].primitive-example {
+[data-example='board'].primitive-example,
+.primitive-example:has(> recipe-board) {
 	flex-direction: column;
+	flex-wrap: nowrap;
 	align-items: stretch;
 }
 
-[data-example='board'] :where([data-board]) {
+:is([data-example='board'], recipe-board) :where([data-board]) {
 	display: grid;
 	grid-template-columns: repeat(3, minmax(0, 1fr));
 	gap: var(--space-3);
 }
 
-[data-example='board'] :where([data-column]) {
+:is([data-example='board'], recipe-board) :where([data-column]) {
 	display: flex;
 	flex-direction: column;
 	gap: var(--space-2);
@@ -21,19 +23,19 @@
 	color: var(--on-surface-container);
 }
 
-[data-example='board'] :where(h3) {
+:is([data-example='board'], recipe-board) :where(h3) {
 	margin: 0;
 	font-size: 0.875rem;
 }
 
-[data-example='board'] :where(ul) {
+:is([data-example='board'], recipe-board) :where(ul) {
 	min-height: 3rem;
 	max-height: 8rem;
 	overflow-y: auto;
 	border-radius: var(--radius-control);
 }
 
-[data-example='board'] ul[data-sortable-over] {
+:is([data-example='board'], recipe-board) ul[data-sortable-over] {
 	outline: 2px solid var(--primary);
 	outline-offset: -2px;
 }
@@ -63,12 +65,12 @@
 	cursor: grabbing;
 }
 
-[data-example='board'] [data-sortable-placeholder] {
+:is([data-example='board'], recipe-board) [data-sortable-placeholder] {
 	border: 1px dashed var(--primary);
 	border-radius: var(--radius-control);
 	background: transparent;
 }
 
-[data-example='board'] [data-sortable-drop] {
+:is([data-example='board'], recipe-board) [data-sortable-drop] {
 	box-shadow: none;
 }

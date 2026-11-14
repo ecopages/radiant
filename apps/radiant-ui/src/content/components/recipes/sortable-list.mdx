@@ -9,7 +9,7 @@ import { PrimitiveExample } from '@/components/primitive-example';
 export const config = {
 	dependencies: {
 		components: [PrimitiveExample],
-		scripts: ['./sortable-list.script.ts'],
+		scripts: ['./sortable-list.script.ts', './sortable-list.element.ts'],
 		stylesheets: ['./sortable-list.css'],
 	},
 };
@@ -37,7 +37,13 @@ Left to the recipe: the order array and writing it to the DOM in `onChange`, and
 
 Tab into the list, press Space on an item, move it with the arrow keys and press Space to drop it, or drag it with the pointer.
 
-<PrimitiveExample name="sortable-list">
+The two forms below behave the same.
+
+### Plain JavaScript
+
+A `mount` function wires the controllers to the markup and returns the cleanup that undoes it.
+
+<PrimitiveExample name="sortable-list" layout="stack">
 	<ul aria-label="Tasks">
 		<li data-task>Plan</li>
 		<li data-task>Build</li>
@@ -48,8 +54,6 @@ Tab into the list, press Space on an item, move it with the arrow keys and press
 		Focus an item, press Space, move with the arrows, press Space to drop
 	</p>
 </PrimitiveExample>
-
-## Source
 
 ```html
 <div data-example="sortable-list">
@@ -104,3 +108,76 @@ export function mount(root: HTMLElement): () => void {
 ```
 
 `mount` runs once for each example element on the page, and the function it returns undoes it; see [how the examples run](/docs/recipes/overview#how-the-examples-run).
+
+### Radiant element
+
+The same behavior as a `RadiantElement`. The markup is authored inside the element and the element finds its parts with `@query`; there is nothing to mount, clean up or run again.
+
+<PrimitiveExample host layout="stack">
+	<recipe-sortable-list>
+		<ul aria-label="Tasks">
+			<li data-task>Plan</li>
+			<li data-task>Build</li>
+			<li data-task>Test</li>
+			<li data-task>Ship</li>
+		</ul>
+		<p data-status aria-live="polite">
+			Focus an item, press Space, move with the arrows, press Space to drop
+		</p>
+	</recipe-sortable-list>
+</PrimitiveExample>
+
+```html
+<recipe-sortable-list>
+	<ul aria-label="Tasks">
+		<li data-task>Plan</li>
+		<li data-task>Build</li>
+		<li data-task>Test</li>
+		<li data-task>Ship</li>
+	</ul>
+	<p data-status aria-live="polite">Focus an item, press Space, move with the arrows, press Space to drop</p>
+</recipe-sortable-list>
+```
+
+```ts
+import { RadiantElement, customElement, query } from '@ecopages/radiant';
+import { createRovingController, createSortableController } from '@ecopages/radiant-ui/controllers';
+import { reorder } from '@ecopages/radiant-ui/helpers';
+
+@customElement('recipe-sortable-list')
+export class RecipeSortableList extends RadiantElement {
+	@query({ selector: 'ul' }) private list!: HTMLElement;
+	@query({ selector: '[data-status]' }) private status!: HTMLElement;
+
+	private items: HTMLElement[] = [];
+
+	private readonly roving = createRovingController(this, {
+		getItems: () => this.items,
+		getTarget: () => this.list,
+		orientation: 'vertical',
+		enabled: () => this.sortable.getState() === null,
+	});
+
+	private readonly sortable = createSortableController(this, {
+		preview: true,
+		createPlaceholder: () => document.createElement('li'),
+		getContainer: () => this.list,
+		getItems: () => this.items,
+		announce: (message) => (this.status.textContent = message),
+		onChange: ({ item, from, to }) => {
+			this.items = reorder(this.items, from, to);
+			this.list.append(...this.items);
+			this.roving.focus(item);
+		},
+	});
+
+	override onConnected(): void {
+		this.items = [...this.list.children] as HTMLElement[];
+		this.roving.sync();
+	}
+}
+```
+
+`createSortableController(this, ...)` and `createRovingController(this, ...)` attach when the element connects and are destroyed when it disconnects. They are field initializers because each refers to the other from its callbacks: `enabled` reads the sortable and `onChange` focuses through the roving controller. The items are read in `onConnected`, once the element has its children.
+
+What the Radiant form removes: the `mount` function and its registration, the cleanup that destroys both controllers, and the re-run after a client-side navigation.
