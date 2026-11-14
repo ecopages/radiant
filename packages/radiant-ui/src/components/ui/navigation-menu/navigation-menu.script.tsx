@@ -3,7 +3,7 @@ import { RadiantElement, customElement, onEvent, prop } from '@ecopages/radiant'
 import { queryRovingTabindexItems } from '@/lib/focusable-elements';
 import { applyRovingTabindex, navigateRovingTabindex } from '@/lib/roving-tabindex';
 import { uniqueId } from '@/lib/unique-id';
-import { PopoverController } from '../../../controllers/popover-controller';
+import { createPopoverController } from '../../../controllers/popover-controller';
 
 export type RuiNavigationMenuProps = {
 	label?: string;
@@ -102,7 +102,14 @@ export class RuiNavigationMenu extends RadiantElement {
 	closeDelay: number;
 
 	private openValue: string | null = null;
-	private popoverController: PopoverController | null = null;
+	private readonly popoverController = createPopoverController(this, {
+		getAnchor: () => this.getOpenTrigger(),
+		getFloating: () => this.getOpenPanel(),
+		getOpen: () => Boolean(this.openValue),
+		getPlacement: () => 'bottom-start',
+		gap: NAVIGATION_MENU_GAP,
+		portal: false,
+	});
 	private openTimer: ReturnType<typeof setTimeout> | null = null;
 	private closeTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -114,8 +121,6 @@ export class RuiNavigationMenu extends RadiantElement {
 
 	override disconnectedCallback(): void {
 		this.clearHoverTimers();
-		this.popoverController?.destroy();
-		this.popoverController = null;
 		super.disconnectedCallback();
 	}
 
@@ -230,29 +235,8 @@ export class RuiNavigationMenu extends RadiantElement {
 		}
 	}
 
-	private ensurePopoverController(): PopoverController {
-		if (!this.popoverController) {
-			this.popoverController = new PopoverController({
-				getAnchor: () => this.getOpenTrigger(),
-				getFloating: () => this.getOpenPanel(),
-				getOpen: () => Boolean(this.openValue),
-				getPlacement: () => 'bottom-start',
-				gap: NAVIGATION_MENU_GAP,
-				portal: false,
-			});
-			this.popoverController.attach();
-		}
-		return this.popoverController;
-	}
-
 	private syncPopover(): void {
-		const controller = this.ensurePopoverController();
-		controller.updateConfig({
-			getAnchor: () => this.getOpenTrigger(),
-			getFloating: () => this.getOpenPanel(),
-			getOpen: () => Boolean(this.openValue),
-		});
-		controller.sync();
+		this.popoverController.sync();
 	}
 
 	private closeMenu(returnFocus = false): void {
@@ -308,7 +292,7 @@ export class RuiNavigationMenu extends RadiantElement {
 		if (!(node instanceof Node)) {
 			return false;
 		}
-		return this.popoverController?.contains(node) ?? false;
+		return this.popoverController.contains(node);
 	}
 
 	private triggerValueFromEvent(event: Event): string | null {

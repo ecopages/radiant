@@ -2,7 +2,7 @@ import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, event, onEvent, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { applyRovingTabindex, navigateRovingTabindex } from '@/lib/roving-tabindex';
-import { PopoverController } from '../../../controllers/popover-controller';
+import { createPopoverController } from '../../../controllers/popover-controller';
 import { createMenuTreeController } from '../../../controllers/menu-tree-controller';
 
 export type RuiMenubarProps = {
@@ -80,7 +80,16 @@ export class RuiMenubar extends RadiantElement {
 		onCloseRoot: (returnFocus) => this.closeOpenMenu(returnFocus),
 	});
 	private openRoot: HTMLElement | null = null;
-	private popoverController: PopoverController | null = null;
+	private readonly popoverController = createPopoverController(this, {
+		getAnchor: () => this.getOpenMenuAnchor(),
+		getFloating: () => this.getOpenMenuSurface(),
+		getOpen: () => Boolean(this.openRoot),
+		getPlacement: () => 'bottom-start',
+		gap: 6,
+		portal: false,
+		onDismiss: () => this.closeOpenMenu(),
+		dismissOn: ['pointer'],
+	});
 
 	private getTopItems(): HTMLElement[] {
 		return Array.from(
@@ -96,12 +105,6 @@ export class RuiMenubar extends RadiantElement {
 	protected override onConnected(): void {
 		applyRovingTabindex(this.getTopItems(), 0);
 		this.menuTree.sync();
-	}
-
-	override disconnectedCallback(): void {
-		this.popoverController?.destroy();
-		this.popoverController = null;
-		super.disconnectedCallback();
 	}
 
 	private getOpenMenuAnchor(): HTMLElement | null {
@@ -125,25 +128,6 @@ export class RuiMenubar extends RadiantElement {
 			return;
 		}
 
-		if (!this.popoverController) {
-			this.popoverController = new PopoverController({
-				getAnchor: () => this.getOpenMenuAnchor(),
-				getFloating: () => this.getOpenMenuSurface(),
-				getOpen: () => Boolean(this.openRoot),
-				getPlacement: () => 'bottom-start',
-				gap: 6,
-				portal: false,
-				onDismiss: () => this.closeOpenMenu(),
-				dismissOn: ['pointer'],
-			});
-			this.popoverController.attach();
-		}
-
-		this.popoverController.updateConfig({
-			getAnchor: () => this.getOpenMenuAnchor(),
-			getFloating: () => this.getOpenMenuSurface(),
-			getOpen: () => Boolean(this.openRoot),
-		});
 		this.popoverController.sync();
 	}
 
@@ -155,7 +139,7 @@ export class RuiMenubar extends RadiantElement {
 		if (top) top.setAttribute('aria-expanded', 'false');
 		if (menu) menu.hidden = true;
 		this.openRoot = null;
-		this.popoverController?.teardown();
+		this.popoverController.teardown();
 		if (returnFocus && top) top.focus();
 	}
 

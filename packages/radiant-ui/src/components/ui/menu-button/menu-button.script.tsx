@@ -11,7 +11,7 @@ import {
 	query,
 } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
-import { PopoverController } from '../../../controllers/popover-controller';
+import { createPopoverController } from '../../../controllers/popover-controller';
 import { createMenuTreeController } from '../../../controllers/menu-tree-controller';
 import type { RuiPlacement } from '../../../controllers/placement';
 import { uniqueId } from '@/lib/unique-id';
@@ -104,17 +104,20 @@ export class RuiMenuButton extends RadiantElement {
 		onCloseRoot: (returnFocus) => this.setOpen(false, returnFocus ? 'trigger' : null),
 	});
 	private readonly menuId = uniqueId('rui-menu');
-	private popoverController: PopoverController | null = null;
+	private readonly popoverController = createPopoverController(this, {
+		getAnchor: () => this.triggerTarget,
+		getFloating: () => this.menuTarget,
+		getOpen: () => this.open,
+		getPlacement: () => this.placement,
+		gap: MENU_GAP,
+		portal: false,
+		onDismiss: () => this.setOpen(false),
+		dismissOn: ['pointer'],
+	});
 	private pendingFocus: 'first' | 'last' | 'trigger' | null = null;
 
 	protected override onConnected(): void {
 		this.syncOpenState();
-	}
-
-	override disconnectedCallback(): void {
-		this.popoverController?.destroy();
-		this.popoverController = null;
-		super.disconnectedCallback();
 	}
 
 	private getItems(): HTMLElement[] {
@@ -124,23 +127,6 @@ export class RuiMenuButton extends RadiantElement {
 
 	private getSearchInput(): HTMLInputElement | null {
 		return this.menuTarget?.querySelector<HTMLInputElement>('[data-autocomplete-input]') ?? null;
-	}
-
-	private ensurePopoverController(): PopoverController {
-		if (!this.popoverController) {
-			this.popoverController = new PopoverController({
-				getAnchor: () => this.triggerTarget,
-				getFloating: () => this.menuTarget,
-				getOpen: () => this.open,
-				getPlacement: () => this.placement,
-				gap: MENU_GAP,
-				portal: false,
-				onDismiss: () => this.setOpen(false),
-				dismissOn: ['pointer'],
-			});
-			this.popoverController.attach();
-		}
-		return this.popoverController;
 	}
 
 	@bound
@@ -155,12 +141,7 @@ export class RuiMenuButton extends RadiantElement {
 		menuTree.sync();
 		if (!this.open) menuTree.closeAll();
 
-		const controller = this.ensurePopoverController();
-		controller.updateConfig({
-			getPlacement: () => this.placement,
-			getOpen: () => this.open,
-		});
-		controller.sync();
+		this.popoverController.sync();
 
 		const focus = this.pendingFocus;
 		this.pendingFocus = null;
