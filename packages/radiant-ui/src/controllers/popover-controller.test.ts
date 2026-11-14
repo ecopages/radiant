@@ -200,3 +200,36 @@ describe('PopoverController dismissal', () => {
 		expect(controller.isOutside(anchor)).toBe(false);
 	});
 });
+
+describe('PopoverController portal theming', () => {
+	afterEach(() => {
+		document.body.replaceChildren();
+	});
+
+	it('keeps the --rui-* values and dark scope of a themed host on the portaled surface, and returns the surface on destroy', () => {
+		const host = document.createElement('section');
+		host.classList.add('dark');
+		host.style.setProperty('--rui-popover-surface', 'rgb(4, 5, 6)');
+		const anchor = document.createElement('button');
+		const floating = document.createElement('div');
+		host.append(anchor, floating);
+		document.body.append(host);
+		const controller = new PopoverController({
+			getAnchor: () => anchor,
+			getFloating: () => floating,
+			getOpen: () => true,
+			getPlacement: () => 'bottom',
+		});
+
+		controller.attach();
+		controller.sync();
+
+		expect(floating.parentNode).toBe(document.body);
+		expect(getComputedStyle(floating).getPropertyValue('--rui-popover-surface')).toBe('rgb(4, 5, 6)');
+		expect(floating.classList.contains('dark')).toBe(true);
+
+		controller.destroy();
+		expect(floating.parentNode).toBe(host);
+		expect(floating.classList.contains('dark')).toBe(false);
+	});
+});

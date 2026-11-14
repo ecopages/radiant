@@ -2,7 +2,7 @@ import { bindController, type Controller, type ControllerHost } from './controll
 import { DismissController, type DismissReason } from './dismiss-controller';
 import { attachFloating } from './floating-position';
 import type { RuiPlacement } from './placement';
-import { mountPortal, type PortalHandle } from './portal';
+import { PortalController } from './portal';
 
 export type PopoverControllerConfig = {
 	getAnchor: () => HTMLElement | null;
@@ -37,13 +37,17 @@ export class PopoverController implements Controller {
 	private attached = false;
 	private config: PopoverControllerConfig;
 	private cleanupFloating: (() => void) | null = null;
-	private portalHandle: PortalHandle | null = null;
+	private readonly portal: PortalController;
 	private floatingElement: HTMLElement | null = null;
 	private exitToken: object | null = null;
 	private readonly dismissal: DismissController;
 
 	constructor(config: PopoverControllerConfig) {
 		this.config = config;
+		this.portal = new PortalController({
+			getNode: () => this.resolveFloating(),
+			getContainer: () => this.config.portalContainer ?? document.body,
+		});
 		this.dismissal = new DismissController({
 			getSurface: () => this.resolveFloating(),
 			getRelated: () => [this.config.getAnchor()],
@@ -92,12 +96,9 @@ export class PopoverController implements Controller {
 
 		const usePortal = this.config.portal !== false;
 		if (usePortal) {
-			if (!this.portalHandle) {
-				this.portalHandle = mountPortal(floating, this.config.portalContainer ?? document.body);
-			}
-		} else if (this.portalHandle) {
-			this.portalHandle.unmount();
-			this.portalHandle = null;
+			this.portal.attach();
+		} else {
+			this.portal.destroy();
 		}
 
 		this.teardownFloating();
@@ -135,10 +136,7 @@ export class PopoverController implements Controller {
 	teardown(): void {
 		this.exitToken = null;
 		this.teardownFloating();
-		if (this.portalHandle) {
-			this.portalHandle.unmount();
-			this.portalHandle = null;
-		}
+		this.portal.destroy();
 	}
 
 	destroy(): void {
@@ -163,7 +161,7 @@ export class PopoverController implements Controller {
 	 * exit. Without animations (reduced motion, classic themes) the unmount stays synchronous.
 	 */
 	private releasePortalAfterExit(floating: HTMLElement): void {
-		if (!this.portalHandle) {
+		if (!this.portal.isMounted) {
 			return;
 		}
 		const animations = floating.getAnimations();
