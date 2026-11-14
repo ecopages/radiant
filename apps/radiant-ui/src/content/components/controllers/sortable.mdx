@@ -91,7 +91,7 @@ export function mount(root: HTMLElement): () => void {
 | `preview`           | Lifts the item into a layer that follows the pointer and keeps a placeholder in its slot. Default `false`; see [Drag preview](#drag-preview). |
 | `getPreviewLayer`   | Where the preview goes. Default `document.body`. Only with `preview`.                                                                         |
 | `createPlaceholder` | Builds the placeholder. Default an empty `div`; return an `li` for a `ul`. Only with `preview`.                                               |
-| `enabled`           | Return `false` to ignore presses and keys.                                                                                                    |
+| `getEnabled`        | Return `false` to ignore presses and keys.                                                                                                    |
 | `getLabel`          | The name announced for an item. Default: its trimmed `textContent`.                                                                           |
 | `announce`          | Receives each announcement; point it at a live region. Without it nothing is announced.                                                       |
 | `messages`          | Replaces any of the announcements; see `DEFAULT_SORTABLE_MESSAGES`.                                                                           |

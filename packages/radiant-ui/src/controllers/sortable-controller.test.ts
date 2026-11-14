@@ -175,8 +175,8 @@ describe('SortableController on a plain list', () => {
 			expect(onChange).toHaveBeenCalledTimes(1);
 		});
 
-		it('ignores presses when enabled returns false', () => {
-			const { items, onChange, controller } = mount({ enabled: () => false });
+		it('ignores presses when getEnabled returns false', () => {
+			const { items, onChange, controller } = mount({ getEnabled: () => false });
 			controller.attach();
 
 			pointer(items()[0], 'pointerdown', 10);

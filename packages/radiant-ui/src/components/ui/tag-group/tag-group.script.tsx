@@ -128,14 +128,14 @@ export class RuiTagGroup extends RadiantElement {
 	private readonly roving = createRovingController(this, {
 		getItems: () => this.getVisibleTags(),
 		getTarget: (): HTMLElement => this,
-		enabled: () => this.sortable.getState() === null,
+		getEnabled: () => this.sortable.getState() === null,
 	});
 	private readonly sortable = createSortableController(this, {
 		getContainer: () => this,
 		getItems: () => this.getVisibleTags(),
 		axis: 'both',
 		liftKeys: [' '],
-		enabled: () => this.reorderable && !this.disabled,
+		getEnabled: () => this.reorderable && !this.disabled,
 		getLabel: (tag) => this.getTagLabel(tag),
 		announce: (message) => this.announce(message),
 		onChange: (change) => this.reorderTag(change),

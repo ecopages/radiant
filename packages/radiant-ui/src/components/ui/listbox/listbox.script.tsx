@@ -110,7 +110,7 @@ export class RuiListbox extends RadiantElement {
 		getItems: () => this.getOptions(),
 		getTarget: (): HTMLElement => this,
 		orientation: 'vertical',
-		enabled: () => !this.embedded && !this.disabled,
+		getEnabled: () => !this.embedded && !this.disabled,
 		onMove: (option) => {
 			if (this.selectionMode !== 'multiple') this.select(option);
 		},

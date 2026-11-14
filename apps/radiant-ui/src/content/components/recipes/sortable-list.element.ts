@@ -13,7 +13,7 @@ export class RecipeSortableList extends RadiantElement {
 		getItems: () => this.items,
 		getTarget: () => this.list,
 		orientation: 'vertical',
-		enabled: () => this.sortable.getState() === null,
+		getEnabled: () => this.sortable.getState() === null,
 	});
 
 	private readonly sortable = createSortableController(this, {

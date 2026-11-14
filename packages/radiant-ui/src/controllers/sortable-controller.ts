@@ -103,7 +103,7 @@ export type SortableControllerConfig = {
 	 */
 	createPlaceholder?: (item: HTMLElement) => HTMLElement;
 	/** Return `false` to ignore presses and keys. */
-	enabled?: () => boolean;
+	getEnabled?: () => boolean;
 	/** The name announced for an item. Default: its trimmed `textContent`. */
 	getLabel?: (item: HTMLElement) => string;
 	/** Receives each announcement; point it at a live region (`aria-live="polite"`). Without it nothing is announced. */
@@ -300,7 +300,7 @@ export class SortableController implements Controller {
 
 	private onPress(event: PointerEvent): boolean {
 		this.candidate = null;
-		if (this.session || this.config.enabled?.() === false) {
+		if (this.session || this.config.getEnabled?.() === false) {
 			return false;
 		}
 		const items = this.config.getItems();
@@ -417,7 +417,7 @@ export class SortableController implements Controller {
 	 */
 	private onKeydown(event: KeyboardEvent): void {
 		const session = this.session;
-		if (this.candidate || this.config.enabled?.() === false || session?.source === 'pointer') {
+		if (this.candidate || this.config.getEnabled?.() === false || session?.source === 'pointer') {
 			return;
 		}
 		if (session) {
