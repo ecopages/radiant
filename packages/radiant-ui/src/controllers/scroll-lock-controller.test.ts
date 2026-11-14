@@ -11,8 +11,8 @@ describe('ScrollLockController', () => {
 
 	const locks: ScrollLockController[] = [];
 
-	function lockOf(): ScrollLockController {
-		const lock = new ScrollLockController();
+	function lockOf(target?: HTMLElement): ScrollLockController {
+		const lock = new ScrollLockController(target ? { getTarget: () => target } : undefined);
 		locks.push(lock);
 		return lock;
 	}
@@ -103,6 +103,63 @@ describe('ScrollLockController', () => {
 		first.attach();
 		expect(document.documentElement.style.overflow).toBe('hidden');
 		first.destroy();
+	});
+
+	describe('with a scroll container as the target', () => {
+		function scroller(): HTMLElement {
+			const element = document.createElement('div');
+			element.style.overflow = 'auto';
+			document.body.append(element);
+			return element;
+		}
+
+		afterEach(() => {
+			document.body.replaceChildren();
+		});
+
+		it('locks that element and leaves the page alone, then restores its inline overflow', () => {
+			const element = scroller();
+			const lock = lockOf(element);
+
+			lock.attach();
+			expect(element.style.overflow).toBe('hidden');
+			expect(document.documentElement.style.overflow).toBe('');
+
+			lock.destroy();
+			expect(element.style.overflow).toBe('auto');
+		});
+
+		it('pads the element by the scrollbar width that disappears, not counting its borders', () => {
+			const element = scroller();
+			element.style.border = '2px solid';
+			Object.defineProperty(element, 'offsetWidth', { value: element.clientWidth + 4 + 15 });
+			const lock = lockOf(element);
+
+			lock.attach();
+			expect(element.style.paddingRight).toBe('15px');
+			expect(document.body.style.paddingRight).toBe('');
+
+			lock.destroy();
+			expect(element.style.paddingRight).toBe('');
+		});
+
+		it('keeps locks on different elements independent, and counts holders of the same element', () => {
+			const first = scroller();
+			const second = scroller();
+			const a = lockOf(first);
+			const b = lockOf(first);
+			const c = lockOf(second);
+
+			a.attach();
+			b.attach();
+			c.attach();
+			c.destroy();
+			expect(second.style.overflow).toBe('auto');
+			a.destroy();
+			expect(first.style.overflow).toBe('hidden');
+			b.destroy();
+			expect(first.style.overflow).toBe('auto');
+		});
 	});
 
 	it('is bound to a host through createScrollLockController', () => {

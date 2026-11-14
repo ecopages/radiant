@@ -42,6 +42,19 @@
 	user-select: none;
 }
 
+.primitive-example :where([data-scroller]) {
+	flex-basis: 100%;
+	height: 6rem;
+	margin: 0;
+	padding: var(--space-2) var(--space-4);
+	overflow-y: auto;
+	list-style: none;
+	border: 1px solid var(--border);
+	border-radius: var(--radius-control);
+	background: var(--surface);
+	color: var(--on-surface);
+}
+
 .primitive-example :where([data-status]) {
 	margin: 0;
 	flex-basis: 100%;

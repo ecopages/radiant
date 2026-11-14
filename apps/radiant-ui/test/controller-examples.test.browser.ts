@@ -129,15 +129,17 @@ describe('controller page examples', () => {
 		expect(document.activeElement).toBe(toggle);
 	});
 
-	test('ScrollLockController locks the root and restores it', async () => {
+	test('ScrollLockController locks the list it is given and restores it', async () => {
 		const root = await mountExample('scroll-lock');
 		const button = root.querySelector('button')!;
+		const scroller = root.querySelector<HTMLElement>('[data-scroller]')!;
 
 		button.click();
-		expect(document.documentElement.style.overflow).toBe('hidden');
-
-		button.click();
+		expect(scroller.style.overflow).toBe('hidden');
 		expect(document.documentElement.style.overflow).toBe('');
+
+		button.click();
+		expect(scroller.style.overflow).toBe('');
 	});
 
 	test('RovingController keeps one tab stop and moves it with the arrows', async () => {

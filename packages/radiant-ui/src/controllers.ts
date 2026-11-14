@@ -72,7 +72,11 @@ export {
 export { PortalController, createPortalController, type PortalControllerConfig } from './controllers/portal-controller';
 export { ResizeController, createResizeController, type ResizeControllerConfig } from './controllers/resize-controller';
 export { RovingController, createRovingController, type RovingControllerConfig } from './controllers/roving-controller';
-export { ScrollLockController, createScrollLockController } from './controllers/scroll-lock-controller';
+export {
+	ScrollLockController,
+	createScrollLockController,
+	type ScrollLockControllerConfig,
+} from './controllers/scroll-lock-controller';
 export {
 	SORTABLE_ACTIVE_ATTRIBUTE,
 	SORTABLE_DROP_ATTRIBUTE,
