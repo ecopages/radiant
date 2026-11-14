@@ -10,6 +10,7 @@ import {
 	resolveSortIndex,
 	resolveSortKeyIndex,
 	type SortableAxis,
+	type SortableRect,
 } from './sortable-order';
 
 /** Set on the item being moved, with the value `lifted`, from the lift until the sort ends. */
@@ -279,11 +280,23 @@ export class SortableController implements Controller {
 		const target = hovered === -1 ? session.target : eligible[hovered];
 		const items = target === this.member ? session.items : target.getItems();
 		const rects = items.map((item) => item.getBoundingClientRect());
-		const to =
-			target === this.member
-				? resolveSortIndex(rects, session.from, point, this.config.axis)
-				: resolveInsertIndex(rects, point, this.config.axis);
-		this.place(session, target, items, to);
+		const from = target === this.member ? session.from : null;
+		this.place(session, target, items, this.resolveTargetIndex(rects, from, point));
+	}
+
+	/**
+	 * Decides the index the lifted item takes from where the pointer is. Runs on every pointer move of a sort, over the rects of the items of the container under the pointer.
+	 *
+	 * @remarks Override to snap to a grid or change where a neighbour gives way. `from` is the item's own index when it is over its own container (its rect is in `rects`), and `null` over another container of the group. Return an index in the reordered list: `0` to `rects.length - 1` over the own container, `0` to `rects.length` over another. The default is `resolveSortIndex` and `resolveInsertIndex` with the configured axis.
+	 */
+	protected resolveTargetIndex(
+		rects: readonly SortableRect[],
+		from: number | null,
+		point: { x: number; y: number },
+	): number {
+		return from === null
+			? resolveInsertIndex(rects, point, this.config.axis)
+			: resolveSortIndex(rects, from, point, this.config.axis);
 	}
 
 	/** This container and the group members that accept the item, in group order. */

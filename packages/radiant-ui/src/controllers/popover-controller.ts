@@ -101,7 +101,16 @@ export class PopoverController implements Controller {
 		}
 
 		this.teardownFloating();
-		this.cleanupFloating = attachFloating({
+		this.cleanupFloating = this.position(anchor, floating);
+	}
+
+	/**
+	 * Decides where the open surface sits. Runs from `sync()` each time the popover is open, after the portal mount and the surface is shown.
+	 *
+	 * @remarks Override to place the surface by your own rule. Return a cleanup function; it runs before the next `position()`, when the popover closes and on `destroy()`. The default keeps the surface beside the anchor with `attachFloating`, using the configured placement, gap and `matchAnchorWidth`.
+	 */
+	protected position(anchor: HTMLElement, floating: HTMLElement): () => void {
+		return attachFloating({
 			anchor,
 			floating,
 			getPlacement: this.config.getPlacement,

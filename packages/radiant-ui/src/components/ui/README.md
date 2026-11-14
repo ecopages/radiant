@@ -57,6 +57,23 @@ class RuiPopover extends RadiantElement {
 }
 ```
 
+Compose or extend: components compose controllers, controllers can be extended, and a component never extends one.
+
+- **Compose** to add a behavior to a component. A `rui-tag-group` holds a `RovingController` and a `SortableController` side by side; each owns its own concern and the component wires them together.
+- **Extend** to change how a controller itself decides something. A subclass overrides one documented `protected` hook and inherits `attach()`, `destroy()` and the lifecycle contract. Only decision points are protected; fields and helpers stay private, so internals can change.
+- A subclass is constructed directly and registered with `bindController(host, instance)`. `createX` always returns the base class. The component holds the instance, it does not become one.
+
+```ts
+class SnapSortable extends SortableController {
+	protected override resolveTargetIndex(rects: readonly SortableRect[], from: number | null, point: Point) {
+		return snapToRow(super.resolveTargetIndex(rects, from, point));
+	}
+}
+bindController(this, new SnapSortable({ getContainer, getItems }));
+```
+
+The hooks, each documented with when it runs and what it returns: `PopoverController.position` (where the open surface sits), `DismissController.isInside` (what counts as inside), `RovingController.resolveNext` (where a key moves focus), `PointerDragController.acceptsPress` (which presses start a drag), `SwipeController.resolveDirection` (what counts as a swipe) and `SortableController.resolveTargetIndex` (the index a drag resolves to). Where a config callback already covers the decision (`canStart`, `exclude`, `getPlacement`), use the callback; hooks are for subclasses, callbacks for owners. The other controllers decide nothing a subclass would change.
+
 Before writing bespoke logic, check `src/controllers` for a controller that already does it and compose that:
 
 - `PopoverController` (popover, hover-card, menu-button, menubar, navigation-menu; select and combobox through the listbox controller): portal mount, floating position, teardown, and, when given `onDismiss`, dismissal through a `DismissController` over the anchor and floating surface. `dismissOn` narrows it to some of `pointer`, `focus` and `escape`.

@@ -112,11 +112,26 @@ export class RovingController implements Controller {
 		if (orientation === 'none') {
 			return { handled: false };
 		}
-		const result = navigateRovingTabindex({ items: this.config.getItems(), current, key, orientation, wrap });
+		const result = this.resolveNext(this.config.getItems(), current, key, orientation, wrap);
 		if (result.handled) {
 			this.active = result.item;
 		}
 		return result;
+	}
+
+	/**
+	 * Decides where a key moves focus. Runs from `navigate` for every key press on an item and for the keys a component routes itself, unless the orientation is `none`.
+	 *
+	 * @remarks Override to change the keys or the order, such as skipping every other item or adding PageUp and PageDown. Return `{ handled: false }` to leave the key alone. `orientation` and `wrap` are the configured ones. The default is `navigateRovingTabindex`.
+	 */
+	protected resolveNext(
+		items: HTMLElement[],
+		current: HTMLElement | null,
+		key: string,
+		orientation: RovingOrientation,
+		wrap: boolean,
+	): RovingNavResult {
+		return navigateRovingTabindex({ items, current, key, orientation, wrap });
 	}
 
 	private pick(items: HTMLElement[], preferred?: HTMLElement | null): HTMLElement | null {

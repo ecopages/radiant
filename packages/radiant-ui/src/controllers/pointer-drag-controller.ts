@@ -116,9 +116,18 @@ export class PointerDragController implements Controller {
 		}
 	}
 
+	/**
+	 * Decides whether a press starts a drag. Runs on every `pointerdown` on the target while no drag is running.
+	 *
+	 * @remarks Override to change which presses count, such as also taking the middle button. The default accepts the primary button when `canStart` does not refuse.
+	 */
+	protected acceptsPress(event: PointerEvent): boolean {
+		return event.button === 0 && this.config.canStart?.(event) !== false;
+	}
+
 	private onPointerDown(event: PointerEvent): void {
 		const target = this.config.getTarget();
-		if (this.session || !target || event.button !== 0 || this.config.canStart?.(event) === false) {
+		if (this.session || !target || !this.acceptsPress(event)) {
 			return;
 		}
 		this.session = {

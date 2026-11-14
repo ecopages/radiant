@@ -6,6 +6,9 @@
  * plain class: the constructor is inert (no DOM, no `window`), `attach()` starts work, and `destroy()` ends all of
  * it. Both must be safe to call repeatedly: `attach()` after `attach()` changes nothing, `destroy()` after
  * `destroy()` changes nothing, and a destroyed controller can be attached again.
+ *
+ * Components compose controllers, controllers can be extended, and a component never extends one. A subclass
+ * overrides the documented `protected` hooks of a controller and is registered with `bindController`.
  */
 export interface Controller {
 	attach(): void;

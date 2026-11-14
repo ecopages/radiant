@@ -52,6 +52,15 @@ export class SwipeController implements Controller {
 		}
 	}
 
+	/**
+	 * Decides which swipe, if any, a gesture was. Runs on the pointer-up of the followed pointer, with the travel from the press point.
+	 *
+	 * @remarks Override to change what counts as a swipe, such as a minimum speed. Return `null` for no swipe; the default is `resolveSwipeDirection` with the configured `axis` and `threshold`.
+	 */
+	protected resolveDirection(dx: number, dy: number): SwipeDirection | null {
+		return resolveSwipeDirection(dx, dy, this.config);
+	}
+
 	private onPointerDown(event: PointerEvent): void {
 		if (event.button !== 0 || this.config.exclude?.(event.target)) {
 			return;
@@ -66,7 +75,7 @@ export class SwipeController implements Controller {
 			return;
 		}
 		this.pointerId = null;
-		const direction = resolveSwipeDirection(event.clientX - this.startX, event.clientY - this.startY, this.config);
+		const direction = this.resolveDirection(event.clientX - this.startX, event.clientY - this.startY);
 		if (direction) {
 			this.config.onSwipe(direction, event);
 		}

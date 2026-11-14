@@ -94,9 +94,15 @@ export class DismissController implements Controller {
 
 	/** Whether `node` is the surface, inside it, or one of the related elements or inside one. */
 	contains(node: Node | null): boolean {
-		if (!node) {
-			return false;
-		}
+		return node !== null && this.isInside(node);
+	}
+
+	/**
+	 * Decides what counts as inside. Runs for every pointer press, focus change and Escape that `contains` and `isOutside` judge, and for those methods when an owner calls them.
+	 *
+	 * @remarks Override to widen or narrow the inside, such as a surface that counts a neighbouring toolbar. The default is the surface and the related elements, and anything inside them.
+	 */
+	protected isInside(node: Node): boolean {
 		if (this.config.getSurface()?.contains(node)) {
 			return true;
 		}
