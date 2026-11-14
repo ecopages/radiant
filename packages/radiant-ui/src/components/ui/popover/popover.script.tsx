@@ -112,12 +112,18 @@ export class RuiPopover extends RadiantElement {
 		getPortalContainer: () => resolvePortalContainer(this.portalContainer),
 		onDismiss: (reason, event) => this.dismiss(reason, event),
 	});
-	/** @remarks An `anchor` selector can match an element outside this host that a re-render replaces, so the match is made on `document` at event time. */
+	/**
+	 * @remarks
+	 * An `anchor` selector can match an element outside this host that a re-render replaces, so the match is made
+	 * on `document` at event time. The listener captures, so an anchor handler that calls `stopPropagation()`, such
+	 * as a button inside a clickable row, still toggles the popover.
+	 */
 	constructor() {
 		super();
 		createEventListenerController(this, {
 			getTarget: () => document,
 			type: 'click',
+			options: { capture: true },
 			listener: (event) => {
 				if (this.usesExternalAnchor() && this.getAnchorElement()?.contains(event.target as Node)) {
 					this.setOpen(!this.open);
