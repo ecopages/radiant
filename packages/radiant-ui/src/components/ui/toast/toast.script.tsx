@@ -161,14 +161,6 @@ export class RuiToast extends RadiantElement<RuiToastBindings> {
 	private dragStartTime: number | null = null;
 	private exitTimer: ReturnType<typeof setTimeout> | null = null;
 
-	/**
-	 * Announce mount after paint so enter CSS can run.
-	 *
-	 * @remarks
-	 * `mounted` stays true across disconnect so list remounts skip the enter
-	 * animation (avoids an opacity flicker when siblings update). Timer state is
-	 * still reset on disconnect and restarted on reconnect / first paint.
-	 */
 	constructor() {
 		super();
 		createPointerDragController(this, {
@@ -183,6 +175,14 @@ export class RuiToast extends RadiantElement<RuiToastBindings> {
 		});
 	}
 
+	/**
+	 * Announce mount after paint so enter CSS can run.
+	 *
+	 * @remarks
+	 * `mounted` stays true across disconnect so list remounts skip the enter
+	 * animation (avoids an opacity flicker when siblings update). Timer state is
+	 * still reset on disconnect and restarted on reconnect / first paint.
+	 */
 	override connectedCallback(): void {
 		super.connectedCallback();
 		const isReconnect = this.mounted;
