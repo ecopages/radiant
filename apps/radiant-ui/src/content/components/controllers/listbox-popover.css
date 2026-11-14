@@ -1,0 +1,4 @@
+.primitive-example[data-example='listbox-popover'] {
+	min-height: 12rem;
+	align-items: flex-start;
+}
