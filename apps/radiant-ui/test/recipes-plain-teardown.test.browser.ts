@@ -16,7 +16,7 @@ function pointerdown(target: Element): void {
 
 /** Puts the recipe into the state that holds the most listeners, so the cleanup has the most to undo. */
 const engage: Record<string, (root: HTMLElement) => void> = {
-	modal: (root) => root.querySelector<HTMLElement>('[data-open]')!.click(),
+	modal: (root) => root.querySelector<HTMLElement>('[data-delete]')!.click(),
 	'popover-menu': (root) => root.querySelector<HTMLElement>('button')!.click(),
 	'sortable-list': (root) => pointerdown(root.querySelector('li')!),
 	board: (root) => pointerdown(root.querySelector('[data-card]')!),

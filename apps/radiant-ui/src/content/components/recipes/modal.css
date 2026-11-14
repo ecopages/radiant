@@ -7,8 +7,24 @@
 
 :is([data-example='modal'], recipe-modal) :where([data-origin]) {
 	display: flex;
-	flex-wrap: wrap;
+	flex-direction: column;
 	gap: var(--space-3);
+	width: min(100%, 22rem);
+}
+
+:is([data-example='modal'], recipe-modal) :where([data-list] li) {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-3);
+}
+
+:is([data-example='modal'], recipe-modal) :where([data-empty]:not([hidden])) {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-3);
+	margin: 0;
 }
 
 :is([data-example='modal'], recipe-modal) :where([data-layer]:not([hidden])) {
