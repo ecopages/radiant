@@ -56,7 +56,11 @@ export class DismissController implements Controller {
 		}
 		if (triggers.includes('focus')) {
 			this.listeners.push(
-				new EventListenerController({ getTarget, type: 'focusout', listener: (event) => this.onFocusOut(event) }),
+				new EventListenerController({
+					getTarget,
+					type: 'focusout',
+					listener: (event) => this.onFocusOut(event),
+				}),
 			);
 		}
 		if (triggers.includes('escape')) {

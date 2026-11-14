@@ -6,7 +6,14 @@ describe('DismissController on plain elements', () => {
 		document.body.replaceChildren();
 	});
 
-	function mount(options: { open?: () => boolean; triggers?: readonly DismissReason[]; settleFocus?: boolean; escapeScope?: 'document' | 'tree' } = {}) {
+	function mount(
+		options: {
+			open?: () => boolean;
+			triggers?: readonly DismissReason[];
+			settleFocus?: boolean;
+			escapeScope?: 'document' | 'tree';
+		} = {},
+	) {
 		const anchor = document.createElement('button');
 		const surface = document.createElement('div');
 		const inside = document.createElement('button');

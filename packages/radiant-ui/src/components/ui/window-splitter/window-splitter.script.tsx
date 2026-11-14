@@ -115,7 +115,11 @@ export class RuiWindowSplitter extends RadiantElement {
 			type: 'pointermove',
 			listener: (event) => this.onPointerMove(event),
 		}),
-		new EventListenerController({ getTarget: () => document, type: 'pointerup', listener: () => this.onPointerUp() }),
+		new EventListenerController({
+			getTarget: () => document,
+			type: 'pointerup',
+			listener: () => this.onPointerUp(),
+		}),
 	];
 
 	protected override onConnected(): void {

@@ -326,8 +326,6 @@ export class RuiDateRangePicker extends RadiantElement {
 		this.commitRange(detail.start, detail.end);
 		this.calendarPopover.closeAndRestoreFocus();
 	}
-
-
 }
 
 declare global {

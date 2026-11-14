@@ -36,9 +36,10 @@ export type EventListenerControllerConfig<T extends EventTarget = EventTarget, K
  * `once` is handled here, not by the DOM: the first event of any listed type runs the listener and detaches every
  * type, so a later `attach()` registers them again without a `destroy()` in between.
  */
-export class EventListenerController<T extends EventTarget = EventTarget, K extends string = string>
-	implements Controller
-{
+export class EventListenerController<
+	T extends EventTarget = EventTarget,
+	K extends string = string,
+> implements Controller {
 	private target: T | null = null;
 
 	private readonly handler = (event: Event): void => {

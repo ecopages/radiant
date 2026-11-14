@@ -46,7 +46,9 @@ describe('ResizeController', () => {
 		controller.attach();
 		controller.attach();
 		await frame();
-		const seen = new Set(onResize.mock.calls.flatMap(([entries]) => entries.map((entry: ResizeObserverEntry) => entry.target)));
+		const seen = new Set(
+			onResize.mock.calls.flatMap(([entries]) => entries.map((entry: ResizeObserverEntry) => entry.target)),
+		);
 		expect(seen).toEqual(new Set([first, second]));
 
 		controller.destroy();

@@ -1,8 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import {
-	PopoverController,
-	createPopoverController,
-} from './popover-controller';
+import { PopoverController, createPopoverController } from './popover-controller';
 
 describe('PopoverController attached to a plain element', () => {
 	const observers: { observed: Element[]; disconnected: boolean }[] = [];

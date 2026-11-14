@@ -288,7 +288,6 @@ export class RuiDateField extends RadiantElement {
 		this.commitValue(detail.value);
 		this.calendarPopover.closeAndRestoreFocus();
 	}
-
 }
 
 declare global {

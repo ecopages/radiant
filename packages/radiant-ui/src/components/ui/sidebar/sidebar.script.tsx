@@ -202,8 +202,16 @@ export class RuiSidebar extends RadiantElement {
 	private dragStartSize = 0;
 	private navigationListeners: Controller[] = [];
 	private readonly dragListeners = [
-		new EventListenerController({ getTarget: () => document, type: 'pointermove', listener: (event) => this.onPointerMove(event) }),
-		new EventListenerController({ getTarget: () => document, type: ['pointerup', 'pointercancel'], listener: () => this.onPointerUp() }),
+		new EventListenerController({
+			getTarget: () => document,
+			type: 'pointermove',
+			listener: (event) => this.onPointerMove(event),
+		}),
+		new EventListenerController({
+			getTarget: () => document,
+			type: ['pointerup', 'pointercancel'],
+			listener: () => this.onPointerUp(),
+		}),
 	];
 
 	/** @remarks Set by the first update cycle so later cycles never scroll. */

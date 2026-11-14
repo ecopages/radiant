@@ -52,15 +52,15 @@ Update the README beside the code when behavior or ownership changes.
 
 ## Reuse before inventing
 
-| Need                                                  | Use                                                 |
-| ----------------------------------------------------- | --------------------------------------------------- |
-| Nested menus                                          | `controllers/menu-tree-controller.ts`                               |
-| Listbox in a popup (select, combobox)                 | `ListboxPopoverController` + `ListboxHostController`  |
-| Portaled overlay                                      | `PopoverController`                                 |
-| Field label / control protocol                        | `shared/field-label.ts`, `form/control-protocol.ts` |
-| Comma-separated list values (`string[]` / `number[]`) | `shared/multi-value.ts`                             |
-| Numeric range / slider math                           | `shared/numeric-range.ts`                           |
-| Generated ARIA ids                                    | `@/lib/unique-id` (`uniqueId`)                      |
+| Need                                                  | Use                                                  |
+| ----------------------------------------------------- | ---------------------------------------------------- |
+| Nested menus                                          | `controllers/menu-tree-controller.ts`                |
+| Listbox in a popup (select, combobox)                 | `ListboxPopoverController` + `ListboxHostController` |
+| Portaled overlay                                      | `PopoverController`                                  |
+| Field label / control protocol                        | `shared/field-label.ts`, `form/control-protocol.ts`  |
+| Comma-separated list values (`string[]` / `number[]`) | `shared/multi-value.ts`                              |
+| Numeric range / slider math                           | `shared/numeric-range.ts`                            |
+| Generated ARIA ids                                    | `@/lib/unique-id` (`uniqueId`)                       |
 
 ## Done when
 
