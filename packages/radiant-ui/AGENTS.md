@@ -1,6 +1,6 @@
 # Agent instructions
 
-Working rules for `packages/radiant-ui`. Architecture: [`src/components/ui/README.md`](./src/components/ui/README.md). Tokens and CSS: [`DESIGN.md`](./DESIGN.md). Storybook overview and file layout: `src/Introduction.mdx`. Package scripts: [`README.md`](./README.md). Implement: [`.agents/skills/radiant-ui-authoring/`](../../.agents/skills/radiant-ui-authoring/SKILL.md). Document: [`.agents/skills/radiant-ui-docs/`](../../.agents/skills/radiant-ui-docs/SKILL.md).
+Working rules for `packages/radiant-ui`. Architecture: [`src/components/ui/README.md`](./src/components/ui/README.md). Tokens and CSS: [`DESIGN.md`](./DESIGN.md). Storybook overview and file layout: `src/components/ui/Introduction.mdx`. Package scripts: [`README.md`](./README.md). Implement: [`.agents/skills/radiant-ui-authoring/`](../../.agents/skills/radiant-ui-authoring/SKILL.md). Document: [`.agents/skills/radiant-ui-docs/`](../../.agents/skills/radiant-ui-docs/SKILL.md).
 
 Do not load root [`CONTEXT.md`](../../CONTEXT.md) for catalog-only work. Catalog terms are defined in the ui README.
 

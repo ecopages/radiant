@@ -1,15 +1,15 @@
 import '@ecopages/radiant/server/install-ssr-runtime';
 import { renderToString } from '@ecopages/jsx/server';
 import { describe, expect, it } from 'vitest';
-import { RuiAlert } from './components/ui/alert/alert';
-import { RuiAvatar } from './components/ui/avatar/avatar';
-import { RuiCarousel, RuiCarouselNext, RuiCarouselPrev, RuiCarouselRotation } from './components/ui/carousel/carousel';
-import { RuiFeed, RuiFeedArticle } from './components/ui/feed/feed';
-import { RuiGrid } from './components/ui/grid/grid';
-import { RuiSelect, RuiSelectListbox, RuiSelectTrigger } from './components/ui/select/select';
-import { RuiSidebarMenuButton } from './components/ui/sidebar/sidebar';
-import { RuiTabs } from './components/ui/tabs';
-import { RuiTab, RuiTabList, RuiTabPanel, RuiTabPanels } from './components/ui/tabs/tabs';
+import { RuiAlert } from '../components/ui/alert/alert';
+import { RuiAvatar } from '../components/ui/avatar/avatar';
+import { RuiCarousel, RuiCarouselNext, RuiCarouselPrev, RuiCarouselRotation } from '../components/ui/carousel/carousel';
+import { RuiFeed, RuiFeedArticle } from '../components/ui/feed/feed';
+import { RuiGrid } from '../components/ui/grid/grid';
+import { RuiSelect, RuiSelectListbox, RuiSelectTrigger } from '../components/ui/select/select';
+import { RuiSidebarMenuButton } from '../components/ui/sidebar/sidebar';
+import { RuiTabs } from '../components/ui/tabs';
+import { RuiTab, RuiTabList, RuiTabPanel, RuiTabPanels } from '../components/ui/tabs/tabs';
 
 describe('host defaulting', () => {
 	it('keeps consumer feed aria over label aliases', () => {

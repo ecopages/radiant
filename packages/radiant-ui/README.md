@@ -11,6 +11,7 @@ This project is **not a React app**. JSX compiles through `@ecopages/jsx`.
 | Path                                                            | Role                                                                                                                                                                                                    |
 | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/components/ui`                                             | **`@ecopages/radiant-ui`** component library (APG-oriented widgets)                                                                                                                                     |
+| `src/lib`, `src/contract`                                       | Shared helpers built as entries (`cx`, `aria`) or used by components; cross-component host contract tests                                                                                               |
 | `src/controllers`                                               | [Primitives catalog](./src/controllers/README.md): public `@ecopages/radiant-ui/controllers` and `@ecopages/radiant-ui/helpers` entries. The reusable controllers and helpers components are built from |
 | [`@ecopages/storybook-radiant-vite`](../storybook-radiant-vite) | Storybook framework for Radiant (client + SSR → hydrate)                                                                                                                                                |
 | `src/components/client`, `src/components/ssr`, `src/stories`    | Framework dogfood demos (not the published UI catalog)                                                                                                                                                  |
@@ -18,7 +19,7 @@ This project is **not a React app**. JSX compiles through `@ecopages/jsx`.
 Framework documentation (API, SSR contract, Vitest, limitations):  
 **[../storybook-radiant-vite/README.md](../storybook-radiant-vite/README.md)**
 
-Library overview and conventions: Storybook **Introduction** (`src/Introduction.mdx`). Component authoring: [`src/components/ui/README.md`](./src/components/ui/README.md).
+Library overview and conventions: Storybook **Introduction** (`src/components/ui/Introduction.mdx`). Component authoring: [`src/components/ui/README.md`](./src/components/ui/README.md).
 
 ## Develop
 
