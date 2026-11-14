@@ -16,7 +16,9 @@ export function mount(root: HTMLElement): () => void {
 	const portal = new PortalController({ getNode: () => layer, getContainer: () => root });
 	let returnTo: HTMLElement | null = null;
 	const trap = new FocusTrapController({ getSurface: () => dialog, getReturnFocus: () => returnTo });
-	const lock = new ScrollLockController();
+	const lock = new ScrollLockController({
+		getTarget: () => root.closest<HTMLElement>('.docs-layout__content') ?? document.documentElement,
+	});
 	const dismiss = new DismissController({
 		getSurface: () => dialog,
 		triggers: ['pointer', 'escape'],

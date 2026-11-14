@@ -57,4 +57,18 @@ describe('recipe pages', () => {
 			expect(fences(slug)).toContain(source);
 		},
 	);
+
+	const stylesheets = recipeFiles.filter((file) => file.endsWith('.css')).map((file) => file.replace('.css', ''));
+
+	test.each(stylesheets.filter((slug) => /```css/.test(readFileSync(join(recipesDirectory, `${slug}.mdx`), 'utf8'))))(
+		'%s page shows its stylesheet as written',
+		(slug) => {
+			const source = readFileSync(join(recipesDirectory, `${slug}.css`), 'utf8');
+			const fences = [
+				...readFileSync(join(recipesDirectory, `${slug}.mdx`), 'utf8').matchAll(/```css\n([\s\S]*?)\n```/g),
+			].map((match) => `${match[1]}\n`);
+
+			expect(fences).toContain(source);
+		},
+	);
 });

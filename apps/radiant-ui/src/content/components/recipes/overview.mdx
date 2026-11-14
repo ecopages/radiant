@@ -20,7 +20,7 @@ Every recipe page has the same four parts, in this order. The example and the so
 1. **Goal.** The behavior in one or two sentences, and when you would want it.
 2. **Primitives.** Each controller and helper the recipe composes and why that one, one line apiece, linked to its page. A recipe states which decision it left to a config callback, a protected hook or its own code.
 3. **Example.** The recipe running on the page twice, as plain JavaScript and as a Radiant element, in plain elements styled from the theme variables so it follows the active theme.
-4. **Source.** The full code of each form, complete enough to paste into a project: imports, markup and script or element.
+4. **Source.** The full code of each form, complete enough to paste into a project: imports, markup and script or element. A recipe whose behavior depends on CSS (the swipe card, sortable list, board, modal and popover menu) ends with a Styles section showing its stylesheet. Its selectors are scoped to the example on this site; drop the scope in your own project.
 
 The rule of [Composing a component](/docs/getting-started/composing) holds in every recipe: keep each controller in a variable you own, configure it with getters and callbacks, and extend a controller through its protected hooks rather than reimplementing it.
 

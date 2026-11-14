@@ -3,7 +3,7 @@ import { afterEach, describe, expect, test } from 'vitest';
 import '../src/content/components/recipes/board.css';
 import '../src/content/components/recipes/calendar-events.css';
 import '../src/content/components/recipes/sortable-list.css';
-import { mountForm, type Form } from './mount-recipe';
+import { mountForm, trackListeners, type Form } from './mount-recipe';
 
 function pointer(target: Element | Document, type: string, x: number, y: number): void {
 	target.dispatchEvent(new PointerEvent(type, { bubbles: true, button: 0, pointerId: 1, clientX: x, clientY: y }));
@@ -11,38 +11,6 @@ function pointer(target: Element | Document, type: string, x: number, y: number)
 
 const status = (root: HTMLElement) => root.querySelector('[data-status]')!.textContent;
 const texts = (nodes: Iterable<Element>) => [...nodes].map((node) => node.textContent);
-
-/**
- * Records the listeners that are added and not removed while `run` works, so a test can say none is left once the
- * element has gone.
- */
-async function trackListeners(run: (live: Set<string>) => Promise<void>): Promise<void> {
-	const add = EventTarget.prototype.addEventListener;
-	const remove = EventTarget.prototype.removeEventListener;
-	const live = new Set<string>();
-	const ids = new WeakMap<object, number>();
-	const id = (value: unknown) => {
-		if (typeof value !== 'object' && typeof value !== 'function') return String(value);
-		const object = value as object;
-		return String(ids.get(object) ?? ids.set(object, ids.size).get(object));
-	};
-	const key = (target: EventTarget, type: string, listener: unknown, options: unknown) =>
-		[id(target), type, id(listener), JSON.stringify(options)].join('|');
-	EventTarget.prototype.addEventListener = function (type, listener, options) {
-		live.add(key(this, type, listener, options));
-		return add.call(this, type, listener, options);
-	};
-	EventTarget.prototype.removeEventListener = function (type, listener, options) {
-		live.delete(key(this, type, listener, options));
-		return remove.call(this, type, listener, options);
-	};
-	try {
-		await run(live);
-	} finally {
-		EventTarget.prototype.addEventListener = add;
-		EventTarget.prototype.removeEventListener = remove;
-	}
-}
 
 afterEach(() => {
 	document.body.innerHTML = '';
@@ -192,14 +160,17 @@ describe('Radiant form teardown', () => {
 	test.each(cases)(
 		'$slug removes every listener when the element leaves and starts again on a fresh copy',
 		async ({ slug, ready, act }) => {
+			const tracker = trackListeners();
 			let root!: HTMLElement;
-			await trackListeners(async (live) => {
+			try {
 				root = await mountForm(slug, 'radiant');
 				await ready(root);
-				expect(live.size).toBeGreaterThan(0);
+				expect(tracker.live().length).toBeGreaterThan(0);
 				root.remove();
-				expect([...live]).toEqual([]);
-			});
+				expect(tracker.live()).toEqual([]);
+			} finally {
+				tracker.stop();
+			}
 
 			const fresh = root.cloneNode(true) as HTMLElement;
 			document.body.append(fresh);

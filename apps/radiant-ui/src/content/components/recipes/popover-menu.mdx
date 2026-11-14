@@ -229,3 +229,42 @@ export class RecipePopoverMenu extends RadiantElement {
 `createPopoverController(this, ...)` and `createRovingController(this, ...)` are held in fields because the element calls them when the menu opens; both attach when the element connects and are destroyed when it disconnects, as are the `@onEvent` listeners. The popover still reports the dismissal reason, so the element decides whether focus returns to the button. `sync()` goes in `onConnected` because the items exist only after the element has its children.
 
 What the Radiant form removes: the `mount` function and its registration, the cleanup to return and call, and the re-run after a client-side navigation.
+
+### Styles
+
+The menu hides with `hidden` and sits in the flow under the button; add `position: absolute` to float it over what follows.
+
+```css
+:is([data-example='popover-menu'], .primitive-example:has(> recipe-popover-menu)) {
+	flex-direction: column;
+	align-items: flex-start;
+	min-height: 13rem;
+}
+
+:is([data-example='popover-menu'], .primitive-example:has(> recipe-popover-menu)) [role='menu'] {
+	min-width: 10rem;
+	box-shadow: 0 var(--space-1) var(--space-3) color-mix(in srgb, var(--on-surface) 20%, transparent);
+}
+
+:is([data-example='popover-menu'], .primitive-example:has(> recipe-popover-menu)) [role='menu'][hidden] {
+	display: none;
+}
+
+:is([data-example='popover-menu'], .primitive-example:has(> recipe-popover-menu)) [role='menuitem'] {
+	padding: var(--space-2) var(--space-3);
+	border: 0;
+	border-radius: var(--radius-control);
+	background: transparent;
+	color: var(--on-surface-container);
+}
+
+:is([data-example='popover-menu'], .primitive-example:has(> recipe-popover-menu)) [role='menuitem']:hover {
+	background: var(--surface-container-high);
+}
+
+:is([data-example='popover-menu'], .primitive-example:has(> recipe-popover-menu)) [role='menuitem']:focus-visible {
+	background: var(--primary);
+	color: var(--on-primary);
+	outline-offset: -2px;
+}
+```
