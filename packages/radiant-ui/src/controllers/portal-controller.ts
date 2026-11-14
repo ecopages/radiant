@@ -25,7 +25,7 @@ type CarriedTheme = {
  *
  * @remarks
  * `attach()` leaves a comment where the node was and appends the node to the container, so `destroy()` restores
- * the original position among its siblings. Attaching twice or destroying twice changes nothing.
+ * the original position among its siblings. Attaching again with the same node, or destroying twice, changes nothing; attaching again after the getter returns another node puts the old one back and mounts the new one.
  *
  * Theming rule: a node that leaves its ancestors loses what they set, so `attach()` carries three things onto
  * the node and `destroy()` removes them again. They are the `dark` class and the `data-theme` attribute of the
