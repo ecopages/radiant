@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ListboxPopoverBehavior } from './listbox-popover-behavior';
+import { ListboxPopoverController } from './listbox-popover-controller';
 
 function createOption(id: string, label: string, hidden = false): HTMLElement {
 	const option = document.createElement('div');
@@ -16,7 +16,7 @@ function createBehavior(options: HTMLElement[] = []) {
 	const activeHost = document.createElement('button');
 	let open = false;
 
-	const behavior = new ListboxPopoverBehavior({
+	const behavior = new ListboxPopoverController({
 		getAnchor: () => anchor,
 		getFloating: () => floating,
 		getOpen: () => open,
@@ -28,7 +28,7 @@ function createBehavior(options: HTMLElement[] = []) {
 	return { anchor, floating, activeHost, behavior, setOpen: (next: boolean) => (open = next) };
 }
 
-describe('ListboxPopoverBehavior', () => {
+describe('ListboxPopoverController', () => {
 	it('ensures option ids and tracks active-descendant navigation', () => {
 		const options = [createOption('', 'One'), createOption('', 'Two')];
 		const { behavior, activeHost, setOpen } = createBehavior(options);

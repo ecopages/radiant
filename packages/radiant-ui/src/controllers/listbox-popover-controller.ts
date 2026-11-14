@@ -1,4 +1,4 @@
-import { PopoverController, shouldDismissPopoverFocus, shouldDismissPopoverPointer } from '../../../controllers/popover-controller';
+import { PopoverController, shouldDismissPopoverFocus, shouldDismissPopoverPointer } from './popover-controller';
 import {
 	clearCollectionActive,
 	getVisibleCollectionOptions,
@@ -8,7 +8,7 @@ import {
 
 export type ListboxActivation = 'first' | 'last' | 'none';
 
-export type ListboxPopoverBehaviorConfig = {
+export type ListboxPopoverControllerConfig = {
 	getAnchor: () => HTMLElement | null;
 	getFloating: () => HTMLElement | null;
 	getOpen: () => boolean;
@@ -36,13 +36,13 @@ export type ListboxKeydownConfig = {
  * policies local. This behavior owns only the state machine both controls must
  * agree on: active-descendant navigation, popover positioning, and dismissal.
  */
-export class ListboxPopoverBehavior {
-	private readonly config: ListboxPopoverBehaviorConfig;
+export class ListboxPopoverController {
+	private readonly config: ListboxPopoverControllerConfig;
 	private readonly popoverController: PopoverController;
 	private activeIndex = -1;
 	private visualFocus = false;
 
-	constructor(config: ListboxPopoverBehaviorConfig) {
+	constructor(config: ListboxPopoverControllerConfig) {
 		this.config = config;
 		this.popoverController = new PopoverController({
 			getAnchor: config.getAnchor,

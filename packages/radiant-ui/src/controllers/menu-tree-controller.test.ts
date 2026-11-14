@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { MenuTreeController } from './menu-tree';
+import { MenuTreeController } from './menu-tree-controller';
 
 function keyEvent(key: string, target: HTMLElement): KeyboardEvent {
 	const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });

@@ -3,7 +3,7 @@ import { RadiantElement, customElement, event, onEvent, prop } from '@ecopages/r
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { applyRovingTabindex, navigateRovingTabindex } from '@/lib/roving-tabindex';
 import { PopoverController, shouldDismissPopoverPointer } from '../../../controllers/popover-controller';
-import { MenuTreeController } from '../shared/menu-tree';
+import { MenuTreeController } from '../../../controllers/menu-tree-controller';
 
 export type RuiMenubarProps = {
 	label?: string;

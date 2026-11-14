@@ -1,7 +1,7 @@
 import { listenMobileLayoutViewport } from '@/lib/viewport/mobile-layout';
-import { PopoverController, shouldDismissPopoverFocus } from '../../../controllers/popover-controller';
+import { PopoverController, shouldDismissPopoverFocus } from './popover-controller';
 
-export type CalendarPopoverBehaviorConfig = {
+export type CalendarPopoverControllerConfig = {
 	getHost: () => HTMLElement;
 	getAnchor: () => HTMLElement | null;
 	getFloating: () => HTMLElement | null;
@@ -20,13 +20,13 @@ export type CalendarPopoverBehaviorConfig = {
  *
  * @remarks Date-field and date-range-picker keep value commit and selection mode local.
  */
-export class CalendarPopoverBehavior {
-	private readonly config: CalendarPopoverBehaviorConfig;
+export class CalendarPopoverController {
+	private readonly config: CalendarPopoverControllerConfig;
 	private popoverController: PopoverController | null = null;
 	private suppressPopoverDismiss = false;
 	private disposeMobileLayoutListener: (() => void) | null = null;
 
-	constructor(config: CalendarPopoverBehaviorConfig) {
+	constructor(config: CalendarPopoverControllerConfig) {
 		this.config = config;
 	}
 

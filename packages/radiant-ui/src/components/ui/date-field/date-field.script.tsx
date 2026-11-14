@@ -15,7 +15,7 @@ import { effectiveVisibleMonths } from '@/lib/viewport/mobile-layout';
 import { uniqueId } from '@/lib/unique-id';
 import type { RuiCalendarChangeDetail } from '../calendar/calendar.script';
 import type { RuiDateInputChangeDetail } from '../date-input/date-input.script';
-import { CalendarPopoverBehavior } from '../shared/calendar-popover-behavior';
+import { CalendarPopoverController } from '../../../controllers/calendar-popover-controller';
 import { syncFieldLabel } from '../shared/field-label';
 
 export type RuiDateFieldProps = {
@@ -134,7 +134,7 @@ export class RuiDateField extends RadiantElement {
 	open = false;
 
 	private readonly uid = uniqueId('rui-date-field');
-	private readonly calendarPopover = new CalendarPopoverBehavior({
+	private readonly calendarPopover = new CalendarPopoverController({
 		getHost: () => this,
 		getAnchor: () => this.getToggle()?.parentElement ?? this,
 		getFloating: () => this.popoverTarget,

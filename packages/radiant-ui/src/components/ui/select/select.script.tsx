@@ -5,7 +5,7 @@ import { uniqueId } from '@/lib/unique-id';
 import { findAssociatedLabel, syncFieldLabel } from '../shared/field-label';
 import { ListboxHostController } from '../shared/listbox-host-controller';
 import { getListboxOptionValue } from '../shared/listbox-option';
-import { ListboxPopoverBehavior } from '../shared/listbox-popover-behavior';
+import { ListboxPopoverController } from '../../../controllers/listbox-popover-controller';
 import { multiValuePropOptions, type ViewMultiValue } from '../shared/multi-value';
 
 export type RuiSelectSelectionMode = 'single' | 'multiple';
@@ -138,7 +138,7 @@ export class RuiSelect extends RadiantElement {
 		getPopup: () => this.getListboxPopup(),
 		tagGroupSelector: '[data-select-value] rui-tag-group',
 	});
-	private readonly listboxBehavior = new ListboxPopoverBehavior({
+	private readonly listboxPopover = new ListboxPopoverController({
 		getAnchor: () => this.rootTarget,
 		getFloating: () => this.getListboxPopup(),
 		getOpen: () => this.open,
@@ -303,7 +303,7 @@ export class RuiSelect extends RadiantElement {
 	}
 
 	private ensureOptionIds(): void {
-		this.listboxBehavior.ensureOptionIds();
+		this.listboxPopover.ensureOptionIds();
 	}
 
 	private getAccessibleName(): string {
@@ -406,34 +406,34 @@ export class RuiSelect extends RadiantElement {
 		popup.toggleAttribute('hidden', !next);
 
 		if (!next) {
-			this.listboxBehavior.clearActiveOption();
+			this.listboxPopover.clearActiveOption();
 			this.resetSearchFilter();
 			this.syncSearchInput();
-			this.listboxBehavior.syncPopoverPosition();
+			this.listboxPopover.syncPopoverPosition();
 			return;
 		}
 
 		this.ensureOptionIds();
 		this.syncSearchInput();
-		this.listboxBehavior.syncPopoverPosition();
+		this.listboxPopover.syncPopoverPosition();
 
 		if (this.hasSearchInput()) {
 			this.focusPopupInput();
 		}
 
 		if (activate === 'first') {
-			const visible = this.listboxBehavior.getVisibleOptions();
-			this.listboxBehavior.setActiveOption(visible.length ? 0 : -1);
+			const visible = this.listboxPopover.getVisibleOptions();
+			this.listboxPopover.setActiveOption(visible.length ? 0 : -1);
 			return;
 		}
 
 		if (activate === 'last') {
-			const visible = this.listboxBehavior.getVisibleOptions();
-			this.listboxBehavior.setActiveOption(visible.length ? visible.length - 1 : -1);
+			const visible = this.listboxPopover.getVisibleOptions();
+			this.listboxPopover.setActiveOption(visible.length ? visible.length - 1 : -1);
 			return;
 		}
 
-		this.listboxBehavior.clearActiveOption();
+		this.listboxPopover.clearActiveOption();
 	}
 
 	private selectOption(option: HTMLElement): void {
@@ -454,7 +454,7 @@ export class RuiSelect extends RadiantElement {
 	}
 
 	private handleListboxKeydown(event: KeyboardEvent): void {
-		this.listboxBehavior.handleKeydown(event, {
+		this.listboxPopover.handleKeydown(event, {
 			isOpen: this.open,
 			canUseSpace: !this.hasSearchInput(),
 			closesOnTab: this.closesOnSelect(),
@@ -468,7 +468,7 @@ export class RuiSelect extends RadiantElement {
 				}
 			},
 			onSelectActive: () => {
-				const option = this.listboxBehavior.getVisibleOptions()[this.listboxBehavior.activeOptionIndex];
+				const option = this.listboxPopover.getVisibleOptions()[this.listboxPopover.activeOptionIndex];
 				if (option) {
 					this.selectOption(option);
 				}
@@ -495,7 +495,7 @@ export class RuiSelect extends RadiantElement {
 	}
 
 	override disconnectedCallback(): void {
-		this.listboxBehavior.destroy();
+		this.listboxPopover.destroy();
 		super.disconnectedCallback();
 	}
 
@@ -557,7 +557,7 @@ export class RuiSelect extends RadiantElement {
 			return;
 		}
 
-		this.listboxBehavior.clearActiveOption();
+		this.listboxPopover.clearActiveOption();
 	}
 
 	@onEvent({ selector: '[data-select-value] rui-tag-group', type: 'rui-remove' })
@@ -598,10 +598,10 @@ export class RuiSelect extends RadiantElement {
 			return;
 		}
 
-		const visible = this.listboxBehavior.getVisibleOptions();
+		const visible = this.listboxPopover.getVisibleOptions();
 		const index = visible.indexOf(option);
 		if (index >= 0) {
-			this.listboxBehavior.setActiveOption(index);
+			this.listboxPopover.setActiveOption(index);
 		}
 	}
 
@@ -638,7 +638,7 @@ export class RuiSelect extends RadiantElement {
 
 	@onEvent({ ref: 'root', type: 'focusout' })
 	onFocusOut(event: FocusEvent): void {
-		if (!this.listboxBehavior.shouldDismissFocus(event.relatedTarget)) {
+		if (!this.listboxPopover.shouldDismissFocus(event.relatedTarget)) {
 			return;
 		}
 
@@ -650,7 +650,7 @@ export class RuiSelect extends RadiantElement {
 		if (!this.open) {
 			return;
 		}
-		if (!this.listboxBehavior.shouldDismissPointer(event.target as Node)) {
+		if (!this.listboxPopover.shouldDismissPointer(event.target as Node)) {
 			return;
 		}
 		this.setOpen(false);

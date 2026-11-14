@@ -1,4 +1,4 @@
-import { PopoverController } from '../../../controllers/popover-controller';
+import { PopoverController } from './popover-controller';
 import { uniqueId } from '@/lib/unique-id';
 
 const SUBMENU_DELAY = 200;
