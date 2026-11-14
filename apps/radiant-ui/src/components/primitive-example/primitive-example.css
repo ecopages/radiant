@@ -29,7 +29,7 @@
 	outline-offset: 2px;
 }
 
-.primitive-example :where(button[aria-pressed='true'], [data-active], [data-sortable-state='lifted']) {
+.primitive-example :where(button[aria-pressed='true'], [data-active]) {
 	background: var(--primary);
 	color: var(--on-primary);
 }
@@ -83,6 +83,12 @@
 	border-radius: var(--radius-control);
 	background: var(--surface);
 	color: var(--on-surface);
+}
+
+.primitive-example :where([data-sortable-state='lifted']) {
+	background: var(--primary);
+	color: var(--on-primary);
+	transform: translate(var(--sortable-dx, 0), var(--sortable-dy, 0));
 }
 
 .primitive-example :where([data-sortable-drop='before']) {

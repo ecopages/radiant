@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, test } from 'vitest';
 import { syncExamples } from '../src/components/primitive-example/mount-example';
+import '@ecopages/radiant-ui/themes/default';
 import '../src/components/primitive-example/primitive-example.css';
 
 const pages = import.meta.glob('../src/content/components/{controllers,recipes}/*.mdx', {
@@ -84,5 +85,26 @@ describe('example frame touch dragging', () => {
 		const item = getComputedStyle(root.querySelector('li')!);
 		expect(item.touchAction).toBe('none');
 		expect(item.userSelect).toBe('none');
+	});
+
+	test('the sortable controller example shows the lifted item in the accent colors and moved by the drag offsets', async () => {
+		const root = await mountFramed('controllers', 'sortable');
+		const item = root.querySelector<HTMLElement>('li')!;
+		const rest = getComputedStyle(root.querySelectorAll('li')[1]);
+
+		item.dispatchEvent(
+			new PointerEvent('pointerdown', { bubbles: true, button: 0, pointerId: 1, clientX: 5, clientY: 5 }),
+		);
+		document.dispatchEvent(
+			new PointerEvent('pointermove', { bubbles: true, pointerId: 1, clientX: 45, clientY: 30 }),
+		);
+
+		const lifted = getComputedStyle(item);
+		expect(item.dataset.sortableState).toBe('lifted');
+		expect(lifted.backgroundColor).not.toBe(rest.backgroundColor);
+		expect(lifted.transform).not.toBe('none');
+		document.dispatchEvent(
+			new PointerEvent('pointerup', { bubbles: true, pointerId: 1, clientX: 45, clientY: 30 }),
+		);
 	});
 });

@@ -1,5 +1,7 @@
 import { userEvent } from 'vitest/browser';
 import { afterEach, describe, expect, test } from 'vitest';
+import '@ecopages/radiant-ui/themes/default';
+import '../src/components/primitive-example/primitive-example.css';
 import '../src/content/components/recipes/board.css';
 import '../src/content/components/recipes/calendar-events.css';
 import '../src/content/components/recipes/sortable-list.css';
@@ -12,9 +14,31 @@ function pointer(target: Element | Document, type: string, x: number, y: number)
 const status = (root: HTMLElement) => root.querySelector('[data-status]')!.textContent;
 const texts = (nodes: Iterable<Element>) => [...nodes].map((node) => node.textContent);
 
+function rgba(color: string): [number, number, number, number] {
+	const context = document.createElement('canvas').getContext('2d', { willReadFrequently: true })!;
+	context.fillStyle = color;
+	context.fillRect(0, 0, 1, 1);
+	return [...context.getImageData(0, 0, 1, 1).data] as [number, number, number, number];
+}
+
+function luminance([r, g, b]: number[]): number {
+	const [lr, lg, lb] = [r, g, b].map((channel) => {
+		const value = channel / 255;
+		return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+	});
+	return 0.2126 * lr + 0.7152 * lg + 0.0722 * lb;
+}
+
+function contrast(foreground: string, background: string): number {
+	const [light, dark] = [luminance(rgba(foreground)), luminance(rgba(background))].sort((a, b) => b - a);
+	return (light + 0.05) / (dark + 0.05);
+}
+
 afterEach(() => {
 	document.body.innerHTML = '';
 	document.documentElement.removeAttribute('style');
+	document.documentElement.classList.remove('dark');
+	document.documentElement.removeAttribute('data-theme');
 });
 
 describe.each<Form>(['plain', 'radiant'])('sortable list, %s form', (form) => {
@@ -66,6 +90,34 @@ describe.each<Form>(['plain', 'radiant'])('board with a real mouse, %s form', (f
 
 		expect(texts(columns()[0].children)).not.toContain('Write the brief');
 		expect(texts(columns()[2].children)).toContain('Write the brief');
+	});
+});
+
+describe.each<Form>(['plain', 'radiant'])('a lifted item outside the example frame, %s form', (form) => {
+	test.each([
+		{ slug: 'sortable-list', item: 'li' },
+		{ slug: 'board', item: 'li' },
+	])('$slug: the item stays readable and without a list marker in dark and light', async ({ slug, item }) => {
+		for (const theme of ['dark', 'light']) {
+			document.documentElement.classList.toggle('dark', theme === 'dark');
+			document.documentElement.setAttribute('data-theme', theme);
+			const root = await mountForm(slug, form);
+			const first = root.querySelector<HTMLElement>(item)!;
+			await expect.poll(() => first.tabIndex).toBe(0);
+			const from = first.getBoundingClientRect();
+			pointer(first, 'pointerdown', from.x + 5, from.y + 5);
+			pointer(document, 'pointermove', from.x + 40, from.y + 30);
+
+			const lifted = document.querySelector<HTMLElement>('[data-sortable-state="lifted"]')!;
+			const style = getComputedStyle(lifted);
+			expect(lifted.parentElement, theme).toBe(document.body);
+			expect(lifted.textContent!.trim(), theme).not.toBe('');
+			expect(rgba(style.backgroundColor)[3], theme).toBe(255);
+			expect(contrast(style.color, style.backgroundColor), theme).toBeGreaterThanOrEqual(4.5);
+			expect(style.listStyleType, theme).toBe('none');
+			pointer(document, 'pointerup', from.x + 40, from.y + 30);
+			document.body.innerHTML = '';
+		}
 	});
 });
 
