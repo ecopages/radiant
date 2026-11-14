@@ -16,10 +16,10 @@ export type SwipeControllerConfig = SwipeOptions & {
  *
  * @remarks
  * Reports once, on release; it does not follow the pointer. A surface that moves with the pointer or decides on
- * speed (the toast) needs a `PointerDragController`. Pointer capture is not taken, so a release outside the
- * element ends nothing and a gesture started there is judged on the next release over it; touch pointers are
- * captured implicitly by the browser. Only the pointer that went down counts, and a pointer cancel or `destroy()`
- * drops the gesture.
+ * speed (the toast) needs a `PointerDragController`. Pointer capture is not taken, so a release outside the element
+ * is never seen and the gesture stays pending until the next press or cancel; touch pointers are captured
+ * implicitly by the browser. Only the pointer that went down counts, and a pointer cancel or `destroy()` drops the
+ * gesture.
  */
 export class SwipeController implements Controller {
 	private pointerId: number | null = null;
