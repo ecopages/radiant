@@ -56,9 +56,14 @@ export class PortalController implements Controller {
 		return this.mounted !== null;
 	}
 
+	/**
+	 * @remarks
+	 * Mounts nothing for a node without a parent, such as a surface a re-render replaced: it has no place to
+	 * return to, and moving it would leave a stale node in the container for good.
+	 */
 	attach(): void {
 		const node = this.config.getNode();
-		if (this.mounted || !node) {
+		if (this.mounted || !node?.parentNode) {
 			return;
 		}
 		const placeholder = document.createComment('rui-portal');

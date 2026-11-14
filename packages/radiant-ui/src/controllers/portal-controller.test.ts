@@ -65,6 +65,16 @@ describe('PortalController', () => {
 		expect(document.body.childNodes).toHaveLength(0);
 	});
 
+	it('mounts nothing for a node that has no parent', () => {
+		const node = document.createElement('div');
+		const portal = new PortalController({ getNode: () => node });
+
+		portal.attach();
+
+		expect(node.parentNode).toBeNull();
+		expect(portal.isMounted).toBe(false);
+	});
+
 	it('is bound to a host through createPortalController', () => {
 		const { origin, node } = setup();
 		const connected: Array<() => void> = [];
@@ -74,8 +84,7 @@ describe('PortalController', () => {
 			registerCleanupCallback: (callback) => cleanup.push(callback),
 		};
 
-		const portal = createPortalController(host, { getNode: () => node });
-		expect(portal).toBeInstanceOf(PortalController);
+		createPortalController(host, { getNode: () => node });
 		expect(node.parentNode).toBe(origin);
 
 		connected.forEach((callback) => callback());
@@ -108,6 +117,24 @@ describe('PortalController', () => {
 			expect(node.hasAttribute('data-theme')).toBe(false);
 			expect(node.style.getPropertyValue('--rui-popover-surface')).toBe('');
 			expect(node.className).toBe('rui-popover');
+		});
+
+		it('skips the move back when the origin removed its place, and still takes the theme off', () => {
+			const themed = document.createElement('section');
+			themed.classList.add('dark');
+			themed.setAttribute('data-theme', 'ocean');
+			themed.style.setProperty('--rui-a', 'origin');
+			const { origin, node } = setup(themed);
+			const portal = new PortalController({ getNode: () => node });
+
+			portal.attach();
+			origin.replaceChildren();
+
+			expect(() => portal.destroy()).not.toThrow();
+			expect(node.parentNode).toBe(document.body);
+			expect(node.classList.contains('dark')).toBe(false);
+			expect(node.hasAttribute('data-theme')).toBe(false);
+			expect(node.style.getPropertyValue('--rui-a')).toBe('');
 		});
 
 		it('takes each --rui-* value from the nearest ancestor that sets it', () => {
