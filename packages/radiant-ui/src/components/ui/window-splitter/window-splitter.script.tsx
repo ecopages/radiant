@@ -1,17 +1,7 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
-import {
-	RadiantElement,
-	bindTo,
-	bound,
-	customElement,
-	event,
-	onEvent,
-	onUpdated,
-	prop,
-	query,
-} from '@ecopages/radiant';
+import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
-import { EventListenerController } from '../../../controllers/event-listener-controller';
+import { createPointerDragController } from '../../../controllers/pointer-drag-controller';
 
 export type RuiWindowSplitterProps = {
 	/** Primary pane size as a percentage. Default: `50`. */
@@ -108,31 +98,18 @@ export class RuiWindowSplitter extends RadiantElement {
 	@event({ name: 'rui-splitter-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiWindowSplitterChangeDetail>;
 
-	private dragging = false;
-	private readonly dragListeners = [
-		new EventListenerController({
-			getTarget: () => document,
-			type: 'pointermove',
-			listener: (event) => this.onPointerMove(event),
-		}),
-		new EventListenerController({
-			getTarget: () => document,
-			type: 'pointerup',
-			listener: () => this.onPointerUp(),
-		}),
-	];
+	constructor() {
+		super();
+		createPointerDragController(this, {
+			getTarget: () => this.separatorTarget,
+			onMove: ({ x, y }) => this.dragTo(x, y),
+		});
+	}
 
 	protected override onConnected(): void {
 		this.clampValue();
 		this.syncSeparatorPresentation();
 		this.applySize();
-	}
-
-	override disconnectedCallback(): void {
-		for (const controller of this.dragListeners) {
-			controller.destroy();
-		}
-		super.disconnectedCallback();
 	}
 
 	@onUpdated(['value', 'orientation'])
@@ -208,31 +185,12 @@ export class RuiWindowSplitter extends RadiantElement {
 		this.changeEvent.emit({ value: next });
 	}
 
-	@onEvent({ ref: 'separator', type: 'pointerdown' })
-	onPointerDown(event: PointerEvent): void {
-		this.dragging = true;
-		this.separatorTarget?.setPointerCapture(event.pointerId);
-		for (const controller of this.dragListeners) {
-			controller.attach();
-		}
-	}
-
-	@bound
-	onPointerMove(event: PointerEvent): void {
-		if (!this.dragging) return;
+	private dragTo(x: number, y: number): void {
 		const rect = this.getBoundingClientRect();
 		if (this.orientation === 'vertical') {
-			this.updateValue(clampSplitterValue(((event.clientY - rect.top) / rect.height) * 100));
+			this.updateValue(clampSplitterValue(((y - rect.top) / rect.height) * 100));
 		} else {
-			this.updateValue(clampSplitterValue(((event.clientX - rect.left) / rect.width) * 100));
-		}
-	}
-
-	@bound
-	onPointerUp(): void {
-		this.dragging = false;
-		for (const controller of this.dragListeners) {
-			controller.destroy();
+			this.updateValue(clampSplitterValue(((x - rect.left) / rect.width) * 100));
 		}
 	}
 }

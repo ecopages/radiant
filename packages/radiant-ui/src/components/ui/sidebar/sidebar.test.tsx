@@ -364,6 +364,41 @@ describe('RuiSidebar composition', () => {
 		cleanup();
 	});
 
+	it.each([
+		['left', 40, 1],
+		['right', 40, -1],
+	] as const)('resizes the %s pane with a pointer drag and stops on release', async (side, travel, sign) => {
+		const { host, cleanup } = mount(
+			<RuiSidebar
+				id="primary-sidebar"
+				side={side}
+				collapsible="off"
+				defaultWidth={220}
+				resizable
+				mobileBreakpoint={0}
+				label="Primary"
+			>
+				<span>content</span>
+			</RuiSidebar>,
+		);
+		await settled();
+		const handle = host.querySelector('[data-ref="handle"]') as HTMLElement;
+		const pointer = (target: EventTarget, type: string, x: number) =>
+			target.dispatchEvent(new PointerEvent(type, { bubbles: true, pointerId: 1, button: 0, clientX: x }));
+
+		const start = Number.parseFloat(paneWidthVar(host));
+		const expected = `${start + sign * travel}px`;
+		pointer(handle, 'pointerdown', 100);
+		pointer(document, 'pointermove', 100 + travel);
+		expect(paneWidthVar(host)).toBe(expected);
+
+		pointer(document, 'pointerup', 100 + travel);
+		pointer(document, 'pointermove', 100 + travel * 2);
+		expect(paneWidthVar(host)).toBe(expected);
+
+		cleanup();
+	});
+
 	it('reflects the right-side orientation', async () => {
 		const { host, cleanup } = mount(
 			<RuiSidebar id="primary-sidebar" side="right" mobileBreakpoint={0} label="Primary">

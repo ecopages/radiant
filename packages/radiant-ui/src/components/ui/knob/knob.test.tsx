@@ -1,0 +1,65 @@
+import { createRoot } from '@ecopages/jsx';
+import { afterEach, describe, expect, it } from 'vitest';
+import { RuiKnob } from './knob';
+import type { RuiKnob as RuiKnobElement } from './knob.script';
+
+const cleanups: Array<() => void> = [];
+
+async function mountKnob() {
+	const host = document.createElement('div');
+	document.body.append(host);
+	const root = createRoot(host);
+	root.render(<RuiKnob value={0} min={0} max={100} />);
+	cleanups.push(() => {
+		root.unmount();
+		host.remove();
+	});
+	await customElements.whenDefined('rui-knob');
+	await new Promise((resolve) => setTimeout(resolve, 0));
+	const knob = host.querySelector('rui-knob') as RuiKnobElement;
+	const control = knob.querySelector('[data-ref="control"]') as HTMLElement;
+	const rect = control.getBoundingClientRect();
+	const center = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+	return { knob, control, center, radius: rect.width / 2 };
+}
+
+const pointer = (target: EventTarget, type: string, x: number, y: number) =>
+	target.dispatchEvent(new PointerEvent(type, { bubbles: true, pointerId: 1, button: 0, clientX: x, clientY: y }));
+
+describe('rui-knob pointer drag', () => {
+	afterEach(() => {
+		for (const cleanup of cleanups.splice(0)) cleanup();
+	});
+
+	it('follows the pointer while dragging, flags data-dragging and stops on release', async () => {
+		const { knob, control, center, radius } = await mountKnob();
+		const changes: number[] = [];
+		knob.addEventListener('rui-change', (event) => changes.push((event as CustomEvent).detail.value));
+
+		pointer(control, 'pointerdown', center.x - radius, center.y + radius);
+		const afterPress = knob.value;
+		expect(control.hasAttribute('data-dragging')).toBe(true);
+
+		pointer(document, 'pointermove', center.x + radius, center.y + radius);
+		expect(knob.value).not.toBe(afterPress);
+
+		pointer(document, 'pointerup', center.x + radius, center.y + radius);
+		const released = knob.value;
+		expect(control.hasAttribute('data-dragging')).toBe(false);
+
+		pointer(document, 'pointermove', center.x, center.y - radius);
+		expect(knob.value).toBe(released);
+		expect(changes.length).toBeGreaterThan(0);
+	});
+
+	it('ignores a press while disabled', async () => {
+		const { knob, control, center, radius } = await mountKnob();
+		knob.disabled = true;
+		await knob.updateComplete;
+
+		pointer(control, 'pointerdown', center.x + radius, center.y);
+
+		expect(control.hasAttribute('data-dragging')).toBe(false);
+		expect(knob.value).toBe(0);
+	});
+});

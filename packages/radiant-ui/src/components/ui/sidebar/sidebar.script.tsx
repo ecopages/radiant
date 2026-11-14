@@ -2,7 +2,6 @@ import type { JSX_PROPS } from '@ecopages/jsx';
 import {
 	RadiantElement,
 	bindTo,
-	bound,
 	customElement,
 	event,
 	onEvent,
@@ -18,6 +17,7 @@ import { SIDEBAR_MOBILE_BREAKPOINT_PX } from '@/lib/viewport/breakpoints';
 import { createDismissController } from '../../../controllers/dismiss-controller';
 import type { Controller } from '../../../controllers/controller';
 import { EventListenerController, createEventListenerController } from '../../../controllers/event-listener-controller';
+import { createPointerDragController } from '../../../controllers/pointer-drag-controller';
 
 export type RuiSidebarVariant = 'sidebar' | 'inset';
 export type RuiSidebarSide = 'left' | 'right';
@@ -197,22 +197,8 @@ export class RuiSidebar extends RadiantElement {
 		listener: (event) => this.setMobile(event.matches),
 	});
 
-	private dragging = false;
-	private dragStartCoord = 0;
 	private dragStartSize = 0;
 	private navigationListeners: Controller[] = [];
-	private readonly dragListeners = [
-		new EventListenerController({
-			getTarget: () => document,
-			type: 'pointermove',
-			listener: (event) => this.onPointerMove(event),
-		}),
-		new EventListenerController({
-			getTarget: () => document,
-			type: ['pointerup', 'pointercancel'],
-			listener: () => this.onPointerUp(),
-		}),
-	];
 
 	/** @remarks Set by the first update cycle so later cycles never scroll. */
 	private didScrollActiveOnMount = false;
@@ -245,6 +231,18 @@ export class RuiSidebar extends RadiantElement {
 
 	constructor() {
 		super();
+		createPointerDragController(this, {
+			getTarget: () => this.handleTarget,
+			canStart: () => this.collapsible === 'off',
+			onStart: ({ event }) => {
+				event.preventDefault();
+				this.dragStartSize = this.paneWidth();
+			},
+			onMove: ({ dx, dy }) => {
+				const travel = isHorizontalSide(this.side) ? dx : dy;
+				this.applyWidth(this.dragStartSize + (this.side === 'right' ? -travel : travel), true);
+			},
+		});
 		createDismissController(this, {
 			getSurface: () => null,
 			getOpen: () => this.isMobile && this.isOpen(),
@@ -284,7 +282,6 @@ export class RuiSidebar extends RadiantElement {
 	}
 
 	override disconnectedCallback(): void {
-		this.endDrag();
 		this.detachNavigationListeners();
 		this.mobileReady = false;
 		super.disconnectedCallback();
@@ -546,47 +543,6 @@ export class RuiSidebar extends RadiantElement {
 		this.syncPresentation();
 		this.syncPaneWidthVar();
 		this.toggleEvent.emit({ open: next, state: paneState });
-	}
-
-	private beginDrag(event: PointerEvent): void {
-		if (event.button !== 0) return;
-		if (this.collapsible !== 'off') return;
-		this.dragging = true;
-		const horizontal = isHorizontalSide(this.side);
-		this.dragStartCoord = horizontal ? event.clientX : event.clientY;
-		this.dragStartSize = this.paneWidth();
-		this.handleTarget?.setPointerCapture(event.pointerId);
-		for (const controller of this.dragListeners) {
-			controller.attach();
-		}
-	}
-
-	private endDrag(): void {
-		if (!this.dragging) return;
-		this.dragging = false;
-		for (const controller of this.dragListeners) {
-			controller.destroy();
-		}
-	}
-
-	@bound
-	private onPointerMove(event: PointerEvent): void {
-		if (!this.dragging) return;
-		const horizontal = isHorizontalSide(this.side);
-		const coord = horizontal ? event.clientX : event.clientY;
-		const delta = this.side === 'right' ? this.dragStartCoord - coord : coord - this.dragStartCoord;
-		this.applyWidth(this.dragStartSize + delta, true);
-	}
-
-	@bound
-	private onPointerUp(): void {
-		this.endDrag();
-	}
-
-	@onEvent({ ref: 'handle', type: 'pointerdown' })
-	onHandlePointerDown(event: Event): void {
-		event.preventDefault();
-		this.beginDrag(event as PointerEvent);
 	}
 
 	@onEvent({ ref: 'handle', type: 'keydown' })

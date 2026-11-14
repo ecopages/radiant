@@ -49,10 +49,66 @@ async function expectAnnouncement(host: ParentNode, text: string): Promise<void>
 
 describe('rui-toaster', () => {
 	afterEach(() => {
+		vi.restoreAllMocks();
 		toast.dismiss();
 		toast.clear();
 		resetToastDeadlines();
 		for (const cleanup of cleanups.splice(0)) cleanup();
+	});
+
+	describe('swipe to dismiss', () => {
+		const pointer = (target: EventTarget, type: string, x: number, y = 0) =>
+			target.dispatchEvent(
+				new PointerEvent(type, { bubbles: true, pointerId: 1, button: 0, clientX: x, clientY: y }),
+			);
+
+		async function mountToast() {
+			const { host } = mount(<RuiToaster />);
+			await settled();
+			toast('Swipe me');
+			await settledToasts(host);
+			return toastElements(host)[0];
+		}
+
+		it('follows the pointer past the dead zone and dismisses past the threshold', async () => {
+			const element = await mountToast();
+
+			pointer(element, 'pointerdown', 0);
+			pointer(document, 'pointermove', 4);
+			expect(element.style.getPropertyValue('--rui-toast-swipe-x')).toBe('');
+			pointer(document, 'pointermove', 60);
+			expect(element.style.getPropertyValue('--rui-toast-swipe-x')).toBe('60px');
+			expect(element.dataset.swiping).toBe('true');
+
+			pointer(document, 'pointerup', 60);
+			expect(element.dataset.swipeOut).toBe('true');
+			expect(element.dataset.swipeDirection).toBe('right');
+		});
+
+		it('springs back when released short and slow', async () => {
+			const element = await mountToast();
+			let now = 1_000;
+			vi.spyOn(Date, 'now').mockImplementation(() => (now += 1_000));
+
+			pointer(element, 'pointerdown', 0);
+			pointer(document, 'pointermove', 20);
+			pointer(document, 'pointerup', 20);
+
+			expect(element.dataset.swipeOut).toBe('false');
+			expect(element.style.getPropertyValue('--rui-toast-swipe-x')).toBe('0px');
+			expect(element.dataset.swiping).toBe('false');
+		});
+
+		it('does not start from a button inside the toast', async () => {
+			const element = await mountToast();
+			const button = element.appendChild(document.createElement('button'));
+
+			pointer(button, 'pointerdown', 0);
+			pointer(document, 'pointermove', 80);
+			pointer(document, 'pointerup', 80);
+
+			expect(element.dataset.swipeOut).toBe('false');
+		});
 	});
 
 	it('exports every supported toast position in display order', () => {

@@ -126,12 +126,18 @@ describe('RuiWindowSplitter input handling', () => {
 		splitter.addEventListener('rui-splitter-change', (e) => details.push((e as CustomEvent).detail.value));
 		const rect = splitter.getBoundingClientRect();
 		separator.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 1, bubbles: true }));
-		document.dispatchEvent(new PointerEvent('pointermove', { clientX: rect.left + rect.width * 0.65 }));
+		document.dispatchEvent(
+			new PointerEvent('pointermove', { pointerId: 1, clientX: rect.left + rect.width * 0.65 }),
+		);
 		expect(splitter.value).toBeCloseTo(65, 0);
-		document.dispatchEvent(new PointerEvent('pointermove', { clientX: rect.left + rect.width * 2 }));
+		document.dispatchEvent(new PointerEvent('pointermove', { pointerId: 1, clientX: rect.left + rect.width * 2 }));
 		expect(splitter.value).toBe(80);
-		document.dispatchEvent(new PointerEvent('pointerup'));
+		document.dispatchEvent(new PointerEvent('pointerup', { pointerId: 1 }));
 		expect(details.at(-1)).toBe(80);
+		document.dispatchEvent(
+			new PointerEvent('pointermove', { pointerId: 1, clientX: rect.left + rect.width * 0.3 }),
+		);
+		expect(splitter.value).toBe(80);
 		cleanup();
 	});
 });

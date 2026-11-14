@@ -1,6 +1,6 @@
 import type { WithoutChildren } from '../../../lib/without-children';
 import type { JSX_PROPS } from '@ecopages/jsx';
-import { RadiantElement, bindTo, bound, customElement, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
+import { RadiantElement, bindTo, customElement, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import { RuiIconAlertCircle, RuiIconAlertTriangle, RuiIconCheck, RuiIconInfo, RuiIconX } from '@/lib/icons';
 import {
 	DEFAULT_TOAST_POSITION,
@@ -12,7 +12,7 @@ import {
 	type ToastVariant,
 	splitToastPosition,
 } from './toast-context';
-import { createEventListenerController } from '../../../controllers/event-listener-controller';
+import { createPointerDragController, type PointerDragEndReason } from '../../../controllers/pointer-drag-controller';
 import { toastState } from './toast-state';
 
 /**
@@ -158,7 +158,6 @@ export class RuiToast extends RadiantElement<RuiToastBindings> {
 	private held = false;
 	private timerReady = false;
 	private timeoutId: ReturnType<typeof setTimeout> | null = null;
-	private pointerStart: { x: number; y: number } | null = null;
 	private dragStartTime: number | null = null;
 	private exitTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -172,20 +171,15 @@ export class RuiToast extends RadiantElement<RuiToastBindings> {
 	 */
 	constructor() {
 		super();
-		createEventListenerController(this, {
+		createPointerDragController(this, {
 			getTarget: (): HTMLElement => this,
-			type: 'pointerdown',
-			listener: (event) => this.onPointerDown(event),
-		});
-		createEventListenerController(this, {
-			getTarget: (): HTMLElement => this,
-			type: 'pointermove',
-			listener: (event) => this.onPointerMove(event),
-		});
-		createEventListenerController(this, {
-			getTarget: (): HTMLElement => this,
-			type: ['pointerup', 'pointercancel'],
-			listener: (event) => this.onPointerUp(event),
+			canStart: (event) => this.canStartSwipe(event),
+			onStart: () => {
+				this.dragStartTime = Date.now();
+				this.swipeAxis = null;
+			},
+			onMove: ({ dx, dy }) => this.onSwipeMove({ x: dx, y: dy }),
+			onEnd: ({ reason }) => this.onSwipeEnd(reason),
 		});
 	}
 
@@ -350,24 +344,13 @@ export class RuiToast extends RadiantElement<RuiToastBindings> {
 		}, TOAST_EXIT_MS);
 	}
 
-	@bound
-	private onPointerDown(event: PointerEvent): void {
-		if (!this.dismissible || this.variant === 'loading') return;
-		if (event.button !== 0) return;
+	private canStartSwipe(event: PointerEvent): boolean {
+		if (!this.dismissible || this.variant === 'loading') return false;
 		const target = event.target as HTMLElement | null;
-		if (target?.closest('[data-toast-close], [data-toast-action], button, a')) return;
-
-		this.dragStartTime = Date.now();
-		this.pointerStart = { x: event.clientX, y: event.clientY };
-		this.swipeAxis = null;
-		this.setPointerCapture(event.pointerId);
+		return !target?.closest('[data-toast-close], [data-toast-action], button, a');
 	}
 
-	@bound
-	private onPointerMove(event: PointerEvent): void {
-		if (!this.pointerStart) return;
-		const delta = { x: event.clientX - this.pointerStart.x, y: event.clientY - this.pointerStart.y };
-
+	private onSwipeMove(delta: { x: number; y: number }): void {
 		if (!this.startSwipe(delta)) return;
 		this.swipeAxis ??= Math.abs(delta.x) > Math.abs(delta.y) ? 'x' : 'y';
 		const amount = this.swipeAxis === 'x' ? { x: delta.x, y: 0 } : { x: 0, y: delta.y };
@@ -403,21 +386,15 @@ export class RuiToast extends RadiantElement<RuiToastBindings> {
 		this.setSwipeTranslation({ x: 0, y: 0 });
 	}
 
-	@bound
-	private onPointerUp(event: PointerEvent): void {
-		if (!this.pointerStart) return;
-		this.releaseToastPointer(event.pointerId);
+	private onSwipeEnd(reason: PointerDragEndReason): void {
 		const swipe = this.readSwipe();
 		this.swiping = false;
-		if (swipe && this.dismissible && this.shouldDismissSwipe(swipe)) this.dismissFromSwipe(swipe);
-		else this.cancelSwipe();
-		this.clearPointerState();
-	}
-
-	private releaseToastPointer(pointerId: number): void {
-		try {
-			this.releasePointerCapture(pointerId);
-		} catch {}
+		if (reason !== 'destroy' && swipe && this.dismissible && this.shouldDismissSwipe(swipe)) {
+			this.dismissFromSwipe(swipe);
+		} else {
+			this.cancelSwipe();
+		}
+		this.dragStartTime = null;
 	}
 
 	private readSwipe(): { x: number; y: number } | undefined {
@@ -457,11 +434,6 @@ export class RuiToast extends RadiantElement<RuiToastBindings> {
 		this.resetSwipeTranslation();
 		this.swipeAxis = null;
 		this.syncDomState();
-	}
-
-	private clearPointerState(): void {
-		this.pointerStart = null;
-		this.dragStartTime = null;
 	}
 
 	@onEvent({ selector: '[data-toast-close]', type: 'click' })

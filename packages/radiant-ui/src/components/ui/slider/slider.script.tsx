@@ -2,6 +2,7 @@ import type { JSX_PROPS } from '@ecopages/jsx';
 import { bindTo, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import { FormAssociatedElement, type FormValue } from '@ecopages/radiant/form-associated-element';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
+import { createPointerDragController } from '@/controllers/pointer-drag-controller';
 import { numberArrayTransform, type ViewNumericValue } from '../shared/multi-value';
 import {
 	createNumericRange,
@@ -339,9 +340,19 @@ export class RuiSlider extends FormAssociatedElement {
 	@query({ ref: 'rangeMaxThumb' }) rangeMaxThumb: HTMLButtonElement | null;
 
 	private activeThumb: RuiSliderThumb | null = null;
-	private activePointerId: number | null = null;
 	private pending: number[] | null = null;
 	private lastEmitted = '';
+
+	constructor() {
+		super();
+		createPointerDragController(this, {
+			getTarget: () => this.rangeTrack,
+			canStart: () => !this.effectiveDisabled && !this.readOnly,
+			onStart: ({ event }) => this.startDrag(event),
+			onMove: ({ event }) => this.dragTo(event),
+			onEnd: ({ reason }) => (reason === 'release' ? this.commit() : this.revert()),
+		});
+	}
 
 	protected override onConnected(): void {
 		this.adoptLegacyRangeAttributes();
@@ -662,7 +673,6 @@ export class RuiSlider extends FormAssociatedElement {
 		this.rangeTrack?.removeAttribute('data-dragging');
 		this.pending = null;
 		this.activeThumb = null;
-		this.activePointerId = null;
 		this.syncValues(values);
 	}
 
@@ -670,24 +680,11 @@ export class RuiSlider extends FormAssociatedElement {
 		this.rangeTrack?.removeAttribute('data-dragging');
 		this.pending = null;
 		this.activeThumb = null;
-		this.activePointerId = null;
 		this.lastEmitted = this.committedValues().join(',');
 		this.paint(this.committedValues());
 	}
 
-	private releasePointer(event: PointerEvent): void {
-		const track = this.rangeTrack;
-		if (track?.hasPointerCapture(event.pointerId)) {
-			track.releasePointerCapture(event.pointerId);
-		}
-	}
-
-	@onEvent({ ref: 'rangeTrack', type: 'pointerdown' })
-	onPointerDown(event: PointerEvent): void {
-		if (event.button !== 0 || this.effectiveDisabled || this.readOnly) {
-			return;
-		}
-
+	private startDrag(event: PointerEvent): void {
 		const thumbElement = (event.target as HTMLElement).closest<HTMLElement>('[data-thumb]');
 		const fromThumb = this.parseThumb(thumbElement?.getAttribute('data-thumb') ?? null);
 		const next = this.valueFromPointer(event);
@@ -695,8 +692,6 @@ export class RuiSlider extends FormAssociatedElement {
 		this.pending = this.committedValues();
 		this.lastEmitted = this.pending.join(',');
 		this.activeThumb = thumb;
-		this.activePointerId = event.pointerId;
-		this.rangeTrack?.setPointerCapture(event.pointerId);
 		this.thumbFor(thumb)?.focus();
 		if (fromThumb) {
 			this.rangeTrack?.setAttribute('data-dragging', '');
@@ -706,38 +701,13 @@ export class RuiSlider extends FormAssociatedElement {
 		event.preventDefault();
 	}
 
-	/**
-	 * @remarks Pointermove is observed on `document` so drag still tracks when
-	 * testing-library dispatches move events off the thumb/track (no capture retarget).
-	 */
-	@onEvent({ document: true, type: 'pointermove' })
-	onPointerMove(event: PointerEvent): void {
-		if (!this.activeThumb || event.pointerId !== this.activePointerId) {
+	private dragTo(event: PointerEvent): void {
+		if (!this.activeThumb) {
 			return;
 		}
 
 		this.rangeTrack?.setAttribute('data-dragging', '');
 		this.moveThumb(this.activeThumb, this.valueFromPointer(event));
-	}
-
-	@onEvent({ document: true, type: 'pointerup' })
-	onPointerUp(event: PointerEvent): void {
-		if (!this.activeThumb || event.pointerId !== this.activePointerId) {
-			return;
-		}
-
-		this.releasePointer(event);
-		this.commit();
-	}
-
-	@onEvent({ document: true, type: 'pointercancel' })
-	onPointerCancel(event: PointerEvent): void {
-		if (!this.activeThumb || event.pointerId !== this.activePointerId) {
-			return;
-		}
-
-		this.releasePointer(event);
-		this.revert();
 	}
 
 	@onEvent({ selector: '[data-thumb]', type: 'keydown' })

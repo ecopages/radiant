@@ -2,6 +2,7 @@ import type { JSX_PROPS } from '@ecopages/jsx';
 import { bindTo, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import { FormAssociatedElement, type FormValue } from '@ecopages/radiant/form-associated-element';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
+import { createPointerDragController } from '@/controllers/pointer-drag-controller';
 import { createNumericRange, valueFromSliderKey, valuesAlignOnStep } from '../shared/numeric-range';
 import { createKnobRing, knobValueFromPointer } from './knob-geometry';
 
@@ -143,9 +144,24 @@ export class RuiKnob extends FormAssociatedElement {
 	@query({ ref: 'centerValue' }) centerValueTarget: HTMLElement | null;
 	@query({ ref: 'belowValue' }) belowValueTarget: HTMLElement | null;
 
-	private activePointerId: number | null = null;
 	private lastEmitted: number | null = null;
 	private rangeCommitQueued = false;
+
+	constructor() {
+		super();
+		createPointerDragController(this, {
+			getTarget: () => this.controlTarget,
+			canStart: () => !this.effectiveDisabled && !this.readOnly,
+			onStart: ({ event }) => {
+				this.lastEmitted = this.value;
+				this.controlTarget?.setAttribute('data-dragging', '');
+				this.commitFromPointer(event);
+				event.preventDefault();
+			},
+			onMove: ({ event }) => this.commitFromPointer(event),
+			onEnd: () => this.controlTarget?.removeAttribute('data-dragging'),
+		});
+	}
 
 	protected override onConnected(): void {
 		this.syncPresentation();
@@ -296,62 +312,21 @@ export class RuiKnob extends FormAssociatedElement {
 		}
 	}
 
-	@onEvent({ ref: 'control', type: 'pointerdown' })
-	onPointerDown(event: PointerEvent): void {
+	private commitFromPointer(event: PointerEvent): void {
 		const control = this.controlTarget;
-		if (event.button !== 0 || this.effectiveDisabled || this.readOnly || !control) {
+		if (!control) {
 			return;
 		}
 
-		this.activePointerId = event.pointerId;
-		this.lastEmitted = this.value;
-		control.setAttribute('data-dragging', '');
-		control.setPointerCapture(event.pointerId);
-		const rect = control.getBoundingClientRect();
-		const value = knobValueFromPointer(event.clientX, event.clientY, rect, this.numericRange);
+		const value = knobValueFromPointer(
+			event.clientX,
+			event.clientY,
+			control.getBoundingClientRect(),
+			this.numericRange,
+		);
 		if (value != null) {
 			this.commitValue(value);
 		}
-		event.preventDefault();
-	}
-
-	@onEvent({ ref: 'control', type: 'pointermove' })
-	onPointerMove(event: PointerEvent): void {
-		const control = this.controlTarget;
-		if (event.pointerId !== this.activePointerId || !control) {
-			return;
-		}
-
-		const rect = control.getBoundingClientRect();
-		const value = knobValueFromPointer(event.clientX, event.clientY, rect, this.numericRange);
-		if (value != null) {
-			this.commitValue(value);
-		}
-	}
-
-	@onEvent({ ref: 'control', type: 'pointerup' })
-	onPointerUp(event: PointerEvent): void {
-		if (event.pointerId !== this.activePointerId) {
-			return;
-		}
-
-		this.controlTarget?.releasePointerCapture(event.pointerId);
-		this.controlTarget?.removeAttribute('data-dragging');
-		this.activePointerId = null;
-	}
-
-	@onEvent({ ref: 'control', type: 'pointercancel' })
-	onPointerCancel(event: PointerEvent): void {
-		if (event.pointerId !== this.activePointerId) {
-			return;
-		}
-
-		const control = this.controlTarget;
-		if (control?.hasPointerCapture(event.pointerId)) {
-			control.releasePointerCapture(event.pointerId);
-		}
-		control?.removeAttribute('data-dragging');
-		this.activePointerId = null;
 	}
 
 	@onEvent({ ref: 'control', type: 'keydown' })
