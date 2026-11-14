@@ -111,6 +111,17 @@ describe('RuiNumberField commit', () => {
 		expect(changes).toEqual([0]);
 	});
 
+	it('keeps the committed value when the typed text has no digits', async () => {
+		const { host, input, changes } = await mount();
+
+		await typeAndBlur(input, '5');
+		await typeAndBlur(input, 'abc');
+
+		expect(host.value).toBe(5);
+		expect(changes).toEqual([5]);
+		expect(input.value).toBe('5');
+	});
+
 	it('does not emit when the same committed value is typed again', async () => {
 		const { host, input, changes } = await mount();
 

@@ -30,6 +30,9 @@ export function parseNumber(input: string, locale?: string | string[], options?:
 		.replaceAll(group, '')
 		.replace(decimal, '.')
 		.replace(/[^\d.-]/g, '');
+	if (!/\d/.test(normalized)) {
+		return null;
+	}
 	const parsed = Number(normalized);
 	return Number.isFinite(parsed) ? parsed : null;
 }
