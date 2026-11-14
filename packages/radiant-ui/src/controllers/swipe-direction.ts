@@ -1,7 +1,16 @@
+/**
+ * The direction of travel of a swipe.
+ */
 export type SwipeDirection = 'left' | 'right' | 'up' | 'down';
 
+/**
+ * Which axes count for a swipe.
+ */
 export type SwipeAxis = 'x' | 'y' | 'both';
 
+/**
+ * The axis and the distance, in pixels, a swipe needs.
+ */
 export type SwipeOptions = {
 	/** Which travel counts. Default: `x`. */
 	axis?: SwipeAxis;
@@ -9,6 +18,9 @@ export type SwipeOptions = {
 	threshold?: number;
 };
 
+/**
+ * The travel, in pixels, a swipe needs by default.
+ */
 export const DEFAULT_SWIPE_THRESHOLD_PX = 48;
 
 /**
@@ -18,6 +30,12 @@ export const DEFAULT_SWIPE_THRESHOLD_PX = 48;
  * Pure: no DOM. A swipe needs travel of at least `threshold` along its axis that also exceeds the travel on the
  * other axis, so a mostly-cross-axis drag is ignored. With `axis: 'both'` the longer axis decides and an exact tie
  * is not a swipe.
+ *
+ * @example
+ * ```ts
+ * resolveSwipeDirection(-60, 5); // 'left'
+ * resolveSwipeDirection(10, 5); // null
+ * ```
  */
 export function resolveSwipeDirection(
 	dx: number,

@@ -2,6 +2,7 @@ import { navigateRovingTabindex, type RovingNavResult, type RovingOrientation } 
 import { bindController, type Controller, type ControllerHost } from './controller';
 import { EventListenerController } from './event-listener-controller';
 
+/** The items, key target, orientation and callbacks of a `RovingController`. */
 export type RovingControllerConfig = {
 	/** Read on every event and sync, so the collection can change (hidden, disabled or added items) without telling the controller. */
 	getItems: () => HTMLElement[];
@@ -194,7 +195,19 @@ export class RovingController implements Controller {
 	}
 }
 
-/** Creates a `RovingController` that attaches when `host` connects and is destroyed when it disconnects. */
+/**
+ * Creates a `RovingController` that attaches when `host` connects and is destroyed when it disconnects.
+ *
+ * @example
+ * ```ts
+ * // in a RadiantElement subclass
+ * private readonly roving = createRovingController(this, {
+ *   getItems: () => [...this.querySelectorAll<HTMLElement>('button')],
+ *   getTarget: () => this,
+ * });
+ * // call this.roving.sync() from onConnected and whenever the items change
+ * ```
+ */
 export function createRovingController(host: ControllerHost, config: RovingControllerConfig): RovingController {
 	return bindController(host, new RovingController(config));
 }

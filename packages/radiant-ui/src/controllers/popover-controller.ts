@@ -4,6 +4,7 @@ import { attachFloating } from './floating-position';
 import type { RuiPlacement } from './placement';
 import { PortalController } from './portal';
 
+/** The anchor, floating surface, open state and placement a `PopoverController` reads from its owner. */
 export type PopoverControllerConfig = {
 	getAnchor: () => HTMLElement | null;
 	getFloating: () => HTMLElement | null;
@@ -186,6 +187,19 @@ export class PopoverController implements Controller {
 
 /**
  * Creates a `PopoverController` that attaches when `host` connects and is destroyed when it disconnects.
+ *
+ * @example
+ * ```ts
+ * // in a RadiantElement subclass
+ * private readonly popover = createPopoverController(this, {
+ *   getAnchor: () => this.trigger,
+ *   getFloating: () => this.panel,
+ *   getOpen: () => this.open,
+ *   getPlacement: () => 'bottom-start',
+ *   onDismiss: () => (this.open = false),
+ * });
+ * // call this.popover.sync() whenever `open` changes
+ * ```
  */
 export function createPopoverController(host: ControllerHost, config: PopoverControllerConfig): PopoverController {
 	return bindController(host, new PopoverController(config));

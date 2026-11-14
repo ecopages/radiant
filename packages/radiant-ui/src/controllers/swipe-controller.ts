@@ -2,6 +2,7 @@ import { bindController, type Controller, type ControllerHost } from './controll
 import { EventListenerController } from './event-listener-controller';
 import { resolveSwipeDirection, type SwipeDirection, type SwipeOptions } from './swipe-direction';
 
+/** The target, thresholds and callback of a `SwipeController`. */
 export type SwipeControllerConfig = SwipeOptions & {
 	/** Resolved on every `attach()`; `null` listens to nothing. */
 	getTarget: () => HTMLElement | null;
@@ -88,7 +89,18 @@ export class SwipeController implements Controller {
 	}
 }
 
-/** Creates a `SwipeController` that attaches when `host` connects and is destroyed when it disconnects. */
+/**
+ * Creates a `SwipeController` that attaches when `host` connects and is destroyed when it disconnects.
+ *
+ * @example
+ * ```ts
+ * // in a RadiantElement subclass
+ * createSwipeController(this, {
+ *   getTarget: () => this,
+ *   onSwipe: (direction) => (direction === 'left' ? this.next() : this.previous()),
+ * });
+ * ```
+ */
 export function createSwipeController(host: ControllerHost, config: SwipeControllerConfig): SwipeController {
 	return bindController(host, new SwipeController(config));
 }

@@ -43,7 +43,14 @@ export function buildDateMaskPattern(locale: IntlLocale): DateMaskPattern {
 	return pattern;
 }
 
-/** Human-readable placeholder derived from the locale mask (e.g. `mm/dd/yyyy`). */
+/**
+ * Human-readable placeholder derived from the locale mask (e.g. `mm/dd/yyyy`).
+ *
+ * @example
+ * ```ts
+ * getDefaultDatePlaceholder('en-US'); // 'mm/dd/yyyy'
+ * ```
+ */
 export function getDefaultDatePlaceholder(locale: IntlLocale): string {
 	const parts = getDateTimeFormat(locale, {
 		year: 'numeric',
@@ -97,7 +104,14 @@ function normalizeYear(value: number): number {
 	return value >= 69 ? 1900 + value : 2000 + value;
 }
 
-/** Maps masked digits back to year/month/day using the locale field order. */
+/**
+ * Maps masked digits back to year/month/day using the locale field order.
+ *
+ * @example
+ * ```ts
+ * maskedDigitsToParts('08212002', 'en-US'); // { month: 8, day: 21, year: 2002 }
+ * ```
+ */
 export function maskedDigitsToParts(digits: string, locale: IntlLocale): Partial<Record<DatePartType, number>> | null {
 	const order = getNumericPartOrder(locale);
 	let cursor = 0;
@@ -120,6 +134,14 @@ export function maskedDigitsToParts(digits: string, locale: IntlLocale): Partial
 	return values;
 }
 
+/**
+ * Builds a local `Date` from year, month and day, or `null` when a part is missing or the date does not exist.
+ *
+ * @example
+ * ```ts
+ * partsToDate({ year: 2002, month: 8, day: 21 }); // Date for 21 August 2002
+ * ```
+ */
 export function partsToDate(parts: Partial<Record<DatePartType, number>>): Date | null {
 	if (parts.year == null || parts.month == null || parts.day == null) {
 		return null;

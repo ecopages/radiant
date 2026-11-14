@@ -3,7 +3,14 @@ export function getVisibleCollectionOptions(options: HTMLElement[]): HTMLElement
 	return options.filter((option) => !option.hidden && option.getAttribute('aria-disabled') !== 'true');
 }
 
-/** Wraps an active option index in the collection bounds. */
+/**
+ * Wraps an active option index in the collection bounds.
+ *
+ * @example
+ * ```ts
+ * wrapCollectionIndex(2, 1, 3); // 0
+ * ```
+ */
 export function wrapCollectionIndex(index: number, direction: 1 | -1, length: number): number {
 	if (length === 0) {
 		return -1;

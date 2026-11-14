@@ -8,8 +8,10 @@ import {
 	wrapCollectionIndex,
 } from './collection-navigation';
 
+/** Which option becomes active when the popup opens. */
 export type ListboxActivation = 'first' | 'last' | 'none';
 
+/** The elements and state a `ListboxPopoverController` reads from the select or combobox that owns it. */
 export type ListboxPopoverControllerConfig = {
 	getAnchor: () => HTMLElement | null;
 	getFloating: () => HTMLElement | null;
@@ -21,6 +23,7 @@ export type ListboxPopoverControllerConfig = {
 	onDismiss?: (reason: DismissReason, event: Event) => void;
 };
 
+/** The policy and callbacks `handleKeydown` applies for one key press. */
 export type ListboxKeydownConfig = {
 	isOpen: boolean;
 	canUseSpace: boolean;
@@ -215,6 +218,19 @@ export class ListboxPopoverController implements Controller {
 
 /**
  * Creates a `ListboxPopoverController` that attaches when `host` connects and is destroyed when it disconnects.
+ *
+ * @example
+ * ```ts
+ * // in a RadiantElement subclass
+ * private readonly listbox = createListboxPopoverController(this, {
+ *   getAnchor: () => this.input,
+ *   getFloating: () => this.popup,
+ *   getOpen: () => this.open,
+ *   getOptions: () => [...this.popup.querySelectorAll<HTMLElement>('[role="option"]')],
+ *   getActiveDescendantHost: () => this.input,
+ *   getOptionIdPrefix: () => 'pick',
+ * });
+ * ```
  */
 export function createListboxPopoverController(
 	host: ControllerHost,

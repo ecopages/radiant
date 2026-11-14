@@ -3,6 +3,7 @@ import { EventListenerController } from './event-listener-controller';
 import { resolveTrapMove } from './focus-trap-order';
 import { queryFocusableCandidates } from '@/lib/focusable-elements';
 
+/** The surface a `FocusTrapController` traps focus in, and how it picks the loop. */
 export type FocusTrapControllerConfig = {
 	/** The modal surface. `null` traps nothing, such as a node the view has not stamped yet. */
 	getSurface: () => HTMLElement | null;
@@ -110,6 +111,12 @@ export class FocusTrapController implements Controller {
 
 /**
  * Creates a `FocusTrapController` that traps when `host` connects and releases when it disconnects.
+ *
+ * @example
+ * ```ts
+ * // in a RadiantElement subclass
+ * createFocusTrapController(this, { getSurface: () => this.panel });
+ * ```
  */
 export function createFocusTrapController(
 	host: ControllerHost,

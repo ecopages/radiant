@@ -3,6 +3,7 @@ import { bindController, type Controller, type ControllerHost } from './controll
 import { DismissController, type DismissReason } from './dismiss-controller';
 import { PopoverController } from './popover-controller';
 
+/** The getters and callbacks `CalendarPopoverController` reads from the date picker that owns it. */
 export type CalendarPopoverControllerConfig = {
 	getHost: () => HTMLElement;
 	getAnchor: () => HTMLElement | null;
@@ -144,6 +145,24 @@ export class CalendarPopoverController implements Controller {
 
 /**
  * Creates a `CalendarPopoverController` that attaches when `host` connects and is destroyed when it disconnects.
+ *
+ * @example
+ * ```ts
+ * // in a RadiantElement subclass
+ * class DatePicker extends RadiantElement {
+ *   private readonly picker = createCalendarPopoverController(this, {
+ *     getHost: () => this,
+ *     getAnchor: () => this.field,
+ *     getFloating: () => this.popup,
+ *     getOpen: () => this.open,
+ *     getCalendar: () => this.popup,
+ *     getFocusIso: () => this.value,
+ *     getToggle: () => this.toggle,
+ *     setOpenState: (next) => (this.open = next),
+ *     onLayoutChange: () => {},
+ *   });
+ * }
+ * ```
  */
 export function createCalendarPopoverController(
 	host: ControllerHost,

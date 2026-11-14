@@ -2,6 +2,9 @@ import type { DatePartType } from './types';
 import type { DateSegmentModel } from './segments';
 import { maxSegmentLength } from './segments';
 
+/**
+ * The segments after a typed digit, the digits typed into the part so far, and whether focus should move on.
+ */
 export type SegmentDigitResult = {
 	segments: DateSegmentModel[];
 	enteredKeys: string;
@@ -38,6 +41,9 @@ function parseDigits(raw: string): number | null {
 	return Number.isFinite(parsed) ? parsed : null;
 }
 
+/**
+ * The lowest and highest value of a part; the day bound follows the month and year when both are set.
+ */
 export function getSegmentBounds(type: DatePartType, segments: DateSegmentModel[]): { min: number; max: number } {
 	return { min: 1, max: maxForPart(type, segments) };
 }
@@ -92,10 +98,16 @@ export function segmentAriaName(type: DatePartType, locale: string | string[] | 
 	return 'Year';
 }
 
+/**
+ * The text to show for a segment: its value, or its placeholder when empty.
+ */
 export function segmentDisplayText(segment: DateSegmentModel): string {
 	return segment.isPlaceholder || segment.value === '' ? segment.placeholder : segment.value;
 }
 
+/**
+ * The number a segment holds, or `null` when empty.
+ */
 export function segmentNumericValue(segment: DateSegmentModel): number | null {
 	if (segment.isPlaceholder || segment.value === '') {
 		return null;
@@ -103,10 +115,16 @@ export function segmentNumericValue(segment: DateSegmentModel): number | null {
 	return parseDigits(segment.value.replace(/\D/g, ''));
 }
 
+/**
+ * Returns the segments with one part emptied.
+ */
 export function clearSegmentValue(segments: DateSegmentModel[], type: DatePartType): DateSegmentModel[] {
 	return updateSegment(segments, type, { value: '', isPlaceholder: true });
 }
 
+/**
+ * Returns the segments with one part set to a number, zero-padded.
+ */
 export function setSegmentNumeric(segments: DateSegmentModel[], type: DatePartType, value: number): DateSegmentModel[] {
 	return updateSegment(segments, type, {
 		value: padPart(type, value),
@@ -114,6 +132,15 @@ export function setSegmentNumeric(segments: DateSegmentModel[], type: DatePartTy
 	});
 }
 
+/**
+ * Returns the segments with one part stepped by `delta`, wrapping months and days within their bounds.
+ *
+ * @example
+ * ```ts
+ * incrementSegmentValue(buildDateSegments(new Date(2026, 10, 14), 'en-US'), 'month', 1).map((s) => s.value);
+ * // ['12', '/', '14', '/', '2026']
+ * ```
+ */
 export function incrementSegmentValue(
 	segments: DateSegmentModel[],
 	type: DatePartType,
@@ -142,6 +169,13 @@ export function incrementSegmentValue(
 
 /**
  * Applies one typed digit to a segment, mirroring React Aria `useDateSegment` entry rules.
+ *
+ * @example
+ * ```ts
+ * const segments = buildDateSegments(null, 'en-US');
+ * applyDigitToSegment(segments, 'month', '1', '').focusNext; // false, a second digit may follow
+ * applyDigitToSegment(segments, 'month', '5', '').focusNext; // true, '05' is complete
+ * ```
  */
 export function applyDigitToSegment(
 	segments: DateSegmentModel[],
@@ -182,12 +216,18 @@ export function applyDigitToSegment(
 	};
 }
 
+/**
+ * The types of the editable segments, in order.
+ */
 export function getEditablePartTypes(segments: DateSegmentModel[]): DatePartType[] {
 	return segments
 		.filter((segment): segment is DateSegmentModel & { type: DatePartType } => segment.editable)
 		.map((segment) => segment.type as DatePartType);
 }
 
+/**
+ * The part to focus next or previous, or `null` at either end.
+ */
 export function focusPartAfter(
 	segments: DateSegmentModel[],
 	type: DatePartType,
@@ -205,6 +245,9 @@ export function focusPartAfter(
 	return parts[nextIndex] ?? null;
 }
 
+/**
+ * The first empty part, else the first part, else `null`.
+ */
 export function firstEmptyOrFirstPart(segments: DateSegmentModel[]): DatePartType | null {
 	let first: DatePartType | null = null;
 
@@ -226,6 +269,9 @@ export function firstEmptyOrFirstPart(segments: DateSegmentModel[]): DatePartTyp
 	return first;
 }
 
+/**
+ * What backspace did: move focus to the previous part, or update the segments.
+ */
 export type BackspaceSegmentResult =
 	{ kind: 'focus-previous' } | { kind: 'updated'; segments: DateSegmentModel[]; enteredKeys: string };
 

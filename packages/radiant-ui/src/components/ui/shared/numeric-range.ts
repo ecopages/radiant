@@ -1,3 +1,6 @@
+/**
+ * How many steps `PageUp` and `PageDown` move a slider.
+ */
 export const SLIDER_PAGE_STEP_MULTIPLIER = 10;
 
 /**
@@ -9,6 +12,9 @@ export const SLIDER_PAGE_STEP_MULTIPLIER = 10;
  */
 export const MAX_VALUE_FRACTION_DIGITS = 15;
 
+/**
+ * Bounds and step with the operations on them: `clamp`, `ratioFor` and `valueFromRatio`.
+ */
 export type NumericRange = {
 	lowerBound: number;
 	upperBound: number;
@@ -20,6 +26,11 @@ export type NumericRange = {
 
 /**
  * Decimal places in a step interval, used as the default readout precision.
+ *
+ * @example
+ * ```ts
+ * fractionDigitsFromStep(0.25); // 2
+ * ```
  */
 export function fractionDigitsFromStep(step: number): number {
 	if (!Number.isFinite(step) || step <= 0) {
@@ -47,7 +58,14 @@ export function resolveValuePrecision(step: number, valuePrecision: number | und
 	return fractionDigitsFromStep(step);
 }
 
-/** Formats a numeric value for readouts, tooltips, and `aria-valuetext`. */
+/**
+ * Formats a numeric value for readouts, tooltips, and `aria-valuetext`.
+ *
+ * @example
+ * ```ts
+ * formatNumericValue(2.5, 2); // '2.50'
+ * ```
+ */
 export function formatNumericValue(value: number, valuePrecision: number): string {
 	return Number.isFinite(value) ? value.toFixed(valuePrecision) : '';
 }
@@ -72,7 +90,17 @@ export function valuesAlignOnStep(left: number, right: number, step: number): bo
 	return Math.abs(left - right) <= Math.min(roundingNoise, resolvedStep * 1e-6);
 }
 
-/** Normalizes numeric-control bounds and step values into a stable interaction model. */
+/**
+ * Normalizes numeric-control bounds and step values into a stable interaction model.
+ *
+ * @example
+ * ```ts
+ * const range = createNumericRange(0, 100, 5);
+ * range.clamp(7); // 5
+ * range.ratioFor(25); // 0.25
+ * range.valueFromRatio(0.5); // 50
+ * ```
+ */
 export function createNumericRange(min: number, max: number, step: number): NumericRange {
 	const resolvedMin = Number.isFinite(min) ? min : 0;
 	const resolvedMax = Number.isFinite(max) ? max : 100;
@@ -104,6 +132,11 @@ export function createNumericRange(min: number, max: number, step: number): Nume
  * Maps WAI-ARIA slider keys onto a stepped value.
  *
  * @returns `undefined` when the key is not part of the slider model.
+ *
+ * @example
+ * ```ts
+ * valueFromSliderKey(createNumericRange(0, 100, 5), 50, 'PageUp'); // 100
+ * ```
  */
 export function valueFromSliderKey(range: NumericRange, current: number, key: string): number | undefined {
 	switch (key) {

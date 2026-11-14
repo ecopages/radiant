@@ -44,6 +44,7 @@ export type SortableChange = {
 /** The sort in progress, for an owner that draws a placeholder from it. */
 export type SortableState = SortableChange;
 
+/** The container, items and callbacks of a `SortableController`. */
 export type SortableControllerConfig = {
 	/** The element that holds the items; it receives the press and the keys. Resolved on every `attach()`. */
 	getContainer: () => HTMLElement | null;
@@ -524,7 +525,19 @@ export class SortableController implements Controller {
 	}
 }
 
-/** Creates a `SortableController` that attaches when `host` connects and is destroyed when it disconnects. */
+/**
+ * Creates a `SortableController` that attaches when `host` connects and is destroyed when it disconnects.
+ *
+ * @example
+ * ```ts
+ * // in a RadiantElement subclass
+ * createSortableController(this, {
+ *   getContainer: () => this,
+ *   getItems: () => [...this.children] as HTMLElement[],
+ *   onChange: ({ item, to }) => this.moveItem(item, to),
+ * });
+ * ```
+ */
 export function createSortableController(host: ControllerHost, config: SortableControllerConfig): SortableController {
 	return bindController(host, new SortableController(config));
 }

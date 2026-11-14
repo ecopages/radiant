@@ -5,9 +5,13 @@ import type { RuiPlacement } from './placement';
 type Side = 'top' | 'right' | 'bottom' | 'left';
 type Align = 'start' | 'center' | 'end';
 
+/** Measured size of a floating surface, in pixels. */
 export type FloatingSize = { width: number; height: number };
+/** Fixed-position coordinates of a floating surface, in pixels. */
 export type FloatingCoords = { x: number; y: number };
+/** The viewport a floating surface must fit in, with the padding to keep from its edges. */
 export type FloatingViewport = { width: number; height: number; padding: number };
+/** Where a floating surface goes and the placement it ended up with after a flip. */
 export type FloatingPositionResult = { coords: FloatingCoords; placement: RuiPlacement };
 
 const OPPOSITE: Record<Side, Side> = {
@@ -233,6 +237,7 @@ export function applyFloatingPosition(
 	return resolved;
 }
 
+/** What `attachFloating` needs: the anchor and floating elements, the placement and the gap. */
 export type AttachFloatingOptions = {
 	anchor: HTMLElement;
 	floating: HTMLElement;

@@ -1,5 +1,6 @@
 import { bindController, type Controller, type ControllerHost } from './controller';
 
+/** The elements and callback of a `ResizeController`. */
 export type ResizeControllerConfig = {
 	/** Resolved on every `attach()`; `null` entries are skipped. */
 	getTargets: () => ReadonlyArray<Element | null>;
@@ -36,7 +37,18 @@ export class ResizeController implements Controller {
 	}
 }
 
-/** Creates a `ResizeController` that attaches when `host` connects and is destroyed when it disconnects. */
+/**
+ * Creates a `ResizeController` that attaches when `host` connects and is destroyed when it disconnects.
+ *
+ * @example
+ * ```ts
+ * // in a RadiantElement subclass
+ * createResizeController(this, {
+ *   getTargets: () => [this],
+ *   onResize: ([entry]) => this.fit(entry.contentRect.width),
+ * });
+ * ```
+ */
 export function createResizeController(host: ControllerHost, config: ResizeControllerConfig): ResizeController {
 	return bindController(host, new ResizeController(config));
 }

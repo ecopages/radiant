@@ -11,6 +11,11 @@ export type TrapMove<T> = { kind: 'native' } | { kind: 'item'; item: T } | { kin
  * and the last for Shift+Tab; otherwise it is left to the browser.
  *
  * Generic over the item so the decision needs no DOM.
+ *
+ * @example
+ * ```ts
+ * resolveTrapMove(['a', 'b', 'c'], 'c', false, false); // { kind: 'item', item: 'a' }
+ * ```
  */
 export function resolveTrapMove<T>(items: readonly T[], active: T, backwards: boolean, strict: boolean): TrapMove<T> {
 	if (items.length === 0) {

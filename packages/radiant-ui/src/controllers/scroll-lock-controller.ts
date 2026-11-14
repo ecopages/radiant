@@ -72,6 +72,12 @@ export class ScrollLockController implements Controller {
 
 /**
  * Creates a `ScrollLockController` that locks when `host` connects and releases when it disconnects.
+ *
+ * @example
+ * ```ts
+ * // in a RadiantElement subclass
+ * createScrollLockController(this); // the page does not scroll while the element is connected
+ * ```
  */
 export function createScrollLockController(host: ControllerHost): ScrollLockController {
 	return bindController(host, new ScrollLockController());

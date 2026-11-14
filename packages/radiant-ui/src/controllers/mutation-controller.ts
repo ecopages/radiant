@@ -1,5 +1,6 @@
 import { bindController, type Controller, type ControllerHost } from './controller';
 
+/** The node, observer options and callback of a `MutationController`. */
 export type MutationControllerConfig = {
 	/** Resolved on every `attach()`, so a changed target is picked up by attaching again. */
 	getTarget: () => Node | null;
@@ -41,7 +42,19 @@ export class MutationController implements Controller {
 	}
 }
 
-/** Creates a `MutationController` that attaches when `host` connects and is destroyed when it disconnects. */
+/**
+ * Creates a `MutationController` that attaches when `host` connects and is destroyed when it disconnects.
+ *
+ * @example
+ * ```ts
+ * // in a RadiantElement subclass
+ * createMutationController(this, {
+ *   getTarget: () => this,
+ *   options: { childList: true },
+ *   onMutate: () => this.refresh(),
+ * });
+ * ```
+ */
 export function createMutationController(host: ControllerHost, config: MutationControllerConfig): MutationController {
 	return bindController(host, new MutationController(config));
 }

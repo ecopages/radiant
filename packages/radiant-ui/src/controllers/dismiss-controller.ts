@@ -1,8 +1,10 @@
 import { bindController, type Controller, type ControllerHost } from './controller';
 import { EventListenerController } from './event-listener-controller';
 
+/** What dismissed a surface: a pointer press outside it, focus leaving it, or Escape. */
 export type DismissReason = 'pointer' | 'focus' | 'escape';
 
+/** What `DismissController` watches, which triggers it hears and what it calls back. */
 export type DismissControllerConfig = {
 	/** The surface being dismissed (popover content, dialog panel, drawer). */
 	getSurface: () => HTMLElement | null;
@@ -160,7 +162,20 @@ export class DismissController implements Controller {
 	}
 }
 
-/** Creates a `DismissController` that attaches when `host` connects and is destroyed when it disconnects. */
+/**
+ * Creates a `DismissController` that attaches when `host` connects and is destroyed when it disconnects.
+ *
+ * @example
+ * ```ts
+ * // in a RadiantElement subclass
+ * createDismissController(this, {
+ *   getSurface: () => this.panel,
+ *   getRelated: () => [this.trigger],
+ *   getOpen: () => this.open,
+ *   onDismiss: () => (this.open = false),
+ * });
+ * ```
+ */
 export function createDismissController(host: ControllerHost, config: DismissControllerConfig): DismissController {
 	return bindController(host, new DismissController(config));
 }

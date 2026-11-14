@@ -1,3 +1,6 @@
+/**
+ * Which way a sortable list runs.
+ */
 export type SortableAxis = 'vertical' | 'horizontal' | 'both';
 
 /** The part of a `DOMRect` the arithmetic reads, so a test passes plain objects. */
@@ -118,6 +121,11 @@ export function resolveSortKeyIndex(
  *
  * @remarks
  * What an owner calls with the `from` and `to` of a change to compute the new order.
+ *
+ * @example
+ * ```ts
+ * reorder(['a', 'b', 'c'], 0, 2); // ['b', 'c', 'a']
+ * ```
  */
 export function reorder<T>(items: readonly T[], from: number, to: number): T[] {
 	const next = [...items];

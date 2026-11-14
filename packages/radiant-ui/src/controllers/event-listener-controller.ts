@@ -15,6 +15,7 @@ type EventMapOf<T> = T extends Window
 /** The event a listener receives for `type` on `T`: the typed event when the DOM maps it, else a plain `Event`. */
 export type EventOf<T, K extends string> = K extends keyof EventMapOf<T> ? EventMapOf<T>[K] : Event;
 
+/** The target, event types, listener and options of an `EventListenerController`. */
 export type EventListenerControllerConfig<T extends EventTarget = EventTarget, K extends string = string> = {
 	/** Resolved on every `attach()`; `null` attaches nothing, such as a node the view has not stamped yet. */
 	getTarget: () => T | null;
@@ -93,7 +94,19 @@ export class EventListenerController<
 	}
 }
 
-/** Creates an `EventListenerController` that attaches when `host` connects and is destroyed when it disconnects. */
+/**
+ * Creates an `EventListenerController` that attaches when `host` connects and is destroyed when it disconnects.
+ *
+ * @example
+ * ```ts
+ * // in a RadiantElement subclass
+ * createEventListenerController(this, {
+ *   getTarget: () => document,
+ *   type: 'keydown',
+ *   listener: (event) => this.onKey(event.key), // event is a KeyboardEvent
+ * });
+ * ```
+ */
 export function createEventListenerController<T extends EventTarget = EventTarget, K extends string = string>(
 	host: ControllerHost,
 	config: EventListenerControllerConfig<T, K>,

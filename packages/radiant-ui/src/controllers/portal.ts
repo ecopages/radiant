@@ -1,5 +1,6 @@
 import { bindController, type Controller, type ControllerHost } from './controller';
 
+/** The node a `PortalController` moves and the container it moves it to. */
 export type PortalControllerConfig = {
 	/** Resolved on every `attach()`; `null` mounts nothing, such as a node the view has not stamped yet. */
 	getNode: () => HTMLElement | null;
@@ -108,6 +109,12 @@ export class PortalController implements Controller {
 
 /**
  * Creates a `PortalController` that moves the node when `host` connects and puts it back when it disconnects.
+ *
+ * @example
+ * ```ts
+ * // in a RadiantElement subclass
+ * createPortalController(this, { getNode: () => this.panel }); // panel moves to document.body while connected
+ * ```
  */
 export function createPortalController(host: ControllerHost, config: PortalControllerConfig): PortalController {
 	return bindController(host, new PortalController(config));

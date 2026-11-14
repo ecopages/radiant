@@ -6,6 +6,7 @@ const SUBMENU_DELAY = 200;
 const SUBMENU_CLOSE_DELAY = 250;
 const SUBMENU_GAP = 6;
 
+/** The root menu and the callbacks a `MenuTreeController` reports activation and closing to. */
 export type MenuTreeControllerConfig = {
 	root: HTMLElement;
 	getRootMenu: () => HTMLElement | null;
@@ -351,6 +352,17 @@ export class MenuTreeController implements Controller {
 
 /**
  * Creates a `MenuTreeController` that attaches when `host` connects and is destroyed when it disconnects.
+ *
+ * @example
+ * ```ts
+ * // in a RadiantElement subclass
+ * private readonly tree = createMenuTreeController(this, {
+ *   root: this,
+ *   getRootMenu: () => this.querySelector<HTMLElement>('[role="menu"]'),
+ *   onActivate: (item) => this.choose(item),
+ *   onCloseRoot: (returnFocus) => this.close(returnFocus),
+ * });
+ * ```
  */
 export function createMenuTreeController(host: ControllerHost, config: MenuTreeControllerConfig): MenuTreeController {
 	return bindController(host, new MenuTreeController(config));

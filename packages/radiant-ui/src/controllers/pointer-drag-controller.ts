@@ -25,6 +25,8 @@ export type PointerDragInfo = {
 	elementUnderPointer(): Element | null;
 };
 
+/** How a drag ended: pointer up, the browser took the pointer, or the controller was destroyed. */
+/** The last position of a drag and how it ended. */
 export type PointerDragEndReason = 'release' | 'cancel' | 'destroy';
 
 export type PointerDragEnd = PointerDragInfo & {
@@ -32,6 +34,7 @@ export type PointerDragEnd = PointerDragInfo & {
 	reason: PointerDragEndReason;
 };
 
+/** The target and callbacks of a `PointerDragController`. */
 export type PointerDragControllerConfig = {
 	/** Where a press starts a drag and where the pointer is captured; resolved on every `attach()`. */
 	getTarget: () => HTMLElement | null;
@@ -190,7 +193,18 @@ export class PointerDragController implements Controller {
 	}
 }
 
-/** Creates a `PointerDragController` that attaches when `host` connects and is destroyed when it disconnects. */
+/**
+ * Creates a `PointerDragController` that attaches when `host` connects and is destroyed when it disconnects.
+ *
+ * @example
+ * ```ts
+ * // in a RadiantElement subclass
+ * createPointerDragController(this, {
+ *   getTarget: () => this.handle,
+ *   onMove: ({ dx, dy }) => this.moveBy(dx, dy),
+ * });
+ * ```
+ */
 export function createPointerDragController(
 	host: ControllerHost,
 	config: PointerDragControllerConfig,
