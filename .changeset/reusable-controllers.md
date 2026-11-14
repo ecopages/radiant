@@ -8,4 +8,4 @@ Controllers attach to a host and tear down with it, each with a `createX(host, c
 
 Helpers are the pure logic behind them: date, selection and segment logic, masks, number formatting, parsing and numeric ranges, text filtering, `cycleValue`, `uniqueId` and `isCssSafeId`, ordering and floating-position decisions.
 
-`rui-tag-group` gains an opt-in `reorderable` attribute and a `rui-reorder` event; Space lifts and drops a tag. The carousel flips its swipe direction in right-to-left layouts, `rui-dialog` releases its scroll lock and returns focus when it disconnects while open, and pointer drags ignore a non-primary button.
+`rui-tag-group` gains an opt-in `reorderable` attribute and a `rui-reorder` event; Space lifts a tag instead of selecting it. The carousel flips its swipe direction in right-to-left layouts, `rui-dialog` releases its scroll lock and returns focus when it disconnects while open, and pointer drags ignore a non-primary button.
