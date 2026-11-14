@@ -26,20 +26,25 @@ A confirmation, a form in an overlay or a lightbox: while it is open the user wo
 ## Primitives
 
 - [PortalController](/docs/controllers/portal) moves the dialog out of the element it lives in and puts it back on close, so no overflow or stacking context of its parents clips it. Without `getContainer` it goes to `document.body`; the example passes the example frame instead so the frame styles still apply. It also carries the theme of the place it left.
-- [FocusTrapController](/docs/controllers/focus-trap) moves focus into the dialog on attach, loops Tab and Shift+Tab inside it, and returns focus to the previously focused element on destroy.
+- [FocusTrapController](/docs/controllers/focus-trap) moves focus into the dialog on attach, loops Tab and Shift+Tab inside it, and returns focus on destroy: to the previously focused element, or to the control `getReturnFocus` names.
 - [ScrollLockController](/docs/controllers/scroll-lock) stops the page from scrolling, and counts, so two modals open at once release it only when both are closed.
 - [DismissController](/docs/controllers/dismiss) reports Escape and a press outside the dialog. Focus leaving is not listened to, because the trap already keeps it inside.
 
 Left to the recipe: the open and close function that attaches and destroys the four together, and `aria-modal` and a label on the dialog. None of them makes the rest of the page `inert`; a modal that must also block the pointer on the page or find-in-page sets `inert` itself.
 
+Escape stays with DismissController: its `onDismiss` closes the dialog, and the close calls `trap.destroy()`, which is where `getReturnFocus` is read. The trap has no Escape of its own. For a non-modal surface, such as an inline panel that should hold focus only while the user works in it, pass `getEnabled: () => false` (or a getter that reads the panel's state) so Tab can leave without detaching the trap; this dialog is modal and leaves it out.
+
 ## Example
 
-Open the dialog, press Tab to see focus stay inside it, then close it with the button, Escape or a press outside it.
+Open the dialog, press Tab to see focus stay inside it, then close it with the button, Escape or a press outside it. Cancel, Escape and a press outside return focus to Open dialog; Delete returns it to Next item through `getReturnFocus`.
 
 <PrimitiveExample name="modal">
 	<div data-origin>
 		<button type="button" data-open>
 			Open dialog
+		</button>
+		<button type="button" data-next>
+			Next item
 		</button>
 		<div data-box data-dialog role="dialog" aria-modal="true" aria-labelledby="modal-title" hidden>
 			<p id="modal-title">Delete this item?</p>
@@ -62,6 +67,7 @@ Open the dialog, press Tab to see focus stay inside it, then close it with the b
 <div data-example="modal">
 	<div data-origin>
 		<button type="button" data-open>Open dialog</button>
+		<button type="button" data-next>Next item</button>
 		<div data-box data-dialog role="dialog" aria-modal="true" aria-labelledby="modal-title" hidden>
 			<p id="modal-title">Delete this item?</p>
 			<button type="button" data-confirm>Delete</button>
@@ -83,10 +89,12 @@ import {
 export function mount(root: HTMLElement): () => void {
 	const opener = root.querySelector<HTMLElement>('[data-open]')!;
 	const dialog = root.querySelector<HTMLElement>('[data-dialog]')!;
+	const next = root.querySelector<HTMLElement>('[data-next]')!;
 	const status = root.querySelector('[data-status]')!;
 
 	const portal = new PortalController({ getNode: () => dialog, getContainer: () => root });
-	const trap = new FocusTrapController({ getSurface: () => dialog });
+	let returnTo: HTMLElement | null = null;
+	const trap = new FocusTrapController({ getSurface: () => dialog, getReturnFocus: () => returnTo });
 	const lock = new ScrollLockController();
 	const dismiss = new DismissController({
 		getSurface: () => dialog,
@@ -107,13 +115,17 @@ export function mount(root: HTMLElement): () => void {
 		dismiss.destroy();
 		dialog.hidden = true;
 		trap.destroy();
+		returnTo = null;
 		lock.destroy();
 		portal.destroy();
 		status.textContent = message;
 	}
 
 	opener.addEventListener('click', open);
-	dialog.querySelector('[data-confirm]')!.addEventListener('click', () => close('Deleted'));
+	dialog.querySelector('[data-confirm]')!.addEventListener('click', () => {
+		returnTo = next;
+		close('Deleted');
+	});
 	dialog.querySelector('[data-close]')!.addEventListener('click', () => close('Dialog closed'));
 	return () => close('Dialog closed');
 }

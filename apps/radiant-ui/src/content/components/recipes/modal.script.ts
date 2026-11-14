@@ -9,10 +9,12 @@ import { mountExample } from '../../../components/primitive-example/mount-exampl
 export function mount(root: HTMLElement): () => void {
 	const opener = root.querySelector<HTMLElement>('[data-open]')!;
 	const dialog = root.querySelector<HTMLElement>('[data-dialog]')!;
+	const next = root.querySelector<HTMLElement>('[data-next]')!;
 	const status = root.querySelector('[data-status]')!;
 
 	const portal = new PortalController({ getNode: () => dialog, getContainer: () => root });
-	const trap = new FocusTrapController({ getSurface: () => dialog });
+	let returnTo: HTMLElement | null = null;
+	const trap = new FocusTrapController({ getSurface: () => dialog, getReturnFocus: () => returnTo });
 	const lock = new ScrollLockController();
 	const dismiss = new DismissController({
 		getSurface: () => dialog,
@@ -33,13 +35,17 @@ export function mount(root: HTMLElement): () => void {
 		dismiss.destroy();
 		dialog.hidden = true;
 		trap.destroy();
+		returnTo = null;
 		lock.destroy();
 		portal.destroy();
 		status.textContent = message;
 	}
 
 	opener.addEventListener('click', open);
-	dialog.querySelector('[data-confirm]')!.addEventListener('click', () => close('Deleted'));
+	dialog.querySelector('[data-confirm]')!.addEventListener('click', () => {
+		returnTo = next;
+		close('Deleted');
+	});
 	dialog.querySelector('[data-close]')!.addEventListener('click', () => close('Dialog closed'));
 	return () => close('Dialog closed');
 }

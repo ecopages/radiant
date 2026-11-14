@@ -163,5 +163,16 @@ describe('recipes', () => {
 		await userEvent.click(opener);
 		pointer(document.body, 'pointerdown', 0, 0);
 		expect(dialog.hidden).toBe(true);
+		expect(document.activeElement).toBe(opener);
+
+		await userEvent.click(opener);
+		await userEvent.click(confirm);
+		expect(dialog.hidden).toBe(true);
+		expect(status(root)).toBe('Deleted');
+		expect(document.activeElement).toBe(root.querySelector('[data-next]'));
+
+		await userEvent.click(opener);
+		await userEvent.keyboard('{Escape}');
+		expect(document.activeElement).toBe(opener);
 	});
 });
