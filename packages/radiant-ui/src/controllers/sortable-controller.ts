@@ -1,4 +1,5 @@
 import { bindController, type Controller, type ControllerHost } from './controller';
+import { closestItem } from './closest-item';
 import { EventListenerController } from './event-listener-controller';
 import { PointerDragController, type PointerDragInfo, type PointerDragEnd } from './pointer-drag-controller';
 import type { SortableGroup, SortableMember } from './sortable-group';
@@ -233,25 +234,13 @@ export class SortableController implements Controller {
 		return this.config.group?.members ?? [this.member];
 	}
 
-	private findItem(target: EventTarget | null, items: HTMLElement[]): HTMLElement | null {
-		const container = this.config.getContainer();
-		let node = target instanceof Element ? target : null;
-		while (node && node !== container) {
-			if (node instanceof HTMLElement && items.includes(node)) {
-				return node;
-			}
-			node = node.parentElement;
-		}
-		return null;
-	}
-
 	private onPress(event: PointerEvent): boolean {
 		this.candidate = null;
 		if (this.session || this.config.enabled?.() === false) {
 			return false;
 		}
 		const items = this.config.getItems();
-		const item = this.findItem(event.target, items);
+		const item = closestItem(event.target, items, this.config.getContainer());
 		if (!item) {
 			return false;
 		}
@@ -316,6 +305,7 @@ export class SortableController implements Controller {
 
 	private onPointerEnd(end: PointerDragEnd): void {
 		const session = this.session;
+		this.candidate = null;
 		if (!session) {
 			return;
 		}
@@ -335,9 +325,14 @@ export class SortableController implements Controller {
 		setTimeout(() => container.removeEventListener('click', swallow, { capture: true }), 0);
 	}
 
+	/**
+	 * @remarks
+	 * Ignores keys while a press is pending (`candidate` set, no session yet): a keyboard sort ended then would leave the
+	 * pointer drag running with nothing to lift.
+	 */
 	private onKeydown(event: KeyboardEvent): void {
 		const session = this.session;
-		if (this.config.enabled?.() === false || session?.source === 'pointer') {
+		if (this.candidate || this.config.enabled?.() === false || session?.source === 'pointer') {
 			return;
 		}
 		if (session) {
@@ -352,7 +347,7 @@ export class SortableController implements Controller {
 			return;
 		}
 		const items = this.config.getItems();
-		const item = this.findItem(event.target, items);
+		const item = closestItem(event.target, items, this.config.getContainer());
 		if (item && event.target === (this.config.getHandle?.(item) ?? item)) {
 			event.preventDefault();
 			this.lift({ item, from: items.indexOf(item) }, 'keyboard');

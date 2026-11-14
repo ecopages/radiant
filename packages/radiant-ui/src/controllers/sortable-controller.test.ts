@@ -214,6 +214,33 @@ describe('SortableController on a plain list', () => {
 	});
 
 	describe('keyboard', () => {
+		it('ignores keys while a press is pending, so a pointer drag cannot outlive a keyboard sort', () => {
+			const { items, controller } = mount();
+			controller.attach();
+			const [first] = items();
+
+			pointer(first, 'pointerdown', 10);
+			press(first, ' ');
+			press(first, ' ');
+			expect(controller.getState()).toBeNull();
+
+			expect(() => pointer(document, 'pointermove', 40)).not.toThrow();
+			expect(controller.getState()).toMatchObject({ item: first, source: 'pointer' });
+			pointer(document, 'pointerup', 40);
+		});
+
+		it('takes keys again after a press that never became a drag', () => {
+			const { items, controller } = mount();
+			controller.attach();
+			const [first] = items();
+
+			pointer(first, 'pointerdown', 10);
+			pointer(document, 'pointerup', 10);
+			press(first, ' ');
+
+			expect(controller.getState()).toMatchObject({ item: first, source: 'keyboard' });
+		});
+
 		it('lifts with Space, moves with arrows, drops with Space and reports the change', () => {
 			const { list, items, onChange, controller } = mount();
 			controller.attach();
