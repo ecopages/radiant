@@ -50,8 +50,47 @@ describe('recipes', () => {
 		const start = ship.getBoundingClientRect();
 		pointer(ship, 'pointerdown', start.x + 5, start.y + 5);
 		pointer(ship, 'pointermove', start.x + 5, first.y + 1);
+		expect(ship.parentElement).toBe(document.body);
 		pointer(ship, 'pointerup', start.x + 5, first.y + 1);
 		expect(texts(items())).toEqual(['Ship', 'Build', 'Test', 'Plan']);
+	});
+
+	test('board moves a card between columns by pointer and by keyboard, the card leaving the clipped column', async () => {
+		const root = await mountRecipe('board');
+		const columns = () => [...root.querySelectorAll('ul')];
+		const cards = (column: number) => texts(columns()[column].children);
+
+		const card = columns()[0].children[0] as HTMLElement;
+		const from = card.getBoundingClientRect();
+		const target = columns()[1].children[1].getBoundingClientRect();
+		const x = target.x + 5;
+		pointer(card, 'pointerdown', from.x + 5, from.y + 5);
+		pointer(document, 'pointermove', x, target.y + 2);
+		expect(card.parentElement).toBe(document.body);
+		expect(columns()[1].querySelector('[data-sortable-placeholder]')).toBe(columns()[1].children[1]);
+		pointer(document, 'pointerup', x, target.y + 2);
+		expect(card.parentElement).toBe(columns()[1]);
+		expect(cards(0)).toEqual([
+			'Sketch the layout',
+			'Pick the colors',
+			'Draft the copy',
+			'Review accessibility',
+			'Plan the launch',
+		]);
+		expect(cards(1)).toEqual(['Build the header', 'Write the brief', 'Wire the form']);
+		expect(document.activeElement).toBe(card);
+		expect(status(root)).toBe('Dropped Write the brief in Doing, position 2 of 3.');
+
+		const wire = columns()[1].children[2] as HTMLElement;
+		wire.focus();
+		await userEvent.keyboard(' {PageDown}');
+		expect(wire.parentElement).toBe(document.body);
+		expect(columns()[2].querySelector('[data-sortable-placeholder]')).toBe(columns()[2].children[1]);
+		await userEvent.keyboard('{ArrowUp} ');
+		expect(cards(1)).toEqual(['Build the header', 'Write the brief']);
+		expect(cards(2)).toEqual(['Wire the form', 'Set up the repo']);
+		expect(document.activeElement).toBe(wire);
+		expect(document.querySelector('[data-sortable-placeholder]')).toBeNull();
 	});
 
 	test('searchable list filters as you type and the arrows walk the matches', async () => {

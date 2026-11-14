@@ -16,6 +16,8 @@ export function mount(root: HTMLElement): () => void {
 	});
 
 	const sortable = new SortableController({
+		preview: true,
+		createPlaceholder: () => document.createElement('li'),
 		getContainer: () => list,
 		getItems: () => items,
 		announce: (message) => (status.textContent = message),

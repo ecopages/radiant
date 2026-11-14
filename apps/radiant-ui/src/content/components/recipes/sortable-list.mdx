@@ -10,6 +10,7 @@ export const config = {
 	dependencies: {
 		components: [PrimitiveExample],
 		scripts: ['./sortable-list.script.ts'],
+		stylesheets: ['./sortable-list.css'],
 	},
 };
 
@@ -26,6 +27,7 @@ A to-do list, a playlist or a priority ranking: the order is data the user edits
 ## Primitives
 
 - [SortableController](/docs/controllers/sortable) decides where the item lands, by pointer or keyboard, and announces each step. It never moves a node, so the recipe keeps the order itself.
+- With `preview: true` the dragged item follows the pointer above the page and a placeholder holds its slot; `createPlaceholder` returns an `li` because the container is a `ul`. The lifted item leaves the example, so its style selects it by `data-task`, not by an ancestor.
 - [reorder](/docs/helpers/ordering) turns the `from` and `to` of a change into the new array, so the order is one array the recipe owns.
 - [RovingController](/docs/controllers/roving) gives the list one tab stop and moves it with the arrows. Its `enabled` returns `false` while an item is lifted, so the arrow keys that steer the lifted item do not also move focus.
 
@@ -37,10 +39,10 @@ Tab into the list, press Space on an item, move it with the arrow keys and press
 
 <PrimitiveExample name="sortable-list">
 	<ul aria-label="Tasks">
-		<li>Plan</li>
-		<li>Build</li>
-		<li>Test</li>
-		<li>Ship</li>
+		<li data-task>Plan</li>
+		<li data-task>Build</li>
+		<li data-task>Test</li>
+		<li data-task>Ship</li>
 	</ul>
 	<p data-status aria-live="polite">
 		Focus an item, press Space, move with the arrows, press Space to drop
@@ -52,10 +54,10 @@ Tab into the list, press Space on an item, move it with the arrow keys and press
 ```html
 <div data-example="sortable-list">
 	<ul aria-label="Tasks">
-		<li>Plan</li>
-		<li>Build</li>
-		<li>Test</li>
-		<li>Ship</li>
+		<li data-task>Plan</li>
+		<li data-task>Build</li>
+		<li data-task>Test</li>
+		<li data-task>Ship</li>
 	</ul>
 	<p data-status aria-live="polite">Focus an item, press Space, move with the arrows, press Space to drop</p>
 </div>
@@ -79,6 +81,8 @@ export function mount(root: HTMLElement): () => void {
 	});
 
 	const sortable = new SortableController({
+		preview: true,
+		createPlaceholder: () => document.createElement('li'),
 		getContainer: () => list,
 		getItems: () => items,
 		announce: (message) => (status.textContent = message),

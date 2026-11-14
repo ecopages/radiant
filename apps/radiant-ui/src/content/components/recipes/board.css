@@ -1,0 +1,74 @@
+[data-example='board'].primitive-example {
+	flex-direction: column;
+	align-items: stretch;
+}
+
+[data-example='board'] :where([data-board]) {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: var(--space-3);
+}
+
+[data-example='board'] :where([data-column]) {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
+	min-width: 0;
+	padding: var(--space-2);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-container);
+	background: var(--surface-container);
+	color: var(--on-surface-container);
+}
+
+[data-example='board'] :where(h3) {
+	margin: 0;
+	font-size: 0.875rem;
+}
+
+[data-example='board'] :where(ul) {
+	min-height: 3rem;
+	max-height: 8rem;
+	overflow-y: auto;
+	border-radius: var(--radius-control);
+}
+
+[data-example='board'] ul[data-sortable-over] {
+	outline: 2px solid var(--primary);
+	outline-offset: -2px;
+}
+
+[data-card] {
+	padding: var(--space-1) var(--space-3);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-control);
+	background: var(--surface);
+	color: var(--on-surface);
+	font-size: 0.875rem;
+	cursor: grab;
+	touch-action: none;
+	user-select: none;
+}
+
+[data-card]:focus-visible {
+	outline: 2px solid var(--focus-ring);
+	outline-offset: 2px;
+}
+
+[data-card][data-sortable-state='lifted'] {
+	z-index: 10;
+	background: var(--primary);
+	color: var(--on-primary);
+	box-shadow: 0 0.5rem 1rem rgb(0 0 0 / 0.25);
+	cursor: grabbing;
+}
+
+[data-example='board'] [data-sortable-placeholder] {
+	border: 1px dashed var(--primary);
+	border-radius: var(--radius-control);
+	background: transparent;
+}
+
+[data-example='board'] [data-sortable-drop] {
+	box-shadow: none;
+}
