@@ -32,17 +32,7 @@ export {
 	type EventListenerControllerConfig,
 	type EventOf,
 } from './controllers/event-listener-controller';
-export {
-	applyFloatingPosition,
-	attachFloating,
-	computeFloatingCoords,
-	computeFloatingPosition,
-	type AttachFloatingOptions,
-	type FloatingCoords,
-	type FloatingPositionResult,
-	type FloatingSize,
-	type FloatingViewport,
-} from './controllers/floating-position';
+export { applyFloatingPosition, attachFloating, type AttachFloatingOptions } from './controllers/floating-position';
 export {
 	FocusTrapController,
 	createFocusTrapController,

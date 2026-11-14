@@ -24,7 +24,16 @@ export {
 	valuesAlignOnStep,
 	type NumericRange,
 } from './components/ui/shared/numeric-range';
-export { wrapCollectionIndex } from './controllers/collection-navigation';
+export { wrapCollectionIndex } from './controllers/collection-index';
+export {
+	computeFloatingCoords,
+	computeFloatingPosition,
+	type FloatingCoords,
+	type FloatingPositionResult,
+	type FloatingSize,
+	type FloatingViewport,
+} from './controllers/floating-geometry';
+export type { RuiPlacement } from './controllers/placement';
 export { resolveTrapMove, type TrapMove } from './controllers/focus-trap-order';
 export {
 	findRectIndex,
