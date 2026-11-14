@@ -93,6 +93,8 @@ try {
 			path.join(SRC, 'index.ts'),
 			path.join(SRC, 'aria.ts'),
 			path.join(SRC, 'cx.ts'),
+			path.join(SRC, 'controllers.ts'),
+			path.join(SRC, 'helpers.ts'),
 			...listComponentEntries(),
 		],
 		external: externalPackages,

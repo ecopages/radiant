@@ -275,3 +275,74 @@ test('built aggregate stylesheets do not repeat an @media block inside one rule'
 		assert.deepEqual(repeats.slice(0, 3), [], `${file} repeats nested @media blocks (${repeats.length} rules)`);
 	}
 });
+
+const externalPackages = [
+	'@ecopages/jsx',
+	'@ecopages/jsx/*',
+	'@ecopages/radiant',
+	'@ecopages/radiant/*',
+	'@ecopages/signals',
+	'@ecopages/signals/*',
+	'*.css',
+];
+
+async function bundleConsumer(source) {
+	const result = await build({
+		stdin: { contents: source, resolveDir: fileURLToPath(new URL('..', import.meta.url)) },
+		bundle: true,
+		write: false,
+		format: 'esm',
+		treeShaking: true,
+		external: externalPackages,
+	});
+	return result.outputFiles[0].text;
+}
+
+for (const { entry, used, markers } of [
+	{
+		entry: '@ecopages/radiant-ui/controllers',
+		used: 'createSwipeController',
+		markers: ['data-sortable-state', 'MutationObserver', 'ResizeObserver'],
+	},
+	{
+		entry: '@ecopages/radiant-ui/helpers',
+		used: 'cycleValue',
+		markers: ['PageDown', 'formatToParts', 'search'],
+	},
+]) {
+	test(`importing ${used} from ${entry} leaves the other exports out of the bundle`, async () => {
+		const everything = await bundleConsumer(`import * as all from '${entry}'; console.log(all);`);
+		const single = await bundleConsumer(`import { ${used} } from '${entry}'; console.log(${used});`);
+
+		for (const marker of markers) {
+			assert.ok(everything.includes(marker), `${marker} is expected in the full ${entry} bundle`);
+			assert.ok(!single.includes(marker), `${marker} survived a bundle that imports only ${used}`);
+		}
+		assert.ok(single.length < everything.length / 4, 'the single-export bundle should be a small part of the entry');
+	});
+}
+
+test('the helpers entry imports and runs without a DOM', () => {
+	const result = spawnSync(
+		process.execPath,
+		[
+			'--input-type=module',
+			'-e',
+			`
+import assert from 'node:assert/strict';
+assert.equal(typeof window, 'undefined');
+assert.equal(typeof document, 'undefined');
+const helpers = await import('@ecopages/radiant-ui/helpers');
+const weeks = helpers.buildCalendarMonth(2026, 10, { locale: 'en-US', value: '2026-11-14' });
+assert.ok(weeks.flat().some((cell) => cell.iso === '2026-11-14' && cell.isSelected));
+assert.equal(helpers.textContains('Crème brûlée', 'creme'), true);
+assert.equal(helpers.cycleValue(['a', 'b'], 'b'), 'a');
+assert.deepEqual(helpers.reorder(['a', 'b', 'c'], 0, 2), ['b', 'c', 'a']);
+assert.match(helpers.uniqueId('rui'), /^rui-/);
+`,
+		],
+		{ cwd: new URL('..', import.meta.url), encoding: 'utf8' },
+	);
+
+	assert.equal(result.status, 0, result.stderr || result.stdout);
+});
