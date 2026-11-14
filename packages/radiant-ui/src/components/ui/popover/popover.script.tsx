@@ -102,11 +102,19 @@ export class RuiPopover extends RadiantElement {
 		getPlacement: () => this.placement,
 		onDismiss: (reason, event) => this.dismiss(reason, event),
 	});
-	private readonly anchorClick = createEventListenerController(this, {
-		getTarget: () => (this.usesExternalAnchor() ? this.getAnchorElement() : null),
-		type: 'click',
-		listener: () => this.setOpen(!this.open),
-	});
+	/** @remarks An `anchor` selector can match an element outside this host that a re-render replaces, so the match is made on `document` at event time. */
+	constructor() {
+		super();
+		createEventListenerController(this, {
+			getTarget: () => document,
+			type: 'click',
+			listener: (event) => {
+				if (this.usesExternalAnchor() && this.getAnchorElement()?.contains(event.target as Node)) {
+					this.setOpen(!this.open);
+				}
+			},
+		});
+	}
 
 	protected override onConnected(): void {
 		this.syncPopover();
@@ -148,7 +156,6 @@ export class RuiPopover extends RadiantElement {
 			anchor.setAttribute('aria-controls', this.surfaceId);
 			anchor.setAttribute('aria-expanded', String(this.open));
 		}
-		this.anchorClick.attach();
 
 		this.controller.updateConfig({
 			gap: this.offset,

@@ -49,3 +49,33 @@ describe('rui-popover dismissal', () => {
 		expect(host.open).toBe(true);
 	});
 });
+
+describe('rui-popover external anchor', () => {
+	afterEach(() => {
+		document.body.innerHTML = '';
+	});
+
+	it.each(['replaced', 'removed and added back later'])('toggles from an anchor that is %s', async (change) => {
+		const container = document.createElement('div');
+		document.body.append(container);
+		const anchor = document.createElement('button');
+		anchor.id = 'external-anchor';
+		document.body.append(anchor);
+		createRoot(container).render(<RuiPopover anchor="#external-anchor">Body</RuiPopover>);
+		const host = container.querySelector('rui-popover') as RuiPopoverElement;
+		await vi.waitFor(() => expect(host.isConnected).toBe(true));
+		await new Promise((resolve) => setTimeout(resolve, 20));
+
+		const fresh = anchor.cloneNode(true) as HTMLElement;
+		if (change === 'replaced') {
+			anchor.replaceWith(fresh);
+		} else {
+			anchor.remove();
+			await new Promise((resolve) => setTimeout(resolve, 20));
+			document.body.append(fresh);
+		}
+		fresh.click();
+
+		expect(host.open).toBe(true);
+	});
+});

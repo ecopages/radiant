@@ -83,3 +83,24 @@ describe('combobox form reset', () => {
 		expect(visibleCount(form)).toBe(2);
 	});
 });
+
+describe('autocomplete with an input owned by a combobox', () => {
+	it.each(['replaced', 'removed and added back later'])('filters from an input that is %s', async (change) => {
+		document.body.innerHTML = `<rui-select><input data-autocomplete-input="" type="text" value="" /><rui-autocomplete><div data-autocomplete-collection=""><div role="option" data-label="Germany">Germany</div><div role="option" data-label="Italy">Italy</div></div></rui-autocomplete></rui-select>`;
+		const scope = document.querySelector('rui-select')!;
+		await wait();
+
+		const input = scope.querySelector('input')!;
+		const fresh = input.cloneNode(true) as HTMLInputElement;
+		if (change === 'replaced') {
+			input.replaceWith(fresh);
+		} else {
+			input.remove();
+			await wait();
+			scope.prepend(fresh);
+		}
+		await filterTo(scope, 'ita');
+
+		expect(visibleCount(scope)).toBe(1);
+	});
+});

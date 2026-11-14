@@ -61,14 +61,20 @@ export class RuiAutocomplete extends RadiantElement {
 	@prop({ type: String, defaultValue: 'base' }) sensitivity: TextFilterSensitivity;
 	@prop({ type: String, attribute: 'input-value', defaultValue: '' }) inputValue: string;
 
-	private readonly externalInput = createEventListenerController(this, {
-		getTarget: () => {
-			const input = this.getInput();
-			return input && !this.contains(input) ? input : null;
-		},
-		type: 'input',
-		listener: () => this.applyFilter(),
-	});
+	/** @remarks An input outside this element, owned by a combobox or select, can be replaced by a re-render, so the match is made on `document` at event time. */
+	constructor() {
+		super();
+		createEventListenerController(this, {
+			getTarget: () => document,
+			type: 'input',
+			listener: (event) => {
+				const input = this.getInput();
+				if (event.target === input && !this.contains(input)) {
+					this.applyFilter();
+				}
+			},
+		});
+	}
 
 	private getInput(): HTMLInputElement | null {
 		const local = this.querySelector<HTMLInputElement>('[data-autocomplete-input]');
@@ -136,7 +142,6 @@ export class RuiAutocomplete extends RadiantElement {
 	}
 
 	protected override onConnected(): void {
-		this.externalInput.attach();
 		this.initialize();
 	}
 
