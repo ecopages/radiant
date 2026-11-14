@@ -1,7 +1,7 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, event, onEvent, onUpdated, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
-import { createRovingController, type RovingController } from '../../../controllers/roving-controller';
+import { createRovingController } from '../../../controllers/roving-controller';
 
 export type RuiTreeProps = {
 	label?: string;
@@ -60,17 +60,12 @@ export class RuiTree extends RadiantElement {
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiTreeChangeDetail>;
 
-	private readonly roving: RovingController;
-
-	constructor() {
-		super();
-		this.roving = createRovingController(this, {
-			getItems: () => this.getVisibleItems(),
-			getTarget: (): HTMLElement => this,
-			orientation: 'vertical',
-			wrap: false,
-		});
-	}
+	private readonly roving = createRovingController(this, {
+		getItems: () => this.getVisibleItems(),
+		getTarget: (): HTMLElement => this,
+		orientation: 'vertical',
+		wrap: false,
+	});
 
 	private getVisibleItems(): HTMLElement[] {
 		return Array.from(this.querySelectorAll<HTMLElement>('[role="treeitem"]')).filter((item) => {

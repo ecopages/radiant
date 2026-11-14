@@ -5,7 +5,7 @@ import { navigateRovingTabindex } from '@/lib/roving-tabindex';
 import { uniqueId } from '@/lib/unique-id';
 import { createDismissController } from '../../../controllers/dismiss-controller';
 import { createPopoverController } from '../../../controllers/popover-controller';
-import { createRovingController, type RovingController } from '../../../controllers/roving-controller';
+import { createRovingController } from '../../../controllers/roving-controller';
 
 export type RuiNavigationMenuProps = {
 	label?: string;
@@ -117,16 +117,15 @@ export class RuiNavigationMenu extends RadiantElement {
 	private openTimer: ReturnType<typeof setTimeout> | null = null;
 	private closeTimer: ReturnType<typeof setTimeout> | null = null;
 
-	private readonly roving: RovingController;
+	private readonly roving = createRovingController(this, {
+		getItems: () => this.getBarItems(),
+		getTarget: (): HTMLElement => this,
+		wrap: false,
+		onMove: (item) => this.syncMenuToBarItem(item),
+	});
 
 	constructor() {
 		super();
-		this.roving = createRovingController(this, {
-			getItems: () => this.getBarItems(),
-			getTarget: (): HTMLElement => this,
-			wrap: false,
-			onMove: (item) => this.syncMenuToBarItem(item),
-		});
 		createDismissController(this, {
 			getSurface: () => this.getOpenPanel(),
 			getRelated: () => [this],

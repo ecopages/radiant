@@ -1,6 +1,6 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, onEvent, prop } from '@ecopages/radiant';
-import { createRovingController, type RovingController } from '../../../controllers/roving-controller';
+import { createRovingController } from '../../../controllers/roving-controller';
 import { queryRovingTabindexItems } from '@/lib/focusable-elements';
 
 export type RuiToolbarProps = {
@@ -48,15 +48,10 @@ export class RuiToolbar extends RadiantElement {
 	@prop({ type: String, defaultValue: '' }) label: string;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) exclusiveToggles: boolean;
 
-	private readonly roving: RovingController;
-
-	constructor() {
-		super();
-		this.roving = createRovingController(this, {
-			getItems: () => this.getItems(),
-			getTarget: (): HTMLElement => this,
-		});
-	}
+	private readonly roving = createRovingController(this, {
+		getItems: () => this.getItems(),
+		getTarget: (): HTMLElement => this,
+	});
 
 	private getItems(): HTMLElement[] {
 		return queryRovingTabindexItems(this);

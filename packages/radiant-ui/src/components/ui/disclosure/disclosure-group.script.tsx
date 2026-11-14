@@ -1,6 +1,6 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, onEvent, onUpdated, prop } from '@ecopages/radiant';
-import { createRovingController, type RovingController } from '../../../controllers/roving-controller';
+import { createRovingController } from '../../../controllers/roving-controller';
 import type { RuiDisclosureToggleDetail } from './disclosure.script';
 import { RuiDisclosure } from './disclosure.script';
 
@@ -47,16 +47,11 @@ export class RuiDisclosureGroup extends RadiantElement {
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) multiple: boolean;
 	@prop({ type: Boolean, reflect: true, attribute: 'animated', defaultValue: false }) animated: boolean;
 
-	private readonly roving: RovingController;
-
-	constructor() {
-		super();
-		this.roving = createRovingController(this, {
-			getItems: () => this.getTriggers(),
-			getTarget: (): HTMLElement => this,
-			orientation: 'vertical',
-		});
-	}
+	private readonly roving = createRovingController(this, {
+		getItems: () => this.getTriggers(),
+		getTarget: (): HTMLElement => this,
+		orientation: 'vertical',
+	});
 
 	protected override onConnected(): void {
 		this.syncChildrenAnimated();
