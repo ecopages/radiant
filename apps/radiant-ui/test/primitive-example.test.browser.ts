@@ -1,4 +1,3 @@
-import { userEvent } from 'vitest/browser';
 import { afterEach, describe, expect, test } from 'vitest';
 import { syncExamples } from '../src/components/primitive-example/mount-example';
 import '../src/components/primitive-example/primitive-example.css';
