@@ -4,12 +4,13 @@ import {
 	DOCS_ROOT,
 	DOCS_SECTION_CONFIG,
 	DOCS_SECTION_ORDER,
+	NON_COMPONENT_SECTIONS,
 	type ComponentCategory,
 	type ComponentSectionId,
 } from '@/content/components';
 
 const COMPONENT_SECTION_ORDER = DOCS_SECTION_ORDER.filter(
-	(section): section is ComponentSectionId => section !== 'getting-started',
+	(section): section is ComponentSectionId => !NON_COMPONENT_SECTIONS.some((id) => id === section),
 );
 
 export const COMPONENT_CATEGORY_ORDER: ComponentCategory[] = COMPONENT_SECTION_ORDER.map(

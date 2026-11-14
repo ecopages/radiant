@@ -1,0 +1,35 @@
+---
+title: Overview
+description: Pure functions and types Radiant UI components are built from, usable on the server and in tests.
+order: 0
+---
+
+# Helpers
+
+<p class="docs-lede">
+	Helpers are the decisions and formatting behind the components: date math, masks, number parsing, ordering. They are
+	plain functions with no DOM.
+</p>
+
+```ts
+import { cycleValue } from '@ecopages/radiant-ui/helpers';
+
+cycleValue(['light', 'dark', 'system'], 'system'); // 'light'
+```
+
+Nothing in the entry touches the DOM at import time or when called, so helpers run on the server and in tests. Anything that reads or sets DOM state is a [controller](/docs/controllers/overview) utility instead. The entry is tree-shakeable. Every export has a TSDoc example, and each page below shows the results of real calls, computed when the docs are built.
+
+Use a helper, not a controller, for anything that only maps input to output.
+
+| Page                                         | What it does                                                           | Reach for it when                                       |
+| -------------------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------- |
+| [Dates](/docs/helpers/intl-date)             | Month grids, ISO days, selection state, locale formatting and parsing. | Any calendar, scheduler or date grid.                   |
+| [Date segments](/docs/helpers/date-segments) | The model of a segmented date input.                                   | A date field with separate parts.                       |
+| [Masks](/docs/helpers/mask)                  | Pattern masks and locale date masks.                                   | Formatted text input.                                   |
+| [Numbers](/docs/helpers/intl-number)         | Locale-aware format and parse, step snapping.                          | Number fields and steppers.                             |
+| [Numeric range](/docs/helpers/numeric-range) | Clamp to a stepped range, ratio to value, slider keys.                 | Sliders, knobs and meters.                              |
+| [Text filter](/docs/helpers/text-filter)     | Case- and accent-insensitive contains.                                 | Filtering a list as the user types.                     |
+| [Cycle value](/docs/helpers/cycle-value)     | The next value in a list, wrapping.                                    | A cycle toggle.                                         |
+| [Unique id](/docs/helpers/unique-id)         | A CSS-safe, document-unique id.                                        | `aria-controls` and `aria-labelledby` targets.          |
+| [Ordering](/docs/helpers/ordering)           | Where a dragged item lands, and key-driven moves, from rectangles.     | Your own drag logic, or applying a sortable `onChange`. |
+| [Decisions](/docs/helpers/decisions)         | Swipe direction from a delta, focus-trap wrap target, wrapped index.   | Custom gestures, focus loops and option lists.          |
