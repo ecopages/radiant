@@ -9,7 +9,8 @@ import { PrimitiveExample } from '@/components/primitive-example';
 export const config = {
 	dependencies: {
 		components: [PrimitiveExample],
-		scripts: ['./modal.script.ts'],
+		scripts: ['./modal.script.ts', './modal.element.ts'],
+		stylesheets: ['./modal.css'],
 	},
 };
 
@@ -25,7 +26,7 @@ A confirmation, a form in an overlay or a lightbox: while it is open the user wo
 
 ## Primitives
 
-- [PortalController](/docs/controllers/portal) moves the dialog out of the element it lives in and puts it back on close, so no overflow or stacking context of its parents clips it. Without `getContainer` it goes to `document.body`; the example passes the example frame instead so the frame styles still apply. It also carries the theme of the place it left.
+- [PortalController](/docs/controllers/portal) moves the dialog out of the element it lives in and puts it back on close, so no overflow or stacking context of its parents clips it. Without `getContainer` it goes to `document.body`; the example passes the example frame instead, so the dialog stays inside it and the frame styles still apply. It also carries the theme of the place it left.
 - [FocusTrapController](/docs/controllers/focus-trap) moves focus into the dialog on attach, loops Tab and Shift+Tab inside it, and returns focus on destroy: to the previously focused element, or to the control `getReturnFocus` names.
 - [ScrollLockController](/docs/controllers/scroll-lock) stops the page from scrolling, and counts, so two modals open at once release it only when both are closed.
 - [DismissController](/docs/controllers/dismiss) reports Escape and a press outside the dialog. Focus leaving is not listened to, because the trap already keeps it inside.
@@ -36,7 +37,11 @@ Escape stays with DismissController: its `onDismiss` closes the dialog, and the 
 
 ## Example
 
-Open the dialog, press Tab to see focus stay inside it, then close it with the button, Escape or a press outside it. Cancel, Escape and a press outside return focus to Open dialog; Delete returns it to Next item through `getReturnFocus`.
+Open the dialog: the example frame dims behind it. Press Tab to see focus stay inside, then close it with a button, Escape or a press on the dimmed area. Cancel, Escape and a press outside return focus to Open dialog; Delete returns it to Next item through `getReturnFocus`. The two forms below behave the same.
+
+### Plain JavaScript
+
+A `mount` function wires the controllers to one element and returns the cleanup that undoes it.
 
 <PrimitiveExample name="modal">
 	<div data-origin>
@@ -46,14 +51,19 @@ Open the dialog, press Tab to see focus stay inside it, then close it with the b
 		<button type="button" data-next>
 			Next item
 		</button>
-		<div data-box data-dialog role="dialog" aria-modal="true" aria-labelledby="modal-title" hidden>
-			<p id="modal-title">Delete this item?</p>
-			<button type="button" data-confirm>
-				Delete
-			</button>
-			<button type="button" data-close>
-				Cancel
-			</button>
+		<div data-layer hidden>
+			<div data-dialog role="dialog" aria-modal="true" aria-labelledby="modal-title">
+				<h3 id="modal-title">Delete this item?</h3>
+				<p>This cannot be undone.</p>
+				<div data-actions>
+					<button type="button" data-close>
+						Cancel
+					</button>
+					<button type="button" data-confirm>
+						Delete
+					</button>
+				</div>
+			</div>
 		</div>
 	</div>
 	<p data-status aria-live="polite">
@@ -61,17 +71,20 @@ Open the dialog, press Tab to see focus stay inside it, then close it with the b
 	</p>
 </PrimitiveExample>
 
-## Source
-
 ```html
 <div data-example="modal">
 	<div data-origin>
 		<button type="button" data-open>Open dialog</button>
 		<button type="button" data-next>Next item</button>
-		<div data-box data-dialog role="dialog" aria-modal="true" aria-labelledby="modal-title" hidden>
-			<p id="modal-title">Delete this item?</p>
-			<button type="button" data-confirm>Delete</button>
-			<button type="button" data-close>Cancel</button>
+		<div data-layer hidden>
+			<div data-dialog role="dialog" aria-modal="true" aria-labelledby="modal-title">
+				<h3 id="modal-title">Delete this item?</h3>
+				<p>This cannot be undone.</p>
+				<div data-actions>
+					<button type="button" data-close>Cancel</button>
+					<button type="button" data-confirm>Delete</button>
+				</div>
+			</div>
 		</div>
 	</div>
 	<p data-status aria-live="polite">Dialog closed</p>
@@ -88,11 +101,12 @@ import {
 
 export function mount(root: HTMLElement): () => void {
 	const opener = root.querySelector<HTMLElement>('[data-open]')!;
+	const layer = root.querySelector<HTMLElement>('[data-layer]')!;
 	const dialog = root.querySelector<HTMLElement>('[data-dialog]')!;
 	const next = root.querySelector<HTMLElement>('[data-next]')!;
 	const status = root.querySelector('[data-status]')!;
 
-	const portal = new PortalController({ getNode: () => dialog, getContainer: () => root });
+	const portal = new PortalController({ getNode: () => layer, getContainer: () => root });
 	let returnTo: HTMLElement | null = null;
 	const trap = new FocusTrapController({ getSurface: () => dialog, getReturnFocus: () => returnTo });
 	const lock = new ScrollLockController();
@@ -103,7 +117,7 @@ export function mount(root: HTMLElement): () => void {
 	});
 
 	function open(): void {
-		dialog.hidden = false;
+		layer.hidden = false;
 		portal.attach();
 		lock.attach();
 		trap.attach();
@@ -113,7 +127,7 @@ export function mount(root: HTMLElement): () => void {
 
 	function close(message: string): void {
 		dismiss.destroy();
-		dialog.hidden = true;
+		layer.hidden = true;
 		trap.destroy();
 		returnTo = null;
 		lock.destroy();
@@ -132,3 +146,132 @@ export function mount(root: HTMLElement): () => void {
 ```
 
 `mount` runs once for each example element on the page, and the function it returns undoes it; see [how the examples run](/docs/recipes/overview#how-the-examples-run).
+
+### Radiant element
+
+The same behavior as a `RadiantElement`. The markup is authored inside the element and the element finds its parts with `@query`; there is nothing to mount, clean up or run again.
+
+<PrimitiveExample host>
+	<recipe-modal>
+		<div data-origin>
+			<button type="button" data-open>
+				Open dialog
+			</button>
+			<button type="button" data-next>
+				Next item
+			</button>
+			<div data-layer hidden>
+				<div data-dialog role="dialog" aria-modal="true" aria-labelledby="radiant-modal-title">
+					<h3 id="radiant-modal-title">Delete this item?</h3>
+					<p>This cannot be undone.</p>
+					<div data-actions>
+						<button type="button" data-close>
+							Cancel
+						</button>
+						<button type="button" data-confirm>
+							Delete
+						</button>
+					</div>
+				</div>
+			</div>
+		</div>
+		<p data-status aria-live="polite">
+			Dialog closed
+		</p>
+	</recipe-modal>
+</PrimitiveExample>
+
+```html
+<recipe-modal>
+	<div data-origin>
+		<button type="button" data-open>Open dialog</button>
+		<button type="button" data-next>Next item</button>
+		<div data-layer hidden>
+			<div data-dialog role="dialog" aria-modal="true" aria-labelledby="radiant-modal-title">
+				<h3 id="radiant-modal-title">Delete this item?</h3>
+				<p>This cannot be undone.</p>
+				<div data-actions>
+					<button type="button" data-close>Cancel</button>
+					<button type="button" data-confirm>Delete</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<p data-status aria-live="polite">Dialog closed</p>
+</recipe-modal>
+```
+
+```ts
+import { RadiantElement, customElement, onEvent, query } from '@ecopages/radiant';
+import {
+	DismissController,
+	FocusTrapController,
+	PortalController,
+	ScrollLockController,
+} from '@ecopages/radiant-ui/controllers';
+
+/**
+ * @remarks
+ * The four controllers are constructed directly, not through `createX(this, ...)`: they start and stop with the
+ * dialog, not with the element's connection. `registerCleanupCallback` releases them if the element leaves the page
+ * while the dialog is open.
+ */
+@customElement('recipe-modal')
+export class RecipeModal extends RadiantElement {
+	@query({ selector: '[data-next]' }) private next!: HTMLElement;
+	@query({ selector: '[data-layer]' }) private layer!: HTMLElement;
+	@query({ selector: '[data-dialog]' }) private dialog!: HTMLElement;
+	@query({ selector: '[data-status]' }) private status!: HTMLElement;
+
+	private returnTo: HTMLElement | null = null;
+	private readonly portal = new PortalController({ getNode: () => this.layer, getContainer: () => this });
+	private readonly trap = new FocusTrapController({
+		getSurface: () => this.dialog,
+		getReturnFocus: () => this.returnTo,
+	});
+	private readonly lock = new ScrollLockController();
+	private readonly dismiss = new DismissController({
+		getSurface: () => this.dialog,
+		triggers: ['pointer', 'escape'],
+		onDismiss: () => this.close('Dialog closed'),
+	});
+
+	constructor() {
+		super();
+		this.registerCleanupCallback(() => this.close('Dialog closed'));
+	}
+
+	@onEvent({ selector: '[data-open]', type: 'click' })
+	open(): void {
+		this.layer.hidden = false;
+		this.portal.attach();
+		this.lock.attach();
+		this.trap.attach();
+		this.dismiss.attach();
+		this.status.textContent = 'Dialog open';
+	}
+
+	@onEvent({ selector: '[data-confirm]', type: 'click' })
+	confirm(): void {
+		this.returnTo = this.next;
+		this.close('Deleted');
+	}
+
+	@onEvent({ selector: '[data-close]', type: 'click' })
+	cancel(): void {
+		this.close('Dialog closed');
+	}
+
+	private close(message: string): void {
+		this.dismiss.destroy();
+		this.layer.hidden = true;
+		this.trap.destroy();
+		this.returnTo = null;
+		this.lock.destroy();
+		this.portal.destroy();
+		this.status.textContent = message;
+	}
+}
+```
+
+The four controllers are built directly because the dialog starts and stops them, and the `@onEvent` listeners keep working after the layer is portaled because the container is the element itself. The cleanup callback closes the dialog if the element is removed while the dialog is open. What the Radiant form removes: the `mount` function and its registration, the cleanup to return and call, and the re-run after a client-side navigation.

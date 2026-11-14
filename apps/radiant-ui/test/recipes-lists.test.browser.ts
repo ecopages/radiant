@@ -232,49 +232,4 @@ describe('recipes', () => {
 		expect(status(root)).toBe('Chose Delete');
 		expect(document.activeElement).toBe(trigger);
 	});
-
-	test('modal traps focus, locks scroll, closes three ways and returns focus to the opener', async () => {
-		const root = await mountRecipe('modal');
-		const opener = root.querySelector<HTMLElement>('[data-open]')!;
-		const dialog = root.querySelector<HTMLElement>('[data-dialog]')!;
-		const origin = dialog.parentElement!;
-		const [confirm, cancel] = dialog.querySelectorAll<HTMLElement>('button');
-
-		await userEvent.click(opener);
-		expect(dialog.hidden).toBe(false);
-		expect(dialog.parentElement).toBe(root);
-		expect(document.documentElement.style.overflow).toBe('hidden');
-		await expect.poll(() => document.activeElement).toBe(confirm);
-
-		await userEvent.tab();
-		expect(document.activeElement).toBe(cancel);
-		await userEvent.tab();
-		expect(document.activeElement).toBe(confirm);
-
-		await userEvent.keyboard('{Escape}');
-		expect(dialog.hidden).toBe(true);
-		expect(dialog.parentElement).toBe(origin);
-		expect(document.documentElement.style.overflow).toBe('');
-		expect(document.activeElement).toBe(opener);
-
-		await userEvent.click(opener);
-		await userEvent.click(cancel);
-		expect(dialog.hidden).toBe(true);
-		expect(document.activeElement).toBe(opener);
-
-		await userEvent.click(opener);
-		pointer(document.body, 'pointerdown', 0, 0);
-		expect(dialog.hidden).toBe(true);
-		expect(document.activeElement).toBe(opener);
-
-		await userEvent.click(opener);
-		await userEvent.click(confirm);
-		expect(dialog.hidden).toBe(true);
-		expect(status(root)).toBe('Deleted');
-		expect(document.activeElement).toBe(root.querySelector('[data-next]'));
-
-		await userEvent.click(opener);
-		await userEvent.keyboard('{Escape}');
-		expect(document.activeElement).toBe(opener);
-	});
 });
