@@ -14,8 +14,8 @@ import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { findFirstFocusableCandidate } from '@/lib/focusable-elements';
 import { uniqueId } from '@/lib/unique-id';
 import { notePreviewClosed, notePreviewOpened, resolvePreviewOpenDelay } from '../shared/preview-timing';
-import { PopoverController, shouldDismissPopoverFocus } from '../shared/popover-controller';
-import type { RuiPlacement } from '../shared/placement';
+import { createPopoverController, shouldDismissPopoverFocus } from '../../../controllers/popover-controller';
+import type { RuiPlacement } from '../../../controllers/placement';
 
 export type RuiHoverCardOpenChangeDetail = {
 	open: boolean;
@@ -121,7 +121,12 @@ export class RuiHoverCard extends RadiantElement {
 	openChangeEvent: EventEmitter<RuiHoverCardOpenChangeDetail>;
 
 	private readonly contentId = uniqueId('rui-hover-card');
-	private controller: PopoverController | null = null;
+	private readonly controller = createPopoverController(this, {
+		getAnchor: () => this.getAnchor(),
+		getFloating: () => this.contentTarget,
+		getOpen: () => this.open,
+		getPlacement: () => this.placement,
+	});
 	private showTimer: ReturnType<typeof setTimeout> | null = null;
 	private hideTimer: ReturnType<typeof setTimeout> | null = null;
 	private longPressTimer: ReturnType<typeof setTimeout> | null = null;
@@ -143,8 +148,6 @@ export class RuiHoverCard extends RadiantElement {
 		if (this.open) {
 			notePreviewClosed();
 		}
-		this.controller?.destroy();
-		this.controller = null;
 		super.disconnectedCallback();
 	}
 
@@ -166,21 +169,7 @@ export class RuiHoverCard extends RadiantElement {
 	}
 
 	private getFloatingElement(): HTMLElement | null {
-		return this.controller?.getFloatingElement() ?? this.contentTarget;
-	}
-
-	private ensureController(): PopoverController {
-		if (!this.controller) {
-			this.controller = new PopoverController({
-				getAnchor: () => this.getAnchor(),
-				getFloating: () => this.contentTarget,
-				getOpen: () => this.open,
-				getPlacement: () => this.placement,
-				gap: HOVER_CARD_GAP,
-				portal: this.portal,
-			});
-		}
-		return this.controller;
+		return this.controller.getFloatingElement() ?? this.contentTarget;
 	}
 
 	@bound
@@ -197,16 +186,11 @@ export class RuiHoverCard extends RadiantElement {
 			anchor.setAttribute('aria-expanded', String(this.open));
 		}
 
-		const controller = this.ensureController();
-		controller.updateConfig({
-			getAnchor: () => this.getAnchor(),
-			getFloating: () => this.contentTarget,
-			getOpen: () => this.open,
-			getPlacement: () => this.placement,
+		this.controller.updateConfig({
 			gap: HOVER_CARD_GAP,
 			portal: this.portal,
 		});
-		controller.sync();
+		this.controller.sync();
 		this.syncContentPointerBridge();
 	}
 

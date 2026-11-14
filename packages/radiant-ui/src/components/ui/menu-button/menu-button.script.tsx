@@ -11,9 +11,9 @@ import {
 	query,
 } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
-import { PopoverController, shouldDismissPopoverPointer } from '../shared/popover-controller';
+import { PopoverController, shouldDismissPopoverPointer } from '../../../controllers/popover-controller';
 import { MenuTreeController } from '../shared/menu-tree';
-import type { RuiPlacement } from '../shared/placement';
+import type { RuiPlacement } from '../../../controllers/placement';
 import { uniqueId } from '@/lib/unique-id';
 
 export type RuiMenuButtonProps = {
@@ -145,6 +145,7 @@ export class RuiMenuButton extends RadiantElement {
 				gap: MENU_GAP,
 				portal: false,
 			});
+			this.popoverController.attach();
 		}
 		return this.popoverController;
 	}

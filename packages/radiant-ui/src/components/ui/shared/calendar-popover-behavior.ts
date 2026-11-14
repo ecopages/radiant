@@ -1,5 +1,5 @@
 import { listenMobileLayoutViewport } from '@/lib/viewport/mobile-layout';
-import { PopoverController, shouldDismissPopoverFocus } from './popover-controller';
+import { PopoverController, shouldDismissPopoverFocus } from '../../../controllers/popover-controller';
 
 export type CalendarPopoverBehaviorConfig = {
 	getHost: () => HTMLElement;
@@ -132,6 +132,7 @@ export class CalendarPopoverBehavior {
 				gap: 4,
 				portal: false,
 			});
+			this.popoverController.attach();
 		}
 
 		return this.popoverController;

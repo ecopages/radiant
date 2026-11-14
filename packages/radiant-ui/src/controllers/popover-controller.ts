@@ -1,3 +1,4 @@
+import { bindController, type Controller, type ControllerHost } from './controller';
 import { attachFloating } from './floating-position';
 import type { RuiPlacement } from './placement';
 import { mountPortal, type PortalHandle } from './portal';
@@ -44,8 +45,14 @@ export type PopoverControllerConfig = {
 
 /**
  * Headless popover lifecycle: portal mount, floating position, and teardown.
+ *
+ * @remarks
+ * `sync()` does nothing until `attach()`, and nothing after `destroy()`, so an element that is not connected never
+ * mounts a portal or registers floating listeners. `destroy()` removes the floating listeners and observer, returns
+ * a portaled surface to its place and forgets the floating element.
  */
-export class PopoverController {
+export class PopoverController implements Controller {
+	private attached = false;
 	private config: PopoverControllerConfig;
 	private cleanupFloating: (() => void) | null = null;
 	private portalHandle: PortalHandle | null = null;
@@ -60,7 +67,14 @@ export class PopoverController {
 		this.config = { ...this.config, ...patch };
 	}
 
+	attach(): void {
+		this.attached = true;
+	}
+
 	sync(): void {
+		if (!this.attached) {
+			return;
+		}
 		const floating = this.resolveFloating();
 		if (!floating) {
 			return;
@@ -121,6 +135,7 @@ export class PopoverController {
 	}
 
 	destroy(): void {
+		this.attached = false;
 		this.teardown();
 		this.floatingElement = null;
 	}
@@ -161,4 +176,11 @@ export class PopoverController {
 		this.cleanupFloating?.();
 		this.cleanupFloating = null;
 	}
+}
+
+/**
+ * Creates a `PopoverController` that attaches when `host` connects and is destroyed when it disconnects.
+ */
+export function createPopoverController(host: ControllerHost, config: PopoverControllerConfig): PopoverController {
+	return bindController(host, new PopoverController(config));
 }

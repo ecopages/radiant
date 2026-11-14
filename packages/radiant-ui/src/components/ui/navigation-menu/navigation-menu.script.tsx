@@ -3,7 +3,7 @@ import { RadiantElement, customElement, onEvent, prop } from '@ecopages/radiant'
 import { queryRovingTabindexItems } from '@/lib/focusable-elements';
 import { applyRovingTabindex, navigateRovingTabindex } from '@/lib/roving-tabindex';
 import { uniqueId } from '@/lib/unique-id';
-import { PopoverController, shouldDismissPopoverPointer } from '../shared/popover-controller';
+import { PopoverController, shouldDismissPopoverPointer } from '../../../controllers/popover-controller';
 
 export type RuiNavigationMenuProps = {
 	label?: string;
@@ -240,6 +240,7 @@ export class RuiNavigationMenu extends RadiantElement {
 				gap: NAVIGATION_MENU_GAP,
 				portal: false,
 			});
+			this.popoverController.attach();
 		}
 		return this.popoverController;
 	}

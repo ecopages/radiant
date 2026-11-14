@@ -2,8 +2,8 @@ import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, bindTo, customElement, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import { findFirstFocusableCandidate } from '@/lib/focusable-elements';
 import { uniqueId } from '@/lib/unique-id';
-import { applyFloatingPosition, attachFloating } from '../shared/floating-position';
-import type { RuiPlacement } from '../shared/placement';
+import { applyFloatingPosition, attachFloating } from '../../../controllers/floating-position';
+import type { RuiPlacement } from '../../../controllers/placement';
 
 export type RuiTooltipProps = {
 	/** Accessible description shown in the tooltip. */

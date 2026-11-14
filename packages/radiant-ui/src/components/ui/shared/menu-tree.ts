@@ -1,4 +1,4 @@
-import { PopoverController } from './popover-controller';
+import { PopoverController } from '../../../controllers/popover-controller';
 import { uniqueId } from '@/lib/unique-id';
 
 const SUBMENU_DELAY = 200;
@@ -227,6 +227,7 @@ export class MenuTreeController {
 				gap: SUBMENU_GAP,
 				portal: false,
 			});
+			popover.attach();
 			this.popovers.set(submenu, popover);
 		}
 		popover.updateConfig({ getAnchor: () => item, getOpen: () => item.getAttribute('aria-expanded') === 'true' });

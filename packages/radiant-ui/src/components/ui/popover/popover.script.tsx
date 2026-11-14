@@ -4,11 +4,11 @@ import { isServer } from '@ecopages/radiant/is-server';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { uniqueId } from '@/lib/unique-id';
 import {
-	PopoverController,
+	createPopoverController,
 	shouldDismissPopoverFocus,
 	shouldDismissPopoverPointer,
-} from '../shared/popover-controller';
-import type { RuiPlacement } from '../shared/placement';
+} from '../../../controllers/popover-controller';
+import type { RuiPlacement } from '../../../controllers/placement';
 
 export type RuiPopoverOpenChangeDetail = {
 	open: boolean;
@@ -97,7 +97,12 @@ export class RuiPopover extends RadiantElement {
 	openChangeEvent: EventEmitter<RuiPopoverOpenChangeDetail>;
 
 	private readonly surfaceId = uniqueId('rui-popover');
-	private controller: PopoverController | null = null;
+	private readonly controller = createPopoverController(this, {
+		getAnchor: () => this.getAnchorElement(),
+		getFloating: () => this.surfaceTarget,
+		getOpen: () => this.open,
+		getPlacement: () => this.placement,
+	});
 	private anchorClickTarget: HTMLElement | null = null;
 
 	protected override onConnected(): void {
@@ -106,8 +111,6 @@ export class RuiPopover extends RadiantElement {
 
 	override disconnectedCallback(): void {
 		this.unbindExternalAnchorClick();
-		this.controller?.destroy();
-		this.controller = null;
 		super.disconnectedCallback();
 	}
 
@@ -134,21 +137,6 @@ export class RuiPopover extends RadiantElement {
 		return null;
 	}
 
-	private ensureController(): PopoverController {
-		if (!this.controller) {
-			this.controller = new PopoverController({
-				getAnchor: () => this.getAnchorElement(),
-				getFloating: () => this.surfaceTarget,
-				getOpen: () => this.open,
-				getPlacement: () => this.placement,
-				gap: this.offset,
-				portal: this.portal,
-				matchAnchorWidth: this.matchAnchorWidth,
-			});
-		}
-		return this.controller;
-	}
-
 	@bound
 	@onUpdated(['open', 'placement', 'portal', 'matchAnchorWidth', 'offset', 'anchor'])
 	syncPopover(): void {
@@ -164,17 +152,12 @@ export class RuiPopover extends RadiantElement {
 		}
 		this.syncExternalAnchorClick(anchor);
 
-		const controller = this.ensureController();
-		controller.updateConfig({
-			getAnchor: () => this.getAnchorElement(),
-			getFloating: () => this.surfaceTarget,
-			getOpen: () => this.open,
-			getPlacement: () => this.placement,
+		this.controller.updateConfig({
 			gap: this.offset,
 			portal: this.portal,
 			matchAnchorWidth: this.matchAnchorWidth,
 		});
-		controller.sync();
+		this.controller.sync();
 	}
 
 	setOpen(next: boolean, emit = true): void {
@@ -198,7 +181,7 @@ export class RuiPopover extends RadiantElement {
 		if (
 			!shouldDismissPopoverPointer(
 				this.getAnchorElement(),
-				this.controller?.getFloatingElement() ?? this.surfaceTarget,
+				this.controller.getFloatingElement() ?? this.surfaceTarget,
 				target,
 			)
 		) {
@@ -215,7 +198,7 @@ export class RuiPopover extends RadiantElement {
 		if (
 			!shouldDismissPopoverFocus(
 				this.getAnchorElement(),
-				this.controller?.getFloatingElement() ?? this.surfaceTarget,
+				this.controller.getFloatingElement() ?? this.surfaceTarget,
 				event.relatedTarget,
 			)
 		) {

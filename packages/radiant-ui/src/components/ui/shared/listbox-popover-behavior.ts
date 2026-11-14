@@ -1,4 +1,4 @@
-import { PopoverController, shouldDismissPopoverFocus, shouldDismissPopoverPointer } from './popover-controller';
+import { PopoverController, shouldDismissPopoverFocus, shouldDismissPopoverPointer } from '../../../controllers/popover-controller';
 import {
 	clearCollectionActive,
 	getVisibleCollectionOptions,
@@ -53,6 +53,7 @@ export class ListboxPopoverBehavior {
 			portal: false,
 			matchAnchorWidth: true,
 		});
+		this.popoverController.attach();
 	}
 
 	get activeOptionIndex(): number {

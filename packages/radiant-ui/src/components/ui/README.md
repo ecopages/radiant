@@ -34,6 +34,31 @@ A registered host that declares `data-rui-aria-target(s)` binds the field's ARIA
 
 `RuiFieldError` has a controlled mode for an error that belongs to a group rather than a control: with `error` it renders that content (falling back to `children`), is visible while non-empty, works outside `RuiField` and on the server, and stamps `data-rui-field-error-controlled`. `findFieldErrorElements` skips controlled regions, so the field never overwrites or hides them; it only gives a controlled region an `id` when missing and lists it in the control's `aria-describedby` (an empty hidden region adds nothing to the description).
 
+## Controllers
+
+A **controller** is a reusable class in [`src/controllers`](../../controllers) that a component composes instead of reimplementing the behavior. It is not core's `RadiantController` (`@ecopages/radiant`), which is a reactive host with its own lifecycle; a catalog controller is a plain class and needs no custom element.
+
+The contract is `Controller` in `src/controllers/controller.ts`:
+
+- The constructor is inert: no DOM and no `window`, so building one on the server is safe.
+- `attach()` starts work; `destroy()` ends all of it. Both are idempotent, and a destroyed controller can be attached again.
+- It takes elements or getters in and does no component-specific work. The component adds its own `data-rui-*` attributes and `rui-change` events.
+
+For a host, each controller offers a one-line `createX(host, config)` factory built on `bindController`. It constructs the controller and registers `attach()` as a connected callback and `destroy()` as a cleanup callback, so the component writes no `disconnectedCallback` code for it. `host` is anything with `registerConnectedCallback` and `registerCleanupCallback`, such as a `RadiantElement`. Without a host, construct the class with getters and call `attach()` and `destroy()` directly.
+
+```ts
+class RuiPopover extends RadiantElement {
+	private readonly controller = createPopoverController(this, {
+		getAnchor: () => this.getAnchorElement(),
+		getFloating: () => this.surfaceTarget,
+		getOpen: () => this.open,
+		getPlacement: () => this.placement,
+	});
+}
+```
+
+Before writing bespoke logic, check `src/controllers` for a controller that already does it and compose that. `PopoverController` is the first adopter (popover, hover-card); `MenuTreeController` and the listbox and calendar popover behaviors still create theirs by hand, calling `attach()` themselves.
+
 ## Multi-value `value`
 
 Token-select hosts (`rui-select`, `rui-combobox`, `rui-listbox`, `rui-checkbox-group`, `rui-tag-group`, `rui-table`) share one protocol:
@@ -160,7 +185,7 @@ Popups inside parent-owned JSX trees must not bind `hidden` in the view when ope
 
 - **Reflected `open` on the host** (dialog, menu-button): the view seeds SSR visibility with `hidden={open ? undefined : true}`, and the controller also synchronizes the rendered surface with `toggleAttribute`. Imperative APIs and delegated triggers must not leave an initially hidden surface concealed.
 - **Internal open state** (select, combobox, popover surfaces): the view omits `hidden`; the script sets initial closed state with `toggleAttribute('hidden', !open)` in `connectedCallback` / `setOpen`.
-- **Shared helper:** `PopoverController` uses `toggleAttribute` for all portaled surfaces.
+- **Shared helper:** `PopoverController` (`src/controllers`) uses `toggleAttribute` for all portaled surfaces.
 
 Presentation attributes owned by the view (`aria-label`, bordered chrome) should not be duplicated in script `syncPresentation()` helpers.
 

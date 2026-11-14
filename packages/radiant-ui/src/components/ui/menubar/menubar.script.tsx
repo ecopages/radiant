@@ -2,7 +2,7 @@ import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, event, onEvent, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { applyRovingTabindex, navigateRovingTabindex } from '@/lib/roving-tabindex';
-import { PopoverController, shouldDismissPopoverPointer } from '../shared/popover-controller';
+import { PopoverController, shouldDismissPopoverPointer } from '../../../controllers/popover-controller';
 import { MenuTreeController } from '../shared/menu-tree';
 
 export type RuiMenubarProps = {
@@ -143,6 +143,7 @@ export class RuiMenubar extends RadiantElement {
 				gap: 6,
 				portal: false,
 			});
+			this.popoverController.attach();
 		}
 
 		this.popoverController.updateConfig({
