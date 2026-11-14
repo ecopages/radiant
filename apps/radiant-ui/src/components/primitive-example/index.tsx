@@ -4,6 +4,8 @@ import type { JsxRenderable } from '@ecopages/jsx';
 export type PrimitiveExampleProps = {
 	/** Names the example for the page script, which finds its elements under `[data-example="<name>"]`. */
 	name: string;
+	/** `stack` lays the children out as one full-width column instead of a wrapping row. */
+	layout?: 'stack';
 	children?: JsxRenderable;
 };
 
@@ -16,8 +18,8 @@ export type PrimitiveExampleProps = {
  */
 export const PrimitiveExample = eco.component<PrimitiveExampleProps, JsxRenderable>({
 	dependencies: { stylesheets: ['./primitive-example.css'] },
-	render: ({ name, children }) => (
-		<div class="primitive-example unstyled" data-example={name}>
+	render: ({ name, layout, children }) => (
+		<div class="primitive-example unstyled" data-example={name} data-layout={layout}>
 			{children}
 		</div>
 	),

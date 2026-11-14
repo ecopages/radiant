@@ -75,6 +75,16 @@ describe('recipes', () => {
 		await userEvent.tab();
 		expect(document.activeElement).toBe(shown()[0]);
 		expect(texts(shown())).toEqual(['Banana']);
+
+		await userEvent.clear(input);
+		await userEvent.type(input, 'zzz');
+		expect(status(root)).toBe('No matches');
+	});
+
+	test('searchable list has a visible label tied to its field', async () => {
+		const root = await mountRecipe('searchable-list');
+
+		expect(root.querySelector('label')!.htmlFor).toBe(root.querySelector('input')!.id);
 	});
 
 	test('swipe card is dismissed by a swipe or the button, not by a press on the button', async () => {

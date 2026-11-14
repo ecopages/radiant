@@ -24,7 +24,8 @@ export function mount(root: HTMLElement): () => void {
 			item.hidden = !textContains(item.textContent, input.value);
 		}
 		roving.sync();
-		status.textContent = `${visible().length} of ${all.length} shown`;
+		const shown = visible().length;
+		status.textContent = shown === 0 ? 'No matches' : `${shown} of ${all.length} shown`;
 	});
 
 	input.addEventListener('keydown', (event) => {

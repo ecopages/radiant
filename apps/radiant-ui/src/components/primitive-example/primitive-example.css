@@ -121,3 +121,63 @@
 .primitive-example :where([hidden]) {
 	display: none;
 }
+
+.primitive-example[data-layout='stack'] {
+	flex-direction: column;
+	flex-wrap: nowrap;
+	align-items: stretch;
+}
+
+.primitive-example[data-layout='stack'] :where(label) {
+	font-weight: 500;
+}
+
+.primitive-example[data-layout='stack'] :where(input) {
+	box-sizing: border-box;
+	width: 100%;
+	padding: var(--space-2) var(--space-3);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-control);
+	background: var(--surface);
+	color: var(--on-surface);
+	font: inherit;
+}
+
+.primitive-example[data-layout='stack'] :where(input:focus-visible) {
+	outline: 2px solid var(--focus-ring);
+	outline-offset: 2px;
+}
+
+.primitive-example[data-layout='stack'] :where(ul) {
+	gap: 0;
+	overflow: hidden;
+	border: 1px solid var(--border);
+	border-radius: var(--radius-control);
+	background: var(--surface);
+}
+
+.primitive-example[data-layout='stack'] :where(li) {
+	padding: var(--space-2) var(--space-3);
+	border: 0;
+	border-radius: 0;
+	background: transparent;
+}
+
+.primitive-example[data-layout='stack'] :where(li + li) {
+	border-top: 1px solid var(--border);
+}
+
+.primitive-example[data-layout='stack'] :where(li:hover) {
+	background: var(--surface-container-high);
+}
+
+.primitive-example[data-layout='stack'] :where(li:focus-visible) {
+	outline: 2px solid var(--focus-ring);
+	outline-offset: -2px;
+}
+
+.primitive-example[data-layout='stack'] :where([data-status]) {
+	flex-basis: auto;
+	font-size: 0.8125rem;
+	color: color-mix(in srgb, var(--on-surface-container-low) 70%, transparent);
+}

@@ -34,8 +34,9 @@ Left to the recipe: reading the query, hiding the items that do not match, the D
 
 Type to filter, press ArrowDown to move into the list, use the arrow keys, and press Enter to choose.
 
-<PrimitiveExample name="searchable-list">
-	<input type="search" aria-label="Filter fruit" placeholder="Filter fruit" />
+<PrimitiveExample name="searchable-list" layout="stack">
+	<label for="fruit-filter">Filter fruit</label>
+	<input id="fruit-filter" type="search" placeholder="Type a fruit" />
 	<ul aria-label="Fruit">
 		<li>Apple</li>
 		<li>Apricot</li>
@@ -52,7 +53,8 @@ Type to filter, press ArrowDown to move into the list, use the arrow keys, and p
 
 ```html
 <div data-example="searchable-list">
-	<input type="search" aria-label="Filter fruit" placeholder="Filter fruit" />
+	<label for="fruit-filter">Filter fruit</label>
+	<input id="fruit-filter" type="search" placeholder="Type a fruit" />
 	<ul aria-label="Fruit">
 		<li>Apple</li>
 		<li>Apricot</li>
@@ -90,7 +92,8 @@ export function mount(root: HTMLElement): () => void {
 			item.hidden = !textContains(item.textContent, input.value);
 		}
 		roving.sync();
-		status.textContent = `${visible().length} of ${all.length} shown`;
+		const shown = visible().length;
+		status.textContent = shown === 0 ? 'No matches' : `${shown} of ${all.length} shown`;
 	});
 
 	input.addEventListener('keydown', (event) => {
