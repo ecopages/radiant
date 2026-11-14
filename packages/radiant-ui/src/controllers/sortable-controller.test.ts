@@ -449,4 +449,30 @@ describe('SortableController on a plain list', () => {
 		cleanup.forEach((callback) => callback());
 		expect(controller.getState()).toBeNull();
 	});
+
+	it('moves to the container a second attach() resolves, without duplicate listeners', () => {
+		const { list, items, controller } = mount({}, ['Alpha', 'Beta']);
+		const second = document.createElement('ul');
+		const secondItem = document.createElement('li');
+		secondItem.tabIndex = 0;
+		second.append(secondItem);
+		document.body.append(second);
+		let current = list;
+		const moved = new SortableController({
+			getContainer: () => current,
+			getItems: () => [...current.children] as HTMLElement[],
+		});
+		controller.destroy();
+		moved.attach();
+
+		current = second;
+		moved.attach();
+		moved.attach();
+
+		press(items()[0], ' ');
+		expect(moved.getState()).toBeNull();
+		press(secondItem, ' ');
+		expect(moved.getState()).not.toBeNull();
+		moved.destroy();
+	});
 });

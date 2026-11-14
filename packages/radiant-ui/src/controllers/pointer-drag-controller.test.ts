@@ -256,4 +256,24 @@ describe('PointerDragController on plain elements', () => {
 		cleanup();
 		expect(onEnd.mock.calls[0][0].reason).toBe('destroy');
 	});
+
+	it('moves to the target a second attach() resolves, without duplicate listeners', () => {
+		let current: HTMLElement | null = null;
+		const { element, other, onStart, controller } = mount({ getTarget: () => current });
+		controller.attach();
+		fire(element, 'pointerdown');
+		expect(onStart).not.toHaveBeenCalled();
+
+		current = element;
+		controller.attach();
+		controller.attach();
+		current = other;
+		controller.attach();
+
+		fire(element, 'pointerdown', { id: 2 });
+		expect(onStart).not.toHaveBeenCalled();
+		fire(other, 'pointerdown');
+		expect(onStart).toHaveBeenCalledTimes(1);
+		controller.destroy();
+	});
 });

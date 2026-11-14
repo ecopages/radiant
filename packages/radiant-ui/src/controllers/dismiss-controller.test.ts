@@ -242,4 +242,25 @@ describe('DismissController on plain elements', () => {
 		pointerDown(outside);
 		expect(onDismiss).toHaveBeenCalledTimes(1);
 	});
+
+	it('attach() again reports once, and judges the surface it resolves then', () => {
+		const { outside, inside, onDismiss } = mount();
+		const other = document.createElement('div');
+		const otherInside = document.createElement('button');
+		other.append(otherInside);
+		document.body.append(other);
+		let surface: HTMLElement | null = inside.parentElement;
+		const controller = new DismissController({ getSurface: () => surface, onDismiss });
+		controller.attach();
+
+		surface = other;
+		controller.attach();
+		controller.attach();
+
+		pointerDown(otherInside);
+		expect(onDismiss).not.toHaveBeenCalled();
+		pointerDown(outside);
+		expect(onDismiss).toHaveBeenCalledTimes(1);
+		controller.destroy();
+	});
 });

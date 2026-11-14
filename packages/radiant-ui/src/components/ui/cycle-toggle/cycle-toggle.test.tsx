@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { createRoot } from '@ecopages/jsx';
 import { RuiCycleToggle, RuiCycleToggleItem } from './cycle-toggle';
 import { RuiCycleToggle as RuiCycleToggleElement } from './cycle-toggle.script';
@@ -71,19 +71,27 @@ describe('RuiCycleToggle hydration', () => {
 });
 
 describe('RuiCycleToggle child observation', () => {
-	it('resyncs when children change and stops after removal', async () => {
+	const item = (value: string) => {
+		const element = document.createElement('span');
+		element.dataset.cycleValue = value;
+		return element;
+	};
+
+	it('shows only the selected item when items arrive later, and stops after removal', async () => {
 		const host = document.createElement('rui-cycle-toggle') as RuiCycleToggleElement;
+		host.append(item('a'));
 		document.body.append(host);
 		await settled();
-		const resync = vi.spyOn(host, 'resync');
 
-		host.append(document.createElement('span'));
+		const late = item('b');
+		host.append(late);
 		await settled();
-		expect(resync).toHaveBeenCalledTimes(1);
+		expect(late.hidden).toBe(true);
 
 		host.remove();
-		host.append(document.createElement('span'));
+		const afterRemoval = item('c');
+		host.append(afterRemoval);
 		await settled();
-		expect(resync).toHaveBeenCalledTimes(1);
+		expect(afterRemoval.hidden).toBe(false);
 	});
 });

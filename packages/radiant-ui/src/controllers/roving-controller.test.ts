@@ -302,4 +302,24 @@ describe('RovingController on plain elements', () => {
 		cleanup.forEach((callback) => callback());
 		expect(press(items[1], 'ArrowRight').defaultPrevented).toBe(false);
 	});
+
+	it('listens on the target a second attach() resolves, once', () => {
+		const first = document.createElement('div');
+		const second = document.createElement('div');
+		const items = Array.from({ length: 3 }, () => document.createElement('button'));
+		second.append(...items);
+		document.body.append(first, second);
+		let current: HTMLElement = first;
+		const onMove = vi.fn();
+		const controller = new RovingController({ getItems: () => items, getTarget: () => current, onMove });
+		controller.attach();
+
+		current = second;
+		controller.attach();
+		controller.attach();
+
+		press(items[0], 'ArrowRight');
+		expect(onMove).toHaveBeenCalledTimes(1);
+		controller.destroy();
+	});
 });

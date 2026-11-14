@@ -202,4 +202,21 @@ describe('FocusTrapController', () => {
 		cleanup.forEach((callback) => callback());
 		expect(document.activeElement).toBe(outside);
 	});
+
+	it('attach() again keeps the first remembered element and a single key listener', async () => {
+		const { outside, surface, first, last } = setup();
+		outside.focus();
+		const trap = new FocusTrapController({ getSurface: () => surface });
+
+		trap.attach();
+		await flush();
+		trap.attach();
+		await flush();
+		last.focus();
+		await userEvent.tab();
+		expect(document.activeElement).toBe(first);
+
+		trap.destroy();
+		expect(document.activeElement).toBe(outside);
+	});
 });
