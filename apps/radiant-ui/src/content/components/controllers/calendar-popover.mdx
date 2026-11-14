@@ -10,6 +10,7 @@ export const config = {
 	dependencies: {
 		components: [PrimitiveExample],
 		scripts: ['./calendar-popover.script.ts'],
+		stylesheets: ['./calendar-popover.css'],
 	},
 };
 
@@ -31,17 +32,14 @@ import {
 
 ## Try it
 
-The button opens the popup and focuses its first available day. Escape from inside the popup closes it and returns focus to the button; focus leaving the host closes it without moving focus. `portal` moves the popup while it is open, here into the example frame so the frame styles still reach it.
+The button opens the popup and focuses the selected day, today at first. The month grid comes from `buildCalendarMonth`, and picking a day sets the button label and closes the popup. Escape from inside the popup closes it and returns focus to the button; focus leaving the host closes it without moving focus. `portal` moves the popup while it is open, here into the example frame so the frame styles still reach it.
 
 <PrimitiveExample name="calendar-popover">
 	<button type="button">Pick a date</button>
 	<div data-box hidden>
-		<button type="button" data-calendar-day data-iso="2026-11-14">
-			14
-		</button>
-		<button type="button" data-calendar-day data-iso="2026-11-15">
-			15
-		</button>
+		<p data-month></p>
+		<div data-weekdays></div>
+		<div data-days></div>
 	</div>
 </PrimitiveExample>
 
@@ -49,20 +47,57 @@ The button opens the popup and focuses its first available day. Escape from insi
 <div data-example="calendar-popover">
 	<button type="button">Pick a date</button>
 	<div data-box hidden>
-		<button type="button" data-calendar-day data-iso="2026-11-14">14</button>
-		<button type="button" data-calendar-day data-iso="2026-11-15">15</button>
+		<p data-month></p>
+		<div data-weekdays></div>
+		<div data-days></div>
 	</div>
 </div>
 ```
 
 ```ts
 import { CalendarPopoverController } from '@ecopages/radiant-ui/controllers';
+import {
+	buildCalendarMonth,
+	dateToIso,
+	formatDisplayDate,
+	formatMonthYear,
+	getWeekStartsOn,
+	getWeekdayLabels,
+} from '@ecopages/radiant-ui/helpers';
 
 export function mount(root: HTMLElement): () => void {
 	const toggle = root.querySelector('button')!;
 	const popup = root.querySelector<HTMLElement>('[data-box]')!;
+	const locale = 'en-US';
+	const today = new Date();
+
+	popup.querySelector('[data-month]')!.textContent = formatMonthYear(today, locale);
+	popup.querySelector('[data-weekdays]')!.replaceChildren(
+		...getWeekdayLabels(locale, getWeekStartsOn(locale)).map((label) => {
+			const cell = document.createElement('span');
+			cell.textContent = label;
+			return cell;
+		}),
+	);
+	popup.querySelector('[data-days]')!.replaceChildren(
+		...buildCalendarMonth(today.getFullYear(), today.getMonth(), { locale, today })
+			.flat()
+			.map((day) => {
+				if (!day.inMonth) {
+					return document.createElement('span');
+				}
+				const button = document.createElement('button');
+				button.type = 'button';
+				button.textContent = String(day.date.getDate());
+				button.dataset.calendarDay = '';
+				button.dataset.iso = day.iso;
+				button.toggleAttribute('data-today', day.isToday);
+				return button;
+			}),
+	);
 
 	let open = false;
+	let selected = dateToIso(today);
 	const picker = new CalendarPopoverController({
 		getHost: () => root,
 		getAnchor: () => toggle,
@@ -71,7 +106,7 @@ export function mount(root: HTMLElement): () => void {
 		getCalendar: () => popup,
 		portal: true,
 		getPortalContainer: () => root,
-		getFocusIso: () => undefined,
+		getFocusIso: () => selected,
 		getToggle: () => toggle,
 		setOpenState: (next) => (open = next),
 		onLayoutChange: () => {},
@@ -79,6 +114,15 @@ export function mount(root: HTMLElement): () => void {
 	picker.attach();
 
 	toggle.addEventListener('click', () => picker.setOpen(!open));
+	popup.addEventListener('click', (event) => {
+		const day = (event.target as HTMLElement).closest<HTMLElement>('[data-calendar-day]');
+		if (!day) {
+			return;
+		}
+		selected = day.dataset.iso!;
+		toggle.textContent = formatDisplayDate(new Date(`${selected}T00:00`), locale);
+		picker.closeAndRestoreFocus();
+	});
 	return () => picker.destroy();
 }
 ```
