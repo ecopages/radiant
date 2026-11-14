@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
+import { userEvent } from 'vitest/browser';
 import { createRoot } from '@ecopages/jsx';
 import { RuiDateRangePicker } from './date-range-picker';
 import { RuiDateRangePicker as RuiDateRangePickerScript } from './date-range-picker.script';
@@ -64,8 +65,8 @@ describe.each([false, true])('RuiDateRangePicker with portal %s', (portal) => {
 
 		toggle.click();
 		await settled();
-		(popup.querySelector('[data-calendar-day][data-iso="2026-08-05"]') as HTMLElement).click();
-		(popup.querySelector('[data-calendar-day][data-iso="2026-08-12"]') as HTMLElement).click();
+		await userEvent.click(popup.querySelector('[data-calendar-day][data-iso="2026-08-05"]') as HTMLElement);
+		await userEvent.click(popup.querySelector('[data-calendar-day][data-iso="2026-08-12"]') as HTMLElement);
 		await settled();
 
 		expect(picker.value).toBe('2026-08-05/2026-08-12');

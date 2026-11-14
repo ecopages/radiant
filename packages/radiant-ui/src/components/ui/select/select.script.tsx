@@ -169,14 +169,19 @@ export class RuiSelect extends RadiantElement {
 	/** @remarks Cached because a portaled popup is no longer inside the host to be found again. */
 	@query({ selector: '[data-select-listbox]', cache: true }) popupTarget: HTMLElement | null;
 
-	/** @remarks The popup is a separate listener target, not host delegation, because a portaled popup is outside the host and its events never bubble through it. */
-	constructor() {
-		super();
+	/**
+	 * The popup is a separate listener target, not host delegation, because a portaled popup is outside the host
+	 * and its events never bubble through it.
+	 *
+	 * @remarks They first attach as the element connects, which can be before its children exist (markup added
+	 * after the element is in the document), so each opening attaches them again to resolve the popup that exists now.
+	 */
+	private readonly popupListeners = [
 		createEventListenerController(this, {
 			getTarget: () => this.popupTarget,
 			type: ['pointerover', 'mousedown', 'click', 'input'],
 			listener: (event) => this.onPopupEvent(event),
-		});
+		}),
 		createEventListenerController(this, {
 			getTarget: () => this.popupTarget,
 			type: 'keydown',
@@ -186,7 +191,13 @@ export class RuiSelect extends RadiantElement {
 					this.handleListboxKeydown(event);
 				}
 			},
-		});
+		}),
+	];
+
+	private attachPopupListeners(): void {
+		for (const listener of this.popupListeners) {
+			listener.attach();
+		}
 	}
 
 	private get listboxId(): string {
@@ -444,6 +455,9 @@ export class RuiSelect extends RadiantElement {
 
 		trigger.setAttribute('aria-expanded', String(next));
 		popup.toggleAttribute('hidden', !next);
+		if (next) {
+			this.attachPopupListeners();
+		}
 
 		if (!next) {
 			this.listboxPopover.clearActiveOption();

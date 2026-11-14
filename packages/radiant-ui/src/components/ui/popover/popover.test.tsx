@@ -80,6 +80,29 @@ describe('rui-popover external anchor', () => {
 	});
 });
 
+describe('rui-popover external anchor handlers', () => {
+	afterEach(() => {
+		document.body.innerHTML = '';
+	});
+
+	it('toggles from an anchor whose own click handler stops propagation', async () => {
+		const container = document.createElement('div');
+		document.body.append(container);
+		const anchor = document.createElement('button');
+		anchor.id = 'external-anchor';
+		anchor.addEventListener('click', (event) => event.stopPropagation());
+		document.body.append(anchor);
+		createRoot(container).render(<RuiPopover anchor="#external-anchor">Body</RuiPopover>);
+		const host = container.querySelector('rui-popover') as RuiPopoverElement;
+		await vi.waitFor(() => expect(host.isConnected).toBe(true));
+		await new Promise((resolve) => setTimeout(resolve, 20));
+
+		anchor.click();
+
+		expect(host.open).toBe(true);
+	});
+});
+
 describe('rui-popover portal container', () => {
 	afterEach(() => {
 		document.body.innerHTML = '';

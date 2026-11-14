@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
+import { userEvent } from 'vitest/browser';
 import { createRoot } from '@ecopages/jsx';
 import { RuiDateField } from './date-field';
 import { RuiDateField as RuiDateFieldScript } from './date-field.script';
@@ -64,7 +65,7 @@ describe.each([false, true])('RuiDateField with portal %s', (portal) => {
 
 		toggle.click();
 		await settled();
-		(popup.querySelector('[data-calendar-day][data-iso="2026-08-12"]') as HTMLElement).click();
+		await userEvent.click(popup.querySelector('[data-calendar-day][data-iso="2026-08-12"]') as HTMLElement);
 		await settled();
 
 		expect(field.value).toBe('2026-08-12');
@@ -92,7 +93,8 @@ describe.each([false, true])('RuiDateField with portal %s', (portal) => {
 	it('keeps the label on the input and closes on Escape and on focus moving away', async () => {
 		const { field, toggle, popup, elsewhere } = await mountField(portal);
 		const input = field.querySelector('[data-date-field-input]') as HTMLElement;
-		expect(input.getAttribute('aria-labelledby') ?? input.getAttribute('aria-label')).toBeTruthy();
+		expect(input.getAttribute('aria-label')).toBe('Start');
+		expect(input.hasAttribute('aria-labelledby')).toBe(false);
 
 		toggle.click();
 		await settled();

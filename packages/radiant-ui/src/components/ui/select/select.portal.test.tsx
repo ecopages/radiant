@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
+import { userEvent } from 'vitest/browser';
 import { createRoot } from '@ecopages/jsx';
 import { RuiSelect } from './select';
 import { RuiSelect as RuiSelectElement } from './select.script';
@@ -64,7 +65,7 @@ describe.each([false, true])('RuiSelect with portal %s', (portal) => {
 
 		trigger.click();
 		await settled();
-		(popup.querySelector('[role="option"][data-value="dog"]') as HTMLElement).click();
+		await userEvent.click(popup.querySelector('[role="option"][data-value="dog"]') as HTMLElement);
 		await settled();
 
 		expect(select.value).toEqual(['dog']);
@@ -124,8 +125,8 @@ describe.each([false, true])('RuiSelect with portal %s', (portal) => {
 
 		trigger.click();
 		await settled();
-		(popup.querySelector('[data-value="cat"]') as HTMLElement).click();
-		(popup.querySelector('[data-value="dog"]') as HTMLElement).click();
+		await userEvent.click(popup.querySelector('[data-value="cat"]') as HTMLElement);
+		await userEvent.click(popup.querySelector('[data-value="dog"]') as HTMLElement);
 		await settled();
 
 		const listboxHost = popup.querySelector('rui-listbox') as HTMLElement & {

@@ -1027,4 +1027,49 @@ describe('RuiSidebar matchActive', () => {
 		history.replaceState(null, '', originalPath);
 		cleanup();
 	});
+
+	it('stops listening for navigation when matchActive turns off and again when it turns on', async () => {
+		const originalPath = window.location.pathname;
+		history.replaceState(null, '', '/docs/overview');
+		const { host, cleanup } = mount(
+			<RuiSidebar id="nav" matchActive navigationEvents="eco:page-load" label="Docs">
+				<RuiSidebarContent>
+					<RuiSidebarMenu aria-label="Docs links">
+						<RuiSidebarMenuItem>
+							<RuiSidebarMenuButton as="a" href="/docs/overview">
+								Overview
+							</RuiSidebarMenuButton>
+						</RuiSidebarMenuItem>
+						<RuiSidebarMenuItem>
+							<RuiSidebarMenuButton as="a" href="/docs/installation">
+								Installation
+							</RuiSidebarMenuButton>
+						</RuiSidebarMenuItem>
+					</RuiSidebarMenu>
+				</RuiSidebarContent>
+			</RuiSidebar>,
+		);
+		await settled();
+		await tick();
+		const sidebar = host.querySelector('rui-sidebar') as HTMLElement & { matchActive: boolean };
+		const activeHref = () => host.querySelector('a.rui-sidebar__menu-button--active')?.getAttribute('href');
+
+		sidebar.matchActive = false;
+		await settled();
+		history.replaceState(null, '', '/docs/installation');
+		document.dispatchEvent(new Event('eco:page-load'));
+		window.dispatchEvent(new PopStateEvent('popstate'));
+		await settled();
+		expect(activeHref()).not.toBe('/docs/installation');
+
+		sidebar.matchActive = true;
+		await settled();
+		history.replaceState(null, '', '/docs/overview');
+		document.dispatchEvent(new Event('eco:page-load'));
+		await settled();
+		expect(activeHref()).toBe('/docs/overview');
+
+		history.replaceState(null, '', originalPath);
+		cleanup();
+	});
 });

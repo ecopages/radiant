@@ -3,8 +3,7 @@ import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, bound, customElement, onUpdated, prop, state } from '@ecopages/radiant';
 import { isServer } from '@ecopages/radiant/is-server';
 import { parseCommaSeparated } from '@/lib/comma-separated';
-import type { Controller } from '../../../controllers/controller';
-import { EventListenerController } from '../../../controllers/event-listener-controller';
+import { EventListenerController, createEventListenerController } from '../../../controllers/event-listener-controller';
 import {
 	ensureUniqueHeadingId,
 	querySelectorAllSafe,
@@ -88,7 +87,21 @@ export class RuiToc extends RadiantElement<RuiTocBindings> {
 
 	private headings: HTMLElement[] = [];
 	private scrollRoot: HTMLElement | Window | null = null;
-	private navigationListener: Controller | null = null;
+
+	/**
+	 * The event types the document listener is attached with.
+	 *
+	 * @remarks
+	 * `navigation-events` can change, but a listener controller takes its types at construction and reads them
+	 * again on `destroy()`. This array is the one it holds: `syncNavigationListener` replaces its contents only
+	 * between a `destroy()` and an `attach()`, so the old types are removed before the new ones are added.
+	 */
+	private readonly navigationTypes: string[] = [];
+	private readonly navigationListener = createEventListenerController(this, {
+		getTarget: () => document,
+		type: this.navigationTypes,
+		listener: () => this.rebuild(),
+	});
 	private pendingScrollTargetId: string | null = null;
 	private scrollRafPending = false;
 	private readonly scrollListener = new EventListenerController({
@@ -121,25 +134,19 @@ export class RuiToc extends RadiantElement<RuiTocBindings> {
 		return Number.isFinite(fromAttribute) ? fromAttribute : fallback;
 	}
 
-	override connectedCallback(): void {
-		super.connectedCallback();
-		this.attachNavigationListeners();
-	}
-
 	protected override onConnected(): void {
+		this.syncNavigationListener();
 		this.rebuild();
 	}
 
 	override disconnectedCallback(): void {
 		this.detachScrollListener();
-		this.detachNavigationListeners();
 		super.disconnectedCallback();
 	}
 
 	@onUpdated(['target', 'headingSelector', 'scrollOffset', 'navigationEvents'])
 	onScanSettingsUpdated(): void {
-		this.detachNavigationListeners();
-		this.attachNavigationListeners();
+		this.syncNavigationListener();
 		this.rebuild();
 	}
 
@@ -213,22 +220,21 @@ export class RuiToc extends RadiantElement<RuiTocBindings> {
 		return Number.isFinite(level) ? level : 2;
 	}
 
-	private attachNavigationListeners(): void {
-		if (isServer || !this.isConnected) {
+	/**
+	 * @remarks Returns on the server: server rendering runs the `@onUpdated` callbacks that call this, and its
+	 * `document` takes no listeners.
+	 */
+	private syncNavigationListener(): void {
+		if (isServer) {
 			return;
 		}
-
-		this.navigationListener = new EventListenerController({
-			getTarget: () => document,
-			type: parseCommaSeparated(this.readConfiguredProp(this.navigationEvents, 'navigation-events')),
-			listener: () => this.rebuild(),
-		});
+		this.navigationListener.destroy();
+		this.navigationTypes.splice(
+			0,
+			this.navigationTypes.length,
+			...parseCommaSeparated(this.readConfiguredProp(this.navigationEvents, 'navigation-events')),
+		);
 		this.navigationListener.attach();
-	}
-
-	private detachNavigationListeners(): void {
-		this.navigationListener?.destroy();
-		this.navigationListener = null;
 	}
 
 	private attachScrollListener(): void {

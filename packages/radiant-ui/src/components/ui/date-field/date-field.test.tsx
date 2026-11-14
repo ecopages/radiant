@@ -132,3 +132,30 @@ describe('RuiDateField popup focus', () => {
 		expect(focusedIso()).toBe('2026-08-14');
 	});
 });
+
+describe('RuiDateField popup listeners', () => {
+	afterEach(() => {
+		document.body.innerHTML = '';
+	});
+
+	it('wires the popup when its children are added after the element connects', async () => {
+		const source = mount();
+		await settled();
+		const markup = (source.querySelector('rui-date-field') as RuiDateFieldScript).innerHTML;
+		source.remove();
+
+		const field = document.createElement('rui-date-field') as RuiDateFieldScript;
+		field.setAttribute('value', '2026-08-07');
+		field.setAttribute('locale', 'en-US');
+		document.body.append(field);
+		field.innerHTML = markup;
+		await settled();
+
+		(field.querySelector('[data-date-field-trigger]') as HTMLElement).click();
+		await settled();
+		(field.querySelector('[data-calendar-day][data-iso="2026-08-12"]') as HTMLElement).click();
+		await settled();
+
+		expect(field.value).toBe('2026-08-12');
+	});
+});
