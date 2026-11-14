@@ -36,7 +36,7 @@ export type ListboxKeydownConfig = {
  * Shared state and interaction plumbing for listbox-backed popovers.
  *
  * @remarks Select and combobox intentionally keep their selection and filtering
- * policies local. This behavior owns only the state machine both controls must
+ * policies local. This controller owns only the state machine both controls must
  * agree on: active-descendant navigation, popover positioning, and dismissal.
  * `syncPopoverPosition()` does nothing until `attach()`, and nothing after `destroy()`. A host built with
  * `createListboxPopoverController` attaches on every connect, so an element that is moved or reconnected positions

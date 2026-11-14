@@ -67,7 +67,7 @@ DOM utilities in the same entry (not classes, but they touch elements):
 
 ## Helpers
 
-Pure, usable on the server. Each export has TSDoc with an input and output example.
+Pure, usable on the server. Exports whose result is not obvious from the name and signature carry an input and output example in their TSDoc.
 
 | Module (exports)                                                                                                                                                                                                                         | What it does                                                                                                               | Reach for it when                                       |
 | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
@@ -86,7 +86,7 @@ Pure, usable on the server. Each export has TSDoc with an input and output examp
 | Ordering: `reorder`, `resolveSortIndex`, `resolveInsertIndex`, `resolveSortKeyIndex`, `resolveContainerKeyIndex`, `findRectIndex`, `SortableRect`, `SortableAxis`                                                                        | Where a dragged item lands, and key-driven moves, from rects.                                                              | Your own drag logic, or applying a sortable `onChange`. |
 | Decisions: `resolveSwipeDirection`, `DEFAULT_SWIPE_THRESHOLD_PX`, `resolveTrapMove`, `wrapCollectionIndex`, `computeFloatingCoords`, `computeFloatingPosition`, `FloatingViewport`                                                       | Swipe direction from a delta, focus-trap wrap target, wrapped index, floating position from an anchor rect and a viewport. | Custom gestures, focus loops, option lists.             |
 
-Left out of both entries on purpose: `focusable-elements` and `roving-tabindex` read or set DOM state when called, so they are in `controllers`.
+Left out of `helpers` on purpose: `focusable-elements` and `roving-tabindex` read or set DOM state when called, so they are only in `controllers`.
 
 ## Internal
 
@@ -97,4 +97,4 @@ Not exported from either entry; do not import them from `dist` or `src` in consu
 
 ## Adding a primitive
 
-Add the export to `src/controllers.ts` or `src/helpers.ts`, give it TSDoc with a short `@example` (controllers: the `createX` call; helpers: an input and output line), and add a row here. A pure module goes in `helpers`; anything that touches the DOM when called goes in `controllers`.
+Add the export to `src/controllers.ts` or `src/helpers.ts`, give it TSDoc with a short `@example` where the usage or result is not obvious (controllers: the `createX` call; helpers: an input and output line), and add a row here. A pure module goes in `helpers`; anything that touches the DOM when called goes in `controllers`.

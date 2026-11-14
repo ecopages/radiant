@@ -1,12 +1,6 @@
-/**
- * The options of `Intl.NumberFormat`.
- */
 export type NumberFormatOptions = Intl.NumberFormatOptions;
 export { resolveLocale } from '../intl/locale';
 
-/**
- * Creates an `Intl.NumberFormat`.
- */
 export function getNumberFormatter(locale?: string | string[], options?: NumberFormatOptions): Intl.NumberFormat {
 	return new Intl.NumberFormat(locale, options);
 }

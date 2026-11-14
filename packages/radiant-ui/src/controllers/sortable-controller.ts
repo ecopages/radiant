@@ -111,7 +111,9 @@ const DEFAULT_LIFT_KEYS = [' ', 'Enter'];
  *   getContainer: () => list,
  *   getItems: () => [...list.children] as HTMLElement[],
  *   announce: (message) => (status.textContent = message),
- *   onChange: ({ item, to }) => list.insertBefore(item, [...list.children].filter((el) => el !== item)[to] ?? null),
+ *   onChange: ({ item, to }) => {
+ *     list.insertBefore(item, [...list.children].filter((el) => el !== item)[to] ?? null);
+ *   },
  * });
  * ```
  *
@@ -124,8 +126,9 @@ const DEFAULT_LIFT_KEYS = [' ', 'Enter'];
  *     group,
  *     getContainer: () => list,
  *     getItems: () => [...list.children] as HTMLElement[],
- *     onChange: ({ item, to, toContainer }) =>
- *       toContainer.insertBefore(item, [...toContainer.children].filter((el) => el !== item)[to] ?? null),
+ *     onChange: ({ item, to, toContainer }) => {
+ *       toContainer.insertBefore(item, [...toContainer.children].filter((el) => el !== item)[to] ?? null);
+ *     },
  *   });
  * sortable(this.querySelector('#todo')!);
  * sortable(this.querySelector('#done')!);
