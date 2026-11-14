@@ -13,6 +13,7 @@ import {
 	prop,
 	query,
 } from '@ecopages/radiant';
+import { isServer } from '@ecopages/radiant/is-server';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { queryFocusableCandidates } from '@/lib/focusable-elements';
 import { uniqueId } from '@/lib/unique-id';
@@ -142,7 +143,8 @@ export class RuiDialog extends RadiantElement {
 
 	/**
 	 * @remarks
-	 * The focus trap and scroll lock start and stop only when `open` actually changes; a `label` update while
+	 * The focus trap and scroll lock need a document, so server rendering skips them.
+	 * They start and stop only when `open` actually changes; a `label` update while
 	 * open must not restart the trap, which would remember an element inside the dialog as the one to restore.
 	 */
 	@bound
@@ -170,7 +172,7 @@ export class RuiDialog extends RadiantElement {
 			this.dialogTarget.removeAttribute('aria-describedby');
 		}
 
-		if (this.open === this.lastOpen) {
+		if (isServer || this.open === this.lastOpen) {
 			return;
 		}
 		this.lastOpen = this.open;
