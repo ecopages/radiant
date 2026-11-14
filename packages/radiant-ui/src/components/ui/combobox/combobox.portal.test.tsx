@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
+import { userEvent } from 'vitest/browser';
 import { createRoot } from '@ecopages/jsx';
 import { RuiCombobox } from './combobox';
 import { RuiCombobox as RuiComboboxElement } from './combobox.script';
@@ -71,7 +72,7 @@ describe.each([false, true])('RuiCombobox with portal %s', (portal) => {
 
 		trigger.click();
 		await settled();
-		(popup.querySelector('[data-value="it"]') as HTMLElement).click();
+		await userEvent.click(popup.querySelector('[data-value="it"]') as HTMLElement);
 		await settled();
 
 		const listboxHost = popup.querySelector('rui-listbox') as HTMLElement & { value: string[] };
