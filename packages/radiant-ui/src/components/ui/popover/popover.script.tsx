@@ -3,11 +3,8 @@ import { RadiantElement, bound, customElement, event, onEvent, onUpdated, prop, 
 import { isServer } from '@ecopages/radiant/is-server';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { uniqueId } from '@/lib/unique-id';
-import {
-	createPopoverController,
-	shouldDismissPopoverFocus,
-	shouldDismissPopoverPointer,
-} from '../../../controllers/popover-controller';
+import type { DismissReason } from '../../../controllers/dismiss-controller';
+import { createPopoverController } from '../../../controllers/popover-controller';
 import type { RuiPlacement } from '../../../controllers/placement';
 
 export type RuiPopoverOpenChangeDetail = {
@@ -102,6 +99,7 @@ export class RuiPopover extends RadiantElement {
 		getFloating: () => this.surfaceTarget,
 		getOpen: () => this.open,
 		getPlacement: () => this.placement,
+		onDismiss: (reason, event) => this.dismiss(reason, event),
 	});
 	private anchorClickTarget: HTMLElement | null = null;
 
@@ -172,39 +170,12 @@ export class RuiPopover extends RadiantElement {
 		this.syncPopover();
 	}
 
-	@onEvent({ document: true, type: 'pointerdown' })
-	onDocumentPointerDown(event: PointerEvent): void {
-		if (!this.open) {
-			return;
-		}
-		const target = event.target as Node | null;
-		if (
-			!shouldDismissPopoverPointer(
-				this.getAnchorElement(),
-				this.controller.getFloatingElement() ?? this.surfaceTarget,
-				target,
-			)
-		) {
-			return;
-		}
+	private dismiss(reason: DismissReason, event: Event): void {
 		this.setOpen(false);
-	}
-
-	@onEvent({ ref: 'host', type: 'focusout' })
-	onFocusOut(event: FocusEvent): void {
-		if (!this.open) {
-			return;
+		if (reason === 'escape') {
+			event.preventDefault();
+			this.getAnchorElement()?.focus();
 		}
-		if (
-			!shouldDismissPopoverFocus(
-				this.getAnchorElement(),
-				this.controller.getFloatingElement() ?? this.surfaceTarget,
-				event.relatedTarget,
-			)
-		) {
-			return;
-		}
-		this.setOpen(false);
 	}
 
 	private usesExternalAnchor(): boolean {
@@ -243,17 +214,6 @@ export class RuiPopover extends RadiantElement {
 	@bound
 	private onExternalAnchorClick(): void {
 		this.setOpen(!this.open);
-	}
-
-	@onEvent({ document: true, type: 'keydown' })
-	onDocumentKeydown(event: KeyboardEvent): void {
-		if (!this.open || event.key !== 'Escape') {
-			return;
-		}
-		event.preventDefault();
-		this.setOpen(false);
-		const anchor = this.getAnchorElement();
-		anchor?.focus();
 	}
 }
 

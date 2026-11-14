@@ -2,7 +2,7 @@ import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, event, onEvent, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { applyRovingTabindex, navigateRovingTabindex } from '@/lib/roving-tabindex';
-import { PopoverController, shouldDismissPopoverPointer } from '../../../controllers/popover-controller';
+import { PopoverController } from '../../../controllers/popover-controller';
 import { createMenuTreeController } from '../../../controllers/menu-tree-controller';
 
 export type RuiMenubarProps = {
@@ -133,6 +133,8 @@ export class RuiMenubar extends RadiantElement {
 				getPlacement: () => 'bottom-start',
 				gap: 6,
 				portal: false,
+				onDismiss: () => this.closeOpenMenu(),
+				dismissOn: ['pointer'],
 			});
 			this.popoverController.attach();
 		}
@@ -173,15 +175,6 @@ export class RuiMenubar extends RadiantElement {
 		if (focus === 'first') {
 			this.menuTree.getFocusableItems(menu)[0]?.focus();
 		}
-	}
-
-	@onEvent({ document: true, type: 'pointerdown' })
-	onDocumentPointerDown(event: PointerEvent): void {
-		if (!this.openRoot) return;
-		if (!shouldDismissPopoverPointer(this.getOpenMenuAnchor(), this.getOpenMenuSurface(), event.target as Node)) {
-			return;
-		}
-		this.closeOpenMenu();
 	}
 
 	/**

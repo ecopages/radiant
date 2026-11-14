@@ -2,6 +2,7 @@ import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, bindTo, customElement, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import { findFirstFocusableCandidate } from '@/lib/focusable-elements';
 import { uniqueId } from '@/lib/unique-id';
+import { createDismissController } from '../../../controllers/dismiss-controller';
 import { applyFloatingPosition, attachFloating } from '../../../controllers/floating-position';
 import type { RuiPlacement } from '../../../controllers/placement';
 
@@ -82,6 +83,16 @@ export class RuiTooltip extends RadiantElement {
 	 * write is preferable to routing it through the reactive binding system.
 	 */
 	private open = false;
+
+	constructor() {
+		super();
+		createDismissController(this, {
+			getSurface: () => null,
+			getOpen: () => this.open,
+			onDismiss: () => this.setOpen(false),
+			triggers: ['escape'],
+		});
+	}
 
 	private showTimer: ReturnType<typeof setTimeout> | null = null;
 	private hideTimer: ReturnType<typeof setTimeout> | null = null;
@@ -165,12 +176,6 @@ export class RuiTooltip extends RadiantElement {
 	private scheduleHide(): void {
 		this.clearTimers();
 		this.hideTimer = setTimeout(() => this.setOpen(false), 80);
-	}
-
-	@onEvent({ document: true, type: 'keydown' })
-	onDocumentKeydown(event: KeyboardEvent): void {
-		if (!this.open || event.key !== 'Escape') return;
-		this.setOpen(false);
 	}
 
 	@onEvent({ type: 'focusin', ref: 'trigger' })

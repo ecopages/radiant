@@ -145,6 +145,7 @@ export class RuiSelect extends RadiantElement {
 		getOptions: () => this.collection.getOptions(),
 		getActiveDescendantHost: () => this.getActiveDescendantHost(),
 		getOptionIdPrefix: () => `${this.uid}-option`,
+		onDismiss: () => this.setOpen(false),
 	});
 
 	@query({ ref: 'root' }) rootTarget: HTMLElement | null;
@@ -629,26 +630,6 @@ export class RuiSelect extends RadiantElement {
 		}
 
 		this.setOpen(true);
-	}
-
-	@onEvent({ ref: 'root', type: 'focusout' })
-	onFocusOut(event: FocusEvent): void {
-		if (!this.listboxPopover.shouldDismissFocus(event.relatedTarget)) {
-			return;
-		}
-
-		this.setOpen(false);
-	}
-
-	@onEvent({ document: true, type: 'pointerdown' })
-	onDocumentPointerDown(event: PointerEvent): void {
-		if (!this.open) {
-			return;
-		}
-		if (!this.listboxPopover.shouldDismissPointer(event.target as Node)) {
-			return;
-		}
-		this.setOpen(false);
 	}
 }
 

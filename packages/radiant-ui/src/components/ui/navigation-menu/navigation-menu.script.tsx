@@ -3,7 +3,7 @@ import { RadiantElement, customElement, onEvent, prop } from '@ecopages/radiant'
 import { queryRovingTabindexItems } from '@/lib/focusable-elements';
 import { applyRovingTabindex, navigateRovingTabindex } from '@/lib/roving-tabindex';
 import { uniqueId } from '@/lib/unique-id';
-import { PopoverController, shouldDismissPopoverPointer } from '../../../controllers/popover-controller';
+import { PopoverController } from '../../../controllers/popover-controller';
 
 export type RuiNavigationMenuProps = {
 	label?: string;
@@ -308,7 +308,7 @@ export class RuiNavigationMenu extends RadiantElement {
 		if (!(node instanceof Node)) {
 			return false;
 		}
-		return !shouldDismissPopoverPointer(this.getOpenTrigger(), this.getOpenPanel(), node);
+		return this.popoverController?.contains(node) ?? false;
 	}
 
 	private triggerValueFromEvent(event: Event): string | null {

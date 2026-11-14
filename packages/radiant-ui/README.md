@@ -11,7 +11,7 @@ This project is **not a React app**. JSX compiles through `@ecopages/jsx`.
 | Path                                                            | Role                                                                |
 | --------------------------------------------------------------- | ------------------------------------------------------------------- |
 | `src/components/ui`                                             | **`@ecopages/radiant-ui`** component library (APG-oriented widgets) |
-| `src/controllers`                                               | Reusable controllers components compose (popover, floating, portal, observers, listeners, listbox, calendar and menu-tree) |
+| `src/controllers`                                               | Reusable controllers components compose (popover, dismiss, floating, portal, observers, listeners, listbox, calendar and menu-tree) |
 | [`@ecopages/storybook-radiant-vite`](../storybook-radiant-vite) | Storybook framework for Radiant (client + SSR → hydrate)            |
 | `src/components/client`, `src/components/ssr`, `src/stories`    | Framework dogfood demos (not the published UI catalog)              |
 

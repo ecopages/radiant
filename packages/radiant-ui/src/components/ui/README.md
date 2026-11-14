@@ -59,7 +59,8 @@ class RuiPopover extends RadiantElement {
 
 Before writing bespoke logic, check `src/controllers` for a controller that already does it and compose that:
 
-- `PopoverController` (popover, hover-card): portal mount, floating position and teardown.
+- `PopoverController` (popover, hover-card, menu-button, menubar, navigation-menu, select and combobox through the listbox controller): portal mount, floating position, teardown, and, when given `onDismiss`, dismissal through a `DismissController` over the anchor and floating surface. `dismissOn` narrows it to some of `pointer`, `focus` and `escape`.
+- `DismissController` (popover, tooltip, hover-card through `PopoverController`): calls `onDismiss(reason, event)` on a pointer press outside the surface and its related elements, focus leaving them, or Escape anywhere in the document, while `getOpen()` is true. It needs no popover, so a dialog or drawer can use it. `contains(node)` and `isOutside(target)` answer the same question for components that run their own focus or pointer handling (navigation-menu, hover-card). Escape handlers that restore focus in a particular way (date pickers, menubar, navigation-menu, dialog, sidebar) remain in the components.
 - `MutationController`: a `MutationObserver` on the node `getTarget()` returns. Attaching again with another target moves it. Used by tabs, cycle-toggle, table, field and sidebar-trigger.
 - `ResizeController`: a `ResizeObserver` on the elements `getTargets()` returns. Used by the toaster (one per toast) and floating positioning.
 - `EventListenerController`: one or more event types on the target `getTarget()` returns (`document`, `window` or an element), with `once`, `passive` and `capture` options. For listeners added and removed at runtime, such as a drag; use core's `@onEvent({ document: true })` when the listener lives as long as the element. Used by the toaster, sidebar, toc, window-splitter, dialog registry and floating positioning.

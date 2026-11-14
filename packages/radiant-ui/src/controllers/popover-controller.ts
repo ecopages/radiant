@@ -1,36 +1,8 @@
 import { bindController, type Controller, type ControllerHost } from './controller';
+import { DismissController, type DismissReason } from './dismiss-controller';
 import { attachFloating } from './floating-position';
 import type { RuiPlacement } from './placement';
 import { mountPortal, type PortalHandle } from './portal';
-
-/** Whether `node` is inside the anchor or floating surface. */
-export function popoverContains(anchor: HTMLElement | null, floating: HTMLElement | null, node: Node | null): boolean {
-	if (!node) {
-		return false;
-	}
-	return Boolean(anchor?.contains(node) || floating?.contains(node));
-}
-
-/** Whether focus left the popover interaction tree. */
-export function shouldDismissPopoverFocus(
-	anchor: HTMLElement | null,
-	floating: HTMLElement | null,
-	relatedTarget: EventTarget | null,
-): boolean {
-	if (!(relatedTarget instanceof Node)) {
-		return true;
-	}
-	return !popoverContains(anchor, floating, relatedTarget);
-}
-
-/** Whether a pointer event target is outside the popover interaction tree. */
-export function shouldDismissPopoverPointer(
-	anchor: HTMLElement | null,
-	floating: HTMLElement | null,
-	target: Node | null,
-): boolean {
-	return !popoverContains(anchor, floating, target);
-}
 
 export type PopoverControllerConfig = {
 	getAnchor: () => HTMLElement | null;
@@ -41,15 +13,23 @@ export type PopoverControllerConfig = {
 	portal?: boolean;
 	matchAnchorWidth?: boolean;
 	portalContainer?: ParentNode;
+	/**
+	 * Called when the user dismisses the open popover. Dismissal listens only when this is set, and only while
+	 * `getOpen()` is true.
+	 */
+	onDismiss?: (reason: DismissReason, event: Event) => void;
+	/** Which dismissals `onDismiss` hears about. Defaults to all of them. Read once, when the controller is created. */
+	dismissOn?: readonly DismissReason[];
 };
 
 /**
- * Headless popover lifecycle: portal mount, floating position, and teardown.
+ * Headless popover lifecycle: portal mount, floating position, dismissal, and teardown.
  *
  * @remarks
  * `sync()` does nothing until `attach()`, and nothing after `destroy()`, so an element that is not connected never
  * mounts a portal or registers floating listeners. `destroy()` removes the floating listeners and observer, returns
- * a portaled surface to its place and forgets the floating element.
+ * a portaled surface to its place and forgets the floating element. Dismissal is delegated to a
+ * `DismissController` over the anchor and the floating surface, attached with the popover.
  */
 export class PopoverController implements Controller {
 	private attached = false;
@@ -58,9 +38,17 @@ export class PopoverController implements Controller {
 	private portalHandle: PortalHandle | null = null;
 	private floatingElement: HTMLElement | null = null;
 	private exitToken: object | null = null;
+	private readonly dismissal: DismissController;
 
 	constructor(config: PopoverControllerConfig) {
 		this.config = config;
+		this.dismissal = new DismissController({
+			getSurface: () => this.resolveFloating(),
+			getRelated: () => [this.config.getAnchor()],
+			getOpen: () => this.config.getOpen(),
+			onDismiss: (reason, event) => this.config.onDismiss?.(reason, event),
+			triggers: config.dismissOn,
+		});
 	}
 
 	updateConfig(patch: Partial<PopoverControllerConfig>): void {
@@ -69,6 +57,9 @@ export class PopoverController implements Controller {
 
 	attach(): void {
 		this.attached = true;
+		if (this.config.onDismiss) {
+			this.dismissal.attach();
+		}
 	}
 
 	sync(): void {
@@ -118,7 +109,12 @@ export class PopoverController implements Controller {
 	}
 
 	contains(node: Node | null): boolean {
-		return popoverContains(this.config.getAnchor(), this.resolveFloating(), node);
+		return this.dismissal.contains(node);
+	}
+
+	/** Whether `target` is not a node, or is outside the anchor and floating surface. */
+	isOutside(target: EventTarget | null): boolean {
+		return this.dismissal.isOutside(target);
 	}
 
 	getFloatingElement(): HTMLElement | null {
@@ -136,6 +132,7 @@ export class PopoverController implements Controller {
 
 	destroy(): void {
 		this.attached = false;
+		this.dismissal.destroy();
 		this.teardown();
 		this.floatingElement = null;
 	}

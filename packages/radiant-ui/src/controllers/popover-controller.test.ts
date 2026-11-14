@@ -2,84 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
 	PopoverController,
 	createPopoverController,
-	popoverContains,
-	shouldDismissPopoverFocus,
-	shouldDismissPopoverPointer,
 } from './popover-controller';
-
-describe('popover-controller helpers', () => {
-	it('popoverContains returns true for anchor and floating descendants', () => {
-		const anchor = document.createElement('button');
-		const floating = document.createElement('div');
-		const child = document.createElement('span');
-		floating.append(child);
-		document.body.append(anchor, floating);
-
-		expect(popoverContains(anchor, floating, anchor)).toBe(true);
-		expect(popoverContains(anchor, floating, child)).toBe(true);
-		expect(popoverContains(anchor, floating, document.body)).toBe(false);
-
-		anchor.remove();
-		floating.remove();
-	});
-
-	it('shouldDismissPopoverFocus ignores focus moves inside the tree', () => {
-		const anchor = document.createElement('button');
-		const floating = document.createElement('div');
-		const item = document.createElement('button');
-		floating.append(item);
-		document.body.append(anchor, floating);
-
-		expect(shouldDismissPopoverFocus(anchor, floating, item)).toBe(false);
-		expect(shouldDismissPopoverFocus(anchor, floating, document.body)).toBe(true);
-
-		anchor.remove();
-		floating.remove();
-	});
-
-	it('shouldDismissPopoverPointer ignores clicks inside the tree', () => {
-		const anchor = document.createElement('button');
-		const floating = document.createElement('div');
-		document.body.append(anchor, floating);
-
-		expect(shouldDismissPopoverPointer(anchor, floating, anchor)).toBe(false);
-		expect(shouldDismissPopoverPointer(anchor, floating, floating)).toBe(false);
-		expect(shouldDismissPopoverPointer(anchor, floating, document.body)).toBe(true);
-
-		anchor.remove();
-		floating.remove();
-	});
-
-	it('retains a portaled surface until teardown', () => {
-		const anchor = document.createElement('button');
-		const floating = document.createElement('div');
-		let open = true;
-		let configuredFloating: HTMLElement | null = floating;
-		const controller = new PopoverController({
-			getAnchor: () => anchor,
-			getFloating: () => configuredFloating,
-			getOpen: () => open,
-			getPlacement: () => 'bottom',
-			portal: true,
-		});
-		document.body.append(anchor, floating);
-
-		controller.attach();
-		controller.sync();
-		configuredFloating = null;
-		expect(controller.getFloatingElement()).toBe(floating);
-
-		open = false;
-		controller.sync();
-		expect(floating.hidden).toBe(true);
-		expect(floating.parentNode).toBe(document.body);
-		controller.destroy();
-		expect(floating.parentNode).toBe(document.body);
-
-		anchor.remove();
-		floating.remove();
-	});
-});
 
 describe('PopoverController attached to a plain element', () => {
 	const observers: { observed: Element[]; disconnected: boolean }[] = [];
@@ -208,5 +131,75 @@ describe('PopoverController attached to a plain element', () => {
 
 		anchor.remove();
 		floating.remove();
+	});
+});
+
+describe('PopoverController dismissal', () => {
+	afterEach(() => {
+		document.body.replaceChildren();
+	});
+
+	function mount(options: { dismissOn?: ('pointer' | 'focus' | 'escape')[]; open?: () => boolean } = {}) {
+		const anchor = document.createElement('button');
+		const floating = document.createElement('div');
+		const outside = document.createElement('button');
+		document.body.append(anchor, floating, outside);
+		const onDismiss = vi.fn();
+		const controller = new PopoverController({
+			getAnchor: () => anchor,
+			getFloating: () => floating,
+			getOpen: options.open ?? (() => false),
+			getPlacement: () => 'bottom',
+			portal: false,
+			onDismiss,
+			dismissOn: options.dismissOn,
+		});
+		return { anchor, floating, outside, onDismiss, controller };
+	}
+
+	it('reports dismissals from attach until destroy, with the anchor and floating surface as the inside', () => {
+		const { anchor, floating, outside, onDismiss, controller } = mount({ open: () => true });
+
+		outside.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+		expect(onDismiss).not.toHaveBeenCalled();
+
+		controller.attach();
+		anchor.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+		floating.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+		expect(onDismiss).not.toHaveBeenCalled();
+
+		outside.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+		outside.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+		anchor.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: outside }));
+		expect(onDismiss.mock.calls.map(([reason]) => reason)).toEqual(['pointer', 'escape', 'focus']);
+
+		controller.destroy();
+		outside.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+		expect(onDismiss).toHaveBeenCalledTimes(3);
+	});
+
+	it('reports nothing while closed and only the triggers named in dismissOn', () => {
+		const closed = mount();
+		closed.controller.attach();
+		closed.outside.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+		expect(closed.onDismiss).not.toHaveBeenCalled();
+		closed.controller.destroy();
+
+		const pointerOnly = mount({ open: () => true, dismissOn: ['pointer'] });
+		pointerOnly.controller.attach();
+		pointerOnly.outside.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+		expect(pointerOnly.onDismiss).not.toHaveBeenCalled();
+		pointerOnly.controller.destroy();
+	});
+
+	it('contains and isOutside answer for the anchor and floating surface', () => {
+		const { anchor, floating, outside, controller } = mount();
+
+		expect(controller.contains(anchor)).toBe(true);
+		expect(controller.contains(floating)).toBe(true);
+		expect(controller.contains(outside)).toBe(false);
+		expect(controller.isOutside(outside)).toBe(true);
+		expect(controller.isOutside(null)).toBe(true);
+		expect(controller.isOutside(anchor)).toBe(false);
 	});
 });

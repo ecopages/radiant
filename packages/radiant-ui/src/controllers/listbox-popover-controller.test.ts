@@ -91,19 +91,38 @@ describe('ListboxPopoverController', () => {
 		expect(onSelectActive).toHaveBeenCalled();
 	});
 
-	it('dismisses focus and pointer interactions outside the popover tree', () => {
-		const { anchor, floating, behavior } = createBehavior();
+	it('reports focus and pointer interactions outside the popover tree while open', () => {
+		const onDismiss = vi.fn();
+		const anchor = document.createElement('button');
+		const floating = document.createElement('div');
 		const inside = document.createElement('button');
+		const outside = document.createElement('button');
 		floating.append(inside);
-		document.body.append(anchor, floating);
+		document.body.append(anchor, floating, outside);
+		const controller = new ListboxPopoverController({
+			getAnchor: () => anchor,
+			getFloating: () => floating,
+			getOpen: () => true,
+			getOptions: () => [],
+			getActiveDescendantHost: () => anchor,
+			getOptionIdPrefix: () => 'rui-test-option',
+			onDismiss,
+		});
+		controller.attach();
 
-		expect(behavior.shouldDismissFocus(inside)).toBe(false);
-		expect(behavior.shouldDismissPointer(inside)).toBe(false);
-		expect(behavior.shouldDismissFocus(document.body)).toBe(true);
-		expect(behavior.shouldDismissPointer(document.body)).toBe(true);
+		inside.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+		anchor.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: inside }));
+		expect(onDismiss).not.toHaveBeenCalled();
 
+		outside.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+		anchor.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: null }));
+		outside.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+		expect(onDismiss).toHaveBeenCalledTimes(2);
+
+		controller.destroy();
 		anchor.remove();
 		floating.remove();
+		outside.remove();
 	});
 });
 

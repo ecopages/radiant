@@ -1,5 +1,6 @@
 import { bindController, type Controller, type ControllerHost } from './controller';
-import { PopoverController, shouldDismissPopoverFocus, shouldDismissPopoverPointer } from './popover-controller';
+import type { DismissReason } from './dismiss-controller';
+import { PopoverController } from './popover-controller';
 import {
 	clearCollectionActive,
 	getVisibleCollectionOptions,
@@ -16,6 +17,8 @@ export type ListboxPopoverControllerConfig = {
 	getOptions: () => HTMLElement[];
 	getActiveDescendantHost: () => HTMLElement | null;
 	getOptionIdPrefix: () => string;
+	/** Called on a pointer press outside the anchor and popup, or focus leaving them. Escape stays with the owner's key handling. */
+	onDismiss?: (reason: DismissReason, event: Event) => void;
 };
 
 export type ListboxKeydownConfig = {
@@ -54,6 +57,8 @@ export class ListboxPopoverController implements Controller {
 			gap: 4,
 			portal: false,
 			matchAnchorWidth: true,
+			onDismiss: (reason, event) => config.onDismiss?.(reason, event),
+			dismissOn: ['pointer', 'focus'],
 		});
 	}
 
@@ -193,22 +198,6 @@ export class ListboxPopoverController implements Controller {
 
 	syncPopoverPosition(): void {
 		this.popoverController.sync();
-	}
-
-	shouldDismissFocus(relatedTarget: EventTarget | null): boolean {
-		return shouldDismissPopoverFocus(
-			this.config.getAnchor(),
-			this.popoverController.getFloatingElement(),
-			relatedTarget,
-		);
-	}
-
-	shouldDismissPointer(target: Node | null): boolean {
-		return shouldDismissPopoverPointer(
-			this.config.getAnchor(),
-			this.popoverController.getFloatingElement(),
-			target,
-		);
 	}
 
 	destroy(): void {

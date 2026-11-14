@@ -14,7 +14,7 @@ import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { findFirstFocusableCandidate } from '@/lib/focusable-elements';
 import { uniqueId } from '@/lib/unique-id';
 import { notePreviewClosed, notePreviewOpened, resolvePreviewOpenDelay } from '../shared/preview-timing';
-import { createPopoverController, shouldDismissPopoverFocus } from '../../../controllers/popover-controller';
+import { createPopoverController } from '../../../controllers/popover-controller';
 import type { RuiPlacement } from '../../../controllers/placement';
 
 export type RuiHoverCardOpenChangeDetail = {
@@ -126,6 +126,8 @@ export class RuiHoverCard extends RadiantElement {
 		getFloating: () => this.contentTarget,
 		getOpen: () => this.open,
 		getPlacement: () => this.placement,
+		onDismiss: (_reason, event) => this.dismissWithEscape(event),
+		dismissOn: ['escape'],
 	});
 	private showTimer: ReturnType<typeof setTimeout> | null = null;
 	private hideTimer: ReturnType<typeof setTimeout> | null = null;
@@ -272,11 +274,7 @@ export class RuiHoverCard extends RadiantElement {
 		return event.pointerType === 'touch';
 	}
 
-	@onEvent({ document: true, type: 'keydown' })
-	onDocumentKeydown(event: KeyboardEvent): void {
-		if (!this.open || event.key !== 'Escape') {
-			return;
-		}
+	private dismissWithEscape(event: Event): void {
 		event.preventDefault();
 		const anchor = this.getAnchor();
 		this.dismissed = true;
@@ -291,7 +289,7 @@ export class RuiHoverCard extends RadiantElement {
 		if (this.dismissed) {
 			return;
 		}
-		if (!shouldDismissPopoverFocus(this.getAnchor(), this.getFloatingElement(), event.relatedTarget)) {
+		if (!this.controller.isOutside(event.relatedTarget)) {
 			return;
 		}
 		this.scheduleShow(true);
@@ -300,7 +298,7 @@ export class RuiHoverCard extends RadiantElement {
 	@onEvent({ type: 'focusout', ref: 'trigger' })
 	onFocusOut(event: FocusEvent): void {
 		this.dismissed = false;
-		if (!shouldDismissPopoverFocus(this.getAnchor(), this.getFloatingElement(), event.relatedTarget)) {
+		if (!this.controller.isOutside(event.relatedTarget)) {
 			return;
 		}
 		this.scheduleHide();

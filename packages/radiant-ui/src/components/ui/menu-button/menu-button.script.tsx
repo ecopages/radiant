@@ -11,7 +11,7 @@ import {
 	query,
 } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
-import { PopoverController, shouldDismissPopoverPointer } from '../../../controllers/popover-controller';
+import { PopoverController } from '../../../controllers/popover-controller';
 import { createMenuTreeController } from '../../../controllers/menu-tree-controller';
 import type { RuiPlacement } from '../../../controllers/placement';
 import { uniqueId } from '@/lib/unique-id';
@@ -135,6 +135,8 @@ export class RuiMenuButton extends RadiantElement {
 				getPlacement: () => this.placement,
 				gap: MENU_GAP,
 				portal: false,
+				onDismiss: () => this.setOpen(false),
+				dismissOn: ['pointer'],
 			});
 			this.popoverController.attach();
 		}
@@ -188,14 +190,6 @@ export class RuiMenuButton extends RadiantElement {
 		this.open = next;
 		if (wasOpen && !next) this.closeEvent.emit();
 		if (wasOpen === next) this.syncOpenState();
-	}
-
-	@onEvent({ document: true, type: 'pointerdown' })
-	onDocumentPointerDown(event: PointerEvent): void {
-		if (!this.open) return;
-		const target = event.target as Node | null;
-		if (!shouldDismissPopoverPointer(this.triggerTarget, this.menuTarget, target)) return;
-		this.setOpen(false);
 	}
 
 	@onEvent({ ref: 'trigger', type: 'click' })

@@ -1,6 +1,6 @@
 import { listenMobileLayoutViewport } from '@/lib/viewport/mobile-layout';
 import { bindController, type Controller, type ControllerHost } from './controller';
-import { PopoverController, shouldDismissPopoverFocus } from './popover-controller';
+import { PopoverController } from './popover-controller';
 
 export type CalendarPopoverControllerConfig = {
 	getHost: () => HTMLElement;
@@ -115,7 +115,7 @@ export class CalendarPopoverController implements Controller {
 			}
 
 			const next = relatedTarget instanceof Node ? relatedTarget : document.activeElement;
-			if (!shouldDismissPopoverFocus(this.config.getHost(), popover, next)) {
+			if (next instanceof Node && (this.config.getHost().contains(next) || popover.contains(next))) {
 				return;
 			}
 
