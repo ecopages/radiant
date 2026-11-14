@@ -77,6 +77,9 @@ export type RuiDateRangePickerChangeDetail = {
  *
  * Do not set `aria-expanded` on the trigger — the host owns it.
  *
+ * With `portal` the popup leaves the host while it is open, so Tab order follows its place in the document, not the host:
+ * Shift+Tab from the first calendar control does not return to the toggle.
+ *
  * @see https://react-aria.adobe.com/DateRangePicker
  * @element rui-date-range-picker
  * @attr {string} value - Canonical `YYYY-MM-DD/YYYY-MM-DD` range. Default: `''`.

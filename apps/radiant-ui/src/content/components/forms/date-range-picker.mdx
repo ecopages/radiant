@@ -105,7 +105,7 @@ Use the calendar button to select the start and end dates. After the first date 
 
 By default the calendar popup renders next to the field, so an `overflow: hidden` ancestor can clip it. Set `portal` to render it in `document.body` while it is open, and `portal-container` (a CSS selector, resolved each time the popup opens) to render it in another element. The `portalContainer` property also takes an element or a function that returns one, and can change between opens.
 
-The popup returns to its place when it closes. Picking a day, Escape and focus leaving close it as without `portal`, and Escape from inside the popup returns focus to the toggle.
+The popup returns to its place when it closes. Picking a day, Escape and focus leaving close it as without `portal`, and Escape from inside the popup returns focus to the toggle. Tab order follows the popup's position in the document while it is open, so Shift+Tab from the first calendar control does not return to the toggle and Tab from the last one leaves the page; a portaled popup is best reached with the arrow keys.
 
 
 ## Theming

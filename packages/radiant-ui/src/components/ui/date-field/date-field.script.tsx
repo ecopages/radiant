@@ -89,6 +89,8 @@ export type RuiDateFieldChangeDetail = { value: string };
  *
  * @remarks
  * BEM classes live on the view helpers; the host never queries them.
+ * With `portal` the popup leaves the host while it is open, so Tab order follows its place in the document, not the host:
+ * Shift+Tab from the first calendar control does not return to the toggle.
  */
 @customElement('rui-date-field')
 export class RuiDateField extends RadiantElement {
