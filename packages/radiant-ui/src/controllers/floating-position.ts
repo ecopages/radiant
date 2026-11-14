@@ -136,8 +136,8 @@ export function computeFloatingCoords(
 	placement: RuiPlacement,
 	gap: number,
 	viewport: FloatingViewport = {
-		width: typeof window === 'undefined' ? 0 : window.innerWidth,
-		height: typeof window === 'undefined' ? 0 : window.innerHeight,
+		width: window.innerWidth,
+		height: window.innerHeight,
 		padding: DEFAULT_VIEWPORT_PADDING,
 	},
 ): FloatingCoords {
@@ -153,8 +153,8 @@ export function computeFloatingPosition(
 	placement: RuiPlacement,
 	gap: number,
 	viewport: FloatingViewport = {
-		width: typeof window === 'undefined' ? 0 : window.innerWidth,
-		height: typeof window === 'undefined' ? 0 : window.innerHeight,
+		width: window.innerWidth,
+		height: window.innerHeight,
 		padding: DEFAULT_VIEWPORT_PADDING,
 	},
 ): FloatingPositionResult {

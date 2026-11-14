@@ -80,7 +80,7 @@ export class PointerDragController implements Controller {
 	private readonly drag: readonly Controller[];
 
 	constructor(private readonly config: PointerDragControllerConfig) {
-		const getDocument = () => (typeof document === 'undefined' ? null : document);
+		const getDocument = () => document;
 		this.press = new EventListenerController({
 			getTarget: config.getTarget,
 			type: 'pointerdown',
@@ -112,7 +112,7 @@ export class PointerDragController implements Controller {
 	destroy(): void {
 		this.press.destroy();
 		if (this.session) {
-			this.finish('destroy', this.session.last);
+			this.finish(this.session, 'destroy', this.session.last);
 		}
 	}
 
@@ -151,14 +151,10 @@ export class PointerDragController implements Controller {
 		if (!this.session || event.pointerId !== this.session.pointerId) {
 			return;
 		}
-		this.finish(reason, event);
+		this.finish(this.session, reason, event);
 	}
 
-	private finish(reason: PointerDragEndReason, event: PointerEvent): void {
-		const session = this.session;
-		if (!session) {
-			return;
-		}
+	private finish(session: DragSession, reason: PointerDragEndReason, event: PointerEvent): void {
 		const info = this.info(session, event);
 		this.session = null;
 		for (const listener of this.drag) {

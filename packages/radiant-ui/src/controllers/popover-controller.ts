@@ -151,13 +151,13 @@ export class PopoverController implements Controller {
 	 * Keeps the portaled surface in `document.body` until its exit transition ends.
 	 *
 	 * @remarks Moving a node back to its placeholder detaches it, which drops the running transition and skips the
-	 * exit. Without animations (reduced motion, classic themes, non-browser DOMs) the unmount stays synchronous.
+	 * exit. Without animations (reduced motion, classic themes) the unmount stays synchronous.
 	 */
 	private releasePortalAfterExit(floating: HTMLElement): void {
 		if (!this.portalHandle) {
 			return;
 		}
-		const animations = typeof floating.getAnimations === 'function' ? floating.getAnimations() : [];
+		const animations = floating.getAnimations();
 		if (animations.length === 0) {
 			this.teardown();
 			return;

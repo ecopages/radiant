@@ -11,7 +11,7 @@ export type MutationControllerConfig = {
  * Observes a node for DOM mutations from `attach()` until `destroy()`.
  *
  * @remarks
- * Attaches to nothing when `MutationObserver` is missing or `getTarget()` returns `null`. Attaching again with the
+ * Attaches to nothing when `getTarget()` returns `null`. Attaching again with the
  * same target keeps the running observer; with a different target it moves the observer there.
  */
 export class MutationController implements Controller {
@@ -21,7 +21,7 @@ export class MutationController implements Controller {
 	constructor(private readonly config: MutationControllerConfig) {}
 
 	attach(): void {
-		const target = typeof MutationObserver === 'function' ? this.config.getTarget() : null;
+		const target = this.config.getTarget();
 		if (target === this.observed) {
 			return;
 		}

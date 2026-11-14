@@ -44,7 +44,7 @@ export class DismissController implements Controller {
 
 	constructor(private readonly config: DismissControllerConfig) {
 		const triggers = config.triggers ?? ALL_TRIGGERS;
-		const getTarget = () => (typeof document === 'undefined' ? null : document);
+		const getTarget = () => document;
 		if (triggers.includes('pointer')) {
 			this.listeners.push(
 				new EventListenerController({

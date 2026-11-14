@@ -16,7 +16,7 @@ type EventMapOf<T> = T extends Window
 export type EventOf<T, K extends string> = K extends keyof EventMapOf<T> ? EventMapOf<T>[K] : Event;
 
 export type EventListenerControllerConfig<T extends EventTarget = EventTarget, K extends string = string> = {
-	/** Resolved on every `attach()`; `null` attaches nothing, so a server render never reaches `document`. */
+	/** Resolved on every `attach()`; `null` attaches nothing, such as a node the view has not stamped yet. */
 	getTarget: () => T | null;
 	type: K | readonly K[];
 	listener(event: EventOf<T, K>): void;

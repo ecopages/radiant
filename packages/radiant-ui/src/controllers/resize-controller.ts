@@ -10,7 +10,7 @@ export type ResizeControllerConfig = {
 /**
  * Observes the size of elements from `attach()` until `destroy()`.
  *
- * @remarks Attaches to nothing when `ResizeObserver` is missing. Attaching again while attached changes nothing.
+ * @remarks Attaching again while attached changes nothing.
  */
 export class ResizeController implements Controller {
 	private observer: ResizeObserver | null = null;
@@ -18,7 +18,7 @@ export class ResizeController implements Controller {
 	constructor(private readonly config: ResizeControllerConfig) {}
 
 	attach(): void {
-		if (this.observer || typeof ResizeObserver !== 'function') {
+		if (this.observer) {
 			return;
 		}
 		const observer = new ResizeObserver((entries) => this.config.onResize(entries));
