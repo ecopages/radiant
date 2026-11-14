@@ -219,4 +219,92 @@ describe('FocusTrapController', () => {
 		trap.destroy();
 		expect(document.activeElement).toBe(outside);
 	});
+
+	it('leaves Tab to the browser while getEnabled is false, and traps again when it returns true', async () => {
+		const { surface, first, last, after } = setup();
+		let enabled = false;
+		const trap = new FocusTrapController({ getSurface: () => surface, getEnabled: () => enabled });
+		trap.attach();
+		await flush();
+
+		last.focus();
+		await userEvent.tab();
+		expect(document.activeElement).toBe(after);
+
+		enabled = true;
+		last.focus();
+		await userEvent.tab();
+		expect(document.activeElement).toBe(first);
+	});
+
+	it('still takes initial focus and restores focus on destroy while getEnabled is false', async () => {
+		const { outside, surface, first } = setup();
+		outside.focus();
+		const trap = new FocusTrapController({ getSurface: () => surface, getEnabled: () => false });
+
+		trap.attach();
+		await flush();
+		expect(document.activeElement).toBe(first);
+
+		trap.destroy();
+		expect(document.activeElement).toBe(outside);
+	});
+
+	it('returns focus to getReturnFocus on destroy instead of the attach-time element', async () => {
+		const { outside, surface, after } = setup();
+		outside.focus();
+		const trap = new FocusTrapController({ getSurface: () => surface, getReturnFocus: () => after });
+		trap.attach();
+		await flush();
+
+		trap.destroy();
+
+		expect(document.activeElement).toBe(after);
+	});
+
+	it('falls back to the attach-time element when getReturnFocus gives null or a removed element', async () => {
+		const { outside, surface, after } = setup();
+		let target: HTMLElement | null = null;
+		const trap = new FocusTrapController({ getSurface: () => surface, getReturnFocus: () => target });
+
+		outside.focus();
+		trap.attach();
+		await flush();
+		trap.destroy();
+		expect(document.activeElement).toBe(outside);
+
+		after.remove();
+		target = after;
+		trap.attach();
+		await flush();
+		trap.destroy();
+		expect(document.activeElement).toBe(outside);
+	});
+
+	it('moves focus to the first or last focusable with focusFirst and focusLast', async () => {
+		const { surface, first, middle, last } = setup();
+		const trap = new FocusTrapController({ getSurface: () => surface, getFocusable: () => [middle, last] });
+		trap.attach();
+		await flush();
+
+		trap.focusLast();
+		expect(document.activeElement).toBe(last);
+
+		first.focus();
+		trap.focusFirst();
+		expect(document.activeElement).toBe(middle);
+	});
+
+	it('focuses the surface from focusFirst and focusLast when nothing inside can take focus', async () => {
+		const { outside, surface, first, middle, last } = setup();
+		[first, middle, last].forEach((button) => button.setAttribute('disabled', ''));
+		const trap = new FocusTrapController({ getSurface: () => surface });
+		trap.attach();
+		await flush();
+
+		outside.focus();
+		trap.focusLast();
+
+		expect(document.activeElement).toBe(surface);
+	});
 });

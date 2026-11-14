@@ -34,7 +34,7 @@ export {
 	type FloatingViewport,
 } from './controllers/floating-geometry';
 export type { RuiPlacement } from './controllers/placement';
-export { resolveTrapMove, type TrapMove } from './controllers/focus-trap-order';
+export { pickReturnTarget, resolveTrapEdge, resolveTrapMove, type TrapMove } from './controllers/focus-trap-order';
 export {
 	findRectIndex,
 	reorder,
