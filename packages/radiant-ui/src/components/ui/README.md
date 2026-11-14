@@ -57,7 +57,14 @@ class RuiPopover extends RadiantElement {
 }
 ```
 
-Before writing bespoke logic, check `src/controllers` for a controller that already does it and compose that. `PopoverController` is the first adopter (popover, hover-card); `MenuTreeController` and the listbox and calendar popover behaviors still create theirs by hand, calling `attach()` themselves.
+Before writing bespoke logic, check `src/controllers` for a controller that already does it and compose that:
+
+- `PopoverController` (popover, hover-card): portal mount, floating position and teardown.
+- `MutationController`: a `MutationObserver` on the node `getTarget()` returns. Attaching again with another target moves it. Used by tabs, cycle-toggle, table, field and sidebar-trigger.
+
+When a component only needs the behavior for its connected lifetime and has no use for the controller afterwards, call the factory in the constructor (`createMutationController(this, {...})`) instead of keeping a field. A component that starts and stops a controller itself (field, sidebar-trigger) constructs the class directly and calls `attach()` and `destroy()`.
+
+`MenuTreeController` and the listbox and calendar popover behaviors still create theirs by hand, calling `attach()` themselves.
 
 ## Multi-value `value`
 
