@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { reorder, resolveSortIndex, resolveSortKeyIndex, type SortableRect } from './sortable-order';
+import {
+	findRectIndex,
+	reorder,
+	resolveContainerKeyIndex,
+	resolveInsertIndex,
+	resolveSortIndex,
+	resolveSortKeyIndex,
+	type SortableRect,
+} from './sortable-order';
 
 const column = (count: number): SortableRect[] =>
 	Array.from({ length: count }, (_, index) => ({ left: 0, top: index * 20, width: 100, height: 20 }));
@@ -29,6 +37,17 @@ describe('resolveSortIndex', () => {
 
 		expect(resolveSortIndex(row, 0, { x: 260, y: 500 }, 'horizontal')).toBe(2);
 		expect(resolveSortIndex(row, 2, { x: 40, y: 0 }, 'horizontal')).toBe(0);
+	});
+
+	it('ignores the dragged rect on both axes, so a translated item does not pin itself', () => {
+		const grid: SortableRect[] = [
+			{ left: 70, top: 80, width: 50, height: 50 },
+			{ left: 50, top: 0, width: 50, height: 50 },
+			{ left: 0, top: 50, width: 50, height: 50 },
+		];
+
+		expect(resolveSortIndex(grid, 0, { x: 90, y: 100 }, 'both')).toBe(2);
+		expect(resolveSortIndex(grid, 2, { x: 70, y: 20 }, 'both')).toBe(1);
 	});
 
 	it('takes the index of the nearest item on both axes', () => {
@@ -78,5 +97,40 @@ describe('reorder', () => {
 		expect(reorder(input, 0, 2)).toEqual(['b', 'c', 'a', 'd']);
 		expect(reorder(input, 3, 1)).toEqual(['a', 'd', 'b', 'c']);
 		expect(input).toEqual(['a', 'b', 'c', 'd']);
+	});
+});
+
+describe('resolveInsertIndex', () => {
+	it('counts the midpoints passed, from 0 to the number of items', () => {
+		expect(resolveInsertIndex(column(3), { x: 0, y: 5 })).toBe(0);
+		expect(resolveInsertIndex(column(3), { x: 0, y: 35 })).toBe(2);
+		expect(resolveInsertIndex(column(3), { x: 0, y: 500 })).toBe(3);
+	});
+
+	it('is 0 for an empty list on every axis', () => {
+		expect(resolveInsertIndex([], { x: 5, y: 5 })).toBe(0);
+		expect(resolveInsertIndex([], { x: 5, y: 5 }, 'both')).toBe(0);
+	});
+});
+
+describe('findRectIndex', () => {
+	it('returns the index of the rect that holds the point, or -1', () => {
+		const rects: SortableRect[] = [
+			{ left: 0, top: 0, width: 100, height: 100 },
+			{ left: 200, top: 0, width: 100, height: 100 },
+		];
+
+		expect(findRectIndex(rects, { x: 250, y: 50 })).toBe(1);
+		expect(findRectIndex(rects, { x: 150, y: 50 })).toBe(-1);
+	});
+});
+
+describe('resolveContainerKeyIndex', () => {
+	it('moves to the next or previous container and clamps', () => {
+		expect(resolveContainerKeyIndex('PageDown', 0, 3)).toBe(1);
+		expect(resolveContainerKeyIndex('PageDown', 2, 3)).toBe(2);
+		expect(resolveContainerKeyIndex('PageUp', 1, 3)).toBe(0);
+		expect(resolveContainerKeyIndex('PageUp', 0, 3)).toBe(0);
+		expect(resolveContainerKeyIndex('ArrowDown', 0, 3)).toBeNull();
 	});
 });

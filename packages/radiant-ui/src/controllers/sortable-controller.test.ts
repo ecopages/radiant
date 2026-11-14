@@ -80,7 +80,14 @@ describe('SortableController on a plain list', () => {
 			pointer(document, 'pointerup', 55);
 
 			expect(onChange).toHaveBeenCalledTimes(1);
-			expect(onChange).toHaveBeenCalledWith({ item: first, from: 0, to: 2, source: 'pointer' });
+			expect(onChange).toHaveBeenCalledWith({
+				item: first,
+				from: 0,
+				to: 2,
+				source: 'pointer',
+				fromContainer: list,
+				toContainer: list,
+			});
 			expect(first.hasAttribute(SORTABLE_STATE_ATTRIBUTE)).toBe(false);
 			expect(third.hasAttribute(SORTABLE_DROP_ATTRIBUTE)).toBe(false);
 			expect(list.hasAttribute(SORTABLE_ACTIVE_ATTRIBUTE)).toBe(false);
@@ -89,7 +96,7 @@ describe('SortableController on a plain list', () => {
 		});
 
 		it('marks the target before itself when moving up', () => {
-			const { items, onChange, controller } = mount();
+			const { list, items, onChange, controller } = mount();
 			controller.attach();
 			const [, second, , fourth] = items();
 
@@ -98,7 +105,14 @@ describe('SortableController on a plain list', () => {
 
 			expect(second.getAttribute(SORTABLE_DROP_ATTRIBUTE)).toBe('before');
 			pointer(document, 'pointerup', 25);
-			expect(onChange).toHaveBeenCalledWith({ item: fourth, from: 3, to: 1, source: 'pointer' });
+			expect(onChange).toHaveBeenCalledWith({
+				item: fourth,
+				from: 3,
+				to: 1,
+				source: 'pointer',
+				fromContainer: list,
+				toContainer: list,
+			});
 		});
 
 		it('treats a press that stays under the threshold as a click, not a sort', () => {
@@ -201,7 +215,7 @@ describe('SortableController on a plain list', () => {
 
 	describe('keyboard', () => {
 		it('lifts with Space, moves with arrows, drops with Space and reports the change', () => {
-			const { items, onChange, controller } = mount();
+			const { list, items, onChange, controller } = mount();
 			controller.attach();
 			const [first, , third] = items();
 
@@ -216,7 +230,14 @@ describe('SortableController on a plain list', () => {
 
 			press(first, ' ');
 
-			expect(onChange).toHaveBeenCalledWith({ item: first, from: 0, to: 2, source: 'keyboard' });
+			expect(onChange).toHaveBeenCalledWith({
+				item: first,
+				from: 0,
+				to: 2,
+				source: 'keyboard',
+				fromContainer: list,
+				toContainer: list,
+			});
 			expect(first.hasAttribute(SORTABLE_STATE_ATTRIBUTE)).toBe(false);
 			expect(third.hasAttribute(SORTABLE_DROP_ATTRIBUTE)).toBe(false);
 		});

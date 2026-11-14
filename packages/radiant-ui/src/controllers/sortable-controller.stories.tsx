@@ -3,6 +3,7 @@ import { RadiantElement, customElement } from '@ecopages/radiant';
 import { expect, userEvent, waitFor } from 'storybook/test';
 import { isStaticSsrPreview } from '@/lib/storybook-ssr';
 import { createSortableController } from './sortable-controller';
+import { SortableGroup } from './sortable-group';
 import { reorder } from './sortable-order';
 
 /**
@@ -30,6 +31,36 @@ class SortableDemo extends RadiantElement {
 				item.focus();
 			},
 		});
+	}
+}
+
+/**
+ * Two plain lists in one `SortableGroup`: items move between them, and an empty list is a drop zone.
+ */
+@customElement('rui-sortable-board-demo')
+class SortableBoardDemo extends RadiantElement {
+	constructor() {
+		super();
+		const group = new SortableGroup();
+		const items = (list: HTMLElement) => [...list.querySelectorAll<HTMLElement>('li')];
+		const sortable = (selector: string) =>
+			createSortableController(this, {
+				group,
+				getContainer: () => this.querySelector<HTMLElement>(selector),
+				getItems: () => items(this.querySelector<HTMLElement>(selector)!),
+				announce: (message) => {
+					const status = this.querySelector('[aria-live]');
+					if (status) {
+						status.textContent = message;
+					}
+				},
+				onChange: ({ item, to, toContainer }) => {
+					toContainer.insertBefore(item, items(toContainer).filter((el) => el !== item)[to] ?? null);
+					item.focus();
+				},
+			});
+		sortable('#todo');
+		sortable('#done');
 	}
 }
 
@@ -96,6 +127,62 @@ export const Default: Story = {
 				{ keys: '[/MouseLeft]' },
 			]);
 			await waitFor(() => expect(labels(root)).toEqual(['Date', 'Banana', 'Cherry', 'Apple']));
+		});
+	},
+};
+
+export const BetweenLists: Story = {
+	parameters: { radiant: { element: SortableBoardDemo } },
+	render: () => (
+		<rui-sortable-board-demo>
+			<style>{`
+				rui-sortable-board-demo { display: flex; gap: 2rem; }
+				.demo-list { list-style: none; margin: 0; padding: 0.25rem; width: 12rem; min-height: 5rem; border: 1px dashed #8886; touch-action: none; user-select: none; }
+				.demo-list[data-sortable-over] { border-color: #36f; }
+				.demo-list li { padding: 0.5rem 0.75rem; border: 1px solid #8884; background: #fff; color: #111; position: relative; }
+				.demo-list li[data-sortable-state='lifted'] { transform: translate(var(--sortable-dx, 0), var(--sortable-dy, 0)); z-index: 1; }
+				.demo-list li[data-sortable-drop='before'] { box-shadow: 0 -2px 0 0 #36f; }
+				.demo-list li[data-sortable-drop='after'] { box-shadow: 0 2px 0 0 #36f; }
+			`}</style>
+			<ul id="todo" class="demo-list" aria-label="To do">
+				<li tabindex="0">Write</li>
+				<li tabindex="0">Review</li>
+			</ul>
+			<ul id="done" class="demo-list" aria-label="Done" />
+			<p aria-live="polite" data-status />
+		</rui-sortable-board-demo>
+	),
+	play: async ({ canvasElement: root, step }) => {
+		if (isStaticSsrPreview(root)) return;
+
+		const names = (id: string) => [...root.querySelectorAll(`#${id} li`)].map((item) => item.textContent);
+		const item = (name: string) => [...root.querySelectorAll('li')].find((li) => li.textContent === name)!;
+		const status = root.querySelector('[data-status]') as HTMLElement;
+
+		await step('PageDown moves the lifted item to the next list', async () => {
+			item('Write').focus();
+			await userEvent.keyboard(' ');
+			await userEvent.keyboard('{PageDown}');
+			await expect(status).toHaveTextContent('Write, Done, position 1 of 1.');
+			await userEvent.keyboard(' ');
+			await expect(names('todo')).toEqual(['Review']);
+			await expect(names('done')).toEqual(['Write']);
+			await expect(item('Write')).toHaveFocus();
+		});
+
+		await step('a pointer drag moves an item back', async () => {
+			const from = item('Write').getBoundingClientRect();
+			const into = (root.querySelector('#todo') as HTMLElement).getBoundingClientRect();
+			await userEvent.pointer([
+				{
+					keys: '[MouseLeft>]',
+					target: item('Write'),
+					coords: { clientX: from.left + 10, clientY: from.top + 5 },
+				},
+				{ coords: { clientX: into.left + 20, clientY: into.top + 2 } },
+				{ keys: '[/MouseLeft]' },
+			]);
+			await waitFor(() => expect(names('todo')).toEqual(['Write', 'Review']));
 		});
 	},
 };
