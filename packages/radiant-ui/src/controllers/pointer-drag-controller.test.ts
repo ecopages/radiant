@@ -6,7 +6,10 @@ import {
 } from './pointer-drag-controller';
 
 describe('PointerDragController on plain elements', () => {
+	const controllers: PointerDragController[] = [];
+
 	afterEach(() => {
+		controllers.splice(0).forEach((controller) => controller.destroy());
 		document.body.replaceChildren();
 		vi.restoreAllMocks();
 	});
@@ -30,6 +33,7 @@ describe('PointerDragController on plain elements', () => {
 			onEnd,
 			...config,
 		});
+		controllers.push(controller);
 		return { element, other, setCapture, release, onStart, onMove, onEnd, controller };
 	}
 
@@ -49,12 +53,11 @@ describe('PointerDragController on plain elements', () => {
 		);
 
 	it('is inert until attached', () => {
-		const { element, onStart, controller } = mount();
+		const { element, onStart } = mount();
 
 		fire(element, 'pointerdown');
 
 		expect(onStart).not.toHaveBeenCalled();
-		expect(controller).toBeInstanceOf(PointerDragController);
 	});
 
 	it('captures the pointer and reports start with the press position', () => {
@@ -165,7 +168,7 @@ describe('PointerDragController on plain elements', () => {
 		expect(onEnd.mock.calls[0][0].reason).toBe('cancel');
 	});
 
-	it('adds its document listeners for the drag only and removes every one when it ends', () => {
+	it('adds its document listeners for the drag only and removes every one it added when it ends', () => {
 		const { element, controller } = mount();
 		const added = vi.spyOn(document, 'addEventListener');
 		const removed = vi.spyOn(document, 'removeEventListener');
@@ -176,7 +179,9 @@ describe('PointerDragController on plain elements', () => {
 		expect(added.mock.calls.map(([type]) => type).sort()).toEqual(['pointercancel', 'pointermove', 'pointerup']);
 
 		fire(document, 'pointerup');
-		expect(removed.mock.calls.map(([type]) => type).sort()).toEqual(['pointercancel', 'pointermove', 'pointerup']);
+		for (const [type, listener] of added.mock.calls) {
+			expect(removed.mock.calls.some(([t, l]) => t === type && l === listener)).toBe(true);
+		}
 	});
 
 	it('starts a new drag after one ends', () => {

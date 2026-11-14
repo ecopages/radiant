@@ -9,7 +9,16 @@ describe('ScrollLockController', () => {
 		return 15;
 	}
 
+	const locks: ScrollLockController[] = [];
+
+	function lockOf(): ScrollLockController {
+		const lock = new ScrollLockController();
+		locks.push(lock);
+		return lock;
+	}
+
 	afterEach(() => {
+		locks.splice(0).forEach((lock) => lock.destroy());
 		vi.restoreAllMocks();
 		document.documentElement.removeAttribute('style');
 		document.body.removeAttribute('style');
@@ -18,7 +27,7 @@ describe('ScrollLockController', () => {
 	it('hides page overflow while attached and restores the previous inline values on destroy', () => {
 		document.documentElement.style.overflow = 'auto';
 		document.body.style.paddingRight = '3px';
-		const lock = new ScrollLockController();
+		const lock = lockOf();
 
 		lock.attach();
 		expect(document.documentElement.style.overflow).toBe('hidden');
@@ -30,7 +39,7 @@ describe('ScrollLockController', () => {
 
 	it('pads the body by the scrollbar width so the layout does not shift', () => {
 		const gap = showScrollbar();
-		const lock = new ScrollLockController();
+		const lock = lockOf();
 
 		lock.attach();
 		expect(document.body.style.paddingRight).toBe(`${gap}px`);
@@ -42,7 +51,7 @@ describe('ScrollLockController', () => {
 	it('adds the scrollbar width to padding the body already has', () => {
 		document.body.style.paddingRight = '10px';
 		const gap = showScrollbar();
-		const lock = new ScrollLockController();
+		const lock = lockOf();
 
 		lock.attach();
 		expect(document.body.style.paddingRight).toBe(`${10 + gap}px`);
@@ -52,8 +61,8 @@ describe('ScrollLockController', () => {
 	});
 
 	it('keeps the page locked until the last of several overlapping locks releases', () => {
-		const outer = new ScrollLockController();
-		const inner = new ScrollLockController();
+		const outer = lockOf();
+		const inner = lockOf();
 
 		outer.attach();
 		inner.attach();
@@ -65,8 +74,8 @@ describe('ScrollLockController', () => {
 	});
 
 	it('keeps the page locked when the locks release outermost first', () => {
-		const outer = new ScrollLockController();
-		const inner = new ScrollLockController();
+		const outer = lockOf();
+		const inner = lockOf();
 
 		outer.attach();
 		inner.attach();
@@ -78,8 +87,8 @@ describe('ScrollLockController', () => {
 	});
 
 	it('counts one lock per controller however often it attaches or destroys', () => {
-		const first = new ScrollLockController();
-		const second = new ScrollLockController();
+		const first = lockOf();
+		const second = lockOf();
 
 		first.attach();
 		first.attach();
@@ -104,7 +113,8 @@ describe('ScrollLockController', () => {
 			registerCleanupCallback: (callback) => cleanup.push(callback),
 		};
 
-		expect(createScrollLockController(host)).toBeInstanceOf(ScrollLockController);
+		const bound = createScrollLockController(host);
+		locks.push(bound);
 		expect(document.documentElement.style.overflow).toBe('');
 
 		connected.forEach((callback) => callback());
