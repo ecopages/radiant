@@ -9,7 +9,7 @@ import { PrimitiveExample } from '@/components/primitive-example';
 export const config = {
 	dependencies: {
 		components: [PrimitiveExample],
-		scripts: ['./calendar-events.script.ts'],
+		scripts: ['./calendar-events.script.ts', './calendar-events.element.ts'],
 		stylesheets: ['./calendar-events.css'],
 	},
 };
@@ -37,6 +37,12 @@ The recipe decides three things itself: how an event is stored (an `iso` date pe
 
 Drag an event to another day. With the keyboard, move between days with the arrow keys, press Enter to focus the first event of a day, press Space to lift it, use the arrows to reorder it within the day and PageDown or PageUp to move it to the next or previous day, then press Space to drop. Typing in the filter hides the events that do not match.
 
+The two forms below behave the same.
+
+### Plain JavaScript
+
+A `mount` function wires the controllers to the markup and returns the cleanup that undoes it.
+
 <PrimitiveExample name="calendar-events">
 	<input type="search" placeholder="Filter events" aria-label="Filter events" />
 	<h3 data-title></h3>
@@ -45,8 +51,6 @@ Drag an event to another day. With the keyboard, move between days with the arro
 		Focus a day, press Enter, then Space to lift an event
 	</p>
 </PrimitiveExample>
-
-## Source
 
 ```html
 <div data-example="calendar-events">
@@ -164,3 +168,161 @@ export function mount(root: HTMLElement): () => void {
 ```
 
 `mount` runs once for each example element on the page, and the function it returns undoes it; see [how the examples run](/docs/recipes/overview#how-the-examples-run).
+
+### Radiant element
+
+The same behavior as a `RadiantElement`. The markup is authored inside the element and the element finds its parts with `@query`; there is nothing to mount, clean up or run again.
+
+<PrimitiveExample host>
+	<recipe-calendar-events>
+		<input type="search" placeholder="Filter events" aria-label="Filter events" />
+		<h3 data-title></h3>
+		<div data-grid role="grid" aria-label="Events by day"></div>
+		<p data-status aria-live="polite">
+			Focus a day, press Enter, then Space to lift an event
+		</p>
+	</recipe-calendar-events>
+</PrimitiveExample>
+
+```html
+<recipe-calendar-events>
+	<input type="search" placeholder="Filter events" aria-label="Filter events" />
+	<h3 data-title></h3>
+	<div data-grid role="grid" aria-label="Events by day"></div>
+	<p data-status aria-live="polite">Focus a day, press Enter, then Space to lift an event</p>
+</recipe-calendar-events>
+```
+
+```ts
+import { RadiantElement, customElement, onEvent, query } from '@ecopages/radiant';
+import { SortableGroup, createRovingController, createSortableController } from '@ecopages/radiant-ui/controllers';
+import {
+	buildCalendarMonth,
+	formatDisplayDate,
+	formatMonthYear,
+	getWeekdayLabels,
+	getWeekStartsOn,
+	textContains,
+} from '@ecopages/radiant-ui/helpers';
+
+const locale = 'en-US';
+const month = new Date(2026, 10, 1);
+const steps: Record<string, number> = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 };
+
+@customElement('recipe-calendar-events')
+export class RecipeCalendarEvents extends RadiantElement {
+	@query({ selector: 'input' }) private filter!: HTMLInputElement;
+	@query({ selector: '[data-title]' }) private heading!: HTMLElement;
+	@query({ selector: '[data-grid]' }) private grid!: HTMLElement;
+	@query({ selector: '[data-status]' }) private status!: HTMLElement;
+
+	private cells: HTMLElement[] = [];
+
+	private readonly events = [
+		{ id: 'review', iso: '2026-11-03', title: 'Design review' },
+		{ id: 'standup', iso: '2026-11-03', title: 'Standup' },
+		{ id: 'launch', iso: '2026-11-12', title: 'Launch day' },
+		{ id: 'retro', iso: '2026-11-19', title: 'Retro' },
+	];
+
+	private readonly group = new SortableGroup();
+
+	private readonly sortables = buildCalendarMonth(month.getFullYear(), month.getMonth(), { locale })
+		.flat()
+		.map(({ iso }) =>
+			createSortableController(this, {
+				group: this.group,
+				getContainer: () => this.cells.find((cell) => cell.dataset.iso === iso) ?? null,
+				getItems: () => [
+					...(this.cells
+						.find((cell) => cell.dataset.iso === iso)
+						?.querySelectorAll<HTMLElement>('[data-event]') ?? []),
+				],
+				announce: (message) => (this.status.textContent = message),
+				onChange: ({ item, to, toContainer }) => {
+					const moved = this.events.find((event) => event.id === item.dataset.event)!;
+					this.events.splice(this.events.indexOf(moved), 1);
+					moved.iso = toContainer.dataset.iso!;
+					const next = this.visible(moved.iso)[to];
+					this.events.splice(next ? this.events.indexOf(next) : this.events.length, 0, moved);
+					this.paint();
+					this.grid.querySelector<HTMLElement>(`[data-event="${moved.id}"]`)!.focus();
+				},
+			}),
+		);
+
+	private readonly roving = createRovingController(this, {
+		getItems: () => this.cells,
+		getTarget: () => this.grid,
+		orientation: 'none',
+	});
+
+	private visible(iso: string) {
+		return this.events.filter((event) => event.iso === iso && textContains(event.title, this.filter.value));
+	}
+
+	private paint(): void {
+		for (const cell of this.cells) {
+			const items = this.visible(cell.dataset.iso!).map(
+				({ id, title }) => `<div data-event="${id}" tabindex="-1">${title}</div>`,
+			);
+			cell.innerHTML = `<span data-day aria-hidden="true">${cell.dataset.day}</span>${items.join('')}`;
+		}
+	}
+
+	/**
+	 * Builds the day cells, then attaches the sortables again.
+	 *
+	 * @remarks
+	 * The controllers attach before this runs, when the cells do not exist, so their containers resolve to nothing.
+	 * A second `attach()` resolves them again.
+	 */
+	override onConnected(): void {
+		this.heading.textContent = formatMonthYear(month, locale);
+		const headers = getWeekdayLabels(locale, getWeekStartsOn(locale)).map(
+			(label) => `<b role="columnheader">${label}</b>`,
+		);
+		this.grid.replaceChildren();
+		this.grid.insertAdjacentHTML('beforeend', `<div role="row">${headers.join('')}</div>`);
+		this.cells = buildCalendarMonth(month.getFullYear(), month.getMonth(), { locale }).flatMap((week) => {
+			const row = this.grid.appendChild(document.createElement('div'));
+			row.setAttribute('role', 'row');
+			return week.map(({ iso, date, inMonth }) => {
+				const cell = row.appendChild(document.createElement('div'));
+				cell.setAttribute('role', 'gridcell');
+				cell.setAttribute('aria-label', formatDisplayDate(date, locale, 'full'));
+				cell.dataset.iso = iso;
+				cell.dataset.day = String(date.getDate());
+				cell.toggleAttribute('data-outside', !inMonth);
+				return cell;
+			});
+		});
+		this.paint();
+		for (const sortable of this.sortables) sortable.attach();
+		this.roving.sync();
+	}
+
+	@onEvent({ selector: 'input', type: 'input' })
+	refilter(): void {
+		this.paint();
+	}
+
+	@onEvent({ selector: '[data-grid]', type: 'keydown' })
+	walk(event: KeyboardEvent): void {
+		const target = event.target as HTMLElement;
+		if (target.hasAttribute('data-event')) {
+			if (event.key === 'Escape') target.closest<HTMLElement>('[role="gridcell"]')!.focus();
+			return;
+		}
+		const next = this.cells[this.cells.indexOf(target) + (steps[event.key] ?? 0)];
+		if (event.key === 'Enter') target.querySelector<HTMLElement>('[data-event]')?.focus();
+		else if (steps[event.key] && next) this.roving.focus(next);
+		else return;
+		event.preventDefault();
+	}
+}
+```
+
+`createSortableController(this, ...)` and `createRovingController(this, ...)` attach when the element connects and are destroyed when it disconnects, and `@onEvent` listeners follow the same lifecycle. The element keeps its private methods off the names `RadiantElement` owns: a method called `render` would replace the host's own and empty the element. The sortables are created once, one per day of the month, and share a `SortableGroup` kept in a field. The day cells are built in `onConnected`, after the controllers attached, so the sortables are attached once more there to resolve their containers; a second `attach()` is how a controller finds a target that did not exist yet.
+
+What the Radiant form removes: the `mount` function and its registration, the cleanup that destroys each sortable and the roving controller, and the re-run after a client-side navigation.
