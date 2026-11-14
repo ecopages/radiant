@@ -60,6 +60,34 @@ describe('EventListenerController', () => {
 		expect(listener).toHaveBeenCalledTimes(1);
 	});
 
+	it('hears an event named in a typed map without a cast', () => {
+		const listener = vi.fn((event: PointerEvent) => event.pointerId);
+		const controller = new EventListenerController({ getTarget: () => document, type: 'pointermove', listener });
+
+		controller.attach();
+		document.dispatchEvent(new PointerEvent('pointermove', { pointerId: 7 }));
+
+		expect(listener).toHaveReturnedWith(7);
+		controller.destroy();
+	});
+
+	it('listens to a media query list and reads matches from the typed event', () => {
+		const query = window.matchMedia('(min-width: 1px)');
+		const seen: boolean[] = [];
+		const controller = new EventListenerController({
+			getTarget: () => query,
+			type: 'change',
+			listener: (event) => seen.push(event.matches),
+		});
+
+		controller.attach();
+		query.dispatchEvent(new MediaQueryListEvent('change', { matches: true }));
+		controller.destroy();
+		query.dispatchEvent(new MediaQueryListEvent('change', { matches: false }));
+
+		expect(seen).toEqual([true]);
+	});
+
 	it('passes once through to the listener', () => {
 		const target = new EventTarget();
 		const listener = vi.fn();
@@ -74,6 +102,31 @@ describe('EventListenerController', () => {
 		target.dispatchEvent(new Event('a'));
 		target.dispatchEvent(new Event('a'));
 		expect(listener).toHaveBeenCalledTimes(1);
+	});
+
+	it('detaches after a once listener fires, so attach registers it again', () => {
+		const target = new EventTarget();
+		const listener = vi.fn();
+		const controller = new EventListenerController({
+			getTarget: () => target,
+			type: ['a', 'b'],
+			listener,
+			options: { once: true },
+		});
+
+		controller.attach();
+		target.dispatchEvent(new Event('a'));
+		target.dispatchEvent(new Event('b'));
+		expect(listener).toHaveBeenCalledTimes(1);
+
+		controller.attach();
+		target.dispatchEvent(new Event('b'));
+		target.dispatchEvent(new Event('a'));
+		expect(listener).toHaveBeenCalledTimes(2);
+
+		controller.destroy();
+		target.dispatchEvent(new Event('a'));
+		expect(listener).toHaveBeenCalledTimes(2);
 	});
 
 	it('moves to a new target when attached again and attaches nothing without one', () => {

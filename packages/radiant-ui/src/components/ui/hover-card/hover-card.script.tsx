@@ -14,6 +14,7 @@ import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { findFirstFocusableCandidate } from '@/lib/focusable-elements';
 import { uniqueId } from '@/lib/unique-id';
 import { notePreviewClosed, notePreviewOpened, resolvePreviewOpenDelay } from '../shared/preview-timing';
+import { createEventListenerController } from '../../../controllers/event-listener-controller';
 import { createPopoverController } from '../../../controllers/popover-controller';
 import type { RuiPlacement } from '../../../controllers/placement';
 
@@ -129,6 +130,11 @@ export class RuiHoverCard extends RadiantElement {
 		onDismiss: (_reason, event) => this.dismissWithEscape(event),
 		dismissOn: ['escape'],
 	});
+	private readonly surfaceBridge = createEventListenerController(this, {
+		getTarget: () => (this.open ? this.getFloatingElement() : null),
+		type: ['pointerenter', 'pointerleave'],
+		listener: (event) => (event.type === 'pointerenter' ? this.onPointerEnter(event) : this.onPointerLeave(event)),
+	});
 	private showTimer: ReturnType<typeof setTimeout> | null = null;
 	private hideTimer: ReturnType<typeof setTimeout> | null = null;
 	private longPressTimer: ReturnType<typeof setTimeout> | null = null;
@@ -197,18 +203,7 @@ export class RuiHoverCard extends RadiantElement {
 	}
 
 	private syncContentPointerBridge(): void {
-		const surface = this.getFloatingElement();
-		if (!surface) {
-			return;
-		}
-
-		surface.removeEventListener('pointerenter', this.onPointerEnter);
-		surface.removeEventListener('pointerleave', this.onPointerLeave);
-
-		if (this.open) {
-			surface.addEventListener('pointerenter', this.onPointerEnter);
-			surface.addEventListener('pointerleave', this.onPointerLeave);
-		}
+		this.surfaceBridge.attach();
 	}
 
 	setOpen(next: boolean, emit = true): void {

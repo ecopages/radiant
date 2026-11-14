@@ -4,6 +4,7 @@ import { isServer } from '@ecopages/radiant/is-server';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { uniqueId } from '@/lib/unique-id';
 import type { DismissReason } from '../../../controllers/dismiss-controller';
+import { createEventListenerController } from '../../../controllers/event-listener-controller';
 import { createPopoverController } from '../../../controllers/popover-controller';
 import type { RuiPlacement } from '../../../controllers/placement';
 
@@ -101,15 +102,14 @@ export class RuiPopover extends RadiantElement {
 		getPlacement: () => this.placement,
 		onDismiss: (reason, event) => this.dismiss(reason, event),
 	});
-	private anchorClickTarget: HTMLElement | null = null;
+	private readonly anchorClick = createEventListenerController(this, {
+		getTarget: () => (this.usesExternalAnchor() ? this.getAnchorElement() : null),
+		type: 'click',
+		listener: () => this.setOpen(!this.open),
+	});
 
 	protected override onConnected(): void {
 		this.syncPopover();
-	}
-
-	override disconnectedCallback(): void {
-		this.unbindExternalAnchorClick();
-		super.disconnectedCallback();
 	}
 
 	private getAnchorElement(): HTMLElement | null {
@@ -148,7 +148,7 @@ export class RuiPopover extends RadiantElement {
 			anchor.setAttribute('aria-controls', this.surfaceId);
 			anchor.setAttribute('aria-expanded', String(this.open));
 		}
-		this.syncExternalAnchorClick(anchor);
+		this.anchorClick.attach();
 
 		this.controller.updateConfig({
 			gap: this.offset,
@@ -186,34 +186,6 @@ export class RuiPopover extends RadiantElement {
 			return false;
 		}
 		return !this.querySelector('[data-popover-trigger]');
-	}
-
-	private syncExternalAnchorClick(anchor: HTMLElement | null): void {
-		if (!this.usesExternalAnchor() || !anchor) {
-			this.unbindExternalAnchorClick();
-			return;
-		}
-
-		if (this.anchorClickTarget === anchor) {
-			return;
-		}
-
-		this.unbindExternalAnchorClick();
-		anchor.addEventListener('click', this.onExternalAnchorClick);
-		this.anchorClickTarget = anchor;
-	}
-
-	private unbindExternalAnchorClick(): void {
-		if (!this.anchorClickTarget) {
-			return;
-		}
-		this.anchorClickTarget.removeEventListener('click', this.onExternalAnchorClick);
-		this.anchorClickTarget = null;
-	}
-
-	@bound
-	private onExternalAnchorClick(): void {
-		this.setOpen(!this.open);
 	}
 }
 

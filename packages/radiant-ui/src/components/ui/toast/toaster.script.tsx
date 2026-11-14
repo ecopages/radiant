@@ -596,7 +596,6 @@ export class RuiToaster extends RadiantElement {
 	/** End interaction; collapse only when the pointer is no longer over the toaster. */
 	@bound
 	private onPointerUp(): void {
-		this.pointerReleaseListener.destroy();
 		if (!this.interacting) return;
 		this.interacting = false;
 		const list = this.listTarget;

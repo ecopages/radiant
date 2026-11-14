@@ -15,7 +15,8 @@ import { isServer } from '@ecopages/radiant/is-server';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { parseCommaSeparated } from '@/lib/comma-separated';
 import { SIDEBAR_MOBILE_BREAKPOINT_PX } from '@/lib/viewport/breakpoints';
-import { EventListenerController } from '../../../controllers/event-listener-controller';
+import type { Controller } from '../../../controllers/controller';
+import { EventListenerController, createEventListenerController } from '../../../controllers/event-listener-controller';
 
 export type RuiSidebarVariant = 'sidebar' | 'inset';
 export type RuiSidebarSide = 'left' | 'right';
@@ -189,14 +190,18 @@ export class RuiSidebar extends RadiantElement {
 	@bindTo([{ attr: 'data-mobile' }, { ref: 'root', attr: 'data-mobile' }])
 	isMobile = false;
 	private mediaQuery: MediaQueryList | null = null;
-	private readonly mediaListener = (event: MediaQueryListEvent): void => this.setMobile(event.matches);
+	private readonly mediaListener = createEventListenerController(this, {
+		getTarget: () => this.mediaQuery,
+		type: 'change',
+		listener: (event) => this.setMobile(event.matches),
+	});
 
 	private dragging = false;
 	private dragStartCoord = 0;
 	private dragStartSize = 0;
-	private navigationListeners: EventListenerController[] = [];
+	private navigationListeners: Controller[] = [];
 	private readonly dragListeners = [
-		new EventListenerController({ getTarget: () => document, type: 'pointermove', listener: (e) => this.onPointerMove(e as PointerEvent) }),
+		new EventListenerController({ getTarget: () => document, type: 'pointermove', listener: (event) => this.onPointerMove(event) }),
 		new EventListenerController({ getTarget: () => document, type: ['pointerup', 'pointercancel'], listener: () => this.onPointerUp() }),
 	];
 
@@ -258,7 +263,6 @@ export class RuiSidebar extends RadiantElement {
 
 	override disconnectedCallback(): void {
 		this.endDrag();
-		this.unbindMobileMediaQuery();
 		this.detachNavigationListeners();
 		this.mobileReady = false;
 		super.disconnectedCallback();
@@ -426,21 +430,16 @@ export class RuiSidebar extends RadiantElement {
 		this.navigationListeners = [];
 	}
 
-	private unbindMobileMediaQuery(): void {
-		this.mediaQuery?.removeEventListener('change', this.mediaListener);
-		this.mediaQuery = null;
-	}
-
 	private bindMobileMediaQuery(): void {
-		this.unbindMobileMediaQuery();
-
 		if (this.mobileBreakpoint <= 0 || !isMediaQuerySupported()) {
+			this.mediaQuery = null;
+			this.mediaListener.attach();
 			this.setMobile(false);
 			return;
 		}
 
 		this.mediaQuery = window.matchMedia(`(max-width: ${this.mobileBreakpoint - 1}px)`);
-		this.mediaQuery.addEventListener('change', this.mediaListener);
+		this.mediaListener.attach();
 		this.setMobile(this.mediaQuery.matches);
 	}
 

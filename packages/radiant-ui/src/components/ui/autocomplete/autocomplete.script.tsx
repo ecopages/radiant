@@ -2,6 +2,7 @@ import type { JSX_PROPS } from '@ecopages/jsx';
 import { isResetBy } from '../shared/form-owner';
 import { RadiantElement, customElement, onEvent, onUpdated, prop } from '@ecopages/radiant';
 import { textContains, type TextFilterSensitivity } from '@/lib/text-filter';
+import { createEventListenerController } from '../../../controllers/event-listener-controller';
 
 export type RuiAutocompleteProps = {
 	/** Filter sensitivity. Default: `base` (case-insensitive contains). */
@@ -60,10 +61,14 @@ export class RuiAutocomplete extends RadiantElement {
 	@prop({ type: String, defaultValue: 'base' }) sensitivity: TextFilterSensitivity;
 	@prop({ type: String, attribute: 'input-value', defaultValue: '' }) inputValue: string;
 
-	private externalInput: HTMLInputElement | null = null;
-	private readonly onExternalInput = (): void => {
-		this.applyFilter();
-	};
+	private readonly externalInput = createEventListenerController(this, {
+		getTarget: () => {
+			const input = this.getInput();
+			return input && !this.contains(input) ? input : null;
+		},
+		type: 'input',
+		listener: () => this.applyFilter(),
+	});
 
 	private getInput(): HTMLInputElement | null {
 		const local = this.querySelector<HTMLInputElement>('[data-autocomplete-input]');
@@ -73,22 +78,6 @@ export class RuiAutocomplete extends RadiantElement {
 
 		const host = this.closest('rui-combobox, rui-select');
 		return host?.querySelector<HTMLInputElement>('[data-autocomplete-input]') ?? null;
-	}
-
-	private bindExternalInput(): void {
-		this.unbindExternalInput();
-		const input = this.getInput();
-		if (!input || this.contains(input)) {
-			return;
-		}
-
-		this.externalInput = input;
-		input.addEventListener('input', this.onExternalInput);
-	}
-
-	private unbindExternalInput(): void {
-		this.externalInput?.removeEventListener('input', this.onExternalInput);
-		this.externalInput = null;
 	}
 
 	syncFilter(): void {
@@ -147,13 +136,8 @@ export class RuiAutocomplete extends RadiantElement {
 	}
 
 	protected override onConnected(): void {
-		this.bindExternalInput();
+		this.externalInput.attach();
 		this.initialize();
-	}
-
-	override disconnectedCallback(): void {
-		this.unbindExternalInput();
-		super.disconnectedCallback();
 	}
 
 	@onUpdated(['sensitivity', 'inputValue'])

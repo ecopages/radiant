@@ -113,7 +113,7 @@ export class RuiWindowSplitter extends RadiantElement {
 		new EventListenerController({
 			getTarget: () => document,
 			type: 'pointermove',
-			listener: (event) => this.onPointerMove(event as PointerEvent),
+			listener: (event) => this.onPointerMove(event),
 		}),
 		new EventListenerController({ getTarget: () => document, type: 'pointerup', listener: () => this.onPointerUp() }),
 	];

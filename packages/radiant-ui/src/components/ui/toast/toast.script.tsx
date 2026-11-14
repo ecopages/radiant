@@ -12,6 +12,7 @@ import {
 	type ToastVariant,
 	splitToastPosition,
 } from './toast-context';
+import { createEventListenerController } from '../../../controllers/event-listener-controller';
 import { toastState } from './toast-state';
 
 /**
@@ -162,21 +163,35 @@ export class RuiToast extends RadiantElement<RuiToastBindings> {
 	private exitTimer: ReturnType<typeof setTimeout> | null = null;
 
 	/**
-	 * Wire pointer listeners, then announce mount after paint so enter CSS can run.
+	 * Announce mount after paint so enter CSS can run.
 	 *
 	 * @remarks
 	 * `mounted` stays true across disconnect so list remounts skip the enter
 	 * animation (avoids an opacity flicker when siblings update). Timer state is
 	 * still reset on disconnect and restarted on reconnect / first paint.
 	 */
+	constructor() {
+		super();
+		createEventListenerController(this, {
+			getTarget: (): HTMLElement => this,
+			type: 'pointerdown',
+			listener: (event) => this.onPointerDown(event),
+		});
+		createEventListenerController(this, {
+			getTarget: (): HTMLElement => this,
+			type: 'pointermove',
+			listener: (event) => this.onPointerMove(event),
+		});
+		createEventListenerController(this, {
+			getTarget: (): HTMLElement => this,
+			type: ['pointerup', 'pointercancel'],
+			listener: (event) => this.onPointerUp(event),
+		});
+	}
+
 	override connectedCallback(): void {
 		super.connectedCallback();
 		const isReconnect = this.mounted;
-
-		this.addEventListener('pointerdown', this.onPointerDown);
-		this.addEventListener('pointermove', this.onPointerMove);
-		this.addEventListener('pointerup', this.onPointerUp);
-		this.addEventListener('pointercancel', this.onPointerUp);
 
 		if (isReconnect) {
 			this.timerReady = true;
@@ -220,10 +235,6 @@ export class RuiToast extends RadiantElement<RuiToastBindings> {
 		}
 		this.held = false;
 		this.timerReady = false;
-		this.removeEventListener('pointerdown', this.onPointerDown);
-		this.removeEventListener('pointermove', this.onPointerMove);
-		this.removeEventListener('pointerup', this.onPointerUp);
-		this.removeEventListener('pointercancel', this.onPointerUp);
 		super.disconnectedCallback();
 	}
 

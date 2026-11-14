@@ -1,4 +1,5 @@
 import { RuiDialog } from './dialog.script';
+import type { Controller } from '../../../controllers/controller';
 import { EventListenerController } from '../../../controllers/event-listener-controller';
 import { createRuiIconX } from '@/lib/icons/x';
 import {
@@ -23,7 +24,7 @@ export type InstallDialogsOptions = {
 };
 
 let installed = false;
-let documentListeners: EventListenerController[] = [];
+let documentListeners: Controller[] = [];
 let mountParent: ParentNode | null = null;
 let hostDialog: RuiDialog | null = null;
 let openId: string | null = null;

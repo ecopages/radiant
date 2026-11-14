@@ -3,6 +3,7 @@ import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, bound, customElement, onUpdated, prop, state } from '@ecopages/radiant';
 import { isServer } from '@ecopages/radiant/is-server';
 import { parseCommaSeparated } from '@/lib/comma-separated';
+import type { Controller } from '../../../controllers/controller';
 import { EventListenerController } from '../../../controllers/event-listener-controller';
 import {
 	ensureUniqueHeadingId,
@@ -87,8 +88,8 @@ export class RuiToc extends RadiantElement<RuiTocBindings> {
 
 	private headings: HTMLElement[] = [];
 	private scrollRoot: HTMLElement | Window | null = null;
-	private scrollListener: EventListenerController | null = null;
-	private navigationListener: EventListenerController | null = null;
+	private scrollListener: Controller | null = null;
+	private navigationListener: Controller | null = null;
 	private pendingScrollTargetId: string | null = null;
 	private scrollRafPending = false;
 	private readonly scrollOffsetTolerance = 4;

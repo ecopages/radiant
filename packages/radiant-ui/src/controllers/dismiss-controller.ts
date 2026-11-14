@@ -28,24 +28,30 @@ const ALL_TRIGGERS: readonly DismissReason[] = ['pointer', 'focus', 'escape'];
  * restore focus.
  */
 export class DismissController implements Controller {
-	private readonly listeners: EventListenerController[] = [];
+	private readonly listeners: Controller[] = [];
 
 	constructor(private readonly config: DismissControllerConfig) {
 		const triggers = config.triggers ?? ALL_TRIGGERS;
-		const listen = (reason: DismissReason, type: string, listener: (event: Event) => void) => {
-			if (triggers.includes(reason)) {
-				this.listeners.push(
-					new EventListenerController({
-						getTarget: () => (typeof document === 'undefined' ? null : document),
-						type,
-						listener,
-					}),
-				);
-			}
-		};
-		listen('pointer', 'pointerdown', (event) => this.onPointerDown(event));
-		listen('focus', 'focusout', (event) => this.onFocusOut(event as FocusEvent));
-		listen('escape', 'keydown', (event) => this.onKeyDown(event as KeyboardEvent));
+		const getTarget = () => (typeof document === 'undefined' ? null : document);
+		if (triggers.includes('pointer')) {
+			this.listeners.push(
+				new EventListenerController({
+					getTarget,
+					type: 'pointerdown',
+					listener: (event) => this.onPointerDown(event),
+				}),
+			);
+		}
+		if (triggers.includes('focus')) {
+			this.listeners.push(
+				new EventListenerController({ getTarget, type: 'focusout', listener: (event) => this.onFocusOut(event) }),
+			);
+		}
+		if (triggers.includes('escape')) {
+			this.listeners.push(
+				new EventListenerController({ getTarget, type: 'keydown', listener: (event) => this.onKeyDown(event) }),
+			);
+		}
 	}
 
 	attach(): void {
@@ -80,7 +86,7 @@ export class DismissController implements Controller {
 		return this.config.getOpen?.() ?? true;
 	}
 
-	private onPointerDown(event: Event): void {
+	private onPointerDown(event: PointerEvent): void {
 		if (this.isOpen() && this.isOutside(event.target)) {
 			this.config.onDismiss('pointer', event);
 		}
