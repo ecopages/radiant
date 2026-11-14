@@ -40,9 +40,7 @@ Config is getters (`getItems`, `getTarget`) and callbacks (`onChange`), so the e
 | [SwipeController](/docs/controllers/swipe)                      | Reports a left, right, up or down swipe on release.                                                                                  | A carousel or pager.                                                               |
 | [PointerDragController](/docs/controllers/pointer-drag)         | Pointer capture, move, end and cancel, with position, delta and the element under the pointer.                                       | A slider, splitter, resize handle or free-form drag.                               |
 | [SortableController](/docs/controllers/sortable)                | Reorders items, or moves them between containers, by pointer or keyboard with announcements. It never moves a node: `onChange` does. | A reorderable list or board, including drag between lists.                         |
-| [ListboxPopoverController](/docs/controllers/listbox-popover)   | Active-descendant navigation and popup positioning for a listbox.                                                                    | A select or combobox you build from options.                                       |
 | [MenuTreeController](/docs/controllers/menu-tree)               | Nested submenu coordination: timers, keyboard, popovers.                                                                             | A menu button or menubar with submenus.                                            |
-| [CalendarPopoverController](/docs/controllers/calendar-popover) | Open state, positioning, focus-out dismissal and mobile layout for a calendar popup.                                                 | A date picker popup around a calendar.                                             |
 
 ## DOM utilities
 
@@ -53,7 +51,7 @@ The same entry exports functions that touch elements. They have no page of their
 | `applyFloatingPosition`, `attachFloating`                                                                     | Floating placement with flip and clamping, applied to an element and kept on scroll and resize.                   | You position a surface without a popover.               |
 | `queryFocusableCandidates`, `getFocusableElements`, `findFirstFocusableCandidate`, `queryRovingTabindexItems` | Query focusable descendants; `getFocusableElements` also skips hidden ones (needs layout).                        | Custom focus loops and initial focus.                   |
 | `applyRovingTabindex`, `focusRovingItem`, `navigateRovingTabindex`                                            | The roving tabindex functions `RovingController` composes.                                                        | One-off roving navigation without a controller.         |
-| `getVisibleCollectionOptions`, `setCollectionActive`, `clearCollectionActive`                                 | `aria-activedescendant` and `data-active` bookkeeping for option collections.                                     | Active-descendant lists outside the listbox controller. |
+| `getVisibleCollectionOptions`, `setCollectionActive`, `clearCollectionActive`                                 | `aria-activedescendant` and `data-active` bookkeeping for option collections.                                     | Active-descendant lists, such as a combobox you build yourself. |
 | `SORTABLE_*_ATTRIBUTE`, `SORTABLE_OFFSET_PROPERTIES`                                                          | The `data-sortable-*` attributes and `--sortable-dx` and `--sortable-dy` the sortable sets.                       | Styling a sortable.                                     |
 
 ## How the examples run

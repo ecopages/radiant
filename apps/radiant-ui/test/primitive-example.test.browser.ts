@@ -58,27 +58,10 @@ describe('example frame layout', () => {
 });
 
 describe('example frame stacking', () => {
-	test('the listbox popup sits above the code block that follows', async () => {
-		const root = await mountFramed('controllers', 'listbox-popover');
-		root.querySelector('input')!.focus();
-
-		await userEvent.keyboard('{ArrowDown}');
-
-		expectOnTop(root.querySelector('[role="listbox"]')!);
-	});
-
 	test('the popover panel sits above the code block that follows', async () => {
 		const root = await mountFramed('controllers', 'popover');
 
 		root.querySelector('button')!.click();
-
-		expectOnTop(root.querySelector('[data-box]')!);
-	});
-
-	test('the calendar popup sits above the code block that follows', async () => {
-		const root = await mountFramed('controllers', 'calendar-popover');
-
-		await userEvent.click(root.querySelector('button')!);
 
 		expectOnTop(root.querySelector('[data-box]')!);
 	});

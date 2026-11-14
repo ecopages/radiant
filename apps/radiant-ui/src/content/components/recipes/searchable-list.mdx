@@ -26,7 +26,7 @@ A command list, a country picker or a long settings page: type to narrow, press 
 - [textContains](/docs/helpers/text-filter) decides whether an item matches. It ignores case and accents by default, so `creme` finds `Crème brûlée`.
 - [RovingController](/docs/controllers/roving) gives the visible matches one tab stop and moves it with the arrows. `getItems` returns only the visible items, so the arrows skip what the filter hid and `sync()` after each filter keeps the tab stop on a visible item.
 
-[ListboxPopoverController](/docs/controllers/listbox-popover) is not used. It is for a combobox: a field that keeps focus while a popup of options is navigated with `aria-activedescendant`. A list that is already on the page needs no popup, and moving real focus with the roving controller is less code.
+It does not use a combobox popup, where a field keeps focus while a popup of options is navigated with `aria-activedescendant`. A list that is already on the page needs no popup, and moving real focus with the roving controller is less code.
 
 Left to the recipe: reading the query, hiding the items that do not match, the Down arrow that moves from the field to the list, and what choosing does.
 

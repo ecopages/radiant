@@ -211,23 +211,6 @@ describe('controller page examples', () => {
 		expect(status(root).textContent).toBe('Dropped Plan, position 2 of 3.');
 	});
 
-	test('ListboxPopoverController opens on ArrowDown, moves the active option and picks it with Enter', async () => {
-		const root = await mountExample('listbox-popover');
-		const input = root.querySelector('input')!;
-		const listbox = root.querySelector<HTMLElement>('[role="listbox"]')!;
-
-		input.focus();
-		await userEvent.keyboard('{ArrowDown}');
-		expect(listbox.hidden).toBe(false);
-
-		await userEvent.keyboard('{ArrowDown}{ArrowDown}');
-		expect(input.getAttribute('aria-activedescendant')).toBe(listbox.children[1].id);
-
-		await userEvent.keyboard('{Enter}');
-		expect(input.value).toBe('Banana');
-		expect(listbox.hidden).toBe(true);
-	});
-
 	test('MenuTreeController opens a submenu on click and reports a leaf item', async () => {
 		const root = await mountExample('menu-tree');
 		const [, recent, submenu] = root.querySelector('[role="menu"]')!.children as unknown as HTMLElement[];
@@ -239,35 +222,5 @@ describe('controller page examples', () => {
 
 		(submenu.firstElementChild as HTMLElement).click();
 		expect(status(root).textContent).toBe('Chose Report.md');
-	});
-
-	test('CalendarPopoverController opens on a day and returns focus to the toggle on Escape', async () => {
-		const root = await mountExample('calendar-popover');
-		const toggle = root.querySelector('button')!;
-		const popup = root.querySelector<HTMLElement>('[data-box]')!;
-
-		await userEvent.click(toggle);
-		const today = popup.querySelector<HTMLElement>('[data-calendar-day][data-today]')!;
-		await expect.poll(() => document.activeElement).toBe(today);
-		expect(popup.hidden).toBe(false);
-		expect(popup.querySelectorAll('[data-weekdays] span')).toHaveLength(7);
-		expect(popup.querySelectorAll('[data-calendar-day]').length).toBeGreaterThanOrEqual(28);
-
-		await userEvent.keyboard('{Escape}');
-		await expect.poll(() => popup.hidden).toBe(true);
-		expect(document.activeElement).toBe(toggle);
-	});
-
-	test('CalendarPopoverController example picks a day, labels the toggle and closes', async () => {
-		const root = await mountExample('calendar-popover');
-		const toggle = root.querySelector('button')!;
-		const popup = root.querySelector<HTMLElement>('[data-box]')!;
-
-		await userEvent.click(toggle);
-		await userEvent.click(popup.querySelector<HTMLElement>('[data-iso$="-01"]')!);
-
-		expect(popup.hidden).toBe(true);
-		expect(toggle.textContent).toMatch(/\b1, \d{4}$/);
-		expect(document.activeElement).toBe(toggle);
 	});
 });
