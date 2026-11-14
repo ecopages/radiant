@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ListboxHostController } from './listbox-host-controller';
+import { ListboxHost } from './listbox-host';
 
 function createOption(value: string, label: string, indicator = false): HTMLElement {
 	const option = document.createElement('div');
@@ -27,11 +27,11 @@ function createRoot(options: HTMLElement[]) {
 	return { root, host, listbox };
 }
 
-describe('ListboxHostController', () => {
+describe('ListboxHost', () => {
 	it('treats the host value as a token array in both selection modes', () => {
 		const { root } = createRoot([createOption('draft', 'Draft'), createOption('published', 'Published')]);
 		let value: string[] = ['draft', 'published'];
-		const collection = new ListboxHostController({
+		const collection = new ListboxHost({
 			getRoot: () => root,
 			getSelectionMode: () => 'single',
 			getValue: () => value,
@@ -50,7 +50,7 @@ describe('ListboxHostController', () => {
 		const { root } = createRoot([createOption('a', 'A'), createOption('b', 'B')]);
 		let value: string[] = ['a'];
 		let mode: 'single' | 'multiple' = 'multiple';
-		const collection = new ListboxHostController({
+		const collection = new ListboxHost({
 			getRoot: () => root,
 			getSelectionMode: () => mode,
 			getValue: () => value,
@@ -72,7 +72,7 @@ describe('ListboxHostController', () => {
 	it('syncs the embedded listbox host and skips indicator text in labels', () => {
 		const { root, host } = createRoot([createOption('cherry', 'Cherry', true)]);
 		let value: string[] = ['cherry'];
-		const collection = new ListboxHostController({
+		const collection = new ListboxHost({
 			getRoot: () => root,
 			getSelectionMode: () => 'multiple',
 			getValue: () => value,
@@ -91,7 +91,7 @@ describe('ListboxHostController', () => {
 	it('clears and removes values through the host protocol', () => {
 		const { root } = createRoot([createOption('a', 'A'), createOption('b', 'B')]);
 		let value: string[] = ['a', 'b'];
-		const collection = new ListboxHostController({
+		const collection = new ListboxHost({
 			getRoot: () => root,
 			getSelectionMode: () => 'multiple',
 			getValue: () => value,

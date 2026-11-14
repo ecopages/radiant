@@ -3,7 +3,7 @@ import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop,
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { uniqueId } from '@/lib/unique-id';
 import { findAssociatedLabel, syncFieldLabel } from '../shared/field-label';
-import { ListboxHostController } from '../shared/listbox-host-controller';
+import { ListboxHost } from '../shared/listbox-host';
 import { getListboxOptionValue } from '../shared/listbox-option';
 import { createListboxPopoverController } from '../../../controllers/listbox-popover-controller';
 import { multiValuePropOptions, type ViewMultiValue } from '../shared/multi-value';
@@ -128,7 +128,7 @@ export class RuiSelect extends RadiantElement {
 
 	private open = false;
 	private readonly uid = uniqueId('rui-select');
-	private readonly collection = new ListboxHostController({
+	private readonly collection = new ListboxHost({
 		getRoot: () => this,
 		getSelectionMode: () => this.selectionMode,
 		getValue: () => this.value,

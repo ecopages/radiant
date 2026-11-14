@@ -1,7 +1,7 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, onEvent, prop } from '@ecopages/radiant';
-import { queryRovingTabindexItems } from '@/lib/focusable-elements';
-import { navigateRovingTabindex } from '@/lib/roving-tabindex';
+import { queryRovingTabindexItems } from '../../../controllers/focusable-elements';
+import { navigateRovingTabindex } from '../../../controllers/roving-tabindex';
 import { uniqueId } from '@/lib/unique-id';
 import { createDismissController } from '../../../controllers/dismiss-controller';
 import { createPopoverController } from '../../../controllers/popover-controller';

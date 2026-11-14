@@ -1,4 +1,4 @@
-import { navigateRovingTabindex, type RovingNavResult, type RovingOrientation } from '@/lib/roving-tabindex';
+import { navigateRovingTabindex, type RovingNavResult, type RovingOrientation } from './roving-tabindex';
 import { bindController, type Controller, type ControllerHost } from './controller';
 import { closestItem } from './closest-item';
 import { EventListenerController } from './event-listener-controller';
@@ -26,7 +26,7 @@ export type RovingControllerConfig = {
  * Owns the active item and the `tabindex` of every item `getItems()` returns (`0` for the active one, `-1` for
  * the rest), and listens on `getTarget()` for `keydown` and `focusin`. Focus entering an item makes it the active
  * one, so a click or a programmatic `focus()` moves the tab stop too. The pure functions it composes live in
- * `lib/roving-tabindex` and stay usable alone.
+ * `controllers/roving-tabindex` and stay usable alone.
  *
  * Selection is the component's: moving focus does not select. Use `onMove` to select on move (tabs with automatic
  * activation, a single-select listbox). Only the arrows of the configured axis and Home/End are consumed

@@ -15,7 +15,7 @@ import {
 } from '@ecopages/radiant';
 import { isServer } from '@ecopages/radiant/is-server';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
-import { queryFocusableCandidates } from '@/lib/focusable-elements';
+import { queryFocusableCandidates } from '../../../controllers/focusable-elements';
 import { uniqueId } from '@/lib/unique-id';
 
 export type RuiDialogProps = {

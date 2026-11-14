@@ -11,7 +11,7 @@ import {
 	resolveValuePrecision,
 	valueFromSliderKey,
 	valuesAlignOnStep,
-} from '../shared/numeric-range';
+} from '@/lib/numeric-range';
 
 export type RuiSliderVariant = 'single' | 'range';
 export type RuiSliderOrientation = 'horizontal' | 'vertical';

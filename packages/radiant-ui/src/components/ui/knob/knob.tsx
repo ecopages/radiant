@@ -1,5 +1,5 @@
 import type { JsxCustomElementAttributes } from '@ecopages/jsx';
-import { createNumericRange } from '../shared/numeric-range';
+import { createNumericRange } from '@/lib/numeric-range';
 import { createKnobRing } from './knob-geometry';
 import { KNOB_DEFAULT_VALUE, RuiKnob as RuiKnobElement, type RuiKnobProps } from './knob.script';
 

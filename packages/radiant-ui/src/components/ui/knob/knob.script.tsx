@@ -3,7 +3,7 @@ import { bindTo, customElement, event, onEvent, onUpdated, prop, query } from '@
 import { FormAssociatedElement, type FormValue } from '@ecopages/radiant/form-associated-element';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { createPointerDragController } from '../../../controllers/pointer-drag-controller';
-import { createNumericRange, valueFromSliderKey, valuesAlignOnStep } from '../shared/numeric-range';
+import { createNumericRange, valueFromSliderKey, valuesAlignOnStep } from '@/lib/numeric-range';
 import { createKnobRing, knobValueFromPointer } from './knob-geometry';
 
 export type RuiKnobValuePosition = 'center' | 'below';

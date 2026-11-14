@@ -6,7 +6,7 @@ import { textContains } from '@/lib/text-filter';
 import { uniqueId } from '@/lib/unique-id';
 import type { RuiAutocomplete } from '../autocomplete/autocomplete.script';
 import { findAssociatedLabel, syncFieldLabel } from '../shared/field-label';
-import { ListboxHostController } from '../shared/listbox-host-controller';
+import { ListboxHost } from '../shared/listbox-host';
 import { getListboxOptionLabel, getListboxOptionValue } from '../shared/listbox-option';
 import { createListboxPopoverController } from '../../../controllers/listbox-popover-controller';
 import { multiValuePropOptions, type ViewMultiValue } from '../shared/multi-value';
@@ -115,7 +115,7 @@ export class RuiCombobox extends RadiantElement {
 
 	private open = false;
 	private readonly uid = uniqueId('rui-combobox');
-	private readonly collection = new ListboxHostController({
+	private readonly collection = new ListboxHost({
 		getRoot: () => this,
 		getSelectionMode: () => this.selectionMode,
 		getValue: () => this.value,

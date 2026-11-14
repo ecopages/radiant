@@ -1,7 +1,7 @@
 import { bindController, type Controller, type ControllerHost } from './controller';
 import { EventListenerController } from './event-listener-controller';
 import { resolveTrapMove } from './focus-trap-order';
-import { queryFocusableCandidates } from '@/lib/focusable-elements';
+import { queryFocusableCandidates } from './focusable-elements';
 
 /** The surface a `FocusTrapController` traps focus in, and how it picks the loop. */
 export type FocusTrapControllerConfig = {

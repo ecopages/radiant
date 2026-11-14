@@ -2,7 +2,7 @@ import type { RuiListbox, RuiListboxSelectionMode } from '../listbox/listbox.scr
 import type { RuiTagGroup } from '../tag-group/tag-group.script';
 import { getListboxOptionLabel, getListboxOptionValue } from './listbox-option';
 
-export type ListboxHostControllerConfig = {
+export type ListboxHostConfig = {
 	getRoot: () => ParentNode | null;
 	getSelectionMode: () => RuiListboxSelectionMode;
 	getValue: () => string[];
@@ -22,10 +22,10 @@ export type ListboxHostControllerConfig = {
  * `aria-selected`, and optional tag-group chips. The comma-separated attribute
  * protocol is handled by `multiValueTransform` on each host.
  */
-export class ListboxHostController {
-	private readonly config: ListboxHostControllerConfig;
+export class ListboxHost {
+	private readonly config: ListboxHostConfig;
 
-	constructor(config: ListboxHostControllerConfig) {
+	constructor(config: ListboxHostConfig) {
 		this.config = config;
 	}
 

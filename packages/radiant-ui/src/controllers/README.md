@@ -92,7 +92,7 @@ Left out of `helpers` on purpose: `focusable-elements` and `roving-tabindex` rea
 
 Not exported from either entry; do not import them from `dist` or `src` in consumer code.
 
-- `ListboxHostController` (`components/ui/shared`): reads `RuiListbox` host types from the catalog.
+- `ListboxHost` (`components/ui/shared`): reads `RuiListbox` host types from the catalog.
 - `preview-timing`, `multi-value`, `field-label` and `form-owner` in `components/ui/shared`: catalog-specific.
 
 ## Adding a primitive

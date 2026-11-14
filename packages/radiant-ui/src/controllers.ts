@@ -6,7 +6,7 @@
  * Pure logic with no DOM is in `@ecopages/radiant-ui/helpers`. The module is named `controllers.ts`,
  * not `index.ts`, so the package `sideEffects` entry for built `index.js` files does not match the built
  * entry and a bundler can drop what a consumer does not import. Controllers that read catalog components
- * (`ListboxHostController`) are internal and not exported.
+ * (`ListboxHost`) are internal and not exported.
  */
 export { bindController, type Controller, type ControllerHost } from './controllers/controller';
 export {
@@ -100,11 +100,11 @@ export {
 	getFocusableElements,
 	queryFocusableCandidates,
 	queryRovingTabindexItems,
-} from './lib/focusable-elements';
+} from './controllers/focusable-elements';
 export {
 	applyRovingTabindex,
 	focusRovingItem,
 	navigateRovingTabindex,
 	type RovingNavResult,
 	type RovingOrientation,
-} from './lib/roving-tabindex';
+} from './controllers/roving-tabindex';

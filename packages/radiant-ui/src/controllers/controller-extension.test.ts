@@ -3,7 +3,7 @@ import { bindController, type ControllerHost } from './controller';
 import { DismissController } from './dismiss-controller';
 import { PointerDragController } from './pointer-drag-controller';
 import { PopoverController } from './popover-controller';
-import type { RovingNavResult } from '@/lib/roving-tabindex';
+import type { RovingNavResult } from './roving-tabindex';
 import { RovingController } from './roving-controller';
 import { SortableController, type SortableChange } from './sortable-controller';
 import { SwipeController } from './swipe-controller';

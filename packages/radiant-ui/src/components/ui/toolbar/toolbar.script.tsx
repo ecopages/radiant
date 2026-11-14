@@ -1,7 +1,7 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, onEvent, prop } from '@ecopages/radiant';
 import { createRovingController } from '../../../controllers/roving-controller';
-import { queryRovingTabindexItems } from '@/lib/focusable-elements';
+import { queryRovingTabindexItems } from '../../../controllers/focusable-elements';
 
 export type RuiToolbarProps = {
 	label?: string;

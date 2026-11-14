@@ -23,7 +23,7 @@ export {
 	valueFromSliderKey,
 	valuesAlignOnStep,
 	type NumericRange,
-} from './components/ui/shared/numeric-range';
+} from './lib/numeric-range';
 export { wrapCollectionIndex } from './controllers/collection-index';
 export {
 	computeFloatingCoords,

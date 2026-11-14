@@ -11,7 +11,7 @@ import {
 	query,
 } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
-import { findFirstFocusableCandidate } from '@/lib/focusable-elements';
+import { findFirstFocusableCandidate } from '../../../controllers/focusable-elements';
 import { uniqueId } from '@/lib/unique-id';
 import { notePreviewClosed, notePreviewOpened, resolvePreviewOpenDelay } from '../shared/preview-timing';
 import { createEventListenerController } from '../../../controllers/event-listener-controller';
