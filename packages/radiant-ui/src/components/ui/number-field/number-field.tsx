@@ -1,5 +1,5 @@
 import type { JsxCustomElementAttributes, JsxElementProps } from '@ecopages/jsx';
-import { withDefaultAriaLabel } from '@/aria';
+import { withDefaultAriaLabel } from '@/lib/aria';
 import { cx } from '@/lib/cx';
 import type { NativeButtonProps, NativeInputProps } from '@/lib/native-element-props';
 import { RuiNumberField as RuiNumberFieldElement, type RuiNumberFieldProps } from './number-field.script';

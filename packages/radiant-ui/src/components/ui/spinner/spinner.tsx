@@ -1,5 +1,5 @@
 import type { JsxElementProps } from '@ecopages/jsx';
-import { withDefaultAriaLabel } from '@/aria';
+import { withDefaultAriaLabel } from '@/lib/aria';
 import { cx } from '@/lib/cx';
 
 export type RuiSpinnerSize = 'sm' | 'md' | 'lg';

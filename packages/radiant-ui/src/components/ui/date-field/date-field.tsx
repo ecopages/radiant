@@ -1,5 +1,5 @@
 import type { JsxCustomElementAttributes, JsxElementProps } from '@ecopages/jsx';
-import { withDefaultAriaLabel } from '@/aria';
+import { withDefaultAriaLabel } from '@/lib/aria';
 import { cx } from '@/lib/cx';
 import { RuiIconCalendar } from '@/lib/icons';
 import type { NativeButtonProps } from '@/lib/native-element-props';
