@@ -79,7 +79,8 @@ describe('ResizeController', () => {
 		const seen = onResize.mock.calls.flatMap(([entries]) =>
 			entries.map((entry: ResizeObserverEntry) => entry.target),
 		);
-		expect(seen).toEqual([second]);
+		expect(seen).toHaveLength(1);
+		expect(seen[0]).toBe(second);
 
 		controller.destroy();
 	});
