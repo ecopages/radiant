@@ -1,0 +1,100 @@
+---
+title: PopoverController
+description: 'Portal mount, floating position, dismissal and teardown of a popup.'
+order: 6
+---
+
+import { PrimitiveExample } from '@/components/primitive-example';
+
+export const config = {
+	dependencies: {
+		components: [PrimitiveExample],
+		scripts: ['./popover.script.ts'],
+	},
+};
+
+# PopoverController
+
+<p class="docs-lede">Portal mount, floating position, dismissal and teardown of a popup.</p>
+
+Reach for it for a popup, hover card or menu panel beside an anchor.
+
+## Import
+
+```ts
+import { PopoverController, createPopoverController } from '@ecopages/radiant-ui/controllers';
+```
+
+## Try it
+
+The button toggles an `open` flag and calls `sync()`, which shows the panel beside the button. A press outside, or focus leaving, calls `onDismiss`. `portal: false` keeps the panel where it is.
+
+<PrimitiveExample name="popover">
+	<button type="button">Toggle</button>
+	<div data-box hidden>
+		Popover content
+	</div>
+</PrimitiveExample>
+
+```html
+<div data-example="popover">
+	<button type="button">Toggle</button>
+	<div data-box hidden>Popover content</div>
+</div>
+```
+
+```ts
+import { PopoverController } from '@ecopages/radiant-ui/controllers';
+
+const root = document.querySelector('[data-example="popover"]')!;
+const trigger = root.querySelector('button')!;
+const panel = root.querySelector<HTMLElement>('[data-box]')!;
+
+let open = false;
+const popover = new PopoverController({
+	getAnchor: () => trigger,
+	getFloating: () => panel,
+	getOpen: () => open,
+	getPlacement: () => 'bottom-start',
+	portal: false,
+	onDismiss: () => {
+		open = false;
+		popover.sync();
+	},
+});
+popover.attach();
+
+trigger.addEventListener('click', () => {
+	open = !open;
+	popover.sync();
+});
+```
+
+## Config
+
+| Option             | Description                                                                                           |
+| ------------------ | ----------------------------------------------------------------------------------------------------- |
+| `getAnchor`        | The element the popup sits beside.                                                                    |
+| `getFloating`      | The popup surface.                                                                                    |
+| `getOpen`          | Whether the popup is open.                                                                            |
+| `getPlacement`     | A `RuiPlacement`, such as `bottom-start`. Read when the popup is positioned.                          |
+| `gap`              | Pixels between anchor and popup. Default `8`.                                                         |
+| `portal`           | Mount the popup in `document.body` while open. Default `true`; `false` leaves it in place.            |
+| `matchAnchorWidth` | Give the popup the anchor width.                                                                      |
+| `portalContainer`  | Where a portaled popup goes instead of `document.body`.                                               |
+| `onDismiss`        | Called when the user dismisses the open popup. Dismissal listens only when this is set.               |
+| `dismissOn`        | Which dismissals `onDismiss` hears about. Defaults to all. Read once, when the controller is created. |
+
+## Lifecycle
+
+`attach()` enables `sync()` and, when `onDismiss` is set, dismissal. `sync()` does nothing before `attach()` or after `destroy()`; call it whenever `open` changes. `destroy()` removes the floating listeners, returns a portaled popup to its place and forgets the floating element. Also `updateConfig(patch)`, `contains(node)`, `isOutside(target)` and `teardown()`.
+
+With a host, `createPopoverController(host, config)` does the same on connect and disconnect; see [bindController](/docs/controllers/bind-controller).
+
+## Protected hooks
+
+Extend the class and override these to change how it decides. A component never extends a controller; a subclass is registered with `bindController`.
+
+| Hook                         | Description                                                                                                                                                                                                                                                                                  |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `position(anchor, floating)` | Decides where the open popup sits. Runs from `sync()` each time the popover is open. Return a cleanup function; it runs before the next `position()`, when the popover closes and on `destroy()`. The default is `attachFloating` with the configured placement, gap and `matchAnchorWidth`. |

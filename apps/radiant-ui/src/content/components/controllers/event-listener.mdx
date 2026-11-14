@@ -1,0 +1,80 @@
+---
+title: EventListenerController
+description: 'Listens to one or more event types on a target while attached, with a listener typed from the target and the event type.'
+order: 2
+---
+
+import { PrimitiveExample } from '@/components/primitive-example';
+
+export const config = {
+	dependencies: {
+		components: [PrimitiveExample],
+		scripts: ['./event-listener.script.ts'],
+	},
+};
+
+# EventListenerController
+
+<p class="docs-lede">
+	Listens to one or more event types on a target while attached, with a listener typed from the target and the event
+	type.
+</p>
+
+Reach for it for listeners on `document` or `window`, listeners added and removed at runtime, or listeners that need `once`, `passive` or `capture`.
+
+## Import
+
+```ts
+import { EventListenerController, createEventListenerController } from '@ecopages/radiant-ui/controllers';
+```
+
+## Try it
+
+A `keydown` listener on `document`. The event is a `KeyboardEvent` without a cast. Stop listening calls `destroy()`.
+
+<PrimitiveExample name="event-listener">
+	<p data-status>Press a key</p>
+	<button type="button">Stop listening</button>
+</PrimitiveExample>
+
+```html
+<div data-example="event-listener">
+	<p data-status>Press a key</p>
+	<button type="button">Stop listening</button>
+</div>
+```
+
+```ts
+import { EventListenerController } from '@ecopages/radiant-ui/controllers';
+
+const root = document.querySelector('[data-example="event-listener"]')!;
+const status = root.querySelector('[data-status]')!;
+
+const keys = new EventListenerController({
+	getTarget: () => document,
+	type: 'keydown',
+	listener: (event) => (status.textContent = `Pressed ${event.key}`),
+});
+keys.attach();
+
+root.querySelector('button')!.addEventListener('click', () => keys.destroy());
+```
+
+## Config
+
+| Option      | Description                                                                                           |
+| ----------- | ----------------------------------------------------------------------------------------------------- |
+| `getTarget` | Resolved on every `attach()`. `null` attaches nothing.                                                |
+| `type`      | An event type, or an array of types.                                                                  |
+| `listener`  | Receives the event, typed from the target and the type.                                               |
+| `options`   | `AddEventListenerOptions`. `once` ends the whole controller after the first event of any listed type. |
+
+## Lifecycle
+
+`attach()` adds the listeners to the target. Attaching again with the same target changes nothing; with a different target it moves the listeners there. `destroy()` removes them.
+
+With a host, `createEventListenerController(host, config)` does the same on connect and disconnect; see [bindController](/docs/controllers/bind-controller).
+
+## Protected hooks
+
+None. Change behavior through the config callbacks.

@@ -1,0 +1,121 @@
+---
+title: SortableController
+description: 'Reorders items, or moves them between containers, by pointer or keyboard, with announcements.'
+order: 13
+---
+
+import { PrimitiveExample } from '@/components/primitive-example';
+
+export const config = {
+	dependencies: {
+		components: [PrimitiveExample],
+		scripts: ['./sortable.script.ts'],
+	},
+};
+
+# SortableController
+
+<p class="docs-lede">Reorders items, or moves them between containers, by pointer or keyboard, with announcements.</p>
+
+Reach for it for a reorderable list or board, including drag between lists.
+
+## Import
+
+```ts
+import { SortableController, SortableGroup, createSortableController } from '@ecopages/radiant-ui/controllers';
+```
+
+## Try it
+
+Drag an item, or focus it and press Space, move it with the arrow keys and press Space to drop. The controller never moves a node: `onChange` does, and the announcement goes to a live region.
+
+<PrimitiveExample name="sortable">
+	<ul>
+		<li tabindex="0">Plan</li>
+		<li tabindex="0">Build</li>
+		<li tabindex="0">Ship</li>
+	</ul>
+	<p data-status aria-live="polite">
+		Focus an item, press Space, move with the arrows, press Space to drop
+	</p>
+</PrimitiveExample>
+
+```html
+<div data-example="sortable">
+	<ul>
+		<li tabindex="0">Plan</li>
+		<li tabindex="0">Build</li>
+		<li tabindex="0">Ship</li>
+	</ul>
+	<p data-status aria-live="polite">Focus an item, press Space, move with the arrows, press Space to drop</p>
+</div>
+```
+
+```ts
+import { SortableController } from '@ecopages/radiant-ui/controllers';
+
+const root = document.querySelector('[data-example="sortable"]')!;
+const list = root.querySelector('ul')!;
+const status = root.querySelector('[data-status]')!;
+
+const sortable = new SortableController({
+	getContainer: () => list,
+	getItems: () => [...list.children] as HTMLElement[],
+	announce: (message) => (status.textContent = message),
+	onChange: ({ item, to }) => {
+		const others = [...list.children].filter((child) => child !== item);
+		list.insertBefore(item, others[to] ?? null);
+		item.focus();
+	},
+});
+sortable.attach();
+```
+
+## Config
+
+| Option              | Description                                                                                                                             |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `getContainer`      | The element that holds the items; it receives the press and the keys.                                                                   |
+| `getItems`          | The items in document order, read on every event.                                                                                       |
+| `group`             | A `SortableGroup` shared by the containers that can exchange items. Without it items only reorder within the container.                 |
+| `accepts`           | Refuses an item that comes from another container of the group.                                                                         |
+| `getContainerLabel` | The name announced for this container. Default: its `aria-label`.                                                                       |
+| `getHandle`         | Narrows where a press or Space lifts an item to a handle inside it.                                                                     |
+| `liftKeys`          | The keys that lift an item. Default Space and Enter; drop is always Space or Enter.                                                     |
+| `axis`              | `vertical` (default), `horizontal` or `both`.                                                                                           |
+| `threshold`         | Pointer travel in px before a press becomes a drag. Default `4`.                                                                        |
+| `enabled`           | Return `false` to ignore presses and keys.                                                                                              |
+| `getLabel`          | The name announced for an item. Default: its trimmed `textContent`.                                                                     |
+| `announce`          | Receives each announcement; point it at a live region. Without it nothing is announced.                                                 |
+| `messages`          | Replaces any of the announcements; see `DEFAULT_SORTABLE_MESSAGES`.                                                                     |
+| `onChange`          | Called on drop with `{ item, from, to, source, fromContainer, toContainer }` for the owner to apply. Return `false` to refuse the move. |
+
+## Lifecycle
+
+`attach()` listens for presses and keys on the container and, with a `group`, joins it. `destroy()` ends a sort in progress without calling `onChange` or announcing, and leaves the group. While a sort runs the controller only sets state for CSS: `data-sortable-state="lifted"` on the item, `data-sortable-drop="before"` or `"after"` on the item it would land beside, `data-sortable-active` and `data-sortable-over` on containers, and `--sortable-dx` and `--sortable-dy` on the lifted item. After a drop the owner moves the node, which can blur it, so restore focus on the moved item.
+
+With a host, `createSortableController(host, config)` does the same on connect and disconnect; see [bindController](/docs/controllers/bind-controller).
+
+### Moving between lists
+
+Create one `SortableGroup`, pass it as `group` to the controller of every container and insert into `toContainer` in `onChange`. A container with no items is a drop zone. `PageDown` and `PageUp` move the lifted item to the next and previous container of the group.
+
+```ts
+const group = new SortableGroup();
+const sortable = (list: HTMLElement) =>
+	new SortableController({
+		group,
+		getContainer: () => list,
+		getItems: () => [...list.children] as HTMLElement[],
+		onChange: ({ item, to, toContainer }) =>
+			toContainer.insertBefore(item, [...toContainer.children].filter((el) => el !== item)[to] ?? null),
+	});
+```
+
+## Protected hooks
+
+Extend the class and override these to change how it decides. A component never extends a controller; a subclass is registered with `bindController`.
+
+| Hook                                     | Description                                                                                                                                                                                                                                                     |
+| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `resolveTargetIndex(rects, from, point)` | Decides the index the lifted item takes from where the pointer is. Runs on every pointer move of a sort. Override to snap to a grid or change where a neighbour gives way. The default is `resolveSortIndex` and `resolveInsertIndex` with the configured axis. |

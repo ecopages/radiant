@@ -1,0 +1,85 @@
+---
+title: MutationController
+description: 'A MutationObserver on a node, attached and disconnected with the host.'
+order: 3
+---
+
+import { PrimitiveExample } from '@/components/primitive-example';
+
+export const config = {
+	dependencies: {
+		components: [PrimitiveExample],
+		scripts: ['./mutation.script.ts'],
+	},
+};
+
+# MutationController
+
+<p class="docs-lede">A MutationObserver on a node, attached and disconnected with the host.</p>
+
+Reach for it to react to children or attributes of a node changing.
+
+## Import
+
+```ts
+import { MutationController, createMutationController } from '@ecopages/radiant-ui/controllers';
+```
+
+## Try it
+
+The list is observed for added children. Add item appends an `li` and the callback reports the new count.
+
+<PrimitiveExample name="mutation">
+	<ul>
+		<li>First item</li>
+	</ul>
+	<button type="button">Add item</button>
+	<p data-status>1 items</p>
+</PrimitiveExample>
+
+```html
+<div data-example="mutation">
+	<ul>
+		<li>First item</li>
+	</ul>
+	<button type="button">Add item</button>
+	<p data-status>1 items</p>
+</div>
+```
+
+```ts
+import { MutationController } from '@ecopages/radiant-ui/controllers';
+
+const root = document.querySelector('[data-example="mutation"]')!;
+const list = root.querySelector('ul')!;
+const status = root.querySelector('[data-status]')!;
+
+const observer = new MutationController({
+	getTarget: () => list,
+	options: { childList: true },
+	onMutate: () => (status.textContent = `${list.children.length} items`),
+});
+observer.attach();
+
+root.querySelector('button')!.addEventListener('click', () =>
+	list.insertAdjacentHTML('beforeend', '<li>New item</li>'),
+);
+```
+
+## Config
+
+| Option      | Description                                                |
+| ----------- | ---------------------------------------------------------- |
+| `getTarget` | Resolved on every `attach()`. `null` attaches nothing.     |
+| `options`   | The `MutationObserverInit`, such as `{ childList: true }`. |
+| `onMutate`  | Receives the `MutationRecord[]`.                           |
+
+## Lifecycle
+
+`attach()` starts the observer on the target; attaching again with the same target keeps it, with a different target moves it. `destroy()` disconnects it.
+
+With a host, `createMutationController(host, config)` does the same on connect and disconnect; see [bindController](/docs/controllers/bind-controller).
+
+## Protected hooks
+
+None. Change behavior through the config callbacks.

@@ -1,0 +1,82 @@
+---
+title: ResizeController
+description: 'A ResizeObserver on elements, attached and disconnected with the host.'
+order: 4
+---
+
+import { PrimitiveExample } from '@/components/primitive-example';
+
+export const config = {
+	dependencies: {
+		components: [PrimitiveExample],
+		scripts: ['./resize.script.ts'],
+	},
+};
+
+# ResizeController
+
+<p class="docs-lede">A ResizeObserver on elements, attached and disconnected with the host.</p>
+
+Reach for it to react to an element changing size.
+
+## Import
+
+```ts
+import { ResizeController, createResizeController } from '@ecopages/radiant-ui/controllers';
+```
+
+## Try it
+
+The box is observed. Change width toggles its inline width and the callback reports the new content width. The observer also reports the size at the moment it starts.
+
+<PrimitiveExample name="resize">
+	<div data-box style="width: 6rem">
+		Box
+	</div>
+	<button type="button">Change width</button>
+	<p data-status></p>
+</PrimitiveExample>
+
+```html
+<div data-example="resize">
+	<div data-box style="width: 6rem">Box</div>
+	<button type="button">Change width</button>
+	<p data-status></p>
+</div>
+```
+
+```ts
+import { ResizeController } from '@ecopages/radiant-ui/controllers';
+
+const root = document.querySelector('[data-example="resize"]')!;
+const box = root.querySelector<HTMLElement>('[data-box]')!;
+const status = root.querySelector('[data-status]')!;
+
+const resize = new ResizeController({
+	getTargets: () => [box],
+	onResize: ([entry]) => (status.textContent = `Width ${Math.round(entry.contentRect.width)}px`),
+});
+resize.attach();
+
+root.querySelector('button')!.addEventListener('click', () => {
+	box.style.width = box.style.width === '12rem' ? '6rem' : '12rem';
+});
+```
+
+## Config
+
+| Option       | Description                                                        |
+| ------------ | ------------------------------------------------------------------ |
+| `getTargets` | Resolved on every `attach()`. `null` entries are skipped.          |
+| `onResize`   | Receives the `ResizeObserverEntry[]`.                              |
+| `options`    | Optional `ResizeObserverOptions`, such as `{ box: "border-box" }`. |
+
+## Lifecycle
+
+`attach()` observes every target; attaching while attached changes nothing. `destroy()` disconnects the observer.
+
+With a host, `createResizeController(host, config)` does the same on connect and disconnect; see [bindController](/docs/controllers/bind-controller).
+
+## Protected hooks
+
+None. Change behavior through the config callbacks.

@@ -1,0 +1,103 @@
+---
+title: MenuTreeController
+description: 'Nested submenu coordination: timers, keyboard and popovers.'
+order: 15
+---
+
+import { PrimitiveExample } from '@/components/primitive-example';
+
+export const config = {
+	dependencies: {
+		components: [PrimitiveExample],
+		scripts: ['./menu-tree.script.ts'],
+	},
+};
+
+# MenuTreeController
+
+<p class="docs-lede">Nested submenu coordination: timers, keyboard and popovers.</p>
+
+Reach for it for a menu button or menubar with submenus.
+
+## Import
+
+```ts
+import { MenuTreeController, createMenuTreeController } from '@ecopages/radiant-ui/controllers';
+```
+
+## Try it
+
+The submenu is the `menu` that follows its `menuitem`. Click Open recent, or focus it and press ArrowRight or Enter, to open it; choosing a leaf item reports it.
+
+<PrimitiveExample name="menu-tree">
+	<div role="menu" aria-label="File">
+		<button type="button" role="menuitem">
+			New
+		</button>
+		<button type="button" role="menuitem">
+			Open recent
+		</button>
+		<div role="menu" aria-label="Open recent">
+			<button type="button" role="menuitem">
+				Report.md
+			</button>
+			<button type="button" role="menuitem">
+				Notes.md
+			</button>
+		</div>
+	</div>
+	<p data-status>Nothing chosen</p>
+</PrimitiveExample>
+
+```html
+<div data-example="menu-tree">
+	<div role="menu" aria-label="File">
+		<button type="button" role="menuitem">New</button>
+		<button type="button" role="menuitem">Open recent</button>
+		<div role="menu" aria-label="Open recent">
+			<button type="button" role="menuitem">Report.md</button>
+			<button type="button" role="menuitem">Notes.md</button>
+		</div>
+	</div>
+	<p data-status>Nothing chosen</p>
+</div>
+```
+
+```ts
+import { MenuTreeController } from '@ecopages/radiant-ui/controllers';
+
+const root = document.querySelector<HTMLElement>('[data-example="menu-tree"]')!;
+const menu = root.querySelector<HTMLElement>('[role="menu"]')!;
+const status = root.querySelector('[data-status]')!;
+
+const tree = new MenuTreeController({
+	root,
+	getRootMenu: () => menu,
+	onActivate: (item) => (status.textContent = `Chose ${item.textContent}`),
+	onCloseRoot: () => tree.closeAll(),
+});
+tree.attach();
+tree.sync();
+
+menu.addEventListener('click', (event) => tree.handleClick(event));
+menu.addEventListener('keydown', (event) => tree.handleKeydown(event));
+```
+
+## Config
+
+| Option        | Description                                                                |
+| ------------- | -------------------------------------------------------------------------- |
+| `root`        | The element whose descendants hold the menus.                              |
+| `getRootMenu` | The top-level menu.                                                        |
+| `onActivate`  | Called with a leaf item the user activates by click, Enter or Space.       |
+| `onCloseRoot` | Called for Escape (`true`, return focus to the trigger) and Tab (`false`). |
+
+## Lifecycle
+
+The controller holds no listener of its own: `attach()` has nothing to start, and the owner routes events to `handlePointerOver`, `handlePointerOut`, `handleFocusOut`, `handleKeydown` and `handleClick`. Call `sync()` after the menus render to set `aria-haspopup`, `aria-expanded`, `aria-controls` and `hidden` on the items with a submenu. `destroy()` closes every open branch and releases its popover and timers; `closeAll()` closes them on demand.
+
+With a host, `createMenuTreeController(host, config)` does the same on connect and disconnect; see [bindController](/docs/controllers/bind-controller).
+
+## Protected hooks
+
+None. The key map and timers are fixed; behavior that differs belongs in `onActivate` and `onCloseRoot`.

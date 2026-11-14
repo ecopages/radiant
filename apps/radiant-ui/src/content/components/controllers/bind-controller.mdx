@@ -1,0 +1,90 @@
+---
+title: bindController
+description: 'The contract every controller follows, and the one function that ties a controller to a host element.'
+order: 1
+---
+
+import { PrimitiveExample } from '@/components/primitive-example';
+
+export const config = {
+	dependencies: {
+		components: [PrimitiveExample],
+		scripts: ['./bind-controller.script.ts'],
+	},
+};
+
+# bindController
+
+<p class="docs-lede">
+	The contract every controller follows, and the one function that ties a controller to a host element.
+</p>
+
+Reach for it when you write a new controller, or hold one without a `createX` factory.
+
+## Import
+
+```ts
+import { bindController, type Controller, type ControllerHost } from '@ecopages/radiant-ui/controllers';
+```
+
+## Try it
+
+A controller of three lines and a stand-in host. Connect runs the connected callbacks and Disconnect the cleanup callbacks, as a `RadiantElement` does when it enters and leaves the document.
+
+<PrimitiveExample name="bind-controller">
+	<button type="button">Connect</button>
+	<button type="button">Disconnect</button>
+	<p data-status>Not attached</p>
+</PrimitiveExample>
+
+```html
+<div data-example="bind-controller">
+	<button type="button">Connect</button>
+	<button type="button">Disconnect</button>
+	<p data-status>Not attached</p>
+</div>
+```
+
+```ts
+import { bindController, type Controller } from '@ecopages/radiant-ui/controllers';
+
+const root = document.querySelector('[data-example="bind-controller"]')!;
+const status = root.querySelector('[data-status]')!;
+const [connect, disconnect] = root.querySelectorAll('button');
+
+class Pulse implements Controller {
+	attach(): void {
+		status.textContent = 'Attached';
+	}
+	destroy(): void {
+		status.textContent = 'Destroyed';
+	}
+}
+
+const connected: (() => void)[] = [];
+const cleanup: (() => void)[] = [];
+bindController(
+	{
+		registerConnectedCallback: (callback) => connected.push(callback),
+		registerCleanupCallback: (callback) => cleanup.push(callback),
+	},
+	new Pulse(),
+);
+
+connect.addEventListener('click', () => connected.forEach((callback) => callback()));
+disconnect.addEventListener('click', () => cleanup.forEach((callback) => callback()));
+```
+
+## Config
+
+| Part                               | Description                                                                                                                                                          |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Controller`                       | `attach()` starts work and `destroy()` ends all of it. The constructor is inert. Both are safe to call repeatedly, and a destroyed controller can be attached again. |
+| `ControllerHost`                   | The two methods a host needs: `registerConnectedCallback` and `registerCleanupCallback`. A `RadiantElement` has both; a plain object with them satisfies the type.   |
+| `bindController(host, controller)` | Registers `attach()` on every connect and `destroy()` on every cleanup, and returns the same controller.                                                             |
+
+## Lifecycle
+
+`bindController` runs nothing itself: it registers `controller.attach()` as a connected callback and `controller.destroy()` as a cleanup callback. Every `createX(host, config)` factory is `bindController(host, new X(config))`.
+
+Components compose controllers, a controller can be extended through its documented `protected` hooks, and a component never extends a controller. See [Composing a component](/docs/getting-started/composing).

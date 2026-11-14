@@ -1,0 +1,86 @@
+---
+title: RovingController
+description: 'Roving tabindex with arrows, Home and End, over the items `getItems()` returns.'
+order: 10
+---
+
+import { PrimitiveExample } from '@/components/primitive-example';
+
+export const config = {
+	dependencies: {
+		components: [PrimitiveExample],
+		scripts: ['./roving.script.ts'],
+	},
+};
+
+# RovingController
+
+<p class="docs-lede">Roving tabindex with arrows, Home and End, over the items getItems() returns.</p>
+
+Reach for it for tabs, toolbars, lists and grids with one tab stop.
+
+## Import
+
+```ts
+import { RovingController, createRovingController } from '@ecopages/radiant-ui/controllers';
+```
+
+## Try it
+
+One button is tabbable. Focus it and press ArrowRight, ArrowLeft, Home or End to move focus, and the tab stop moves with it.
+
+<PrimitiveExample name="roving">
+	<div role="toolbar" aria-label="Formatting">
+		<button type="button">Bold</button>
+		<button type="button">Italic</button>
+		<button type="button">Underline</button>
+	</div>
+</PrimitiveExample>
+
+```html
+<div data-example="roving">
+	<div role="toolbar" aria-label="Formatting">
+		<button type="button">Bold</button>
+		<button type="button">Italic</button>
+		<button type="button">Underline</button>
+	</div>
+</div>
+```
+
+```ts
+import { RovingController } from '@ecopages/radiant-ui/controllers';
+
+const toolbar = document.querySelector<HTMLElement>('[data-example="roving"] [role="toolbar"]')!;
+
+const roving = new RovingController({
+	getItems: () => [...toolbar.querySelectorAll('button')],
+	getTarget: () => toolbar,
+});
+roving.attach();
+roving.sync();
+```
+
+## Config
+
+| Option        | Description                                                                                            |
+| ------------- | ------------------------------------------------------------------------------------------------------ |
+| `getItems`    | The items, read on every event and sync, so the collection can change without telling the controller.  |
+| `getTarget`   | The element that receives `keydown` and `focusin`.                                                     |
+| `orientation` | `horizontal` (default), `vertical` or `both`. `none` handles no keys and leaves them to the component. |
+| `wrap`        | Wrap past the first or last item. Default `true`.                                                      |
+| `enabled`     | Return `false` to ignore keys and focus.                                                               |
+| `onMove`      | Called after a key moved focus to an item, so the component can select it or open its menu.            |
+
+## Lifecycle
+
+`attach()` listens for `keydown` and `focusin` on the target. Call `sync()` from the host's connected callback and whenever the items change: it sets `tabindex` to `0` on the active item and `-1` on the rest. `destroy()` removes the listeners and forgets the active item but leaves `tabindex` as it is. Also `getActive()`, `setActive(item)`, `focus(item)` and `navigate(current, key)`.
+
+With a host, `createRovingController(host, config)` does the same on connect and disconnect; see [bindController](/docs/controllers/bind-controller).
+
+## Protected hooks
+
+Extend the class and override these to change how it decides. A component never extends a controller; a subclass is registered with `bindController`.
+
+| Hook                                                  | Description                                                                                                                                                                                                                              |
+| ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `resolveNext(items, current, key, orientation, wrap)` | Decides where a key moves focus. Override to change the keys or the order, such as skipping every other item or adding PageUp and PageDown. Return `{ handled: false }` to leave the key alone. The default is `navigateRovingTabindex`. |

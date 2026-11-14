@@ -1,0 +1,81 @@
+---
+title: PortalController
+description: 'Moves a node into `document.body`, or a container, and carries the origin theme with it.'
+order: 7
+---
+
+import { PrimitiveExample } from '@/components/primitive-example';
+
+export const config = {
+	dependencies: {
+		components: [PrimitiveExample],
+		scripts: ['./portal.script.ts'],
+	},
+};
+
+# PortalController
+
+<p class="docs-lede">Moves a node into document.body, or a container, and carries the origin theme with it.</p>
+
+Reach for it for a surface that must escape clipping or stacking contexts.
+
+## Import
+
+```ts
+import { PortalController, createPortalController } from '@ecopages/radiant-ui/controllers';
+```
+
+## Try it
+
+Each press of the button attaches or destroys the controller. While attached the node is a child of `body`; destroyed, it is back among its siblings.
+
+<PrimitiveExample name="portal">
+	<div data-box>Portaled node</div>
+	<button type="button">Toggle portal</button>
+	<p data-status>Parent: div</p>
+</PrimitiveExample>
+
+```html
+<div data-example="portal">
+	<div data-box>Portaled node</div>
+	<button type="button">Toggle portal</button>
+	<p data-status>Parent: div</p>
+</div>
+```
+
+```ts
+import { PortalController } from '@ecopages/radiant-ui/controllers';
+
+const root = document.querySelector('[data-example="portal"]')!;
+const panel = root.querySelector<HTMLElement>('[data-box]')!;
+const toggle = root.querySelector('button')!;
+const status = root.querySelector('[data-status]')!;
+
+const portal = new PortalController({ getNode: () => panel });
+
+toggle.addEventListener('click', () => {
+	if (portal.isMounted) {
+		portal.destroy();
+	} else {
+		portal.attach();
+	}
+	status.textContent = `Parent: ${panel.parentElement!.tagName.toLowerCase()}`;
+});
+```
+
+## Config
+
+| Option         | Description                                                                      |
+| -------------- | -------------------------------------------------------------------------------- |
+| `getNode`      | The node to move. Resolved on every `attach()`; `null` mounts nothing.           |
+| `getContainer` | Where the node goes. Resolved on every `attach()`; `document.body` when omitted. |
+
+## Lifecycle
+
+`attach()` leaves a comment where the node was and appends the node to the container. `destroy()` restores the original position among its siblings, skipping the move when something removed the comment in the meantime. `isMounted` tells which state it is in. A node that leaves its ancestors loses what they set, so `attach()` also carries the `dark` class, the `data-theme` attribute and the inline `--rui-*` custom properties of its ancestors onto the node, and `destroy()` removes them again.
+
+With a host, `createPortalController(host, config)` does the same on connect and disconnect; see [bindController](/docs/controllers/bind-controller).
+
+## Protected hooks
+
+None. Change behavior through the config callbacks.

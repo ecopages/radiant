@@ -1,0 +1,78 @@
+---
+title: ScrollLockController
+description: 'Locks page scroll without shifting the layout, counted across controllers.'
+order: 9
+---
+
+import { PrimitiveExample } from '@/components/primitive-example';
+
+export const config = {
+	dependencies: {
+		components: [PrimitiveExample],
+		scripts: ['./scroll-lock.script.ts'],
+	},
+};
+
+# ScrollLockController
+
+<p class="docs-lede">Locks page scroll without shifting the layout, counted across controllers.</p>
+
+Reach for it for a modal that must stop the page scrolling.
+
+## Import
+
+```ts
+import { ScrollLockController, createScrollLockController } from '@ecopages/radiant-ui/controllers';
+```
+
+## Try it
+
+Each press attaches or destroys the controller. While locked, the root element has `overflow: hidden`.
+
+<PrimitiveExample name="scroll-lock">
+	<button type="button">Lock scrolling</button>
+	<p data-status>The page scrolls</p>
+</PrimitiveExample>
+
+```html
+<div data-example="scroll-lock">
+	<button type="button">Lock scrolling</button>
+	<p data-status>The page scrolls</p>
+</div>
+```
+
+```ts
+import { ScrollLockController } from '@ecopages/radiant-ui/controllers';
+
+const root = document.querySelector('[data-example="scroll-lock"]')!;
+const toggle = root.querySelector('button')!;
+const status = root.querySelector('[data-status]')!;
+
+const lock = new ScrollLockController();
+let locked = false;
+
+toggle.addEventListener('click', () => {
+	locked = !locked;
+	if (locked) {
+		lock.attach();
+	} else {
+		lock.destroy();
+	}
+	toggle.textContent = locked ? 'Unlock scrolling' : 'Lock scrolling';
+	status.textContent = locked ? 'The page does not scroll' : 'The page scrolls';
+});
+```
+
+## Config
+
+It takes no configuration: `createScrollLockController(host)` and `new ScrollLockController()`.
+
+## Lifecycle
+
+`attach()` sets `overflow: hidden` on the root element and pads the body by the scrollbar width that disappears. Every controller counts as one holder of one page-wide lock, so nested modals can each attach and the page scrolls again only after the last of them destroys. Attaching or destroying twice changes nothing. Only the page scrolls less: a scroll container inside the modal keeps scrolling.
+
+With a host, `createScrollLockController(host, config)` does the same on connect and disconnect; see [bindController](/docs/controllers/bind-controller).
+
+## Protected hooks
+
+None. Change behavior through the config callbacks.
