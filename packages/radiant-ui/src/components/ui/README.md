@@ -38,6 +38,8 @@ A registered host that declares `data-rui-aria-target(s)` binds the field's ARIA
 
 A **controller** is a reusable class in [`src/controllers`](../../controllers) that a component composes instead of reimplementing the behavior. It is not core's `RadiantController` (`@ecopages/radiant`), which is a reactive host with its own lifecycle; a catalog controller is a plain class and needs no custom element.
 
+Every controller and pure helper is catalogued, with its import path (`@ecopages/radiant-ui/controllers` and `@ecopages/radiant-ui/helpers`), in [`src/controllers/README.md`](../../controllers/README.md); read it before writing bespoke logic. This section is the contract and how catalog components use each controller.
+
 The contract is `Controller` in `src/controllers/controller.ts`:
 
 - The constructor is inert: no DOM and no `window`, so building one on the server is safe.

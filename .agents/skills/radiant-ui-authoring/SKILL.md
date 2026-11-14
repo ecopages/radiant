@@ -22,6 +22,8 @@ New or changed files under `packages/radiant-ui/src/components/ui/`. Skip for pl
 
 Work one component at a time. Copy a neighbor of the same **tier** (Native / Composite / Form / Shell), not a random file.
 
+0. **Read the primitives catalog first** — [`src/controllers/README.md`](../../../packages/radiant-ui/src/controllers/README.md) lists every controller (`@ecopages/radiant-ui/controllers`) and pure helper (`@ecopages/radiant-ui/helpers`) with when to reach for it. Compose existing primitives before writing bespoke keyboard, drag, popup, date, mask or filter logic; add a new primitive to the catalog only when none fits.
+
 1. **Classify** — Native (thin platform control), Composite (APG host), Form (field/form wiring), Shell (layout coordinator). Read Introduction.mdx before inventing a new category.
 2. **Pick a host shape** — default **View-owned Shell** (no CE `render()`, no `Bindings` generic). Use **Derived Tree** (`render()` + optional `this.$`) only when inner DOM is generated from host state (calendar grid, toaster list, TOC, meter). Never CE `render()` + `this.slotted` for parent-owned chrome. Copy 1:1 field→DOM writes with `@bindTo`; keep `@onUpdated` for procedures.
 3. **Lay out files** — see [references/files.md](references/files.md).
@@ -52,15 +54,16 @@ Update the README beside the code when behavior or ownership changes.
 
 ## Reuse before inventing
 
-| Need                                                  | Use                                                  |
-| ----------------------------------------------------- | ---------------------------------------------------- |
-| Nested menus                                          | `controllers/menu-tree-controller.ts`                |
-| Listbox in a popup (select, combobox)                 | `ListboxPopoverController` + `ListboxHostController` |
-| Portaled overlay                                      | `PopoverController`                                  |
-| Field label / control protocol                        | `shared/field-label.ts`, `form/control-protocol.ts`  |
-| Comma-separated list values (`string[]` / `number[]`) | `shared/multi-value.ts`                              |
-| Numeric range / slider math                           | `shared/numeric-range.ts`                            |
-| Generated ARIA ids                                    | `@/lib/unique-id` (`uniqueId`)                       |
+| Need                                                              | Use                                                                          |
+| ----------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Nested menus                                                      | `controllers/menu-tree-controller.ts`                                        |
+| Listbox in a popup (select, combobox)                             | `ListboxPopoverController` + `ListboxHostController`                         |
+| Portaled overlay                                                  | `PopoverController`                                                          |
+| Anything else (drag, sort, roving focus, dates, masks, filtering) | [primitives catalog](../../../packages/radiant-ui/src/controllers/README.md) |
+| Field label / control protocol                                    | `shared/field-label.ts`, `form/control-protocol.ts`                          |
+| Comma-separated list values (`string[]` / `number[]`)             | `shared/multi-value.ts`                                                      |
+| Numeric range / slider math                                       | `shared/numeric-range.ts`                                                    |
+| Generated ARIA ids                                                | `@/lib/unique-id` (`uniqueId`)                                               |
 
 ## Done when
 
