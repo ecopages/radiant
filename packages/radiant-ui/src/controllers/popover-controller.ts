@@ -16,7 +16,7 @@ export type PopoverControllerConfig = {
 	portalContainer?: ParentNode;
 	/**
 	 * Called when the user dismisses the open popover. Dismissal listens only when this is set, and only while
-	 * `getOpen()` is true.
+	 * `getOpen()` is true. Read in `attach()`, so `updateConfig` cannot change it.
 	 */
 	onDismiss?: (reason: DismissReason, event: Event) => void;
 	/** Which dismissals `onDismiss` hears about. Defaults to all of them. Read once, when the controller is created. */
@@ -58,7 +58,8 @@ export class PopoverController implements Controller {
 		});
 	}
 
-	updateConfig(patch: Partial<PopoverControllerConfig>): void {
+	/** Replaces config fields that are read on every `sync()`; `onDismiss` and `dismissOn` are fixed at construction. */
+	updateConfig(patch: Partial<Omit<PopoverControllerConfig, 'onDismiss' | 'dismissOn'>>): void {
 		this.config = { ...this.config, ...patch };
 	}
 
@@ -134,6 +135,13 @@ export class PopoverController implements Controller {
 		return this.resolveFloating();
 	}
 
+	/**
+	 * Ends the current open cycle: removes the floating listeners and returns a portaled surface to its place.
+	 *
+	 * @remarks
+	 * Unlike `destroy()` the controller stays attached and `sync()` mounts the surface again. For a popover that closes
+	 * one branch of a tree, such as a submenu, without ending the controller.
+	 */
 	teardown(): void {
 		this.exitToken = null;
 		this.teardownFloating();
