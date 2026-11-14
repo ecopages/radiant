@@ -15,7 +15,7 @@ import { effectiveVisibleMonths } from '@/lib/viewport/mobile-layout';
 import { uniqueId } from '@/lib/unique-id';
 import type { RuiCalendarChangeDetail } from '../calendar/calendar.script';
 import type { RuiDateInputChangeDetail } from '../date-input/date-input.script';
-import { createCalendarPopoverController } from '../../../controllers/calendar-popover-controller';
+import { createCalendarPopoverController } from '../shared/calendar-popover-controller';
 import { createEventListenerController } from '../../../controllers/event-listener-controller';
 import {
 	portalContainerPropOptions,

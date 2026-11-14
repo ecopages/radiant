@@ -13,7 +13,7 @@ import {
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { isIsoInRange, normalizeRange, parseIsoRange, serializeIsoRange } from '@/lib/intl-date';
 import type { RuiCalendarChangeDetail } from '../calendar/calendar.script';
-import { createCalendarPopoverController } from '../../../controllers/calendar-popover-controller';
+import { createCalendarPopoverController } from '../shared/calendar-popover-controller';
 import { createEventListenerController } from '../../../controllers/event-listener-controller';
 import {
 	portalContainerPropOptions,

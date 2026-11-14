@@ -1,8 +1,8 @@
-import { bindController, type Controller, type ControllerHost } from './controller';
-import type { DismissReason } from './dismiss-controller';
-import { PopoverController } from './popover-controller';
-import { wrapCollectionIndex } from './collection-index';
-import { clearCollectionActive, getVisibleCollectionOptions, setCollectionActive } from './collection-navigation';
+import { bindController, type Controller, type ControllerHost } from '../../../controllers/controller';
+import type { DismissReason } from '../../../controllers/dismiss-controller';
+import { PopoverController } from '../../../controllers/popover-controller';
+import { wrapCollectionIndex } from '../../../controllers/collection-index';
+import { clearCollectionActive, getVisibleCollectionOptions, setCollectionActive } from '../../../controllers/collection-navigation';
 
 /** Which option becomes active when the popup opens. */
 export type ListboxActivation = 'first' | 'last' | 'none';

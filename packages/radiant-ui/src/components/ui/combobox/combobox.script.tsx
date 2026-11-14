@@ -9,7 +9,7 @@ import { findAssociatedLabel, syncFieldLabel } from '../shared/field-label';
 import { ListboxHost } from '../shared/listbox-host';
 import { getListboxOptionLabel, getListboxOptionValue } from '../shared/listbox-option';
 import { createEventListenerController } from '../../../controllers/event-listener-controller';
-import { createListboxPopoverController } from '../../../controllers/listbox-popover-controller';
+import { createListboxPopoverController } from '../shared/listbox-popover-controller';
 import { multiValuePropOptions, type ViewMultiValue } from '../shared/multi-value';
 import {
 	portalContainerPropOptions,

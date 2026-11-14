@@ -1,8 +1,8 @@
 import { MOBILE_LAYOUT_MAX_WIDTH_PX } from '@/lib/viewport/mobile-layout';
-import { bindController, type Controller, type ControllerHost } from './controller';
-import { DismissController, type DismissReason } from './dismiss-controller';
-import { EventListenerController } from './event-listener-controller';
-import { PopoverController } from './popover-controller';
+import { bindController, type Controller, type ControllerHost } from '../../../controllers/controller';
+import { DismissController, type DismissReason } from '../../../controllers/dismiss-controller';
+import { EventListenerController } from '../../../controllers/event-listener-controller';
+import { PopoverController } from '../../../controllers/popover-controller';
 
 /** The getters and callbacks `CalendarPopoverController` reads from the date picker that owns it. */
 export type CalendarPopoverControllerConfig = {
