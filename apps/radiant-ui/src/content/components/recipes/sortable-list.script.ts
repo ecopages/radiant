@@ -1,30 +1,38 @@
 import { RovingController, SortableController } from '@ecopages/radiant-ui/controllers';
 import { reorder } from '@ecopages/radiant-ui/helpers';
+import { mountExample } from '../../../components/primitive-example/mount-example';
 
-const root = document.querySelector('[data-example="sortable-list"]')!;
-const list = root.querySelector('ul')!;
-const status = root.querySelector('[data-status]')!;
+export function mount(root: HTMLElement): () => void {
+	const list = root.querySelector('ul')!;
+	const status = root.querySelector('[data-status]')!;
 
-let items = [...list.children] as HTMLElement[];
+	let items = [...list.children] as HTMLElement[];
 
-const roving = new RovingController({
-	getItems: () => items,
-	getTarget: () => list,
-	orientation: 'vertical',
-	enabled: () => sortable.getState() === null,
-});
+	const roving = new RovingController({
+		getItems: () => items,
+		getTarget: () => list,
+		orientation: 'vertical',
+		enabled: () => sortable.getState() === null,
+	});
 
-const sortable = new SortableController({
-	getContainer: () => list,
-	getItems: () => items,
-	announce: (message) => (status.textContent = message),
-	onChange: ({ item, from, to }) => {
-		items = reorder(items, from, to);
-		list.append(...items);
-		roving.focus(item);
-	},
-});
+	const sortable = new SortableController({
+		getContainer: () => list,
+		getItems: () => items,
+		announce: (message) => (status.textContent = message),
+		onChange: ({ item, from, to }) => {
+			items = reorder(items, from, to);
+			list.append(...items);
+			roving.focus(item);
+		},
+	});
 
-sortable.attach();
-roving.attach();
-roving.sync();
+	sortable.attach();
+	roving.attach();
+	roving.sync();
+	return () => {
+		sortable.destroy();
+		roving.destroy();
+	};
+}
+
+mountExample('sortable-list', mount);

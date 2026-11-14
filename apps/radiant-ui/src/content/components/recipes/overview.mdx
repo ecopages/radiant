@@ -23,3 +23,7 @@ Every recipe page has the same four parts, in this order:
 4. **Source.** The full code of the example, complete enough to paste into a project: imports, markup and script.
 
 The rule of [Composing a component](/docs/getting-started/composing) holds in every recipe: keep each controller in a variable you own, configure it with getters and callbacks, and extend a controller through its protected hooks rather than reimplementing it.
+
+## How the examples run
+
+The source of a recipe is a `mount(root)` function: it wires the controllers to one `[data-example="<name>"]` element and returns the function that undoes it, which destroys every controller it created. The page script that registers `mount` with the docs site is left out of the code block; in your own project call `mount` where the element is created and the returned function where it is removed. See [How the examples run](/docs/controllers/overview#how-the-examples-run).

@@ -1,5 +1,6 @@
 import { userEvent } from 'vitest/browser';
 import { afterEach, describe, expect, test } from 'vitest';
+import { syncExamples } from '../src/components/primitive-example/mount-example';
 
 const pages = import.meta.glob('../src/content/components/recipes/*.mdx', {
 	query: '?raw',
@@ -13,6 +14,7 @@ async function mountRecipe(slug: string): Promise<HTMLElement> {
 	const page = pages[`../src/content/components/recipes/${slug}.mdx`]!;
 	document.body.innerHTML = page.match(/```html\n([\s\S]*?)\n```/)![1];
 	await scripts[`../src/content/components/recipes/${slug}.script.ts`]!();
+	syncExamples();
 	return document.querySelector<HTMLElement>(`[data-example="${slug}"]`)!;
 }
 
