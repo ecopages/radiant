@@ -1,0 +1,48 @@
+---
+title: Composing a component
+description: How a new component is assembled from tested controllers and helpers, and when to extend a controller instead.
+order: 3
+---
+
+# Composing a component
+
+<p class="docs-lede">
+	Most behavior a new component needs already exists as a tested controller or helper. Compose them in the component
+	and keep only what is specific to it.
+</p>
+
+## Compose, then extend
+
+- **A component composes controllers.** Hold each one in a field of the custom element with `createX(this, config)`. Config is getters (`getItems`, `getTarget`) and callbacks (`onChange`), so the element keeps its own state and the controller never reaches into it.
+- **Extend a controller to change how it decides.** A controller documents `protected` hooks at its decision points. Subclass it, override the hook, and register the subclass with `bindController`.
+- **A component never extends a controller.** The component is the host; the controller is a part it holds.
+
+Prefer the lightest tool that works: a config callback first, a documented `protected` hook by subclassing second, a new controller last. Use a [helper](/docs/helpers/overview), not a controller, for anything that only maps input to output.
+
+## Extending through a hook
+
+`SortableController.resolveTargetIndex` decides the index a lifted item takes from where the pointer is. This subclass snaps the drop position to a grid by changing only that decision:
+
+```ts
+import { SortableController, bindController, type SortableRect } from '@ecopages/radiant-ui/controllers';
+
+class SnapSortable extends SortableController {
+	protected override resolveTargetIndex(
+		rects: readonly SortableRect[],
+		from: number | null,
+		point: { x: number; y: number },
+	) {
+		return super.resolveTargetIndex(rects, from, { x: Math.round(point.x / 40) * 40, y: point.y });
+	}
+}
+// in the element: bindController(this, new SnapSortable({ getContainer, getItems, onChange }));
+```
+
+`createX` always returns the base class, so a subclass is constructed directly. The component holds the instance; it does not become one.
+
+## Steps
+
+1. Name the behaviors: open and close, keyboard movement, dragging, filtering, date math, positioning.
+2. Pick one primitive per behavior from [Controllers](/docs/controllers/overview) and [Helpers](/docs/helpers/overview). Controllers own the DOM wiring; helpers own the decisions and formatting.
+3. Keep what is specific to the component (state, markup, `rui-change` events) in the component.
+4. Look at [Recipes](/docs/recipes/overview) for compositions of several primitives.
