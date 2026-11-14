@@ -50,7 +50,7 @@ describe('resolveSortIndex', () => {
 		expect(resolveSortIndex(grid, 2, { x: 70, y: 20 }, 'both')).toBe(1);
 	});
 
-	it('takes the index of the nearest item on both axes', () => {
+	it('lands before or after the nearest item on both axes, by which side of its center the pointer is', () => {
 		const grid: SortableRect[] = [
 			{ left: 0, top: 0, width: 50, height: 50 },
 			{ left: 50, top: 0, width: 50, height: 50 },
@@ -58,7 +58,8 @@ describe('resolveSortIndex', () => {
 			{ left: 50, top: 50, width: 50, height: 50 },
 		];
 
-		expect(resolveSortIndex(grid, 0, { x: 70, y: 80 }, 'both')).toBe(3);
+		expect(resolveSortIndex(grid, 0, { x: 80, y: 80 }, 'both')).toBe(3);
+		expect(resolveSortIndex(grid, 0, { x: 70, y: 80 }, 'both')).toBe(2);
 		expect(resolveSortIndex(grid, 3, { x: 10, y: 10 }, 'both')).toBe(0);
 	});
 });
@@ -110,6 +111,17 @@ describe('resolveInsertIndex', () => {
 	it('is 0 for an empty list on every axis', () => {
 		expect(resolveInsertIndex([], { x: 5, y: 5 })).toBe(0);
 		expect(resolveInsertIndex([], { x: 5, y: 5 }, 'both')).toBe(0);
+	});
+
+	it('can land after the last item on both axes', () => {
+		const grid: SortableRect[] = [
+			{ left: 0, top: 0, width: 50, height: 50 },
+			{ left: 50, top: 0, width: 50, height: 50 },
+		];
+
+		expect(resolveInsertIndex(grid, { x: 90, y: 20 }, 'both')).toBe(2);
+		expect(resolveInsertIndex(grid, { x: 60, y: 20 }, 'both')).toBe(1);
+		expect(resolveInsertIndex(grid, { x: 70, y: 90 }, 'both')).toBe(2);
 	});
 });
 

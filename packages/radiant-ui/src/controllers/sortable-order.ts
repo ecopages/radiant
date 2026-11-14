@@ -11,8 +11,9 @@ export type SortableRect = Pick<DOMRect, 'left' | 'top' | 'width' | 'height'>;
  *
  * @remarks
  * Pure: no DOM. `rects` are the items it would join, none of them the dragged one. `vertical` and `horizontal`
- * count the items whose midpoint the pointer has passed along the axis. `both` (wrapping layouts) takes the index
- * of the item whose center is nearest the pointer, so the dragged one lands before it; no items gives `0`.
+ * count the items whose midpoint the pointer has passed along the axis. `both` (wrapping layouts) takes the item
+ * whose center is nearest the pointer and lands after it when the pointer is past that center in reading order
+ * (right of it on the same row, otherwise below it), else before it; no items gives `0`.
  */
 export function resolveInsertIndex(
 	rects: readonly SortableRect[],
@@ -20,16 +21,19 @@ export function resolveInsertIndex(
 	axis: SortableAxis = 'vertical',
 ): number {
 	if (axis === 'both') {
-		let nearest = 0;
+		let slot = 0;
 		let best = Infinity;
 		rects.forEach((rect, index) => {
-			const distance = Math.hypot(point.x - (rect.left + rect.width / 2), point.y - (rect.top + rect.height / 2));
+			const dx = point.x - (rect.left + rect.width / 2);
+			const dy = point.y - (rect.top + rect.height / 2);
+			const distance = Math.hypot(dx, dy);
 			if (distance < best) {
 				best = distance;
-				nearest = index;
+				const pastCenter = Math.abs(dy) <= rect.height / 2 ? dx > 0 : dy > 0;
+				slot = pastCenter ? index + 1 : index;
 			}
 		});
-		return nearest;
+		return slot;
 	}
 	const vertical = axis === 'vertical';
 	return rects.filter((rect) =>
@@ -43,8 +47,8 @@ export function resolveInsertIndex(
  * @remarks
  * Pure. `rects` are every item in current order, the dragged one included (its rect is ignored, because an owner
  * that translates it with the pointer would otherwise always find it nearest). The owner applies the new order
- * only on drop, so the other rects stay put during the drag. The result is an index in the reordered list; with
- * `both` it is the index of the nearest other item. See `resolveInsertIndex` for the rule.
+ * only on drop, so the other rects stay put during the drag. The result is an index in the reordered list, the
+ * slot `resolveInsertIndex` finds among the other items.
  */
 export function resolveSortIndex(
 	rects: readonly SortableRect[],
@@ -52,12 +56,11 @@ export function resolveSortIndex(
 	point: { x: number; y: number },
 	axis: SortableAxis = 'vertical',
 ): number {
-	const others = rects.filter((_, index) => index !== from);
-	if (axis === 'both' && others.length === 0) {
-		return from;
-	}
-	const slot = resolveInsertIndex(others, point, axis);
-	return axis === 'both' && slot >= from ? slot + 1 : slot;
+	return resolveInsertIndex(
+		rects.filter((_, index) => index !== from),
+		point,
+		axis,
+	);
 }
 
 /** The index of the first rect that contains `point`, or `-1`. Used to find the list under the pointer. */
