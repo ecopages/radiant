@@ -72,7 +72,7 @@ toggle.addEventListener('click', () => {
 
 ## Lifecycle
 
-`attach()` leaves a comment where the node was and appends the node to the container. `destroy()` restores the original position among its siblings, skipping the move when something removed the comment in the meantime. `isMounted` tells which state it is in. A node that leaves its ancestors loses what they set, so `attach()` also carries the `dark` class, the `data-theme` attribute and the inline `--rui-*` custom properties of its ancestors onto the node, and `destroy()` removes them again.
+`attach()` leaves a comment where the node was and appends the node to the container. `destroy()` restores the original position among its siblings, skipping the move when something removed the comment in the meantime. A node without a parent is not mounted. Attaching or destroying twice changes nothing, and `isMounted` tells which state it is in. A node that leaves its ancestors loses what they set, so `attach()` also carries the `dark` class, the `data-theme` attribute and the inline `--rui-*` custom properties of its ancestors onto the node, and `destroy()` removes them again.
 
 With a host, `createPortalController(host, config)` does the same on connect and disconnect; see [bindController](/docs/controllers/bind-controller).
 

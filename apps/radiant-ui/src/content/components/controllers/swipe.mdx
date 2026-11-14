@@ -67,7 +67,7 @@ swipe.attach();
 
 ## Lifecycle
 
-`attach()` listens for `pointerdown`, `pointerup` and `pointercancel` on the target. It reports once, on release, and does not follow the pointer; a surface that moves with the pointer needs [PointerDragController](/docs/controllers/pointer-drag). `destroy()` removes the listeners and drops a gesture in progress.
+`attach()` listens for a press on the target; release and cancel are then listened for on `document`, so a release outside the element still ends the gesture. It reports once, on release, and does not follow the pointer; a surface that moves with the pointer needs [PointerDragController](/docs/controllers/pointer-drag). A cancel or `destroy()` drops a gesture in progress, and `destroy()` removes the listeners.
 
 With a host, `createSwipeController(host, config)` does the same on connect and disconnect; see [bindController](/docs/controllers/bind-controller).
 

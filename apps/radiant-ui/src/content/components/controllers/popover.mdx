@@ -82,12 +82,12 @@ trigger.addEventListener('click', () => {
 | `portal`           | Mount the popup in `document.body` while open. Default `true`; `false` leaves it in place.            |
 | `matchAnchorWidth` | Give the popup the anchor width.                                                                      |
 | `portalContainer`  | Where a portaled popup goes instead of `document.body`.                                               |
-| `onDismiss`        | Called when the user dismisses the open popup. Dismissal listens only when this is set.               |
+| `onDismiss`        | Called when the user dismisses the open popup. Dismissal listens only when this is set. Read once, when the controller is created.               |
 | `dismissOn`        | Which dismissals `onDismiss` hears about. Defaults to all. Read once, when the controller is created. |
 
 ## Lifecycle
 
-`attach()` enables `sync()` and, when `onDismiss` is set, dismissal. `sync()` does nothing before `attach()` or after `destroy()`; call it whenever `open` changes. `destroy()` removes the floating listeners, returns a portaled popup to its place and forgets the floating element. Also `updateConfig(patch)`, `contains(node)`, `isOutside(target)` and `teardown()`.
+`attach()` enables `sync()` and, when `onDismiss` is set, dismissal. `sync()` does nothing before `attach()` or after `destroy()`; call it whenever `open` changes. `destroy()` removes the floating listeners, ends dismissal, returns a portaled popup to its place and forgets the floating element. `teardown()` closes the popup the same way but stays attached, so the next `sync()` mounts it again. Also `updateConfig(patch)`, `contains(node)` and `isOutside(target)`.
 
 With a host, `createPopoverController(host, config)` does the same on connect and disconnect; see [bindController](/docs/controllers/bind-controller).
 
