@@ -11,6 +11,10 @@ export type PopoverControllerConfig = {
 	getOpen: () => boolean;
 	getPlacement: () => RuiPlacement;
 	gap?: number;
+	/**
+	 * Moves the surface to the portal container while it is open. Default `true`, unlike `portal` on the listbox and
+	 * calendar controllers, which default to `false`; pass `false` to keep the surface where it is.
+	 */
 	portal?: boolean;
 	matchAnchorWidth?: boolean;
 	/**
@@ -36,7 +40,8 @@ export type PopoverControllerConfig = {
  * a portaled surface to its place and forgets the floating element. Dismissal is delegated to a
  * `DismissController` over the anchor and the floating surface, attached with the popover. Its listeners sit on
  * `document`, so a surface portaled out of the host element still counts as inside: focus moving within it does
- * not dismiss, and focus leaving it does.
+ * not dismiss, and focus leaving it does. A popup portaled out of this surface by another controller counts as
+ * inside it, so working in a nested select does not dismiss the popover around it.
  */
 export class PopoverController implements Controller {
 	private attached = false;

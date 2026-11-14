@@ -56,7 +56,13 @@ export class SwipeController implements Controller {
 	 * @remarks Override to change what counts as a swipe. Return `null` for no swipe; the default is `resolveSwipeDirection` with the configured `axis`, `threshold`, `minVelocity` and `dominance`. `elapsedMs` is the drag's, press to release.
 	 */
 	protected resolveDirection(dx: number, dy: number, elapsedMs: number): SwipeDirection | null {
-		return resolveSwipeDirection(dx, dy, { ...this.config, elapsedMs });
+		return resolveSwipeDirection(dx, dy, {
+			axis: this.config.axis,
+			threshold: this.config.threshold,
+			minVelocity: this.config.minVelocity,
+			dominance: this.config.dominance,
+			elapsedMs,
+		});
 	}
 }
 

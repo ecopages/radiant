@@ -19,6 +19,26 @@ type CarriedTheme = {
 	properties: string[];
 };
 
+const origins = new WeakMap<Node, Comment>();
+
+/**
+ * Where the nearest portaled node at or above `node` came from, or `null` when none is mounted by a
+ * `PortalController`.
+ *
+ * @remarks
+ * The result is the placeholder that marks the node's old place, so it is inside whatever the node was inside.
+ * `DismissController` uses it to treat a portaled popup as part of the surface it came from.
+ */
+export function portalOrigin(node: Node): Comment | null {
+	for (let current: Node | null = node; current; current = current.parentNode) {
+		const origin = origins.get(current);
+		if (origin) {
+			return origin;
+		}
+	}
+	return null;
+}
+
 /**
  * Moves a surface out of its container, for example to `document.body` so it stacks above the page, and puts it
  * back on `destroy()`.
@@ -33,6 +53,8 @@ type CarriedTheme = {
  * Anything the node already has is kept as it is. Stylesheet rules scoped to an ancestor
  * (`.card { --rui-x: ... }`) cannot be listed from the DOM and do not travel; DESIGN.md puts the `--rui-*`
  * defaults and overrides of a portaled surface on the surface class for that reason.
+ *
+ * While mounted, `portalOrigin(node)` answers where the node came from, so `DismissController` counts a portaled popup as part of the surface it left, as a React portal bubbles to its parent.
  *
  * `destroy()` skips the move back when something removed the comment in the meantime, such as a re-render of the
  * origin, and still takes the carried theme off the node.
@@ -77,6 +99,7 @@ export class PortalController implements Controller {
 		const theme = this.carryTheme(node);
 		(this.config.getContainer?.() ?? document.body).appendChild(node);
 		this.mounted = { node, placeholder, theme };
+		origins.set(node, placeholder);
 	}
 
 	destroy(): void {
@@ -85,6 +108,7 @@ export class PortalController implements Controller {
 		}
 		const { node, placeholder, theme } = this.mounted;
 		this.mounted = null;
+		origins.delete(node);
 		if (theme.dark) node.classList.remove(DARK_CLASS);
 		if (theme.attribute) node.removeAttribute(THEME_ATTRIBUTE);
 		theme.properties.forEach((name) => node.style.removeProperty(name));

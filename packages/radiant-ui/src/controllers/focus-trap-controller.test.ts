@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import type { ControllerHost } from './controller';
 import { FocusTrapController, createFocusTrapController } from './focus-trap-controller';
@@ -167,11 +167,10 @@ describe('FocusTrapController', () => {
 		expect(document.activeElement).toBe(outside);
 	});
 
-	it('is idempotent on attach and traps again after a destroy', async () => {
+	it('traps again after a destroy', async () => {
 		const { outside, surface, first, last } = setup();
 		outside.focus();
 		const trap = new FocusTrapController({ getSurface: () => surface });
-		trap.attach();
 		trap.attach();
 		await flush();
 		trap.destroy();
@@ -207,11 +206,14 @@ describe('FocusTrapController', () => {
 		const { outside, surface, first, last } = setup();
 		outside.focus();
 		const trap = new FocusTrapController({ getSurface: () => surface });
+		const addListener = vi.spyOn(document, 'addEventListener');
 
 		trap.attach();
 		await flush();
 		trap.attach();
 		await flush();
+		expect(addListener.mock.calls.filter(([type]) => type === 'keydown')).toHaveLength(1);
+		addListener.mockRestore();
 		last.focus();
 		await userEvent.tab();
 		expect(document.activeElement).toBe(first);
@@ -304,7 +306,10 @@ describe('FocusTrapController', () => {
 
 		outside.focus();
 		trap.focusLast();
+		expect(document.activeElement).toBe(surface);
 
+		outside.focus();
+		trap.focusFirst();
 		expect(document.activeElement).toBe(surface);
 	});
 });
