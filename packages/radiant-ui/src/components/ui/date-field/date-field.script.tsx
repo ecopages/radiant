@@ -256,14 +256,6 @@ export class RuiDateField extends RadiantElement {
 		this.value = typeof value === 'string' ? value : '';
 	}
 
-	@onEvent({
-		selector: '[data-date-field-input], [data-date-field-trigger], [data-date-field-popover]',
-		type: 'focusout',
-	})
-	onRootFocusOut(event: FocusEvent): void {
-		this.calendarPopover.handleFocusOut(event, () => this.calendarPopover.setOpen(false));
-	}
-
 	@onEvent({ ref: 'trigger', type: 'pointerdown' })
 	onTriggerPointerDown(): void {
 		this.calendarPopover.suppressDismiss();

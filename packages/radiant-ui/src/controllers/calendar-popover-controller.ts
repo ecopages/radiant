@@ -1,5 +1,6 @@
 import { listenMobileLayoutViewport } from '@/lib/viewport/mobile-layout';
 import { bindController, type Controller, type ControllerHost } from './controller';
+import { DismissController } from './dismiss-controller';
 import { PopoverController } from './popover-controller';
 
 export type CalendarPopoverControllerConfig = {
@@ -19,20 +20,31 @@ export type CalendarPopoverControllerConfig = {
 /**
  * Shared popover open state, positioning, dismissal and focus for calendar-backed date pickers.
  *
- * @remarks Date-field and date-range-picker keep value commit and selection mode local.
+ * @remarks
+ * Date-field and date-range-picker keep value commit and selection mode local. Focus leaving the host and the popup
+ * closes it, judged after focus settles; `suppressDismiss()` skips the next such close.
  */
 export class CalendarPopoverController implements Controller {
 	private readonly config: CalendarPopoverControllerConfig;
 	private popoverController: PopoverController | null = null;
-	private suppressPopoverDismiss = false;
 	private disposeMobileLayoutListener: (() => void) | null = null;
+	private readonly dismissal: DismissController;
 
 	constructor(config: CalendarPopoverControllerConfig) {
 		this.config = config;
+		this.dismissal = new DismissController({
+			getSurface: () => this.config.getFloating(),
+			getRelated: () => [this.config.getHost()],
+			getOpen: () => this.config.getOpen(),
+			onDismiss: () => this.setOpen(false),
+			triggers: ['focus'],
+			settleFocus: true,
+		});
 	}
 
 	/** Starts listening for mobile layout changes until `destroy()`. */
 	attach(): void {
+		this.dismissal.attach();
 		this.disposeMobileLayoutListener?.();
 		this.disposeMobileLayoutListener = listenMobileLayoutViewport(() => {
 			this.config.onLayoutChange();
@@ -68,14 +80,16 @@ export class CalendarPopoverController implements Controller {
 	}
 
 	destroy(): void {
+		this.dismissal.destroy();
 		this.disposeMobileLayoutListener?.();
 		this.disposeMobileLayoutListener = null;
 		this.popoverController?.destroy();
 		this.popoverController = null;
 	}
 
+	/** Ignores the next focus-out, for a press on the toggle, whose focus change must not close the popup. */
 	suppressDismiss(): void {
-		this.suppressPopoverDismiss = true;
+		this.dismissal.suppressFocus();
 	}
 
 	syncPopover(): void {
@@ -94,33 +108,6 @@ export class CalendarPopoverController implements Controller {
 
 	focusCalendarDay(): void {
 		focusCalendarPickerDay(this.config.getCalendar(), this.config.getFocusIso());
-	}
-
-	handleFocusOut(event: FocusEvent, onClose: () => void): void {
-		const relatedTarget = event.relatedTarget;
-
-		queueMicrotask(() => {
-			if (this.suppressPopoverDismiss) {
-				this.suppressPopoverDismiss = false;
-				return;
-			}
-
-			if (!this.config.getOpen()) {
-				return;
-			}
-
-			const popover = this.config.getFloating();
-			if (!popover) {
-				return;
-			}
-
-			const next = relatedTarget instanceof Node ? relatedTarget : document.activeElement;
-			if (next instanceof Node && (this.config.getHost().contains(next) || popover.contains(next))) {
-				return;
-			}
-
-			onClose();
-		});
 	}
 
 	private ensureController(): PopoverController {

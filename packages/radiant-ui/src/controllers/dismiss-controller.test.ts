@@ -6,7 +6,7 @@ describe('DismissController on plain elements', () => {
 		document.body.replaceChildren();
 	});
 
-	function mount(options: { open?: () => boolean; triggers?: readonly DismissReason[] } = {}) {
+	function mount(options: { open?: () => boolean; triggers?: readonly DismissReason[]; settleFocus?: boolean } = {}) {
 		const anchor = document.createElement('button');
 		const surface = document.createElement('div');
 		const inside = document.createElement('button');
@@ -19,6 +19,7 @@ describe('DismissController on plain elements', () => {
 			getRelated: () => [anchor, null],
 			getOpen: options.open,
 			triggers: options.triggers,
+			settleFocus: options.settleFocus,
 			onDismiss,
 		});
 		return { anchor, surface, inside, outside, onDismiss, controller };
@@ -75,6 +76,54 @@ describe('DismissController on plain elements', () => {
 		expect(onDismiss).toHaveBeenCalledWith('escape', expect.any(KeyboardEvent));
 
 		controller.destroy();
+	});
+
+	it('with settleFocus, judges a focus-out by where focus ended up', async () => {
+		const { inside, outside, onDismiss, controller } = mount({ triggers: ['focus'], settleFocus: true });
+		controller.attach();
+
+		inside.focus();
+		focusOut(inside, null);
+		await Promise.resolve();
+		expect(onDismiss).not.toHaveBeenCalled();
+
+		outside.focus();
+		await Promise.resolve();
+		expect(onDismiss).toHaveBeenCalledTimes(1);
+
+		focusOut(inside, null);
+		expect(onDismiss).toHaveBeenCalledTimes(1);
+		await Promise.resolve();
+		expect(onDismiss).toHaveBeenCalledTimes(2);
+
+		controller.destroy();
+	});
+
+	it('suppressFocus swallows the next focus-out only', async () => {
+		const { inside, outside, onDismiss, controller } = mount({ triggers: ['focus'], settleFocus: true });
+		controller.attach();
+
+		controller.suppressFocus();
+		focusOut(inside, outside);
+		await Promise.resolve();
+		expect(onDismiss).not.toHaveBeenCalled();
+
+		focusOut(inside, outside);
+		await Promise.resolve();
+		expect(onDismiss).toHaveBeenCalledTimes(1);
+
+		controller.destroy();
+	});
+
+	it('with settleFocus, a destroy before the focus settles reports nothing', async () => {
+		const { inside, outside, onDismiss, controller } = mount({ triggers: ['focus'], settleFocus: true });
+		controller.attach();
+
+		focusOut(inside, outside);
+		controller.destroy();
+		await Promise.resolve();
+
+		expect(onDismiss).not.toHaveBeenCalled();
 	});
 
 	it('reports nothing while getOpen is false', () => {

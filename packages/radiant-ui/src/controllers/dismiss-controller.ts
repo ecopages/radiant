@@ -13,6 +13,11 @@ export type DismissControllerConfig = {
 	onDismiss: (reason: DismissReason, event: Event) => void;
 	/** Which triggers to listen for. Defaults to all of them. */
 	triggers?: readonly DismissReason[];
+	/**
+	 * Judges a focus-out one microtask later and, when `relatedTarget` is `null`, by `document.activeElement`.
+	 * For surfaces that contain elements that take focus after the old one blurs.
+	 */
+	settleFocus?: boolean;
 };
 
 const ALL_TRIGGERS: readonly DismissReason[] = ['pointer', 'focus', 'escape'];
@@ -29,6 +34,8 @@ const ALL_TRIGGERS: readonly DismissReason[] = ['pointer', 'focus', 'escape'];
  */
 export class DismissController implements Controller {
 	private readonly listeners: Controller[] = [];
+	private attached = false;
+	private focusSuppressed = false;
 
 	constructor(private readonly config: DismissControllerConfig) {
 		const triggers = config.triggers ?? ALL_TRIGGERS;
@@ -55,15 +62,25 @@ export class DismissController implements Controller {
 	}
 
 	attach(): void {
+		this.attached = true;
 		for (const listener of this.listeners) {
 			listener.attach();
 		}
 	}
 
 	destroy(): void {
+		this.attached = false;
 		for (const listener of this.listeners) {
 			listener.destroy();
 		}
+	}
+
+	/**
+	 * Ignores the next focus-out, for a pointer press on an element whose focus change is not a dismissal, such as
+	 * the trigger that toggles the surface.
+	 */
+	suppressFocus(): void {
+		this.focusSuppressed = true;
 	}
 
 	/** Whether `node` is the surface, inside it, or one of the related elements or inside one. */
@@ -93,7 +110,27 @@ export class DismissController implements Controller {
 	}
 
 	private onFocusOut(event: FocusEvent): void {
-		if (this.isOpen() && !this.isOutside(event.target) && this.isOutside(event.relatedTarget)) {
+		if (this.isOutside(event.target)) {
+			return;
+		}
+		const { relatedTarget } = event;
+		if (!this.config.settleFocus) {
+			this.reportFocus(relatedTarget, event);
+			return;
+		}
+		queueMicrotask(() => {
+			if (this.attached) {
+				this.reportFocus(relatedTarget instanceof Node ? relatedTarget : document.activeElement, event);
+			}
+		});
+	}
+
+	private reportFocus(next: EventTarget | null, event: FocusEvent): void {
+		if (this.focusSuppressed) {
+			this.focusSuppressed = false;
+			return;
+		}
+		if (this.isOpen() && this.isOutside(next)) {
 			this.config.onDismiss('focus', event);
 		}
 	}

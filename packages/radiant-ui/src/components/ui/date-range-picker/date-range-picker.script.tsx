@@ -344,13 +344,6 @@ export class RuiDateRangePicker extends RadiantElement {
 		}
 	}
 
-	@onEvent({
-		selector: '[data-range-start], [data-range-end], [data-range-trigger], [data-range-popover]',
-		type: 'focusout',
-	})
-	onRootFocusOut(event: FocusEvent): void {
-		this.calendarPopover.handleFocusOut(event, () => this.calendarPopover.setOpen(false));
-	}
 }
 
 declare global {

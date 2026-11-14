@@ -90,6 +90,38 @@ describe('CalendarPopoverController on a plain element', () => {
 		host.remove();
 	});
 
+	it('closes when focus leaves the host and the popup, unless suppressed or destroyed', async () => {
+		const { host, config } = mount();
+		const outside = document.createElement('button');
+		const inside = document.createElement('button');
+		host.append(inside);
+		document.body.append(outside);
+		const controller = new CalendarPopoverController(config);
+
+		controller.attach();
+		inside.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: host }));
+		await Promise.resolve();
+		expect(config.setOpenState).not.toHaveBeenCalled();
+
+		inside.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: outside }));
+		await Promise.resolve();
+		expect(config.setOpenState).toHaveBeenCalledWith(false);
+		config.setOpenState.mockClear();
+
+		controller.suppressDismiss();
+		inside.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: outside }));
+		await Promise.resolve();
+		expect(config.setOpenState).not.toHaveBeenCalled();
+
+		controller.destroy();
+		inside.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: outside }));
+		await Promise.resolve();
+		expect(config.setOpenState).not.toHaveBeenCalled();
+
+		host.remove();
+		outside.remove();
+	});
+
 	it('createCalendarPopoverController attaches on connect and destroys on cleanup', () => {
 		const { host, config, listeners } = mount();
 		const connected: (() => void)[] = [];
