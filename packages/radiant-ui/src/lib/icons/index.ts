@@ -6,5 +6,7 @@ export { RuiIconChevronDown } from './chevron-down';
 export { RuiIconChevronLeft } from './chevron-left';
 export { RuiIconChevronRight } from './chevron-right';
 export { RuiIconInfo } from './info';
+export { RuiIconMinus } from './minus';
+export { RuiIconPlus } from './plus';
 export { RuiIconX } from './x';
 export type { RuiIconProps } from './types';
