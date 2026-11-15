@@ -1,0 +1,152 @@
+:is(
+	searchable-list-element,
+	searchable-list-app,
+	div[data-controller='searchable-list'],
+	div[data-example='searchable-list']:not(.primitive-example)
+) {
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	gap: var(--space-stack);
+	box-sizing: border-box;
+	width: min(100%, 24rem);
+	padding: var(--space-inset);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-container);
+	background: var(--surface);
+	color: var(--on-surface);
+	box-shadow: var(--shadow-overlay);
+}
+
+:is(
+		searchable-list-element,
+		searchable-list-app,
+		div[data-controller='searchable-list'],
+		div[data-example='searchable-list']:not(.primitive-example)
+	)
+	:where(label) {
+	font-size: 0.75rem;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	opacity: 0.7;
+}
+
+:is(
+		searchable-list-element,
+		searchable-list-app,
+		div[data-controller='searchable-list'],
+		div[data-example='searchable-list']:not(.primitive-example)
+	)
+	input[type='search'] {
+	box-sizing: border-box;
+	width: 100%;
+	min-height: var(--size-control-lg);
+	padding: var(--space-control-y) var(--space-control-x) var(--space-control-y) calc(var(--space-control-x) + 1.5rem);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-control);
+	background: var(--surface-container-low)
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E")
+		no-repeat var(--space-control-x) center / 1rem;
+	color: inherit;
+	font: inherit;
+}
+
+:is(
+		searchable-list-element,
+		searchable-list-app,
+		div[data-controller='searchable-list'],
+		div[data-example='searchable-list']:not(.primitive-example)
+	)
+	input[type='search']:focus-visible {
+	outline: 2px solid var(--focus-ring);
+	outline-offset: 1px;
+}
+
+:is(
+		searchable-list-element,
+		searchable-list-app,
+		div[data-controller='searchable-list'],
+		div[data-example='searchable-list']:not(.primitive-example)
+	)
+	ul {
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+	margin: 0 calc(var(--space-2) * -1);
+	padding: 0;
+	border: 0;
+	background: transparent;
+	list-style: none;
+}
+
+:is(
+		searchable-list-element,
+		searchable-list-app,
+		div[data-controller='searchable-list'],
+		div[data-example='searchable-list']:not(.primitive-example)
+	)
+	li {
+	padding: var(--space-control-y) var(--space-control-x);
+	border: 0;
+	border-radius: var(--radius-control);
+	background: transparent;
+	transition: background-color var(--duration-fast) var(--ease-out-strong);
+}
+
+:is(
+		searchable-list-element,
+		searchable-list-app,
+		div[data-controller='searchable-list'],
+		div[data-example='searchable-list']:not(.primitive-example)
+	)
+	li[hidden] {
+	display: none;
+}
+
+:is(
+		searchable-list-element,
+		searchable-list-app,
+		div[data-controller='searchable-list'],
+		div[data-example='searchable-list']:not(.primitive-example)
+	)
+	:where(li:hover) {
+	background: var(--surface-container-high);
+}
+
+:is(
+		searchable-list-element,
+		searchable-list-app,
+		div[data-controller='searchable-list'],
+		div[data-example='searchable-list']:not(.primitive-example)
+	)
+	:where(li:focus-visible) {
+	outline: 0;
+	background: color-mix(in srgb, var(--primary) 14%, var(--surface));
+	color: var(--primary);
+	font-weight: 600;
+}
+
+:is(
+		searchable-list-element,
+		searchable-list-app,
+		div[data-controller='searchable-list'],
+		div[data-example='searchable-list']:not(.primitive-example)
+	)
+	:where([data-status]) {
+	margin: 0;
+	font-size: 0.75rem;
+	opacity: 0.65;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	:is(
+			searchable-list-element,
+			searchable-list-app,
+			div[data-controller='searchable-list'],
+			div[data-example='searchable-list']:not(.primitive-example)
+		)
+		li {
+		transition: none;
+	}
+}

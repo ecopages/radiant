@@ -12,8 +12,8 @@ import {
  * dialog, not with the element's connection. `registerCleanupCallback` releases them if the element leaves the page
  * while the dialog is open.
  */
-@customElement('recipe-modal')
-export class RecipeModal extends RadiantElement {
+@customElement('modal-element')
+export class ModalElement extends RadiantElement {
 	@query({ selector: '[data-list]' }) private list!: HTMLElement;
 	@query({ selector: '[data-empty]' }) private empty!: HTMLElement;
 	@query({ selector: '[data-reset]' }) private reset!: HTMLElement;

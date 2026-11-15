@@ -5,11 +5,18 @@ order: 3
 ---
 
 import { PrimitiveExample } from '@/components/primitive-example';
+import { RecipeCode, RecipeExample, RecipePattern, RecipePatterns } from '@/components/recipe-patterns';
 
 export const config = {
 	dependencies: {
-		components: [PrimitiveExample],
-		scripts: ['./searchable-list.script.ts', './searchable-list.element.ts'],
+		components: [PrimitiveExample, RecipePatterns, RecipeCode, RecipeExample],
+		scripts: [
+			'./searchable-list.script.ts',
+			'./searchable-list.element.ts',
+			'./searchable-list.controller.ts',
+			'./searchable-list.component.tsx',
+		],
+		stylesheets: ['./searchable-list.css'],
 	},
 };
 
@@ -32,185 +39,66 @@ Left to the recipe: reading the query, hiding the items that do not match, the D
 
 ## Example
 
-Type to filter, press ArrowDown to move into the list, use the arrow keys, and press Enter to choose. The two forms below behave the same.
+Type to filter, press ArrowDown to move into the list, use the arrow keys, and press Enter to choose. Pick an authoring pattern below; they all behave the same, and the one you pick is remembered on the other recipes.
 
-### Plain JavaScript
+<RecipePatterns patterns={['element', 'component', 'controller', 'plain']}>
 
-A `mount` function wires the controllers to one element and returns the cleanup that undoes it.
-
-<PrimitiveExample name="searchable-list" layout="stack">
-	<label for="fruit-filter">Filter fruit</label>
-	<input id="fruit-filter" type="search" placeholder="Type a fruit" />
-	<ul aria-label="Fruit">
-		<li>Apple</li>
-		<li>Apricot</li>
-		<li>Banana</li>
-		<li>Cherry</li>
-		<li>Date</li>
-	</ul>
-	<p data-status aria-live="polite">
-		5 of 5 shown
-	</p>
-</PrimitiveExample>
-
-```html
-<div data-example="searchable-list">
-	<label for="fruit-filter">Filter fruit</label>
-	<input id="fruit-filter" type="search" placeholder="Type a fruit" />
-	<ul aria-label="Fruit">
-		<li>Apple</li>
-		<li>Apricot</li>
-		<li>Banana</li>
-		<li>Cherry</li>
-		<li>Date</li>
-	</ul>
-	<p data-status aria-live="polite">5 of 5 shown</p>
-</div>
-```
-
-```ts
-import { RovingController } from '@ecopages/radiant-ui/controllers';
-import { textContains } from '@ecopages/radiant-ui/helpers';
-
-export function mount(root: HTMLElement): () => void {
-	const input = root.querySelector('input')!;
-	const list = root.querySelector('ul')!;
-	const status = root.querySelector('[data-status]')!;
-
-	const all = [...list.children] as HTMLElement[];
-	const visible = () => all.filter((item) => !item.hidden);
-
-	const roving = new RovingController({
-		getItems: visible,
-		getTarget: () => list,
-		orientation: 'vertical',
-		wrap: false,
-	});
-	roving.attach();
-	roving.sync();
-
-	input.addEventListener('input', () => {
-		for (const item of all) {
-			item.hidden = !textContains(item.textContent, input.value);
-		}
-		roving.sync();
-		const shown = visible().length;
-		status.textContent = shown === 0 ? 'No matches' : `${shown} of ${all.length} shown`;
-	});
-
-	input.addEventListener('keydown', (event) => {
-		const first = visible()[0];
-		if (event.key === 'ArrowDown' && first) {
-			event.preventDefault();
-			roving.focus(first);
-		}
-	});
-
-	list.addEventListener('keydown', (event) => {
-		if (event.key === 'Enter' && event.target instanceof HTMLElement) {
-			status.textContent = `Chose ${event.target.textContent}`;
-		}
-	});
-	return () => roving.destroy();
-}
-```
-
-`mount` runs once for each example element on the page, and the function it returns undoes it; see [how the examples run](/docs/recipes/overview#how-the-examples-run).
-
-### Radiant element
+<RecipePattern id="element">
 
 The same behavior as a `RadiantElement`. The markup is authored inside the element and the element finds its parts with `@query`; there is nothing to mount, clean up or run again.
 
-<PrimitiveExample host layout="stack">
-	<recipe-searchable-list>
-		<label for="radiant-fruit-filter">Filter fruit</label>
-		<input id="radiant-fruit-filter" type="search" placeholder="Type a fruit" />
-		<ul aria-label="Fruit">
-			<li>Apple</li>
-			<li>Apricot</li>
-			<li>Banana</li>
-			<li>Cherry</li>
-			<li>Date</li>
-		</ul>
-		<p data-status aria-live="polite">
-			5 of 5 shown
-		</p>
-	</recipe-searchable-list>
-</PrimitiveExample>
+<RecipeExample recipe="searchable-list" pattern="element" layout="stack" />
 
-```html
-<recipe-searchable-list>
-	<label for="radiant-fruit-filter">Filter fruit</label>
-	<input id="radiant-fruit-filter" type="search" placeholder="Type a fruit" />
-	<ul aria-label="Fruit">
-		<li>Apple</li>
-		<li>Apricot</li>
-		<li>Banana</li>
-		<li>Cherry</li>
-		<li>Date</li>
-	</ul>
-	<p data-status aria-live="polite">5 of 5 shown</p>
-</recipe-searchable-list>
-```
-
-```ts
-import { RadiantElement, customElement, onEvent, query } from '@ecopages/radiant';
-import { createRovingController } from '@ecopages/radiant-ui/controllers';
-import { textContains } from '@ecopages/radiant-ui/helpers';
-
-@customElement('recipe-searchable-list')
-export class RecipeSearchableList extends RadiantElement {
-	@query({ selector: 'input' }) private input!: HTMLInputElement;
-	@query({ selector: 'ul' }) private list!: HTMLElement;
-	@query({ selector: '[data-status]' }) private status!: HTMLElement;
-
-	private readonly roving = createRovingController(this, {
-		getItems: () => this.visible,
-		getTarget: () => this.list,
-		orientation: 'vertical',
-		wrap: false,
-	});
-
-	private get all(): HTMLElement[] {
-		return [...this.list.children] as HTMLElement[];
-	}
-
-	private get visible(): HTMLElement[] {
-		return this.all.filter((item) => !item.hidden);
-	}
-
-	override onConnected(): void {
-		this.roving.sync();
-	}
-
-	@onEvent({ selector: 'input', type: 'input' })
-	filter(): void {
-		for (const item of this.all) {
-			item.hidden = !textContains(item.textContent, this.input.value);
-		}
-		this.roving.sync();
-		const shown = this.visible.length;
-		this.status.textContent = shown === 0 ? 'No matches' : `${shown} of ${this.all.length} shown`;
-	}
-
-	@onEvent({ selector: 'input', type: 'keydown' })
-	enterList(event: KeyboardEvent): void {
-		const first = this.visible[0];
-		if (event.key === 'ArrowDown' && first) {
-			event.preventDefault();
-			this.roving.focus(first);
-		}
-	}
-
-	@onEvent({ selector: 'ul', type: 'keydown' })
-	choose(event: KeyboardEvent): void {
-		if (event.key === 'Enter' && event.target instanceof HTMLElement) {
-			this.status.textContent = `Chose ${event.target.textContent}`;
-		}
-	}
-}
-```
+<RecipeCode recipe="searchable-list" pattern="element" />
 
 `createRovingController(this, ...)` attaches the controller when the element connects and destroys it when the element disconnects, and `@onEvent` listeners follow the same lifecycle. So removing the element undoes everything, and the router adding a copy on another page starts it again without a mount call. `sync()` goes in `onConnected` because the items exist only after the element has its children.
 
 What the Radiant form removes: the `mount` function and its registration, the cleanup to return and call, and the re-run after a client-side navigation.
+
+</RecipePattern>
+
+<RecipePattern id="component">
+
+The same behavior as one self-contained element. The list is not authored on the page: the element holds the fruit and the query as state and draws the label, the field, the rows and the status line in `render()`.
+
+<PrimitiveExample host layout="stack">
+	<searchable-list-app></searchable-list-app>
+</PrimitiveExample>
+
+<RecipeCode recipe="searchable-list" pattern="component" />
+
+Filtering writes `query` and `status`, and `render()` draws only the matching rows, so a hidden item is no longer an element with `hidden` set but a row that is not there. A render replaces the rows the roving controller knew, so `updated()`, which runs after each commit, calls `sync()` to put the tab stop back on a row that exists. The list is drawn by the first render, after the controller attached on connect and found nothing to listen on, so `updated()` attaches it again. The `input` is not bound to state, so typing never replaces the field and focus stays in it.
+
+Compared with the Radiant element above, the markup and the data live inside the element, so there is nothing to keep in step with the page, but restyling the structure means editing the class. It also needs the render path to have content before the script runs: this docs build prerenders the tag empty and the client draws it, so the page shows nothing until the script loads, which a page of authored children does not.
+
+</RecipePattern>
+
+<RecipePattern id="controller">
+
+The same behavior as a `RadiantController` attached to markup that already exists. The root is a plain `div` carrying `data-controller="searchable-list"`, and the class finds its parts with `@query` just as the element does.
+
+<RecipeExample recipe="searchable-list" pattern="controller" layout="stack" />
+
+<RecipeCode recipe="searchable-list" pattern="controller" />
+
+There is no custom element tag to define, so the markup can come from a server template or a CMS and the class attaches to it through `data-controller`. One registry that the docs site starts over the document connects it, including copies inserted later. `createRovingController(this, ...)` takes the controller as its host exactly as it takes the element, so the logic is the element form's, and removing the root runs the same cleanup.
+
+</RecipePattern>
+
+<RecipePattern id="plain">
+
+A `mount` function wires the controllers to one element and returns the cleanup that undoes it.
+
+<RecipeExample recipe="searchable-list" pattern="plain" layout="stack" />
+
+<RecipeCode recipe="searchable-list" pattern="plain" />
+
+`mount` runs once for each example element on the page, and the function it returns undoes it; see [how the examples run](/docs/recipes/overview#how-the-examples-run).
+
+</RecipePattern>
+
+</RecipePatterns>
+
+### Styles
+
+The stylesheet is the `searchable-list.css` tab in the files above. It styles the field, the rows and the status from the theme variables, and marks the row that holds the tab stop with `:focus-visible`, so the walked row needs no class the script would have to keep in step. The selectors are scoped to the example on this site; drop the scope in your own project.

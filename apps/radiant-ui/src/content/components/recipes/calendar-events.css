@@ -1,11 +1,17 @@
 [data-example='calendar-events'].primitive-example,
-.primitive-example:has(> recipe-calendar-events, > recipe-calendar-events-app) {
+.primitive-example:has(> calendar-events-element, > calendar-events-app, > [data-controller='calendar-events']) {
 	flex-direction: column;
 	flex-wrap: nowrap;
 	align-items: stretch;
 }
 
-:is([data-example='calendar-events'], recipe-calendar-events, recipe-calendar-events-app) :where(input) {
+:is(
+		[data-example='calendar-events'],
+		calendar-events-element,
+		calendar-events-app,
+		div[data-controller='calendar-events']
+	)
+	:where(input) {
 	padding: var(--space-1) var(--space-3);
 	border: 1px solid var(--border);
 	border-radius: var(--radius-control);
@@ -14,23 +20,46 @@
 	font: inherit;
 }
 
-:is([data-example='calendar-events'], recipe-calendar-events, recipe-calendar-events-app) :where([data-title]) {
+:is(
+		[data-example='calendar-events'],
+		calendar-events-element,
+		calendar-events-app,
+		div[data-controller='calendar-events']
+	)
+	:where([data-title]) {
 	margin: 0;
 	font-size: 1rem;
 }
 
-:is([data-example='calendar-events'], recipe-calendar-events, recipe-calendar-events-app) :where([data-grid]) {
+:is(
+		[data-example='calendar-events'],
+		calendar-events-element,
+		calendar-events-app,
+		div[data-controller='calendar-events']
+	)
+	:where([data-grid]) {
 	display: grid;
 	grid-template-columns: repeat(7, minmax(4.5rem, 1fr));
 	gap: var(--space-1);
 	overflow-x: auto;
 }
 
-:is([data-example='calendar-events'], recipe-calendar-events, recipe-calendar-events-app) :where([role='row']) {
+:is(
+		[data-example='calendar-events'],
+		calendar-events-element,
+		calendar-events-app,
+		div[data-controller='calendar-events']
+	)
+	:where([role='row']) {
 	display: contents;
 }
 
-:is([data-example='calendar-events'], recipe-calendar-events, recipe-calendar-events-app)
+:is(
+		[data-example='calendar-events'],
+		calendar-events-element,
+		calendar-events-app,
+		div[data-controller='calendar-events']
+	)
 	:where([role='columnheader']) {
 	font-weight: normal;
 	color: var(--on-surface-container-low);
@@ -38,7 +67,13 @@
 	text-align: center;
 }
 
-:is([data-example='calendar-events'], recipe-calendar-events, recipe-calendar-events-app) :where([role='gridcell']) {
+:is(
+		[data-example='calendar-events'],
+		calendar-events-element,
+		calendar-events-app,
+		div[data-controller='calendar-events']
+	)
+	:where([role='gridcell']) {
 	display: flex;
 	flex-direction: column;
 	gap: var(--space-1);
@@ -50,20 +85,44 @@
 	color: var(--on-surface);
 }
 
-:is([data-example='calendar-events'], recipe-calendar-events, recipe-calendar-events-app) :where([data-outside]) {
+:is(
+		[data-example='calendar-events'],
+		calendar-events-element,
+		calendar-events-app,
+		div[data-controller='calendar-events']
+	)
+	:where([data-outside]) {
 	background: transparent;
 	color: var(--on-surface-container-low);
 }
 
-:is([data-example='calendar-events'], recipe-calendar-events, recipe-calendar-events-app) :where([data-sortable-over]) {
+:is(
+		[data-example='calendar-events'],
+		calendar-events-element,
+		calendar-events-app,
+		div[data-controller='calendar-events']
+	)
+	:where([data-sortable-over]) {
 	border-color: var(--primary);
 }
 
-:is([data-example='calendar-events'], recipe-calendar-events, recipe-calendar-events-app) :where([data-day]) {
+:is(
+		[data-example='calendar-events'],
+		calendar-events-element,
+		calendar-events-app,
+		div[data-controller='calendar-events']
+	)
+	:where(span[data-day]) {
 	font-size: 0.75rem;
 }
 
-:is([data-example='calendar-events'], recipe-calendar-events, recipe-calendar-events-app) :where([data-event]) {
+:is(
+		[data-example='calendar-events'],
+		calendar-events-element,
+		calendar-events-app,
+		div[data-controller='calendar-events']
+	)
+	:where([data-event]) {
 	padding: var(--space-1);
 	overflow-wrap: anywhere;
 	border-radius: var(--radius-control);
@@ -74,24 +133,44 @@
 	user-select: none;
 }
 
-:is([data-example='calendar-events'], recipe-calendar-events, recipe-calendar-events-app)
+:is(
+		[data-example='calendar-events'],
+		calendar-events-element,
+		calendar-events-app,
+		div[data-controller='calendar-events']
+	)
 	:where([data-event][data-sortable-state='lifted']) {
 	background: var(--primary);
 	color: var(--on-primary);
 	transform: translate(var(--sortable-dx, 0), var(--sortable-dy, 0));
 }
 
-:is([data-example='calendar-events'], recipe-calendar-events, recipe-calendar-events-app)
+:is(
+		[data-example='calendar-events'],
+		calendar-events-element,
+		calendar-events-app,
+		div[data-controller='calendar-events']
+	)
 	:where([data-sortable-drop='before']) {
 	box-shadow: 0 -2px 0 var(--primary);
 }
 
-:is([data-example='calendar-events'], recipe-calendar-events, recipe-calendar-events-app)
+:is(
+		[data-example='calendar-events'],
+		calendar-events-element,
+		calendar-events-app,
+		div[data-controller='calendar-events']
+	)
 	:where([data-sortable-drop='after']) {
 	box-shadow: 0 2px 0 var(--primary);
 }
 
-:is([data-example='calendar-events'], recipe-calendar-events, recipe-calendar-events-app)
+:is(
+		[data-example='calendar-events'],
+		calendar-events-element,
+		calendar-events-app,
+		div[data-controller='calendar-events']
+	)
 	:where([role='gridcell']:focus-visible, [data-event]:focus-visible) {
 	outline: 2px solid var(--focus-ring);
 	outline-offset: 1px;

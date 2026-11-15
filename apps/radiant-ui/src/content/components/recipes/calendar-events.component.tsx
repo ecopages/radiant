@@ -1,31 +1,11 @@
 import { RadiantElement, customElement, onEvent, state } from '@ecopages/radiant';
 import { SortableGroup, createRovingController, createSortableController } from '@ecopages/radiant-ui/controllers';
-import {
-	buildCalendarMonth,
-	formatDisplayDate,
-	formatMonthYear,
-	getWeekdayLabels,
-	getWeekStartsOn,
-	textContains,
-} from '@ecopages/radiant-ui/helpers';
+import { formatMonthYear, getWeekdayLabels, getWeekStartsOn, textContains } from '@ecopages/radiant-ui/helpers';
+import { dayLabel, initialEvents, locale, month, steps, weeks, type CalendarEvent } from './calendar-events.data';
 
-type CalendarEvent = { id: string; iso: string; title: string };
-
-const locale = 'en-US';
-const month = new Date(2026, 10, 1);
-const weeks = buildCalendarMonth(month.getFullYear(), month.getMonth(), { locale });
-const steps: Record<string, number> = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 };
-
-const initialEvents: CalendarEvent[] = [
-	{ id: 'review', iso: '2026-11-03', title: 'Design review' },
-	{ id: 'standup', iso: '2026-11-03', title: 'Standup' },
-	{ id: 'launch', iso: '2026-11-12', title: 'Launch day' },
-	{ id: 'retro', iso: '2026-11-19', title: 'Retro' },
-];
-
-@customElement('recipe-calendar-events-app')
-export class RecipeCalendarEventsApp extends RadiantElement<{ status: string }> {
-	@state events = initialEvents;
+@customElement('calendar-events-app')
+export class CalendarEventsApp extends RadiantElement<{ status: string }> {
+	@state events: CalendarEvent[] = [...initialEvents];
 	@state filter = '';
 	@state status = 'Focus a day, press Enter, then Space to lift an event';
 
@@ -118,24 +98,27 @@ export class RecipeCalendarEventsApp extends RadiantElement<{ status: string }> 
 					</div>
 					{weeks.map((week) => (
 						<div key={week[0].iso} role="row">
-							{week.map(({ iso, date, inMonth }) => (
-								<div
-									key={iso}
-									role="gridcell"
-									aria-label={formatDisplayDate(date, locale, 'full')}
-									data-iso={iso}
-									data-outside={inMonth ? undefined : ''}
-								>
-									<span data-day aria-hidden="true">
-										{date.getDate()}
-									</span>
-									{this.visible(this.events, iso).map(({ id, title }) => (
-										<div key={id} data-event={id} tabindex="-1">
-											{title}
-										</div>
-									))}
-								</div>
-							))}
+							{week.map(({ iso, date, inMonth }) => {
+								const events = this.visible(this.events, iso);
+								return (
+									<div
+										key={iso}
+										role="gridcell"
+										aria-label={dayLabel(date, events.length)}
+										data-iso={iso}
+										data-outside={inMonth ? undefined : ''}
+									>
+										<span data-day aria-hidden="true">
+											{date.getDate()}
+										</span>
+										{events.map(({ id, title }) => (
+											<div key={id} data-event={id} tabindex="-1">
+												{title}
+											</div>
+										))}
+									</div>
+								);
+							})}
 						</div>
 					))}
 				</div>

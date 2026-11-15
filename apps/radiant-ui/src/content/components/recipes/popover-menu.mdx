@@ -5,11 +5,12 @@ order: 5
 ---
 
 import { PrimitiveExample } from '@/components/primitive-example';
+import { RecipeCode, RecipeExample, RecipePattern, RecipePatterns } from '@/components/recipe-patterns';
 
 export const config = {
 	dependencies: {
-		components: [PrimitiveExample],
-		scripts: ['./popover-menu.script.ts', './popover-menu.element.ts'],
+		components: [PrimitiveExample, RecipePatterns, RecipeCode, RecipeExample],
+		scripts: ['./popover-menu.script.ts', './popover-menu.element.ts', './popover-menu.controller.ts', './popover-menu.component.tsx'],
 		stylesheets: ['./popover-menu.css'],
 	},
 };
@@ -33,238 +34,68 @@ Left to the recipe: the open flag, moving focus into the menu on open, and retur
 
 ## Example
 
-Open the menu with the button, move with the arrow keys, choose with Enter, or press Escape to close it. The two forms below behave the same.
+Open the menu with the button, move with the arrow keys, choose with Enter, or press Escape to close it. Pick an authoring pattern below; they all behave the same, and the one you pick is remembered on the other recipes.
 
-### Plain JavaScript
+<RecipePatterns patterns={['element', 'component', 'controller', 'plain']}>
 
-A `mount` function wires the controllers to one element and returns the cleanup that undoes it.
-
-<PrimitiveExample name="popover-menu">
-	<button type="button" aria-haspopup="menu" aria-expanded="false">
-		Actions
-	</button>
-	<div role="menu" aria-label="Actions" hidden>
-		<button type="button" role="menuitem">
-			Rename
-		</button>
-		<button type="button" role="menuitem">
-			Duplicate
-		</button>
-		<button type="button" role="menuitem">
-			Delete
-		</button>
-	</div>
-	<p data-status aria-live="polite">
-		Menu closed
-	</p>
-</PrimitiveExample>
-
-```html
-<div data-example="popover-menu">
-	<button type="button" aria-haspopup="menu" aria-expanded="false">Actions</button>
-	<div role="menu" aria-label="Actions" hidden>
-		<button type="button" role="menuitem">Rename</button>
-		<button type="button" role="menuitem">Duplicate</button>
-		<button type="button" role="menuitem">Delete</button>
-	</div>
-	<p data-status aria-live="polite">Menu closed</p>
-</div>
-```
-
-```ts
-import { PopoverController, RovingController } from '@ecopages/radiant-ui/controllers';
-
-export function mount(root: HTMLElement): () => void {
-	const trigger = root.querySelector('button')!;
-	const menu = root.querySelector<HTMLElement>('[role="menu"]')!;
-	const status = root.querySelector('[data-status]')!;
-	const items = [...menu.querySelectorAll<HTMLElement>('[role="menuitem"]')];
-
-	let open = false;
-
-	const popover = new PopoverController({
-		getAnchor: () => trigger,
-		getFloating: () => menu,
-		getOpen: () => open,
-		getPlacement: () => 'bottom-start',
-		portal: false,
-		onDismiss: (reason) => setOpen(false, reason === 'escape'),
-	});
-
-	const roving = new RovingController({
-		getItems: () => items,
-		getTarget: () => menu,
-		orientation: 'vertical',
-	});
-
-	function setOpen(next: boolean, restoreFocus = false): void {
-		open = next;
-		popover.sync();
-		trigger.setAttribute('aria-expanded', String(open));
-		status.textContent = open ? 'Menu open' : 'Menu closed';
-		if (open) {
-			roving.sync();
-			roving.focus(items[0]);
-		} else if (restoreFocus) {
-			trigger.focus();
-		}
-	}
-
-	popover.attach();
-	roving.attach();
-	roving.sync();
-
-	trigger.addEventListener('click', () => setOpen(!open, true));
-	for (const item of items) {
-		item.addEventListener('click', () => {
-			setOpen(false, true);
-			status.textContent = `Chose ${item.textContent}`;
-		});
-	}
-	return () => {
-		popover.destroy();
-		roving.destroy();
-	};
-}
-```
-
-`mount` runs once for each example element on the page, and the function it returns undoes it; see [how the examples run](/docs/recipes/overview#how-the-examples-run).
-
-### Radiant element
+<RecipePattern id="element">
 
 The same behavior as a `RadiantElement`. The markup is authored inside the element and the element finds its parts with `@query`; there is nothing to mount, clean up or run again.
 
-<PrimitiveExample host>
-	<recipe-popover-menu>
-		<button type="button" aria-haspopup="menu" aria-expanded="false">
-			Actions
-		</button>
-		<div role="menu" aria-label="Actions" hidden>
-			<button type="button" role="menuitem">
-				Rename
-			</button>
-			<button type="button" role="menuitem">
-				Duplicate
-			</button>
-			<button type="button" role="menuitem">
-				Delete
-			</button>
-		</div>
-		<p data-status aria-live="polite">
-			Menu closed
-		</p>
-	</recipe-popover-menu>
-</PrimitiveExample>
+<RecipeExample recipe="popover-menu" pattern="element" />
 
-```html
-<recipe-popover-menu>
-	<button type="button" aria-haspopup="menu" aria-expanded="false">Actions</button>
-	<div role="menu" aria-label="Actions" hidden>
-		<button type="button" role="menuitem">Rename</button>
-		<button type="button" role="menuitem">Duplicate</button>
-		<button type="button" role="menuitem">Delete</button>
-	</div>
-	<p data-status aria-live="polite">Menu closed</p>
-</recipe-popover-menu>
-```
-
-```ts
-import { RadiantElement, customElement, onEvent, query } from '@ecopages/radiant';
-import { createPopoverController, createRovingController } from '@ecopages/radiant-ui/controllers';
-
-@customElement('recipe-popover-menu')
-export class RecipePopoverMenu extends RadiantElement {
-	@query({ selector: 'button' }) private trigger!: HTMLElement;
-	@query({ selector: '[role="menu"]' }) private menu!: HTMLElement;
-	@query({ selector: '[role="menuitem"]', all: true }) private items!: HTMLElement[];
-	@query({ selector: '[data-status]' }) private status!: HTMLElement;
-
-	private open = false;
-
-	private readonly menuPopover = createPopoverController(this, {
-		getAnchor: () => this.trigger,
-		getFloating: () => this.menu,
-		getOpen: () => this.open,
-		getPlacement: () => 'bottom-start',
-		portal: false,
-		onDismiss: (reason) => this.setOpen(false, reason === 'escape'),
-	});
-
-	private readonly roving = createRovingController(this, {
-		getItems: () => this.items,
-		getTarget: () => this.menu,
-		orientation: 'vertical',
-	});
-
-	override onConnected(): void {
-		this.roving.sync();
-	}
-
-	private setOpen(next: boolean, restoreFocus = false): void {
-		this.open = next;
-		this.menuPopover.sync();
-		this.trigger.setAttribute('aria-expanded', String(next));
-		this.status.textContent = next ? 'Menu open' : 'Menu closed';
-		if (next) {
-			this.roving.sync();
-			this.roving.focus(this.items[0]);
-		} else if (restoreFocus) {
-			this.trigger.focus();
-		}
-	}
-
-	@onEvent({ selector: 'button[aria-haspopup]', type: 'click' })
-	toggle(): void {
-		this.setOpen(!this.open, true);
-	}
-
-	@onEvent({ selector: '[role="menuitem"]', type: 'click' })
-	choose(event: Event): void {
-		this.setOpen(false, true);
-		this.status.textContent = `Chose ${(event.target as HTMLElement).textContent}`;
-	}
-}
-```
+<RecipeCode recipe="popover-menu" pattern="element" />
 
 `createPopoverController(this, ...)` and `createRovingController(this, ...)` are held in fields because the element calls them when the menu opens; both attach when the element connects and are destroyed when it disconnects, as are the `@onEvent` listeners. The popover still reports the dismissal reason, so the element decides whether focus returns to the button. `sync()` goes in `onConnected` because the items exist only after the element has its children.
 
 What the Radiant form removes: the `mount` function and its registration, the cleanup to return and call, and the re-run after a client-side navigation.
 
+</RecipePattern>
+
+<RecipePattern id="component">
+
+The same menu as one self-contained tag. The element owns its markup: it keeps the open flag and the status as state and draws the button, the menu and the status line with `render()`, so there is no markup to author or copy and the page holds only the tag.
+
+<PrimitiveExample host>
+	<popover-menu-app></popover-menu-app>
+</PrimitiveExample>
+
+<RecipeCode recipe="popover-menu" pattern="component" />
+
+`open` and `status` are `@state`, so `aria-expanded`, `hidden` and the status text follow from `render()` and `setOpen` no longer writes them. The controllers still read the live DOM, so they look the button, the menu and the items up with `querySelector` in their getters instead of holding `@query` fields. The popover shows the menu in `sync()`, ahead of the render, so focus can move into it at once; `updated()`, which runs after each commit, attaches and syncs the roving controller to the menu the render produced. The status line is bound with `this.$.status`, so announcing patches one text node.
+
+Compared with the Radiant element above, the markup lives inside the element, so there is nothing to keep in step with the page and the labels are data you can change, but restyling the structure means editing the class. It also needs the render path on the server to have content before the script runs: this docs build prerenders the tag empty and the client draws it, so the page shows nothing until the script loads, which a page of authored children does not.
+
+</RecipePattern>
+
+<RecipePattern id="controller">
+
+The same behavior as a `RadiantController` attached to markup that already exists. There is no custom element tag: the root is a plain `div` carrying `data-controller="popover-menu"`, and the class finds its parts with `@query` just as the element does.
+
+<RecipeExample recipe="popover-menu" pattern="controller" />
+
+<RecipeCode recipe="popover-menu" pattern="controller" />
+
+The class is registered with `@controller('popover-menu')` and nothing in the file starts it: one registry the docs site starts over the document attaches it to every `data-controller="popover-menu"` element, including markup inserted later, and disconnects it when the element is removed. `createPopoverController(this, ...)` and `createRovingController(this, ...)` accept the controller as their host, so they attach on connect and are destroyed on disconnect, as are the `@onEvent` listeners.
+
+Compared with the Radiant element, there is no tag to define, so the markup can come from a server or a CMS and only needs the attribute. The differences are small: the controller has no `onConnected`, so the first `roving.sync()` goes in a connected callback registered in the constructor, and something outside the class has to start the registry.
+
+</RecipePattern>
+
+<RecipePattern id="plain">
+
+A `mount` function wires the controllers to one element and returns the cleanup that undoes it.
+
+<RecipeExample recipe="popover-menu" pattern="plain" />
+
+<RecipeCode recipe="popover-menu" pattern="plain" />
+
+`mount` runs once for each example element on the page, and the function it returns undoes it; see [how the examples run](/docs/recipes/overview#how-the-examples-run).
+
+</RecipePattern>
+
+</RecipePatterns>
+
 ### Styles
 
-The menu hides with `hidden` and sits in the flow under the button; add `position: absolute` to float it over what follows.
-
-```css
-:is([data-example='popover-menu'], .primitive-example:has(> recipe-popover-menu)) {
-	flex-direction: column;
-	align-items: flex-start;
-	min-height: 13rem;
-}
-
-:is([data-example='popover-menu'], .primitive-example:has(> recipe-popover-menu)) [role='menu'] {
-	min-width: 10rem;
-	box-shadow: 0 var(--space-1) var(--space-3) color-mix(in srgb, var(--on-surface) 20%, transparent);
-}
-
-:is([data-example='popover-menu'], .primitive-example:has(> recipe-popover-menu)) [role='menu'][hidden] {
-	display: none;
-}
-
-:is([data-example='popover-menu'], .primitive-example:has(> recipe-popover-menu)) [role='menuitem'] {
-	padding: var(--space-2) var(--space-3);
-	border: 0;
-	border-radius: var(--radius-control);
-	background: transparent;
-	color: var(--on-surface-container);
-}
-
-:is([data-example='popover-menu'], .primitive-example:has(> recipe-popover-menu)) [role='menuitem']:hover {
-	background: var(--surface-container-high);
-}
-
-:is([data-example='popover-menu'], .primitive-example:has(> recipe-popover-menu)) [role='menuitem']:focus-visible {
-	background: var(--primary);
-	color: var(--on-primary);
-	outline-offset: -2px;
-}
-```
+The menu hides with `hidden` and sits in the flow under the button; add `position: absolute` to float it over what follows. The stylesheet is the `popover-menu.css` tab in the files above.

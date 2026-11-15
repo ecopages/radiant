@@ -1,13 +1,20 @@
 import { RadiantElement, customElement, query } from '@ecopages/radiant';
 import { SortableGroup, createSortableController } from '@ecopages/radiant-ui/controllers';
 
-@customElement('recipe-board')
-export class RecipeBoard extends RadiantElement {
+@customElement('board-element')
+export class BoardElement extends RadiantElement {
 	@query({ selector: 'ul', all: true }) private lists!: HTMLElement[];
 	@query({ selector: '[data-status]' }) private status!: HTMLElement;
 
 	private readonly group = new SortableGroup();
 
+	/**
+	 * One sortable per column.
+	 *
+	 * @remarks
+	 * A controller binds to the host when the class is constructed, before the markup can be queried, so the count is
+	 * written here and has to match the number of `ul` in the markup; the component form takes it from its data.
+	 */
 	private readonly sortables = Array.from({ length: 3 }, (_, column) =>
 		createSortableController(this, {
 			group: this.group,

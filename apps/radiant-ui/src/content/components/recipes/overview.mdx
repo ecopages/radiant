@@ -11,23 +11,28 @@ order: 0
 	it.
 </p>
 
-Recipes are listed in this section, below this page. A component is a composition of [controllers](/docs/controllers/overview) and [helpers](/docs/helpers/overview); a recipe shows one such composition end to end without the weight of a catalog component.
+A component is a composition of [controllers](/docs/controllers/overview) and [helpers](/docs/helpers/overview); a recipe shows one such composition end to end without the weight of a catalog component.
 
 ## What a recipe page contains
 
-Every recipe page has the same four parts, in this order. The example and the source each come in two forms, plain JavaScript and a Radiant element:
+Every recipe page has the same four parts, in this order. The example and the source come once for each authoring pattern the recipe has: a Radiant element, a Radiant component, a Radiant controller and plain JavaScript. A toggle above them switches between the patterns, and the pattern you pick is remembered, so every other recipe opens on it too. Only the selected pattern is on the page: switching destroys the running example, which runs its cleanup, and starts the new one, so two patterns never overlap:
 
 1. **Goal.** The behavior in one or two sentences, and when you would want it.
 2. **Primitives.** Each controller and helper the recipe composes and why that one, one line apiece, linked to its page. A recipe states which decision it left to a config callback, a protected hook or its own code.
-3. **Example.** The recipe running on the page twice, as plain JavaScript and as a Radiant element, in plain elements styled from the theme variables so it follows the active theme.
-4. **Source.** The full code of each form, complete enough to paste into a project: imports, markup and script or element. A recipe whose behavior depends on CSS (the swipe card, sortable list, board, modal and popover menu) ends with a Styles section showing its stylesheet. Its selectors are scoped to the example on this site; drop the scope in your own project.
+3. **Example.** The recipe running on the page in the selected pattern, in plain elements styled from the theme variables so it follows the active theme.
+4. **Source.** The full code of the selected pattern as file tabs under its example, complete enough to paste into a project: the script, element, component or controller, the files every pattern shares (`<recipe>.data.ts` for static data and `<recipe>.loader.ts` for media loading, where a recipe has them), the markup and the stylesheet, when the recipe has one (every recipe here does). The example and the tabs read the same files, so the markup and the code you see are what runs; the Radiant component draws its own markup, so it has no markup tab. The stylesheet's selectors are scoped to the example on this site; drop the scope in your own project.
 
 The rule of [Composing a component](/docs/getting-started/composing) holds in every recipe: keep each controller in a variable you own, configure it with getters and callbacks, and extend a controller through its protected hooks rather than reimplementing it.
 
 ## How the examples run
 
-The source of a recipe is a `mount(root)` function: it wires the controllers to one `[data-example="<name>"]` element and returns the function that undoes it, which destroys every controller it created. The page script that registers `mount` with the docs site is left out of the code block; in your own project call `mount` where the element is created and the returned function where it is removed. See [How the examples run](/docs/controllers/overview#how-the-examples-run).
+The source of the plain form of a recipe is a `mount(root)` function: it wires the controllers to one `[data-example="<name>"]` element and returns the function that undoes it, which destroys every controller it created. The page script that registers `mount` with the docs site is left out of the code block; in your own project call `mount` where the element is created and the returned function where it is removed. See [How the examples run](/docs/controllers/overview#how-the-examples-run).
 
-## Plain and Radiant forms
+## Authoring patterns
 
-The plain form is the controllers with nothing else: one function, no framework, so you can see exactly what is composed. The Radiant form is how a Radiant component uses the same controllers: a `RadiantElement` calls `createX(this, config)`, and the controller attaches when the element connects and is destroyed when it disconnects. Compared with the plain form, the Radiant form has no `mount` function to call, no cleanup to return and call, and nothing to run again after a client-side navigation, because a custom element starts itself on every copy of it that enters the page. The two forms compose the same controllers and behave the same; the prose of each page says what differs.
+The patterns compose the same controllers and behave the same; the prose of each page says what differs. They are listed from the most Radiant to the least.
+
+- **Radiant element.** A `RadiantElement` finds the authored markup inside it with `@query`, and `createX(this, config)` attaches each controller when the element connects and destroys it when it disconnects. There is no `mount` function to call, no cleanup to return and nothing to run again after a client-side navigation, because a custom element starts itself on every copy of it that enters the page.
+- **Radiant component.** The element keeps the data as `@state` and draws its own markup in `render()`, so the markup is no longer authored on the page. The controllers attach again in `updated()`, after each render, because they resolve their elements when they attach and the first attach happens before anything is drawn.
+- **Radiant controller.** A `RadiantController` registered with `@controller('name')` attaches to existing markup that carries `data-controller="name"`, with no custom element to define. It suits markup that a server or a CMS owns. A registry started once for the page attaches a controller when its element appears and disconnects it when the element is removed; on this site the docs start it.
+- **Plain JavaScript.** One function, no framework, so you can see exactly what is composed. It is listed last because it is the baseline the others remove code from: the `mount` function, the cleanup it returns and its registration.

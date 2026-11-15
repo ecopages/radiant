@@ -5,11 +5,17 @@ order: 2
 ---
 
 import { PrimitiveExample } from '@/components/primitive-example';
+import { RecipeCode, RecipeExample, RecipePattern, RecipePatterns } from '@/components/recipe-patterns';
 
 export const config = {
 	dependencies: {
-		components: [PrimitiveExample],
-		scripts: ['./sortable-list.script.ts', './sortable-list.element.ts'],
+		components: [PrimitiveExample, RecipePatterns, RecipeCode, RecipeExample],
+		scripts: [
+			'./sortable-list.script.ts',
+			'./sortable-list.element.ts',
+			'./sortable-list.controller.ts',
+			'./sortable-list.component.tsx',
+		],
 		stylesheets: ['./sortable-list.css'],
 	},
 };
@@ -27,7 +33,7 @@ A to-do list, a playlist or a priority ranking: the order is data the user edits
 ## Primitives
 
 - [SortableController](/docs/controllers/sortable) decides where the item lands, by pointer or keyboard, and announces each step. It never moves a node, so the recipe keeps the order itself.
-- With `preview: true` the dragged item follows the pointer above the page and a placeholder holds its slot; `createPlaceholder` returns an `li` because the container is a `ul`. The lifted item leaves the example, so its style selects it by `data-task`, not by an ancestor.
+- With `preview: true` the dragged item follows the pointer above the page and a placeholder holds its slot; `createPlaceholder` returns an `li` because the container is a `ul`. The lifted item leaves the example, so its style selects it by `data-sortable-task`, not by an ancestor.
 - [reorder](/docs/helpers/ordering) turns the `from` and `to` of a change into the new array, so the order is one array the recipe owns.
 - [RovingController](/docs/controllers/roving) gives the list one tab stop and moves it with the arrows. Its `enabled` returns `false` while an item is lifted, so the arrow keys that steer the lifted item do not also move focus.
 
@@ -37,184 +43,66 @@ Left to the recipe: the order array and writing it to the DOM in `onChange`, and
 
 Tab into the list, press Space on an item, move it with the arrow keys and press Space to drop it, or drag it with the pointer.
 
-The two forms below behave the same.
+Pick an authoring pattern below; they all behave the same, and the one you pick is remembered on the other recipes.
 
-### Plain JavaScript
+<RecipePatterns patterns={['element', 'component', 'controller', 'plain']}>
 
-A `mount` function wires the controllers to the markup and returns the cleanup that undoes it.
-
-<PrimitiveExample name="sortable-list" layout="stack">
-	<ul aria-label="Tasks">
-		<li data-task>Plan</li>
-		<li data-task>Build</li>
-		<li data-task>Test</li>
-		<li data-task>Ship</li>
-	</ul>
-	<p data-status aria-live="polite">
-		Focus an item, press Space, move with the arrows, press Space to drop
-	</p>
-</PrimitiveExample>
-
-```html
-<div data-example="sortable-list">
-	<ul aria-label="Tasks">
-		<li data-task>Plan</li>
-		<li data-task>Build</li>
-		<li data-task>Test</li>
-		<li data-task>Ship</li>
-	</ul>
-	<p data-status aria-live="polite">Focus an item, press Space, move with the arrows, press Space to drop</p>
-</div>
-```
-
-```ts
-import { RovingController, SortableController } from '@ecopages/radiant-ui/controllers';
-import { reorder } from '@ecopages/radiant-ui/helpers';
-
-export function mount(root: HTMLElement): () => void {
-	const list = root.querySelector('ul')!;
-	const status = root.querySelector('[data-status]')!;
-
-	let items = [...list.children] as HTMLElement[];
-
-	const roving = new RovingController({
-		getItems: () => items,
-		getTarget: () => list,
-		orientation: 'vertical',
-		getEnabled: () => sortable.getState() === null,
-	});
-
-	const sortable = new SortableController({
-		preview: true,
-		createPlaceholder: () => document.createElement('li'),
-		getContainer: () => list,
-		getItems: () => items,
-		announce: (message) => (status.textContent = message),
-		onChange: ({ item, from, to }) => {
-			items = reorder(items, from, to);
-			list.append(...items);
-			roving.focus(item);
-		},
-	});
-
-	sortable.attach();
-	roving.attach();
-	roving.sync();
-	return () => {
-		sortable.destroy();
-		roving.destroy();
-	};
-}
-```
-
-`mount` runs once for each example element on the page, and the function it returns undoes it; see [how the examples run](/docs/recipes/overview#how-the-examples-run).
-
-### Radiant element
+<RecipePattern id="element">
 
 The same behavior as a `RadiantElement`. The markup is authored inside the element and the element finds its parts with `@query`; there is nothing to mount, clean up or run again.
 
-<PrimitiveExample host layout="stack">
-	<recipe-sortable-list>
-		<ul aria-label="Tasks">
-			<li data-task>Plan</li>
-			<li data-task>Build</li>
-			<li data-task>Test</li>
-			<li data-task>Ship</li>
-		</ul>
-		<p data-status aria-live="polite">
-			Focus an item, press Space, move with the arrows, press Space to drop
-		</p>
-	</recipe-sortable-list>
-</PrimitiveExample>
+<RecipeExample recipe="sortable-list" pattern="element" layout="stack" />
 
-```html
-<recipe-sortable-list>
-	<ul aria-label="Tasks">
-		<li data-task>Plan</li>
-		<li data-task>Build</li>
-		<li data-task>Test</li>
-		<li data-task>Ship</li>
-	</ul>
-	<p data-status aria-live="polite">Focus an item, press Space, move with the arrows, press Space to drop</p>
-</recipe-sortable-list>
-```
-
-```ts
-import { RadiantElement, customElement, query } from '@ecopages/radiant';
-import { createRovingController, createSortableController } from '@ecopages/radiant-ui/controllers';
-import { reorder } from '@ecopages/radiant-ui/helpers';
-
-@customElement('recipe-sortable-list')
-export class RecipeSortableList extends RadiantElement {
-	@query({ selector: 'ul' }) private list!: HTMLElement;
-	@query({ selector: '[data-status]' }) private status!: HTMLElement;
-
-	private items: HTMLElement[] = [];
-
-	private readonly roving = createRovingController(this, {
-		getItems: () => this.items,
-		getTarget: () => this.list,
-		orientation: 'vertical',
-		getEnabled: () => this.sortable.getState() === null,
-	});
-
-	private readonly sortable = createSortableController(this, {
-		preview: true,
-		createPlaceholder: () => document.createElement('li'),
-		getContainer: () => this.list,
-		getItems: () => this.items,
-		announce: (message) => (this.status.textContent = message),
-		onChange: ({ item, from, to }) => {
-			this.items = reorder(this.items, from, to);
-			this.list.append(...this.items);
-			this.roving.focus(item);
-		},
-	});
-
-	override onConnected(): void {
-		this.items = [...this.list.children] as HTMLElement[];
-		this.roving.sync();
-	}
-}
-```
+<RecipeCode recipe="sortable-list" pattern="element" />
 
 `createSortableController(this, ...)` and `createRovingController(this, ...)` attach when the element connects and are destroyed when it disconnects. They are field initializers because each refers to the other from its callbacks: `enabled` reads the sortable and `onChange` focuses through the roving controller. The items are read in `onConnected`, once the element has its children.
 
 What the Radiant form removes: the `mount` function and its registration, the cleanup that destroys both controllers, and the re-run after a client-side navigation.
 
+</RecipePattern>
+
+<RecipePattern id="component">
+
+The same behavior as a single `RadiantElement` that owns its markup: the tasks are `@state` and `render()` draws the list.
+
+<PrimitiveExample host>
+	<sortable-list-app></sortable-list-app>
+</PrimitiveExample>
+
+<RecipeCode recipe="sortable-list" pattern="component" />
+
+The tasks are `@state`, so a drop is a new array: `onChange` does not touch the DOM, it writes the reordered tasks with `reorder`, and `render()` moves the keyed items. The sortable and roving controllers are still field initializers that refer to each other, but they read the list through a query instead of a stored `ul` and an `items` array, because the list is drawn by the element. `updated()` runs after each commit: it attaches the sortable to the committed list, syncs the roving tab stop and focuses the item that moved. The status line is bound with `this.$.status`, so announcing during a sort patches one text node and never re-renders the list while an item is lifted.
+
+Compared with the Radiant element above, the markup lives inside the element, so there is nothing to keep in step with the page and the tasks are state you can change, but restyling the structure means editing the class. It also needs the render path on the server to have content before the script runs: this docs build prerenders the tag empty and the client draws it, so the page shows nothing until the script loads, which a page of authored children does not.
+
+</RecipePattern>
+
+<RecipePattern id="controller">
+
+The same behavior as a `RadiantController` attached to markup that is already on the page.
+
+<RecipeExample recipe="sortable-list" pattern="controller" layout="stack" />
+
+<RecipeCode recipe="sortable-list" pattern="controller" />
+
+Compared with the Radiant element, there is no custom element tag to define: the markup is a plain `div` that a server or CMS can render, and `data-controller="sortable-list"` attaches the class through the registry, which the docs site starts once over the document. The body is the element's, with `@query` finding the parts and the sortable and roving controllers declared the same way, because a `RadiantController` accepts `createSortableController(this, ...)` as a host. The items are read in `connect()` after `super.connect()`. When the element is removed the registry disconnects the controller and both primitives are destroyed.
+
+</RecipePattern>
+
+<RecipePattern id="plain">
+
+A `mount` function wires the controllers to the markup and returns the cleanup that undoes it.
+
+<RecipeExample recipe="sortable-list" pattern="plain" layout="stack" />
+
+<RecipeCode recipe="sortable-list" pattern="plain" />
+
+`mount` runs once for each example element on the page, and the function it returns undoes it; see [how the examples run](/docs/recipes/overview#how-the-examples-run).
+
+</RecipePattern>
+
+</RecipePatterns>
+
 ### Styles
 
-The lifted item and the placeholder are styled by `data-sortable-state` and `data-sortable-placeholder`; `touch-action: none` on the items lets a touch drag reorder instead of scrolling.
-
-```css
-[data-task] {
-	cursor: grab;
-	touch-action: none;
-	user-select: none;
-}
-
-[data-task][data-sortable-state='lifted'] {
-	z-index: 10;
-	padding: var(--space-2) var(--space-3);
-	border: 1px solid var(--border);
-	border-radius: var(--radius-control);
-	background: var(--primary);
-	color: var(--on-primary);
-	font-size: 0.875rem;
-	box-shadow: 0 0.5rem 1rem rgb(0 0 0 / 0.25);
-	list-style: none;
-	cursor: grabbing;
-}
-
-:is([data-example='sortable-list'], recipe-sortable-list) [data-sortable-placeholder] {
-	min-height: 2.5rem;
-	box-sizing: border-box;
-	outline: 1px dashed var(--primary);
-	outline-offset: -4px;
-	background: transparent;
-}
-
-:is([data-example='sortable-list'], recipe-sortable-list) [data-sortable-drop] {
-	box-shadow: none;
-}
-```
+The lifted item and the placeholder are styled by `data-sortable-state` and `data-sortable-placeholder`; `touch-action: none` on the items lets a touch drag reorder instead of scrolling. The stylesheet is the `sortable-list.css` tab in the files above.

@@ -48,6 +48,24 @@ async function pathExists(filePath: string): Promise<boolean> {
 	}
 }
 
+test('recipe exports carry the source files of every pattern', async () => {
+	const { expandRecipeCode } = await import('./generate-llm-docs');
+	const body = [
+		'<RecipeExample recipe="searchable-list" pattern="element" layout="stack" />',
+		'',
+		'<RecipeCode recipe="searchable-list" pattern="element" />',
+		'',
+		'<RecipeCode recipe="searchable-list" pattern="component" />',
+	].join('\n');
+	const exported = expandRecipeCode(body);
+
+	expect(exported).not.toContain('<Recipe');
+	expect(exported).toContain('```ts title="searchable-list.element.ts"');
+	expect(exported).toContain('```html title="searchable-list.html"');
+	expect(exported).toContain('```css title="searchable-list.css"');
+	expect(exported).toContain('```tsx title="searchable-list.component.tsx"');
+});
+
 test('generateLlmDocs writes llms.txt and Markdown exports in sidebar order', async () => {
 	const outputRoot = await mkdtemp(join(tmpdir(), 'rui-llm-output-'));
 

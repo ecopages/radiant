@@ -3,7 +3,12 @@ import { syncExamples } from '../src/components/primitive-example/mount-example'
 import '@ecopages/radiant-ui/themes/default';
 import '../src/components/primitive-example/primitive-example.css';
 
-const pages = import.meta.glob('../src/content/components/{controllers,recipes}/*.mdx', {
+const pages = import.meta.glob('../src/content/components/controllers/*.mdx', {
+	query: '?raw',
+	import: 'default',
+	eager: true,
+}) as Record<string, string>;
+const recipeMarkup = import.meta.glob('../src/content/components/recipes/*.plain.html', {
 	query: '?raw',
 	import: 'default',
 	eager: true,
@@ -15,7 +20,10 @@ const scripts = import.meta.glob('../src/content/components/{controllers,recipes
  * positioned block a code fence is, tall enough for a popup to overlap it.
  */
 async function mountFramed(section: 'controllers' | 'recipes', slug: string): Promise<HTMLElement> {
-	const markup = pages[`../src/content/components/${section}/${slug}.mdx`]!.match(/```html\n([\s\S]*?)\n```/)![1];
+	const markup =
+		section === 'recipes'
+			? recipeMarkup[`../src/content/components/recipes/${slug}.plain.html`]!
+			: pages[`../src/content/components/${section}/${slug}.mdx`]!.match(/```html\n([\s\S]*?)\n```/)![1];
 	document.body.innerHTML = `${markup}<pre style="position: relative; height: 20rem">code</pre>`;
 	const root = document.querySelector<HTMLElement>(`[data-example="${slug}"]`)!;
 	root.classList.add('primitive-example', 'unstyled');

@@ -1,25 +1,25 @@
 .primitive-example[data-example='modal'],
-.primitive-example:has(> recipe-modal) {
+.primitive-example:has(> modal-element, > modal-app, > [data-controller='modal']) {
 	min-height: 18rem;
 	align-content: flex-start;
 	align-items: flex-start;
 }
 
-:is([data-example='modal'], recipe-modal) :where([data-origin]) {
+:is([data-example='modal'], modal-element, modal-app, div[data-controller='modal']) :where([data-origin]) {
 	display: flex;
 	flex-direction: column;
 	gap: var(--space-3);
 	width: min(100%, 22rem);
 }
 
-:is([data-example='modal'], recipe-modal) :where([data-list] li) {
+:is([data-example='modal'], modal-element, modal-app, div[data-controller='modal']) :where([data-list] li) {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 	gap: var(--space-3);
 }
 
-:is([data-example='modal'], recipe-modal) :where([data-empty]:not([hidden])) {
+:is([data-example='modal'], modal-element, modal-app, div[data-controller='modal']) :where([data-empty]:not([hidden])) {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
@@ -27,7 +27,7 @@
 	margin: 0;
 }
 
-:is([data-example='modal'], recipe-modal) :where([data-layer]:not([hidden])) {
+:is([data-example='modal'], modal-element, modal-app, div[data-controller='modal']) :where([data-layer]:not([hidden])) {
 	position: absolute;
 	inset: 0;
 	z-index: 2;
@@ -38,7 +38,7 @@
 	background: color-mix(in srgb, var(--on-surface) 50%, transparent);
 }
 
-:is([data-example='modal'], recipe-modal) :where([data-dialog]) {
+:is([data-example='modal'], modal-element, modal-app, div[data-controller='modal']) :where([data-dialog]) {
 	box-sizing: border-box;
 	display: flex;
 	flex-direction: column;
@@ -49,17 +49,18 @@
 	border-radius: var(--radius-container);
 	background: var(--surface);
 	color: var(--on-surface);
+	box-shadow: var(--shadow-overlay);
 }
 
-:is([data-example='modal'], recipe-modal) :where([data-dialog] > *) {
+:is([data-example='modal'], modal-element, modal-app, div[data-controller='modal']) :where([data-dialog] > *) {
 	margin: 0;
 }
 
-:is([data-example='modal'], recipe-modal) :where([data-dialog] h3) {
+:is([data-example='modal'], modal-element, modal-app, div[data-controller='modal']) :where([data-dialog] h3) {
 	font-size: 1rem;
 }
 
-:is([data-example='modal'], recipe-modal) :where([data-actions]) {
+:is([data-example='modal'], modal-element, modal-app, div[data-controller='modal']) :where([data-actions]) {
 	display: flex;
 	flex-wrap: wrap;
 	justify-content: flex-end;
@@ -67,7 +68,7 @@
 	margin-block-start: var(--space-2);
 }
 
-:is([data-example='modal'], recipe-modal) :where([data-confirm]) {
+:is([data-example='modal'], modal-element, modal-app, div[data-controller='modal']) :where([data-confirm]) {
 	background: var(--primary);
 	color: var(--on-primary);
 }

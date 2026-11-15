@@ -14,7 +14,7 @@
 	font-size: 0.875rem;
 }
 
-.primitive-example :where(button) {
+.primitive-example :where(button:not(.rui-button, .rui-slider__thumb)) {
 	padding: var(--space-1) var(--space-3);
 	border: 1px solid var(--border);
 	border-radius: var(--radius-control);
@@ -29,7 +29,7 @@
 	outline-offset: 2px;
 }
 
-.primitive-example :where(button[aria-pressed='true'], [data-active]) {
+.primitive-example :where(button:not(.rui-button, .rui-slider__thumb)[aria-pressed='true'], [data-active]) {
 	background: var(--primary);
 	color: var(--on-primary);
 }

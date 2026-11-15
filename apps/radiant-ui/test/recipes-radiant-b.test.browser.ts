@@ -21,8 +21,8 @@ afterEach(() => {
 describe.each<Form>(['plain', 'radiant'])('swipe card with a real mouse (%s form)', (form) => {
 	test('a mouse drag across the card dismisses it', async () => {
 		const root = await mountForm('swipe-card', form);
-		const card = root.querySelector<HTMLElement>('[data-card]')!;
-		await expect.poll(() => root.querySelector('[data-card]')).not.toBeNull();
+		const card = root.querySelector<HTMLElement>('[data-swipe-card]')!;
+		await expect.poll(() => root.querySelector('[data-swipe-card]')).not.toBeNull();
 		const target = document.body.appendChild(document.createElement('div'));
 		const box = card.getBoundingClientRect();
 		target.style.cssText = `position: fixed; top: ${box.top}px; left: ${box.right + 10}px; width: 40px; height: 20px`;
@@ -37,8 +37,8 @@ describe.each<Form>(['plain', 'radiant'])('swipe card with a real mouse (%s form
 describe.each<Form>(['plain', 'radiant'])('swipe card (%s form)', (form) => {
 	const mount = async () => {
 		const root = await mountForm('swipe-card', form);
-		const card = root.querySelector<HTMLElement>('[data-card]')!;
-		await expect.poll(() => root.querySelector('[data-card]')).not.toBeNull();
+		const card = root.querySelector<HTMLElement>('[data-swipe-card]')!;
+		await expect.poll(() => root.querySelector('[data-swipe-card]')).not.toBeNull();
 		return {
 			root,
 			card,
@@ -133,7 +133,7 @@ test('swipe card Radiant form removes every listener when the element leaves and
 
 	const fresh = root.cloneNode(true) as HTMLElement;
 	document.body.append(fresh);
-	const card = fresh.querySelector<HTMLElement>('[data-card]')!;
+	const card = fresh.querySelector<HTMLElement>('[data-swipe-card]')!;
 	pointer(card, 'pointerdown', 200, 0, 1000);
 	pointer(card, 'pointermove', 170, 0, 1100);
 	expect(card.style.getPropertyValue('--swipe-dx')).toBe('-30px');

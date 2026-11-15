@@ -17,7 +17,7 @@ describe('board component', () => {
 	const cards = (root: HTMLElement, column: number) => texts(columns(root)[column].children);
 	const ready = async (root: HTMLElement) => {
 		await expect.poll(() => columns(root)).toHaveLength(3);
-		await expect.poll(() => root.querySelector<HTMLElement>('[data-card]')!.isConnected).toBe(true);
+		await expect.poll(() => root.querySelector<HTMLElement>('[data-board-card]')!.isConnected).toBe(true);
 		return root;
 	};
 
@@ -54,7 +54,7 @@ describe('board component', () => {
 
 	test('the keyboard moves a card to the next column, then another, and focus follows the card', async () => {
 		const root = await ready(await mountComponent('board'));
-		const wire = () => root.querySelector<HTMLElement>('[data-card="form"]')!;
+		const wire = () => root.querySelector<HTMLElement>('[data-board-card="form"]')!;
 		wire().focus();
 
 		await userEvent.keyboard(' {PageDown}{ArrowUp} ');
@@ -84,10 +84,10 @@ describe('board component', () => {
 			tracker.stop();
 		}
 
-		const fresh = document.createElement('recipe-board-app');
+		const fresh = document.createElement('board-app');
 		document.body.append(fresh);
 		await ready(fresh);
-		(fresh.querySelector('[data-card="brief"]') as HTMLElement).focus();
+		(fresh.querySelector('[data-board-card="brief"]') as HTMLElement).focus();
 		await userEvent.keyboard(' {PageDown} ');
 
 		expect(cards(fresh, 1)).toContain('Write the brief');
@@ -183,7 +183,7 @@ describe('calendar events component', () => {
 			tracker.stop();
 		}
 
-		const fresh = document.createElement('recipe-calendar-events-app');
+		const fresh = document.createElement('calendar-events-app');
 		document.body.append(fresh);
 		await ready(fresh);
 		await userEvent.fill(fresh.querySelector('input')!, 'stand');

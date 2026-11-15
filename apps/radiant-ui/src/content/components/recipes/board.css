@@ -1,17 +1,17 @@
 [data-example='board'].primitive-example,
-.primitive-example:has(> recipe-board, > recipe-board-app) {
+.primitive-example:has(> board-element, > board-app, > [data-controller='board']) {
 	flex-direction: column;
 	flex-wrap: nowrap;
 	align-items: stretch;
 }
 
-:is([data-example='board'], recipe-board, recipe-board-app) :where([data-board]) {
+:is([data-example='board'], board-element, board-app, div[data-controller='board']) :where([data-board]) {
 	display: grid;
 	grid-template-columns: repeat(3, minmax(0, 1fr));
 	gap: var(--space-3);
 }
 
-:is([data-example='board'], recipe-board, recipe-board-app) :where([data-column]) {
+:is([data-example='board'], board-element, board-app, div[data-controller='board']) :where([data-column]) {
 	display: flex;
 	flex-direction: column;
 	gap: var(--space-2);
@@ -23,24 +23,24 @@
 	color: var(--on-surface-container);
 }
 
-:is([data-example='board'], recipe-board, recipe-board-app) :where(h3) {
+:is([data-example='board'], board-element, board-app, div[data-controller='board']) :where(h3) {
 	margin: 0;
 	font-size: 0.875rem;
 }
 
-:is([data-example='board'], recipe-board, recipe-board-app) :where(ul) {
+:is([data-example='board'], board-element, board-app, div[data-controller='board']) :where(ul) {
 	min-height: 3rem;
 	max-height: 8rem;
 	overflow-y: auto;
 	border-radius: var(--radius-control);
 }
 
-:is([data-example='board'], recipe-board, recipe-board-app) ul[data-sortable-over] {
+:is([data-example='board'], board-element, board-app, div[data-controller='board']) ul[data-sortable-over] {
 	outline: 2px solid var(--primary);
 	outline-offset: -2px;
 }
 
-[data-card] {
+[data-board-card] {
 	padding: var(--space-1) var(--space-3);
 	border: 1px solid var(--border);
 	border-radius: var(--radius-control);
@@ -52,26 +52,26 @@
 	user-select: none;
 }
 
-[data-card]:focus-visible {
+[data-board-card]:focus-visible {
 	outline: 2px solid var(--focus-ring);
 	outline-offset: 2px;
 }
 
-[data-card][data-sortable-state='lifted'] {
+[data-board-card][data-sortable-state='lifted'] {
 	z-index: 10;
 	background: var(--primary);
 	color: var(--on-primary);
-	box-shadow: 0 0.5rem 1rem rgb(0 0 0 / 0.25);
+	box-shadow: var(--shadow-overlay);
 	list-style: none;
 	cursor: grabbing;
 }
 
-:is([data-example='board'], recipe-board, recipe-board-app) [data-sortable-placeholder] {
+:is([data-example='board'], board-element, board-app, div[data-controller='board']) [data-sortable-placeholder] {
 	border: 1px dashed var(--primary);
 	border-radius: var(--radius-control);
 	background: transparent;
 }
 
-:is([data-example='board'], recipe-board, recipe-board-app) [data-sortable-drop] {
+:is([data-example='board'], board-element, board-app, div[data-controller='board']) [data-sortable-drop] {
 	box-shadow: none;
 }
