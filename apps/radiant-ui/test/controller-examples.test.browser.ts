@@ -223,4 +223,26 @@ describe('controller page examples', () => {
 		(submenu.firstElementChild as HTMLElement).click();
 		expect(status(root).textContent).toBe('Chose Report.md');
 	});
+
+	test('MediaController loads a tone, plays it and scrubs', async () => {
+		const root = await mountExample('media');
+		const play = root.querySelector<HTMLButtonElement>('[data-action="play"]')!;
+		const seek = root.querySelector<HTMLInputElement>('input[type="range"]')!;
+		await expect.poll(() => status(root).textContent).toMatch(/^ready, 0:00 of 0:04/);
+		expect(seek.disabled).toBe(false);
+
+		await userEvent.click(play);
+		await expect.poll(() => play.getAttribute('aria-pressed')).toBe('true');
+		await expect.poll(() => status(root).textContent).toMatch(/^playing/);
+
+		seek.value = '3';
+		seek.dispatchEvent(new Event('input', { bubbles: true }));
+		expect(status(root).textContent).toMatch(/0:03 of 0:04/);
+
+		await userEvent.click(play);
+		expect(play.getAttribute('aria-pressed')).toBe('false');
+		expect(play.textContent).toBe('Play');
+		await userEvent.click(root.querySelector('[data-action="mute"]')!);
+		await expect.poll(() => root.querySelector('[data-action="mute"]')!.getAttribute('aria-pressed')).toBe('true');
+	});
 });

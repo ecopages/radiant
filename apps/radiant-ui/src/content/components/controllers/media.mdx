@@ -1,0 +1,238 @@
+---
+title: MediaController
+description: 'The playback core of an audio or video element: one state snapshot, per-frame progress, seek, scrub, volume and rate.'
+order: 14
+---
+
+import { PrimitiveExample } from '@/components/primitive-example';
+
+export const config = {
+	dependencies: {
+		components: [PrimitiveExample],
+		scripts: ['./media.script.ts'],
+	},
+};
+
+# MediaController
+
+<p class="docs-lede">
+	The playback core of an audio or video element: one state snapshot, per-frame progress, seek, scrub, volume and
+	rate.
+</p>
+
+Reach for it to build an audio or video player with custom controls. The host never listens to a media event: it reads a `MediaState` and calls methods. It works on any `HTMLMediaElement`, so on `audio` and `video` alike.
+
+## Import
+
+```ts
+import {
+	MediaController,
+	createMediaController,
+	type MediaState,
+	type MediaStatus,
+} from '@ecopages/radiant-ui/controllers';
+import { formatMediaTime, clampSeek, bufferedEnd } from '@ecopages/radiant-ui/helpers';
+```
+
+## Try it
+
+A four second tone, generated in the page as a WAV blob, loops. Drag the range to scrub: the position follows the pointer at once and the media seeks once you pause. The status line is the state the controller reports.
+
+<PrimitiveExample name="media">
+	<audio></audio>
+	<button type="button" data-action="play" aria-pressed="false">
+		Play
+	</button>
+	<button type="button" data-action="back">
+		Back 1s
+	</button>
+	<button type="button" data-action="forward">
+		Forward 1s
+	</button>
+	<button type="button" data-action="mute" aria-pressed="false">
+		Mute
+	</button>
+	<button type="button" data-action="rate">
+		1x
+	</button>
+	<input type="range" aria-label="Position" min="0" max="0" step="0.01" value="0" disabled />
+	<p data-status>idle</p>
+</PrimitiveExample>
+
+```html
+<div data-example="media">
+	<audio></audio>
+	<button type="button" data-action="play" aria-pressed="false">Play</button>
+	<button type="button" data-action="back">Back 1s</button>
+	<button type="button" data-action="forward">Forward 1s</button>
+	<button type="button" data-action="mute" aria-pressed="false">Mute</button>
+	<button type="button" data-action="rate">1x</button>
+	<input type="range" aria-label="Position" min="0" max="0" step="0.01" value="0" disabled />
+	<p data-status>idle</p>
+</div>
+```
+
+```ts
+import { MediaController, type MediaState } from '@ecopages/radiant-ui/controllers';
+import { formatMediaTime } from '@ecopages/radiant-ui/helpers';
+
+const RATES = [1, 1.5, 2];
+
+export function mount(root: HTMLElement): () => void {
+	const audio = root.querySelector('audio')!;
+	const play = root.querySelector<HTMLButtonElement>('[data-action="play"]')!;
+	const back = root.querySelector<HTMLButtonElement>('[data-action="back"]')!;
+	const forward = root.querySelector<HTMLButtonElement>('[data-action="forward"]')!;
+	const mute = root.querySelector<HTMLButtonElement>('[data-action="mute"]')!;
+	const rate = root.querySelector<HTMLButtonElement>('[data-action="rate"]')!;
+	const seek = root.querySelector<HTMLInputElement>('input[type="range"]')!;
+	const status = root.querySelector('[data-status]')!;
+	const url = toneUrl(4);
+
+	const renderProgress = (state: MediaState) => {
+		const hours = state.duration >= 3600;
+		const position = formatMediaTime(state.position, { hours });
+		const duration = formatMediaTime(state.duration, { hours });
+		seek.max = String(Number.isFinite(state.duration) ? state.duration : 0);
+		seek.value = String(state.position);
+		seek.setAttribute('aria-valuetext', `${position} of ${duration}`);
+		status.textContent = state.error
+			? `error: ${state.error.message || 'the media failed'}`
+			: `${state.status}, ${position} of ${duration}, buffered to ${formatMediaTime(state.buffered)}`;
+	};
+
+	const renderState = (state: MediaState) => {
+		play.setAttribute('aria-pressed', String(!audio.paused));
+		mute.setAttribute('aria-pressed', String(state.muted));
+		rate.textContent = `${state.rate}x`;
+		seek.disabled = !state.seekable;
+		back.disabled = !state.seekable;
+		forward.disabled = !state.seekable;
+		renderProgress(state);
+	};
+
+	const media = new MediaController({
+		getMedia: () => audio,
+		onState: renderState,
+		onProgress: renderProgress,
+	});
+	media.attach();
+	media.setLoop(true);
+	void media.load(url);
+
+	play.addEventListener('click', () => void media.toggle());
+	back.addEventListener('click', () => media.skip(-1));
+	forward.addEventListener('click', () => media.skip(1));
+	mute.addEventListener('click', () => media.toggleMuted());
+	rate.addEventListener('click', () =>
+		media.setRate(RATES[(RATES.indexOf(media.getState().rate) + 1) % RATES.length]!),
+	);
+	seek.addEventListener('input', () => media.scrub(Number(seek.value)));
+
+	return () => {
+		media.destroy();
+		URL.revokeObjectURL(url);
+	};
+}
+```
+
+`toneUrl(seconds)` returns an object URL of a 440 Hz WAV built in memory; it is in the page script. `mount` runs once for each example element on the page, and the function it returns undoes it; see [how the examples run](/docs/controllers/overview#how-the-examples-run).
+
+## Config
+
+| Option                 | Description                                                                                                                                                                       |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `getMedia`             | The `HTMLMediaElement`, resolved on every `attach()`. Returning `null` leaves the controller inert until the next `attach()`.                                                     |
+| `resolveSource`        | `(url) => Promise<string>`: turns the URL given to `load()` into the one the element gets. See [Loading through a Blob](#loading-through-a-blob).                                  |
+| `releaseSource`        | Called with a URL `resolveSource` returned once the element no longer uses it, so you can revoke an object URL. Never called for the URL in use, and each URL once. See [Destroy](#destroy).          |
+| `onState`              | Called with the `MediaState` when anything other than `position`, `buffered`, `bufferedRanges` or `seekableRange` changes, and once on `attach()`.                                 |
+| `onProgress`           | Called with the latest state once per animation frame while playing; on `timeupdate` while playing in a hidden tab; on `timeupdate`, `seeked` and `progress` otherwise; on `visibilitychange`; on `attach()`; and when a `scrub` starts and when its seek is applied. |
+| `onError`              | Called once for each error the state enters: a `MediaError`, a failed `resolveSource`, a `play()` that failed or a last `source` child that could not load.                        |
+| `seekDebounce`         | Quiet time in milliseconds before `scrub` seeks. Default `120`.                                                                                                                   |
+| `pauseOnDestroy`       | Pause when the controller is destroyed for good. Default `true`.                                                                                                                  |
+| `clearSourceOnDestroy` | Remove `src` and reload the element when the controller is destroyed for good. Default `false`.                                                                                   |
+
+## State
+
+`getState()` and every callback return a `MediaState`, a fresh object read from the element's own properties (`readyState`, `networkState`, `paused`, `ended`, `error`, `played`, `buffered`, `seekable`) on every media event. The controller holds only what the element cannot answer: a pending `scrub` target, a `resolveSource` in flight, `blocked`, whether playback was ever started, and a failure that has no `MediaError`. They are cleared when the element is emptied or loads again, but they are flags: if you change the element behind the controller's back, they can lag until the next media event.
+
+| Field                             | Description                                                                                                                                                  |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `status`                          | `idle` (no source), `loading`, `ready` (loaded, not started), `playing`, `paused`, `ended` or `error`.                                                       |
+| `position`                        | Seconds. While a `scrub` is pending it is the scrub target, so a range input does not jump back. After `load(url, { startAt })` it is `startAt` until metadata arrives. |
+| `duration`                        | Seconds. `NaN` before metadata, `Infinity` for a live stream.                                                                                                |
+| `seekable`                        | Metadata is known, no `resolveSource` is pending or rejected and, for a live stream, the element reports a seekable window. `seek` and `scrub` do nothing while `false`. |
+| `live`                            | The duration is `Infinity`.                                                                                                                                  |
+| `buffered`, `bufferedRanges`      | End, in seconds, of the buffered range that contains `position` (0 when none does), and every range as `[start, end]` for a segmented bar.                   |
+| `seekableRange`                   | The window `media.seekable` reports, `[start, end]`, or `null`. For a live stream with a rewind window, seeks are clamped to it.                              |
+| `currentSrc`                      | The source the element actually plays; `''` when it has none.                                                                                                |
+| `volume`, `muted`, `rate`, `loop` | The element's `volume`, `muted`, `playbackRate` and `loop`. `loop` has no event, so it is read on every refresh.                                              |
+| `waiting`                         | Playing with `readyState` below `HAVE_FUTURE_DATA`: playback started and is waiting for data.                                                                |
+| `seeking`                         | The element is seeking.                                                                                                                                      |
+| `blocked`                         | The last `play()` was refused by the autoplay policy. The status is `paused` and `error` stays `null`; the next user-initiated `play()` can succeed.         |
+| `error`                           | A `MediaError` from the element, or the `Error` of a failed `resolveSource`, `play()` or last `source` child (`No supported source`).                        |
+
+How the status is read: an `error` wins (a pending `resolveSource` hides the old error), then a pending `resolveSource` is `loading`, an element with `networkState` empty is `idle`, `ended` is `ended`, an unpaused element is `playing` (`loading` while `readyState` is still 0), a paused element that is still fetching and has no current data is `loading`, and otherwise it is `paused` once playback was started and `ready` before.
+
+A `source` child that fails is only seen when its `error` event fires after `attach()`. Markup that already failed before the controller attached reads as `loading`; call `load(url)` to recover.
+
+## Methods
+
+| Method                                                                                  | Description                                                                                                                                                                                                                                |
+| --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `getState()`                                                                            | The current `MediaState`.                                                                                                                                                                                                                  |
+| `load(url, { autoplay, startAt })`                                                      | Sets the source, through `resolveSource` when given. `autoplay` calls `play()` right after the source is set, so it works for `preload="none"` too. `startAt` seconds is applied as the element's default playback position, and `position` reports it from the `load()` call until metadata arrives, so it never shows 0. A newer `load()` replaces it, and it cancels a pending scrub. Resolves once the element has the source. Never rejects. |
+| `retry()`                                                                               | Runs the last `load()` again with the same URL and options, to recover from an `error`.                                                                                                                                                    |
+| `play()`, `pause()`, `toggle()`                                                         | `play()` never rejects: an `AbortError` (a newer `load()` or a `pause()` interrupted it) is quiet, a `NotAllowedError` sets `blocked`, anything else is the `error` state. It does nothing while the status is `idle`, and after a rejected `resolveSource` while the `error` holds, so the track the element still has is not played by mistake: `load()` or `retry()` recovers. `toggle()` pauses an element that is not paused, which includes one that is `loading`; read a toggle button's pressed state from `!audio.paused`, not from `status === 'playing'`. |
+| `seek(seconds)`                                                                         | Seeks now, clamped to `[0, duration]`, or to the seekable window of a live stream. With an unknown duration it clamps at 0 only. Ignored while not `seekable` and for a value that is not finite. Cancels a pending scrub.                  |
+| `scrub(seconds)`                                                                        | A debounced seek. `position` is the target at once; `currentTime` is set after `seekDebounce` ms without another `scrub`, once for a whole burst. `load()`, `seek()`, `destroy()` and a source change cancel it.                           |
+| `skip(delta)`                                                                           | `seek` relative to the pending scrub target, or to the position when none is pending.                                                                                                                                                      |
+| `goLive()`                                                                              | Seeks to the end of the seekable window of a live stream. Does nothing otherwise.                                                                                                                                                          |
+| `setVolume(0..1)`, `setMuted(muted)`, `toggleMuted()`, `setRate(rate)`, `setLoop(loop)` | Set the element's property. `setVolume` clamps to 0..1 and `setRate` to 0.0625..16; both ignore a value that is not finite. The state follows on `volumechange` and `ratechange`, so it also follows a change someone else makes.         |
+
+## Events and lifecycle
+
+Media events do not bubble, so the controller listens on the element itself, with one `AbortController`, to `loadstart`, `loadedmetadata`, `loadeddata`, `canplay`, `canplaythrough`, `play`, `playing`, `pause`, `ended`, `waiting`, `stalled`, `suspend`, `seeking`, `seeked`, `timeupdate`, `durationchange`, `progress`, `volumechange`, `ratechange`, `emptied`, `abort` and `error`, and in the capture phase to the `error` of `source` children. After each it reads the element again. Nothing counts events, so the order does not matter. In Chromium, setting `src` while playing fires `abort`, `emptied`, `loadstart` and `canplay` with no `pause` and no `play`, and `paused` turns true; `load(url, { autoplay })` then adds `play` and `playing`.
+
+- `attach()` adds the listeners and reports the current state at once, because the media may already have metadata or be playing. It is repeat-safe: attaching again re-resolves `getMedia` and does nothing for the same element, so it is also how a late-rendered element is picked up (the visualizer has a separate `refresh()` because it also re-reads `getEnabled`). Attaching to a different element, or to `null`, first ends the session on the old one as `destroy()` does: paused and released in a microtask unless another controller still uses it. A controller attached after `destroy()` syncs again.
+- While the status is `playing` one frame loop runs, never two. It stops on pause, `ended`, `emptied`, an error, a status that is no longer `playing` and `destroy()`. Animation frames stop in a background tab, so while `document.hidden` the loop is replaced by `timeupdate` and `onProgress` keeps running for a Media Session or lyric sync.
+- A callback may call a method. After `onState` and after `onError` the controller reads the state again, so `onProgress` never receives a state older than the one the callback caused.
+- The constructor makes no DOM, `window` or media access, so building one on the server is safe. Methods do nothing before `attach()`.
+- A media `error` event, a last failing `source` child or a rejected `resolveSource` puts the state in `error` and calls `onError` once. `load()` or `retry()` recovers.
+- Several controllers may share one element. They only read it and call its methods.
+
+With a host, `createMediaController(host, config)` attaches on connect and destroys on disconnect; see [bindController](/docs/controllers/bind-controller).
+
+### Destroy
+
+`destroy()` stops listening, cancels the frame loop, the timers and a pending scrub, and makes a pending `load()` a no-op, all at once. It does not touch the element synchronously: pausing and releasing wait one microtask. If a controller attached to the same element again by then, which is what moving the element in the DOM does (cleanup, then connect), nothing happens and playback and the source carry on. The same holds while another `MediaController` is attached to the element: only the last one destroyed pauses it. Otherwise it pauses unless `pauseOnDestroy` is `false`, and with `clearSourceOnDestroy` removes `src`, reloads the element and calls `releaseSource` once with the resolved source. The resolved source is tracked per element, so when several controllers share it the last one destroyed releases it once, whichever of them loaded it. `attach()` to another element ends the session on the old one with the same rules. Both methods are idempotent.
+
+Releasing a Blob URL revokes it, so the element cannot play that source again. With `clearSourceOnDestroy`, `src` is cleared and the URL released on the final destroy; without it the element keeps `src` and the URL stays alive until the next `load()` replaces it, so a reused element never plays a revoked URL. An element that was ever visualized by an `AudioVisualizerController` must keep same-origin or CORS sources.
+
+### Loading through a Blob
+
+A media element can only seek in a file whose server answers range requests. Many dev and preview servers do not, so on those the position snaps to 0 whenever you seek. Loading through a Blob fixes it for short media, because the whole file is then in memory. Pass a `resolveSource` for that and a `releaseSource` to revoke the object URL; the controller calls it when the URL is no longer used, including on the final `destroy()`:
+
+```ts
+createMediaController(this, {
+	getMedia: () => this.querySelector('audio'),
+	resolveSource: async (url) => URL.createObjectURL(await (await fetch(url)).blob()),
+	releaseSource: (url) => URL.revokeObjectURL(url),
+});
+```
+
+Long media should not be loaded this way: serve it with range support instead. The controller does not hard-code the workaround. It only guards the hook: a newer `load()` or a `destroy()` makes an older pending resolution a no-op and the URL it returned goes to `releaseSource`, and a URL the element is using is never released, so a `resolveSource` that caches and returns the same URL again is safe. While a source resolves the element is paused, the status is `loading`, and `seek` and `scrub` do nothing.
+
+## Accessibility
+
+The controller sets no ARIA and handles no keys. The host provides:
+
+- A name for every control. A toggle such as play or mute keeps one label and sets `aria-pressed` from the state, as the example does (`!audio.paused`, because `toggle()` pauses anything that is not paused). If you want the label to change (Play, Pause) leave `aria-pressed` off: a button must not do both, or a screen reader announces "Pause, toggle button, pressed".
+- `aria-valuetext` on the position control with the position and the duration, for example `1:15 of 4:00` from `formatMediaTime`. Do not use the bare position.
+- Keyboard shortcuts (space, arrows, `m`), fullscreen, picture-in-picture and captions. The controller does none of these; call the element's own APIs.
+- Live-region announcements. Do not make the per-frame status line live. Announce changes of `status`, `blocked` and `error` from `onState` instead.
+- A visible way to start playback: when `blocked` is `true` the browser refused autoplay, so show the play control and let the user press it.
+
+## Protected hooks
+
+None. Change behavior through the config callbacks.

@@ -21,15 +21,16 @@ Nothing in the entry touches the DOM at import time or when called, so helpers r
 
 Use a helper, not a controller, for anything that only maps input to output.
 
-| Page                                         | What it does                                                           | Reach for it when                                       |
-| -------------------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------- |
-| [Dates](/docs/helpers/intl-date)             | Month grids, ISO days, selection state, locale formatting and parsing. | Any calendar, scheduler or date grid.                   |
-| [Date segments](/docs/helpers/date-segments) | The model of a segmented date input.                                   | A date field with separate parts.                       |
-| [Masks](/docs/helpers/mask)                  | Pattern masks and locale date masks.                                   | Formatted text input.                                   |
-| [Numbers](/docs/helpers/intl-number)         | Locale-aware format and parse, step snapping.                          | Number fields and steppers.                             |
-| [Numeric range](/docs/helpers/numeric-range) | Clamp to a stepped range, ratio to value, slider keys.                 | Sliders, knobs and meters.                              |
-| [Text filter](/docs/helpers/text-filter)     | Case- and accent-insensitive contains.                                 | Filtering a list as the user types.                     |
-| [Cycle value](/docs/helpers/cycle-value)     | The next value in a list, wrapping.                                    | A cycle toggle.                                         |
-| [Unique id](/docs/helpers/unique-id)         | A CSS-safe, document-unique id.                                        | `aria-controls` and `aria-labelledby` targets.          |
-| [Ordering](/docs/helpers/ordering)           | Where a dragged item lands, and key-driven moves, from rectangles.     | Your own drag logic, or applying a sortable `onChange`. |
+| Page                                         | What it does                                                                            | Reach for it when                                       |
+| -------------------------------------------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| [Dates](/docs/helpers/intl-date)             | Month grids, ISO days, selection state, locale formatting and parsing.                  | Any calendar, scheduler or date grid.                   |
+| [Date segments](/docs/helpers/date-segments) | The model of a segmented date input.                                                    | A date field with separate parts.                       |
+| [Masks](/docs/helpers/mask)                  | Pattern masks and locale date masks.                                                    | Formatted text input.                                   |
+| [Numbers](/docs/helpers/intl-number)         | Locale-aware format and parse, step snapping.                                           | Number fields and steppers.                             |
+| [Numeric range](/docs/helpers/numeric-range) | Clamp to a stepped range, ratio to value, slider keys.                                  | Sliders, knobs and meters.                              |
+| [Text filter](/docs/helpers/text-filter)     | Case- and accent-insensitive contains.                                                  | Filtering a list as the user types.                     |
+| [Cycle value](/docs/helpers/cycle-value)     | The next value in a list, wrapping.                                                     | A cycle toggle.                                         |
+| [Unique id](/docs/helpers/unique-id)         | A CSS-safe, document-unique id.                                                         | `aria-controls` and `aria-labelledby` targets.          |
+| [Ordering](/docs/helpers/ordering)           | Where a dragged item lands, and key-driven moves, from rectangles.                      | Your own drag logic, or applying a sortable `onChange`. |
 | [Decisions](/docs/helpers/decisions)         | Swipe direction from a delta, focus-trap wrap target, wrapped index, floating position. | Custom gestures, focus loops and option lists.          |
+| [Media time](/docs/helpers/media-time)       | Time labels, seek clamping and the buffered end of a media element.                     | A player's time display and seek bar.                   |
