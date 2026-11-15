@@ -597,12 +597,14 @@ export class RuiCombobox extends RadiantElement {
 			},
 			onEscapeWhenClosed: () => {
 				const input = this.getInput();
-				if (input && (input.value || (!this.isMultiple() && this.value.length > 0))) {
-					input.value = '';
-					this.value = [];
-					this.changeEvent.emit({ value: [] });
-					this.syncFilter();
+				if (!input || !(input.value || (!this.isMultiple() && this.value.length > 0))) {
+					return false;
 				}
+				input.value = '';
+				this.value = [];
+				this.changeEvent.emit({ value: [] });
+				this.syncFilter();
+				return true;
 			},
 		});
 	}

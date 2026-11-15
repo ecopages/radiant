@@ -296,8 +296,7 @@ function onDocumentClick(event: Event): void {
 
 	const closeTrigger = target.closest('[data-dialog-close]');
 	if (closeTrigger) {
-		const insideDialog = closeTrigger.closest('rui-dialog');
-		if (insideDialog?.hasAttribute('open')) {
+		if (closeTrigger.closest('rui-dialog')) {
 			return;
 		}
 		event.preventDefault();

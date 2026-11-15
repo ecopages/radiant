@@ -44,7 +44,8 @@ const MENU_GAP = 6;
  * Required:
  * - `[data-ref="trigger"]` — menu button. Host sets `aria-haspopup="menu"`,
  *   `aria-expanded`, `aria-controls`, and `disabled`.
- * - `[data-ref="menu"]` — popup surface (`role="menu"`). Host toggles `hidden`.
+ * - `[data-ref="menu"]` — popup surface (`role="menu"`). Host toggles `hidden` and sets `tabindex="-1"`, so a press on
+ *   a separator, the padding or a disabled item leaves focus inside the menu, where focus-out dismissal ignores it.
  *
  * Per menu item:
  * - `[role="menuitem"]` — action or branch. Host reads `data-value` or text on activate.
@@ -112,7 +113,7 @@ export class RuiMenuButton extends RadiantElement {
 		gap: MENU_GAP,
 		portal: false,
 		onDismiss: () => this.setOpen(false),
-		dismissOn: ['pointer'],
+		dismissOn: ['pointer', 'focus'],
 	});
 	private pendingFocus: 'first' | 'last' | 'trigger' | null = null;
 
@@ -135,6 +136,7 @@ export class RuiMenuButton extends RadiantElement {
 		if (!this.triggerTarget || !this.menuTarget) return;
 
 		this.menuTarget.id = this.menuId;
+		this.menuTarget.tabIndex = -1;
 		this.triggerTarget.setAttribute('aria-controls', this.menuId);
 		this.triggerTarget.setAttribute('aria-haspopup', 'menu');
 		const menuTree = this.menuTree;

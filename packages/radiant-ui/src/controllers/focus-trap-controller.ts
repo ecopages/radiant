@@ -1,13 +1,13 @@
 import { bindController, type Controller, type ControllerHost } from './controller';
 import { EventListenerController } from './event-listener-controller';
 import { pickReturnTarget, resolveTrapEdge, resolveTrapMove } from './focus-trap-order';
-import { queryFocusableCandidates } from './focusable-elements';
+import { getFocusableElements } from './focusable-elements';
 
 /** The surface a `FocusTrapController` traps focus in, and how it picks the loop. */
 export type FocusTrapControllerConfig = {
 	/** The modal surface. `null` traps nothing, such as a node the view has not stamped yet. */
 	getSurface: () => HTMLElement | null;
-	/** The elements Tab loops over, in order. Defaults to the focusable descendants of the surface. */
+	/** The elements Tab loops over, in order. Defaults to the visible, non-inert focusable descendants of the surface. */
 	getFocusable?: () => HTMLElement[];
 	/**
 	 * Whether focus inside the surface but outside `getFocusable()` (the surface itself, a `tabindex="-1"` node) is
@@ -109,7 +109,7 @@ export class FocusTrapController implements Controller {
 	}
 
 	private getFocusable(surface: HTMLElement): HTMLElement[] {
-		return this.config.getFocusable?.() ?? queryFocusableCandidates(surface);
+		return this.config.getFocusable?.() ?? getFocusableElements(surface);
 	}
 
 	private focusInitial(): void {

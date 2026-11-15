@@ -22,7 +22,7 @@ export type RuiPopoverProps = {
 	open?: boolean;
 	/** Placement relative to the anchor. Default: `bottom`. */
 	placement?: RuiPlacement;
-	/** Teleport the surface to `document.body`. Default: `true`. */
+	/** Teleport the surface to `document.body`, or into the nearest modal surface that holds the anchor. Default: `true`. */
 	portal?: boolean;
 	/** CSS selector of the element a portaled surface goes to instead of `document.body`, resolved when it opens. */
 	portalContainer?: string;
@@ -55,7 +55,7 @@ export type RuiPopoverProps = {
  *
  * Anchor (one of):
  * - `[data-popover-trigger]` — inside this host, inside a parent `rui-popover-trigger`, or resolved
- *   via the `anchor` attribute (CSS selector). Host sets `aria-controls` and `aria-expanded` on the
+ *   via the `anchor` attribute (CSS selector). Host sets `aria-haspopup="dialog"`, `aria-controls` and `aria-expanded` on the
  *   resolved focusable anchor (first `button`, link, input, or `[role="button"]` inside the trigger).
  *
  * Optional:
@@ -66,7 +66,7 @@ export type RuiPopoverProps = {
  * @element rui-popover
  * @attr {boolean} open - Whether the popover is open (controlled). Default: `false`.
  * @attr {string} placement - Placement relative to the anchor. Default: `bottom`.
- * @attr {boolean} portal - Teleport the surface to `document.body`. Default: `true`.
+ * @attr {boolean} portal - Teleport the surface to `document.body`, or into the nearest modal surface (`[aria-modal="true"]` or an open modal `<dialog>`) that holds the anchor. Default: `true`.
  * @attr {string} portal-container - CSS selector of the element a portaled surface goes to instead of `document.body`, resolved each time it opens. The `portalContainer` property also takes an element or a function that returns one.
  * @attr {boolean} match-anchor-width - Match the anchor width (dropdown menus). Default: `false`.
  * @attr {number} offset - Gap between anchor and surface in px. Default: `8`.
@@ -104,6 +104,8 @@ export class RuiPopover extends RadiantElement {
 	openChangeEvent: EventEmitter<RuiPopoverOpenChangeDetail>;
 
 	private readonly surfaceId = uniqueId('rui-popover');
+	private describedAnchor: HTMLElement | null = null;
+	private setHaspopup = false;
 	private readonly controller = createPopoverController(this, {
 		getAnchor: () => this.getAnchorElement(),
 		getFloating: () => this.surfaceTarget,
@@ -120,6 +122,7 @@ export class RuiPopover extends RadiantElement {
 	 */
 	constructor() {
 		super();
+		this.registerCleanupCallback(() => this.clearAnchorAria());
 		createEventListenerController(this, {
 			getTarget: () => document,
 			type: 'click',
@@ -134,6 +137,20 @@ export class RuiPopover extends RadiantElement {
 
 	protected override onConnected(): void {
 		this.syncPopover();
+	}
+
+	/**
+	 * Takes `aria-controls` and `aria-expanded` back off the anchor the host described, and `aria-haspopup` only when
+	 * the host added it, so an anchor that declares its own keeps it.
+	 */
+	private clearAnchorAria(): void {
+		this.describedAnchor?.removeAttribute('aria-controls');
+		this.describedAnchor?.removeAttribute('aria-expanded');
+		if (this.setHaspopup) {
+			this.describedAnchor?.removeAttribute('aria-haspopup');
+		}
+		this.describedAnchor = null;
+		this.setHaspopup = false;
 	}
 
 	private getAnchorElement(): HTMLElement | null {
@@ -168,7 +185,15 @@ export class RuiPopover extends RadiantElement {
 		if (surface) {
 			surface.id = this.surfaceId;
 		}
+		if (anchor !== this.describedAnchor) {
+			this.clearAnchorAria();
+		}
 		if (anchor) {
+			if (!anchor.hasAttribute('aria-haspopup')) {
+				anchor.setAttribute('aria-haspopup', 'dialog');
+				this.setHaspopup = true;
+			}
+			this.describedAnchor = anchor;
 			anchor.setAttribute('aria-controls', this.surfaceId);
 			anchor.setAttribute('aria-expanded', String(this.open));
 		}

@@ -94,13 +94,19 @@ export function mount(root: HTMLElement): () => void {
 | `getRoot`     | The element whose descendants hold the menus, read on every event.         |
 | `getRootMenu` | The top-level menu.                                                        |
 | `onActivate`  | Called with a leaf item the user activates by click, Enter or Space.       |
-| `onCloseRoot` | Called for Escape (`true`, return focus to the trigger) and Tab (`false`). |
+| `onCloseRoot` | Called for Escape in the root menu (`true`, return focus to the trigger) and Tab (`false`). Escape in a submenu closes only that submenu. |
 
 ## Lifecycle
 
 The controller holds no listener of its own: `attach()` has nothing to start, and the owner routes events to `handlePointerOver`, `handlePointerOut`, `handleFocusOut`, `handleKeydown` and `handleClick`. Call `sync()` after the menus render to set `aria-haspopup`, `aria-expanded`, `aria-controls` and `hidden` on the items with a submenu. `destroy()` closes every open branch and releases its popover and timers; `closeAll()` closes them on demand.
 
 With a host, `createMenuTreeController(host, config)` does the same on connect and disconnect; see [bindController](/docs/controllers/bind-controller).
+
+## Accessibility: what the controller does and what you must provide
+
+The controller handles keys and submenu state; the caller owns the structure. Provide `role="menubar"` or `role="menu"` on the containers with an `aria-label` or `aria-labelledby`, `role="menuitem"`, `menuitemcheckbox` or `menuitemradio` on the items (only a `menuitem` can own a submenu; a `role="group"` inside the menu, such as a radio group, is fine) and `aria-checked` on checkable items. `sync()` adds `aria-haspopup`, `aria-expanded` and `aria-controls` to items that own a submenu.
+
+Keys: arrows, Home, End, Enter and Space, Tab and Escape. Escape closes the submenu that holds focus and returns focus to its parent item; in the root menu it closes the menu. Keys with Alt, Ctrl or Meta held are left to the browser. There is no typeahead.
 
 ## Protected hooks
 

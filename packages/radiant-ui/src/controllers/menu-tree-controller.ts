@@ -5,6 +5,7 @@ import { uniqueId } from '@/lib/unique-id';
 const SUBMENU_DELAY = 200;
 const SUBMENU_CLOSE_DELAY = 250;
 const SUBMENU_GAP = 6;
+const ITEM_SELECTOR = '[role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"]';
 
 /** The root menu and the callbacks a `MenuTreeController` reports activation and closing to. */
 export type MenuTreeControllerConfig = {
@@ -31,7 +32,9 @@ type MenuKeyContext = {
  *
  * `attach()` starts no listener: submenu popovers and timers exist only while a branch is open, and the owner
  * routes events to the `handle*` methods. A submenu opens only while attached, so an event the owner routes late,
- * after `destroy()`, opens nothing. `destroy()` closes every open branch and releases its popover and timers.
+ * after `destroy()`, opens nothing. Items are `role="menuitem"`, `menuitemcheckbox` and `menuitemradio`; only a
+ * `menuitem` can own a submenu. Key presses with Alt, Ctrl or Meta held are left to the browser. There is no
+ * typeahead. `destroy()` closes every open branch and releases its popover and timers.
  */
 export class MenuTreeController implements Controller {
 	private readonly config: MenuTreeControllerConfig;
@@ -106,8 +109,9 @@ export class MenuTreeController implements Controller {
 
 	handleKeydown(event: KeyboardEvent): boolean {
 		const item = this.getDirectItem(event.target);
-		const menu = item?.parentElement;
-		if (!item || !menu || menu.getAttribute('role') !== 'menu') return false;
+		const menu = item?.closest<HTMLElement>('[role="menu"]');
+		if (!item || !menu) return false;
+		if (event.altKey || event.ctrlKey || event.metaKey) return false;
 		const handler = this.keyHandlers[event.key];
 		if (!handler) return false;
 		const handled = handler.call(this, {
@@ -179,10 +183,12 @@ export class MenuTreeController implements Controller {
 
 	/**
 	 * @remarks
-	 * Escape stays in the tree's key map: it runs only for keys pressed on a menu item and returns focus to the
-	 * root trigger (`returnFocus: true`), which is the menu's own keyboard contract, not a document-wide dismissal.
+	 * Escape stays in the tree's key map: it runs only for keys pressed on a menu item, which is the menu's own
+	 * keyboard contract, not a document-wide dismissal. In a submenu it closes only that submenu and focuses its
+	 * parent item; in the root menu it closes the root and returns focus to the root trigger.
 	 */
-	private closeRootMenu(): boolean {
+	private closeRootMenu(context: MenuKeyContext): boolean {
+		if (this.getRootMenu() !== context.menu) return this.closeNestedMenu(context);
 		this.config.onCloseRoot(true);
 		return true;
 	}
@@ -270,7 +276,7 @@ export class MenuTreeController implements Controller {
 	}
 
 	private closeSiblingBranches(item: HTMLElement): void {
-		const menu = item.parentElement;
+		const menu = item.closest<HTMLElement>('[role="menu"]');
 		if (!menu) return;
 		for (const sibling of this.getDirectItems(menu)) {
 			if (sibling !== item && sibling.getAttribute('aria-expanded') === 'true') this.closeSubmenu(sibling, false);
@@ -295,18 +301,19 @@ export class MenuTreeController implements Controller {
 	}
 
 	private getDirectItems(menu: HTMLElement): HTMLElement[] {
-		return Array.from(menu.querySelectorAll<HTMLElement>('[role="menuitem"]')).filter(
+		return Array.from(menu.querySelectorAll<HTMLElement>(ITEM_SELECTOR)).filter(
 			(item) => item.closest('[role="menu"]') === menu,
 		);
 	}
 
 	private getDirectItem(target: EventTarget | null): HTMLElement | null {
 		if (!(target instanceof HTMLElement)) return null;
-		const item = target.closest<HTMLElement>('[role="menuitem"]');
+		const item = target.closest<HTMLElement>(ITEM_SELECTOR);
 		return item && item.closest('[role="menu"]') && this.config.getRoot().contains(item) ? item : null;
 	}
 
 	private getSubmenu(item: HTMLElement): HTMLElement | null {
+		if (item.getAttribute('role') !== 'menuitem') return null;
 		const next = item.nextElementSibling;
 		return next instanceof HTMLElement && next.getAttribute('role') === 'menu' ? next : null;
 	}

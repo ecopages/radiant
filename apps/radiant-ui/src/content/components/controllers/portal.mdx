@@ -80,6 +80,12 @@ export function mount(root: HTMLElement): () => void {
 
 With a host, `createPortalController(host, config)` does the same on connect and disconnect; see [bindController](/docs/controllers/bind-controller).
 
+## Accessibility: what the controller does and what you must provide
+
+Moving a node to the end of `document.body` changes its place in the tab order and the accessibility tree: Tab from the trigger does not reach a portaled popup, which comes after everything else. Wire the trigger to the popup yourself (`aria-controls`, `aria-expanded`, `aria-haspopup`), and for a non-modal popup that holds interactive content either keep it in place with `portal: false` or move focus into it on open and back on close. A modal surface needs `role="dialog"`, `aria-modal="true"` and a label.
+
+Moving a node removes and re-inserts it, so the `connectedCallback` of any custom element inside it runs again. Keep state those elements need in the owner, not in their connect callbacks.
+
 ## Protected hooks
 
 None. Change behavior through the config callbacks.

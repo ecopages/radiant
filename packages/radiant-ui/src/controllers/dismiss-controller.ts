@@ -13,7 +13,15 @@ export type DismissControllerConfig = {
 	getRelated?: () => readonly (HTMLElement | null)[];
 	/** Reports nothing while this returns `false`. Defaults to always open. */
 	getOpen?: () => boolean;
-	onDismiss: (reason: DismissReason, event: Event) => void;
+	/**
+	 * Called when the surface is dismissed.
+	 *
+	 * @remarks
+	 * An Escape callback that leaves the surface open returns `false` to decline: the key is then offered to the
+	 * next layer. Any other return value, including `undefined`, counts as handled. The return value is ignored for
+	 * `pointer` and `focus`.
+	 */
+	onDismiss: (reason: DismissReason, event: Event) => void | boolean;
 	/** Which triggers to listen for. Defaults to all of them. */
 	triggers?: readonly DismissReason[];
 	/**
@@ -30,6 +38,19 @@ export type DismissControllerConfig = {
 
 const ALL_TRIGGERS: readonly DismissReason[] = ['pointer', 'focus', 'escape'];
 
+/** What the Escape registry asks of an attached controller, kept out of the controller's public surface. */
+type EscapeLayer = {
+	isCandidate: (event: Event) => boolean;
+	getSurface: () => HTMLElement | null;
+	dismiss: (event: Event) => void | boolean;
+};
+
+/** Attached controllers that listen for Escape, in attach order. */
+const escapeLayers = new Map<DismissController, EscapeLayer>();
+
+/** Escape key events already routed to the layers, so a later listener on the same press does nothing. */
+const reportedEscapes = new WeakSet<Event>();
+
 /**
  * Calls back when the user dismisses a surface: a pointer press outside it, focus leaving it, or Escape.
  *
@@ -37,18 +58,28 @@ const ALL_TRIGGERS: readonly DismissReason[] = ['pointer', 'focus', 'escape'];
  * Works on any surface, with or without a popover. The surface and its related elements are read through getters
  * on every event, so they may change while attached. All listeners sit on `document`: a focus change inside the
  * surface or its related elements is ignored, and focus moving to nothing (`relatedTarget` is `null`) counts as
- * leaving. Escape is reported wherever it happens in the document; the callback decides whether to stop it or
- * restore focus.
+ * leaving, unless the browser window or tab lost focus (a focus-out with no `relatedTarget` while `document.activeElement` is still the blurred element, which is not a dismissal).
+ *
+ * Escape is reported wherever it happens in the document, to one layer per key press: among the attached controllers
+ * that are open (and, with `escapeScope: 'tree'`, contain the event target), the layer whose surface is nested
+ * inside the others wins, so Escape closes a popover before the dialog that holds it. Layers that are not nested
+ * are told apart by the one that contains the event target, then by the latest attached. Escape during IME
+ * composition is ignored, and so is one that was already reported or whose default was prevented (a menu closing
+ * its submenu), so a layer that closes synchronously does not expose the next one to the same key press. The
+ * callback decides whether to stop the event or restore focus. A callback that leaves its surface open returns
+ * `false`, and the key goes to the next layer instead of being used up.
  */
 export class DismissController implements Controller {
 	private readonly listeners: Controller[] = [];
 	private attached = false;
+	private readonly listensForEscape: boolean;
 	private focusSuppressed = false;
 	private suppressTimer: ReturnType<typeof setTimeout> | undefined;
 
 	constructor(private readonly config: DismissControllerConfig) {
 		const triggers = config.triggers ?? ALL_TRIGGERS;
 		const getTarget = () => document;
+		this.listensForEscape = triggers.includes('escape');
 		if (triggers.includes('pointer')) {
 			this.listeners.push(
 				new EventListenerController({
@@ -77,6 +108,14 @@ export class DismissController implements Controller {
 	attach(): void {
 		this.clearSuppression();
 		this.attached = true;
+		escapeLayers.delete(this);
+		if (this.listensForEscape) {
+			escapeLayers.set(this, {
+				isCandidate: (event) => this.isEscapeCandidate(event),
+				getSurface: () => this.config.getSurface(),
+				dismiss: (event) => this.config.onDismiss('escape', event),
+			});
+		}
 		for (const listener of this.listeners) {
 			listener.attach();
 		}
@@ -85,6 +124,7 @@ export class DismissController implements Controller {
 	destroy(): void {
 		this.clearSuppression();
 		this.attached = false;
+		escapeLayers.delete(this);
 		for (const listener of this.listeners) {
 			listener.destroy();
 		}
@@ -155,6 +195,9 @@ export class DismissController implements Controller {
 			return;
 		}
 		const { relatedTarget } = event;
+		if (relatedTarget === null && document.activeElement === event.target) {
+			return;
+		}
 		if (!this.config.settleFocus) {
 			this.reportFocus(relatedTarget, event);
 			return;
@@ -177,13 +220,40 @@ export class DismissController implements Controller {
 	}
 
 	private onKeyDown(event: KeyboardEvent): void {
-		if (this.config.escapeScope === 'tree' && this.isOutside(event.target)) {
+		if (event.key !== 'Escape' || event.isComposing || event.defaultPrevented || reportedEscapes.has(event)) {
 			return;
 		}
-		if (this.isOpen() && event.key === 'Escape') {
-			this.config.onDismiss('escape', event);
+		reportedEscapes.add(event);
+		const declined = new Set<DismissController>();
+		for (let layer = topEscapeLayer(event, declined); layer; layer = topEscapeLayer(event, declined)) {
+			if (escapeLayers.get(layer)?.dismiss(event) !== false) {
+				return;
+			}
+			declined.add(layer);
 		}
 	}
+
+	private isEscapeCandidate(event: Event): boolean {
+		if (this.config.escapeScope === 'tree' && this.isOutside(event.target)) {
+			return false;
+		}
+		return this.isOpen();
+	}
+}
+
+function isNestedIn(layer: DismissController, other: DismissController): boolean {
+	const surface = escapeLayers.get(layer)?.getSurface() ?? null;
+	const otherSurface = escapeLayers.get(other)?.getSurface() ?? null;
+	return surface !== null && other.contains(surface) && !layer.contains(otherSurface);
+}
+
+function topEscapeLayer(event: KeyboardEvent, declined: ReadonlySet<DismissController>): DismissController | undefined {
+	const candidates = [...escapeLayers]
+		.filter(([controller, layer]) => !declined.has(controller) && layer.isCandidate(event))
+		.map(([controller]) => controller);
+	const topmost = candidates.filter((layer) => !candidates.some((other) => isNestedIn(other, layer)));
+	const holders = topmost.filter((layer) => layer.contains(event.target as Node | null));
+	return (holders.length > 0 ? holders : topmost).at(-1);
 }
 
 /**

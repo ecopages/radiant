@@ -42,7 +42,7 @@ describe('DismissController on plain elements', () => {
 	const focusOut = (target: Node, relatedTarget: Node | null) =>
 		target.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget }));
 	const keyDown = (target: Node, key: string) =>
-		target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+		target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
 
 	it('reports a pointer press outside the surface and its related elements, not inside', () => {
 		const { anchor, surface, inside, outside, onDismiss, controller } = mount();
@@ -192,6 +192,137 @@ describe('DismissController on plain elements', () => {
 		expect(onDismiss).toHaveBeenCalledTimes(2);
 
 		controller.destroy();
+	});
+
+	it('reports Escape only to the nested layer, then to the outer one once it is closed', () => {
+		const outerSurface = document.createElement('div');
+		const innerSurface = document.createElement('div');
+		const innerButton = document.createElement('button');
+		innerSurface.append(innerButton);
+		outerSurface.append(innerSurface);
+		document.body.append(outerSurface);
+		let innerOpen = true;
+		const onOuter = vi.fn();
+		const onInner = vi.fn();
+		const outer = new DismissController({ getSurface: () => outerSurface, onDismiss: onOuter });
+		const inner = new DismissController({
+			getSurface: () => innerSurface,
+			getOpen: () => innerOpen,
+			onDismiss: onInner,
+		});
+		controllers.push(outer, inner);
+		outer.attach();
+		inner.attach();
+
+		keyDown(innerButton, 'Escape');
+		expect(onInner).toHaveBeenCalledTimes(1);
+		expect(onOuter).not.toHaveBeenCalled();
+
+		innerOpen = false;
+		keyDown(innerButton, 'Escape');
+		expect(onOuter).toHaveBeenCalledTimes(1);
+		expect(onInner).toHaveBeenCalledTimes(1);
+	});
+
+	it('closes one layer per press when the inner layer listens first and closes on dismiss', () => {
+		const outerSurface = document.createElement('div');
+		const innerSurface = document.createElement('div');
+		const innerButton = document.createElement('button');
+		innerSurface.append(innerButton);
+		outerSurface.append(innerSurface);
+		document.body.append(outerSurface);
+		let innerOpen = true;
+		const onOuter = vi.fn();
+		const inner = new DismissController({
+			getSurface: () => innerSurface,
+			getOpen: () => innerOpen,
+			onDismiss: () => {
+				innerOpen = false;
+			},
+		});
+		const outer = new DismissController({ getSurface: () => outerSurface, onDismiss: onOuter });
+		controllers.push(outer, inner);
+		inner.attach();
+		outer.attach();
+
+		keyDown(innerButton, 'Escape');
+		expect(onOuter).not.toHaveBeenCalled();
+
+		keyDown(innerButton, 'Escape');
+		expect(onOuter).toHaveBeenCalledTimes(1);
+	});
+
+	it('offers Escape to the next layer when the top layer returns false, and stops at the first that handles it', () => {
+		const a = mount();
+		const b = mount();
+		const c = mount();
+		a.onDismiss.mockReturnValue(undefined);
+		b.onDismiss.mockReturnValue(false);
+		c.onDismiss.mockReturnValue(false);
+		a.controller.attach();
+		b.controller.attach();
+		c.controller.attach();
+
+		keyDown(document.body, 'Escape');
+
+		expect(c.onDismiss).toHaveBeenCalledTimes(1);
+		expect(b.onDismiss).toHaveBeenCalledTimes(1);
+		expect(a.onDismiss).toHaveBeenCalledTimes(1);
+	});
+
+	it('uses the Escape up when the top layer handles it, even when an earlier layer is open', () => {
+		const a = mount();
+		const b = mount();
+		a.controller.attach();
+		b.controller.attach();
+
+		keyDown(document.body, 'Escape');
+
+		expect(b.onDismiss).toHaveBeenCalledTimes(1);
+		expect(a.onDismiss).not.toHaveBeenCalled();
+	});
+
+	it('ignores an Escape whose default was prevented by a handler closer to the target', () => {
+		const { inside, onDismiss, controller } = mount();
+		controller.attach();
+		inside.addEventListener('keydown', (event) => event.preventDefault());
+
+		keyDown(inside, 'Escape');
+
+		expect(onDismiss).not.toHaveBeenCalled();
+	});
+
+	it('reports Escape to the layer that holds the target when layers are not nested', () => {
+		const a = mount();
+		const b = mount();
+		a.controller.attach();
+		b.controller.attach();
+
+		keyDown(a.inside, 'Escape');
+
+		expect(a.onDismiss).toHaveBeenCalledTimes(1);
+		expect(b.onDismiss).not.toHaveBeenCalled();
+	});
+
+	it('ignores Escape pressed while an input method is composing', () => {
+		const { inside, onDismiss, controller } = mount();
+		controller.attach();
+
+		inside.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, isComposing: true }));
+
+		expect(onDismiss).not.toHaveBeenCalled();
+	});
+
+	it('does not treat a window blur, where the active element is unchanged, as focus leaving', () => {
+		const { inside, onDismiss, controller } = mount();
+		controller.attach();
+		inside.focus();
+
+		focusOut(inside, null);
+		expect(onDismiss).not.toHaveBeenCalled();
+
+		inside.blur();
+		expect(onDismiss).toHaveBeenCalledTimes(1);
 	});
 
 	it('listens only for the requested triggers', () => {

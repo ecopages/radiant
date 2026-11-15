@@ -101,6 +101,8 @@ export function mount(root: HTMLElement): () => void {
 
 `attach()` listens for presses and keys on the container and, with a `group`, joins it. `destroy()` ends a sort in progress without calling `onChange` or announcing, and leaves the group. While a sort runs the controller only sets state for CSS: `data-sortable-state="lifted"` on the item, `data-sortable-drop="before"` or `"after"` on the item it would land beside, `data-sortable-active` and `data-sortable-over` on containers, and `--sortable-dx` and `--sortable-dy` on the lifted item. After a drop the owner moves the node, which can blur it, so restore focus on the moved item.
 
+`move(item, to)` and `moveBy(item, delta)` apply a move within the container without a sort, through `onChange` with `source: 'programmatic'`, for "move up" and "move down" buttons; see Accessibility below.
+
 With a host, `createSortableController(host, config)` does the same on connect and disconnect; see [bindController](/docs/controllers/bind-controller).
 
 ### Moving between lists
@@ -147,6 +149,31 @@ const sortable = new SortableController({
 - `--sortable-dx` and `--sortable-dy` are not set, and `resolveTargetIndex` receives `from` as `null` with the rects of the other items.
 
 The [board recipe](/docs/recipes/board) moves cards between scrolling columns with it.
+
+## Accessibility: what the controller does and what you must provide
+
+The controller supplies the keyboard path (Space or Enter lifts, arrows move, Space or Enter drops, Escape cancels) and the announcements. It sets no ARIA on the items. You must provide:
+
+- A live region (`aria-live="polite"`) and `announce` pointed at it. Without `announce` nothing is announced.
+- Focusable items (`tabindex`, usually through `RovingController`) with a role such as `listitem` or `option`, and an `aria-roledescription` and instructions that name the keys. Touch screen readers often do not deliver Space or Enter, so the keyboard path alone is not enough.
+- A non-drag alternative for a single pointer (WCAG 2.5.7): buttons that call `move(item, to)` or `moveBy(item, delta)`. They apply the move through the same `onChange` and announce it like a drop, without lifting. `moveBy(item, -1)` is "move up".
+- `touch-action: none` on the handle (or item) and a target at least 24px square.
+- Focus on the moved item after a drop, in `onChange`; a node that moves can lose focus, and so does a button that moved the item away.
+
+```ts showLineNumbers
+upButton.addEventListener('click', () => {
+	sortable.moveBy(item, -1);
+	item.focus();
+});
+downButton.addEventListener('click', () => {
+	sortable.moveBy(item, 1);
+	item.focus();
+});
+```
+
+`move` returns `false` and does nothing when a sort is running, `getEnabled` is `false`, the item is not one of `getItems()`, the index does not change, or `onChange` refuses. It stays within the container; cross-container moves need a drag or `PageUp` and `PageDown`. Escape also cancels a pointer drag, wherever focus is, and the click after the release is swallowed.
+
+With `preview`, the lifted item goes to `getPreviewLayer()`. The default `document.body` is outside an `aria-modal` dialog, so inside a dialog return an element within the dialog.
 
 ## Protected hooks
 

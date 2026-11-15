@@ -25,6 +25,48 @@ export function focusRovingItem(items: HTMLElement[], index: number): HTMLElemen
 	return items[next] ?? null;
 }
 
+const TEXT_ENTRY_INPUT_TYPES: ReadonlySet<string> = new Set([
+	'text',
+	'search',
+	'email',
+	'url',
+	'tel',
+	'password',
+	'number',
+	'date',
+	'datetime-local',
+	'month',
+	'time',
+	'week',
+]);
+
+function isTextEntry(target: EventTarget | null): boolean {
+	if (target instanceof HTMLInputElement) {
+		return TEXT_ENTRY_INPUT_TYPES.has(target.type);
+	}
+	return target instanceof HTMLTextAreaElement || (target instanceof HTMLElement && target.isContentEditable);
+}
+
+/**
+ * Whether a key press belongs to the browser or to a text-entry control, not to roving navigation.
+ *
+ * @remarks
+ * True when Alt, Ctrl or Meta is held (browser history, select-to-start-of-document and similar shortcuts), or
+ * when the event target is a text field that is not itself one of `items`, so a text field nested inside an item
+ * keeps its caret keys. A text field is a `textarea`, a contenteditable element, or an `input` of type text,
+ * search, email, url, tel, password, number, date, datetime-local, month, time or week. Checkboxes, radios,
+ * buttons, ranges and selects stay navigable. An input that is itself an item (a radio, a toolbar text field)
+ * navigates like any other item. Shift alone does not ignore the key: the pure
+ * navigation functions take only the key name, and a caller that wants Shift+Arrow for selection handles it in
+ * `onMove`. The pure functions below do not call this; `RovingController` does.
+ */
+export function isRovingKeyIgnored(event: KeyboardEvent, items: readonly HTMLElement[]): boolean {
+	if (event.altKey || event.ctrlKey || event.metaKey) {
+		return true;
+	}
+	return isTextEntry(event.target) && !items.includes(event.target as HTMLElement);
+}
+
 function deltaForKey(key: string, orientation: RovingOrientation): 'prev' | 'next' | 'first' | 'last' | null {
 	if (key === 'Home') return 'first';
 	if (key === 'End') return 'last';

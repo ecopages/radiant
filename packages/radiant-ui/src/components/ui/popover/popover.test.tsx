@@ -150,3 +150,86 @@ describe('rui-popover portal container', () => {
 		await vi.waitFor(() => expect(surface.parentElement).toBe(other));
 	});
 });
+
+describe('rui-popover trigger wiring', () => {
+	afterEach(() => {
+		document.body.innerHTML = '';
+	});
+
+	async function mountPopover(declaresMenu = false) {
+		const container = document.createElement('div');
+		document.body.append(container);
+		createRoot(container).render(
+			<RuiPopover
+				trigger={
+					<button type="button" aria-haspopup={declaresMenu ? 'menu' : undefined}>
+						Open
+					</button>
+				}
+			>
+				<span>Body</span>
+			</RuiPopover>,
+		);
+		const host = container.querySelector('rui-popover') as RuiPopoverElement;
+		await vi.waitFor(() => expect(host.querySelector('[data-popover-trigger] button')).toBeTruthy());
+		host.setOpen(true);
+		return { host, trigger: host.querySelector('[data-popover-trigger] button') as HTMLElement };
+	}
+
+	it('declares aria-haspopup="dialog" with aria-controls and aria-expanded on the trigger', async () => {
+		const { host, trigger } = await mountPopover();
+		const surface = document.querySelector('[data-ref="surface"]') as HTMLElement;
+
+		expect(trigger.getAttribute('aria-haspopup')).toBe('dialog');
+		expect(trigger.getAttribute('aria-controls')).toBe(surface.id);
+		expect(trigger.getAttribute('aria-expanded')).toBe('true');
+		host.setOpen(false);
+		expect(trigger.getAttribute('aria-expanded')).toBe('false');
+	});
+
+	it('keeps an aria-haspopup the trigger already declares', async () => {
+		const { host, trigger } = await mountPopover(true);
+		expect(trigger.getAttribute('aria-haspopup')).toBe('menu');
+		host.remove();
+		expect(trigger.getAttribute('aria-haspopup')).toBe('menu');
+	});
+
+	it('takes the aria attributes it added off the trigger when the popover disconnects', async () => {
+		const { host, trigger } = await mountPopover();
+		expect(trigger.hasAttribute('aria-controls')).toBe(true);
+
+		host.remove();
+
+		expect(trigger.hasAttribute('aria-haspopup')).toBe(false);
+		expect(trigger.hasAttribute('aria-controls')).toBe(false);
+		expect(trigger.hasAttribute('aria-expanded')).toBe(false);
+	});
+
+	it('moves the aria attributes to a new anchor when the anchor selector changes', async () => {
+		const container = document.createElement('div');
+		document.body.append(container);
+		createRoot(container).render(
+			<>
+				<button type="button" id="first">
+					First
+				</button>
+				<button type="button" id="second">
+					Second
+				</button>
+				<RuiPopover anchor="#first">
+					<span>Body</span>
+				</RuiPopover>
+			</>,
+		);
+		const host = container.querySelector('rui-popover') as RuiPopoverElement;
+		const first = container.querySelector('#first') as HTMLElement;
+		const second = container.querySelector('#second') as HTMLElement;
+		await vi.waitFor(() => expect(first.getAttribute('aria-controls')).toBeTruthy());
+
+		host.anchor = '#second';
+
+		await vi.waitFor(() => expect(second.getAttribute('aria-controls')).toBeTruthy());
+		expect(first.hasAttribute('aria-controls')).toBe(false);
+		expect(first.hasAttribute('aria-haspopup')).toBe(false);
+	});
+});
