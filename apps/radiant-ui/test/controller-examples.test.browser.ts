@@ -174,6 +174,29 @@ describe('controller page examples', () => {
 		expect(scroller.style.overflow).toBe('');
 	});
 
+	test('CaptionsController shows one track at a time and keeps the toggle in step', async () => {
+		const root = await mountExample('captions');
+		const video = root.querySelector('video')!;
+		const toggle = root.querySelector<HTMLButtonElement>('[data-action="captions"]')!;
+		const language = root.querySelector<HTMLButtonElement>('[data-action="language"]')!;
+		const modes = () => [...video.textTracks].map((track) => track.mode);
+		expect(modes()).toEqual(['disabled', 'disabled']);
+		expect(toggle.getAttribute('aria-pressed')).toBe('false');
+
+		toggle.click();
+		expect(modes()).toEqual(['showing', 'disabled']);
+		expect(toggle.getAttribute('aria-pressed')).toBe('true');
+		expect(status(root).textContent).toBe('Captions on: en');
+
+		language.click();
+		expect(modes()).toEqual(['disabled', 'showing']);
+		expect(language.textContent).toBe('Italiano');
+
+		root.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', bubbles: true }));
+		expect(modes()).toEqual(['disabled', 'disabled']);
+		expect(toggle.getAttribute('aria-pressed')).toBe('false');
+	});
+
 	test('RovingController keeps one tab stop and moves it with the arrows', async () => {
 		const root = await mountExample('roving');
 		const items = [...root.querySelectorAll('button')];
