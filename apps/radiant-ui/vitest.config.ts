@@ -24,10 +24,28 @@ export default defineConfig({
 				test: {
 					name: 'browser',
 					include: ['src/**/*.test.browser.{ts,tsx}', 'test/**/*.test.browser.{ts,tsx}'],
+					exclude: ['test/**/*-voice-memo-*.test.browser.ts', '**/node_modules/**'],
 					browser: {
 						enabled: true,
 						headless: true,
 						provider: playwright({}),
+						instances: [{ browser: 'chromium' }],
+					},
+				},
+			},
+			{
+				extends: true,
+				test: {
+					name: 'browser-media',
+					include: ['test/**/*-voice-memo-*.test.browser.ts'],
+					browser: {
+						enabled: true,
+						headless: true,
+						provider: playwright({
+							launchOptions: {
+								args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'],
+							},
+						}),
 						instances: [{ browser: 'chromium' }],
 					},
 				},

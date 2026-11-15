@@ -1,0 +1,64 @@
+<div data-example="voice-memo" data-state="idle">
+	<div data-meter aria-hidden="true"><span></span></div>
+	<output data-elapsed>0:00</output>
+	<div data-controls>
+		<button
+			type="button"
+			class="rui-button rui-button--filled rui-button--lg rui-button--square"
+			data-record
+			aria-label="Record"
+		>
+			<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
+				<circle cx="12" cy="12" r="6" fill="currentColor" />
+			</svg>
+		</button>
+		<button
+			type="button"
+			class="rui-button rui-button--ghost rui-button--md rui-button--square"
+			data-pause
+			aria-label="Pause"
+			disabled
+		>
+			<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" data-icon="pause">
+				<path d="M7 5h3v14H7zM14 5h3v14h-3z" fill="currentColor" />
+			</svg>
+			<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" data-icon="resume">
+				<path d="M8 5v14l10-7z" fill="currentColor" />
+			</svg>
+		</button>
+		<button
+			type="button"
+			class="rui-button rui-button--ghost rui-button--md rui-button--square"
+			data-stop
+			aria-label="Stop"
+			disabled
+		>
+			<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
+				<path d="M7 7h10v10H7z" fill="currentColor" />
+			</svg>
+		</button>
+		<button
+			type="button"
+			class="rui-button rui-button--ghost rui-button--md rui-button--square"
+			data-discard
+			aria-label="Discard"
+			disabled
+		>
+			<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
+				<path
+					d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				/>
+			</svg>
+		</button>
+	</div>
+	<div data-result hidden>
+		<audio data-player controls preload="auto"></audio>
+		<a class="rui-button rui-button--outline rui-button--sm" data-download download="voice-memo.webm">Download</a>
+	</div>
+	<p data-status aria-live="polite">Press Record to start. It stops by itself after 1:00.</p>
+</div>

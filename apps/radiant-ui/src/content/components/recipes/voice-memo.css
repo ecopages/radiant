@@ -1,0 +1,97 @@
+.primitive-example:is(
+	[data-example='voice-memo'],
+	:has(> voice-memo-element, > [data-controller='voice-memo'], > voice-memo-app)
+) {
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	gap: var(--space-stack);
+	box-sizing: border-box;
+	width: min(100%, 24rem);
+	padding: var(--space-inset);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-container);
+	background: var(--surface);
+	color: var(--on-surface);
+	box-shadow: var(--shadow-overlay);
+	--voice-memo-muted: color-mix(in srgb, currentColor 78%, var(--surface));
+
+	& :where(voice-memo-element, [data-controller='voice-memo'], voice-memo-app) {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-stack);
+		min-width: 0;
+	}
+
+	& :where([data-meter]) {
+		position: relative;
+		height: 0.5rem;
+		overflow: hidden;
+		border-radius: var(--radius-full);
+		background: var(--surface-container-high);
+
+		& > span {
+			position: absolute;
+			inset: 0;
+			transform: scaleX(var(--level, 0));
+			transform-origin: left center;
+			border-radius: inherit;
+			background: var(--primary);
+			transition: transform 90ms linear;
+		}
+	}
+
+	& :where([data-meter]:not([data-state='recording']) > span) {
+		opacity: 0.4;
+	}
+
+	& :where([data-elapsed]) {
+		font-size: 2rem;
+		line-height: 1;
+		font-variant-numeric: tabular-nums;
+	}
+
+	& :where([data-controls]) {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2);
+	}
+
+	& [data-pause] [data-icon='resume'],
+	& [data-pause][data-paused] [data-icon='pause'] {
+		display: none;
+	}
+
+	& [data-pause][data-paused] [data-icon='resume'] {
+		display: block;
+	}
+
+	& :where([data-result]) {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-3);
+
+		& > audio {
+			flex: 1 1 12rem;
+			min-width: 0;
+			width: 100%;
+		}
+	}
+
+	& :where([data-result][hidden]) {
+		display: none;
+	}
+
+	& :where([data-status]) {
+		margin: 0;
+		font-size: 0.8125rem;
+		color: var(--voice-memo-muted);
+	}
+
+	& :where([data-status]:is([data-state='denied'], [data-state='error'], [data-state='unsupported'])) {
+		color: var(--error);
+		font-weight: 500;
+	}
+}
