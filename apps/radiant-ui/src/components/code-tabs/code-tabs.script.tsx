@@ -3,6 +3,7 @@ import { unsafeHtml } from '@ecopages/jsx';
 import { RuiButton } from '@ecopages/radiant-ui/button';
 import { RuiTab, RuiTabList, RuiTabPanel, RuiTabPanels, RuiTabs } from '@ecopages/radiant-ui/tabs';
 import { RadiantElement, customElement, onEvent, prop, state } from '@ecopages/radiant';
+import { COPY_STATE_ATTRIBUTE, createCopyController } from '@ecopages/radiant-ui/controllers';
 import { DOCS_DEFAULT_THEME_IMPORT, docsThemeImportSpecifier, isDocsThemeColor } from '@/lib/docs-theme-preview';
 import { COPY_ICON_ATTRIBUTES, COPY_ICON_SHAPES } from '@/lib/copy-icons';
 import { renderTabLabel } from './code-tab-icons';
@@ -72,34 +73,42 @@ export class RadiantCodeTabs extends RadiantElement {
 	@prop({ type: String }) defaultSelectedKey = '';
 	@prop({ type: String, reflect: true }) selectedKey = '';
 	@state copyStatus = '';
-	@state copyState: '' | 'copied' | 'error' = '';
-	@state copyTab = '';
 
+	private copiedTab: RadiantCodeTabItem | undefined;
 	private copyStatusTimer: ReturnType<typeof setTimeout> | undefined;
 
 	/**
-	 * Shows the result on the tab's copy button and in the live region until the timeout clears both.
+	 * Copies the text of the tab whose button was clicked, with the docs theme import applied.
 	 *
 	 * @remarks
-	 * A repeated result for the same tab clears the state, waits for that render and forces a reflow before setting
-	 * it again, so the one-shot animation in `copy-button.css` runs again.
+	 * `getFeedbackTarget` runs just before the controller writes the state and removes the previous one with a forced
+	 * reflow, so the one-shot animation in `copy-button.css` runs again on a repeated result. `announce` writes the
+	 * result for the tab that was copied into the live region and clears it after the same period as the state.
 	 */
-	private async announce(message: string, tab: string, state: 'copied' | 'error'): Promise<void> {
-		clearTimeout(this.copyStatusTimer);
-		if (this.copyState === state && this.copyTab === tab) {
-			this.copyState = '';
-			await this.updateComplete;
-			void this.offsetWidth;
-		}
-		this.copyStatus = message;
-		this.copyTab = tab;
-		this.copyState = state;
-		this.copyStatusTimer = setTimeout(() => {
-			this.copyStatus = '';
-			this.copyState = '';
-			this.copyTab = '';
-		}, COPY_STATUS_TIMEOUT_MS);
-	}
+	private readonly copy = createCopyController(this, {
+		getRoot: () => this,
+		selector: '[data-copy-button]',
+		resetDelay: COPY_STATUS_TIMEOUT_MS,
+		getText: (trigger) => {
+			const tab = this.resolveTabs().find((item) => item.id === trigger!.dataset.copyTab)!;
+			this.copiedTab = tab;
+			return withThemeImport(tab, isRichTab(tab) ? tab.content : tab.code, this.themeImport);
+		},
+		getFeedbackTarget: (trigger) => {
+			trigger!.removeAttribute(COPY_STATE_ATTRIBUTE);
+			void trigger!.offsetWidth;
+			return trigger;
+		},
+		announce: (message) => {
+			const { label } = this.copiedTab!;
+			clearTimeout(this.copyStatusTimer);
+			this.copyStatus = message === 'Copied' ? `${label} copied to clipboard` : `Failed to copy ${label}`;
+			this.copyStatusTimer = setTimeout(() => {
+				this.copyStatus = '';
+			}, COPY_STATUS_TIMEOUT_MS);
+		},
+	});
+
 	@state themeImport = DOCS_DEFAULT_THEME_IMPORT;
 	private rootObserver: MutationObserver | null = null;
 
@@ -142,17 +151,6 @@ export class RadiantCodeTabs extends RadiantElement {
 			return [];
 		}
 	}
-
-	private handleCopy = async (tab: RadiantCodeTabItem): Promise<void> => {
-		try {
-			await navigator.clipboard.writeText(
-				withThemeImport(tab, isRichTab(tab) ? tab.content : tab.code, this.themeImport),
-			);
-			await this.announce(`${tab.label} copied to clipboard`, tab.id, 'copied');
-		} catch {
-			await this.announce(`Failed to copy ${tab.label}`, tab.id, 'error');
-		}
-	};
 
 	@onEvent({ selector: 'rui-tabs', type: 'rui-change' })
 	onTabChange(event: Event): void {
@@ -201,8 +199,7 @@ export class RadiantCodeTabs extends RadiantElement {
 									class="code-tabs__copy"
 									aria-label={`${this.copyLabel}: ${tab.label}`}
 									data-copy-button=""
-									data-copy-state={tab.id === this.copyTab ? this.copyState || undefined : undefined}
-									on:click={() => void this.handleCopy(tab)}
+									data-copy-tab={tab.id}
 								>
 									<CopyIcons />
 								</RuiButton>

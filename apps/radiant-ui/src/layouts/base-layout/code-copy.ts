@@ -1,4 +1,7 @@
-const codeCopySelector = '[data-rehype-pretty-copy]';
+import { COPY_STATE_ATTRIBUTE, CopyController } from '@ecopages/radiant-ui/controllers';
+
+/** A button that carries text to copy; one without text is ignored. */
+const codeCopySelector = '[data-rehype-pretty-copy]:not([data-rehype-pretty-copy=""])';
 const codeCopyStatusSelector = '[data-code-copy-status]';
 
 /** How long the button holds its `data-copy-state` and how long the live region keeps the result. */
@@ -11,37 +14,7 @@ export const CODE_COPY_FEEDBACK_MS = 1200;
  */
 const CODE_COPY_REANNOUNCE_DELAY_MS = 100;
 
-const buttonResetTimers = new WeakMap<HTMLButtonElement, number>();
 let statusTimer: number | undefined;
-
-/**
- * @remarks
- * `execCommand('copy')` is the fallback for browsers without the async Clipboard API. It reports
- * failure by returning `false`, not by throwing. Selecting the textarea moves focus, so focus goes
- * back to the button that started the copy.
- */
-async function copyTextToClipboard(text: string, button: HTMLButtonElement): Promise<void> {
-	if (navigator.clipboard?.writeText) {
-		await navigator.clipboard.writeText(text);
-		return;
-	}
-
-	const textarea = document.createElement('textarea');
-	textarea.value = text;
-	textarea.setAttribute('readonly', '');
-	textarea.style.position = 'fixed';
-	textarea.style.opacity = '0';
-	document.body.append(textarea);
-	try {
-		textarea.select();
-		if (!document.execCommand('copy')) {
-			throw new Error('Copy command was rejected');
-		}
-	} finally {
-		textarea.remove();
-		button.focus({ preventScroll: true });
-	}
-}
 
 /**
  * Writes the copy result into the base layout's live region and clears it after the feedback period.
@@ -71,46 +44,30 @@ function announce(message: string): void {
 }
 
 /**
- * @remarks
- * The button keeps its accessible name ("Copy code") and its icons; the result is `data-copy-state` for the
- * stylesheet and the live region for assistive technology. A repeated result removes the state and forces a reflow
- * before setting it again, so the one-shot animation runs again instead of continuing.
- */
-function showCodeCopyFeedback(button: HTMLButtonElement, isError: boolean): void {
-	window.clearTimeout(buttonResetTimers.get(button));
-
-	button.removeAttribute('data-copy-state');
-	void button.offsetWidth;
-	button.dataset.copyState = isError ? 'error' : 'copied';
-	announce(isError ? 'Could not copy code' : 'Code copied to clipboard');
-
-	buttonResetTimers.set(
-		button,
-		window.setTimeout(() => {
-			buttonResetTimers.delete(button);
-			button.removeAttribute('data-copy-state');
-		}, CODE_COPY_FEEDBACK_MS),
-	);
-}
-
-function onCodeCopyClick(event: MouseEvent): void {
-	const target = event.target instanceof Element ? event.target.closest(codeCopySelector) : null;
-	if (!(target instanceof HTMLButtonElement)) return;
-
-	const source = target.dataset.rehypePrettyCopy;
-	if (!source) return;
-
-	void copyTextToClipboard(source, target)
-		.then(() => showCodeCopyFeedback(target, false))
-		.catch(() => showCodeCopyFeedback(target, true));
-}
-
-/**
  * Handles clicks on fenced code copy buttons for the whole document.
  *
- * @returns A function that removes the listener.
+ * @remarks
+ * One delegated `CopyController` on the document element, so buttons inserted by a navigation work without
+ * registering again. The button keeps its accessible name ("Copy code") and its icons; the result is
+ * `data-copy-state` for the stylesheet and the live region for assistive technology. `getFeedbackTarget` runs
+ * just before the controller writes the state, and removes the previous one with a forced reflow so the one-shot
+ * animation runs again on a repeated result instead of continuing.
+ *
+ * @returns A function that stops the controller.
  */
 export function registerCodeCopy(): () => void {
-	document.addEventListener('click', onCodeCopyClick);
-	return () => document.removeEventListener('click', onCodeCopyClick);
+	const controller = new CopyController({
+		getText: (trigger) => trigger!.dataset.rehypePrettyCopy!,
+		getRoot: () => document.documentElement,
+		selector: codeCopySelector,
+		resetDelay: CODE_COPY_FEEDBACK_MS,
+		getFeedbackTarget: (trigger) => {
+			trigger!.removeAttribute(COPY_STATE_ATTRIBUTE);
+			void trigger!.offsetWidth;
+			return trigger;
+		},
+		announce: (message) => announce(message === 'Copied' ? 'Code copied to clipboard' : 'Could not copy code'),
+	});
+	controller.attach();
+	return () => controller.destroy();
 }
