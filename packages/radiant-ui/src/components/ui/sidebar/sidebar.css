@@ -472,21 +472,54 @@
 		}
 	}
 
+	/**
+	 * Mobile drawer motion.
+	 *
+	 * @remarks
+	 * The pane keeps a fixed width and slides with `transform`, so content never reflows and the
+	 * animation stays off the main thread. Only transitions are used (no keyframes), so toggling
+	 * mid-flight reverses from the current position. The host stays `visibility: visible` for the
+	 * exit duration (a delayed visibility transition) and ignores pointer events immediately.
+	 * Transitions apply only under `[data-motion]`, which the host sets after first paint and
+	 * withholds for a frame when the viewport crosses the breakpoint, so neither plays an animation.
+	 * `--rui-sidebar-slide` is -1 for the left side and 1 for the right, flipped under RTL because
+	 * the pane sits on the inline start edge.
+	 */
 	.rui-sidebar[data-mobile='true'] {
 		@apply fixed inset-0 z-(--z-modal) flex min-w-0 bg-transparent;
+		--rui-sidebar-enter: var(--duration-slow);
+		--rui-sidebar-exit: var(--duration-normal);
+		--rui-sidebar-slide: -1;
+	}
+
+	.rui-sidebar[data-mobile='true'][data-side='right'] {
+		--rui-sidebar-slide: 1;
+	}
+
+	.rui-sidebar[data-mobile='true']:dir(rtl) {
+		--rui-sidebar-slide: 1;
+	}
+
+	.rui-sidebar[data-mobile='true'][data-side='right']:dir(rtl) {
+		--rui-sidebar-slide: -1;
 	}
 
 	.rui-sidebar[data-mobile='true'][data-state='collapsed'] {
-		/* Drop below site chrome so the inset trigger stays clickable. */
-		@apply pointer-events-none invisible z-auto;
+		@apply pointer-events-none invisible;
 	}
 
 	.rui-sidebar[data-mobile='true'][data-state='expanded'] {
 		@apply pointer-events-auto visible;
 	}
 
+	.rui-sidebar[data-mobile='true'][data-motion][data-state='collapsed'] {
+		transition: visibility 0s linear var(--rui-sidebar-exit);
+	}
+
 	.rui-sidebar[data-mobile='true'] > .rui-sidebar__pane {
-		@apply relative z-(--z-modal) h-full bg-surface text-on-background;
+		@apply relative z-(--z-modal) h-full w-72 max-w-[85vw] bg-surface text-on-background;
+		box-shadow: var(--shadow-modal);
+		transition: none;
 	}
 
 	.rui-sidebar[data-mobile='true'][data-variant='inset'] > .rui-sidebar__pane {
@@ -494,12 +527,21 @@
 	}
 
 	.rui-sidebar[data-mobile='true'][data-state='collapsed'] > .rui-sidebar__pane {
-		@apply w-0 overflow-hidden opacity-0;
+		@apply w-72 overflow-hidden opacity-100;
+		transform: translateX(calc(var(--rui-sidebar-slide) * 100%));
 	}
 
 	.rui-sidebar[data-mobile='true'][data-state='expanded'] > .rui-sidebar__pane {
 		@apply w-72 max-w-[85vw] opacity-100;
-		box-shadow: var(--shadow-modal);
+		transform: translateX(0);
+	}
+
+	.rui-sidebar[data-mobile='true'][data-motion][data-state='collapsed'] > .rui-sidebar__pane {
+		transition: transform var(--rui-sidebar-exit) var(--ease-in);
+	}
+
+	.rui-sidebar[data-mobile='true'][data-motion][data-state='expanded'] > .rui-sidebar__pane {
+		transition: transform var(--rui-sidebar-enter) var(--ease-out);
 	}
 
 	.rui-sidebar[data-mobile='true'][data-side='left'] > .rui-sidebar__pane {
@@ -511,7 +553,23 @@
 	}
 
 	.rui-sidebar__scrim {
-		@apply absolute inset-0 z-(--z-overlay) cursor-pointer border-0 p-0 bg-overlay;
+		@apply absolute inset-0 z-(--z-overlay) hidden cursor-pointer border-0 p-0 bg-overlay;
+	}
+
+	.rui-sidebar[data-mobile='true'] > .rui-sidebar__scrim {
+		@apply block opacity-0;
+	}
+
+	.rui-sidebar[data-mobile='true'][data-state='expanded'] > .rui-sidebar__scrim {
+		@apply opacity-100;
+	}
+
+	.rui-sidebar[data-mobile='true'][data-motion][data-state='collapsed'] > .rui-sidebar__scrim {
+		transition: opacity var(--rui-sidebar-exit) var(--ease-in);
+	}
+
+	.rui-sidebar[data-mobile='true'][data-motion][data-state='expanded'] > .rui-sidebar__scrim {
+		transition: opacity var(--rui-sidebar-enter) var(--ease-out);
 	}
 
 	.rui-sidebar[data-mobile='true'] > .rui-sidebar__handle {
@@ -521,6 +579,34 @@
 	/* -------------------------------------------------------------------------- */
 	/* Reduced motion                                                             */
 	/* -------------------------------------------------------------------------- */
+
+	/**
+	 * @remarks The mobile drawer fades instead of sliding: the pane keeps its resting
+	 * position and cross-fades with the scrim over `--duration-fast`.
+	 */
+	@media (prefers-reduced-motion: reduce) {
+		.rui-sidebar[data-mobile='true'] {
+			--rui-sidebar-enter: var(--duration-fast);
+			--rui-sidebar-exit: var(--duration-fast);
+		}
+
+		.rui-sidebar[data-mobile='true'][data-state='collapsed'] > .rui-sidebar__pane {
+			@apply opacity-0;
+			transform: none;
+		}
+
+		.rui-sidebar[data-mobile='true'][data-state='expanded'] > .rui-sidebar__pane {
+			transform: none;
+		}
+
+		.rui-sidebar[data-mobile='true'][data-motion][data-state='collapsed'] > .rui-sidebar__pane {
+			transition: opacity var(--rui-sidebar-exit) var(--ease-standard);
+		}
+
+		.rui-sidebar[data-mobile='true'][data-motion][data-state='expanded'] > .rui-sidebar__pane {
+			transition: opacity var(--rui-sidebar-enter) var(--ease-standard);
+		}
+	}
 
 	@media (prefers-reduced-motion: reduce) {
 		.rui-sidebar__pane,

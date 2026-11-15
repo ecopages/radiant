@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
-import { expect, userEvent, within } from 'storybook/test';
+import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { withStylesheets } from '@sb/with-stylesheets';
 import docsNavCss from './sidebar.docs.css?url';
 import radiantPkg from '../../../../../radiant/package.json';
@@ -437,26 +437,26 @@ export const Responsive: Story = {
 		const root = () => canvasElement.querySelector('[data-ref="root"]') as HTMLElement;
 		const pane = () => canvasElement.querySelector('[data-ref="pane"]') as HTMLElement;
 
-		expect(scrim().hidden).toBe(false);
+		expect(getComputedStyle(scrim()).visibility).toBe('visible');
 		expect(scrim().compareDocumentPosition(pane()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 		expect(canvas.getByText('Dashboard')).toBeInTheDocument();
 
 		sidebar.setOpen(false);
 		await new Promise((resolve) => setTimeout(resolve, 0));
 		expect(sidebar).toHaveAttribute('data-state', 'collapsed');
-		expect(scrim().hidden).toBe(true);
+		await waitFor(() => expect(getComputedStyle(scrim()).visibility).toBe('hidden'));
 		expect(root().style.getPropertyValue('--rui-sidebar-pane-width')).toBe('0px');
 
 		const openTrigger = canvas.getByRole('button', { name: 'Open sidebar' });
 		await userEvent.click(openTrigger);
 		await new Promise((resolve) => setTimeout(resolve, 0));
 		expect(sidebar).toHaveAttribute('data-state', 'expanded');
-		expect(scrim().hidden).toBe(false);
+		expect(getComputedStyle(scrim()).visibility).toBe('visible');
 
 		await userEvent.click(scrim());
 		await new Promise((resolve) => setTimeout(resolve, 0));
 		expect(sidebar).toHaveAttribute('data-state', 'collapsed');
-		expect(scrim().hidden).toBe(true);
+		await waitFor(() => expect(getComputedStyle(scrim()).visibility).toBe('hidden'));
 	},
 };
 

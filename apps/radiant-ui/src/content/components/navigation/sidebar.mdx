@@ -69,7 +69,7 @@ import '@ecopages/radiant-ui/sidebar';
 
 <rui-sidebar id="app-sidebar" collapsible="icon" label="Navigation">
   <div data-ref="root" class="rui-sidebar">
-    <button data-ref="scrim" type="button" hidden></button>
+    <button data-ref="scrim" type="button" class="rui-sidebar__scrim" tabindex="-1" aria-label="Close sidebar"></button>
     <div data-ref="pane" class="rui-sidebar__pane">
       <a href="/dashboard" class="rui-sidebar__menu-button" data-ref="menu-button">Dashboard</a>
     </div>
@@ -146,11 +146,27 @@ Rounded corners use `rounded-container`; the docs site header uses `surface`, ma
 | --- | --- | --- | --- |
 | `[data-ref="root"]` | yes | `data-state`, `data-collapsible`, … | inner shell |
 | `[data-ref="pane"]` | yes | `inert` | pane content |
-| `[data-ref="scrim"]` | no | `hidden` | mobile overlay button |
+| `[data-ref="scrim"]` | no | nothing; CSS shows and fades it | mobile overlay button |
 | `[data-ref="handle"]` | no | `hidden`, `aria-valuenow`, … | resize handle |
 | `[data-ref="menu-button"]` | no | `aria-current`, active class | menu links |
 
 Host-owned on `<rui-sidebar>`: `role="complementary"`, `data-state`, `data-pane-width`, …
+
+### Mobile drawer motion
+
+Below the breakpoint the pane is a drawer that keeps a fixed width (`18rem`, at most `85vw`) and slides in from its edge with `transform`, so content never reflows. The scrim fades with it.
+
+| | Enter | Exit |
+| --- | --- | --- |
+| Duration | `--duration-slow` (300ms; 200ms in the snappy pack) | `--duration-normal` (200ms; 150ms in the snappy pack) |
+| Easing | `--ease-out` (decelerates) | `--ease-in` (accelerates) |
+
+- The drawer stays visible until the exit finishes. It ignores pointer events and its pane is `inert` from the moment it closes, so it cannot be clicked mid-close.
+- Toggling mid-transition reverses from the current position.
+- With `prefers-reduced-motion: reduce` the pane does not slide; pane and scrim cross-fade over `--duration-fast`.
+- Nothing animates on first paint or when the viewport crosses the breakpoint.
+- Styling hooks: `data-state`, `data-side` and `data-mobile` on `.rui-sidebar`, plus `--rui-sidebar-enter` and `--rui-sidebar-exit` (override on `.rui-sidebar` for custom timing) and `--rui-sidebar-slide` (`-1` or `1`, the slide direction). The shell carries `data-motion` once transitions are armed.
+- The closed scrim is `visibility: hidden`, so it is out of the tab order and the accessibility tree.
 
 ### Methods (`<rui-sidebar>`)
 

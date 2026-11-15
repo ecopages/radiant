@@ -625,12 +625,12 @@ describe('RuiSidebar mobile drawer', () => {
 
 		const scrim = host.querySelector('[data-ref="scrim"]') as HTMLButtonElement;
 		expect(sidebar.getAttribute('data-state')).toBe('expanded');
-		expect(scrim.hidden).toBe(false);
+		expect(scrim.hasAttribute('hidden')).toBe(false);
 
 		cleanup();
 	});
 
-	it('hides the scrim and zeros pane width when the mobile drawer closes', async () => {
+	it('zeros pane width and inerts the pane when the mobile drawer closes', async () => {
 		const { host, sidebar, cleanup } = mountMobileSidebar({ collapsible: 'icon', open: true });
 		await settled();
 
@@ -638,31 +638,25 @@ describe('RuiSidebar mobile drawer', () => {
 		await settled();
 
 		const pane = host.querySelector('[data-ref="pane"]') as HTMLElement;
-		const scrim = host.querySelector('[data-ref="scrim"]') as HTMLButtonElement;
 
 		expect(sidebar.getAttribute('data-state')).toBe('collapsed');
 		expect(paneWidthVar(host)).toBe('0px');
 		expect(sidebar.getAttribute('data-pane-width')).toBe('0');
-		expect(scrim.hidden).toBe(true);
 		expect(pane.hasAttribute('inert')).toBe(true);
 
 		cleanup();
 	});
 
-	it('reopens the mobile drawer and reveals the scrim again', async () => {
+	it('reopens the mobile drawer', async () => {
 		const { host, sidebar, cleanup } = mountMobileSidebar({ collapsible: 'icon', open: false });
 		await settled();
 
-		const scrim = host.querySelector('[data-ref="scrim"]') as HTMLButtonElement;
 		expect(sidebar.getAttribute('data-state')).toBe('collapsed');
-		expect(scrim.hidden).toBe(true);
 
 		sidebar.setOpen(true);
 		await settled();
 
-		const openScrim = host.querySelector('[data-ref="scrim"]') as HTMLButtonElement;
 		expect(sidebar.getAttribute('data-state')).toBe('expanded');
-		expect(openScrim.hidden).toBe(false);
 		expect(paneWidthVar(host)).not.toBe('0px');
 
 		cleanup();
@@ -677,7 +671,6 @@ describe('RuiSidebar mobile drawer', () => {
 		await settled();
 
 		expect(sidebar.getAttribute('data-state')).toBe('collapsed');
-		expect((host.querySelector('[data-ref="scrim"]') as HTMLButtonElement).hidden).toBe(true);
 
 		cleanup();
 	});

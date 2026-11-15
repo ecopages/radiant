@@ -118,7 +118,8 @@ function isHorizontalSide(side: RuiSidebarSide): boolean {
  *   and `data-side` / `data-variant`.
  *
  * Optional:
- * - `[data-ref="scrim"]` — mobile overlay dismiss control. Host toggles `hidden`.
+ * - `[data-ref="scrim"]` — mobile overlay dismiss control. CSS fades it with `data-state`; it is out of the
+ *   tab order and the accessibility tree once the drawer has finished closing.
  * - `[data-ref="handle"]` — resize handle (`role="separator"`). Host toggles `hidden`
  *   and sets `aria-orientation`, `aria-valuenow` / `min` / `max`, and `aria-label`.
  * - `[data-ref="menu-button"]` — menu links. When `matchActive` is set, host
@@ -274,6 +275,30 @@ export class RuiSidebar extends RadiantElement {
 		this.syncPresentation();
 		this.syncPaneWidthVar();
 		this.mobileReady = true;
+		this.resumeMotion();
+	}
+
+	private motionFrame = 0;
+
+	/**
+	 * Stops drawer transitions for the changes made in the current task.
+	 *
+	 * @remarks
+	 * CSS gates every mobile transition on `[data-motion]` on the shell. Removing it before a
+	 * viewport flip or the first sync lets state change without animating, and `resumeMotion`
+	 * restores it two frames later: the first frame computes the styles without it, so the
+	 * restored attribute cannot turn that change into a transition.
+	 */
+	private suspendMotion(): void {
+		cancelAnimationFrame(this.motionFrame);
+		this.rootTarget?.removeAttribute('data-motion');
+	}
+
+	private resumeMotion(): void {
+		cancelAnimationFrame(this.motionFrame);
+		this.motionFrame = requestAnimationFrame(() => {
+			this.motionFrame = requestAnimationFrame(() => this.rootTarget?.setAttribute('data-motion', ''));
+		});
 	}
 
 	/**
@@ -292,6 +317,7 @@ export class RuiSidebar extends RadiantElement {
 
 	override disconnectedCallback(): void {
 		this.mobileReady = false;
+		cancelAnimationFrame(this.motionFrame);
 		super.disconnectedCallback();
 	}
 
@@ -312,11 +338,6 @@ export class RuiSidebar extends RadiantElement {
 		const root = this.rootTarget;
 		if (root) {
 			root.dataset.state = paneState;
-		}
-
-		const scrim = this.scrimTarget;
-		if (scrim) {
-			scrim.toggleAttribute('hidden', !(this.isMobile && open));
 		}
 
 		const pane = this.paneTarget;
@@ -468,6 +489,7 @@ export class RuiSidebar extends RadiantElement {
 		if (next === this.isMobile) return;
 		const leavingMobile = this.isMobile && !next;
 		const enteringMobile = !this.isMobile && next;
+		this.suspendMotion();
 		this.isMobile = next;
 		const applyPolicy = this.mobileReady && !this.openControlled;
 		if (applyPolicy && leavingMobile && this.collapsible === 'off' && !this.isOpen()) {
@@ -478,6 +500,7 @@ export class RuiSidebar extends RadiantElement {
 			this.syncPaneWidthVar();
 		}
 		this.mobileChangeEvent.emit({ mobile: next });
+		this.resumeMotion();
 	}
 
 	private clampWidth(next: number): number {

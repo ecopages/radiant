@@ -96,7 +96,7 @@ rui-sidebar {
 			@apply bg-overlay/40 backdrop-blur-sm;
 		}
 
-		.rui-sidebar[data-mobile='true'][data-state='expanded'] > .rui-sidebar__pane {
+		.rui-sidebar[data-mobile='true'] > .rui-sidebar__pane {
 			@apply ms-0 h-full w-full max-w-none border-0 bg-background/90 backdrop-blur-md;
 			box-shadow: none;
 		}
