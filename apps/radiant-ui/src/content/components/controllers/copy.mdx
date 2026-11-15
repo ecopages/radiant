@@ -1,0 +1,127 @@
+---
+title: CopyController
+description: 'Copies text to the clipboard on a click and reports copied or error as a data attribute and an announcement.'
+order: 16
+---
+
+import { PrimitiveExample } from '@/components/primitive-example';
+
+export const config = {
+	dependencies: {
+		components: [PrimitiveExample],
+		scripts: ['./copy.script.ts'],
+	},
+};
+
+# CopyController
+
+<p class="docs-lede">Copies text to the clipboard on a click and reports copied or error as a data attribute and an announcement.</p>
+
+Reach for it for a copy button on a code sample, an invite link or a token, where the button must show the result and a screen reader must hear it.
+
+## Import
+
+```ts
+import { CopyController, createCopyController } from '@ecopages/radiant-ui/controllers';
+```
+
+## Try it
+
+Press the button. It gets `data-copy-state="copied"` for 1.5 seconds, then the attribute is removed, and the message goes to the status line, which is a polite live region.
+
+<PrimitiveExample name="copy">
+	<code>pnpm add @ecopages/radiant-ui</code>
+	<button type="button">Copy</button>
+	<p data-status role="status"></p>
+</PrimitiveExample>
+
+```html
+<div data-example="copy">
+	<code>pnpm add @ecopages/radiant-ui</code>
+	<button type="button">Copy</button>
+	<p data-status role="status"></p>
+</div>
+```
+
+```ts
+import { CopyController } from '@ecopages/radiant-ui/controllers';
+
+export function mount(root: HTMLElement): () => void {
+	const button = root.querySelector('button')!;
+	const source = root.querySelector('code')!;
+	const status = root.querySelector('[data-status]')!;
+
+	const copy = new CopyController({
+		getText: () => source.textContent ?? '',
+		getTrigger: () => button,
+		resetDelay: 1500,
+		announce: (message) => (status.textContent = message),
+	});
+	copy.attach();
+	return () => copy.destroy();
+}
+```
+
+`mount` runs once for each example element on the page, and the function it returns undoes it; see [how the examples run](/docs/controllers/overview#how-the-examples-run).
+
+## Recipe: a copy button on every code block
+
+One listener on the container serves every button, including blocks added later. The button label changes with the state through CSS, so the markup keeps one accessible name.
+
+```ts
+import { CopyController } from '@ecopages/radiant-ui/controllers';
+
+const copy = new CopyController({
+	getRoot: () => document.querySelector('main'),
+	selector: '[data-copy-button]',
+	getText: (button) => button!.closest('figure')!.querySelector('code')!.textContent ?? '',
+	announce: (message) => (document.querySelector('#copy-status')!.textContent = message),
+});
+copy.attach();
+```
+
+```css
+[data-copy-button][data-copy-state='copied']::after {
+	content: ' copied';
+}
+[data-copy-button][data-copy-state='error']::after {
+	content: ' failed, try again';
+}
+```
+
+## Config
+
+| Option              | Meaning                                                                                                                                           |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `getText`           | The text, or a function returning it (or a promise of it), read at copy time. Receives the trigger, `null` for a `copy()` call without one.      |
+| `getTrigger`        | The element whose click copies, read on `attach()`. Also the default trigger of `copy()`.                                                         |
+| `getRoot`           | With `selector`, the element that listens for clicks on behalf of every matching descendant, read on `attach()`.                                  |
+| `selector`          | The delegated trigger selector, used with `getRoot`.                                                                                              |
+| `getFeedbackTarget` | The element that carries `data-copy-state` instead of the trigger, called with the trigger.                                                       |
+| `resetDelay`        | Milliseconds `copied` and `error` show before `idle`. Default 2000.                                                                               |
+| `onCopy`            | Called with the text after a successful copy.                                                                                                     |
+| `onError`           | Called with the error after a failed one.                                                                                                         |
+| `announce`          | Called with "Copied" or "Could not copy" for a polite live region you own. The controller creates no DOM.                                          |
+
+`getState()` returns `idle`, `copied` or `error`. `copy()` copies now and resolves with `{ state: 'copied', text }`, `{ state: 'error', error }` or `{ state: 'idle' }` when `copy()` ran before `attach()` or after `destroy()`, or a newer `copy()` superseded it, and the controller is not attached; it never rejects.
+
+## Lifecycle
+
+`attach()` listens for the click. A copy writes with `navigator.clipboard.writeText`; only when that API does not exist, as on an insecure page, it uses a hidden textarea and `document.execCommand('copy')`. The textarea is mounted inside the trigger's `[aria-modal="true"]` or open `dialog`, otherwise beside the trigger, so a focus trap does not refuse it; the page selection and focus are restored afterwards. The state is written as `data-copy-state` and, after `resetDelay`, returns to `idle` and the attribute is removed, so CSS written against `[data-copy-state]` never matches idle; a second copy while `copied` shows starts the delay again. `destroy()` removes the listener and the pending timer and the attribute, and a copy still in flight then changes nothing.
+
+With a host, `createCopyController(host, config)` does the same on connect and disconnect; see [bindController](/docs/controllers/bind-controller).
+
+## Accessibility
+
+A changed attribute is not announced. Pass `announce` and write the message into a live region that is in the page before the copy (`role="status"` or `aria-live="polite"`), as the example does. Keep the button's accessible name the same in every state and show the result visually with CSS on `data-copy-state`, so the name does not flicker under a screen reader. The button should be a real `button` so it takes Enter and Space.
+
+## Caveats
+
+- Browsers allow the clipboard write only in response to a user gesture and, for the async API, in a secure context (HTTPS or localhost). Call `copy()` from an event handler. A copy started later, from a timer or after a long await, can be refused and ends as `error`.
+- The async API may also be refused by a permissions policy in an iframe. That is `error` too.
+- A `getText` that awaits a slow request can outlive the gesture in some browsers. On the `execCommand` fallback that can make the copy fail with `error`; resolve the text ahead of time when you can.
+- Repeating the same announcement does not re-read in every screen reader. Clearing the region before writing it again is the owner's job.
+
+## Protected hooks
+
+None. It decides nothing an owner would change.

@@ -1,5 +1,5 @@
 import { userEvent } from 'vitest/browser';
-import { afterEach, describe, expect, test } from 'vitest';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 import { syncExamples } from '../src/components/primitive-example/mount-example';
 
 const pages = import.meta.glob('../src/content/components/controllers/*.mdx', {
@@ -33,6 +33,7 @@ function press(target: Element, type: string, x: number, y = 0, timeStamp?: numb
 const status = (root: HTMLElement) => root.querySelector('[data-status]')!;
 
 afterEach(() => {
+	vi.restoreAllMocks();
 	document.body.innerHTML = '';
 	document.documentElement.removeAttribute('style');
 });
@@ -269,5 +270,28 @@ describe('controller page examples', () => {
 		expect(play.textContent).toBe('Play');
 		await userEvent.click(root.querySelector('[data-action="mute"]')!);
 		await expect.poll(() => root.querySelector('[data-action="mute"]')!.getAttribute('aria-pressed')).toBe('true');
+	});
+
+	test('CopyController copies the code, shows the state and announces it', async () => {
+		const writeText = vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue();
+		const root = await mountExample('copy');
+		const button = root.querySelector('button')!;
+
+		button.click();
+
+		await vi.waitFor(() => expect(button.getAttribute('data-copy-state')).toBe('copied'));
+		expect(writeText).toHaveBeenCalledWith('pnpm add @ecopages/radiant-ui');
+		expect(status(root).textContent).toBe('Copied');
+	});
+
+	test('MediaRecorderController reports a refused microphone as denied and keeps Record usable', async () => {
+		vi.spyOn(navigator.mediaDevices, 'getUserMedia').mockRejectedValue(new DOMException('no', 'NotAllowedError'));
+		const root = await mountExample('media-recorder');
+		const record = root.querySelector<HTMLButtonElement>('[data-record]')!;
+
+		record.click();
+
+		await vi.waitFor(() => expect(status(root).textContent).toContain('Microphone access was denied'));
+		expect(record.disabled).toBe(false);
 	});
 });

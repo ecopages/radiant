@@ -42,6 +42,14 @@ export {
 export { createCanvasSurface, type CanvasSurface } from './controllers/audio-visualizer-canvas';
 export { wave, type WaveOptions } from './controllers/audio-visualizer-wave';
 export {
+	COPY_STATE_ATTRIBUTE,
+	CopyController,
+	createCopyController,
+	type CopyControllerConfig,
+	type CopyOutcome,
+	type CopyState,
+} from './controllers/copy-controller';
+export {
 	DismissController,
 	createDismissController,
 	type DismissControllerConfig,
@@ -59,6 +67,14 @@ export {
 	createFocusTrapController,
 	type FocusTrapControllerConfig,
 } from './controllers/focus-trap-controller';
+export {
+	MediaRecorderController,
+	createMediaRecorderController,
+	type MediaRecorderControllerConfig,
+	type MediaRecorderSnapshot,
+	type MediaRecorderStatus,
+	type MediaRecordingResult,
+} from './controllers/media-recorder-controller';
 export {
 	MenuTreeController,
 	createMenuTreeController,

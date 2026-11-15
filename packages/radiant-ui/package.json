@@ -29,6 +29,7 @@
 		"build-storybook": "pnpm run build:storybook-deps && pnpm run build:framework && pnpm --filter @ecopages/storybook-radiant-vite exec storybook build -c ../radiant-ui/.storybook",
 		"build:storybook-deps": "pnpm --filter @ecopages/radiant-ui build:lib && pnpm --filter @ecopages/radiant-themes build:lib",
 		"test": "vitest run",
+		"test:unit": "vitest run --project=unit --project=media --project=autoplay-policy",
 		"test:all": "pnpm --filter @ecopages/jsx build:lib && pnpm --filter @ecopages/radiant build:lib && pnpm run build:storybook-deps && pnpm run build:framework && vitest run",
 		"test:storybook": "pnpm --filter @ecopages/jsx build:lib && pnpm --filter @ecopages/radiant build:lib && pnpm run build:storybook-deps && pnpm run build:framework && vitest run --project=storybook",
 		"test:ssr": "pnpm --filter @ecopages/jsx build:lib && pnpm --filter @ecopages/radiant build:lib && pnpm run build:storybook-deps && pnpm run build:framework && vitest run --project=ssr && node --import tsx ./scripts/test-storybook-ssr.ts",
