@@ -1,0 +1,211 @@
+<div data-example="audio-player">
+	<audio data-audio preload="auto"></audio>
+	<div data-now>
+		<span data-cover aria-hidden="true"></span>
+		<div data-meta>
+			<strong data-title>Morning Light</strong>
+			<span data-artist>Radiant Demo</span>
+			<rui-toolbar label="Visualizer" exclusive-toggles>
+				<div class="rui-toolbar" data-ref="root" role="toolbar" aria-label="Visualizer">
+					<button
+						type="button"
+						class="rui-button rui-button--ghost rui-button--sm"
+						data-toggle
+						data-visualizer="led"
+						aria-label="LED bars"
+						aria-pressed="true"
+					>
+						LED
+					</button>
+					<button
+						type="button"
+						class="rui-button rui-button--ghost rui-button--sm"
+						data-toggle
+						data-visualizer="solid"
+						aria-label="Solid bars"
+						aria-pressed="false"
+					>
+						Bars
+					</button>
+					<button
+						type="button"
+						class="rui-button rui-button--ghost rui-button--sm"
+						data-toggle
+						data-visualizer="wave"
+						aria-label="Waveform"
+						aria-pressed="false"
+					>
+						Wave
+					</button>
+				</div>
+			</rui-toolbar>
+		</div>
+	</div>
+	<div data-scrub>
+		<output data-elapsed>0:00</output>
+		<rui-slider data-seek step="0.01" label="Seek" min="0" max="1" value="0" disabled>
+			<div class="rui-slider rui-slider--single" data-ref="root">
+				<div class="rui-slider__range">
+					<div
+						class="rui-slider__range-track"
+						data-ref="rangeTrack"
+						style="--rui-slider-fill-start: 0%; --rui-slider-fill-size: 0%; --rui-slider-value: 0%"
+					>
+						<div class="rui-slider__range-fill" data-ref="rangeFill"></div>
+						<button
+							type="button"
+							class="rui-slider__thumb"
+							data-ref="singleThumb"
+							data-thumb="value"
+							role="slider"
+							aria-label="Seek"
+						></button>
+					</div>
+				</div>
+			</div>
+		</rui-slider>
+		<output data-total>0:08</output>
+	</div>
+	<div data-controls>
+		<button
+			type="button"
+			class="rui-button rui-button--ghost rui-button--md rui-button--square"
+			data-previous
+			aria-label="Previous track"
+		>
+			<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
+				<path d="M5 5h2v14H5zM19 5v14L8 12z" fill="currentColor" />
+			</svg>
+		</button>
+		<button
+			type="button"
+			class="rui-button rui-button--filled rui-button--lg rui-button--square"
+			data-playback
+			aria-label="Play"
+			aria-pressed="false"
+		>
+			<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" data-icon="play">
+				<path d="M8 5v14l10-7z" fill="currentColor" /></svg
+			><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" data-icon="pause">
+				<path d="M7 5h3v14H7zM14 5h3v14h-3z" fill="currentColor" />
+			</svg>
+		</button>
+		<button
+			type="button"
+			class="rui-button rui-button--ghost rui-button--md rui-button--square"
+			data-next
+			aria-label="Next track"
+		>
+			<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
+				<path d="M17 5h2v14h-2zM5 5v14l11-7z" fill="currentColor" />
+			</svg>
+		</button>
+		<button
+			type="button"
+			class="rui-button rui-button--ghost rui-button--md rui-button--square"
+			data-loop
+			data-mode="off"
+			aria-label="Loop: off"
+		>
+			<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
+				<path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z" fill="currentColor" />
+				<path d="M13 15V9h-1l-2 1v1h1.5v4H13z" fill="currentColor" data-one />
+			</svg>
+		</button>
+		<button
+			type="button"
+			class="rui-button rui-button--ghost rui-button--md rui-button--square"
+			data-shuffle
+			aria-label="Shuffle"
+			aria-pressed="false"
+		>
+			<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
+				<path
+					d="M10.59 9.17 5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"
+					fill="currentColor"
+				/>
+			</svg>
+		</button>
+		<div data-volume>
+			<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
+				<path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor" />
+				<path
+					d="M16 9a4 4 0 0 1 0 6"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+				/>
+			</svg>
+			<rui-slider data-volume-input step="0.05" label="Volume" min="0" max="1" value="0.8">
+				<div class="rui-slider rui-slider--single" data-ref="root">
+					<div class="rui-slider__range">
+						<div
+							class="rui-slider__range-track"
+							data-ref="rangeTrack"
+							style="--rui-slider-fill-start: 0%; --rui-slider-fill-size: 80%; --rui-slider-value: 80%"
+						>
+							<div class="rui-slider__range-fill" data-ref="rangeFill"></div>
+							<button
+								type="button"
+								class="rui-slider__thumb"
+								data-ref="singleThumb"
+								data-thumb="value"
+								role="slider"
+								aria-label="Volume"
+							></button>
+						</div>
+					</div>
+				</div>
+			</rui-slider>
+		</div>
+	</div>
+	<ol data-tracks aria-label="Playlist">
+		<li
+			data-track
+			aria-describedby="audio-player-plain-help"
+			data-src="/assets/audio/morning-light.wav"
+			data-artist="Radiant Demo"
+			tabindex="0"
+		>
+			<span data-number>1</span>
+			<span data-name>Morning Light</span>
+			<span data-length>0:08</span>
+		</li>
+		<li
+			data-track
+			aria-describedby="audio-player-plain-help"
+			data-src="/assets/audio/low-tide.wav"
+			data-artist="Radiant Demo"
+			tabindex="-1"
+		>
+			<span data-number>2</span>
+			<span data-name>Low Tide</span>
+			<span data-length>0:08</span>
+		</li>
+		<li
+			data-track
+			aria-describedby="audio-player-plain-help"
+			data-src="/assets/audio/neon-rain.wav"
+			data-artist="Radiant Demo"
+			tabindex="-1"
+		>
+			<span data-number>3</span>
+			<span data-name>Neon Rain</span>
+			<span data-length>0:09</span>
+		</li>
+		<li
+			data-track
+			aria-describedby="audio-player-plain-help"
+			data-src="/assets/audio/paper-planes.wav"
+			data-artist="Radiant Demo"
+			tabindex="-1"
+		>
+			<span data-number>4</span>
+			<span data-name>Paper Planes</span>
+			<span data-length>0:07</span>
+		</li>
+	</ol>
+	<span data-help hidden id="audio-player-plain-help">Enter plays, Space picks up to reorder</span>
+	<p data-status aria-live="polite">Pick a track, or drag one to reorder the playlist</p>
+</div>

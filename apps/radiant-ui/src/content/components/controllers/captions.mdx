@@ -1,0 +1,251 @@
+---
+title: CaptionsController
+description: 'Captions and subtitles for a media element: tracks from cues, WebVTT text or a URL, one shown at a time, kept above your controls.'
+order: 17
+---
+
+import { PrimitiveExample } from '@/components/primitive-example';
+
+export const config = {
+	dependencies: {
+		components: [PrimitiveExample],
+		scripts: ['./captions.script.ts'],
+	},
+};
+
+# CaptionsController
+
+<p class="docs-lede">
+	Captions and subtitles for a media element: tracks from cues, WebVTT text or a URL, one shown at a time, kept above
+	your controls.
+</p>
+
+Reach for it when you build your own video player and the captions button, the language menu and the placement above the controls are yours. It works on any `HTMLMediaElement` and owns only the tracks it adds.
+
+## Import
+
+```ts
+import {
+	CaptionsController,
+	createCaptionsController,
+	type CaptionTrackSource,
+	type CaptionsState,
+} from '@ecopages/radiant-ui/controllers';
+```
+
+## Try it
+
+A six second silent clip, generated in the page, with two caption tracks. Press Play, then Captions (or `c` while the example has focus). The language button switches the track, also while captions are off, and the cues stay above the control bar.
+
+<PrimitiveExample name="captions">
+	<div data-stage style="position: relative; width: 320px; max-width: 100%; height: 180px; background: #111">
+		<video muted style="display: block; width: 100%; height: 100%"></video>
+		<div
+			data-controls
+			style="position: absolute; inset: auto 0 0; display: flex; gap: 0.5rem; padding: 0.5rem; background: rgb(0 0 0 / 0.6)"
+		>
+			<button type="button" data-action="play">
+				Play
+			</button>
+			<button type="button" data-action="captions" aria-pressed="false">
+				Captions
+			</button>
+			<button type="button" data-action="language" data-language="en">
+				English
+			</button>
+		</div>
+	</div>
+	<p data-status>Captions off</p>
+</PrimitiveExample>
+
+```html
+<div data-example="captions">
+	<div data-stage style="position: relative; width: 320px; max-width: 100%; height: 180px; background: #111">
+		<video muted style="display: block; width: 100%; height: 100%"></video>
+		<div
+			data-controls
+			style="position: absolute; inset: auto 0 0; display: flex; gap: 0.5rem; padding: 0.5rem; background: rgb(0 0 0 / 0.6)"
+		>
+			<button type="button" data-action="play">Play</button>
+			<button type="button" data-action="captions" aria-pressed="false">Captions</button>
+			<button type="button" data-action="language" data-language="en">English</button>
+		</div>
+	</div>
+	<p data-status>Captions off</p>
+</div>
+```
+
+```ts
+import { CaptionsController, type CaptionsState } from '@ecopages/radiant-ui/controllers';
+
+const TRACKS = [
+	{
+		language: 'en',
+		label: 'English',
+		cues: [
+			{ start: 0, end: 2.5, text: 'Captions are a track of cues' },
+			{ start: 3, end: 5.5, text: 'They stay above the controls' },
+		],
+	},
+	{
+		language: 'it',
+		label: 'Italiano',
+		cues: [
+			{ start: 0, end: 2.5, text: 'I sottotitoli sono una traccia di cue' },
+			{ start: 3, end: 5.5, text: 'Restano sopra i controlli' },
+		],
+	},
+];
+
+export function mount(root: HTMLElement): () => void {
+	const video = root.querySelector('video')!;
+	const controls = root.querySelector<HTMLElement>('[data-controls]')!;
+	const play = root.querySelector<HTMLButtonElement>('[data-action="play"]')!;
+	const toggle = root.querySelector<HTMLButtonElement>('[data-action="captions"]')!;
+	const language = root.querySelector<HTMLButtonElement>('[data-action="language"]')!;
+	const status = root.querySelector('[data-status]')!;
+	const url = silentUrl(6);
+	video.src = url;
+
+	const captions = new CaptionsController({
+		getMedia: () => video,
+		getAvoid: () => controls,
+		tracks: TRACKS,
+		onState: (state: CaptionsState) => {
+			toggle.setAttribute('aria-pressed', String(state.enabled));
+			status.textContent = state.enabled ? `Captions on: ${state.language}` : 'Captions off';
+		},
+	});
+	captions.attach();
+
+	const onKey = (event: KeyboardEvent) => {
+		if (event.key === 'c' && !event.ctrlKey && !event.altKey && !event.metaKey) {
+			captions.toggle();
+		}
+	};
+
+	play.addEventListener('click', () => (video.paused ? void video.play() : video.pause()));
+	toggle.addEventListener('click', () => captions.toggle());
+	language.addEventListener('click', () => {
+		const next = captions.getState().tracks.find((track) => track.language !== language.dataset.language)!;
+		captions.setLanguage(next.id);
+		language.dataset.language = next.language;
+		language.textContent = next.label;
+	});
+	root.addEventListener('keydown', onKey);
+
+	return () => {
+		root.removeEventListener('keydown', onKey);
+		captions.destroy();
+		URL.revokeObjectURL(url);
+	};
+}
+```
+
+`silentUrl(seconds)` returns an object URL of a silent WAV built in memory; it is in the page script. `mount` runs once for each example element on the page, and the function it returns undoes it; see [how the examples run](/docs/controllers/overview#how-the-examples-run).
+
+## Config
+
+| Option          | Meaning                                                                                                                                                      |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `getMedia`      | The media element, read on `attach()` and `refresh()`.                                                                                                       |
+| `tracks`        | The tracks, as a fixed list. Or:                                                                                                                             |
+| `getTracks`     | The tracks, read on `attach()` and `refresh()`. Use one of the two, or neither with `adoptExisting`.                                                         |
+| `adoptExisting` | Also take over the captions and subtitles tracks the element already has, `<track>` children included. Optional.                                             |
+| `render`        | `'native'` (default): the browser draws the cues. `'overlay'`: you draw them, with `getOverlay`.                                                             |
+| `getOverlay`    | With `render: 'overlay'`: the element the active cue text is written into. Required there.                                                                   |
+| `getAvoid`      | The element native cues stay above, such as a controls bar, or `null` for the bottom of the media. Optional; without it the browser places the cues.         |
+| `onState`       | Called with a `CaptionsState` when something changes, and once on `attach()`. Optional.                                                                      |
+| `onError`       | Called with an `Error` and the track's `CaptionTrackInfo` for each track that could not be fetched or parsed. It never throws. Optional.                     |
+
+A `CaptionTrackSource` has a `language` (BCP 47), a `label`, an optional `id` (default `${language}-${kind}`) and `kind` (`captions`, the default, or `subtitles`), and exactly one source of cues; the type allows no more than one:
+
+| Field  | The cues are                                                                                                                                                                                                          |
+| ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cues` | A list of `{ start, end, text }` in seconds, added as `VTTCue`s to a track made with `addTextTrack`. No parsing, no network.                                                                                          |
+| `vtt`  | WebVTT text, starting with `WEBVTT`. It becomes a `<track>` element with a Blob URL and the browser parses it, so it does not depend on a server that serves `.vtt` files.                                            |
+| `src`  | A URL the controller fetches and treats as WebVTT text, so a missing or unknown extension does not matter. The page must be allowed to fetch it (same origin or CORS). A failed fetch makes the track `error`.        |
+
+## State
+
+`getState()` and `onState` give a `CaptionsState`:
+
+| Field        | Meaning                                                                                                              |
+| ------------ | -------------------------------------------------------------------------------------------------------------------- |
+| `enabled`    | A track is selected and shown.                                                                                       |
+| `language`   | The language of the shown track, or `null` while captions are off.                                                   |
+| `tracks`     | Each track's `id`, `language`, `label`, `kind` and `status`: `loading`, `ready` or `error`.                          |
+| `activeText` | The text of the cues active now, one per line. Read from the element when you call `getState()`.                     |
+
+`onState` is called once on `attach()`, as `MediaController` does, and then only when `enabled`, `language`, the list of tracks or a status changes. It is not called for each cue, with one exception: with `render: 'overlay'`, `activeText` is part of the comparison, so it is also called when the active cue changes.
+
+## Methods
+
+| Method                        | Does                                                                                                                                                                                                                             |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `enable(language?)`           | Shows a track: the one `language` names (an id first, then a language tag, where `pt` matches `pt-BR`), or the one selected last, or the first. Returns `false` and changes nothing when there is no such track.                  |
+| `disable()`                   | Hides the captions.                                                                                                                                                                                                              |
+| `toggle()`                    | `disable()` while shown, otherwise `enable()`.                                                                                                                                                                                   |
+| `setLanguage(idOrLanguage)`   | Selects a track. While captions are on it switches; while off it only remembers the choice for the next `enable()`. Returns whether a track was found.                                                                          |
+| `refresh()`                   | Reads `getMedia` and `getTracks` again. Tracks that are gone are removed, new ones added, and a track whose source object changed is made again. Call it when the tracks or the avoided element change.                          |
+| `attach()` and `destroy()`    | With a host, `createCaptionsController(host, config)` calls them on connect and disconnect; see [bindController](/docs/controllers/bind-controller).                                                                             |
+
+Captions start off. Exactly one track is shown at a time: the controller sets every track it owns to `disabled` except the selected one.
+
+## Placement
+
+A browser draws a caption at the bottom of the video, which is where your controls are. With `getAvoid`, the controller sets each cue to `snapToLines = false`, `lineAlign = 'end'` and a `line` that is the percentage of the media height at which the avoided element starts, measured from the two bounding boxes. A `ResizeObserver` on the media element and on the avoided element places the cues again, so a control bar that wraps to two rows on a narrow screen pushes them up. A media element with no height (not displayed) is skipped until it has one. With `render: 'overlay'` nothing is placed: position the overlay element yourself.
+
+## Draw the cues yourself
+
+```ts
+const captions = new CaptionsController({
+	getMedia: () => video,
+	tracks,
+	render: 'overlay',
+	getOverlay: () => caption,
+});
+```
+
+The controller keeps the selected track `hidden`, listens to `cuechange`, and writes the active cue text into the element as `textContent` (never as HTML), joined by line breaks when several cues are active, and clears it when none is. The text is the text content of the parsed cue (`getCueAsHTML().textContent`), so WebVTT markup such as `<i>`, `<v Name>` and timestamps is dropped and nothing is ever inserted as HTML. Formatting is not carried over; if you need italics, read the cues from the track yourself. The overlay is yours to style and place.
+
+## Accessibility
+
+The toggle is your button. Give it one name that does not change and say whether it is on with `aria-pressed`, from `onState`:
+
+```ts
+const captions = new CaptionsController({
+	getMedia: () => video,
+	tracks,
+	onState: (state) => {
+		button.setAttribute('aria-pressed', String(state.enabled));
+	},
+});
+button.addEventListener('click', () => captions.toggle());
+button.textContent = 'Captions';
+```
+
+A name that changed with the state ("Turn captions on") would be read together with the pressed state. A single-letter shortcut is optional and is a pattern, not something the controller installs. If you add one, `c` is the usual key; ignore it with Ctrl, Alt or Meta held, and while the user types in a field:
+
+```ts
+player.addEventListener('keydown', (event) => {
+	const typing = (event.target as Element).closest('input, textarea, select, [contenteditable]');
+	if (event.key === 'c' && !event.ctrlKey && !event.altKey && !event.metaKey && !typing) {
+		captions.toggle();
+	}
+});
+```
+
+A language menu is a list of your own buttons or a `select` built from `state.tracks`, with `setLanguage(track.id)`.
+
+Native cues are drawn and exposed by the browser. For an overlay, whether to use a live region is a trade-off the host decides, not a rule. Captions are usually already presented visually, in step with the audio, so a live region makes a screen reader repeat every cue over audio the user may already hear. It can be worth offering as an opt-in for a user who cannot hear the audio and reads speech on a braille display. Hiding the overlay from assistive technology (`aria-hidden`) is the same kind of choice: hidden, a screen reader user is not given text that duplicates the audio; visible, the current caption can be read by moving through the page.
+
+## Lifecycle
+
+Every track the controller adds is its own, so two controllers on one element do not change each other's tracks. `vtt` and `src` tracks are `<track>` elements, removed on `destroy()` with their Blob URLs revoked. `cues` tracks are made with `addTextTrack`, which a browser cannot undo: `destroy()` removes their cues and sets them `disabled`, and the empty track stays in `textTracks` until a controller on that element asks for the same kind, label and language, which reuses it. That empty `disabled` track cannot be removed, and the reuse only bounds how many there are. Tracks the controller did not create are not touched unless `adoptExisting` is set; adopted tracks get their previous mode back on `destroy()`. Adopt on one controller per element: when two controllers with `adoptExisting` share an element, the first claims the tracks and the second finds them taken. A track still loading is `hidden` so the browser loads it, and `disabled` after.
+
+`destroy()` stops listening and observing at once, aborts a fetch in flight (which then writes nothing), and releases the tracks in a microtask that an `attach()` in between cancels. Moving the element in the DOM runs cleanup, then connect, so it keeps its tracks and its selection. `onState` is not called after `destroy()`.
+
+## Protected hooks
+
+None. The decisions an owner changes are config: which tracks, how they are drawn, what they avoid.

@@ -10,6 +10,15 @@
  */
 export { bindController, type Controller, type ControllerHost } from './controllers/controller';
 export {
+	CaptionsController,
+	createCaptionsController,
+	type CaptionCue,
+	type CaptionsControllerConfig,
+	type CaptionsState,
+	type CaptionTrackInfo,
+	type CaptionTrackSource,
+} from './controllers/captions-controller';
+export {
 	clearCollectionActive,
 	getVisibleCollectionOptions,
 	setCollectionActive,

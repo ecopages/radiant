@@ -120,7 +120,7 @@ The bars are plain elements the page styles with the level:
 | `getTarget`  | The element the preset mounts into: the container of the bars, or the element a canvas is created in. `null` is retried on `play`.          |
 | `preset`     | An `AudioVisualizerPreset`: `bars(...)`, `wave(...)` or your own.                                                                           |
 | `getEnabled` | Optional. Checked when playback starts and on every frame; `false` keeps the preset at rest.                                                |
-| `onState`    | Optional. Called with `idle`, `running`, `reduced` or `opaque` each time `getState()` changes, never per frame.                              |
+| `onState`    | Optional. Called with `idle`, `running`, `reduced` or `opaque` each time `getState()` changes, never per frame.                             |
 
 Methods: `refresh()` resolves the getters and `getEnabled` again and starts or stops to match; call it when the host renders the media element late, or when what `getEnabled` returns changes while the media plays. `setPreset(preset)` rests and destroys the old preset, mounts the new one and keeps drawing if the media is playing. `resume()` asks the audio context to run from inside a click or key handler and starts the loop once it does; see [Lifecycle](#lifecycle). `getState()` is `'running'` while the loop draws, `'reduced'` while attached and the user prefers reduced motion, `'blocked'` while the media plays a source that is cross-origin without CORS (never for a stream), and `'idle'` otherwise. `refresh()` does nothing before `attach()` and after `destroy()`; `destroy()` is synchronous, unlike `MediaController.destroy()`, because a visualizer owns nothing the media needs.
 
@@ -128,23 +128,46 @@ Methods: `refresh()` resolves the getters and `getEnabled` again and starts or s
 
 A preset is an object with `mount(target)`, `draw(frame)`, `rest()` and `destroy()`, and optionally `fftSize` and `smoothing`; [Writing a preset](#writing-a-preset) has the contract.
 
-| Preset                     | What it does                                                                                                                                                                                  | Options                                                                            |
-| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| `bars({ mode: 'dom' })`    | Writes each band's level as `--level` (0 to 1) on the target's bar elements and removes it on rest. With no `bands`, each element gets one of as many log-spaced bands as there are elements. | `selector` (default: direct children), `bands` (Hz ranges), `floor` (default 0.12) |
-| `bars({ mode: 'canvas' })` | Draws vertical bars on a canvas it creates in the target.                                                                                                                                     | `count` (default 24), `bands`, `floor`, `gap`, `color`, and the look options below |
-| `wave()`                   | Draws the waveform as a smooth line on a canvas it creates in the target.                                                                                                                     | `lineWidth` (default 2), `fill`, `color`, `padding` (default 0)                    |
+| Preset                     | What it does                                                                                                                                                                                  | Options                                                                                                         |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `bars({ mode: 'dom' })`    | Writes each band's level as `--level` (0 to 1) on the target's bar elements and removes it on rest. With no `bands`, each element gets one of as many log-spaced bands as there are elements. | `selector` (default: direct children), `bands` (Hz ranges), `floor` (default 0.12), and the level options below |
+| `bars({ mode: 'canvas' })` | Draws vertical bars on a canvas it creates in the target.                                                                                                                                     | `count` (default 24), `bands`, `floor`, `gap`, `color`, the level options and the look options below            |
+| `wave()`                   | Draws the waveform as a smooth line on a canvas it creates in the target.                                                                                                                     | `lineWidth` (default 2), `fill`, `color`, `padding` (default 0)                                                 |
+
+Both bars modes shape the level of a band, the analyser's byte as 0 to 1, with these options; the defaults leave it as it is:
+
+| Option       | Description                                                                                                                                                                                                     |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `floorLevel` | The analyser level at or below which a band is off. Default 0. The analyser's scale is loud, so music rarely falls under 0.2 and a bar never empties until this is above the noise of the media.                |
+| `range`      | The analyser span above `floorLevel` that fills the bar. Default 1. A smaller range reaches the top sooner.                                                                                                     |
+| `curve`      | An exponent on the scaled level. Default 1. Above 1 pushes quiet bands down and keeps peaks high, which is what leaves gaps inside the sound.                                                                   |
+| `adapt`      | Scales against the loudest band of the last moments, a running maximum that falls by this many full scales per second (0.2 is slow), in place of `range`, so a quiet track still reaches the top. Default: off. |
+| `floor`      | The lowest level a solid or `dom` bar shows, default 0.12. Segmented bars ignore it: a band that is off lights no segment.                                                                                      |
+
+The canvas bars come in four variants, chosen with `variant`; every one takes the same level shaping above, so they move alike:
+
+| Variant  | Look                                                                                                                                                  |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `led`    | LED segments lit from the bottom (`segments`, default 12; `segmentGap`). The default when `segments` is set.                                          |
+| `solid`  | Continuous bars with rounded tops (`ends: 'round'` is its default; `ends: 'square'` for flat tops).                                                     |
+| `line`   | Hairline bars of `lineWidth` CSS pixels (default 2), centered in wide slots (`gap` default 6).                                                        |
+| `mirror` | Continuous bars that grow up and down from the middle; with `colorEnd`, the gradient runs from `color` at the middle line to `colorEnd` at both edges. |
+
+Without `variant` the bars are as in earlier versions: `led` when `segments` is set, otherwise a plain solid bar with square ends and a `floor` minimum. With a `variant`, a bar has no minimum height: a band under `floorLevel` is not drawn, and the bars do not start with a stub when the music starts. At rest, `idle: 'floor'` draws one dim hairline per bar (the lowest segment for `led`), `'clear'` nothing. `peaks` draw a cap above each bar, and below it too for `mirror`, but none on a bar that is off. `padding`, `gap`, `color`, `colorEnd`, the pixel ratio and reduced motion work the same in every variant.
 
 The canvas bars take these options for a look closer to a hardware meter; each has a default that keeps the plain bars:
 
-| Option       | Description                                                                                                                                                                    |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `padding`    | CSS pixels kept free around the bars inside the canvas. Default 0. `wave()` takes the same option, so a wave can run edge to edge or sit inside a margin.                      |
-| `segments`   | Splits each bar into this many LED segments, lit from the bottom as the level rises. Default: a solid bar.                                                                     |
-| `segmentGap` | CSS pixels between segments. Default 1.                                                                                                                                        |
-| `ends`       | `'square'` (default) or `'round'`: the shape of a bar, or of each segment (a pill).                                                                                            |
-| `colorEnd`   | A custom property name or CSS color. The bars fade from `color` at the bottom to this at the top. Default: one color.                                                          |
-| `peaks`      | `{ hold, fall }`: a cap above each bar that holds the highest recent level for `hold` ms (default 450), then falls `fall` bar heights per second (default 1.2). Default: none. |
-| `idle`       | `'clear'` (default) draws nothing at rest; `'floor'` draws the bars at their lowest level from the moment the preset is mounted, with no caps.                                 |
+| Option       | Description                                                                                                                                                                                                         |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `padding`    | CSS pixels kept free around the bars inside the canvas. Default 0. `wave()` takes the same option, so a wave can run edge to edge or sit inside a margin.                                                           |
+| `variant`    | `'led'`, `'solid'`, `'line'` or `'mirror'`; see the table above. Default: `led` when `segments` is set, otherwise the plain solid bar. |
+| `lineWidth`  | CSS pixels of a `line` bar. Default 2.                                                                                                                                         |
+| `segments`   | Splits each bar into this many LED segments, lit from the bottom as the level rises. Default 12 for `variant: 'led'`; otherwise a solid bar.                                                                                                          |
+| `segmentGap` | CSS pixels between segments. Default 1.                                                                                                                                                                             |
+| `ends`       | `'square'` or `'round'`: the shape of a bar (rounded tops), or of each segment (a pill). Default `'round'` for `solid` and `mirror`, otherwise `'square'`.                                                                                                                                 |
+| `colorEnd`   | A custom property name or CSS color. The bars fade from `color` at the bottom to this at the top. Default: one color.                                                                                               |
+| `peaks`      | `{ hold, fall }`: a cap above each bar that holds the highest recent level for `hold` ms (default 450), then falls `fall` bar heights per second (default 1.2). Default: none.                                      |
+| `idle`       | `'clear'` (default) draws nothing at rest; `'floor'` draws a baseline from the moment the preset is mounted, with no caps: solid bars at their `floor` height, segmented bars as their lowest segment only, dimmed. |
 
 The controller never draws under `prefers-reduced-motion`, so the peak caps never fall there; `idle: 'floor'` is what keeps the bars on screen, as a static row. The canvas path does no DOM work per frame: it draws on the canvas, takes the colors from custom properties once per frame and keeps the pixel ratio handling of `createCanvasSurface`.
 
