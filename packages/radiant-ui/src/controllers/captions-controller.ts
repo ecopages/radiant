@@ -65,8 +65,8 @@ type CaptionsRender =
 
 /** The media element, the tracks, how the cues are drawn and the callbacks of a `CaptionsController`. */
 export type CaptionsControllerConfig = {
-	/** Resolved on every `attach()` and `refresh()`. */
-	getMedia: () => HTMLMediaElement;
+	/** Resolved on every `attach()` and `refresh()`. `null` while the element is not rendered yet: the controller then has no tracks. */
+	getMedia: () => HTMLMediaElement | null;
 	/** Also take over the captions and subtitles tracks the media element already has, `<track>` children included. */
 	adoptExisting?: boolean;
 	/**
@@ -177,7 +177,12 @@ export class CaptionsController implements Controller {
 
 	/**
 	 * Reads `getMedia` and the tracks again and reconciles: tracks that are gone are removed, new ones added, a track
-	 * whose source object changed is made again. Call it when the tracks or the avoided element change.
+	 * whose source object changed is made again. Call it when the tracks or the avoided element change, and once the
+	 * media element exists when `getMedia` returned `null` before.
+	 *
+	 * @remarks
+	 * While `getMedia` returns `null` the controller reports no tracks and does nothing else. When it returns an
+	 * element later, or a different one, the tracks are made on it. `enable()` finds no track until then and returns `false`.
 	 */
 	refresh(): void {
 		if (!this.attached) {
@@ -188,8 +193,10 @@ export class CaptionsController implements Controller {
 			this.release();
 		}
 		this.media = media;
-		this.reconcile(media);
-		this.observe(media);
+		if (media) {
+			this.reconcile(media);
+			this.observe(media);
+		}
 		this.apply();
 		this.emit();
 	}

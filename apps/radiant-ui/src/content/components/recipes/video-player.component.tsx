@@ -1,5 +1,5 @@
 import { RadiantElement, customElement, onEvent, query, state } from '@ecopages/radiant';
-import { CaptionsController, createMediaController, type MediaState } from '@ecopages/radiant-ui/controllers';
+import { createCaptionsController, createMediaController, type MediaState } from '@ecopages/radiant-ui/controllers';
 import { RuiButton } from '@ecopages/radiant-ui/button';
 import { cycleValue, formatMediaTime } from '@ecopages/radiant-ui/helpers';
 import { RuiSlider } from '@ecopages/radiant-ui/slider';
@@ -69,12 +69,7 @@ export class VideoPlayerApp extends RadiantElement<{ status: string; elapsed: st
 	private thumb: HTMLElement | null = null;
 	private readonly thumbObserver = new MutationObserver(() => this.keepValueText());
 
-	/**
-	 * @remarks
-	 * Not bound to the host: the video is drawn by the first render, after the host connects, and a captions controller
-	 * needs the element to attach, so `onConnected()` attaches it and the cleanup destroys it.
-	 */
-	private readonly captions = new CaptionsController({
+	private readonly captions = createCaptionsController(this, {
 		getMedia: () => this.video,
 		getAvoid: () => this.controls,
 		tracks: [{ language: 'en', label: 'English', cues: CAPTIONS }],
@@ -98,7 +93,6 @@ export class VideoPlayerApp extends RadiantElement<{ status: string; elapsed: st
 			clearTimeout(this.hideTimer);
 			this.thumbObserver.disconnect();
 			this.thumb = null;
-			this.captions.destroy();
 		});
 	}
 
@@ -106,12 +100,13 @@ export class VideoPlayerApp extends RadiantElement<{ status: string; elapsed: st
 	 * Starts the player paused on the clip, each time the element connects.
 	 *
 	 * @remarks
-	 * It runs after the render, so the `video` element exists. The media controller attached when the element
-	 * connected, before the first render, when there was no media yet, so it attaches again here. The cleanup is
+	 * It runs after the render, so the `video` element exists. The controllers attached when the element
+	 * connected, before the first render, when there was no media yet, so the media controller attaches again here and
+	 * the captions controller refreshes. The cleanup is
 	 * registered once in the constructor, because one registered here would be added again on every reconnect.
 	 */
 	override onConnected(): void {
-		this.captions.attach();
+		this.captions.refresh();
 		this.captions.disable();
 		this.fullscreenAvailable = document.fullscreenEnabled;
 		this.announcer.reset();

@@ -148,7 +148,7 @@ export function mount(root: HTMLElement): () => void {
 
 | Option          | Meaning                                                                                                                                                      |
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `getMedia`      | The media element, read on `attach()` and `refresh()`.                                                                                                       |
+| `getMedia`      | The media element, read on `attach()` and `refresh()`. `null` while it is not rendered yet: no tracks until a `refresh()` finds it.                           |
 | `tracks`        | The tracks, as a fixed list. Or:                                                                                                                             |
 | `getTracks`     | The tracks, read on `attach()` and `refresh()`. Use one of the two, or neither with `adoptExisting`.                                                         |
 | `adoptExisting` | Also take over the captions and subtitles tracks the element already has, `<track>` children included. Optional.                                             |

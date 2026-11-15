@@ -273,6 +273,47 @@ describe('CaptionsController tracks', () => {
 	});
 });
 
+describe('CaptionsController without a media element yet', () => {
+	it('attaches without throwing and reports no tracks', () => {
+		const onState = vi.fn();
+		const captions = make({ getMedia: () => null, tracks: [EN], onState });
+		expect(() => captions.attach()).not.toThrow();
+		expect(captions.getState()).toMatchObject({ enabled: false, tracks: [] });
+		expect(captions.enable()).toBe(false);
+		expect(() => captions.refresh()).not.toThrow();
+	});
+
+	it('picks the element up on a later refresh and attach', () => {
+		let media: HTMLVideoElement | null = null;
+		const captions = make({ getMedia: () => media, tracks: [EN] });
+		captions.attach();
+		media = video();
+		captions.refresh();
+		expect(captions.getState().tracks).toHaveLength(1);
+		expect(captions.enable()).toBe(true);
+		expect(media.textTracks[0].mode).toBe('showing');
+
+		const other = make({ getMedia: () => media, tracks: [EN] });
+		media = null;
+		other.attach();
+		media = video();
+		other.attach();
+		expect(other.getState().tracks).toHaveLength(1);
+	});
+
+	it('releases the tracks when the element goes away again', () => {
+		let media: HTMLVideoElement | null = video();
+		const element = media;
+		const captions = make({ getMedia: () => media, tracks: [EN] });
+		captions.attach();
+		captions.enable();
+		media = null;
+		captions.refresh();
+		expect(captions.getState().tracks).toEqual([]);
+		expect(element.textTracks[0].mode).toBe('disabled');
+	});
+});
+
 describe('CaptionsController placement', () => {
 	function stage() {
 		const wrapper = document.createElement('div');
