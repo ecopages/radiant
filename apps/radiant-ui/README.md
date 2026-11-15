@@ -168,7 +168,7 @@ The page's Example section has two `###` headings, `Plain JavaScript` then `Radi
 - **Fences.** The `ts` fence of the Radiant form is the `.element.ts` file exactly; the plain fence is the `.script.ts` without the `mountExample` import and closing call. `test/recipe-imports.test.ts` compares both and checks the imports.
 - **Tests.** In a new `test/recipes-<slug>.test.browser.ts`, run the shared assertions through `describe.each(['plain', 'radiant'])` and the `mountForm(slug, form)` helper from `test/mount-recipe.ts` that mounts the first `html` fence and the `.script.ts` (plain) or the second `html` fence and the `.element.ts` (Radiant), then returns the example root. One more test per recipe removes the Radiant element and checks that every listener it added is removed, then adds a fresh copy and checks it works.
 
-Checklist for adding a Radiant form to a recipe:
+Checklist for adding a Radiant element form to a recipe:
 
 1. Create `<slug>.element.ts` with `recipe-<slug>` and port the behavior onto controllers and `@onEvent`, with no behavior change.
 2. Add it to the page's `config.dependencies.scripts`.
@@ -178,6 +178,19 @@ Checklist for adding a Radiant form to a recipe:
 6. Run `pnpm test` and `pnpm run build` and look at the page at 1280px and 390px.
 
 Add a test to `test/controller-examples.test.browser.ts` for every interactive controller example, and to a `test/recipes-<slug>.test.browser.ts` for a recipe. Descriptions in frontmatter are quoted when they contain a colon.
+
+#### All-in-one component
+
+A third form, used where the markup is derived from state: a calendar grid, board columns. Today the board and calendar events recipes have it. The element owns its markup through `render()` (a Derived Tree in the catalog's terms), so the page uses one self-contained tag.
+
+- **When.** Use it when the recipe's markup is generated from data (days, columns, rows) and the Radiant element would have to build it in `onConnected` or ask the author to copy a long block. Do not use it for markup the author is meant to shape, such as a field and a list.
+- **Removes.** The markup to author and copy: the page's `html` fence is the tag alone, and the data is `@state`.
+- **Costs.** The markup lives in the class, so restyling the structure means editing it. The element needs the render path on the server to have content before its script runs; without it the tag is prerendered empty (as in this docs build) and the client draws it, so there is no first paint of it.
+- **Files and tag.** `<slug>.component.tsx` with `@customElement('recipe-<slug>-app')`; the `-app` suffix keeps the tag off the authored-markup form's `recipe-<slug>`. The page lists it in `config.dependencies.scripts` and the recipe's stylesheet selects both tags.
+- **Page.** A third `###` heading, `Radiant component`, after `Radiant element`: its runnable `<PrimitiveExample host>` with the tag, an `html` fence that is the tag, a `tsx` fence that is the file exactly, and a paragraph on how `render()` and the controllers fit and how it compares with the authored-markup form (what it removes, what it costs). The page order is plain, element, component.
+- **Imports.** Only `@ecopages/radiant`, `@ecopages/radiant-ui/controllers` and `@ecopages/radiant-ui/helpers`; the component needs no `@ecopages/jsx` import. `test/recipe-imports.test.ts` checks the imports and the `tsx` fence.
+- **Controllers and `render()`.** Controllers are created as field initializers and attach when the element connects, before the first render, so their targets are getters that read the current DOM (`this.querySelector(...)`), never cached nodes. `updated()` runs after each render and calls `attach()` again, which re-resolves the targets, then restores focus on the node that moved by its id: a keyed item that changes parent is a new node. A controller's `onChange` writes state (a new array) and never the DOM. Text that changes while a sort is in progress, such as the announcement, is bound with `this.$.<field>` so it patches one text node and does not call `render()` again mid-sort.
+- **Tests.** `test/recipes-component.test.browser.ts` mounts the page's third `html` fence and the `.component.tsx` with `mountComponent(slug)`; it moves by real pointer and keyboard input, moves twice to prove the state and not the DOM is the source, and removes the element with `trackListeners()`.
 
 ## LLM docs export
 
