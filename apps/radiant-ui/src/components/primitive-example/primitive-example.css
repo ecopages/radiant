@@ -224,3 +224,12 @@
 .primitive-example :where([data-example='audio-visualizer'] [data-visual]:has(canvas) > span) {
 	display: none;
 }
+
+.primitive-example :where(button[data-copy-state='copied']) {
+	background: var(--primary);
+	color: var(--on-primary);
+}
+
+.primitive-example :where(button[data-copy-state='error']) {
+	border-color: var(--error);
+}

@@ -1,0 +1,214 @@
+---
+title: MediaRecorderController
+description: 'Records the microphone or camera as a state machine with pause, a time limit, a result URL it cleans up and a stream other controllers can read.'
+order: 17
+---
+
+import { PrimitiveExample } from '@/components/primitive-example';
+
+export const config = {
+	dependencies: {
+		components: [PrimitiveExample],
+		scripts: ['./media-recorder.script.ts'],
+	},
+};
+
+# MediaRecorderController
+
+<p class="docs-lede">
+	Records the microphone or camera as a state machine with pause, a time limit, a result URL it cleans up and a stream
+	other controllers can read.
+</p>
+
+Reach for it for voice notes, a camera capture or any recording that needs permission handling and a recording indicator that goes off when it should.
+
+## Import
+
+```ts
+import { MediaRecorderController, createMediaRecorderController } from '@ecopages/radiant-ui/controllers';
+```
+
+## Try it
+
+Press Record and allow the microphone. The recording stops by itself after 30 seconds. After Stop the result plays back below. Nothing leaves the page.
+
+<PrimitiveExample name="media-recorder">
+	<button type="button" data-record>
+		Record
+	</button>
+	<button type="button" data-pause disabled>
+		Pause
+	</button>
+	<button type="button" data-stop disabled>
+		Stop
+	</button>
+	<p data-status>Ready 0.0 s</p>
+	<audio controls hidden></audio>
+</PrimitiveExample>
+
+```html
+<div data-example="media-recorder">
+	<button type="button" data-record>Record</button>
+	<button type="button" data-pause disabled>Pause</button>
+	<button type="button" data-stop disabled>Stop</button>
+	<p data-status>Ready 0.0 s</p>
+	<audio controls hidden></audio>
+</div>
+```
+
+```ts
+import { MediaRecorderController, type MediaRecorderSnapshot } from '@ecopages/radiant-ui/controllers';
+
+export function mount(root: HTMLElement): () => void {
+	const record = root.querySelector<HTMLButtonElement>('[data-record]')!;
+	const pause = root.querySelector<HTMLButtonElement>('[data-pause]')!;
+	const stop = root.querySelector<HTMLButtonElement>('[data-stop]')!;
+	const status = root.querySelector('[data-status]')!;
+	const player = root.querySelector('audio')!;
+
+	const labels: Record<MediaRecorderSnapshot['status'], string> = {
+		idle: 'Ready',
+		requesting: 'Waiting for the microphone',
+		recording: 'Recording',
+		paused: 'Paused',
+		stopped: 'Recorded',
+		denied: 'Microphone access was denied',
+		unsupported: 'This browser cannot record',
+		error: 'Recording failed',
+	};
+
+	const recorder = new MediaRecorderController({
+		mimeTypes: ['audio/webm;codecs=opus', 'audio/mp4'],
+		maxDuration: 30,
+		onState: ({ status: next, duration }) => {
+			status.textContent = `${labels[next]} ${duration.toFixed(1)} s`;
+			record.disabled = next === 'requesting' || next === 'recording' || next === 'paused';
+			pause.disabled = next !== 'recording' && next !== 'paused';
+			pause.textContent = next === 'paused' ? 'Resume' : 'Pause';
+			stop.disabled = pause.disabled;
+		},
+		onStop: ({ url }) => {
+			player.src = url;
+			player.hidden = false;
+		},
+	});
+	recorder.attach();
+
+	record.addEventListener('click', () => {
+		player.hidden = true;
+		player.removeAttribute('src');
+		player.load();
+		void recorder.start();
+	});
+	pause.addEventListener('click', () => {
+		if (recorder.getState().status === 'paused') {
+			recorder.resume();
+		} else {
+			recorder.pause();
+		}
+	});
+	stop.addEventListener('click', () => void recorder.stop());
+	return () => recorder.destroy();
+}
+```
+
+`mount` runs once for each example element on the page, and the function it returns undoes it; see [how the examples run](/docs/controllers/overview#how-the-examples-run).
+
+The status line is not a live region, because `onState` writes it about ten times a second while recording. Announce status changes separately; see Accessibility.
+
+## Recipe: a voice note with a download
+
+The controller revokes the result URL on `discard()`, on the next `start()` and on `destroy()`. A download link therefore points at a URL that is valid only until then, and a note that is kept has to be copied from the blob.
+
+```ts
+import { MediaRecorderController } from '@ecopages/radiant-ui/controllers';
+
+const extensions: Record<string, string> = { 'audio/webm': 'webm', 'audio/mp4': 'm4a', 'audio/ogg': 'ogg' };
+
+const recorder = new MediaRecorderController({
+	mimeTypes: ['audio/webm;codecs=opus', 'audio/mp4', 'audio/ogg;codecs=opus'],
+	maxDuration: 120,
+	onStop: ({ blob, url, mimeType }) => {
+		link.href = url;
+		link.download = `voice-note.${extensions[mimeType.split(';')[0]] ?? 'bin'}`;
+		link.hidden = false;
+		upload.onclick = () => void fetch('/notes', { method: 'POST', body: blob });
+	},
+});
+recorder.attach();
+
+record.onclick = () => void recorder.start();
+stop.onclick = () => void recorder.stop();
+discard.onclick = () => {
+	recorder.discard();
+	link.hidden = true;
+};
+```
+
+## Config
+
+| Option            | Meaning                                                                                                                                                                                                                     |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `constraints`     | `MediaStreamConstraints`, or a getter read on each `start()`. Default `{ audio: true }`. Use `{ video: true }` or both for the camera.                                                                                      |
+| `mimeTypes`       | MIME types in order of preference. The first one `MediaRecorder.isTypeSupported` accepts is used, else the browser default.                                                                                                 |
+| `timeslice`       | Milliseconds between `onData` chunks. Without it the data arrives once, on stop.                                                                                                                                            |
+| `maxDuration`     | Seconds after which the recording stops by itself. Paused time does not count.                                                                                                                                              |
+| `getAudioContext` | An `AudioContext` you own. Only when given, the stream also feeds an `AnalyserNode`, so `getAnalyser()` and `level` work. The controller never creates or closes a context and never connects the analyser to the speakers. |
+| `getUserMedia`    | Replaces `navigator.mediaDevices.getUserMedia`: a test double, or a stream the page already holds.                                                                                                                          |
+| `onState`         | Called with a snapshot on every status change and about every 100 ms while recording.                                                                                                                                       |
+| `onData`          | Called with each non-empty chunk.                                                                                                                                                                                           |
+| `onStop`          | Called with `{ blob, url, mimeType, duration }` when a recording ends through `stop()` or `maxDuration`.                                                                                                                    |
+| `onError`         | Called with the error for every failure other than a refused permission. A refusal is `denied`, reported through `onState` and `getState()` only.                                                                                                                                                    |
+
+## Methods
+
+| Method          | What it does                                                                                                                                                                                                               |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `start()`       | Asks for the device and records. Does nothing while `requesting`, `recording` or `paused`. Resolves when recording began or failed; never rejects.                                                                         |
+| `pause()`       | Pauses a recording. `resume()` continues it.                                                                                                                                                                               |
+| `stop()`        | Ends the recording and resolves with the result, or `null` when nothing was recording. Stopping while `requesting` cancels the request.                                                                                    |
+| `discard()`     | Drops the recording and the last result, stops the device and returns to `idle`. `onStop` does not run.                                                                                                                    |
+| `getState()` | `{ status, duration, level, mimeType, error }`. `duration` is seconds, advancing while recording and frozen while paused. `level` is a smoothed loudness from 0 to 1, always 0 without `getAudioContext`, while paused, and while the context you pass is suspended. |
+| `getAnalyser()` | The `AnalyserNode` while recording or paused when `getAudioContext` is set, otherwise `null`.                                                                                                                              |
+| `getStream()`   | The live `MediaStream` while recording or paused, otherwise `null`, for another controller to analyse. Do not connect it to the speakers.                                                                                  |
+
+Statuses: `idle`, `requesting`, `recording`, `paused`, `stopped`, `denied` (permission refused), `unsupported` (no `MediaRecorder` or `getUserMedia`) and `error`.
+
+## Recipe: a level meter
+
+Pass a context you created from a user gesture; a suspended one reads silence. The same analyser can feed a visualizer.
+
+```ts
+const context = new AudioContext();
+const recorder = new MediaRecorderController({
+	getAudioContext: () => context,
+	onState: ({ level }) => meter.style.setProperty('--level', String(level)),
+});
+record.onclick = async () => {
+	await context.resume();
+	await recorder.start();
+};
+```
+
+## Lifecycle
+
+`start()` does nothing before `attach()`. Every track is stopped when the recording ends, on `discard()` and on `destroy()`, so the browser's recording indicator goes off. A stream that arrives after `stop()`, `discard()` or `destroy()` while `requesting` is stopped on arrival. The result URL is an object URL the controller owns: it is revoked on `discard()`, on the next `start()` and on `destroy()`, so clear any `audio` element that plays it before recording again (the example removes its `src`) and keep the `blob` if the recording must outlive it. A recording also finishes by itself, with a result and `onStop`, when every track ends (a device unplugged or a permission revoked) or the browser stops the recorder. With `getAudioContext`, the source and analyser are disconnected at the same points and the context stays open. `destroy()` returns the state to `idle` without calling `onState`.
+
+With a host, `createMediaRecorderController(host, config)` does the same on connect and disconnect; see [bindController](/docs/controllers/bind-controller).
+
+## Accessibility
+
+Give each button a visible text name that matches its action, and keep Pause and Resume one button whose label changes. Announce status changes through a polite live region, not the running timer. Tell people why the microphone is needed before `start()`, and give `denied` its own message with the way back (the browser's site settings), because the page cannot ask again. Offer the recording as an `audio` element with `controls` so it is playable by keyboard. Recording needs a visible, discoverable stop; do not hide it after `start()`.
+
+## Caveats
+
+- The page must be in a secure context (HTTPS or localhost) for `getUserMedia`. Without it the controller reports `unsupported`.
+- Supported formats differ: Chromium and Firefox record `audio/webm` or `audio/ogg`, Safari records `audio/mp4`. List several in `mimeTypes` and read `mimeType` from the result instead of assuming one.
+- `mimeType` in the snapshot may be `null` until the first chunk arrives when no listed type is supported.
+- Without `timeslice` the whole recording is kept in memory until stop. Use `timeslice` and `onData` to stream long recordings out.
+- The controller does not watch for a device that is unplugged or taken by another tab. Listen for `ended` on the tracks of `getStream()` if that matters.
+- A recording is lost if the page is closed before `stop()`; the controller does not persist anything.
+
+## Protected hooks
+
+None. It decides nothing an owner would change.
