@@ -1,5 +1,5 @@
 import { RadiantElement, customElement, onEvent, query, state } from '@ecopages/radiant';
-import { createMediaController, type MediaState } from '@ecopages/radiant-ui/controllers';
+import { CaptionsController, createMediaController, type MediaState } from '@ecopages/radiant-ui/controllers';
 import { RuiButton } from '@ecopages/radiant-ui/button';
 import { cycleValue, formatMediaTime } from '@ecopages/radiant-ui/helpers';
 import { RuiSlider } from '@ecopages/radiant-ui/slider';
@@ -7,7 +7,7 @@ import type { RuiSliderChangeDetail, RuiSliderElement } from '@ecopages/radiant-
 
 import {
 	Announcer,
-	Captions,
+	CAPTIONS,
 	HIDE_CONTROLS_MS,
 	RATES,
 	VIDEO,
@@ -66,9 +66,22 @@ export class VideoPlayerApp extends RadiantElement<{ status: string; elapsed: st
 	private bufferedKey = '';
 	private valueText = '';
 	private readonly announcer = new Announcer();
-	private readonly captionCues = new Captions();
 	private thumb: HTMLElement | null = null;
 	private readonly thumbObserver = new MutationObserver(() => this.keepValueText());
+
+	/**
+	 * @remarks
+	 * Not bound to the host: the video is drawn by the first render, after the host connects, and a captions controller
+	 * needs the element to attach, so `onConnected()` attaches it and the cleanup destroys it.
+	 */
+	private readonly captions = new CaptionsController({
+		getMedia: () => this.video,
+		getAvoid: () => this.controls,
+		tracks: [{ language: 'en', label: 'English', cues: CAPTIONS }],
+		onState: (state) => {
+			this.captionsOn = state.enabled;
+		},
+	});
 
 	private readonly media = createMediaController(this, {
 		getMedia: () => this.video,
@@ -85,7 +98,7 @@ export class VideoPlayerApp extends RadiantElement<{ status: string; elapsed: st
 			clearTimeout(this.hideTimer);
 			this.thumbObserver.disconnect();
 			this.thumb = null;
-			this.captionCues.stop();
+			this.captions.destroy();
 		});
 	}
 
@@ -98,10 +111,9 @@ export class VideoPlayerApp extends RadiantElement<{ status: string; elapsed: st
 	 * registered once in the constructor, because one registered here would be added again on every reconnect.
 	 */
 	override onConnected(): void {
-		this.video.textTracks[0].mode = 'hidden';
-		this.captionsOn = false;
+		this.captions.attach();
+		this.captions.disable();
 		this.fullscreenAvailable = document.fullscreenEnabled;
-		this.captionCues.start(this.stageNode, this.controls);
 		this.announcer.reset();
 		this.media.attach();
 		void this.media.load(this.video.dataset.src!);
@@ -152,7 +164,6 @@ export class VideoPlayerApp extends RadiantElement<{ status: string; elapsed: st
 		this.ready = state.seekable;
 		this.level = state.muted ? 0 : state.volume;
 		this.volume.value = [this.level];
-		if (state.seekable) this.captionCues.add(this.video.textTracks[0]);
 		if (message !== '') this.status = message;
 		this.renderProgress(state);
 		this.wake();
@@ -220,9 +231,7 @@ export class VideoPlayerApp extends RadiantElement<{ status: string; elapsed: st
 	}
 
 	private toggleCaptions(): void {
-		const track = this.video.textTracks[0];
-		track.mode = track.mode === 'showing' ? 'hidden' : 'showing';
-		this.captionsOn = track.mode === 'showing';
+		this.captions.toggle();
 		this.status = this.captionsOn ? 'Captions on' : 'Captions off';
 	}
 
@@ -347,9 +356,7 @@ export class VideoPlayerApp extends RadiantElement<{ status: string; elapsed: st
 						on:pointerdown={(event: PointerEvent) => (this.pointer = event.pointerType)}
 						on:click={() => this.onVideoClick()}
 						on:dblclick={() => this.toggleFullscreen()}
-					>
-						<track kind="captions" srclang="en" label="English" />
-					</video>
+					></video>
 					<RuiButton
 						size="lg"
 						square
