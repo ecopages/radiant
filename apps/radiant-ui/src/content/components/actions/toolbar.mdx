@@ -62,6 +62,10 @@ import '@ecopages/radiant-ui/toolbar';
 
 Toggle buttons need `data-toggle` and `aria-pressed`. The host updates `aria-pressed` on click.
 
+## Overflow
+
+When the controls do not fit the width of the container, the toolbar scrolls horizontally instead of overflowing it, and hides its scrollbar. Keyboard users reach every control with the arrow keys, which scroll the focused one into view; with a mouse, use a horizontal wheel or trackpad, or Shift with the wheel. Give a toolbar that must stay fully visible more room, or split it into two toolbars.
+
 ## Exclusive toggles
 
 <p>Use `exclusiveToggles` for view modes where only one option (list vs grid) can be active at a time.</p>
