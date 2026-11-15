@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cdp } from 'vitest/browser';
+import type {} from '@vitest/browser-playwright';
 import { createRoot, type JsxRenderable } from '@ecopages/jsx';
 import '../../../styles/radiant-ui.css';
 import './sidebar.css';
