@@ -3,7 +3,12 @@ import path from 'node:path';
 
 export type RecipePatternId = 'element' | 'component' | 'controller' | 'plain';
 
-const RECIPES_DIRECTORY = path.join(import.meta.dirname, '../../content/components/recipes');
+/**
+ * @remarks
+ * Resolved from the app root, not from this module: the docs build bundles this file, and `import.meta.dirname` then
+ * points into the build output instead of `src`.
+ */
+const RECIPES_DIRECTORY = path.join(process.cwd(), 'src/content/components/recipes');
 /** Every file name in the recipes directory. */
 export const present = readdirSync(RECIPES_DIRECTORY);
 
