@@ -1,5 +1,5 @@
 import type { JsxElementProps } from '@ecopages/jsx';
-import { withDefaultAriaLabel } from '@/aria';
+import { withDefaultAriaLabel } from '@/lib/aria';
 import { coalesceDefined } from '@/lib/coalesce-defined';
 import { cx } from '@/lib/cx';
 

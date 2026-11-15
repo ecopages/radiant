@@ -1,0 +1,32 @@
+:is([data-example='popover-menu'], .primitive-example:has(> recipe-popover-menu)) {
+	flex-direction: column;
+	align-items: flex-start;
+	min-height: 13rem;
+}
+
+:is([data-example='popover-menu'], .primitive-example:has(> recipe-popover-menu)) [role='menu'] {
+	min-width: 10rem;
+	box-shadow: 0 var(--space-1) var(--space-3) color-mix(in srgb, var(--on-surface) 20%, transparent);
+}
+
+:is([data-example='popover-menu'], .primitive-example:has(> recipe-popover-menu)) [role='menu'][hidden] {
+	display: none;
+}
+
+:is([data-example='popover-menu'], .primitive-example:has(> recipe-popover-menu)) [role='menuitem'] {
+	padding: var(--space-2) var(--space-3);
+	border: 0;
+	border-radius: var(--radius-control);
+	background: transparent;
+	color: var(--on-surface-container);
+}
+
+:is([data-example='popover-menu'], .primitive-example:has(> recipe-popover-menu)) [role='menuitem']:hover {
+	background: var(--surface-container-high);
+}
+
+:is([data-example='popover-menu'], .primitive-example:has(> recipe-popover-menu)) [role='menuitem']:focus-visible {
+	background: var(--primary);
+	color: var(--on-primary);
+	outline-offset: -2px;
+}

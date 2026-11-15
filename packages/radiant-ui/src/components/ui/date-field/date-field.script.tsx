@@ -15,7 +15,13 @@ import { effectiveVisibleMonths } from '@/lib/viewport/mobile-layout';
 import { uniqueId } from '@/lib/unique-id';
 import type { RuiCalendarChangeDetail } from '../calendar/calendar.script';
 import type { RuiDateInputChangeDetail } from '../date-input/date-input.script';
-import { createCalendarPopoverController } from '../../../controllers/calendar-popover-controller';
+import { createCalendarPopoverController } from '../shared/calendar-popover-controller';
+import { createEventListenerController } from '../../../controllers/event-listener-controller';
+import {
+	portalContainerPropOptions,
+	resolvePortalContainer,
+	type RuiPortalContainer,
+} from '../shared/portal-container';
 import { syncFieldLabel } from '../shared/field-label';
 
 export type RuiDateFieldProps = {
@@ -30,6 +36,10 @@ export type RuiDateFieldProps = {
 	locale?: string;
 	/** Month grids shown in the calendar popover. @default 1 */
 	visibleMonths?: number;
+	/** Render the calendar popup in `document.body`, or in `portalContainer`, while it is open. Default: `false`. */
+	portal?: boolean;
+	/** CSS selector of the element a portaled popup goes to, resolved when the popup opens. */
+	portalContainer?: string;
 };
 
 export type RuiDateFieldChangeDetail = { value: string };
@@ -73,38 +83,30 @@ export type RuiDateFieldChangeDetail = { value: string };
  * @attr {string} name - Form field name on the nested `rui-date-input`. Default: `''`.
  * @attr {string} locale - BCP 47 locale tag, or comma-separated fallback list. Default: `''`.
  * @attr {number} visible-months - Month grids in the popover (adapts to 1 on screens under 640px when greater than 1). Default: `1`.
+ * @attr {boolean} portal - Render the calendar popup in `document.body`, or in `portal-container`, while it is open. Default: `false`.
+ * @attr {string} portal-container - CSS selector of the element a portaled popup goes to, resolved each time it opens. The `portalContainer` property also takes an element or a function that returns one.
  * @fires rui-change - Emitted when a valid date is committed (typing or calendar pick).
  *
  * @remarks
  * BEM classes live on the view helpers; the host never queries them.
+ * With `portal` the popup leaves the host while it is open, so Tab order follows its place in the document, not the host:
+ * Shift+Tab from the first calendar control does not return to the toggle.
  */
 @customElement('rui-date-field')
 export class RuiDateField extends RadiantElement {
 	declare readonly [JSX_PROPS]?: RuiDateFieldProps;
 	@prop({ type: String, reflect: true, defaultValue: '' })
-	@bindTo([
-		{ selector: '[data-date-field-input]', attr: 'value' },
-		{ selector: '[data-date-field-calendar]', attr: 'value' },
-	])
+	@bindTo([{ selector: '[data-date-field-input]', attr: 'value' }])
 	value: string;
 	@prop({ type: String, defaultValue: '' })
-	@bindTo([
-		{ selector: '[data-date-field-input]', attr: 'min' },
-		{ selector: '[data-date-field-calendar]', attr: 'min' },
-	])
+	@bindTo([{ selector: '[data-date-field-input]', attr: 'min' }])
 	min: string;
 	@prop({ type: String, defaultValue: '' })
-	@bindTo([
-		{ selector: '[data-date-field-input]', attr: 'max' },
-		{ selector: '[data-date-field-calendar]', attr: 'max' },
-	])
+	@bindTo([{ selector: '[data-date-field-input]', attr: 'max' }])
 	max: string;
 
 	@prop({ type: Boolean, reflect: true, defaultValue: false })
-	@bindTo([
-		{ selector: '[data-date-field-input]', bool: 'disabled' },
-		{ selector: '[data-date-field-calendar]', bool: 'disabled' },
-	])
+	@bindTo([{ selector: '[data-date-field-input]', bool: 'disabled' }])
 	disabled: boolean;
 
 	@prop({ type: Boolean, attribute: 'read-only', reflect: true, defaultValue: false })
@@ -118,13 +120,12 @@ export class RuiDateField extends RadiantElement {
 	name: string;
 
 	@prop({ type: String, defaultValue: '' })
-	@bindTo([
-		{ selector: '[data-date-field-input]', attr: 'locale' },
-		{ selector: '[data-date-field-calendar]', attr: 'locale' },
-	])
+	@bindTo([{ selector: '[data-date-field-input]', attr: 'locale' }])
 	locale: string;
 	@prop({ type: Number, attribute: 'visible-months', defaultValue: 1 })
 	visibleMonths: number;
+	@prop({ type: Boolean, defaultValue: false }) portal: boolean;
+	@prop(portalContainerPropOptions) portalContainer: RuiPortalContainer | null;
 
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiDateFieldChangeDetail>;
@@ -146,9 +147,24 @@ export class RuiDateField extends RadiantElement {
 			this.open = next;
 		},
 		onLayoutChange: () => this.syncCalendar(),
+		getPortalContainer: () => resolvePortalContainer(this.portalContainer),
 	});
 
-	@query({ ref: 'popover' }) popoverTarget: HTMLElement | null;
+	/** @remarks Cached because a portaled popup is no longer inside the host to be found again. */
+	@query({ ref: 'popover', cache: true }) popoverTarget: HTMLElement | null;
+
+	/**
+	 * The popup is a separate listener target, not host delegation, because a portaled popup is outside the host
+	 * and its events never bubble through it.
+	 *
+	 * @remarks It first attaches as the element connects, which can be before its children exist (markup added
+	 * after the element is in the document), so each opening attaches it again to resolve the popup that exists now.
+	 */
+	private readonly popupListener = createEventListenerController(this, {
+		getTarget: () => this.popoverTarget,
+		type: ['mousedown', 'rui-change'],
+		listener: (event) => this.onPopupEvent(event),
+	});
 
 	private get isoValue(): string {
 		return this.value ?? '';
@@ -167,7 +183,7 @@ export class RuiDateField extends RadiantElement {
 	}
 
 	private getCalendar(): HTMLElement | null {
-		return this.querySelector<HTMLElement>('[data-date-field-calendar]');
+		return this.popoverTarget?.querySelector<HTMLElement>('[data-date-field-calendar]') ?? null;
 	}
 
 	private syncLabel(): void {
@@ -209,11 +225,21 @@ export class RuiDateField extends RadiantElement {
 		if (!calendar) {
 			return;
 		}
+		calendar.setAttribute('value', this.value);
+		calendar.setAttribute('min', this.min);
+		calendar.setAttribute('max', this.max);
+		calendar.setAttribute('locale', this.locale);
+		calendar.toggleAttribute('disabled', this.disabled);
 		calendar.setAttribute('selection-mode', 'single');
 		calendar.setAttribute('visible-months', String(effectiveVisibleMonths(this.visibleMonths)));
 	}
 
+	private syncPortal(): void {
+		this.calendarPopover.updateConfig({ portal: this.portal });
+	}
+
 	private initialize(): void {
+		this.syncPortal();
 		this.syncLabel();
 		this.syncInput();
 		this.syncToggle();
@@ -225,8 +251,9 @@ export class RuiDateField extends RadiantElement {
 		this.initialize();
 	}
 
-	@onUpdated(['value', 'min', 'max', 'label', 'disabled', 'readOnly', 'locale', 'visibleMonths'])
+	@onUpdated(['value', 'min', 'max', 'label', 'disabled', 'readOnly', 'locale', 'visibleMonths', 'portal'])
 	onPropsUpdated(): void {
+		this.syncPortal();
 		this.syncLabel();
 		this.syncInput();
 		this.syncToggle();
@@ -235,6 +262,9 @@ export class RuiDateField extends RadiantElement {
 
 	@onUpdated(['open'])
 	onOpenUpdated(): void {
+		if (this.open) {
+			this.popupListener.attach();
+		}
 		this.syncToggle();
 		this.calendarPopover.syncPopover();
 	}
@@ -269,15 +299,12 @@ export class RuiDateField extends RadiantElement {
 		this.calendarPopover.setOpen(!this.open);
 	}
 
-	@onEvent({ selector: '[data-date-field-popover]', type: 'mousedown' })
-	onPopoverMouseDown(event: Event): void {
-		event.preventDefault();
-	}
-
-	@onEvent({ selector: '[data-date-field-calendar]', type: 'rui-change' })
-	onCalendarChange(event: Event): void {
-		const target = event.target;
-		if (!(target instanceof HTMLElement) || !target.matches('[data-date-field-calendar]')) {
+	private onPopupEvent(event: Event): void {
+		if (event.type === 'mousedown') {
+			event.preventDefault();
+			return;
+		}
+		if (event.target !== this.getCalendar()) {
 			return;
 		}
 

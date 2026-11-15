@@ -349,3 +349,35 @@ assert.match(helpers.uniqueId('rui'), /^rui-/);
 
 	assert.equal(result.status, 0, result.stderr || result.stdout);
 });
+
+test('the cx and aria entries resolve to emitted JavaScript and declarations', () => {
+	const packageJson = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+	const packageRoot = fileURLToPath(new URL('..', import.meta.url));
+	for (const [entry, name] of [
+		['cx', 'cx'],
+		['aria', 'withDefaultAriaLabel'],
+	]) {
+		const target = packageJson.exports[`./${entry}`];
+		assert.ok(existsSync(join(packageRoot, target.import)), `${target.import} is missing`);
+		assert.ok(existsSync(join(packageRoot, target.types)), `${target.types} is missing`);
+		assert.match(readFileSync(join(packageRoot, target.types), 'utf8'), new RegExp(name));
+	}
+
+	const result = spawnSync(
+		process.execPath,
+		[
+			'--input-type=module',
+			'-e',
+			`
+import assert from 'node:assert/strict';
+const { cx } = await import('@ecopages/radiant-ui/cx');
+const { withDefaultAriaLabel } = await import('@ecopages/radiant-ui/aria');
+assert.equal(cx('a', false, 'b'), 'a b');
+assert.deepEqual(withDefaultAriaLabel(undefined, 'Name'), { label: 'Name' });
+`,
+		],
+		{ cwd: new URL('..', import.meta.url), encoding: 'utf8' },
+	);
+
+	assert.equal(result.status, 0, result.stderr || result.stdout);
+});

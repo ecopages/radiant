@@ -10,7 +10,10 @@ import {
 } from './sortable-controller';
 
 describe('SortableController on a plain list', () => {
+	const live: SortableController[] = [];
+
 	afterEach(() => {
+		live.splice(0).forEach((controller) => controller.destroy());
 		document.body.replaceChildren();
 		vi.useRealTimers();
 	});
@@ -36,6 +39,7 @@ describe('SortableController on a plain list', () => {
 			onChange,
 			...config,
 		});
+		live.push(controller);
 		return { list, items, onChange, announce, controller };
 	}
 
@@ -171,8 +175,8 @@ describe('SortableController on a plain list', () => {
 			expect(onChange).toHaveBeenCalledTimes(1);
 		});
 
-		it('ignores presses when enabled returns false', () => {
-			const { items, onChange, controller } = mount({ enabled: () => false });
+		it('ignores presses when getEnabled returns false', () => {
+			const { items, onChange, controller } = mount({ getEnabled: () => false });
 			controller.attach();
 
 			pointer(items()[0], 'pointerdown', 10);
@@ -489,6 +493,7 @@ describe('SortableController on a plain list', () => {
 			getContainer: () => current,
 			getItems: () => [...current.children] as HTMLElement[],
 		});
+		live.push(moved);
 		controller.destroy();
 		moved.attach();
 

@@ -91,8 +91,8 @@ try {
 		chunkNames: 'chunks/[name]-[hash]',
 		entryPoints: [
 			path.join(SRC, 'index.ts'),
-			path.join(SRC, 'aria.ts'),
-			path.join(SRC, 'cx.ts'),
+			{ in: path.join(SRC, 'lib', 'aria.ts'), out: 'aria' },
+			{ in: path.join(SRC, 'lib', 'cx.ts'), out: 'cx' },
 			path.join(SRC, 'controllers.ts'),
 			path.join(SRC, 'helpers.ts'),
 			...listComponentEntries(),

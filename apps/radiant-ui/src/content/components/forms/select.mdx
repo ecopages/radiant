@@ -155,6 +155,13 @@ Wrap the embedded listbox in `RuiAutocomplete` and add `RuiSelectSearch` when th
 
 <Canvas of={TriggerKindFocus} meta={SelectMeta} />
 
+## Portal
+
+By default the popup renders next to the trigger, so it is clipped by an `overflow: hidden` ancestor and can be painted over by later content. Set `portal` to render it in `document.body` while it is open, and `portal-container` (a CSS selector, resolved each time the popup opens) to render it in another element. The `portalContainer` property also takes an element or a function that returns one, and can change between opens.
+
+The popup returns to its place when it closes. Tab order follows the popup's position in the document while it is open, so a portaled popup is best reached with the arrow keys; selection, labels and `aria-controls` work as without `portal`.
+
+
 ## Theming
 
 Select surfaces map to **semantic surface roles**, never Tailwind palette steps. Override at the theme layer, not in component CSS.
@@ -192,6 +199,8 @@ Customization of icons is through Composition Helper **children**, not CSS varia
 | `selection-mode` | `single` · `multiple` | `single` | Single or multi-select. |
 | `should-close-on-select` | `boolean` | | Whether selecting closes the popup (defaults to `true` for single, `false` for multiple). |
 | `trigger-kind` | `focus` · `manual` | `manual` | Controls what opens the listbox. |
+| `portal` | `boolean` | `false` | Render the popup in `document.body`, or in `portal-container`, while it is open, so a clipped or `overflow: hidden` ancestor cannot cut it off. |
+| `portal-container` | `string` | | CSS selector of the element a portaled popup goes to instead of `document.body`, resolved each time it opens. The `portalContainer` property also takes an element or a function that returns one. |
 
 ### Light-DOM contract
 

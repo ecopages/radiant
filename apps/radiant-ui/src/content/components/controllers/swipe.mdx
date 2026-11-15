@@ -27,7 +27,7 @@ import { SwipeController, createSwipeController } from '@ecopages/radiant-ui/con
 
 ## Try it
 
-Press on the box, move at least 48 px sideways and release. The callback reports the direction.
+Press on the box and either move at least 48 px sideways or flick it at least 16 px faster than 0.5 px per ms, then release. A drag that is not at least twice as far sideways as it is up or down is ignored. The callback reports the direction.
 
 <PrimitiveExample name="swipe">
 	<div data-box>Swipe me</div>
@@ -50,6 +50,8 @@ export function mount(root: HTMLElement): () => void {
 
 	const swipe = new SwipeController({
 		getTarget: () => box,
+		minVelocity: 0.5,
+		dominance: 2,
 		onSwipe: (direction) => (status.textContent = `Swiped ${direction}`),
 	});
 	swipe.attach();
@@ -66,6 +68,8 @@ export function mount(root: HTMLElement): () => void {
 | `getTarget` | Resolved on every `attach()`. `null` listens to nothing.                                                                                                  |
 | `axis`      | Which travel counts: `x` (default), `y` or `both`.                                                                                                        |
 | `threshold` | Minimum travel in px along the swipe axis. Default 48.                                                                                                    |
+| `minVelocity` | Speed in px per ms along the axis that lets a shorter travel count, a flick. The travel must still reach 16 px (`MIN_FLICK_TRAVEL_PX`). Default: none, only `threshold` decides. |
+| `dominance` | How many times larger the travel along the axis must be than across it. Default 1, which is simply larger.                                                |
 | `getHandle` | Limits gestures to this element's subtree, resolved on every press; use it with the host as `getTarget` when the surface is a child that can be replaced. |
 | `exclude`   | A gesture that starts on a target this returns `true` for is ignored, such as a button inside the surface.                                                |
 | `onSwipe`   | Called on the pointer-up that ends a swipe, with the direction and the event.                                                                             |
@@ -82,4 +86,4 @@ Extend the class and override these to change how it decides. A component never 
 
 | Hook                       | Description                                                                                                                                                                                                             |
 | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `resolveDirection(dx, dy)` | Decides which swipe, if any, a gesture was. Runs on the pointer-up with the travel from the press point. Return `null` for no swipe. The default is `resolveSwipeDirection` with the configured `axis` and `threshold`. |
+| `resolveDirection(dx, dy, elapsedMs)` | Decides which swipe, if any, a gesture was. Runs on the pointer-up with the travel from the press point and the milliseconds since the press, taken from the `timeStamp` of the two pointer events. Return `null` for no swipe. The default is `resolveSwipeDirection` with the configured `axis`, `threshold`, `minVelocity` and `dominance`. |

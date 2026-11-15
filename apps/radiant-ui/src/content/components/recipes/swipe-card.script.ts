@@ -1,4 +1,5 @@
-import { SwipeController } from '@ecopages/radiant-ui/controllers';
+import { PointerDragController } from '@ecopages/radiant-ui/controllers';
+import { resolveSwipeDirection } from '@ecopages/radiant-ui/helpers';
 import { mountExample } from '../../../components/primitive-example/mount-example';
 
 export function mount(root: HTMLElement): () => void {
@@ -8,27 +9,57 @@ export function mount(root: HTMLElement): () => void {
 	const status = root.querySelector('[data-status]')!;
 
 	function setShown(shown: boolean, message: string): void {
+		const hadFocus = !shown && card.contains(document.activeElement);
 		card.hidden = !shown;
 		restoreButton.hidden = shown;
+		if (hadFocus) {
+			restoreButton.focus();
+		}
 		status.textContent = message;
+		card.style.setProperty('--swipe-dx', '0px');
+		card.style.setProperty('--swipe-opacity', '1');
 	}
 
-	const swipe = new SwipeController({
+	function follow(dx: number): void {
+		const distance = Math.min(Math.abs(dx) / card.offsetWidth, 1);
+		card.style.setProperty('--swipe-dx', `${dx}px`);
+		card.style.setProperty('--swipe-opacity', `${1 - distance / 2}`);
+	}
+
+	const drag = new PointerDragController({
 		getTarget: () => card,
-		exclude: (target) => target instanceof Element && target.closest('button') !== null,
-		onSwipe: (direction) => setShown(false, `Card dismissed, swiped ${direction}`),
+		capture: false,
+		canStart: (event) => !(event.target instanceof Element && event.target.closest('button')),
+		onStart: () => {
+			card.dataset.dragging = '';
+		},
+		onMove: ({ dx }) => follow(dx),
+		onEnd: ({ reason, dx, dy, elapsedMs }) => {
+			delete card.dataset.dragging;
+			const direction =
+				reason === 'release'
+					? resolveSwipeDirection(dx, dy, { minVelocity: 0.5, dominance: 2, elapsedMs })
+					: null;
+			if (!direction) {
+				follow(0);
+				return;
+			}
+			follow(direction === 'left' ? -card.offsetWidth : card.offsetWidth);
+			Promise.allSettled(card.getAnimations().map((animation) => animation.finished)).then(() =>
+				setShown(false, `Card dismissed, swiped ${direction}`),
+			);
+		},
 	});
-	swipe.attach();
+	drag.attach();
 
 	dismissButton.addEventListener('click', () => {
 		setShown(false, 'Card dismissed');
-		restoreButton.focus();
 	});
 	restoreButton.addEventListener('click', () => {
 		setShown(true, 'The card is shown');
 		dismissButton.focus();
 	});
-	return () => swipe.destroy();
+	return () => drag.destroy();
 }
 
 mountExample('swipe-card', mount);

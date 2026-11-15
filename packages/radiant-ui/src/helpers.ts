@@ -34,12 +34,15 @@ export {
 	type FloatingViewport,
 } from './controllers/floating-geometry';
 export type { RuiPlacement } from './controllers/placement';
-export { resolveTrapMove, type TrapMove } from './controllers/focus-trap-order';
+export { pickReturnTarget, resolveTrapEdge, resolveTrapMove, type TrapMove } from './controllers/focus-trap-order';
 export {
 	findRectIndex,
 	reorder,
 	resolveContainerKeyIndex,
+	resolveGrabOffset,
 	resolveInsertIndex,
+	resolvePlaceholderSlot,
+	resolvePreviewPosition,
 	resolveSortIndex,
 	resolveSortKeyIndex,
 	type SortableAxis,
@@ -47,8 +50,10 @@ export {
 } from './controllers/sortable-order';
 export {
 	DEFAULT_SWIPE_THRESHOLD_PX,
+	MIN_FLICK_TRAVEL_PX,
 	resolveSwipeDirection,
 	type SwipeAxis,
+	type SwipeDecisionOptions,
 	type SwipeDirection,
 	type SwipeOptions,
 } from './controllers/swipe-direction';

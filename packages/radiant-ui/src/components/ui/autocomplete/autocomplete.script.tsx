@@ -76,6 +76,11 @@ export class RuiAutocomplete extends RadiantElement {
 		});
 	}
 
+	/**
+	 * @remarks A combobox with `portal` moves its popup, and this element with it, out of the combobox, so `closest`
+	 * finds no host. The input's `aria-controls` names the listbox inside this element, which is how the two stay
+	 * linked wherever the popup sits.
+	 */
 	private getInput(): HTMLInputElement | null {
 		const local = this.querySelector<HTMLInputElement>('[data-autocomplete-input]');
 		if (local) {
@@ -83,7 +88,15 @@ export class RuiAutocomplete extends RadiantElement {
 		}
 
 		const host = this.closest('rui-combobox, rui-select');
-		return host?.querySelector<HTMLInputElement>('[data-autocomplete-input]') ?? null;
+		if (host) {
+			return host.querySelector<HTMLInputElement>('[data-autocomplete-input]');
+		}
+		const listboxId = this.querySelector('[role="listbox"]')?.id;
+		return listboxId
+			? document.querySelector<HTMLInputElement>(
+					`[data-autocomplete-input][aria-controls="${CSS.escape(listboxId)}"]`,
+				)
+			: null;
 	}
 
 	syncFilter(): void {

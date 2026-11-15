@@ -14,7 +14,7 @@ export type RovingControllerConfig = {
 	/** Wrap past the first or last item. Default `true`. */
 	wrap?: boolean;
 	/** Return `false` to ignore keys and focus, such as an embedded collection whose owner handles focus. */
-	enabled?: () => boolean;
+	getEnabled?: () => boolean;
 	/** Called after a key moved focus to `item`, so the component can select it or open its menu. */
 	onMove?: (item: HTMLElement, event: KeyboardEvent) => void;
 };
@@ -158,7 +158,7 @@ export class RovingController implements Controller {
 	}
 
 	private onKeydown(event: KeyboardEvent): void {
-		if (this.config.enabled?.() === false) {
+		if (this.config.getEnabled?.() === false) {
 			return;
 		}
 		const current = closestItem(event.target, this.config.getItems(), this.config.getTarget());
@@ -171,7 +171,7 @@ export class RovingController implements Controller {
 	}
 
 	private onFocusIn(event: FocusEvent): void {
-		if (this.config.enabled?.() === false) {
+		if (this.config.getEnabled?.() === false) {
 			return;
 		}
 		const items = this.config.getItems();

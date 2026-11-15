@@ -5,7 +5,6 @@ import { createRuiIconX } from '@/lib/icons/x';
 import { uniqueId } from '@/lib/unique-id';
 import { createRovingController } from '../../../controllers/roving-controller';
 import { createSortableController, type SortableChange } from '../../../controllers/sortable-controller';
-import { reorder } from '../../../controllers/sortable-order';
 import { multiValuePropOptions, type ViewMultiValue } from '../shared/multi-value';
 
 export type RuiTagGroupSelectionMode = 'single' | 'multiple';
@@ -129,14 +128,14 @@ export class RuiTagGroup extends RadiantElement {
 	private readonly roving = createRovingController(this, {
 		getItems: () => this.getVisibleTags(),
 		getTarget: (): HTMLElement => this,
-		enabled: () => this.sortable.getState() === null,
+		getEnabled: () => this.sortable.getState() === null,
 	});
 	private readonly sortable = createSortableController(this, {
 		getContainer: () => this,
 		getItems: () => this.getVisibleTags(),
 		axis: 'both',
 		liftKeys: [' '],
-		enabled: () => this.reorderable && !this.disabled,
+		getEnabled: () => this.reorderable && !this.disabled,
 		getLabel: (tag) => this.getTagLabel(tag),
 		announce: (message) => this.announce(message),
 		onChange: (change) => this.reorderTag(change),
@@ -165,15 +164,29 @@ export class RuiTagGroup extends RadiantElement {
 
 	private reorderTag({ item, from, to }: SortableChange): void {
 		const value = this.getTagValue(item);
+		const others = this.getVisibleTags().filter((tag) => tag !== item);
 		if (this.derivedItems != null) {
 			this.focusAfterRender = value;
-			this.derivedItems = reorder(this.derivedItems, from, to);
+			this.derivedItems = this.moveDerivedItem(value, others[to]);
 		} else {
-			const others = this.getVisibleTags().filter((tag) => tag !== item);
 			item.parentElement!.insertBefore(item, others[to] ?? null);
 			this.roving.focus(item);
 		}
 		this.reorderEvent.emit({ value, from, to });
+	}
+
+	/**
+	 * `derivedItems` with the item of `value` placed before the item of `before`, or last when there is none.
+	 *
+	 * @remarks The indexes of a change count only the visible tags, so they do not address `derivedItems`, which also holds the hidden and disabled ones.
+	 */
+	private moveDerivedItem(value: string, before: HTMLElement | undefined): RuiTagGroupItem[] {
+		const items = this.derivedItems!;
+		const moved = items.find((item) => item.value === value)!;
+		const rest = items.filter((item) => item !== moved);
+		const index = before ? rest.findIndex((item) => item.value === this.getTagValue(before)) : rest.length;
+		rest.splice(index, 0, moved);
+		return rest;
 	}
 
 	private isMultiple(): boolean {

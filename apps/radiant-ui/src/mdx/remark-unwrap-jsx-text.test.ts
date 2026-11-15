@@ -26,12 +26,20 @@ test('unwraps inside nested frames, and in a button', () => {
 	expect(button.children).toEqual([text('Open')]);
 });
 
+test('unwraps the one line of text in a div', () => {
+	const [box] = run(jsx('div', paragraph(text('Box'))));
+
+	expect(box!.children).toEqual([text('Box')]);
+});
+
 test('keeps blank-line separated paragraphs and paragraphs in containers', () => {
 	const two = jsx('li', paragraph(text('a')), paragraph(text('b')));
-	const container = jsx('div', paragraph(text('c')));
+	const twoInDiv = jsx('div', paragraph(text('c')), paragraph(text('d')));
+	const container = jsx('section', paragraph(text('e')));
 
-	const [li, div] = run(two, container);
+	const [li, div, section] = run(two, twoInDiv, container);
 
 	expect(li!.children).toHaveLength(2);
-	expect(div!.children).toEqual([paragraph(text('c'))]);
+	expect(div!.children).toHaveLength(2);
+	expect(section!.children).toEqual([paragraph(text('e'))]);
 });

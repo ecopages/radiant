@@ -6,15 +6,9 @@
  * Pure logic with no DOM is in `@ecopages/radiant-ui/helpers`. The module is named `controllers.ts`,
  * not `index.ts`, so the package `sideEffects` entry for built `index.js` files does not match the built
  * entry and a bundler can drop what a consumer does not import. Controllers that read catalog components
- * (`ListboxHost`) are internal and not exported.
+ * (`ListboxHost`, the listbox and calendar popover controllers) are internal in `components/ui/shared` and not exported.
  */
 export { bindController, type Controller, type ControllerHost } from './controllers/controller';
-export {
-	CalendarPopoverController,
-	createCalendarPopoverController,
-	focusCalendarPickerDay,
-	type CalendarPopoverControllerConfig,
-} from './controllers/calendar-popover-controller';
 export {
 	clearCollectionActive,
 	getVisibleCollectionOptions,
@@ -38,13 +32,6 @@ export {
 	createFocusTrapController,
 	type FocusTrapControllerConfig,
 } from './controllers/focus-trap-controller';
-export {
-	ListboxPopoverController,
-	createListboxPopoverController,
-	type ListboxActivation,
-	type ListboxKeydownConfig,
-	type ListboxPopoverControllerConfig,
-} from './controllers/listbox-popover-controller';
 export {
 	MenuTreeController,
 	createMenuTreeController,
@@ -82,6 +69,7 @@ export {
 	SORTABLE_DROP_ATTRIBUTE,
 	SORTABLE_OFFSET_PROPERTIES,
 	SORTABLE_OVER_ATTRIBUTE,
+	SORTABLE_PLACEHOLDER_ATTRIBUTE,
 	SORTABLE_STATE_ATTRIBUTE,
 	SortableController,
 	createSortableController,
@@ -98,7 +86,7 @@ export {
 } from './controllers/sortable-messages';
 export { SwipeController, createSwipeController, type SwipeControllerConfig } from './controllers/swipe-controller';
 export type { SortableAxis, SortableRect } from './controllers/sortable-order';
-export type { SwipeAxis, SwipeDirection, SwipeOptions } from './controllers/swipe-direction';
+export type { SwipeAxis, SwipeDecisionOptions, SwipeDirection, SwipeOptions } from './controllers/swipe-direction';
 export {
 	findFirstFocusableCandidate,
 	getFocusableElements,

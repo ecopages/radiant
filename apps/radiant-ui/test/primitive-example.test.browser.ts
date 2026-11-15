@@ -1,6 +1,6 @@
-import { userEvent } from 'vitest/browser';
 import { afterEach, describe, expect, test } from 'vitest';
 import { syncExamples } from '../src/components/primitive-example/mount-example';
+import '@ecopages/radiant-ui/themes/default';
 import '../src/components/primitive-example/primitive-example.css';
 
 const pages = import.meta.glob('../src/content/components/{controllers,recipes}/*.mdx', {
@@ -58,27 +58,10 @@ describe('example frame layout', () => {
 });
 
 describe('example frame stacking', () => {
-	test('the listbox popup sits above the code block that follows', async () => {
-		const root = await mountFramed('controllers', 'listbox-popover');
-		root.querySelector('input')!.focus();
-
-		await userEvent.keyboard('{ArrowDown}');
-
-		expectOnTop(root.querySelector('[role="listbox"]')!);
-	});
-
 	test('the popover panel sits above the code block that follows', async () => {
 		const root = await mountFramed('controllers', 'popover');
 
 		root.querySelector('button')!.click();
-
-		expectOnTop(root.querySelector('[data-box]')!);
-	});
-
-	test('the calendar popup sits above the code block that follows', async () => {
-		const root = await mountFramed('controllers', 'calendar-popover');
-
-		await userEvent.click(root.querySelector('button')!);
 
 		expectOnTop(root.querySelector('[data-box]')!);
 	});
@@ -92,5 +75,36 @@ describe('example frame stacking', () => {
 		expect(second.getBoundingClientRect().top).toBeGreaterThan(first.getBoundingClientRect().top);
 		expect(second.getBoundingClientRect().left).toBe(first.getBoundingClientRect().left);
 		expectOnTop(root.querySelector('[role="menu"]')!);
+	});
+});
+
+describe('example frame touch dragging', () => {
+	test('the sortable controller example items do not scroll the page or select text under a drag', async () => {
+		const root = await mountFramed('controllers', 'sortable');
+
+		const item = getComputedStyle(root.querySelector('li')!);
+		expect(item.touchAction).toBe('none');
+		expect(item.userSelect).toBe('none');
+	});
+
+	test('the sortable controller example shows the lifted item in the accent colors and moved by the drag offsets', async () => {
+		const root = await mountFramed('controllers', 'sortable');
+		const item = root.querySelector<HTMLElement>('li')!;
+		const rest = getComputedStyle(root.querySelectorAll('li')[1]);
+
+		item.dispatchEvent(
+			new PointerEvent('pointerdown', { bubbles: true, button: 0, pointerId: 1, clientX: 5, clientY: 5 }),
+		);
+		document.dispatchEvent(
+			new PointerEvent('pointermove', { bubbles: true, pointerId: 1, clientX: 45, clientY: 30 }),
+		);
+
+		const lifted = getComputedStyle(item);
+		expect(item.dataset.sortableState).toBe('lifted');
+		expect(lifted.backgroundColor).not.toBe(rest.backgroundColor);
+		expect(lifted.transform).not.toBe('none');
+		document.dispatchEvent(
+			new PointerEvent('pointerup', { bubbles: true, pointerId: 1, clientX: 45, clientY: 30 }),
+		);
 	});
 });

@@ -38,7 +38,7 @@ import {
 
 ## Swipe
 
-`resolveSwipeDirection(dx, dy, options)` needs travel of at least `threshold` along the axis that also exceeds the travel on the other axis. It is the default of the `resolveDirection` hook of [SwipeController](/docs/controllers/swipe).
+`resolveSwipeDirection(dx, dy, options)` needs travel along the axis that exceeds `dominance` times the travel on the other axis (1 by default) and that is at least `threshold`, or, with `minVelocity` and `elapsedMs`, at least `MIN_FLICK_TRAVEL_PX` covered fast enough. It is the default of the `resolveDirection` hook of [SwipeController](/docs/controllers/swipe).
 
 <HelperResults
 	rows={[
@@ -48,6 +48,10 @@ import {
 		{
 			code: "resolveSwipeDirection(5, 60, { axis: 'both' })",
 			result: resolveSwipeDirection(5, 60, { axis: 'both' }),
+		},
+		{
+			code: 'resolveSwipeDirection(-24, 2, { minVelocity: 0.5, elapsedMs: 40 })',
+			result: resolveSwipeDirection(-24, 2, { minVelocity: 0.5, elapsedMs: 40 }),
 		},
 		{ code: 'DEFAULT_SWIPE_THRESHOLD_PX', result: DEFAULT_SWIPE_THRESHOLD_PX },
 	]}

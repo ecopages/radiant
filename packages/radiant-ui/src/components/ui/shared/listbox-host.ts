@@ -7,7 +7,11 @@ export type ListboxHostConfig = {
 	getSelectionMode: () => RuiListboxSelectionMode;
 	getValue: () => string[];
 	setValue: (value: string[]) => void;
-	/** Popup shell used when no `rui-listbox` host is present. */
+	/**
+	 * Popup shell that holds the `rui-listbox`, or the listbox itself when there is no `rui-listbox` host.
+	 *
+	 * @remarks A portaled popup is no longer inside `getRoot()`, so the owner returns the element it holds.
+	 */
 	getPopup?: () => HTMLElement | null;
 	/** Selector for an optional chip host, e.g. `[data-select-value] rui-tag-group`. */
 	tagGroupSelector?: string;
@@ -30,7 +34,8 @@ export class ListboxHost {
 	}
 
 	getListboxHost(): RuiListbox | null {
-		return this.config.getRoot()?.querySelector('rui-listbox') ?? null;
+		const inPopup = this.config.getPopup?.()?.querySelector('rui-listbox');
+		return inPopup ?? this.config.getRoot()?.querySelector('rui-listbox') ?? null;
 	}
 
 	getListbox(): HTMLElement | null {

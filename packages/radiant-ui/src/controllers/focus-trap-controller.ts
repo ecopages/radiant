@@ -1,6 +1,6 @@
 import { bindController, type Controller, type ControllerHost } from './controller';
 import { EventListenerController } from './event-listener-controller';
-import { resolveTrapMove } from './focus-trap-order';
+import { pickReturnTarget, resolveTrapEdge, resolveTrapMove } from './focus-trap-order';
 import { queryFocusableCandidates } from './focusable-elements';
 
 /** The surface a `FocusTrapController` traps focus in, and how it picks the loop. */
@@ -14,6 +14,16 @@ export type FocusTrapControllerConfig = {
 	 * pulled into the loop on Tab. Read on every key press; `false` when omitted.
 	 */
 	getStrict?: () => boolean;
+	/**
+	 * Whether the trap holds Tab. Read on every key press; when it returns `false` Tab is left to the browser and
+	 * focus can leave the surface, and the trap works again once it returns `true`. `true` when omitted.
+	 */
+	getEnabled?: () => boolean;
+	/**
+	 * Where focus goes on `destroy()`. Defaults to the element focused at `attach()`, which is also used when this
+	 * returns `null` or an element that is no longer connected.
+	 */
+	getReturnFocus?: () => HTMLElement | null;
 };
 
 /**
@@ -25,6 +35,12 @@ export type FocusTrapControllerConfig = {
  * focus to the remembered element. While attached, a Tab pressed with focus inside the surface wraps at either
  * end of the loop; the pure decision is `resolveTrapMove` in `focus-trap-order.ts`. A Tab pressed with focus
  * elsewhere is left alone, so two open modals do not pull focus from each other.
+ *
+ * The ways out are `destroy()`, which also returns focus (to `getReturnFocus()` when it names a connected
+ * element, else to the remembered one), and `getEnabled()` returning `false`, which pauses the loop without
+ * detaching so a non-modal surface can let Tab leave. Escape is not handled here: `DismissController` owns it, and
+ * its `onDismiss` calls `destroy()`. `focusFirst()` and `focusLast()` move focus inside from code, over the same
+ * candidates as the Tab loop.
  *
  * Making the rest of the page `inert` is not part of this controller. It would have to walk the surface's
  * ancestors, remember which siblings were already inert, and restore them in order across nested modals, which
@@ -74,8 +90,22 @@ export class FocusTrapController implements Controller {
 		}
 		this.attached = false;
 		this.keydown.destroy();
-		this.previouslyFocused?.focus();
+		pickReturnTarget(
+			this.config.getReturnFocus?.() ?? null,
+			this.previouslyFocused,
+			(el) => el.isConnected,
+		)?.focus();
 		this.previouslyFocused = null;
+	}
+
+	/** Moves focus to the first of the loop, or to the surface when it holds nothing focusable. */
+	focusFirst(): void {
+		this.focusEdge('first');
+	}
+
+	/** Moves focus to the last of the loop, or to the surface when it holds nothing focusable. */
+	focusLast(): void {
+		this.focusEdge('last');
 	}
 
 	private getFocusable(surface: HTMLElement): HTMLElement[] {
@@ -83,15 +113,24 @@ export class FocusTrapController implements Controller {
 	}
 
 	private focusInitial(): void {
+		this.focusEdge('first');
+	}
+
+	private focusEdge(edge: 'first' | 'last'): void {
 		const surface = this.config.getSurface();
-		if (surface) {
-			(this.getFocusable(surface)[0] ?? surface).focus();
+		if (!surface) {
+			return;
 		}
+		const target = resolveTrapEdge(this.getFocusable(surface), edge);
+		(target.kind === 'item' ? target.item : surface).focus();
 	}
 
 	private handleKeydown(event: KeyboardEvent): void {
 		const surface = this.config.getSurface();
 		const active = document.activeElement;
+		if (this.config.getEnabled?.() === false) {
+			return;
+		}
 		if (event.key !== 'Tab' || !surface || !(active instanceof HTMLElement) || !surface.contains(active)) {
 			return;
 		}

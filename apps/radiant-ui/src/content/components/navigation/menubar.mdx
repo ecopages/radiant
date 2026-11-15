@@ -121,6 +121,10 @@ When a branch opens from pointer hover, focus may remain on a previous item such
 
 <p>Menubars suit desktop-style apps. For site navigation, prefer `RuiNavigationMenu` or `RuiSidebar`.</p>
 
+## Portal
+
+Menus stay in place: a submenu is a `role="menu"` nested in the light DOM of the item that opens it, and that parent and child relationship is what the arrow keys, `aria-expanded` and dismissal follow. Portaling a menu would break it, so there is no `portal` option here.
+
 ## Theming
 
 Menubar surfaces map to **semantic surface roles**, never Tailwind palette steps:

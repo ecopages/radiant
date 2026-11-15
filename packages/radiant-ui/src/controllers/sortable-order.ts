@@ -75,6 +75,35 @@ export function findRectIndex(rects: readonly SortableRect[], point: { x: number
 }
 
 /**
+ * Where a drag preview sits so the pointer keeps the same grip on it: its top-left corner, in client px.
+ *
+ * @remarks Pure. `grab` is the offset of the press inside the item rect, from `resolveGrabOffset`.
+ */
+export function resolvePreviewPosition(
+	point: { x: number; y: number },
+	grab: { x: number; y: number },
+): { left: number; top: number } {
+	return { left: point.x - grab.x, top: point.y - grab.y };
+}
+
+/** How far inside `rect` the press at `point` landed, so the preview can keep that grip. Pure. */
+export function resolveGrabOffset(rect: SortableRect, point: { x: number; y: number }): { x: number; y: number } {
+	return { x: point.x - rect.left, y: point.y - rect.top };
+}
+
+/**
+ * Where a placeholder goes among the other items of a container: beside which one, or `null` for an empty container.
+ *
+ * @remarks Pure. `count` is the number of items without the lifted one and without the placeholder, `to` the slot from `0` to `count`. A slot at the end sits after the last item, so anything the container holds beyond its items stays where it is.
+ */
+export function resolvePlaceholderSlot(count: number, to: number): { index: number; side: 'before' | 'after' } | null {
+	if (count === 0) {
+		return null;
+	}
+	return to < count ? { index: to, side: 'before' } : { index: count - 1, side: 'after' };
+}
+
+/**
  * The container a key moves a lifted item to, or `null` when the key does not switch container.
  *
  * @remarks Pure. `PageDown` goes to the next container and `PageUp` to the previous, clamped, by position in the group.

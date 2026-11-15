@@ -288,3 +288,56 @@ describe('RuiHoverCard', () => {
 		expect(resolvePreviewOpenDelay(600, Date.now() + 1_000)).toBe(600);
 	});
 });
+
+describe('RuiHoverCard portal container', () => {
+	afterEach(() => {
+		document.body.innerHTML = '';
+		resetPreviewTimingForTests();
+	});
+
+	async function mountCard(portalContainer?: string) {
+		const frame = document.createElement('div');
+		frame.id = 'frame';
+		document.body.append(frame);
+		const { host } = mount(
+			<RuiHoverCard delay={0} closeDelay={0} portalContainer={portalContainer}>
+				<RuiHoverCardTrigger>
+					<button type="button">Trigger</button>
+				</RuiHoverCardTrigger>
+				<RuiHoverCardContent>Preview</RuiHoverCardContent>
+			</RuiHoverCard>,
+		);
+		await settled();
+		return { card: getCard(host), content: getContent(host), frame };
+	}
+
+	it('mounts the content in the element a selector names, and back in the card on close', async () => {
+		const { card, content, frame } = await mountCard('#frame');
+
+		card.setOpen(true);
+		await settled();
+		expect(content.parentElement).toBe(frame);
+
+		card.setOpen(false);
+		await settled();
+		expect(card.contains(content)).toBe(true);
+	});
+
+	it('honors a container property changed between opens', async () => {
+		const { card, content, frame } = await mountCard();
+		const other = document.createElement('div');
+		document.body.append(other);
+
+		card.portalContainer = frame;
+		card.setOpen(true);
+		await settled();
+		expect(content.parentElement).toBe(frame);
+		card.setOpen(false);
+		await settled();
+
+		card.portalContainer = () => other;
+		card.setOpen(true);
+		await settled();
+		expect(content.parentElement).toBe(other);
+	});
+});
