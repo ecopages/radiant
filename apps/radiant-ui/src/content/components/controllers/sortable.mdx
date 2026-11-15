@@ -77,22 +77,25 @@ export function mount(root: HTMLElement): () => void {
 
 ## Config
 
-| Option              | Description                                                                                                                             |
-| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `getContainer`      | The element that holds the items; it receives the press and the keys.                                                                   |
-| `getItems`          | The items in document order, read on every event.                                                                                       |
-| `group`             | A `SortableGroup` shared by the containers that can exchange items. Without it items only reorder within the container.                 |
-| `accepts`           | Refuses an item that comes from another container of the group.                                                                         |
-| `getContainerLabel` | The name announced for this container. Default: its `aria-label`.                                                                       |
-| `getHandle`         | Narrows where a press or Space lifts an item to a handle inside it.                                                                     |
-| `liftKeys`          | The keys that lift an item. Default Space and Enter; drop is always Space or Enter.                                                     |
-| `axis`              | `vertical` (default), `horizontal` or `both`.                                                                                           |
-| `threshold`         | Pointer travel in px before a press becomes a drag. Default `4`.                                                                        |
-| `enabled`           | Return `false` to ignore presses and keys.                                                                                              |
-| `getLabel`          | The name announced for an item. Default: its trimmed `textContent`.                                                                     |
-| `announce`          | Receives each announcement; point it at a live region. Without it nothing is announced.                                                 |
-| `messages`          | Replaces any of the announcements; see `DEFAULT_SORTABLE_MESSAGES`.                                                                     |
-| `onChange`          | Called on drop with `{ item, from, to, source, fromContainer, toContainer }` for the owner to apply. Return `false` to refuse the move. |
+| Option              | Description                                                                                                                                   |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `getContainer`      | The element that holds the items; it receives the press and the keys.                                                                         |
+| `getItems`          | The items in document order, read on every event.                                                                                             |
+| `group`             | A `SortableGroup` shared by the containers that can exchange items. Without it items only reorder within the container.                       |
+| `accepts`           | Refuses an item that comes from another container of the group.                                                                               |
+| `getContainerLabel` | The name announced for this container. Default: its `aria-label`.                                                                             |
+| `getHandle`         | Narrows where a press or Space lifts an item to a handle inside it.                                                                           |
+| `liftKeys`          | The keys that lift an item. Default Space and Enter; drop is always Space or Enter.                                                           |
+| `axis`              | `vertical` (default), `horizontal` or `both`.                                                                                                 |
+| `threshold`         | Pointer travel in px before a press becomes a drag. Default `4`.                                                                              |
+| `preview`           | Lifts the item into a layer that follows the pointer and keeps a placeholder in its slot. Default `false`; see [Drag preview](#drag-preview). |
+| `getPreviewLayer`   | Where the preview goes. Default `document.body`. Only with `preview`.                                                                         |
+| `createPlaceholder` | Builds the placeholder. Default an empty `div`; return an `li` for a `ul`. Only with `preview`.                                               |
+| `getEnabled`        | Return `false` to ignore presses and keys.                                                                                                    |
+| `getLabel`          | The name announced for an item. Default: its trimmed `textContent`.                                                                           |
+| `announce`          | Receives each announcement; point it at a live region. Without it nothing is announced.                                                       |
+| `messages`          | Replaces any of the announcements; see `DEFAULT_SORTABLE_MESSAGES`.                                                                           |
+| `onChange`          | Called on drop with `{ item, from, to, source, fromContainer, toContainer }` for the owner to apply. Return `false` to refuse the move.       |
 
 ## Lifecycle
 
@@ -120,10 +123,35 @@ const sortable = (list: HTMLElement) => {
 };
 ```
 
+### Drag preview
+
+A card translated inside a scrolling or clipped column is cut off where it crosses into the next one, and nothing shows where it will land. With `preview: true` the lifted item leaves its container while it is sorted, goes through `PortalController` to `getPreviewLayer()` (default `document.body`) and follows the pointer with `position: fixed`, and a placeholder keeps its slot and moves to the target index, across the containers of a group. A keyboard lift shows the same: the item sits on the placeholder as the keys move it and keeps focus.
+
+```ts
+const sortable = new SortableController({
+	preview: true,
+	createPlaceholder: () => document.createElement('li'),
+	getContainer: () => list,
+	getItems: () => [...list.children] as HTMLElement[],
+	onChange: ({ item, to }) => {
+		const others = [...list.children].filter((child) => child !== item);
+		list.insertBefore(item, others[to] ?? null);
+		item.focus();
+	},
+});
+```
+
+- The controller sets only geometry on the item (`position`, `left`, `top`, `width`, `height`, `pointer-events`, `margin`, `box-sizing`) and sizes the placeholder like the item. Colors, shadow and `z-index` of `[data-sortable-state='lifted']` and the look of `[data-sortable-placeholder]` are your CSS. Styles that depend on an ancestor of the list no longer reach the lifted item, so select it by attribute.
+- `onChange` is unchanged. When the sort ends, by drop, cancel or `destroy()`, the item is back in its original place and the placeholder is gone before `onChange` runs, so the handler you wrote without `preview` keeps working. The controller never moves the item to its new place.
+- During the sort the placeholder is a child of the container and the lifted item is not. The controller reads `getItems` without both, so returning the live children is fine. Do not re-render or reorder the lists until the sort ends.
+- `--sortable-dx` and `--sortable-dy` are not set, and `resolveTargetIndex` receives `from` as `null` with the rects of the other items.
+
+The [board recipe](/docs/recipes/board) moves cards between scrolling columns with it.
+
 ## Protected hooks
 
 Extend the class and override these to change how it decides. A component never extends a controller; a subclass is registered with `bindController`.
 
-| Hook                                     | Description                                                                                                                                                                                                                                                     |
-| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `resolveTargetIndex(rects, from, point)` | Decides the index the lifted item takes from where the pointer is. Runs on every pointer move of a sort. Override to snap to a grid or change where a neighbour gives way. The default is `resolveSortIndex` and `resolveInsertIndex` with the configured axis. |
+| Hook                                     | Description                                                                                                                                                                                                                                                                                              |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `resolveTargetIndex(rects, from, point)` | Decides the index the lifted item takes from where the pointer is. Runs on every pointer move of a sort. Override to snap to a grid or change where a neighbour gives way. The default is `resolveSortIndex` and `resolveInsertIndex` with the configured axis. With `preview`, `from` is always `null`. |

@@ -3,7 +3,10 @@ import {
 	findRectIndex,
 	reorder,
 	resolveContainerKeyIndex,
+	resolveGrabOffset,
 	resolveInsertIndex,
+	resolvePlaceholderSlot,
+	resolvePreviewPosition,
 	resolveSortIndex,
 	resolveSortKeyIndex,
 	type SortableRect,
@@ -144,5 +147,31 @@ describe('resolveContainerKeyIndex', () => {
 		expect(resolveContainerKeyIndex('PageUp', 1, 3)).toBe(0);
 		expect(resolveContainerKeyIndex('PageUp', 0, 3)).toBe(0);
 		expect(resolveContainerKeyIndex('ArrowDown', 0, 3)).toBeNull();
+	});
+});
+
+describe('resolveGrabOffset and resolvePreviewPosition', () => {
+	it('keep the grip the press had on the item as the pointer moves', () => {
+		const rect = { left: 40, top: 100, width: 80, height: 30 };
+		const grab = resolveGrabOffset(rect, { x: 55, y: 110 });
+
+		expect(grab).toEqual({ x: 15, y: 10 });
+		expect(resolvePreviewPosition({ x: 55, y: 110 }, grab)).toEqual({ left: 40, top: 100 });
+		expect(resolvePreviewPosition({ x: 300, y: 20 }, grab)).toEqual({ left: 285, top: 10 });
+	});
+});
+
+describe('resolvePlaceholderSlot', () => {
+	it('sits before the item that takes the slot', () => {
+		expect(resolvePlaceholderSlot(3, 0)).toEqual({ index: 0, side: 'before' });
+		expect(resolvePlaceholderSlot(3, 2)).toEqual({ index: 2, side: 'before' });
+	});
+
+	it('sits after the last item for the slot at the end', () => {
+		expect(resolvePlaceholderSlot(3, 3)).toEqual({ index: 2, side: 'after' });
+	});
+
+	it('has no neighbour in an empty container', () => {
+		expect(resolvePlaceholderSlot(0, 0)).toBeNull();
 	});
 });

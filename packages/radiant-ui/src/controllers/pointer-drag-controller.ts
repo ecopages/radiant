@@ -15,6 +15,13 @@ export type PointerDragInfo = {
 	/** `y - startY`. */
 	dy: number;
 	/**
+	 * Milliseconds from the press to this event, the difference of their `timeStamp`s.
+	 *
+	 * @remarks
+	 * Divide a delta by it for a speed. `0` on the press itself.
+	 */
+	elapsedMs: number;
+	/**
 	 * The topmost element at the pointer's current position.
 	 *
 	 * @remarks
@@ -69,6 +76,7 @@ type DragSession = {
 	pointerId: number;
 	startX: number;
 	startY: number;
+	startTime: number;
 	target: HTMLElement;
 	last: PointerEvent;
 };
@@ -149,6 +157,7 @@ export class PointerDragController implements Controller {
 			pointerId: event.pointerId,
 			startX: event.clientX,
 			startY: event.clientY,
+			startTime: event.timeStamp,
 			target,
 			last: event,
 		};
@@ -190,7 +199,7 @@ export class PointerDragController implements Controller {
 		this.config.onEnd?.({ ...info, reason });
 	}
 
-	private info({ pointerId, startX, startY }: DragSession, event: PointerEvent): PointerDragInfo {
+	private info({ pointerId, startX, startY, startTime }: DragSession, event: PointerEvent): PointerDragInfo {
 		return {
 			event,
 			pointerId,
@@ -200,6 +209,7 @@ export class PointerDragController implements Controller {
 			y: event.clientY,
 			dx: event.clientX - startX,
 			dy: event.clientY - startY,
+			elapsedMs: event.timeStamp - startTime,
 			elementUnderPointer: () => document.elementFromPoint(event.clientX, event.clientY),
 		};
 	}

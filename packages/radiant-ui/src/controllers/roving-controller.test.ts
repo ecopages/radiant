@@ -164,9 +164,9 @@ describe('RovingController on plain elements', () => {
 		controller.destroy();
 	});
 
-	it('ignores keys and focus while enabled returns false', () => {
+	it('ignores keys and focus while getEnabled returns false', () => {
 		let enabled = false;
-		const { items, controller } = mount({ enabled: () => enabled });
+		const { items, controller } = mount({ getEnabled: () => enabled });
 		controller.attach();
 		controller.sync();
 

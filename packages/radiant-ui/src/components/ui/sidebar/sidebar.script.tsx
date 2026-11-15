@@ -10,12 +10,11 @@ import {
 	query,
 	state,
 } from '@ecopages/radiant';
-import { isServer } from '@ecopages/radiant/is-server';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
+import { isServer } from '@ecopages/radiant/is-server';
 import { parseCommaSeparated } from '@/lib/comma-separated';
 import { SIDEBAR_MOBILE_BREAKPOINT_PX } from '@/lib/viewport/breakpoints';
-import type { Controller } from '../../../controllers/controller';
-import { EventListenerController, createEventListenerController } from '../../../controllers/event-listener-controller';
+import { createEventListenerController } from '../../../controllers/event-listener-controller';
 import { createPointerDragController } from '../../../controllers/pointer-drag-controller';
 
 export type RuiSidebarVariant = 'sidebar' | 'inset';
@@ -214,7 +213,26 @@ export class RuiSidebar extends RadiantElement {
 			},
 		});
 	}
-	private navigationListeners: Controller[] = [];
+
+	/**
+	 * The event types the document listener is attached with.
+	 *
+	 * @remarks
+	 * `navigationEvents` is a prop, but a listener controller takes its types at construction and reads them again
+	 * on `destroy()`. This array is the one it holds: `syncNavigationListeners` replaces its contents only between
+	 * a `destroy()` and an `attach()`, so the old types are removed before the new ones are added.
+	 */
+	private readonly navigationTypes: string[] = [];
+	private readonly popstateListener = createEventListenerController(this, {
+		getTarget: () => (this.matchActive ? window : null),
+		type: 'popstate',
+		listener: () => this.syncActiveLinks(false),
+	});
+	private readonly navigationListener = createEventListenerController(this, {
+		getTarget: () => (this.matchActive ? document : null),
+		type: this.navigationTypes,
+		listener: () => this.syncActiveLinks(false),
+	});
 
 	/** @remarks Set by the first update cycle so later cycles never scroll. */
 	private didScrollActiveOnMount = false;
@@ -242,11 +260,11 @@ export class RuiSidebar extends RadiantElement {
 		super.connectedCallback();
 
 		this.ensureWidthInitialized();
-		this.attachNavigationListeners();
 	}
 
 	protected override onConnected(): void {
 		this.ensureWidthInitialized();
+		this.syncNavigationListeners();
 		this.openControlled = this.open !== undefined;
 		this.bindMobileMediaQuery();
 		if (!this.openControlled) {
@@ -273,7 +291,6 @@ export class RuiSidebar extends RadiantElement {
 	}
 
 	override disconnectedCallback(): void {
-		this.detachNavigationListeners();
 		this.mobileReady = false;
 		super.disconnectedCallback();
 	}
@@ -373,8 +390,7 @@ export class RuiSidebar extends RadiantElement {
 
 	@onUpdated(['matchActive', 'matchMode', 'navigationEvents'])
 	onMatchSettingsUpdated(): void {
-		this.detachNavigationListeners();
-		this.attachNavigationListeners();
+		this.syncNavigationListeners();
 	}
 
 	/** Re-applies active classes on descendant menu links from the current URL. */
@@ -410,34 +426,18 @@ export class RuiSidebar extends RadiantElement {
 		return linkPath === currentPath;
 	}
 
-	private attachNavigationListeners(): void {
-		if (isServer || !this.isConnected) {
+	/**
+	 * @remarks Returns on the server: server rendering runs the `@onUpdated` callbacks that call this, and its
+	 * `window` and `document` take no listeners.
+	 */
+	private syncNavigationListeners(): void {
+		if (isServer) {
 			return;
 		}
-
-		if (!this.matchActive || typeof window === 'undefined' || typeof window.addEventListener !== 'function') {
-			return;
-		}
-
-		const listener = () => this.syncActiveLinks(false);
-		this.navigationListeners = [
-			new EventListenerController({ getTarget: () => window, type: 'popstate', listener }),
-			new EventListenerController({
-				getTarget: () => document,
-				type: parseCommaSeparated(this.navigationEvents),
-				listener,
-			}),
-		];
-		for (const controller of this.navigationListeners) {
-			controller.attach();
-		}
-	}
-
-	private detachNavigationListeners(): void {
-		for (const controller of this.navigationListeners) {
-			controller.destroy();
-		}
-		this.navigationListeners = [];
+		this.popstateListener.attach();
+		this.navigationListener.destroy();
+		this.navigationTypes.splice(0, this.navigationTypes.length, ...parseCommaSeparated(this.navigationEvents));
+		this.navigationListener.attach();
 	}
 
 	private bindMobileMediaQuery(): void {

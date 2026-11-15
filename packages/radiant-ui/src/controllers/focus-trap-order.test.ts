@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveTrapMove } from './focus-trap-order';
+import { pickReturnTarget, resolveTrapEdge, resolveTrapMove } from './focus-trap-order';
 
 describe('resolveTrapMove', () => {
 	const items = ['a', 'b', 'c'];
@@ -33,5 +33,27 @@ describe('resolveTrapMove', () => {
 	it('wraps a single item onto itself in both directions', () => {
 		expect(resolveTrapMove(['a'], 'a', false, false)).toEqual({ kind: 'item', item: 'a' });
 		expect(resolveTrapMove(['a'], 'a', true, false)).toEqual({ kind: 'item', item: 'a' });
+	});
+});
+
+describe('resolveTrapEdge', () => {
+	it('picks the first or last item, and the surface when there are none', () => {
+		expect(resolveTrapEdge(['a', 'b', 'c'], 'first')).toEqual({ kind: 'item', item: 'a' });
+		expect(resolveTrapEdge(['a', 'b', 'c'], 'last')).toEqual({ kind: 'item', item: 'c' });
+		expect(resolveTrapEdge([], 'last')).toEqual({ kind: 'surface' });
+	});
+});
+
+describe('pickReturnTarget', () => {
+	const usable = (item: string) => item !== 'gone';
+
+	it('prefers the chosen element while it is usable', () => {
+		expect(pickReturnTarget('chosen', 'remembered', usable)).toBe('chosen');
+	});
+
+	it('falls back to the remembered element when nothing is chosen or the choice is unusable', () => {
+		expect(pickReturnTarget(null, 'remembered', usable)).toBe('remembered');
+		expect(pickReturnTarget('gone', 'remembered', usable)).toBe('remembered');
+		expect(pickReturnTarget(null, null, usable)).toBeNull();
 	});
 });

@@ -77,7 +77,7 @@ export function mount(root: HTMLElement): () => void {
 | `canStart`  | Refuses a press, such as a disabled control. The primary button is already required.                                                                                                                                        |
 | `capture`   | Capture the pointer on the target. Default `true`. Set `false` when the target is a container whose children must keep receiving `click`.                                                                                   |
 | `onStart`   | Called on the accepted press, after capture.                                                                                                                                                                                |
-| `onMove`    | Called on every move with the position, the delta from the press and `elementUnderPointer()`.                                                                                                                               |
+| `onMove`    | Called on every move with the position, the delta from the press, `elapsedMs` since the press and `elementUnderPointer()`.                                                                                                                               |
 | `onEnd`     | Called once per drag, however it ends: `release`, `cancel` or `destroy`.                                                                                                                                                    |
 
 ## Lifecycle

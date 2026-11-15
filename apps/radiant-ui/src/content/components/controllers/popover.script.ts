@@ -11,7 +11,7 @@ export function mount(root: HTMLElement): () => void {
 		getFloating: () => panel,
 		getOpen: () => open,
 		getPlacement: () => 'bottom-start',
-		portal: false,
+		getPortalContainer: () => root,
 		onDismiss: () => {
 			open = false;
 			popover.sync();

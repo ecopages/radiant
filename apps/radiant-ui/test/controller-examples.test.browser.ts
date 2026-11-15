@@ -22,8 +22,12 @@ async function mountExample(slug: string): Promise<HTMLElement> {
 	return document.querySelector<HTMLElement>(`[data-example="${slug}"]`)!;
 }
 
-function press(target: Element, type: string, x: number, y = 0): void {
-	target.dispatchEvent(new PointerEvent(type, { bubbles: true, button: 0, pointerId: 1, clientX: x, clientY: y }));
+function press(target: Element, type: string, x: number, y = 0, timeStamp?: number): void {
+	const event = new PointerEvent(type, { bubbles: true, button: 0, pointerId: 1, clientX: x, clientY: y });
+	if (timeStamp !== undefined) {
+		Object.defineProperty(event, 'timeStamp', { value: timeStamp });
+	}
+	target.dispatchEvent(event);
 }
 
 const status = (root: HTMLElement) => root.querySelector('[data-status]')!;
@@ -169,6 +173,14 @@ describe('controller page examples', () => {
 		press(box, 'pointerdown', 100);
 		press(box, 'pointerup', 20);
 		expect(status(root).textContent).toBe('Swiped left');
+
+		press(box, 'pointerdown', 100, 0, 1000);
+		press(box, 'pointerup', 130, 0, 1030);
+		expect(status(root).textContent).toBe('Swiped right');
+
+		press(box, 'pointerdown', 100, 0, 2000);
+		press(box, 'pointerup', 20, 70, 2400);
+		expect(status(root).textContent).toBe('Swiped right');
 	});
 
 	test('PointerDragController follows the pointer and reports how the drag ended', async () => {
@@ -196,24 +208,7 @@ describe('controller page examples', () => {
 		await userEvent.keyboard(' ');
 
 		expect(names()).toEqual(['Build', 'Plan', 'Ship']);
-		expect(status(root).textContent).not.toContain('Focus an item');
-	});
-
-	test('ListboxPopoverController opens on ArrowDown, moves the active option and picks it with Enter', async () => {
-		const root = await mountExample('listbox-popover');
-		const input = root.querySelector('input')!;
-		const listbox = root.querySelector<HTMLElement>('[role="listbox"]')!;
-
-		input.focus();
-		await userEvent.keyboard('{ArrowDown}');
-		expect(listbox.hidden).toBe(false);
-
-		await userEvent.keyboard('{ArrowDown}{ArrowDown}');
-		expect(input.getAttribute('aria-activedescendant')).toBe(listbox.children[1].id);
-
-		await userEvent.keyboard('{Enter}');
-		expect(input.value).toBe('Banana');
-		expect(listbox.hidden).toBe(true);
+		expect(status(root).textContent).toBe('Dropped Plan, position 2 of 3.');
 	});
 
 	test('MenuTreeController opens a submenu on click and reports a leaf item', async () => {
@@ -227,19 +222,5 @@ describe('controller page examples', () => {
 
 		(submenu.firstElementChild as HTMLElement).click();
 		expect(status(root).textContent).toBe('Chose Report.md');
-	});
-
-	test('CalendarPopoverController opens on a day and returns focus to the toggle on Escape', async () => {
-		const root = await mountExample('calendar-popover');
-		const toggle = root.querySelector('button')!;
-		const popup = root.querySelector<HTMLElement>('[data-box]')!;
-
-		await userEvent.click(toggle);
-		await expect.poll(() => document.activeElement).toBe(popup.querySelector('[data-calendar-day]'));
-		expect(popup.hidden).toBe(false);
-
-		await userEvent.keyboard('{Escape}');
-		await expect.poll(() => popup.hidden).toBe(true);
-		expect(document.activeElement).toBe(toggle);
 	});
 });

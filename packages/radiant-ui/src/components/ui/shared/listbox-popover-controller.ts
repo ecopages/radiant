@@ -1,8 +1,12 @@
-import { bindController, type Controller, type ControllerHost } from './controller';
-import type { DismissReason } from './dismiss-controller';
-import { PopoverController } from './popover-controller';
-import { wrapCollectionIndex } from './collection-index';
-import { clearCollectionActive, getVisibleCollectionOptions, setCollectionActive } from './collection-navigation';
+import { bindController, type Controller, type ControllerHost } from '../../../controllers/controller';
+import type { DismissReason } from '../../../controllers/dismiss-controller';
+import { PopoverController } from '../../../controllers/popover-controller';
+import { wrapCollectionIndex } from '../../../controllers/collection-index';
+import {
+	clearCollectionActive,
+	getVisibleCollectionOptions,
+	setCollectionActive,
+} from '../../../controllers/collection-navigation';
 
 /** Which option becomes active when the popup opens. */
 export type ListboxActivation = 'first' | 'last' | 'none';
@@ -15,6 +19,10 @@ export type ListboxPopoverControllerConfig = {
 	getOptions: () => HTMLElement[];
 	getActiveDescendantHost: () => HTMLElement | null;
 	getOptionIdPrefix: () => string;
+	/** Whether the popup moves out of its place while open. Defaults to `false`; `updateConfig` changes it. */
+	portal?: boolean;
+	/** Where a portaled popup goes. Read each time the popup opens; `document.body` when omitted or `null`. */
+	getPortalContainer?: () => ParentNode | null;
 	/** Called on a pointer press outside the anchor and popup, or focus leaving them. Escape stays with the owner's key handling. */
 	onDismiss?: (reason: DismissReason, event: Event) => void;
 };
@@ -56,11 +64,17 @@ export class ListboxPopoverController implements Controller {
 			getOpen: config.getOpen,
 			getPlacement: () => 'bottom-start',
 			gap: 4,
-			portal: false,
 			matchAnchorWidth: true,
+			portal: config.portal ?? false,
+			getPortalContainer: config.getPortalContainer,
 			onDismiss: config.onDismiss,
 			dismissOn: ['pointer', 'focus'],
 		});
+	}
+
+	/** Changes whether the popup portals, from the next `syncPopoverPosition()`. */
+	updateConfig(patch: Pick<ListboxPopoverControllerConfig, 'portal'>): void {
+		this.popoverController.updateConfig({ portal: patch.portal ?? false });
 	}
 
 	attach(): void {

@@ -41,8 +41,10 @@ describe('extending a controller through its protected hooks', () => {
 	});
 
 	it('SwipeController.resolveDirection changes what counts as a swipe, with lifecycle binding intact', () => {
+		const elapsed: number[] = [];
 		class EagerSwipe extends SwipeController {
-			protected override resolveDirection(dx: number): SwipeDirection | null {
+			protected override resolveDirection(dx: number, _dy: number, elapsedMs: number): SwipeDirection | null {
+				elapsed.push(elapsedMs);
 				return dx > 10 ? 'right' : null;
 			}
 		}
@@ -64,6 +66,8 @@ describe('extending a controller through its protected hooks', () => {
 		pointer(element, 'pointerdown', { x: 0 });
 		pointer(element, 'pointerup', { x: 20 });
 		expect(onSwipe).toHaveBeenCalledWith('right', expect.any(PointerEvent));
+		expect(elapsed).toHaveLength(1);
+		expect(elapsed[0]).toBeGreaterThanOrEqual(0);
 
 		disconnect();
 		pointer(element, 'pointerdown', { x: 0 });

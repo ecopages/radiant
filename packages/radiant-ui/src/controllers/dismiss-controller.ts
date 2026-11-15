@@ -1,5 +1,6 @@
 import { bindController, type Controller, type ControllerHost } from './controller';
 import { EventListenerController } from './event-listener-controller';
+import { portalOrigin } from './portal-controller';
 
 /** What dismissed a surface: a pointer press outside it, focus leaving it, or Escape. */
 export type DismissReason = 'pointer' | 'focus' | 'escape';
@@ -116,9 +117,18 @@ export class DismissController implements Controller {
 	/**
 	 * Decides what counts as inside. Runs for every pointer press, focus change and Escape that `contains` and `isOutside` judge, and for those methods when an owner calls them.
 	 *
-	 * @remarks Override to widen or narrow the inside, such as a surface that counts a neighbouring toolbar. The default is the surface and the related elements, and anything inside them.
+	 * @remarks Override to widen or narrow the inside, such as a surface that counts a neighbouring toolbar. The default is the surface and the related elements, and anything inside them, including a popup a `PortalController` moved out of them (nested portals too).
 	 */
 	protected isInside(node: Node): boolean {
+		for (let current: Node | null = node; current; current = portalOrigin(current)) {
+			if (this.isInsideTree(current)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private isInsideTree(node: Node): boolean {
 		if (this.config.getSurface()?.contains(node)) {
 			return true;
 		}

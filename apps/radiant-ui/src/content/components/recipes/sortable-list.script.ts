@@ -12,10 +12,12 @@ export function mount(root: HTMLElement): () => void {
 		getItems: () => items,
 		getTarget: () => list,
 		orientation: 'vertical',
-		enabled: () => sortable.getState() === null,
+		getEnabled: () => sortable.getState() === null,
 	});
 
 	const sortable = new SortableController({
+		preview: true,
+		createPlaceholder: () => document.createElement('li'),
 		getContainer: () => list,
 		getItems: () => items,
 		announce: (message) => (status.textContent = message),

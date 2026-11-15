@@ -7,6 +7,8 @@ export function mount(root: HTMLElement): () => void {
 
 	const swipe = new SwipeController({
 		getTarget: () => box,
+		minVelocity: 0.5,
+		dominance: 2,
 		onSwipe: (direction) => (status.textContent = `Swiped ${direction}`),
 	});
 	swipe.attach();

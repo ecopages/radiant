@@ -1,0 +1,30 @@
+[data-task] {
+	cursor: grab;
+	touch-action: none;
+	user-select: none;
+}
+
+[data-task][data-sortable-state='lifted'] {
+	z-index: 10;
+	padding: var(--space-2) var(--space-3);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-control);
+	background: var(--primary);
+	color: var(--on-primary);
+	font-size: 0.875rem;
+	box-shadow: 0 0.5rem 1rem rgb(0 0 0 / 0.25);
+	list-style: none;
+	cursor: grabbing;
+}
+
+:is([data-example='sortable-list'], recipe-sortable-list) [data-sortable-placeholder] {
+	min-height: 2.5rem;
+	box-sizing: border-box;
+	outline: 1px dashed var(--primary);
+	outline-offset: -4px;
+	background: transparent;
+}
+
+:is([data-example='sortable-list'], recipe-sortable-list) [data-sortable-drop] {
+	box-shadow: none;
+}

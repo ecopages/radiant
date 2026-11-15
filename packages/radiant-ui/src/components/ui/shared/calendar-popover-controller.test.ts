@@ -79,6 +79,31 @@ describe('CalendarPopoverController on a plain element', () => {
 		host.remove();
 	});
 
+	it('keeps the popup in place by default and portals it into the container when asked', () => {
+		const { host, config } = mount();
+		const floating = config.getFloating();
+		const frame = document.createElement('div');
+		document.body.append(frame);
+		const controller = new CalendarPopoverController({ ...config, portal: true, getPortalContainer: () => frame });
+		const inPlace = new CalendarPopoverController(config);
+
+		inPlace.attach();
+		inPlace.syncPopover();
+		expect(floating.parentNode).toBe(host);
+		inPlace.destroy();
+
+		controller.attach();
+		controller.syncPopover();
+		expect(floating.parentNode).toBe(frame);
+
+		controller.updateConfig({ portal: false });
+		controller.syncPopover();
+		expect(floating.parentNode).toBe(host);
+		controller.destroy();
+		frame.remove();
+		host.remove();
+	});
+
 	it('releases the popover positioning on destroy', () => {
 		const { host, config } = mount();
 		const controller = new CalendarPopoverController(config);
@@ -106,7 +131,7 @@ describe('CalendarPopoverController on a plain element', () => {
 		controller.destroy();
 		await Promise.resolve();
 
-		expect(observers.every((record) => record.disconnected)).toBe(true);
+		expect(observers).toHaveLength(0);
 		host.remove();
 	});
 
@@ -207,8 +232,11 @@ describe('focusCalendarPickerDay', () => {
 		const calendar = document.createElement('div');
 		const day = document.createElement('button');
 		day.setAttribute('data-calendar-day', '');
-		day.setAttribute('data-iso', '2024-01-01');
-		calendar.append(day);
+		day.setAttribute('data-iso', '2024"]');
+		const fallback = document.createElement('button');
+		fallback.setAttribute('data-calendar-day', '');
+		fallback.setAttribute('data-iso', '2024-01-01');
+		calendar.append(fallback, day);
 		document.body.append(calendar);
 
 		expect(() => focusCalendarPickerDay(calendar, '2024"]')).not.toThrow();

@@ -16,16 +16,23 @@ describe('SwipeController on plain elements', () => {
 		return { element, inner, onSwipe, controller };
 	}
 
-	const pointer = (target: EventTarget, type: string, init: { x: number; y: number; id?: number; button?: number }) =>
-		target.dispatchEvent(
-			new PointerEvent(type, {
-				bubbles: true,
-				pointerId: init.id ?? 1,
-				button: init.button ?? 0,
-				clientX: init.x,
-				clientY: init.y,
-			}),
-		);
+	const pointer = (
+		target: EventTarget,
+		type: string,
+		init: { x: number; y: number; id?: number; button?: number; t?: number },
+	) => {
+		const event = new PointerEvent(type, {
+			bubbles: true,
+			pointerId: init.id ?? 1,
+			button: init.button ?? 0,
+			clientX: init.x,
+			clientY: init.y,
+		});
+		if (init.t !== undefined) {
+			Object.defineProperty(event, 'timeStamp', { value: init.t });
+		}
+		return target.dispatchEvent(event);
+	};
 
 	it('is inert until attached', () => {
 		const { element, onSwipe } = mount();
@@ -80,6 +87,42 @@ describe('SwipeController on plain elements', () => {
 
 		pointer(element, 'pointerdown', { x: 200, y: 0 });
 		pointer(element, 'pointerup', { x: 90, y: 0 });
+		expect(onSwipe).toHaveBeenCalledTimes(1);
+	});
+
+	it('counts a short flick with minVelocity, measured from the press to the release timeStamps', () => {
+		const { element, onSwipe, controller } = mount({ minVelocity: 0.5 });
+		controller.attach();
+
+		pointer(element, 'pointerdown', { x: 200, y: 0, t: 1000 });
+		pointer(element, 'pointerup', { x: 170, y: 0, t: 1030 });
+		expect(onSwipe).toHaveBeenCalledWith('left', expect.any(PointerEvent));
+
+		pointer(element, 'pointerdown', { x: 200, y: 0, t: 2000 });
+		pointer(element, 'pointerup', { x: 170, y: 0, t: 2300 });
+		expect(onSwipe).toHaveBeenCalledTimes(1);
+	});
+
+	it('does not count a short flick without minVelocity', () => {
+		const { element, onSwipe, controller } = mount();
+		controller.attach();
+
+		pointer(element, 'pointerdown', { x: 200, y: 0, t: 1000 });
+		pointer(element, 'pointerup', { x: 170, y: 0, t: 1030 });
+
+		expect(onSwipe).not.toHaveBeenCalled();
+	});
+
+	it('honors dominance for a diagonal drag', () => {
+		const { element, onSwipe, controller } = mount({ dominance: 2 });
+		controller.attach();
+
+		pointer(element, 'pointerdown', { x: 200, y: 0 });
+		pointer(element, 'pointerup', { x: 100, y: 70 });
+		expect(onSwipe).not.toHaveBeenCalled();
+
+		pointer(element, 'pointerdown', { x: 200, y: 0 });
+		pointer(element, 'pointerup', { x: 100, y: 40 });
 		expect(onSwipe).toHaveBeenCalledTimes(1);
 	});
 

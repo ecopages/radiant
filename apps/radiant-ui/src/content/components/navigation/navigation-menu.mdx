@@ -78,6 +78,10 @@ import '@ecopages/radiant-ui/navigation-menu';
 
 <p>Keep top-level items to five or fewer. Move secondary links into panels or the footer.</p>
 
+## Portal
+
+Menus stay in place: a panel is nested in the light DOM of the item that opens it, and that parent and child relationship is what the arrow keys, `aria-expanded` and dismissal follow. Portaling a menu would break it, so there is no `portal` option here.
+
 ## Theming
 
 The trigger bar is unboxed by default: fill, border, and shadow are transparent. Override `--rui-navigation-menu-bar-*` on `rui-navigation-menu` to paint chrome. Flyout panels use the shared `--rui-popover-*` surface knobs.

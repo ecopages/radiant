@@ -462,6 +462,29 @@ describe('RuiTagGroup', () => {
 			cleanup();
 		});
 
+		it('reorders a derived list by value while some tags are hidden', async () => {
+			const all = [...tags, { value: 'd', label: 'Delta' }];
+			const { host, cleanup } = mount(<RuiTagGroup reorderable tags={[]} />);
+			await settled();
+			const group = host.querySelector('rui-tag-group') as RuiTagGroupElement;
+			const moves: unknown[] = [];
+			group.addEventListener('rui-reorder', (event) => moves.push((event as CustomEvent).detail));
+			group.setItems(all);
+			await settled();
+			(host.querySelector('[data-rui-managed-list] [data-value="b"]') as HTMLElement).hidden = true;
+			const first = host.querySelector('[data-rui-managed-list] [data-value="a"]') as HTMLElement;
+
+			first.focus();
+			press(first, ' ');
+			press(first, 'ArrowRight');
+			press(first, ' ');
+			await settled();
+
+			expect(names(host)).toEqual(['b', 'c', 'a', 'd']);
+			expect(moves).toEqual([{ value: 'a', from: 0, to: 1 }]);
+			cleanup();
+		});
+
 		it('does nothing unless reorderable, and Space keeps selecting', async () => {
 			const { host, cleanup } = mount(<RuiTagGroup tags={tags} />);
 			await settled();

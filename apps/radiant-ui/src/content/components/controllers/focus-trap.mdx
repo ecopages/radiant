@@ -81,10 +81,18 @@ export function mount(root: HTMLElement): () => void {
 | `getSurface`   | The modal surface. `null` traps nothing.                                                                                                                                     |
 | `getFocusable` | The elements Tab loops over, in order. Defaults to the focusable descendants of the surface.                                                                                 |
 | `getStrict`    | Whether focus inside the surface but outside the loop (the surface itself, a `tabindex="-1"` node) is pulled into the loop on Tab. Read on every key press. Default `false`. |
+| `getEnabled`   | Whether the trap holds Tab. Read on every key press; `false` leaves Tab to the browser so focus can leave. Default `true`.                                                  |
+| `getReturnFocus` | Where focus goes on `destroy()`. Default: the element focused at `attach()`, also used when this returns `null` or an element that is no longer connected.                  |
 
 ## Lifecycle
 
-`attach()` remembers the focused element, listens for Tab on `document` and, in a microtask, focuses the first focusable element of the surface (or the surface). `destroy()` stops listening and returns focus to the remembered element. A Tab with focus outside the surface is left alone. Making the rest of the page `inert` is not part of it.
+`attach()` remembers the focused element, listens for Tab on `document` and, in a microtask, focuses the first focusable element of the surface (or the surface). `destroy()` stops listening and returns focus to `getReturnFocus()` when it names a connected element, otherwise to the remembered one. `focusFirst()` and `focusLast()` move focus to the first or last of the same list the Tab loop uses (or the surface when it is empty), for code that moves focus inside while attached. A Tab with focus outside the surface is left alone. Making the rest of the page `inert` is not part of it.
+
+## Ways out
+
+- `destroy()` releases the trap and returns focus. This is the normal exit for a modal.
+- `getEnabled` returning `false` pauses the loop without detaching, so a non-modal surface can let Tab leave. Initial focus on `attach()` and the return on `destroy()` still happen, and the loop works again when it returns `true`.
+- Escape is not handled here. [DismissController](/docs/controllers/dismiss) owns it: its `onDismiss` calls `destroy()`, and `getReturnFocus` decides where focus lands. The [modal recipe](/docs/recipes/modal) shows the two together.
 
 With a host, `createFocusTrapController(host, config)` does the same on connect and disconnect; see [bindController](/docs/controllers/bind-controller).
 

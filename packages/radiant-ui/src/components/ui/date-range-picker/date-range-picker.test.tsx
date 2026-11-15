@@ -221,3 +221,33 @@ describe('RuiDateRangePicker popup focus', () => {
 		host.remove();
 	});
 });
+
+describe('RuiDateRangePicker popup listeners', () => {
+	it('wires the popup when its children are added after the element connects', async () => {
+		const source = document.createElement('div');
+		document.body.append(source);
+		createRoot(source).render(<RuiDateRangePicker value="2026-08-07/2026-08-14" locale="en-US" />);
+		await customElements.whenDefined('rui-date-range-picker');
+		await customElements.whenDefined('rui-calendar');
+		await flushFirstConnect();
+		await flushRender();
+		const markup = (source.querySelector('rui-date-range-picker') as HTMLElement).innerHTML;
+		source.remove();
+
+		const picker = document.createElement('rui-date-range-picker') as HTMLElement & { value: string };
+		picker.setAttribute('value', '2026-08-07/2026-08-14');
+		picker.setAttribute('locale', 'en-US');
+		document.body.append(picker);
+		picker.innerHTML = markup;
+		await flushFirstConnect();
+		await flushRender();
+
+		(picker.querySelector('[data-range-trigger]') as HTMLElement).click();
+		await flushRender();
+		(picker.querySelector('[data-calendar-day][data-iso="2026-08-05"]') as HTMLElement).click();
+		(picker.querySelector('[data-calendar-day][data-iso="2026-08-12"]') as HTMLElement).click();
+		await flushRender();
+
+		expect(picker.value).toBe('2026-08-05/2026-08-12');
+	});
+});

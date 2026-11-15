@@ -260,3 +260,69 @@ describe('PopoverController portal theming', () => {
 		controller.destroy();
 	});
 });
+
+describe('PopoverController portal container', () => {
+	afterEach(() => {
+		document.body.replaceChildren();
+	});
+
+	function setup(getPortalContainer?: () => ParentNode | null) {
+		const host = document.createElement('section');
+		const anchor = document.createElement('button');
+		const floating = document.createElement('div');
+		host.append(anchor, floating);
+		document.body.append(host);
+		let open = true;
+		const controller = new PopoverController({
+			getAnchor: () => anchor,
+			getFloating: () => floating,
+			getOpen: () => open,
+			getPlacement: () => 'bottom',
+			getPortalContainer,
+		});
+		controller.attach();
+		return { host, floating, controller, setOpen: (next: boolean) => (open = next) };
+	}
+
+	it('mounts the surface in the container the getter returns and returns it on close', () => {
+		const frame = document.createElement('div');
+		document.body.append(frame);
+		const { host, floating, controller, setOpen } = setup(() => frame);
+
+		controller.sync();
+		expect(floating.parentNode).toBe(frame);
+
+		setOpen(false);
+		controller.sync();
+		expect(floating.parentNode).toBe(host);
+		controller.destroy();
+	});
+
+	it('resolves the container again each time the surface opens', () => {
+		const first = document.createElement('div');
+		const second = document.createElement('div');
+		document.body.append(first, second);
+		let container: ParentNode = first;
+		const { floating, controller, setOpen } = setup(() => container);
+
+		controller.sync();
+		expect(floating.parentNode).toBe(first);
+		setOpen(false);
+		controller.sync();
+
+		container = second;
+		setOpen(true);
+		controller.sync();
+		expect(floating.parentNode).toBe(second);
+		controller.destroy();
+	});
+
+	it('falls back to document.body when the getter returns null', () => {
+		const { floating, controller } = setup(() => null);
+
+		controller.sync();
+
+		expect(floating.parentNode).toBe(document.body);
+		controller.destroy();
+	});
+});

@@ -54,4 +54,31 @@ describe('RuiToc navigation events', () => {
 
 		cleanup();
 	});
+
+	it('listens for the new events and not the old ones after navigationEvents changes', async () => {
+		const { host, cleanup } = mount(
+			<div>
+				<article id="article">
+					<h2 id="intro">Intro</h2>
+				</article>
+				<RuiToc target="#article" navigationEvents="eco:before" />
+			</div>,
+		);
+		await settled();
+		const toc = host.querySelector('rui-toc') as HTMLElement & { navigationEvents: string };
+		const article = host.querySelector('#article')!;
+
+		toc.navigationEvents = 'eco:after';
+		await settled();
+		article.innerHTML = '<h2 id="fresh">Fresh</h2>';
+		document.dispatchEvent(new Event('eco:before'));
+		await settled();
+		expect(toc.querySelectorAll('a[href="#fresh"]')).toHaveLength(0);
+
+		document.dispatchEvent(new Event('eco:after'));
+		await settled();
+		expect(toc.querySelectorAll('a[href="#fresh"]')).toHaveLength(1);
+
+		cleanup();
+	});
 });

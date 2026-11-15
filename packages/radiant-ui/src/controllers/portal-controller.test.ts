@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import type { ControllerHost } from './controller';
-import { PortalController, createPortalController } from './portal-controller';
+import { PortalController, createPortalController, portalOrigin } from './portal-controller';
 
 describe('PortalController', () => {
 	afterEach(() => {
@@ -27,6 +27,22 @@ describe('PortalController', () => {
 		portal.destroy();
 		expect([...origin.children]).toEqual([before, node, after]);
 		expect(origin.childNodes).toHaveLength(3);
+	});
+
+	it('records where the node came from for itself and its descendants, until destroy', () => {
+		const { origin, before, node } = setup();
+		const child = document.createElement('i');
+		node.append(child);
+		const portal = new PortalController({ getNode: () => node });
+		expect(portalOrigin(node)).toBeNull();
+
+		portal.attach();
+		expect(portalOrigin(node)?.parentNode).toBe(origin);
+		expect(portalOrigin(child)).toBe(portalOrigin(node));
+		expect(portalOrigin(before)).toBeNull();
+
+		portal.destroy();
+		expect(portalOrigin(node)).toBeNull();
 	});
 
 	it('mounts into the container the getter returns', () => {

@@ -5,8 +5,14 @@ import { uniqueId } from '@/lib/unique-id';
 import { findAssociatedLabel, syncFieldLabel } from '../shared/field-label';
 import { ListboxHost } from '../shared/listbox-host';
 import { getListboxOptionValue } from '../shared/listbox-option';
-import { createListboxPopoverController } from '../../../controllers/listbox-popover-controller';
+import { createEventListenerController } from '../../../controllers/event-listener-controller';
+import { createListboxPopoverController } from '../shared/listbox-popover-controller';
 import { multiValuePropOptions, type ViewMultiValue } from '../shared/multi-value';
+import {
+	portalContainerPropOptions,
+	resolvePortalContainer,
+	type RuiPortalContainer,
+} from '../shared/portal-container';
 
 export type RuiSelectSelectionMode = 'single' | 'multiple';
 export type RuiSelectTriggerKind = 'focus' | 'manual';
@@ -28,6 +34,10 @@ export type RuiSelectProps = {
 	 * `manual` requires a click, the toggle, or arrow keys (the default).
 	 */
 	triggerKind?: RuiSelectTriggerKind;
+	/** Render the popup in `document.body`, or in `portalContainer`, while it is open. Default: `false`. */
+	portal?: boolean;
+	/** CSS selector of the element a portaled popup goes to, resolved when the popup opens. */
+	portalContainer?: string;
 };
 
 export type RuiSelectChangeDetail = { value: string[] };
@@ -86,12 +96,16 @@ export type RuiSelectChangeDetail = { value: string[] };
  * @attr {('single'|'multiple')} selection-mode - Single or multi-select. Default: `single`.
  * @attr {boolean} should-close-on-select - Whether selecting closes the popup (defaults to `true` for single, `false` for multiple).
  * @attr {('focus'|'manual')} trigger-kind - Controls what opens the listbox. Default: `manual`.
+ * @attr {boolean} portal - Render the popup in `document.body`, or in `portal-container`, while it is open. Default: `false`.
+ * @attr {string} portal-container - CSS selector of the element a portaled popup goes to, resolved each time it opens. The `portalContainer` property also takes an element or a function that returns one.
  * @fires rui-change - Emitted when the selected `value` changes; `detail.value` is `string[]`.
  *
  * @remarks
  * Minimum tree: `[data-ref="root"]` > `[data-select-trigger]` > `[data-select-value]`,
  * sibling `[data-select-listbox]` > `rui-listbox[embedded]` > `[role="option"]`.
  * BEM classes live on the view helpers; the host never queries them.
+ * With `portal` the popup leaves the host while it is open, so the host keeps a reference to it and listens on it
+ * directly instead of through the host. Tab order follows the popup's place in the document, not the host.
  * Not form-associated: wrap in `rui-field` and read `RuiForm` `onSubmit`.
  * The selected value does not appear in native `FormData`.
  */
@@ -122,6 +136,8 @@ export class RuiSelect extends RadiantElement {
 	@prop({ type: Boolean, attribute: 'should-close-on-select' }) shouldCloseOnSelect: boolean | undefined;
 	@prop({ type: String, attribute: 'trigger-kind', reflect: true, defaultValue: 'manual' })
 	triggerKind: RuiSelectTriggerKind;
+	@prop({ type: Boolean, defaultValue: false }) portal: boolean;
+	@prop(portalContainerPropOptions) portalContainer: RuiPortalContainer | null;
 
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiSelectChangeDetail>;
@@ -145,10 +161,44 @@ export class RuiSelect extends RadiantElement {
 		getOptions: () => this.collection.getOptions(),
 		getActiveDescendantHost: () => this.getActiveDescendantHost(),
 		getOptionIdPrefix: () => `${this.uid}-option`,
+		getPortalContainer: () => resolvePortalContainer(this.portalContainer),
 		onDismiss: () => this.setOpen(false),
 	});
 
 	@query({ ref: 'root' }) rootTarget: HTMLElement | null;
+	/** @remarks Cached because a portaled popup is no longer inside the host to be found again. */
+	@query({ selector: '[data-select-listbox]', cache: true }) popupTarget: HTMLElement | null;
+
+	/**
+	 * The popup is a separate listener target, not host delegation, because a portaled popup is outside the host
+	 * and its events never bubble through it.
+	 *
+	 * @remarks They first attach as the element connects, which can be before its children exist (markup added
+	 * after the element is in the document), so each opening attaches them again to resolve the popup that exists now.
+	 */
+	private readonly popupListeners = [
+		createEventListenerController(this, {
+			getTarget: () => this.popupTarget,
+			type: ['pointerover', 'mousedown', 'click', 'input'],
+			listener: (event) => this.onPopupEvent(event),
+		}),
+		createEventListenerController(this, {
+			getTarget: () => this.popupTarget,
+			type: 'keydown',
+			options: { capture: true },
+			listener: (event) => {
+				if (event.target instanceof Element && event.target.matches('[data-autocomplete-input]')) {
+					this.handleListboxKeydown(event);
+				}
+			},
+		}),
+	];
+
+	private attachPopupListeners(): void {
+		for (const listener of this.popupListeners) {
+			listener.attach();
+		}
+	}
 
 	private get listboxId(): string {
 		return `${this.uid}-list`;
@@ -170,7 +220,7 @@ export class RuiSelect extends RadiantElement {
 	}
 
 	private getSearchInput(): HTMLInputElement | null {
-		return this.querySelector<HTMLInputElement>('[data-select-listbox] [data-autocomplete-input]');
+		return this.popupTarget?.querySelector<HTMLInputElement>('[data-autocomplete-input]') ?? null;
 	}
 
 	private hasSearchInput(): boolean {
@@ -300,7 +350,7 @@ export class RuiSelect extends RadiantElement {
 	}
 
 	private getListboxPopup(): HTMLElement | null {
-		return this.querySelector<HTMLElement>('[data-select-listbox]');
+		return this.popupTarget;
 	}
 
 	private ensureOptionIds(): void {
@@ -405,6 +455,9 @@ export class RuiSelect extends RadiantElement {
 
 		trigger.setAttribute('aria-expanded', String(next));
 		popup.toggleAttribute('hidden', !next);
+		if (next) {
+			this.attachPopupListeners();
+		}
 
 		if (!next) {
 			this.listboxPopover.clearActiveOption();
@@ -481,7 +534,12 @@ export class RuiSelect extends RadiantElement {
 		this.handleListboxKeydown(event);
 	}
 
+	private syncPortal(): void {
+		this.listboxPopover.updateConfig({ portal: this.portal });
+	}
+
 	private initialize(): void {
+		this.syncPortal();
 		this.ensureOptionIds();
 		this.syncLabel();
 		this.syncTrigger();
@@ -495,8 +553,18 @@ export class RuiSelect extends RadiantElement {
 		this.initialize();
 	}
 
-	@onUpdated(['value', 'label', 'placeholder', 'disabled', 'triggerKind', 'selectionMode', 'shouldCloseOnSelect'])
+	@onUpdated([
+		'value',
+		'label',
+		'placeholder',
+		'disabled',
+		'triggerKind',
+		'selectionMode',
+		'shouldCloseOnSelect',
+		'portal',
+	])
 	onPropsUpdated(): void {
+		this.syncPortal();
 		this.syncLabel();
 		this.syncTrigger();
 		this.collection.syncListboxHost();
@@ -538,24 +606,6 @@ export class RuiSelect extends RadiantElement {
 		this.handleTriggerKeydown(event);
 	}
 
-	@onEvent({
-		selector: '[data-select-listbox] [data-autocomplete-input]',
-		type: 'keydown',
-		options: { capture: true },
-	})
-	onSearchKeydown(event: KeyboardEvent): void {
-		this.handleListboxKeydown(event);
-	}
-
-	@onEvent({ selector: '[data-select-listbox] [data-autocomplete-input]', type: 'input' })
-	onSearchInput(): void {
-		if (!this.open) {
-			return;
-		}
-
-		this.listboxPopover.clearActiveOption();
-	}
-
 	@onEvent({ selector: '[data-select-value] rui-tag-group', type: 'rui-remove' })
 	onTagRemove(event: Event): void {
 		const detail = (event as CustomEvent<{ value?: string }>).detail;
@@ -583,34 +633,30 @@ export class RuiSelect extends RadiantElement {
 		event.stopPropagation();
 	}
 
-	@onEvent({ selector: '[data-select-listbox] [role="option"]', type: 'pointerover' })
-	onOptionPointerOver(event: Event): void {
-		if (!this.open) {
+	private onPopupEvent(event: Event): void {
+		const target = event.target;
+		if (!(target instanceof Element)) {
 			return;
 		}
-
-		const option = this.collection.findOption(event.target);
-		if (!this.collection.isSelectableOption(option)) {
+		if (event.type === 'input') {
+			if (this.open && target.matches('[data-autocomplete-input]')) {
+				this.listboxPopover.clearActiveOption();
+			}
 			return;
 		}
-
-		const visible = this.listboxPopover.getVisibleOptions();
-		const index = visible.indexOf(option);
-		if (index >= 0) {
-			this.listboxPopover.setActiveOption(index);
+		const option = this.collection.findOption(target);
+		if (!option) {
+			return;
 		}
-	}
-
-	@onEvent({ selector: '[data-select-listbox] [role="option"]', type: 'mousedown' })
-	onOptionMouseDown(event: Event): void {
-		event.preventDefault();
-	}
-
-	@onEvent({ selector: '[data-select-listbox] [role="option"]', type: 'click' })
-	onOptionClick(event: Event): void {
-		const option = this.collection.findOption(event.target);
-		if (option) {
+		if (event.type === 'mousedown') {
+			event.preventDefault();
+		} else if (event.type === 'click') {
 			this.selectOption(option);
+		} else if (this.open && this.collection.isSelectableOption(option)) {
+			const index = this.listboxPopover.getVisibleOptions().indexOf(option);
+			if (index >= 0) {
+				this.listboxPopover.setActiveOption(index);
+			}
 		}
 	}
 
@@ -625,7 +671,10 @@ export class RuiSelect extends RadiantElement {
 			return;
 		}
 
-		if (event.relatedTarget instanceof Node && this.contains(event.relatedTarget)) {
+		if (
+			event.relatedTarget instanceof Node &&
+			(this.contains(event.relatedTarget) || this.popupTarget?.contains(event.relatedTarget))
+		) {
 			return;
 		}
 

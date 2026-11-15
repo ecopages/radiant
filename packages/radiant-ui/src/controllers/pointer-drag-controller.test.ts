@@ -40,17 +40,20 @@ describe('PointerDragController on plain elements', () => {
 	const fire = (
 		target: EventTarget,
 		type: string,
-		init: { x?: number; y?: number; id?: number; button?: number } = {},
-	) =>
-		target.dispatchEvent(
-			new PointerEvent(type, {
-				bubbles: true,
-				pointerId: init.id ?? 1,
-				button: init.button ?? 0,
-				clientX: init.x ?? 0,
-				clientY: init.y ?? 0,
-			}),
-		);
+		init: { x?: number; y?: number; id?: number; button?: number; t?: number } = {},
+	) => {
+		const event = new PointerEvent(type, {
+			bubbles: true,
+			pointerId: init.id ?? 1,
+			button: init.button ?? 0,
+			clientX: init.x ?? 0,
+			clientY: init.y ?? 0,
+		});
+		if (init.t !== undefined) {
+			Object.defineProperty(event, 'timeStamp', { value: init.t });
+		}
+		return target.dispatchEvent(event);
+	};
 
 	it('is inert until attached', () => {
 		const { element, onStart } = mount();
@@ -140,6 +143,19 @@ describe('PointerDragController on plain elements', () => {
 			[40, 15, 30, -5],
 			[5, 60, -5, 40],
 		]);
+	});
+
+	it('reports the milliseconds from the press to the start, each move and the end', () => {
+		const { element, onStart, onMove, onEnd, controller } = mount();
+		controller.attach();
+
+		fire(element, 'pointerdown', { t: 1000 });
+		fire(document, 'pointermove', { x: 10, t: 1016 });
+		fire(document, 'pointerup', { x: 30, t: 1250 });
+
+		expect(onStart.mock.calls[0]![0].elapsedMs).toBe(0);
+		expect(onMove.mock.calls[0]![0].elapsedMs).toBe(16);
+		expect(onEnd.mock.calls[0]![0].elapsedMs).toBe(250);
 	});
 
 	it('answers which element is under the pointer, not the captured target', () => {

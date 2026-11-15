@@ -38,6 +38,15 @@ describe('RuiSelect SSR', () => {
 		expect(html).toMatch(/<rui-select[^>]*trigger-kind="focus"/);
 	});
 
+	it('serializes portal and portal-container as attributes', () => {
+		const html = withRadiantServerCustomElementRenderBridge(() =>
+			renderToString(<RuiSelect portal portalContainer="#frame" />),
+		);
+
+		expect(html).toMatch(/<rui-select[^>]*\bportal(="[^"]*")?[ >]/);
+		expect(html).toMatch(/<rui-select[^>]*portal-container="#frame"/);
+	});
+
 	it('forwards global, structured, and direct data/aria props to the host', () => {
 		const html = renderToString(
 			<RuiSelect
