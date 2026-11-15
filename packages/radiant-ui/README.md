@@ -39,7 +39,8 @@ Open the URL Storybook prints (default port `6006`).
 Useful scripts:
 
 ```bash
-pnpm run test            # Vitest (storybook + unit browser projects)
+pnpm run test            # every Vitest project: storybook, unit, autoplay-policy, media, built-package, ssr
+#                          (`autoplay-policy` runs *.policy.test files with the autoplay policy on; `media` runs *.media.test files with a fake capture device)
 pnpm run test:storybook  # Story interaction/render tests (CI)
 pnpm run test:ssr:smoke  # SSR smoke (6 stories × client/ssr-static/ssr-hydrate; runs on PRs)
 pnpm run test:ssr        # Full Components/* SSR matrix (run on demand)

@@ -1,0 +1,299 @@
+---
+title: AudioVisualizerController
+description: 'Feeds a visualization preset the sound of an audio or video element, or of a MediaStream, while it plays.'
+order: 16
+---
+
+import { PrimitiveExample } from '@/components/primitive-example';
+
+export const config = {
+	dependencies: {
+		components: [PrimitiveExample],
+		scripts: ['./audio-visualizer.script.ts', './audio-visualizer-stream.script.ts'],
+	},
+};
+
+# AudioVisualizerController
+
+<p class="docs-lede">
+	Feeds a visualization preset the sound of an audio or video element, or of a MediaStream, while it plays.
+</p>
+
+Reach for it to show levels or a waveform next to a player. The controller measures the sound and runs the frame loop; a preset decides how it looks, and you can swap presets while it plays.
+
+## Import
+
+```ts
+import {
+	AudioVisualizerController,
+	createAudioVisualizerController,
+	bars,
+	wave,
+} from '@ecopages/radiant-ui/controllers';
+```
+
+## Try it
+
+Play the tone, then switch the preset. Bars writes a `--level` custom property on four elements that the page styles, Canvas bars and Wave draw on a canvas the preset creates in the same box, and Dots is the preset written in [Writing a preset](#writing-a-preset).
+
+<PrimitiveExample name="audio-visualizer">
+	<button type="button" data-play>
+		Play
+	</button>
+	<span role="group" aria-label="Visualization" style="display: contents">
+		<button type="button" data-preset="bars-dom" aria-pressed="true">
+			Bars
+		</button>
+		<button type="button" data-preset="bars-canvas" aria-pressed="false">
+			Canvas bars
+		</button>
+		<button type="button" data-preset="wave" aria-pressed="false">
+			Wave
+		</button>
+		<button type="button" data-preset="dots" aria-pressed="false">
+			Dots
+		</button>
+	</span>
+	<div data-visual>
+		<span></span>
+		<span></span>
+		<span></span>
+		<span></span>
+	</div>
+	<audio></audio>
+</PrimitiveExample>
+
+```html
+<div data-example="audio-visualizer">
+	<button type="button" data-play>Play</button>
+	<button type="button" data-preset="bars-dom" aria-pressed="true">Bars</button>
+	<button type="button" data-preset="bars-canvas" aria-pressed="false">Canvas bars</button>
+	<button type="button" data-preset="wave" aria-pressed="false">Wave</button>
+	<div data-visual><span></span><span></span><span></span><span></span></div>
+	<audio></audio>
+</div>
+```
+
+```ts
+import { AudioVisualizerController, bars, wave } from '@ecopages/radiant-ui/controllers';
+
+export function mount(root: HTMLElement): () => void {
+	const audio = root.querySelector('audio')!;
+	const visual = root.querySelector<HTMLElement>('[data-visual]')!;
+	audio.src = createToneUrl(); // a short generated WAV; any audio source works
+	audio.loop = true;
+
+	const visualizer = new AudioVisualizerController({
+		getMedia: () => audio,
+		getTarget: () => visual,
+		preset: bars({ mode: 'dom', selector: 'span' }),
+	});
+	visualizer.attach();
+
+	root.querySelector('[data-preset="wave"]')!.addEventListener('click', () =>
+		visualizer.setPreset(wave({ fill: true })),
+	);
+	return () => {
+		visualizer.destroy();
+		audio.pause();
+	};
+}
+```
+
+`mount` runs once for each example element on the page, and the function it returns undoes it; see [how the examples run](/docs/controllers/overview#how-the-examples-run). The page script also builds the tone and wires the play button and the other presets.
+
+The bars are plain elements the page styles with the level:
+
+```css
+[data-visual] span {
+	transform: scaleY(var(--level, 0.12));
+	transform-origin: bottom;
+}
+```
+
+## Config
+
+| Option       | Description                                                                                                                                 |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `getMedia`   | The `audio` or `video` element. Resolved on every `attach()`; `null` attaches nothing. Give this or `getStream`, never both.                |
+| `getStream`  | A `MediaStream` instead of an element; see [Visualizing a MediaStream](#visualizing-a-mediastream). Resolved on `attach()` and `refresh()`. |
+| `getTarget`  | The element the preset mounts into: the container of the bars, or the element a canvas is created in. `null` is retried on `play`.          |
+| `preset`     | An `AudioVisualizerPreset`: `bars(...)`, `wave(...)` or your own.                                                                           |
+| `getEnabled` | Optional. Checked when playback starts and on every frame; `false` keeps the preset at rest.                                                |
+| `onState`    | Optional. Called with `idle`, `running`, `reduced` or `opaque` each time `getState()` changes, never per frame.                              |
+
+Methods: `refresh()` resolves the getters and `getEnabled` again and starts or stops to match; call it when the host renders the media element late, or when what `getEnabled` returns changes while the media plays. `setPreset(preset)` rests and destroys the old preset, mounts the new one and keeps drawing if the media is playing. `resume()` asks the audio context to run from inside a click or key handler and starts the loop once it does; see [Lifecycle](#lifecycle). `getState()` is `'running'` while the loop draws, `'reduced'` while attached and the user prefers reduced motion, `'blocked'` while the media plays a source that is cross-origin without CORS (never for a stream), and `'idle'` otherwise. `refresh()` does nothing before `attach()` and after `destroy()`; `destroy()` is synchronous, unlike `MediaController.destroy()`, because a visualizer owns nothing the media needs.
+
+## Presets
+
+A preset is an object with `mount(target)`, `draw(frame)`, `rest()` and `destroy()`, and optionally `fftSize` and `smoothing`; [Writing a preset](#writing-a-preset) has the contract.
+
+| Preset                     | What it does                                                                                                                                                                                  | Options                                                                            |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `bars({ mode: 'dom' })`    | Writes each band's level as `--level` (0 to 1) on the target's bar elements and removes it on rest. With no `bands`, each element gets one of as many log-spaced bands as there are elements. | `selector` (default: direct children), `bands` (Hz ranges), `floor` (default 0.12) |
+| `bars({ mode: 'canvas' })` | Draws vertical bars on a canvas it creates in the target.                                                                                                                                     | `count` (default 24), `bands`, `floor`, `gap`, `color`, and the look options below |
+| `wave()`                   | Draws the waveform as a smooth line on a canvas it creates in the target.                                                                                                                     | `lineWidth` (default 2), `fill`, `color`, `padding` (default 0)                    |
+
+The canvas bars take these options for a look closer to a hardware meter; each has a default that keeps the plain bars:
+
+| Option       | Description                                                                                                                                                                    |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `padding`    | CSS pixels kept free around the bars inside the canvas. Default 0. `wave()` takes the same option, so a wave can run edge to edge or sit inside a margin.                      |
+| `segments`   | Splits each bar into this many LED segments, lit from the bottom as the level rises. Default: a solid bar.                                                                     |
+| `segmentGap` | CSS pixels between segments. Default 1.                                                                                                                                        |
+| `ends`       | `'square'` (default) or `'round'`: the shape of a bar, or of each segment (a pill).                                                                                            |
+| `colorEnd`   | A custom property name or CSS color. The bars fade from `color` at the bottom to this at the top. Default: one color.                                                          |
+| `peaks`      | `{ hold, fall }`: a cap above each bar that holds the highest recent level for `hold` ms (default 450), then falls `fall` bar heights per second (default 1.2). Default: none. |
+| `idle`       | `'clear'` (default) draws nothing at rest; `'floor'` draws the bars at their lowest level from the moment the preset is mounted, with no caps.                                 |
+
+The controller never draws under `prefers-reduced-motion`, so the peak caps never fall there; `idle: 'floor'` is what keeps the bars on screen, as a static row. The canvas path does no DOM work per frame: it draws on the canvas, takes the colors from custom properties once per frame and keeps the pixel ratio handling of `createCanvasSurface`.
+
+Canvas presets fill the target, so give it a height and no other content: the canvas is added after what is there. They follow the canvas's own size and the device pixel ratio (browser zoom, another screen), remove the canvas on destroy, and read `color` at draw time: a CSS custom property name such as `--primary` (the default) or any CSS color. A theme or light and dark change shows on the next frame.
+
+## Lifecycle
+
+`attach()` listens to the media element's `play`, `pause`, `ended` and `emptied`, and mounts the preset. The animation-frame loop runs only while the media plays; the host wires nothing else. If the media is already playing at `attach()`, the loop starts at once. `destroy()` ends the loop and the listeners, rests and destroys the preset. A destroyed controller can attach again.
+
+Routing is permanent. The first time an element is visualized, its source node is connected straight to the speakers of one shared `AudioContext`, for the element's whole life: an element can feed only one source node, and there is no way to give it back to the browser's own output. Each controller reads the sound through an analyser of its own, with its own `fftSize` and `smoothing`, which is disconnected when it stops or is destroyed. The context is never suspended or closed, so a player keeps playing after its visualizer is destroyed; the cost is an audio thread that keeps running once any media has been visualized.
+
+So the sound is unchanged only while a visualized element keeps same-origin or CORS-enabled sources (`crossorigin` plus CORS headers), redirects included, for its whole life. What happens otherwise:
+
+- A later source that is cross-origin without `crossorigin` plays as silence. The controller sees it by the URL and reports `opaque`; a same-origin URL that redirects to another origin cannot be seen, and is silent with no report.
+- A context that the browser suspends or interrupts (iOS Safari on lock or a call) silences the media until it runs again. Call `resume()` from a user gesture.
+
+Before an element has been routed, the controller stays `idle` and leaves the media on its native output, then tries again on the next `play`, `volumechange`, `resume()` or change of the context's state, when:
+
+- The browser has not allowed the context to start (autoplay policy before a user gesture). A `play` that follows a click or key press starts it.
+- The media is cross-origin and has no `crossorigin` attribute (`opaque` while it plays; `reduced` wins over it). A source node turns such media into silence, so it needs `crossorigin` and a server that sends CORS headers.
+- The context cannot be created, or the element already feeds a source node that other code made.
+
+If the browser suspends or interrupts the context while it draws, the loop stops and the state is `idle` until the context runs again and the media plays.
+
+`resume()` is for the host's click or key handler: it creates the context if needed and calls its `resume()` inside the gesture, then starts the loop. Chromium accepts a `play` after a gesture, but WebKit is stricter about which call counts and also leaves a context `interrupted` after a lock; the method exists for that, and has not been verified on a device.
+
+With a host, `createAudioVisualizerController(host, config)` does the same on connect and disconnect; see [bindController](/docs/controllers/bind-controller).
+
+## Visualizing a MediaStream
+
+Pass `getStream` in place of `getMedia` to visualize a microphone, a recording in progress or any other `MediaStream`. Give exactly one of the two: both is a compile error. The generated stream below is an oscillator rendered into a `MediaStreamAudioDestinationNode`, so the example needs no microphone and makes no sound. Start it, then stop it.
+
+<PrimitiveExample name="audio-visualizer-stream">
+	<button type="button" data-stream aria-pressed="false">
+		Start the stream
+	</button>
+	<div data-visual></div>
+</PrimitiveExample>
+
+```ts
+const visualizer = new AudioVisualizerController({
+	getStream: () => recorder.getStream(), // null until recording starts
+	getTarget: () => visual,
+	preset: bars({ mode: 'canvas', count: 32, segments: 8, peaks: {}, idle: 'floor' }),
+});
+visualizer.attach();
+
+startButton.addEventListener('click', () => visualizer.resume());
+```
+
+The snippet assumes a recorder, or any other stream source, with a `getStream()` method and an `onState` callback; build it with `onState: () => visualizer.refresh()` so the visualizer follows the recording, and with any other source call `refresh()` yourself when the stream changes. The stream is resolved on `attach()` and again on every `refresh()`, which is how a host that has no stream until recording starts tells the controller. While the getter returns `null` the preset stays mounted and at rest. A different stream replaces the old one: the old source is disconnected, the preset rests, and the loop starts on the new stream. The frame loop runs while the stream has a live audio track, so a stream with no live audio track, such as one whose tracks the host stopped, leaves the state `idle` and draws nothing until a stream with a live track arrives.
+
+What differs from an element:
+
+- The stream goes to the analyser only. An element's source is also connected to the speakers, to keep it audible, but a microphone played back is feedback, so the controller never connects a stream to the destination.
+- The host owns the stream. `destroy()` disconnects the controller's source and leaves every track live; stop the tracks yourself.
+- The shared `AudioContext` is the same as the element path's, never closed, and it starts only inside a user gesture: call `resume()` from the click that starts the stream.
+- There is no `crossorigin` handling and the state is never `opaque`.
+
+## Preset utilities
+
+The utilities the built-in presets use are exported for presets you write:
+
+| Export                                                                             | What it does                                                                                                                                                                                                                                    |
+| ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `logBands(count, min?, max?)`                                                      | `count` contiguous log-spaced `FrequencyBand`s (`[low, high]` in Hz), 60 Hz to 8 kHz by default.                                                                                                                                                |
+| `bandPeak(frequency, rate, fftSize, band)`                                         | The loudest bin of `frame.frequency` in a band, 0 to 1. A band narrower than a bin, or above the Nyquist frequency, still reads one bin, so a band is never empty.                                                                              |
+| `createCanvasSurface(target, onResize?)`                                           | An `aria-hidden` canvas filling the target, sized from its own box and the device pixel ratio, with `context`, `width`, `height`, `clear()`, `resolveColor(color)` and `destroy()`. `onResize` runs after each resize, which clears the canvas. |
+| `stepPeak(peak, level, now, elapsed, timing)`                                      | Moves a peak cap that rises with the level, holds for `timing.hold` ms and falls `timing.fall` bar heights per second. It writes into `peak`, so a frame allocates nothing.                                                                     |
+| `litSegments(level, segments)`, `segmentBounds(index, segments, gap, top, height)` | How many LED segments a level lights, and the top and height of one segment in a bar.                                                                                                                                                           |
+
+## Writing a preset
+
+A preset is an object, so a package can export presets and nothing else of the controller. The contract, in the order the controller calls it:
+
+| Field           | Who calls it and when                                                                                                                                                                                                                                                                |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `mount(target)` | Once the preset is in use: when the controller attaches, or on the first `play` if the target was not there yet, and from `setPreset`. It can run again on the same object after `destroy()`. Create what you need inside `target` and nothing outside it.                           |
+| `draw(frame)`   | On every animation frame while the loop runs: the media plays (or a stream is set), the context runs, motion is not reduced and `getEnabled` allows it. `frame` is `{ frequency, waveform, sampleRate, fftSize }`.                                                                   |
+| `rest()`        | When the loop stops (pause, end, a stream replaced or `null`, a suspended context), and in place of `draw()` while the user prefers reduced motion (state `reduced`) or `getEnabled` is `false`. It can run on a preset that was never mounted. Show a static idle look, or nothing. |
+| `destroy()`     | When `setPreset` replaces the preset, after its `rest()`, and when the controller is destroyed. Remove everything `mount` added; leave no listener, observer or timer.                                                                                                               |
+| `fftSize?`      | The analyser resolution, a power of two from 32 to 32768, default 1024. Read when the loop starts and when the preset is swapped while it runs. `frame.frequency` has `fftSize / 2` bins of `sampleRate / fftSize` Hz; `frame.waveform` has `fftSize` samples.                       |
+| `smoothing?`    | The analyser's smoothing of the spectrum between frames, 0 to 1, default 0.8. Read at the same moments.                                                                                                                                                                              |
+
+The bytes in `frame` run from 0 to 255 and the waveform is centered on 128. Both buffers are reused for every frame: read them in `draw()` and keep no reference.
+
+A canvas preset creates its canvas with `createCanvasSurface` in `mount`, draws on `surface.context` in `draw`, clears in `rest` and destroys the surface in `destroy`; the surface follows the box and the device pixel ratio, so the preset never reads either. A DOM preset keeps the elements the host rendered and writes to them, as `bars({ mode: 'dom' })` does with a `--level` custom property that the page's CSS turns into a transform; it creates nothing per frame and removes what it wrote in `rest` and `destroy`.
+
+This preset draws one dot per band, and is the Dots button in the first example:
+
+```ts
+import {
+	bandPeak,
+	createCanvasSurface,
+	logBands,
+	type AudioFrame,
+	type AudioVisualizerPreset,
+	type CanvasSurface,
+} from '@ecopages/radiant-ui/controllers';
+
+export function dots(count = 12): AudioVisualizerPreset {
+	const bands = logBands(count);
+	let surface: CanvasSurface | null = null;
+	return {
+		mount: (target) => {
+			surface = createCanvasSurface(target);
+		},
+		draw(frame: AudioFrame) {
+			const canvas = surface as CanvasSurface;
+			const { context, width, height } = canvas;
+			canvas.clear();
+			context.fillStyle = canvas.resolveColor('--primary');
+			bands.forEach((band, index) => {
+				const level = bandPeak(frame.frequency, frame.sampleRate, frame.fftSize, band);
+				const radius = 2 + level * (height / 2 - 2);
+				context.beginPath();
+				context.arc(((index + 0.5) * width) / count, height / 2, radius, 0, Math.PI * 2);
+				context.fill();
+			});
+		},
+		rest: () => surface?.clear(),
+		destroy() {
+			surface?.destroy();
+			surface = null;
+		},
+	};
+}
+```
+
+`rest()` can run on a preset that was never mounted, which is why it and `destroy()` check the surface and `draw()` does not.
+
+Rules for a preset that stays smooth:
+
+- **Theme through custom properties.** Take colors with `surface.resolveColor('--primary')` (or any token), once per frame, never as a hard-coded color: a theme or light and dark change then shows on the next frame. A property that is not defined falls back to the canvas's text color.
+- **Reduced motion.** The controller reports `reduced` and never calls `draw()`; it calls `rest()`. Make `rest()` a static look you are happy to leave on screen, as the `idle: 'floor'` option of the canvas bars does.
+- **Allocate nothing per frame.** Build arrays and objects in the factory or in `mount`, and reuse them in `draw()`, as `stepPeak` writes into a peak object.
+- **Read no layout in `draw()`.** Take the size from `surface.width` and `surface.height`, never from `getBoundingClientRect()` or `clientWidth`, and read a color once per frame at most.
+- **Clean up completely.** `destroy()` undoes `mount`, and `setPreset` may mount the same object again.
+
+Swap presets while the media plays with `visualizer.setPreset(preset)`: the old preset is rested and destroyed, the new one is mounted and draws from the next frame.
+
+To share presets, publish a package that exports a factory returning an `AudioVisualizerPreset` (`export function spectrum(options): AudioVisualizerPreset`), imports only from `@ecopages/radiant-ui/controllers`, and lists `@ecopages/radiant-ui` as a peer dependency. The naming convention is `radiant-visualizer-<name>`. There is no preset registry and no lookup by name: the host imports the factory and passes the result to `preset` or `setPreset`.
+
+Not stable yet: `AudioFrame` may gain fields (a timestamp, for example), `mount` may receive options, and the signatures of `stepPeak`, `segmentBounds` and the `onResize` argument of `createCanvasSurface` may change in a minor release. A preset that uses only the fields and the lifecycle above is the safest to write.
+
+## Accessibility
+
+The visualization is decorative. The controller and the presets set no ARIA, and a canvas they create is `aria-hidden="true"`. Do not put text in an element a canvas preset mounts into: the canvas is hidden from assistive technology, and the text would not be. What you provide: the player controls and their labels, and any live region or text that announces playback state. With `prefers-reduced-motion: reduce` the controller starts no loop and no graph, and the preset stays at rest. It follows a change of the preference while attached.
+
+## Protected hooks
+
+None. Change behavior through the config callbacks and by writing a preset.
