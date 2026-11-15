@@ -145,9 +145,11 @@
 		},
 		"dialog": {
 			"direct": [
+				"button",
 				"primitives"
 			],
 			"styles": [
+				"@ecopages/radiant-ui/button/styles.css",
 				"@ecopages/radiant-ui/primitives.css",
 				"@ecopages/radiant-ui/dialog/styles.css"
 			]
