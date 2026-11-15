@@ -101,3 +101,11 @@ export {
 	type RovingNavResult,
 	type RovingOrientation,
 } from './controllers/roving-tabindex';
+export {
+	MediaController,
+	createMediaController,
+	type MediaControllerConfig,
+	type MediaLoadOptions,
+	type MediaState,
+	type MediaStatus,
+} from './controllers/media-controller';

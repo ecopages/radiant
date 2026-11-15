@@ -57,3 +57,10 @@ export {
 	type SwipeDirection,
 	type SwipeOptions,
 } from './controllers/swipe-direction';
+export {
+	bufferedEnd,
+	clampSeek,
+	formatMediaTime,
+	type FormatMediaTimeOptions,
+	type TimeRangesLike,
+} from './controllers/media-time';

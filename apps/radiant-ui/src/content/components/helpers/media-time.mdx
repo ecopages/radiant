@@ -1,0 +1,65 @@
+---
+title: Media time
+description: 'Format a position, clamp a seek target and read the buffered end of a media element.'
+order: 11
+---
+
+import { HelperResults } from '@/components/primitive-example/helper-results';
+import { formatMediaTime, clampSeek, bufferedEnd } from '@ecopages/radiant-ui/helpers';
+
+export const ranges = { length: 2, start: (i) => [0, 30][i], end: (i) => [10, 50][i] };
+
+# Media time
+
+<p class="docs-lede">Format a position, clamp a seek target and read the buffered end of a media element.</p>
+
+Reach for it for the time labels and seek bar of a player; [MediaController](/docs/controllers/media) uses the same arithmetic. The helpers are pure: no DOM at import time or in the call path, so they run on the server and in tests. Each result below is computed when the page is built, by running the call shown.
+
+## Import
+
+```ts
+import { formatMediaTime, clampSeek, bufferedEnd } from '@ecopages/radiant-ui/helpers';
+```
+
+## Format
+
+`formatMediaTime(seconds, { hours })` returns `m:ss`, or `h:mm:ss` when hours are shown. `hours` is `'auto'` (default, from one hour on), `true` or `false`. `NaN`, `Infinity` and negative values, which a media element reports before metadata and for a live stream, format as zero. Pass `hours: duration >= 3600` to a position and its duration so they keep the same width.
+
+<HelperResults
+	rows={[
+		{ code: 'formatMediaTime(75)', result: formatMediaTime(75) },
+		{ code: 'formatMediaTime(3725)', result: formatMediaTime(3725) },
+		{ code: 'formatMediaTime(75, { hours: true })', result: formatMediaTime(75, { hours: true }) },
+		{ code: 'formatMediaTime(3725, { hours: false })', result: formatMediaTime(3725, { hours: false }) },
+		{ code: 'formatMediaTime(NaN)', result: formatMediaTime(NaN) },
+		{ code: 'formatMediaTime(Infinity)', result: formatMediaTime(Infinity) },
+		{ code: 'formatMediaTime(-5)', result: formatMediaTime(-5) },
+	]}
+/>
+
+## Clamp a seek
+
+`clampSeek(position, duration)` clamps to `[0, duration]`. A duration that is not finite clamps at 0 only. The result is always finite, because `currentTime` throws for a non-finite value.
+
+<HelperResults
+	rows={[
+		{ code: 'clampSeek(-3, 60)', result: clampSeek(-3, 60) },
+		{ code: 'clampSeek(90, 60)', result: clampSeek(90, 60) },
+		{ code: 'clampSeek(90, NaN)', result: clampSeek(90, NaN) },
+		{ code: 'clampSeek(90, Infinity)', result: clampSeek(90, Infinity) },
+		{ code: 'clampSeek(NaN, 60)', result: clampSeek(NaN, 60) },
+	]}
+/>
+
+## Buffered end
+
+`bufferedEnd(ranges, position)` takes anything shaped like `TimeRanges`, such as `media.buffered`, and returns the end of the range that contains the position, or 0. With ranges at 0 to 10 and 30 to 50:
+
+<HelperResults
+	rows={[
+		{ code: 'bufferedEnd(ranges, 5)', result: bufferedEnd(ranges, 5) },
+		{ code: 'bufferedEnd(ranges, 10)', result: bufferedEnd(ranges, 10) },
+		{ code: 'bufferedEnd(ranges, 20)', result: bufferedEnd(ranges, 20) },
+		{ code: 'bufferedEnd(ranges, 35)', result: bufferedEnd(ranges, 35) },
+	]}
+/>
