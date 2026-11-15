@@ -15,6 +15,33 @@ export {
 	setCollectionActive,
 } from './controllers/collection-navigation';
 export {
+	AudioVisualizerController,
+	createAudioVisualizerController,
+	type AudioFrame,
+	type AudioVisualizerControllerConfig,
+	type AudioVisualizerPreset,
+	type AudioVisualizerSource,
+	type AudioVisualizerState,
+} from './controllers/audio-visualizer-controller';
+export {
+	bars,
+	type BarsCanvasOptions,
+	type BarsDomOptions,
+	type BarsOptions,
+} from './controllers/audio-visualizer-bars';
+export {
+	bandPeak,
+	litSegments,
+	logBands,
+	segmentBounds,
+	stepPeak,
+	type FrequencyBand,
+	type Peak,
+	type PeakTiming,
+} from './controllers/audio-visualizer-bands';
+export { createCanvasSurface, type CanvasSurface } from './controllers/audio-visualizer-canvas';
+export { wave, type WaveOptions } from './controllers/audio-visualizer-wave';
+export {
 	DismissController,
 	createDismissController,
 	type DismissControllerConfig,

@@ -77,6 +77,31 @@ describe('controller page examples', () => {
 		await expect.poll(() => status(root).textContent).not.toBe(before);
 	});
 
+	test('AudioVisualizerController writes levels while the tone plays and removes them on pause', async () => {
+		const root = await mountExample('audio-visualizer');
+		const bar = root.querySelector<HTMLElement>('[data-visual] span')!;
+		const play = root.querySelector<HTMLElement>('[data-play]')!;
+
+		await userEvent.click(play);
+		await expect.poll(() => bar.style.getPropertyValue('--level')).not.toBe('');
+
+		await userEvent.click(play);
+		await expect.poll(() => bar.style.getPropertyValue('--level')).toBe('');
+	});
+
+	test('AudioVisualizerController swaps to a canvas preset sized to its box', async () => {
+		const root = await mountExample('audio-visualizer');
+		const visual = root.querySelector<HTMLElement>('[data-visual]')!;
+
+		root.querySelector<HTMLElement>('[data-preset="wave"]')!.click();
+		const canvas = visual.querySelector('canvas')!;
+		expect(canvas.getAttribute('aria-hidden')).toBe('true');
+		expect(canvas.width).toBe(Math.round(canvas.getBoundingClientRect().width * window.devicePixelRatio));
+
+		root.querySelector<HTMLElement>('[data-preset="bars-dom"]')!.click();
+		expect(visual.querySelector('canvas')).toBeNull();
+	});
+
 	test('DismissController hides the panel on an outside press and Escape, not on an inside press', async () => {
 		const root = await mountExample('dismiss');
 		const panel = root.querySelector<HTMLElement>('[data-box]')!;

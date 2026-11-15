@@ -47,12 +47,50 @@ export default defineConfig({
 				test: {
 					name: 'unit',
 					include: ['src/**/*.test.{ts,tsx}'],
-					exclude: ['src/**/*.ssr.test.{ts,tsx}', 'src/built-package/**'],
+					exclude: [
+						'src/**/*.ssr.test.{ts,tsx}',
+						'src/**/*.policy.test.{ts,tsx}',
+						'src/**/*.media.test.{ts,tsx}',
+						'src/built-package/**',
+					],
 					setupFiles: ['.storybook/vitest.unit.setup.ts'],
 					browser: {
 						enabled: true,
 						headless: true,
 						provider: playwright({}),
+						instances: [{ browser: 'chromium' }],
+					},
+				},
+			},
+			{
+				extends: true,
+				test: {
+					name: 'autoplay-policy',
+					include: ['src/**/*.policy.test.{ts,tsx}'],
+					browser: {
+						enabled: true,
+						headless: true,
+						provider: playwright({
+							launchOptions: { args: ['--autoplay-policy=document-user-activation-required'] },
+						}),
+						instances: [{ browser: 'chromium' }],
+					},
+				},
+			},
+			{
+				extends: true,
+				test: {
+					name: 'media',
+					include: ['src/**/*.media.test.{ts,tsx}'],
+					setupFiles: ['.storybook/vitest.unit.setup.ts'],
+					browser: {
+						enabled: true,
+						headless: true,
+						provider: playwright({
+							launchOptions: {
+								args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'],
+							},
+						}),
 						instances: [{ browser: 'chromium' }],
 					},
 				},
