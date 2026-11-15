@@ -60,7 +60,7 @@ describe('AudioVisualizerController with a MediaStream', () => {
 
 		await expect.poll(() => controller.getState()).toBe('running');
 		await expect.poll(() => preset.loudest, { timeout: 8000 }).toBeGreaterThan(20);
-		expect(preset.calls.filter((call) => call === 'draw').length).toBeGreaterThan(3);
+		await expect.poll(() => preset.calls.filter((call) => call === 'draw').length).toBeGreaterThan(3);
 		controller.destroy();
 	});
 
