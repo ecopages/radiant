@@ -17,7 +17,7 @@
 	}
 
 	.rui-button > svg {
-		@apply pointer-events-none;
+		@apply pointer-events-none shrink-0;
 	}
 
 	.rui-button:focus-visible {

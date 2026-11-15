@@ -1,12 +1,22 @@
 @reference '../../../styles/radiant-ui.css';
 
 rui-toolbar {
-	@apply block;
+	@apply block max-w-full min-w-0;
 }
 
 @layer components {
 	.rui-toolbar {
-		@apply inline-flex items-center gap-1 rounded-container border border-border bg-surface p-1;
+		@apply inline-flex max-w-full items-center gap-1 overflow-x-auto overflow-y-hidden rounded-container border border-border bg-surface p-1;
+		overscroll-behavior-x: contain;
+		scrollbar-width: none;
+	}
+
+	.rui-toolbar::-webkit-scrollbar {
+		display: none;
+	}
+
+	.rui-toolbar > * {
+		@apply shrink-0;
 	}
 
 	.rui-toolbar .rui-button--ghost[aria-pressed='true'],
