@@ -1,5 +1,27 @@
 # @ecopages/radiant-ui
 
+## 0.4.1
+
+### Patch Changes
+
+- [#706](https://github.com/ecopages/radiant/pull/706) [`f84a117`](https://github.com/ecopages/radiant/commit/f84a117a63433195b8cadf84931763bdc54caf8d) Thanks [@andeeplus](https://github.com/andeeplus)! - Follow-ups to the reusable controllers.
+
+    `SwipeController` takes `minVelocity` and `dominance`, so a short fast flick counts and a diagonal drag does not, and `PointerDragController` reports `elapsedMs`. `FocusTrapController` takes `getEnabled` and `getReturnFocus` and has `focusFirst()` and `focusLast()`. `SortableController` has an opt-in `preview` that lifts the item out of its container to follow the pointer, with a placeholder that marks where it will land. `ScrollLockController` takes a `getTarget`, so an app shell with an inner scroll container can lock it.
+
+    Select, combobox, date-field and date-range-picker gain a `portal` option, off by default, and every portal-capable popup (those four, `rui-popover` and `rui-hover-card`) gains `portalContainer`, a selector, element or function resolved when the popup opens.
+
+    A portaled popup inside a popover no longer closes it: a node moved by `PortalController` counts as inside the surface it came from.
+
+- [#699](https://github.com/ecopages/radiant/pull/699) [`2067d66`](https://github.com/ecopages/radiant/commit/2067d66fbbd499fd01df451754908ba9b63f8551) Thanks [@andeeplus](https://github.com/andeeplus)! - `parseNumber` now returns `null` for text that is not a number, such as `abc` or `12abc`, instead of dropping the stray characters and returning `0` or `12`. It ignores only the group separator, currency, percent sign, unit and spaces the formatter itself writes, and reads the locale's own minus sign, so formatted values still parse back. `rui-number-field` keeps its committed value when the typed text is not a number.
+
+- [#697](https://github.com/ecopages/radiant/pull/697) [`a7be74d`](https://github.com/ecopages/radiant/commit/a7be74d61238c256db4b740ddb75141d5ab1704a) Thanks [@andeeplus](https://github.com/andeeplus)! - Add the `@ecopages/radiant-ui/controllers` and `@ecopages/radiant-ui/helpers` entries, the reusable logic Radiant UI components are built from.
+
+    Controllers attach to a host and tear down with it, each with a `createX(host, config)` factory: event listeners, mutation and resize observation, dismissal, popover, portal, focus trap, scroll lock, roving tabindex, swipe, pointer drag, sortable (with drag between containers), and menu tree controllers. Main controllers expose `protected` hooks at their decision points. `SwipeController` is built on `PointerDragController` and reports a release outside the element.
+
+    Helpers are the pure logic behind them: date, selection and segment logic, masks, number formatting, parsing and numeric ranges, text filtering, `cycleValue`, `uniqueId` and `isCssSafeId`, ordering and floating-position decisions.
+
+    `rui-tag-group` gains an opt-in `reorderable` attribute and a `rui-reorder` event; Space lifts a tag instead of selecting it. The carousel flips its swipe direction in right-to-left layouts, `rui-dialog` releases its scroll lock and returns focus when it disconnects while open, and pointer drags ignore a non-primary button.
+
 ## 0.4.0
 
 ### Minor Changes
