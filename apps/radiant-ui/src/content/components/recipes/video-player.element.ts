@@ -1,11 +1,11 @@
 import { RadiantElement, bindTo, customElement, onEvent, query, state } from '@ecopages/radiant';
-import { createMediaController, type MediaState } from '@ecopages/radiant-ui/controllers';
+import { createCaptionsController, createMediaController, type MediaState } from '@ecopages/radiant-ui/controllers';
 import '@ecopages/radiant-ui/slider';
 import type { RuiSliderChangeDetail, RuiSliderElement } from '@ecopages/radiant-ui/slider';
 import { cycleValue, formatMediaTime } from '@ecopages/radiant-ui/helpers';
 import {
 	Announcer,
-	Captions,
+	CAPTIONS,
 	HIDE_CONTROLS_MS,
 	RATES,
 	bufferedSegments,
@@ -22,11 +22,11 @@ import { fetchSource, releaseSource } from './video-player.loader';
  * @remarks
  * What the page shows that is a plain copy of the media state (the stage state, whether the controls are hidden, the
  * pressed buttons, the clock, the status, the speed, the error panel) is a `@state` field that `@bindTo` writes onto
- * the markup; the buffered bar, the slider values and the caption track are written here because they are not a copy
+ * the markup; the buffered bar and the slider values are written here because they are not a copy
  * of one value.
  *
  * `createMediaController(this, ...)` takes the element as its host and attaches and destroys with it, so the element
- * listens to no media event. The timer, the thumb observer and the caption observer are stopped by a callback
+ * listens to no media event. The timer and the thumb observer are stopped by a callback
  * registered once in the constructor, because one registered in `onConnected()` would be added again on every
  * reconnect, and `onConnected()` starts the load again when the element is moved. Each pointer listener is
  * delegated on the host, and `pointerleave`, which does not bubble, is delegated in the capture phase.
@@ -98,8 +98,16 @@ export class VideoPlayerElement extends RadiantElement {
 	private bufferedKey = '';
 	private valueText = '';
 	private readonly announcer = new Announcer();
-	private readonly captionCues = new Captions();
 	private readonly valueTextObserver = new MutationObserver(() => this.keepValueText());
+
+	private readonly captions = createCaptionsController(this, {
+		getMedia: () => this.video,
+		getAvoid: () => this.controls,
+		tracks: [{ language: 'en', label: 'English', cues: CAPTIONS }],
+		onState: (state) => {
+			this.captionsOn = state.enabled;
+		},
+	});
 
 	private readonly media = createMediaController(this, {
 		getMedia: () => this.video,
@@ -115,16 +123,13 @@ export class VideoPlayerElement extends RadiantElement {
 		this.registerCleanupCallback(() => {
 			clearTimeout(this.hideTimer);
 			this.valueTextObserver.disconnect();
-			this.captionCues.stop();
 		});
 	}
 
 	override onConnected(): void {
 		this.valueTextObserver.observe(this.seekThumb, { attributes: true, attributeFilter: ['aria-valuetext'] });
 		this.fullscreen.hidden = !document.fullscreenEnabled;
-		this.video.textTracks[0].mode = 'hidden';
-		this.captionsOn = false;
-		this.captionCues.start(this.stage, this.controls);
+		this.captions.disable();
 		this.announcer.reset();
 		void this.media.load(this.video.dataset.src!);
 	}
@@ -173,7 +178,6 @@ export class VideoPlayerElement extends RadiantElement {
 		this.volume.value = [state.muted ? 0 : state.volume];
 		this.rate = state.rate;
 		this.seekable = state.seekable;
-		if (state.seekable) this.captionCues.add(this.video.textTracks[0]);
 		this.failed = shown === 'error';
 		if (message !== '') this.status = message;
 		this.renderProgress(state);
@@ -195,9 +199,7 @@ export class VideoPlayerElement extends RadiantElement {
 	}
 
 	private toggleCaptions(): void {
-		const track = this.video.textTracks[0];
-		track.mode = track.mode === 'showing' ? 'hidden' : 'showing';
-		this.captionsOn = track.mode === 'showing';
+		this.captions.toggle();
 		this.status = this.captionsOn ? 'Captions on' : 'Captions off';
 	}
 

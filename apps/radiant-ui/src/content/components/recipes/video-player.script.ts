@@ -1,11 +1,11 @@
 import '@ecopages/radiant-ui/slider';
 import type { RuiSliderChangeDetail, RuiSliderElement } from '@ecopages/radiant-ui/slider';
-import { MediaController, type MediaState } from '@ecopages/radiant-ui/controllers';
+import { CaptionsController, MediaController, type MediaState } from '@ecopages/radiant-ui/controllers';
 import { cycleValue, formatMediaTime } from '@ecopages/radiant-ui/helpers';
 import { mountExample } from '../../../components/primitive-example/mount-example';
 import {
 	Announcer,
-	Captions,
+	CAPTIONS,
 	HIDE_CONTROLS_MS,
 	RATES,
 	bufferedSegments,
@@ -35,14 +35,19 @@ export function mount(root: HTMLElement): () => void {
 	const error = part('[data-error]');
 	const listeners = new AbortController();
 	const { signal } = listeners;
-	const track = video.textTracks[0];
 
 	let hideTimer: ReturnType<typeof setTimeout> | undefined;
 	let pointer = 'mouse';
 	let bufferedKey = '';
 	let valueText = '';
 	const announcer = new Announcer();
-	const captionCues = new Captions();
+
+	const captionsController = new CaptionsController({
+		getMedia: () => video,
+		getAvoid: () => controls,
+		tracks: [{ language: 'en', label: 'English', cues: CAPTIONS }],
+		onState: (state) => captions.setAttribute('aria-pressed', String(state.enabled)),
+	});
 
 	const media = new MediaController({
 		getMedia: () => video,
@@ -97,7 +102,6 @@ export function mount(root: HTMLElement): () => void {
 		rate.textContent = `${state.rate}x`;
 		rate.setAttribute('aria-label', `Speed ${state.rate}x`);
 		seek.disabled = !state.seekable;
-		if (state.seekable) captionCues.add(track);
 		error.hidden = shown !== 'error';
 		if (message !== '') say(message);
 		renderProgress(state);
@@ -123,9 +127,8 @@ export function mount(root: HTMLElement): () => void {
 	}
 
 	function toggleCaptions(): void {
-		track.mode = track.mode === 'showing' ? 'hidden' : 'showing';
-		captions.setAttribute('aria-pressed', String(track.mode === 'showing'));
-		say(track.mode === 'showing' ? 'Captions on' : 'Captions off');
+		captionsController.toggle();
+		say(captionsController.getState().enabled ? 'Captions on' : 'Captions off');
 	}
 
 	/**
@@ -254,16 +257,14 @@ export function mount(root: HTMLElement): () => void {
 	const valueTextObserver = new MutationObserver(keepValueText);
 	valueTextObserver.observe(seekThumb, { attributes: true, attributeFilter: ['aria-valuetext'] });
 	fullscreen.hidden = !document.fullscreenEnabled;
-	track.mode = 'hidden';
-	captions.setAttribute('aria-pressed', 'false');
-	captionCues.start(stage, controls);
+	captionsController.attach();
 	media.attach();
 	void media.load(video.dataset.src!);
 	return () => {
 		listeners.abort();
 		clearTimeout(hideTimer);
 		valueTextObserver.disconnect();
-		captionCues.stop();
+		captionsController.destroy();
 		media.destroy();
 	};
 }

@@ -16,67 +16,6 @@ export const CAPTIONS: readonly { start: number; end: number; text: string }[] =
 	{ start: 9.8, end: 11.9, text: 'Scene five: and it settles' },
 ];
 
-/** Where the bottom of a caption sits, as a percentage of the video height, until the controls have been measured. */
-const DEFAULT_CAPTION_LINE = 64;
-
-/**
- * The captions of the clip as cues on a captions track, kept above the controls.
- *
- * @remarks
- * The usual source of a track is a `.vtt` file named by the `track` element's `src`. The ecopages dev and preview
- * servers answer only a fixed list of file extensions, and `.vtt` is not on it, so the track would never load here.
- * The cues are data and `addCue` works the same in every browser. A track's `cues` are `null` while its mode is
- * `disabled`, so set it to `hidden` first. Loading a source empties the track again, so call `add()` once the
- * metadata of each source is known (the first state that is `seekable`), not at mount; it adds nothing when the cues
- * are there.
- *
- * A browser puts a caption at the bottom of the video, which is where the controls are, and the controls grow to two
- * rows on a narrow stage. The cues are therefore placed by line, as a percentage of the stage height, from the
- * measured top of the controls, and placed again whenever the stage or the controls change size.
- */
-export class Captions {
-	private line = DEFAULT_CAPTION_LINE;
-	private cues: VTTCue[] = [];
-	private stage!: HTMLElement;
-	private controls!: HTMLElement;
-	private readonly observer = new ResizeObserver(() => this.place());
-
-	start(stage: HTMLElement, controls: HTMLElement): void {
-		this.stage = stage;
-		this.controls = controls;
-		this.observer.observe(stage);
-		this.observer.observe(controls);
-	}
-
-	stop(): void {
-		this.observer.disconnect();
-	}
-
-	add(track: TextTrack): void {
-		if (track.cues!.length) return;
-		this.cues = CAPTIONS.map(({ start, end, text }) => {
-			const cue = new VTTCue(start, end, text);
-			cue.snapToLines = false;
-			cue.lineAlign = 'end';
-			cue.line = this.line;
-			return cue;
-		});
-		for (const cue of this.cues) track.addCue(cue);
-	}
-
-	/**
-	 * @remarks
-	 * A stage that is not displayed (a closed tab) has no height to measure; the observer reports again when it is
-	 * shown.
-	 */
-	private place(): void {
-		const height = this.stage.clientHeight;
-		if (height === 0) return;
-		this.line = (100 * (height - this.controls.offsetHeight)) / height;
-		for (const cue of this.cues) cue.line = this.line;
-	}
-}
-
 /**
  * The playback rates the speed button cycles through, as the strings `cycleValue` works on, and the value the
  * button shows with an `x`.

@@ -13,6 +13,12 @@ export interface VideoPlayerForm {
 	remove: (root: HTMLElement) => Promise<void>;
 }
 
+/** The shown track when there is one: a form that is moved and mounted again leaves its released track at index 0. */
+const liveTrack = (root: HTMLElement): TextTrack => {
+	const tracks = Array.from(root.querySelector<HTMLVideoElement>('[data-video]')!.textTracks);
+	return tracks.find((track) => track.mode === 'showing') ?? tracks.at(-1)!;
+};
+
 const hook = <T extends HTMLElement = HTMLElement>(root: HTMLElement, selector: string) =>
 	root.querySelector<T>(selector)!;
 const video = (root: HTMLElement) => hook<HTMLVideoElement>(root, '[data-video]');
@@ -203,12 +209,13 @@ export function describeVideoPlayerForm(name: string, unframed: VideoPlayerForm)
 		});
 
 		test('the captions sit above the controls, also when they wrap to two rows on a narrow screen', async () => {
-			const cueLine = (root: HTMLElement) => Number(video(root).textTracks[0].cues![0].line);
+			const cueLine = (root: HTMLElement) => Number(video(root).textTracks[0].cues?.[0]?.line);
 			const aboveControls = (root: HTMLElement) =>
 				(100 * hook(root, '[data-controls]').offsetTop) / stage(root).clientHeight;
 			try {
 				document.body.style.width = '360px';
 				const narrow = await ready(await form.mount());
+				await userEvent.click(hook(narrow, '[data-captions]'));
 				await expect.poll(() => cueLine(narrow)).toBeCloseTo(aboveControls(narrow), 0);
 				expect(cueLine(narrow)).toBeLessThan(60);
 				expect(video(narrow).textTracks[0].cues![0].lineAlign).toBe('end');
@@ -382,7 +389,8 @@ export function describeVideoPlayerForm(name: string, unframed: VideoPlayerForm)
 			const track = video(root).textTracks[0];
 			const button = hook(root, '[data-captions]');
 			expect(track.kind).toBe('captions');
-			expect(track.mode).toBe('hidden');
+			expect(track.mode).toBe('disabled');
+			expect(video(root).querySelector('track')).toBeNull();
 
 			await userEvent.click(button);
 			expect(track.mode).toBe('showing');
@@ -390,8 +398,10 @@ export function describeVideoPlayerForm(name: string, unframed: VideoPlayerForm)
 			expect(status(root)).toBe('Captions on');
 			stage(root).focus();
 			await userEvent.keyboard('c');
-			expect(track.mode).toBe('hidden');
+			expect(track.mode).toBe('disabled');
 			expect(button.getAttribute('aria-pressed')).toBe('false');
+			expect(status(root)).toBe('Captions off');
+			await userEvent.click(button);
 			expect(track.cues).toHaveLength(5);
 			expect(track.cues![0].text).toBe('Scene one: a slow start');
 		});
@@ -400,16 +410,16 @@ export function describeVideoPlayerForm(name: string, unframed: VideoPlayerForm)
 			const root = await ready(await form.mount());
 			const button = hook(root, '[data-captions]');
 			await userEvent.click(button);
-			expect(video(root).textTracks[0].mode).toBe('showing');
+			expect(liveTrack(root).mode).toBe('showing');
 			expect(button.getAttribute('aria-pressed')).toBe('true');
 
 			await form.relocate(root);
 			await ready(root);
 
-			expect(video(root).textTracks[0].mode).toBe('hidden');
+			expect(liveTrack(root).mode).toBe('disabled');
 			await expect.poll(() => button.getAttribute('aria-pressed')).toBe('false');
 			await userEvent.click(button);
-			expect(video(root).textTracks[0].mode).toBe('showing');
+			expect(liveTrack(root).mode).toBe('showing');
 			await expect.poll(() => button.getAttribute('aria-pressed')).toBe('true');
 		});
 
