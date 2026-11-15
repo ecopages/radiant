@@ -1,12 +1,9 @@
-import rehypePrettyCode, { type Options as RehypePrettyCodeOptions } from 'rehype-pretty-code';
 import remarkGfm from 'remark-gfm';
-import { transformerCopyButton } from '@rehype-pretty/transformers';
 import type { PluggableList } from 'unified';
 import { withContentMdxPlugins } from '@ecopages/content-processor/mdx';
 import { rehypeHeadingIds } from './rehype-heading-ids';
 import { remarkUnwrapJsxText } from './remark-unwrap-jsx-text';
-import { rehypePrettyCopyCompatibility } from './rehype-pretty-copy-compatibility';
-import { DOCS_SHIKI_THEMES } from './shiki-themes';
+import { rehypePierreCode } from './rehype-pierre-code';
 
 export type DocsMdxPluginsOptions = {
 	remarkPlugins?: PluggableList;
@@ -17,25 +14,11 @@ export type DocsMdxPluginsOptions = {
  * Docs-specific MDX plugins layered on top of content-collection defaults.
  *
  * @remarks
- * Order matters: heading ids are assigned first, then rehype-pretty-code, then the copy compatibility pass.
+ * Order matters: heading ids are assigned first, then code blocks are highlighted.
  */
 export function createDocsMdxPlugins(options: DocsMdxPluginsOptions = {}) {
-	const prettyCodePlugin: [typeof rehypePrettyCode, RehypePrettyCodeOptions] = [
-		rehypePrettyCode,
-		{
-			theme: DOCS_SHIKI_THEMES,
-			defaultLang: { block: 'text' },
-			transformers: [transformerCopyButton()],
-		},
-	];
-
 	return withContentMdxPlugins({
 		remarkPlugins: [remarkGfm, remarkUnwrapJsxText, ...(options.remarkPlugins ?? [])],
-		rehypePlugins: [
-			rehypeHeadingIds,
-			prettyCodePlugin,
-			rehypePrettyCopyCompatibility,
-			...(options.rehypePlugins ?? []),
-		],
+		rehypePlugins: [rehypeHeadingIds, rehypePierreCode, ...(options.rehypePlugins ?? [])],
 	});
 }

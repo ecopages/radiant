@@ -10,6 +10,29 @@ radiant-code-tabs .rui-tabs__list {
 	@apply min-w-0 flex-nowrap overflow-x-auto;
 }
 
+/**
+ * A tab strip wider than its block scrolls, so a fade marks the edge that hides tabs. The fade belongs to the scroll
+ * position: it is on while there is more to scroll to and off at the end, and a strip that fits never gets it
+ * because its scroll timeline is inactive.
+ */
+@supports (animation-timeline: scroll()) {
+	radiant-code-tabs .rui-tabs__list {
+		animation: code-tabs-edge linear both;
+		animation-timeline: scroll(self inline);
+	}
+
+	@keyframes code-tabs-edge {
+		0%,
+		98% {
+			mask-image: linear-gradient(to right, #000 calc(100% - 2.5rem), transparent);
+		}
+
+		100% {
+			mask-image: none;
+		}
+	}
+}
+
 radiant-code-tabs .rui-tabs__tab {
 	@apply shrink-0 text-xs;
 }
@@ -20,6 +43,14 @@ radiant-code-tabs .rui-tabs__tab {
 
 .code-tabs__tab-text {
 	@apply truncate;
+}
+
+.code-tabs__tab-meta {
+	@apply shrink-0 text-[0.6875rem] tabular-nums opacity-60;
+}
+
+.code-tabs__tab-meta-text {
+	@apply sr-only;
 }
 
 .code-tabs__tab-icon {
@@ -58,10 +89,10 @@ radiant-code-tabs .rui-tabs__panel {
 	@apply block w-full max-w-full min-w-0 text-[13px];
 
 	&:has([data-rehype-pretty-code-figure]) {
-		@apply flex min-h-0 w-full max-w-full flex-col overflow-y-hidden p-0;
+		@apply flex min-h-0 w-full max-w-full flex-col overflow-y-hidden p-0 text-base;
 
 		[data-rehype-pretty-code-figure] {
-			@apply my-0 flex min-h-0 w-full max-w-full flex-1 flex-col overflow-y-hidden rounded-none;
+			@apply my-0 flex min-h-0 w-full max-w-full flex-1 flex-col overflow-y-hidden rounded-none border-0 shadow-none;
 
 			& > pre {
 				@apply min-h-0 w-full max-w-full flex-1 overflow-x-auto whitespace-pre rounded-none;
@@ -71,7 +102,7 @@ radiant-code-tabs .rui-tabs__panel {
 }
 
 .code-tabs__copy {
-	@apply absolute right-1.5 top-1.5 z-10 inline-flex h-8 items-center justify-center rounded-sm border border-border bg-background px-2 text-sm text-on-background opacity-0 transition-opacity;
+	@apply absolute right-1.5 top-1.5 z-10 rounded-sm border border-border bg-background p-0 text-on-background opacity-0 transition-opacity;
 
 	&:hover,
 	&:focus-visible {

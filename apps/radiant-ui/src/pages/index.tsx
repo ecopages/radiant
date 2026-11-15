@@ -1,6 +1,5 @@
 import { eco } from '@ecopages/core';
 import type { JsxRenderable } from '@ecopages/jsx';
-import { codeToHtml } from 'shiki';
 import { RuiButton } from '@ecopages/radiant-ui/button';
 import { RuiChip } from '@ecopages/radiant-ui/chip';
 import {
@@ -18,21 +17,14 @@ import { previewExampleCode } from '@/data/home-code-examples';
 import { BaseLayout } from '@/layouts/base-layout';
 import { componentNavEntries, firstComponentHref, groupedComponentNavEntries } from '@/lib/component-nav';
 import { DOCS_DEFAULT_THEME_IMPORT } from '@/lib/docs-theme-preview';
+import { highlightToHtml } from '@/lib/pierre-highlight';
 
 const previewStylesExample = `@import '${DOCS_DEFAULT_THEME_IMPORT}';
 @import '@ecopages/radiant-ui/styles.css';`;
 
-const previewExample = await codeToHtml(previewExampleCode, {
-	lang: 'tsx',
-	themes: { light: 'light-plus', dark: 'dark-plus' },
-	defaultColor: false,
-});
+const previewExample = highlightToHtml(previewExampleCode, 'tsx');
 
-const previewStyles = await codeToHtml(previewStylesExample, {
-	lang: 'css',
-	themes: { light: 'light-plus', dark: 'dark-plus' },
-	defaultColor: false,
-});
+const previewStyles = highlightToHtml(previewStylesExample, 'css');
 
 const componentCount = componentNavEntries.length;
 const firstActionsHref = firstComponentHref('Actions');

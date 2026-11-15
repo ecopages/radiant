@@ -6,6 +6,8 @@ type TabIconSource = {
 	id: string;
 	label: string;
 	code?: string;
+	/** Number of source lines the tab shows, written after the label as a muted count. */
+	lines?: number;
 };
 
 const PACKAGE_MANAGER_IDS = new Set<CodeTabIconKind>(['bun', 'pnpm', 'npm']);
@@ -83,14 +85,20 @@ export function CodeTabIcon({ kind }: { kind: CodeTabIconKind }): JsxRenderable 
 export function renderTabLabel(tab: TabIconSource): JsxRenderable {
 	const iconKind = resolveTabIconKind(tab);
 
-	if (!iconKind) {
+	if (!iconKind && tab.lines === undefined) {
 		return tab.label;
 	}
 
 	return (
 		<span class="code-tabs__tab-label">
-			<CodeTabIcon kind={iconKind} />
+			{iconKind ? <CodeTabIcon kind={iconKind} /> : null}
 			<span class="code-tabs__tab-text">{tab.label}</span>
+			{tab.lines === undefined ? null : (
+				<span class="code-tabs__tab-meta" title={`${tab.lines} lines`}>
+					<span aria-hidden="true">{tab.lines}</span>
+					<span class="code-tabs__tab-meta-text">{`, ${tab.lines} lines`}</span>
+				</span>
+			)}
 		</span>
 	);
 }

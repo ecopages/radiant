@@ -3,6 +3,7 @@
 @import './theme.css';
 @import '@ecopages/radiant-ui/styles.css';
 @import './vendor/shiki.css';
+@import './components/copy-button.css';
 @import './fonts.css';
 @import './components/prose.css';
 @import './components/site-header.css';

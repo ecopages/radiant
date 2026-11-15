@@ -189,3 +189,6 @@ apps/docs/src/public/assets/fonts/
 # Vitest browser run artifacts
 .vitest-attachments/
 __screenshots__/
+
+# Claude Code local state and agent worktrees
+.claude/
