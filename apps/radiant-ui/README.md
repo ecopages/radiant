@@ -112,7 +112,7 @@ export const config = {
 };
 ```
 
-Use `<Demo of={Default} meta={ButtonMeta} />` under **Try it**. Put copy-paste examples in **Usage** as fenced `tsx` blocks. `rehype-pretty-code` highlights every fenced block and its `transformerCopyButton` adds the Copy button automatically; do not add one in MDX.
+Use `<Demo of={Default} meta={ButtonMeta} />` under **Try it**. Put copy-paste examples in **Usage** as fenced `tsx` blocks. `src/mdx/rehype-pierre-code.ts` highlights every fenced block with `@pierre/highlights` (the VS Code Light+ and Dark+ pair, through `src/lib/pierre-highlight.ts`) and adds the Copy button automatically; do not add one in MDX. Add `showLineNumbers` after the language (` ```ts showLineNumbers `) to draw a line-number gutter on one block; the numbers are a CSS counter, so they never reach the clipboard or a text selection. The recipe code tabs number every file and show its line count after the file name. The highlighter is WebAssembly and runs when the page build runs in Node, so no code is highlighted in the browser. The theme lab's CSS preview is the one exception, because its CSS comes from the reader's edits; it uses a minimal Shiki instance and not Pierre (see `src/lib/theme-lab/highlight-css.ts` for why), so `shiki` stays a dependency.
 
 Use `<Canvas of={Destructive} meta={ButtonMeta} />` for extra stories that should preview without controls.
 
@@ -135,7 +135,9 @@ Reuse fixtures such as option lists from `src/content/stories/demo-data.ts` when
 - `test/mount-example.test.browser.ts` — `mountExample` mounts each element once, re-mounts after the router events and cleans up an element that left the page
 - `test/primitive-example.test.browser.ts` — with the frame CSS loaded: menu items sit in a column and popups sit above the code block that follows
 - `test/recipe-imports.test.ts` — plain recipe scripts import only the `controllers` and `helpers` entries, plus `mountExample`; Radiant element scripts add `@ecopages/radiant` and no mount helper; the page fences match the scripts
-- `test/mdx-code-copy.test.browser.ts` — the copy button is a sibling of `pre`
+- `src/mdx/rehype-pierre-code.test.ts` — fences become figures with line spans and a copy button holding the exact source, including fences inside MDX JSX nodes
+- `src/lib/pierre-highlight.test.ts` — language fallback and one `.line` per source line, without a line for the final newline
+- `src/styles/components/copy-button.test.browser.ts` — the copy button states and icon animation styles
 - `src/layouts/base-layout/code-copy.test.browser.ts` — the click handler copies from `data-rehype-pretty-copy`, keeps the accessible name "Copy code" and announces the result through the base layout's `role="status"` region
 
 Add a render test when a story layout is easy to regress (trees, sidebars, overlays).

@@ -5,6 +5,14 @@ let highlighter: Promise<HighlighterCore> | undefined;
 /**
  * Loads a minimal Shiki highlighter once: the CSS grammar and the two docs themes on the JavaScript regex engine, so
  * the browser downloads kilobytes instead of the full bundle and no WebAssembly.
+ *
+ * @remarks
+ * This is the only code in the docs app that highlights in the browser: the theme lab shows CSS generated from the
+ * reader's edits, so it cannot be highlighted when the page is built. Everything else is highlighted at build time
+ * with `@pierre/highlights` (`src/lib/pierre-highlight.ts`). Pierre is not used here on purpose: it needs WebAssembly
+ * with SIMD, which some browsers lack and a strict Content Security Policy can block, and its bundle is about 300 KB
+ * (143 KB gzipped) against a few KB for this instance. Using it would also need a `canUseWASM()` check and a
+ * plain-text fallback.
  */
 function loadHighlighter(): Promise<HighlighterCore> {
 	highlighter ??= (async () => {
