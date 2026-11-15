@@ -1,48 +1,256 @@
 ---
 title: Composing a component
-description: How a new component is assembled from tested controllers and helpers, and when to extend a controller instead.
+description: How to build a component from design-system components, controllers and helpers, which host to put it in, and when to extend a controller instead.
 order: 3
 ---
+
+import { RecipeCode } from '@/components/recipe-patterns';
+
+export const config = {
+	dependencies: {
+		components: [RecipeCode],
+	},
+};
 
 # Composing a component
 
 <p class="docs-lede">
-	Most behavior a new component needs already exists as a tested controller or helper. Compose them in the component
-	and keep only what is specific to it.
+	You rarely write a new component from scratch. Components give you the parts, controllers give you the behavior,
+	helpers give you the decisions, and one host ties them to your state.
 </p>
 
-## Compose, then extend
+## The pieces
 
-- **A component composes controllers.** Hold each one in a field of the custom element with `createX(this, config)`. Config is getters (`getItems`, `getTarget`) and callbacks (`onChange`), so the element keeps its own state and the controller never reaches into it.
-- **Extend a controller to change how it decides.** A controller documents `protected` hooks at its decision points. Subclass it, override the hook, and register the subclass with `bindController`.
-- **A component never extends a controller.** The component is the host; the controller is a part it holds.
+| Piece          | What it is                                                                                                                                       | Import                             |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------- |
+| **Component**  | A custom element with a JSX view, such as `RuiSlider` or `RuiButton`. Its contract is its props, its attributes and the bubbling event it fires. | `@ecopages/radiant-ui/<component>` |
+| **Controller** | A plain class that owns one behavior of an element: keyboard movement, dragging, dismissal, positioning. It has `attach()` and `destroy()`.      | `@ecopages/radiant-ui/controllers` |
+| **Helper**     | A pure function that decides something: filtering, ordering, dates, masks. No DOM, so it runs on the server and in tests.                        | `@ecopages/radiant-ui/helpers`     |
+| **Host**       | What holds the composition and your state: a custom element, an element that renders its own markup, a `RadiantController`, or a plain function. | `@ecopages/radiant` (none for a function) |
 
-Prefer the lightest tool that works: a config callback first, a documented `protected` hook by subclassing second, a new controller last. Use a [helper](/docs/helpers/overview), not a controller, for anything that only maps input to output.
+The word controller names two things. A controller in this table is a catalog primitive such as `SortableController`: it is not tied to Radiant, and its host is anything that can run a callback on connect and one on cleanup, or you call `attach()` and `destroy()` yourself. A `RadiantController` from `@ecopages/radiant` is one kind of host: a reactive class that attaches to existing markup through `data-controller`. A host holds controllers; it never is one.
 
-## Extending through a hook
+## Compose components by nesting
 
-`SortableController.resolveTargetIndex` decides the index a lifted item takes from where the pointer is. This subclass snaps the drop position to a grid by changing only that decision:
+A component is a root plus parts. The root is the component itself, such as `RuiTable` or `RuiDialog`. A part is a named region it exposes through a composition helper (`RuiTableRow`, `RuiDialogTitle`) or a named prop (`trigger`, `primary`). You compose by placing other components and elements inside those parts. They stay in your JSX as authored children: the component does not move them into a slot.
 
-```ts
-import { SortableController, bindController, type SortableRect } from '@ecopages/radiant-ui/controllers';
+This table has a button in each row, and the button opens a dialog that holds its own parts and buttons:
 
-class SnapSortable extends SortableController {
-	protected override resolveTargetIndex(
-		rects: readonly SortableRect[],
-		from: number | null,
-		point: { x: number; y: number },
-	) {
-		return super.resolveTargetIndex(rects, from, { x: Math.round(point.x / 40) * 40, y: point.y });
-	}
-}
-// in the element: bindController(this, new SnapSortable({ getContainer, getItems, onChange }));
+```tsx
+import { RuiButton } from '@ecopages/radiant-ui/button';
+import {
+	RuiDialog,
+	RuiDialogActions,
+	RuiDialogBody,
+	RuiDialogTitle,
+	installDialogs,
+} from '@ecopages/radiant-ui/dialog';
+import {
+	RuiTable,
+	RuiTableBody,
+	RuiTableCell,
+	RuiTableColumn,
+	RuiTableHeader,
+	RuiTableRow,
+} from '@ecopages/radiant-ui/table';
+
+installDialogs();
+
+<RuiTable label="Plants" selectionMode="single">
+	<RuiTableHeader>
+		<RuiTableColumn id="name" isRowHeader>
+			Plant
+		</RuiTableColumn>
+		<RuiTableColumn id="actions">Actions</RuiTableColumn>
+	</RuiTableHeader>
+	<RuiTableBody>
+		<RuiTableRow id="aloe">
+			<RuiTableCell isRowHeader>Aloe</RuiTableCell>
+			<RuiTableCell>
+				<RuiButton size="sm" variant="outline" data-dialog-open="remove-aloe">
+					Remove
+				</RuiButton>
+			</RuiTableCell>
+		</RuiTableRow>
+	</RuiTableBody>
+</RuiTable>
+
+<RuiDialog id="remove-aloe">
+	<RuiDialogTitle>Remove Aloe?</RuiDialogTitle>
+	<RuiDialogBody>This cannot be undone.</RuiDialogBody>
+	<RuiDialogActions>
+		<RuiButton variant="ghost" data-dialog-close>
+			Cancel
+		</RuiButton>
+		<RuiButton variant="filled">Remove</RuiButton>
+	</RuiDialogActions>
+</RuiDialog>
 ```
 
-`createX` always returns the base class, so a subclass is constructed directly. The component holds the instance; it does not become one.
+What makes nesting safe is that each component finds what it needs through a light-DOM contract of roles and `data-*` attributes, and ignores the rest:
 
-## Steps
+- **The table** treats a `button`, `a`, `input` or `rui-checkbox` in a cell as the cell's own control. Clicking the button does not select the row.
+- **A toolbar** turns the focusable controls inside it (`button`, `a[href]`, `input`, `select`, `textarea`, `[tabindex]`) into one roving tab stop, whatever components they are.
+- **A field** finds the outermost control inside it, and does not treat an embedded listbox of a select as a second control.
 
-1. Name the behaviors: open and close, keyboard movement, dragging, filtering, date math, positioning.
-2. Pick one primitive per behavior from [Controllers](/docs/controllers/overview) and [Helpers](/docs/helpers/overview). Controllers own the DOM wiring; helpers own the decisions and formatting.
-3. Keep what is specific to the component (state, markup, `rui-change` events) in the component.
-4. Look at [Recipes](/docs/recipes/overview) for compositions of several primitives.
+So do not query a component's inner elements or its class names from outside, and do not restyle them. Use the parts it exposes, and the tokens it reads.
+
+### Replace a part's element
+
+Some parts are worth swapping for your own element, for example a different button as the slider thumb. Radix UI does this with `asChild` and Base UI with a `render` prop: the part clones your element and merges its props into it. Radiant UI has no merge step. A part is whatever element carries the contract the component looks for, so you write the element yourself.
+
+`RuiSlider` renders a default thumb. To use another, write the slider's tree and put your element where the thumb goes, with the thumb's `data-ref`, `data-thumb` and `role="slider"`:
+
+```tsx
+import '@ecopages/radiant-ui/slider';
+
+<rui-slider min={0} max={100} value="40" label="Volume">
+	<div class="rui-slider rui-slider--single" data-ref="root">
+		<div class="rui-slider__header" data-ref="header">
+			<span class="rui-slider__label" data-ref="label">
+				Volume
+			</span>
+		</div>
+		<div class="rui-slider__range">
+			<div class="rui-slider__range-track" data-ref="rangeTrack">
+				<div class="rui-slider__range-fill" data-ref="rangeFill" />
+				<button
+					type="button"
+					class="rui-button rui-button--filled rui-button--sm rui-button--square rui-slider__thumb"
+					data-ref="singleThumb"
+					data-thumb="value"
+					role="slider"
+				>
+					<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+						<path d="M8 5v14l10-7z" fill="currentColor" />
+					</svg>
+				</button>
+			</div>
+		</div>
+	</div>
+</rui-slider>;
+```
+
+The slider still positions the thumb, writes `aria-valuenow`, `aria-valuemin` and `aria-valuemax` on it and handles pointer and keyboard input. A component page lists the contract of its parts under Custom markup when the component supports authored markup.
+
+### If you know Radix UI or Base UI
+
+| In Radix UI or Base UI                                  | In Radiant UI                                                                                             |
+| ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `Root` and parts such as `Trigger` and `Content`        | The component and its composition helpers or named props (`RuiDialog`, `RuiDialogTitle`, `trigger`)       |
+| `asChild` or a `render` prop to change a part's element | Author the part's element with the data attributes and role the component looks for (Custom markup)       |
+| Controlled and uncontrolled state                       | Props and properties in, bubbling events such as `rui-change` out, with `detail` documented per component |
+| `data-state` (Radix) or `data-open`, `data-checked` (Base UI) to style a part | The `aria-*` and `data-*` attributes the component writes on its parts, and the theme tokens it reads |
+
+The difference to plan for: there is no merging of props onto your element. If you replace a part, you also provide what the component would have put on it (here the thumb's `role` and `data-*` hooks); the component adds the state.
+
+### Listen to events
+
+Children report to the outside with events that bubble, so your host or any ancestor listens once for several children. `RuiSlider` fires `rui-change` with `detail.value` as a `number[]`, and `RuiTable` fires `rui-row-action` and `rui-sort-change`. Each component page lists its events and their `detail`.
+
+## Compose behavior with controllers
+
+Behavior that touches the DOM is a controller. Behavior that only maps input to output is a helper.
+
+1. Name the behaviors: filtering, keyboard movement, dragging, positioning, dismissal.
+2. Pick one primitive for each from [Controllers](/docs/controllers/overview) and [Helpers](/docs/helpers/overview).
+3. Hold each controller in a field of the host with `createX(this, config)`.
+4. Keep state, markup and events specific to your component in the host.
+
+`createX(host, config)` constructs the controller and registers `attach()` as a connected callback and `destroy()` as a cleanup callback on the host. You write no `disconnectedCallback`. Callbacks run in the order they were registered, so controllers attach in the order of the fields. A host is anything with `registerConnectedCallback` and `registerCleanupCallback`, which includes a `RadiantElement` and a `RadiantController`.
+
+Config is getters and callbacks. The controller calls them when it needs an answer, so it never reaches into your state and reads current data each time:
+
+<RecipeCode recipe="searchable-list" pattern="element" />
+
+The element composes one controller and one helper. `textContains` decides which rows match. `createRovingController` keeps the visible rows to one tab stop and walks them with the arrow keys: `getItems` returns only the visible rows, so the arrows skip what the filter hid, and `sync()` after each filter moves the tab stop to a visible row. The element owns what is specific to a search: reading the query, hiding rows, the arrow key that moves from the field to the list, and what Enter does.
+
+### Several controllers in one host
+
+Controllers cooperate through your callbacks, not by knowing each other. The audio player lets the user reorder tracks while arrow keys move focus. Both are controllers over the same list, and the roving controller steps aside while a track is lifted. This is an excerpt from the Radiant element form, without the track numbers it also renews:
+
+```ts
+private readonly roving = createRovingController(this, {
+	getItems: () => this.tracks.map((track) => track.element),
+	getTarget: () => this.list,
+	orientation: 'vertical',
+	getEnabled: () => this.sortable.getState() === null,
+});
+
+private readonly sortable = createSortableController(this, {
+	preview: true,
+	liftKeys: [' '],
+	createPlaceholder: () => document.createElement('li'),
+	getContainer: () => this.list,
+	getItems: () => this.tracks.map((track) => track.element),
+	announce: (message) => (this.status = message),
+	onChange: ({ item, from, to }) => {
+		this.tracks = reorder(this.tracks, from, to);
+		this.order.setItems(this.tracks);
+		this.list.append(...this.tracks.map((track) => track.element));
+		this.roving.focus(item);
+	},
+});
+```
+
+`SortableController` decides where the track lands and announces each step, but it never moves a node: `onChange` applies the move to your data and the DOM, and `reorder` is the helper that turns `from` and `to` into the new order. Whatever else the host starts, such as a timer, an observer or audio, belongs in `registerCleanupCallback` so a removed host leaves nothing running.
+
+## Choose a host
+
+The same composition runs in four hosts. A Radiant element is an Element Host, a Radiant component a Render-owning Element Host and a Radiant controller a Controller Host. The controllers, the helpers and the config are identical; only the wiring around them changes. Each recipe in [Recipes](/docs/recipes/overview) shows all four, with the code side by side.
+
+| Host                   | Markup comes from                          | How controllers start                                                      | Pick it when                                                   |
+| ---------------------- | ------------------------------------------ | -------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| **Radiant element**    | Authored inside your custom element        | `createX(this, config)`, attached on connect, destroyed on disconnect      | You own the tag and the markup, and want no `mount` call.      |
+| **Radiant component**  | The element's own `render()` from `@state` | `createX(this, config)`, re-attached in `updated()` after each render      | The markup is derived from data.                               |
+| **Radiant controller** | Existing markup carrying `data-controller` | `createX(this, config)` on a `RadiantController`, started by `startControllers` from `@ecopages/radiant/controller-registry` | A server or a CMS owns the markup and you cannot define a tag. |
+| **Plain JavaScript**   | Any element you pass to your function      | `new XController(config)`, then `attach()`; the function returns `destroy` | No Radiant at all, or you integrate with another framework.    |
+
+A component that renders its own markup attaches controllers before anything is drawn, so a controller that resolves an element when it attaches needs a second `attach()` in `updated()`. Attaching again re-resolves the target getters and does nothing when the element did not change.
+
+## Extend when composing is not enough
+
+Reach for the lightest tool that works:
+
+1. **A config callback.** Most decisions are already one: `getItems`, `getEnabled`, `onChange`, `announce`.
+2. **A `protected` hook, by subclassing.** A controller documents hooks at its decision points. A component never extends a controller; it holds the subclass instance.
+3. **A new controller.** Only when no existing behavior fits.
+
+`RovingController.resolveNext` decides where a key moves focus. This subclass adds PageDown and PageUp, five items at a time, and leaves every other key to the default:
+
+```ts
+import { RovingController, bindController, type RovingNavResult, type RovingOrientation } from '@ecopages/radiant-ui/controllers';
+
+class PagedRoving extends RovingController {
+	protected override resolveNext(
+		items: HTMLElement[],
+		current: HTMLElement | null,
+		key: string,
+		orientation: RovingOrientation,
+		wrap: boolean,
+	): RovingNavResult {
+		const step = key === 'PageDown' ? 5 : key === 'PageUp' ? -5 : 0;
+		const index = current ? items.indexOf(current) : -1;
+		if (step === 0 || index < 0) {
+			return super.resolveNext(items, current, key, orientation, wrap);
+		}
+		const target = Math.min(Math.max(index + step, 0), items.length - 1);
+		return { handled: true, index: target, item: items[target]! };
+	}
+}
+// in the host: bindController(this, new PagedRoving({ getItems, getTarget, orientation: 'vertical' }));
+```
+
+`createX` always returns the base class, so a subclass is constructed directly and tied to the host with `bindController`, which attaches and destroys it the same way.
+
+## What stays yours
+
+- **State and data.** Controllers never own your data; their callbacks hand it back to you.
+- **Roles, names and live regions.** Controllers manage focus, keys and positioning. Unless a controller's page says otherwise, you provide the roles, accessible names and the live region that `announce` writes to.
+- **Cleanup of anything you start.** A controller held by a host is destroyed with it; timers, observers and media you create are not.
+
+## Where to go next
+
+- [Recipes](/docs/recipes/overview): worked compositions such as a modal, a board and an audio player, each in the four hosts.
+- [Controllers](/docs/controllers/overview) and [Helpers](/docs/helpers/overview): every primitive with its config and hooks.
+- [Theming](/docs/getting-started/theming) and [Tokens](/docs/getting-started/tokens): the variables your composition reads.
