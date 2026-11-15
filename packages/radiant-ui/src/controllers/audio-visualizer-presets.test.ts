@@ -110,6 +110,40 @@ describe('bars, dom mode', () => {
 		expect((target.children[0] as HTMLElement).style.getPropertyValue('--level')).toBe('0.120');
 	});
 
+	it('shapes the level with floorLevel, range and curve, and never goes under floor', () => {
+		const target = barsOf(1);
+		const level = () => (target.children[0] as HTMLElement).style.getPropertyValue('--level');
+		const shaped = bars({ mode: 'dom', floor: 0, floorLevel: 0.2, range: 0.5, curve: 2 });
+		shaped.mount(target);
+		shaped.draw(frame(51));
+		expect(level()).toBe('0.000');
+		shaped.draw(frame(Math.round(0.45 * 255)));
+		expect(Number(level())).toBeCloseTo(0.25, 1);
+		shaped.draw(frame(255));
+		expect(level()).toBe('1.000');
+		shaped.rest();
+
+		const floored = bars({ mode: 'dom', floor: 0.2, floorLevel: 0.2, range: 0.5 });
+		floored.mount(target);
+		floored.draw(frame(51));
+		expect(level()).toBe('0.200');
+	});
+
+	it('scales to the running maximum with adapt, which a rest forgets', () => {
+		const target = barsOf(1);
+		const level = () => Number((target.children[0] as HTMLElement).style.getPropertyValue('--level'));
+		const preset = bars({ mode: 'dom', floor: 0, floorLevel: 0.2, adapt: 0.1 });
+		preset.mount(target);
+		preset.draw(frame(128));
+		expect(level()).toBe(1);
+		preset.draw(frame(100));
+		expect(level()).toBeLessThan(1);
+		expect(level()).toBeGreaterThan(0);
+		preset.rest();
+		preset.draw(frame(100));
+		expect(level()).toBe(1);
+	});
+
 	it('writes to the elements the selector matches and not to other children', () => {
 		const target = barsOf(3);
 		target.children[1].setAttribute('data-bar', '');
@@ -369,13 +403,12 @@ describe('bars canvas look', () => {
 		const preset = bars({
 			mode: 'canvas',
 			count: 1,
-			floor: 0.5,
 			segments: 4,
 			segmentGap: 2,
 			color: 'rgb(0, 128, 0)',
 		});
 		preset.mount(target);
-		preset.draw(frame(0));
+		preset.draw(frame(120));
 		const rows = coverage(target.querySelector('canvas')!, 10);
 		expect(rows.slice(0, 20).some(Boolean)).toBe(false);
 		expect(rows[39]).toBe(true);
@@ -383,6 +416,28 @@ describe('bars canvas look', () => {
 		expect(rows[30]).toBe(false);
 		expect(rows[25]).toBe(true);
 		preset.destroy();
+	});
+
+	it('lights no segment for silence or for a level at the floor level, and draws no cap on an empty bar', () => {
+		const painted = (level: number) => {
+			const target = makeTarget(20, 40);
+			const preset = bars({
+				mode: 'canvas',
+				count: 1,
+				segments: 4,
+				floorLevel: 0.3,
+				peaks: {},
+				color: 'rgb(0, 128, 0)',
+			});
+			preset.mount(target);
+			preset.draw(frame(level));
+			const rows = coverage(target.querySelector('canvas')!, 10);
+			preset.destroy();
+			return rows.filter(Boolean).length;
+		};
+		expect(painted(0)).toBe(0);
+		expect(painted(Math.floor(0.3 * 255))).toBe(0);
+		expect(painted(255)).toBeGreaterThan(0);
 	});
 
 	it('keeps the bars inside the padding', () => {
@@ -476,6 +531,31 @@ describe('bars canvas look', () => {
 		const floor = painted('floor');
 		expect(floor.filter(Boolean)).toHaveLength(20);
 		expect(floor[39]).toBe(true);
+	});
+
+	it('rests segmented bars as one dim lowest segment, however high the floor is', () => {
+		const target = makeTarget(20, 40);
+		const preset = bars({
+			mode: 'canvas',
+			count: 1,
+			floor: 0.9,
+			segments: 4,
+			segmentGap: 2,
+			idle: 'floor',
+			color: 'rgb(0, 128, 0)',
+		});
+		preset.mount(target);
+		const canvas = target.querySelector('canvas')!;
+		const rows = coverage(canvas, 10);
+		expect(rows[39]).toBe(true);
+		expect(rows.slice(0, 30).some(Boolean)).toBe(false);
+		const alpha = pixel(canvas, 10 * window.devicePixelRatio, 39 * window.devicePixelRatio)[3];
+		expect(alpha).toBeGreaterThan(0);
+		expect(alpha).toBeLessThan(128);
+		preset.draw(frame(255));
+		preset.rest();
+		expect(coverage(canvas, 10).slice(0, 30).some(Boolean)).toBe(false);
+		preset.destroy();
 	});
 
 	it('shows the floor as soon as it is mounted when idle is floor, and nothing otherwise', () => {
@@ -577,6 +657,105 @@ describe('wave', () => {
 		const silent = frame(0, 2048);
 		silent.waveform.fill(128);
 		expect(() => preset.draw(silent)).not.toThrow();
+		preset.destroy();
+	});
+});
+
+describe('bars variants', () => {
+	const colorOf = 'rgb(0, 128, 0)';
+	const mounted = (options: Parameters<typeof bars>[0] & { mode: 'canvas' }) => {
+		const target = makeTarget(40, 100);
+		const preset = bars(options);
+		preset.mount(target);
+		return { target, preset, canvas: target.querySelector('canvas')! };
+	};
+	const column = (canvas: HTMLCanvasElement, x: number) => {
+		const ratio = window.devicePixelRatio;
+		return Array.from(
+			{ length: canvas.height / ratio },
+			(_, y) => pixel(canvas, Math.round(x * ratio), Math.round(y * ratio))[3] > 0,
+		);
+	};
+	const shaped = { floorLevel: 0.3, range: 0.5, color: colorOf, count: 1, gap: 0 } as const;
+
+	it.each(['solid', 'line', 'mirror'] as const)(
+		'draws nothing for a quiet band in %s, however high the floor is: no minimum height as the music starts',
+		(variant) => {
+			const { preset, canvas } = mounted({ mode: 'canvas', variant, floor: 0.5, ...shaped });
+			preset.draw(frame(Math.floor(0.3 * 255)));
+			expect(column(canvas, 20).some(Boolean)).toBe(false);
+			preset.destroy();
+		},
+	);
+
+	it('rises a solid bar from the bottom by the shaped level, with a rounded top', () => {
+		const { preset, canvas } = mounted({ mode: 'canvas', variant: 'solid', ...shaped });
+		preset.draw(frame(Math.round(0.55 * 255)));
+		const rows = column(canvas, 20);
+		expect(rows[99]).toBe(true);
+		expect(rows.filter(Boolean).length).toBeGreaterThan(45);
+		expect(rows.filter(Boolean).length).toBeLessThan(55);
+		preset.draw(frame(255));
+		expect(column(canvas, 0)[0] || pixel(canvas, 0, 0)[3] > 0).toBe(false);
+		preset.destroy();
+	});
+
+	it('draws a line bar as a thin column in the middle of a wide slot', () => {
+		const { preset, canvas } = mounted({ mode: 'canvas', variant: 'line', lineWidth: 2, ...shaped });
+		preset.draw(frame(255));
+		const ratio = window.devicePixelRatio;
+		expect(pixel(canvas, 20 * ratio, 50 * ratio)[3]).toBeGreaterThan(0);
+		expect(pixel(canvas, 5 * ratio, 50 * ratio)[3]).toBe(0);
+		expect(pixel(canvas, 35 * ratio, 50 * ratio)[3]).toBe(0);
+		preset.destroy();
+	});
+
+	it('draws a mirror bar around the middle line, equally up and down', () => {
+		const { preset, canvas } = mounted({ mode: 'canvas', variant: 'mirror', ...shaped });
+		preset.draw(frame(Math.round(0.55 * 255)));
+		const rows = column(canvas, 20);
+		const first = rows.indexOf(true);
+		const last = rows.lastIndexOf(true);
+		expect(Math.abs(first - (99 - last))).toBeLessThanOrEqual(1);
+		expect(first).toBeGreaterThan(10);
+		preset.destroy();
+	});
+
+	it('rests as nothing, or as one dim hairline with idle floor', () => {
+		const clear = mounted({ mode: 'canvas', variant: 'solid', ...shaped });
+		expect(column(clear.canvas, 20).some(Boolean)).toBe(false);
+		clear.preset.destroy();
+		const floor = mounted({ mode: 'canvas', variant: 'solid', idle: 'floor', ...shaped });
+		const rows = column(floor.canvas, 20);
+		expect(rows.filter(Boolean).length).toBeLessThanOrEqual(2);
+		expect(rows[99]).toBe(true);
+		const alpha = pixel(floor.canvas, 20 * window.devicePixelRatio, 99 * window.devicePixelRatio)[3];
+		expect(alpha).toBeLessThan(128);
+		floor.preset.destroy();
+	});
+
+	it('holds a cap above a solid bar and draws none while the band is off', () => {
+		const { preset, canvas } = mounted({ mode: 'canvas', variant: 'solid', peaks: {}, ...shaped });
+		preset.draw(frame(Math.floor(0.3 * 255)));
+		expect(column(canvas, 20).some(Boolean)).toBe(false);
+		preset.draw(frame(255));
+		const rows = column(canvas, 20);
+		expect(rows[0]).toBe(true);
+		preset.destroy();
+	});
+
+	it('keeps the earlier look without a variant: a plain solid bar at its floor, square ends', () => {
+		const { preset, canvas } = mounted({ mode: 'canvas', floor: 0.5, count: 1, gap: 0, color: colorOf });
+		preset.draw(frame(0));
+		expect(column(canvas, 20).filter(Boolean)).toHaveLength(50);
+		preset.destroy();
+	});
+
+	it('lights segments for variant led without segments set', () => {
+		const { preset, canvas } = mounted({ mode: 'canvas', variant: 'led', ...shaped, segmentGap: 2 });
+		preset.draw(frame(255));
+		const rows = column(canvas, 20);
+		expect(rows.some((on, row) => !on && rows[row - 1] && rows[row + 1])).toBe(true);
 		preset.destroy();
 	});
 });

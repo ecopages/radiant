@@ -115,7 +115,7 @@ export class AudioPlayerController extends RadiantController {
 	private readonly visualizer = createAudioVisualizerController(this, {
 		getMedia: () => this.audio,
 		getTarget: () => this.cover,
-		preset: this.presets.bars,
+		preset: this.presets.led,
 	});
 
 	private readonly roving = createRovingController(this, {

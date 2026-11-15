@@ -49,7 +49,7 @@ export class AudioPlayerApp extends RadiantElement<{ status: string; elapsed: st
 	@state current = tracks[0].id;
 	@state playing = false;
 	@state ready = false;
-	@state view: VisualizerName = 'bars';
+	@state view: VisualizerName = 'led';
 	@state loop: LoopMode = 'off';
 	@state shuffled = false;
 	@state elapsed = '0:00';
@@ -84,7 +84,7 @@ export class AudioPlayerApp extends RadiantElement<{ status: string; elapsed: st
 	private readonly visualizer = createAudioVisualizerController(this, {
 		getMedia: () => this.audio,
 		getTarget: () => this.cover,
-		preset: this.presets.bars,
+		preset: this.presets.led,
 	});
 
 	private readonly roving = createRovingController(this, {
@@ -300,9 +300,20 @@ export class AudioPlayerApp extends RadiantElement<{ status: string; elapsed: st
 							<RuiButton
 								variant="ghost"
 								size="sm"
-								data-visualizer="bars"
-								pressed={this.view === 'bars'}
-								on:click={() => this.show('bars')}
+								data-visualizer="led"
+								aria-label="LED bars"
+								pressed={this.view === 'led'}
+								on:click={() => this.show('led')}
+							>
+								LED
+							</RuiButton>
+							<RuiButton
+								variant="ghost"
+								size="sm"
+								data-visualizer="solid"
+								aria-label="Solid bars"
+								pressed={this.view === 'solid'}
+								on:click={() => this.show('solid')}
 							>
 								Bars
 							</RuiButton>
@@ -310,6 +321,7 @@ export class AudioPlayerApp extends RadiantElement<{ status: string; elapsed: st
 								variant="ghost"
 								size="sm"
 								data-visualizer="wave"
+								aria-label="Waveform"
 								pressed={this.view === 'wave'}
 								on:click={() => this.show('wave')}
 							>

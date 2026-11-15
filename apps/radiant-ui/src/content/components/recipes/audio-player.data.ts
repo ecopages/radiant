@@ -1,4 +1,4 @@
-import { bars, wave } from '@ecopages/radiant-ui/controllers';
+import { bars, logBands, wave } from '@ecopages/radiant-ui/controllers';
 
 export type Track = { id: string; title: string; artist: string; src: string; length: string };
 
@@ -21,32 +21,37 @@ export const tracks: readonly Track[] = [
 	},
 ];
 
-export type VisualizerName = 'bars' | 'wave';
+export type VisualizerName = 'led' | 'solid' | 'wave';
 
 /**
- * The two ways to show the sound, both drawn on a canvas that the visualizer adds to the cover: LED-style bars with
- * peak caps, and a waveform that runs edge to edge.
+ * The three ways to show the sound, each drawn on a canvas that the visualizer adds to the cover: LED-style bars,
+ * solid bars with rounded tops, and a waveform that runs edge to edge. Both bar looks have peak caps.
  *
  * @remarks
- * A preset keeps the element it is mounted on, so each player builds its own. Both take the cover's colors from the
- * theme's custom properties: `--on-primary` is readable on the cover's gradient in every theme. The bars keep a
- * padding and draw at rest, so the cover still shows them under `prefers-reduced-motion`, when the controller never
- * draws a frame; the wave has no padding, and the cover's own rounded corners clip it.
+ * A preset keeps the element it is mounted on, so each player builds its own. All take the cover's colors from the
+ * theme's custom properties: `--on-primary` is readable on the cover's gradient in every theme. The bar looks share
+ * the bands and the level shaping, so they move alike, keep a padding and draw a dim baseline at rest, so the cover
+ * still shows them under `prefers-reduced-motion`, when the controller never draws a frame; the wave has no padding,
+ * and the cover's own rounded corners clip it.
  */
+const barsShared = {
+	mode: 'canvas',
+	bands: logBands(40, 80, 2400),
+	fftSize: 2048,
+	smoothing: 0.6,
+	floorLevel: 0.32,
+	range: 0.66,
+	curve: 1.6,
+	padding: 12,
+	color: '--on-primary',
+	colorEnd: '--secondary-container',
+	peaks: { hold: 450, fall: 1.2 },
+	idle: 'floor',
+} as const;
+
 export const createVisualizers = () => ({
-	bars: bars({
-		mode: 'canvas',
-		count: 40,
-		gap: 2,
-		padding: 12,
-		segments: 14,
-		segmentGap: 2,
-		ends: 'square',
-		color: '--on-primary',
-		colorEnd: '--secondary-container',
-		peaks: { hold: 450, fall: 1.2 },
-		idle: 'floor',
-	}),
+	led: bars({ ...barsShared, variant: 'led', segments: 14, segmentGap: 2, gap: 2 }),
+	solid: bars({ ...barsShared, variant: 'solid', gap: 3 }),
 	wave: wave({ color: '--on-primary', fill: true, padding: 0 }),
 });
 

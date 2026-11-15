@@ -876,20 +876,20 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 	});
 
 	describe(`audio player visualizer (${name})`, () => {
-		test('the selector shows Bars pressed, the bars are drawn at rest, and a click on the pressed button keeps it pressed', async () => {
+		test('the selector shows LED pressed, the LED bars are drawn at rest, and a click on the pressed button keeps it pressed', async () => {
 			const root = await seekable(await form.mount());
 
-			expect(pressed(root)).toEqual(['true', 'false']);
+			expect(pressed(root)).toEqual(['true', 'false', 'false']);
 			expect(canvas(root)!.getAttribute('aria-hidden')).toBe('true');
 			expect(coverage(root)).toBeGreaterThan(0);
 			const bars = canvas(root);
-			await userEvent.click(visualizer(root, 'bars'));
+			await userEvent.click(visualizer(root, 'led'));
 
-			expect(pressed(root)).toEqual(['true', 'false']);
+			expect(pressed(root)).toEqual(['true', 'false', 'false']);
 			expect(canvas(root)).toBe(bars);
 		});
 
-		test('Wave replaces the bars canvas with its own, which is empty at rest, and Bars brings the bars back', async () => {
+		test('Wave replaces the bars canvas with its own, which is empty at rest, and LED brings the bars back', async () => {
 			const root = await seekable(await form.mount());
 			const bars = canvas(root);
 
@@ -899,13 +899,47 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 			expect(root.querySelectorAll('[data-cover] canvas')).toHaveLength(1);
 			expect(canvas(root)!.getAttribute('aria-hidden')).toBe('true');
 			expect(coverage(root)).toBe(0);
-			expect(pressed(root)).toEqual(['false', 'true']);
+			expect(pressed(root)).toEqual(['false', 'false', 'true']);
 
-			await userEvent.click(visualizer(root, 'bars'));
+			await userEvent.click(visualizer(root, 'led'));
 
 			await expect.poll(() => coverage(root)).toBeGreaterThan(0);
 			expect(root.querySelectorAll('[data-cover] canvas')).toHaveLength(1);
-			expect(pressed(root)).toEqual(['true', 'false']);
+			expect(pressed(root)).toEqual(['true', 'false', 'false']);
+		});
+
+		test('the three buttons say what they draw, and Bars switches to solid bars that rest as a hairline and follow the sound', async () => {
+			const root = await seekable(await form.mount());
+			const labels = [...root.querySelectorAll('[data-visualizer]')].map((button) => [
+				button.getAttribute('data-visualizer'),
+				button.getAttribute('aria-label'),
+				button.textContent!.trim(),
+			]);
+			expect(labels).toEqual([
+				['led', 'LED bars', 'LED'],
+				['solid', 'Solid bars', 'Bars'],
+				['wave', 'Waveform', 'Wave'],
+			]);
+			const ledRest = coverage(root);
+			const led = canvas(root)!;
+
+			await userEvent.click(visualizer(root, 'solid'));
+
+			await expect.poll(() => canvas(root)).not.toBe(led);
+			expect(led.isConnected).toBe(false);
+			expect(root.querySelectorAll('[data-cover] canvas')).toHaveLength(1);
+			expect(pressed(root)).toEqual(['false', 'true', 'false']);
+			const rest = coverage(root);
+			expect(rest).toBeGreaterThan(0);
+			expect(rest).toBeLessThan(ledRest);
+
+			await userEvent.click(toggle(root));
+			await barsFollow(root, rest);
+			expect(audio(root).paused).toBe(false);
+
+			await userEvent.click(visualizer(root, 'wave'));
+			await expect.poll(() => pressed(root)).toEqual(['false', 'false', 'true']);
+			expect(root.querySelectorAll('[data-cover] canvas')).toHaveLength(1);
 		});
 
 		test('switching while the track plays keeps it playing and the new preset draws', async () => {
@@ -919,7 +953,7 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 			await expect.poll(() => drawn(canvas(root)!)).toBe(true);
 			expect(audio(root).paused).toBe(false);
 
-			await userEvent.click(visualizer(root, 'bars'));
+			await userEvent.click(visualizer(root, 'led'));
 
 			await barsFollow(root, rest);
 			expect(audio(root).paused).toBe(false);
@@ -969,7 +1003,7 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 			await userEvent.click(root.querySelector('[data-next]')!);
 			await expect.poll(() => current(root)).toBe('Low Tide');
 			expect(canvas(root)).not.toBeNull();
-			expect(pressed(root)).toEqual(['false', 'true']);
+			expect(pressed(root)).toEqual(['false', 'false', 'true']);
 
 			await form.remove(root);
 

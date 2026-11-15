@@ -63,7 +63,7 @@ export function mount(root: HTMLElement): () => void {
 	const visualizer = new AudioVisualizerController({
 		getMedia: () => audio,
 		getTarget: () => part('[data-cover]'),
-		preset: presets.bars,
+		preset: presets.led,
 	});
 
 	const roving = new RovingController({
