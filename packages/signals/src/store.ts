@@ -140,6 +140,7 @@ function createStoreProxyHandler<Value extends object>(node: StoreNode<Value>): 
 				return unwrapStoreEntryValue(value);
 			}
 
+			node.shape.get();
 			return Reflect.get(target, key, receiver);
 		},
 
@@ -207,8 +208,8 @@ function deleteStoreProperty<Value extends object>(node: StoreNode<Value>, key: 
 	}
 
 	const entry = ensureStoreEntry(node, key);
-	entry.set(STORE_ABSENT);
 	Reflect.deleteProperty(node.target as object, key);
+	entry.set(STORE_ABSENT);
 	if (node.valueType === 'array' && key === 'length') {
 		(node.target as unknown as any[]).length = 0;
 	}

@@ -1,7 +1,53 @@
 import { describe, expect, test } from 'vitest';
-import { Computed, createStore, isStore, snapshot } from '../index';
+import { Computed, createStore, effect, isStore, snapshot } from '../index';
 
 describe('store', () => {
+	test('tracks a missing key through insertion, deletion and reinsertion', () => {
+		const store = createStore<{ value?: number }>({});
+		const value = new Computed(() => store.value);
+		const seen: Array<number | undefined> = [];
+		const unsubscribe = value.subscribe((next) => seen.push(next));
+
+		expect(value.get()).toBeUndefined();
+		store.value = 1;
+		expect(value.get()).toBe(1);
+		delete store.value;
+		expect(value.get()).toBeUndefined();
+		store.value = 2;
+		expect(value.get()).toBe(2);
+		expect(seen).toEqual([1, undefined, 2]);
+		unsubscribe();
+	});
+
+	test('re-runs effects when an absent key is added again', async () => {
+		const store = createStore<{ value?: number }>({});
+		const seen: Array<number | undefined> = [];
+		const dispose = effect(() => {
+			seen.push(store.value);
+		});
+		store.value = 1;
+		await Promise.resolve();
+		delete store.value;
+		await Promise.resolve();
+		store.value = 2;
+		await Promise.resolve();
+		expect(seen).toEqual([undefined, 1, undefined, 2]);
+		dispose();
+	});
+
+	test('restores an inherited value to subscribers when an own key is deleted', () => {
+		const store = createStore({});
+		const value = new Computed(() => store.toString);
+		const seen: Array<unknown> = [];
+		const unsubscribe = value.subscribe((next) => seen.push(next));
+		const own = () => 'own';
+		store.toString = own;
+		delete (store as { toString?: () => string }).toString;
+		expect(value.get()).toBe(Object.prototype.toString);
+		expect(seen).toEqual([own, Object.prototype.toString]);
+		unsubscribe();
+	});
+
 	test('tracks nested property reads and branch replacement', () => {
 		const store = createStore({
 			profile: {
