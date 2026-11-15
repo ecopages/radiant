@@ -78,7 +78,7 @@ BEM classes are presentation-only. Set `alert` on the host for `role="alertdialo
 
 ## Alert dialogs
 
-<p>Set `alert` to `true` for destructive confirmations. Alert dialogs limit tab order to the controls inside `RuiDialogActions`, and toggling `alert` updates the role and the tab loop live. `RuiDialogClose` is labelled `Close` only when it renders the icon; with children, the text is its name.</p>
+<p>Set `alert` to `true` for destructive confirmations. Alert dialogs limit tab order to the controls inside `RuiDialogActions`, and toggling `alert` updates the role and the tab loop live. `RuiDialogClose` without children is the corner icon button, labelled `Close`; with children it is an in-flow ghost button named by its text, so it sits in `RuiDialogActions` beside other buttons.</p>
 
 <Canvas of={Alert} meta={DialogMeta} />
 
@@ -165,7 +165,7 @@ Do not set `hidden` on `[data-ref="root"]` or `aria-*` on `[data-ref="dialog"]`.
 | `RuiDialogTitle` | `[data-dialog-title]`, `data-ref="title"` | Visible accessible name. |
 | `RuiDialogBody` | `[data-dialog-body]`, `data-ref="description"` | `aria-describedby` target. |
 | `RuiDialogActions` | — | Action row; not queried by the host. |
-| `RuiDialogClose` | `[data-dialog-close]`, `data-ref="close"` | Emits `rui-close` with reason `dismiss`. |
+| `RuiDialogClose` | `[data-dialog-close]`, `data-ref="close"` | Emits `rui-close` with reason `dismiss`. Corner icon button without children, ghost `rui-button` with children. |
 
 ### CSS classes
 
@@ -179,7 +179,7 @@ Public BEM classes (documented via `@cssclass`):
 | `.rui-dialog__title` | Dialog title; `aria-labelledby` target. |
 | `.rui-dialog__body` | Dialog body; `aria-describedby` target. |
 | `.rui-dialog__actions` | Right-aligned action row. |
-| `.rui-dialog__close` | Dismiss button. |
+| `.rui-dialog__close` | Corner icon dismiss button; not stamped on the text form. |
 
 ### Theme roles
 
