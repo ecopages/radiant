@@ -7,6 +7,7 @@ const pages = import.meta.glob('../src/content/components/recipes/*.mdx', {
 }) as Record<string, string>;
 const scripts = import.meta.glob('../src/content/components/recipes/*.script.ts');
 const elements = import.meta.glob('../src/content/components/recipes/*.element.ts');
+const components = import.meta.glob('../src/content/components/recipes/*.component.tsx');
 
 /** Mounts the markup a recipe page documents and runs the script it documents. */
 export async function mountRecipe(slug: string): Promise<HTMLElement> {
@@ -32,6 +33,17 @@ export async function mountForm(slug: string, form: Form): Promise<HTMLElement> 
 	document.body.innerHTML = [...page.matchAll(/```html\n([\s\S]*?)\n```/g)][1]![1];
 	await elements[`../src/content/components/recipes/${slug}.element.ts`]!();
 	return document.querySelector<HTMLElement>(`recipe-${slug}`)!;
+}
+
+/**
+ * Mounts the all-in-one component a recipe page documents: its third `html` fence, which is the tag alone, and the
+ * `.component.tsx` module. Returns the element, which draws its own markup once the module has registered it.
+ */
+export async function mountComponent(slug: string): Promise<HTMLElement> {
+	const page = pages[`../src/content/components/recipes/${slug}.mdx`]!;
+	document.body.innerHTML = [...page.matchAll(/```html\n([\s\S]*?)\n```/g)][2]![1];
+	await components[`../src/content/components/recipes/${slug}.component.tsx`]!();
+	return document.querySelector<HTMLElement>(`recipe-${slug}-app`)!;
 }
 
 export interface ListenerTracker {

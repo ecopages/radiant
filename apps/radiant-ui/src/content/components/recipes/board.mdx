@@ -9,7 +9,7 @@ import { PrimitiveExample } from '@/components/primitive-example';
 export const config = {
 	dependencies: {
 		components: [PrimitiveExample],
-		scripts: ['./board.script.ts', './board.element.ts'],
+		scripts: ['./board.script.ts', './board.element.ts', './board.component.tsx'],
 		stylesheets: ['./board.css'],
 	},
 };
@@ -36,7 +36,7 @@ Left to the recipe: where the cards live (here, the DOM: `onChange` inserts the 
 
 Drag a card to another column, or focus one, press Space, press PageDown to move it to the next column, use the arrows to choose its place and press Space to drop it. The first column scrolls.
 
-The two forms below behave the same.
+The three forms below behave the same.
 
 ### Plain JavaScript
 
@@ -276,25 +276,147 @@ Each column gets its own `createSortableController(this, ...)`, all sharing a `S
 
 What the Radiant form removes: the `mount` function and its registration, the cleanup that destroys each controller, and the re-run after a client-side navigation.
 
+### Radiant component
+
+The same board as one self-contained tag. The element owns its markup: it keeps the columns and their cards as state and draws them with `render()`, so there is no markup to author or copy and the page holds only the tag.
+
+<PrimitiveExample host>
+	<recipe-board-app></recipe-board-app>
+</PrimitiveExample>
+
+```html
+<recipe-board-app></recipe-board-app>
+```
+
+```tsx
+import { RadiantElement, customElement, state } from '@ecopages/radiant';
+import { SortableGroup, createSortableController } from '@ecopages/radiant-ui/controllers';
+
+type Card = { id: string; title: string };
+type Column = { id: string; title: string; cards: Card[] };
+
+const initialColumns: Column[] = [
+	{
+		id: 'todo',
+		title: 'To do',
+		cards: [
+			{ id: 'brief', title: 'Write the brief' },
+			{ id: 'layout', title: 'Sketch the layout' },
+			{ id: 'colors', title: 'Pick the colors' },
+			{ id: 'copy', title: 'Draft the copy' },
+			{ id: 'a11y', title: 'Review accessibility' },
+			{ id: 'launch', title: 'Plan the launch' },
+		],
+	},
+	{
+		id: 'doing',
+		title: 'Doing',
+		cards: [
+			{ id: 'header', title: 'Build the header' },
+			{ id: 'form', title: 'Wire the form' },
+		],
+	},
+	{ id: 'done', title: 'Done', cards: [{ id: 'repo', title: 'Set up the repo' }] },
+];
+
+function moveCard(columns: Column[], cardId: string, toColumn: string, to: number): Column[] {
+	const card = columns.flatMap((column) => column.cards).find((candidate) => candidate.id === cardId)!;
+	return columns.map((column) => {
+		const cards = column.cards.filter((candidate) => candidate.id !== cardId);
+		if (column.id === toColumn) cards.splice(to, 0, card);
+		return { ...column, cards };
+	});
+}
+
+@customElement('recipe-board-app')
+export class RecipeBoardApp extends RadiantElement<{ status: string }> {
+	@state columns = initialColumns;
+	@state status = 'Focus a card, press Space, PageDown for the next column, Space to drop';
+
+	private focusCard: string | null = null;
+	private readonly group = new SortableGroup();
+
+	private readonly sortables = initialColumns.map((_, column) =>
+		createSortableController(this, {
+			group: this.group,
+			preview: true,
+			createPlaceholder: () => document.createElement('li'),
+			getContainer: () => this.querySelectorAll('ul')[column] ?? null,
+			getItems: () => [...(this.querySelectorAll('ul')[column]?.children ?? [])] as HTMLElement[],
+			announce: (message) => (this.status = message),
+			onChange: ({ item, to, toContainer }) => {
+				this.focusCard = item.dataset.card!;
+				this.columns = moveCard(this.columns, item.dataset.card!, toContainer.dataset.columnId!, to);
+			},
+		}),
+	);
+
+	/**
+	 * Attaches the sortables to the lists the render produced, and focuses the card that was just moved.
+	 *
+	 * @remarks
+	 * The controllers attach when the element connects, before the first render, when no list exists yet; a second
+	 * `attach()` resolves each list again. The keyed sections keep their lists across renders, so later calls change
+	 * nothing, but one that replaced a list would need them. A card that changed column is a new node, so it is found
+	 * by its id.
+	 */
+	protected override updated(): void {
+		for (const sortable of this.sortables) sortable.attach();
+		if (this.focusCard) {
+			this.querySelector<HTMLElement>(`[data-card="${this.focusCard}"]`)?.focus();
+			this.focusCard = null;
+		}
+	}
+
+	override render() {
+		return (
+			<>
+				<div data-board>
+					{this.columns.map((column) => (
+						<section key={column.id} data-column>
+							<h3>{column.title}</h3>
+							<ul aria-label={column.title} data-column-id={column.id}>
+								{column.cards.map((card) => (
+									<li key={card.id} data-card={card.id} tabindex="0">
+										{card.title}
+									</li>
+								))}
+							</ul>
+						</section>
+					))}
+				</div>
+				<p data-status aria-live="polite">
+					{this.$.status}
+				</p>
+			</>
+		);
+	}
+}
+```
+
+The columns are `@state`, so a move is a new array: `onChange` does not touch the DOM, it writes the moved card into `columns` with `moveCard`, and `render()` draws the result. A render can replace a list, so `updated()`, which runs after each commit, attaches the sortables again, and focuses the card that moved by its id, because a card that changed column is a new node. The status line is bound with `this.$.status`, so announcing during a sort patches one text node and never re-renders the columns while a card is lifted.
+
+Compared with the Radiant element above, the markup lives inside the element, so there is nothing to keep in step with the page and the data is state you can change, but restyling the structure means editing the class. It also needs the render path on the server to have content before the script runs: this docs build prerenders the tag empty and the client draws it, so the page shows nothing until the script loads, which a page of authored children does not.
+
 ### Styles
 
 The same attributes style the lifted card, the placeholder and the column a card is over; `touch-action: none` on the cards lets a touch drag move them instead of scrolling.
 
 ```css
 [data-example='board'].primitive-example,
-.primitive-example:has(> recipe-board) {
+.primitive-example:has(> recipe-board, > recipe-board-app) {
 	flex-direction: column;
 	flex-wrap: nowrap;
 	align-items: stretch;
 }
 
-:is([data-example='board'], recipe-board) :where([data-board]) {
+:is([data-example='board'], recipe-board, recipe-board-app) :where([data-board]) {
 	display: grid;
 	grid-template-columns: repeat(3, minmax(0, 1fr));
 	gap: var(--space-3);
 }
 
-:is([data-example='board'], recipe-board) :where([data-column]) {
+:is([data-example='board'], recipe-board, recipe-board-app) :where([data-column]) {
 	display: flex;
 	flex-direction: column;
 	gap: var(--space-2);
@@ -306,19 +428,19 @@ The same attributes style the lifted card, the placeholder and the column a card
 	color: var(--on-surface-container);
 }
 
-:is([data-example='board'], recipe-board) :where(h3) {
+:is([data-example='board'], recipe-board, recipe-board-app) :where(h3) {
 	margin: 0;
 	font-size: 0.875rem;
 }
 
-:is([data-example='board'], recipe-board) :where(ul) {
+:is([data-example='board'], recipe-board, recipe-board-app) :where(ul) {
 	min-height: 3rem;
 	max-height: 8rem;
 	overflow-y: auto;
 	border-radius: var(--radius-control);
 }
 
-:is([data-example='board'], recipe-board) ul[data-sortable-over] {
+:is([data-example='board'], recipe-board, recipe-board-app) ul[data-sortable-over] {
 	outline: 2px solid var(--primary);
 	outline-offset: -2px;
 }
@@ -349,13 +471,13 @@ The same attributes style the lifted card, the placeholder and the column a card
 	cursor: grabbing;
 }
 
-:is([data-example='board'], recipe-board) [data-sortable-placeholder] {
+:is([data-example='board'], recipe-board, recipe-board-app) [data-sortable-placeholder] {
 	border: 1px dashed var(--primary);
 	border-radius: var(--radius-control);
 	background: transparent;
 }
 
-:is([data-example='board'], recipe-board) [data-sortable-drop] {
+:is([data-example='board'], recipe-board, recipe-board-app) [data-sortable-drop] {
 	box-shadow: none;
 }
 ```
