@@ -2,8 +2,8 @@ import { RadiantElement, customElement, query } from '@ecopages/radiant';
 import { createRovingController, createSortableController } from '@ecopages/radiant-ui/controllers';
 import { reorder } from '@ecopages/radiant-ui/helpers';
 
-@customElement('recipe-sortable-list')
-export class RecipeSortableList extends RadiantElement {
+@customElement('sortable-list-element')
+export class SortableListElement extends RadiantElement {
 	@query({ selector: 'ul' }) private list!: HTMLElement;
 	@query({ selector: '[data-status]' }) private status!: HTMLElement;
 

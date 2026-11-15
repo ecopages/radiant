@@ -1,44 +1,9 @@
 import { RadiantElement, customElement, state } from '@ecopages/radiant';
 import { SortableGroup, createSortableController } from '@ecopages/radiant-ui/controllers';
+import { initialColumns, moveCard } from './board.data';
 
-type Card = { id: string; title: string };
-type Column = { id: string; title: string; cards: Card[] };
-
-const initialColumns: Column[] = [
-	{
-		id: 'todo',
-		title: 'To do',
-		cards: [
-			{ id: 'brief', title: 'Write the brief' },
-			{ id: 'layout', title: 'Sketch the layout' },
-			{ id: 'colors', title: 'Pick the colors' },
-			{ id: 'copy', title: 'Draft the copy' },
-			{ id: 'a11y', title: 'Review accessibility' },
-			{ id: 'launch', title: 'Plan the launch' },
-		],
-	},
-	{
-		id: 'doing',
-		title: 'Doing',
-		cards: [
-			{ id: 'header', title: 'Build the header' },
-			{ id: 'form', title: 'Wire the form' },
-		],
-	},
-	{ id: 'done', title: 'Done', cards: [{ id: 'repo', title: 'Set up the repo' }] },
-];
-
-function moveCard(columns: Column[], cardId: string, toColumn: string, to: number): Column[] {
-	const card = columns.flatMap((column) => column.cards).find((candidate) => candidate.id === cardId)!;
-	return columns.map((column) => {
-		const cards = column.cards.filter((candidate) => candidate.id !== cardId);
-		if (column.id === toColumn) cards.splice(to, 0, card);
-		return { ...column, cards };
-	});
-}
-
-@customElement('recipe-board-app')
-export class RecipeBoardApp extends RadiantElement<{ status: string }> {
+@customElement('board-app')
+export class BoardApp extends RadiantElement<{ status: string }> {
 	@state columns = initialColumns;
 	@state status = 'Focus a card, press Space, PageDown for the next column, Space to drop';
 
@@ -54,8 +19,8 @@ export class RecipeBoardApp extends RadiantElement<{ status: string }> {
 			getItems: () => [...(this.querySelectorAll('ul')[column]?.children ?? [])] as HTMLElement[],
 			announce: (message) => (this.status = message),
 			onChange: ({ item, to, toContainer }) => {
-				this.focusCard = item.dataset.card!;
-				this.columns = moveCard(this.columns, item.dataset.card!, toContainer.dataset.columnId!, to);
+				this.focusCard = item.dataset.boardCard!;
+				this.columns = moveCard(this.columns, item.dataset.boardCard!, toContainer.dataset.columnId!, to);
 			},
 		}),
 	);
@@ -72,7 +37,7 @@ export class RecipeBoardApp extends RadiantElement<{ status: string }> {
 	protected override updated(): void {
 		for (const sortable of this.sortables) sortable.attach();
 		if (this.focusCard) {
-			this.querySelector<HTMLElement>(`[data-card="${this.focusCard}"]`)?.focus();
+			this.querySelector<HTMLElement>(`[data-board-card="${this.focusCard}"]`)?.focus();
 			this.focusCard = null;
 		}
 	}
@@ -86,7 +51,7 @@ export class RecipeBoardApp extends RadiantElement<{ status: string }> {
 							<h3>{column.title}</h3>
 							<ul aria-label={column.title} data-column-id={column.id}>
 								{column.cards.map((card) => (
-									<li key={card.id} data-card={card.id} tabindex="0">
+									<li key={card.id} data-board-card={card.id} tabindex="0">
 										{card.title}
 									</li>
 								))}

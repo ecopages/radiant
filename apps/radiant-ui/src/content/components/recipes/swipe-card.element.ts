@@ -2,9 +2,9 @@ import { RadiantElement, customElement, onEvent, query } from '@ecopages/radiant
 import { createPointerDragController } from '@ecopages/radiant-ui/controllers';
 import { resolveSwipeDirection } from '@ecopages/radiant-ui/helpers';
 
-@customElement('recipe-swipe-card')
-export class RecipeSwipeCard extends RadiantElement {
-	@query({ selector: '[data-card]' }) private card!: HTMLElement;
+@customElement('swipe-card-element')
+export class SwipeCardElement extends RadiantElement {
+	@query({ selector: '[data-swipe-card]' }) private card!: HTMLElement;
 	@query({ selector: '[data-dismiss]' }) private dismissButton!: HTMLElement;
 	@query({ selector: '[data-restore]' }) private restoreButton!: HTMLElement;
 	@query({ selector: '[data-status]' }) private status!: HTMLElement;
@@ -58,6 +58,7 @@ export class RecipeSwipeCard extends RadiantElement {
 	@onEvent({ selector: '[data-dismiss]', type: 'click' })
 	dismiss(): void {
 		this.setShown(false, 'Card dismissed');
+		this.restoreButton.focus();
 	}
 
 	@onEvent({ selector: '[data-restore]', type: 'click' })

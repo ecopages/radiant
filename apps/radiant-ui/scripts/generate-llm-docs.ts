@@ -9,6 +9,7 @@ import {
 	LLM_SECTION_ORDER,
 	type ComponentDocsFrontmatter,
 } from '../src/content/components';
+import { recipeFiles, type RecipePatternId } from '../src/components/recipe-patterns/recipe-files';
 import { MOVED_DOCS_PATHS } from '../src/lib/docs/moved-docs-paths';
 import { absoluteUrl, configuredSiteOrigin, normalizeSiteOrigin } from '../src/lib/docs/site-meta';
 
@@ -67,6 +68,29 @@ const legacyPathByCurrentPath = new Map(Object.entries(MOVED_DOCS_PATHS).map(([f
 function legacyLlmsSlug(slug: string): string {
 	const currentPath = `/docs/${slug}`;
 	return (legacyPathByCurrentPath.get(currentPath) ?? currentPath).slice('/docs/'.length);
+}
+
+const RECIPE_CODE_TAG = /^<RecipeCode recipe="([^"]+)" pattern="([^"]+)" \/>$/gm;
+const RECIPE_EXAMPLE_TAG = /^<RecipeExample [^\n]*\/>\n?\n?/gm;
+
+/**
+ * Replaces the recipe components in an MDX body with what a reader of the plain export needs: one fenced block per
+ * source file of each `RecipeCode`, and nothing for `RecipeExample`, which is a live example with no source of its
+ * own (its markup is a file of `RecipeCode`).
+ *
+ * @remarks
+ * Recipe pages no longer carry their code in fences; the site reads it from the recipe files at render time, so the
+ * export has to do the same.
+ */
+export function expandRecipeCode(body: string): string {
+	return body.replace(RECIPE_EXAMPLE_TAG, '').replace(RECIPE_CODE_TAG, (_tag, recipe: string, pattern: string) =>
+		recipeFiles(recipe, pattern as RecipePatternId)
+			.map(({ label, source }) => {
+				const language = label.slice(label.lastIndexOf('.') + 1);
+				return `\`\`\`${language} title="${label}"\n${source.replace(/\n$/, '')}\n\`\`\``;
+			})
+			.join('\n\n'),
+	);
 }
 
 export type GenerateLlmDocsOptions = {
@@ -143,7 +167,7 @@ export async function generateLlmDocs(outputRoot = publicRoot, options: Generate
 
 			for (const page of exportedPosts) {
 				const pageSlug = page.segments[page.segments.length - 1]!;
-				const body = await scanner.getRawContent(page.slug);
+				const body = expandRecipeCode(await scanner.getRawContent(page.slug));
 				const outputPath = join(stagedLlmRoot, sectionId, `${pageSlug}.md`);
 				await mkdir(dirname(outputPath), { recursive: true });
 				await writeFile(outputPath, body, 'utf8');

@@ -1,3 +1,5 @@
+import { isServer } from '@ecopages/radiant/is-server';
+
 type Mount = (root: HTMLElement) => () => void;
 
 const mounts = new Map<string, Mount>();
@@ -39,5 +41,7 @@ export function mountExample(name: string, mount: Mount): void {
 	syncExamples();
 }
 
-document.addEventListener('eco:page-load', syncExamples);
-document.addEventListener('eco:after-swap', syncExamples);
+if (!isServer) {
+	document.addEventListener('eco:page-load', syncExamples);
+	document.addEventListener('eco:after-swap', syncExamples);
+}

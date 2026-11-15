@@ -1,12 +1,6 @@
 import { RovingController, SortableController, SortableGroup } from '@ecopages/radiant-ui/controllers';
-import {
-	buildCalendarMonth,
-	formatDisplayDate,
-	formatMonthYear,
-	getWeekdayLabels,
-	getWeekStartsOn,
-	textContains,
-} from '@ecopages/radiant-ui/helpers';
+import { formatMonthYear, getWeekdayLabels, getWeekStartsOn, textContains } from '@ecopages/radiant-ui/helpers';
+import { initialEvents, locale, month, paintDay, steps, weeks } from './calendar-events.data';
 import { mountExample } from '../../../components/primitive-example/mount-example';
 
 export function mount(root: HTMLElement): () => void {
@@ -14,14 +8,7 @@ export function mount(root: HTMLElement): () => void {
 	const grid = root.querySelector<HTMLElement>('[data-grid]')!;
 	const status = root.querySelector('[data-status]')!;
 
-	const locale = 'en-US';
-	const month = new Date(2026, 10, 1);
-	const events = [
-		{ id: 'review', iso: '2026-11-03', title: 'Design review' },
-		{ id: 'standup', iso: '2026-11-03', title: 'Standup' },
-		{ id: 'launch', iso: '2026-11-12', title: 'Launch day' },
-		{ id: 'retro', iso: '2026-11-19', title: 'Retro' },
-	];
+	const events = initialEvents.map((event) => ({ ...event }));
 
 	root.querySelector('[data-title]')!.textContent = formatMonthYear(month, locale);
 	const headers = getWeekdayLabels(locale, getWeekStartsOn(locale)).map(
@@ -29,32 +16,23 @@ export function mount(root: HTMLElement): () => void {
 	);
 	grid.insertAdjacentHTML('beforeend', `<div role="row">${headers.join('')}</div>`);
 
-	const cells: HTMLElement[] = buildCalendarMonth(month.getFullYear(), month.getMonth(), { locale }).flatMap(
-		(week) => {
-			const row = grid.appendChild(document.createElement('div'));
-			row.setAttribute('role', 'row');
-			return week.map(({ iso, date, inMonth }) => {
-				const cell = row.appendChild(document.createElement('div'));
-				cell.setAttribute('role', 'gridcell');
-				cell.setAttribute('aria-label', formatDisplayDate(date, locale, 'full'));
-				cell.dataset.iso = iso;
-				cell.dataset.day = String(date.getDate());
-				cell.toggleAttribute('data-outside', !inMonth);
-				return cell;
-			});
-		},
-	);
+	const cells: HTMLElement[] = weeks.flatMap((week) => {
+		const row = grid.appendChild(document.createElement('div'));
+		row.setAttribute('role', 'row');
+		return week.map(({ iso, inMonth }) => {
+			const cell = row.appendChild(document.createElement('div'));
+			cell.setAttribute('role', 'gridcell');
+			cell.dataset.iso = iso;
+			cell.toggleAttribute('data-outside', !inMonth);
+			return cell;
+		});
+	});
 
 	const visible = (iso: string) =>
 		events.filter((event) => event.iso === iso && textContains(event.title, filter.value));
 
 	function render(): void {
-		for (const cell of cells) {
-			const items = visible(cell.dataset.iso!).map(
-				({ id, title }) => `<div data-event="${id}" tabindex="-1">${title}</div>`,
-			);
-			cell.innerHTML = `<span data-day aria-hidden="true">${cell.dataset.day}</span>${items.join('')}`;
-		}
+		for (const cell of cells) paintDay(cell, visible(cell.dataset.iso!));
 	}
 
 	const group = new SortableGroup();
@@ -79,7 +57,6 @@ export function mount(root: HTMLElement): () => void {
 	for (const sortable of sortables) sortable.attach();
 
 	const roving = new RovingController({ getItems: () => cells, getTarget: () => grid, orientation: 'none' });
-	const steps: Record<string, number> = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 };
 	grid.addEventListener('keydown', (event) => {
 		const target = event.target as HTMLElement;
 		if (target.hasAttribute('data-event')) {

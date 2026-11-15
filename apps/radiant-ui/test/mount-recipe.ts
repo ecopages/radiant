@@ -1,18 +1,21 @@
+import { startControllers, stopControllers } from '@ecopages/radiant/controller-registry';
 import { syncExamples } from '../src/components/primitive-example/mount-example';
 
-const pages = import.meta.glob('../src/content/components/recipes/*.mdx', {
+const markup = import.meta.glob('../src/content/components/recipes/*.html', {
 	query: '?raw',
 	import: 'default',
 	eager: true,
 }) as Record<string, string>;
+const markupOf = (slug: string, pattern: 'plain' | 'element' | 'controller') =>
+	markup[`../src/content/components/recipes/${slug}.${pattern}.html`]!;
 const scripts = import.meta.glob('../src/content/components/recipes/*.script.ts');
 const elements = import.meta.glob('../src/content/components/recipes/*.element.ts');
 const components = import.meta.glob('../src/content/components/recipes/*.component.tsx');
+const controllers = import.meta.glob('../src/content/components/recipes/*.controller.ts');
 
-/** Mounts the markup a recipe page documents and runs the script it documents. */
+/** Mounts the plain markup of a recipe and runs its script. */
 export async function mountRecipe(slug: string): Promise<HTMLElement> {
-	const page = pages[`../src/content/components/recipes/${slug}.mdx`]!;
-	document.body.innerHTML = page.match(/```html\n([\s\S]*?)\n```/)![1];
+	document.body.innerHTML = markupOf(slug, 'plain');
 	await scripts[`../src/content/components/recipes/${slug}.script.ts`]!();
 	syncExamples();
 	return document.querySelector<HTMLElement>(`[data-example="${slug}"]`)!;
@@ -21,29 +24,41 @@ export async function mountRecipe(slug: string): Promise<HTMLElement> {
 export type Form = 'plain' | 'radiant';
 
 /**
- * Mounts one form of a recipe from its page: the plain form is the first `html` fence plus the `mount` script, the
- * Radiant form is the second `html` fence plus the element script, which needs no mount call. Returns the element the
+ * Mounts one form of a recipe: the plain form is `<slug>.plain.html` plus the `mount` script, the
+ * Radiant form is `<slug>.element.html` plus the element script, which needs no mount call. Returns the element the
  * recipe's parts sit under.
  */
 export async function mountForm(slug: string, form: Form): Promise<HTMLElement> {
 	if (form === 'plain') {
 		return mountRecipe(slug);
 	}
-	const page = pages[`../src/content/components/recipes/${slug}.mdx`]!;
-	document.body.innerHTML = [...page.matchAll(/```html\n([\s\S]*?)\n```/g)][1]![1];
+	document.body.innerHTML = markupOf(slug, 'element');
 	await elements[`../src/content/components/recipes/${slug}.element.ts`]!();
-	return document.querySelector<HTMLElement>(`recipe-${slug}`)!;
+	return document.querySelector<HTMLElement>(`${slug}-element`)!;
 }
 
 /**
- * Mounts the all-in-one component a recipe page documents: its third `html` fence, which is the tag alone, and the
+ * Mounts the all-in-one component of a recipe: the `<slug-app>` tag alone, and the
  * `.component.tsx` module. Returns the element, which draws its own markup once the module has registered it.
  */
 export async function mountComponent(slug: string): Promise<HTMLElement> {
-	const page = pages[`../src/content/components/recipes/${slug}.mdx`]!;
-	document.body.innerHTML = [...page.matchAll(/```html\n([\s\S]*?)\n```/g)][2]![1];
+	document.body.innerHTML = `<${slug}-app></${slug}-app>`;
 	await components[`../src/content/components/recipes/${slug}.component.tsx`]!();
-	return document.querySelector<HTMLElement>(`recipe-${slug}-app`)!;
+	return document.querySelector<HTMLElement>(`${slug}-app`)!;
+}
+
+/**
+ * Mounts the Radiant controller form of a recipe: `<slug>.controller.html`, which is markup carrying
+ * `data-controller="<slug>"`, and the `.controller.ts` module whose `@controller` registers the class. A registry
+ * runs over the document, as on the docs site, and any earlier one is stopped so controllers are not started twice.
+ * Returns the element the controller is attached to.
+ */
+export async function mountController(slug: string): Promise<HTMLElement> {
+	stopControllers();
+	document.body.innerHTML = markupOf(slug, 'controller');
+	await controllers[`../src/content/components/recipes/${slug}.controller.ts`]!();
+	startControllers(document);
+	return document.querySelector<HTMLElement>(`[data-controller="${slug}"]`)!;
 }
 
 export interface ListenerTracker {

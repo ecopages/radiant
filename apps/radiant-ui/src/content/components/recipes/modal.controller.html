@@ -1,0 +1,33 @@
+<div data-controller="modal">
+	<div data-origin>
+		<ul data-list aria-label="Files">
+			<li>
+				<span>Brief</span>
+				<button type="button" data-delete aria-label="Delete Brief">Delete</button>
+			</li>
+			<li>
+				<span>Report</span>
+				<button type="button" data-delete aria-label="Delete Report">Delete</button>
+			</li>
+			<li>
+				<span>Notes</span>
+				<button type="button" data-delete aria-label="Delete Notes">Delete</button>
+			</li>
+		</ul>
+		<div data-empty hidden>
+			<span>No files left</span>
+			<button type="button" data-reset>Reset</button>
+		</div>
+		<div data-layer hidden>
+			<div data-dialog role="dialog" aria-modal="true" aria-labelledby="modal-title">
+				<h3 id="modal-title">Delete this file?</h3>
+				<p>This cannot be undone.</p>
+				<div data-actions>
+					<button type="button" data-close>Cancel</button>
+					<button type="button" data-confirm>Delete</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<p data-status aria-live="polite">Delete a file to see where focus goes</p>
+</div>

@@ -1,38 +1,56 @@
-:is([data-example='swipe-card'], .primitive-example:has(> recipe-swipe-card)) {
+.primitive-example:has(> swipe-card-element, > [data-controller='swipe-card'], > swipe-card-app),
+.primitive-example[data-example='swipe-card'] {
 	flex-direction: column;
 	align-items: stretch;
 	overflow-x: clip;
 	min-height: 8rem;
 }
 
-:is([data-example='swipe-card'], .primitive-example:has(> recipe-swipe-card)) [data-card] {
+:is([data-example='swipe-card'], swipe-card-element, swipe-card-app, div[data-controller='swipe-card'])
+	[data-swipe-card] {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 	gap: var(--space-3);
-	border-style: solid;
+	padding: var(--space-3) var(--space-4);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-control);
+	background: var(--surface);
+	color: var(--on-surface);
 	cursor: grab;
+	touch-action: none;
+	user-select: none;
 	transform: translateX(var(--swipe-dx, 0));
 	opacity: var(--swipe-opacity, 1);
 	transition:
-		transform 0.2s ease,
-		opacity 0.2s ease;
+		transform var(--duration-normal) var(--ease-out-strong),
+		opacity var(--duration-normal) var(--ease-out-strong);
 }
 
-:is([data-example='swipe-card'], .primitive-example:has(> recipe-swipe-card)) [data-card][data-dragging] {
+:is([data-example='swipe-card'], swipe-card-element, swipe-card-app, div[data-controller='swipe-card'])
+	[data-swipe-card][data-dragging] {
 	transition: none;
 	cursor: grabbing;
-	box-shadow: 0 var(--space-1) var(--space-3) color-mix(in srgb, var(--on-surface) 20%, transparent);
+	box-shadow: var(--shadow-overlay);
 }
 
-:is([data-example='swipe-card'], .primitive-example:has(> recipe-swipe-card)) [data-card][hidden] {
+:is([data-example='swipe-card'], swipe-card-element, swipe-card-app, div[data-controller='swipe-card'])
+	[data-swipe-card][hidden] {
 	display: none;
 }
 
-:is([data-example='swipe-card'], .primitive-example:has(> recipe-swipe-card)) [data-restore] {
+:is([data-example='swipe-card'], swipe-card-element, swipe-card-app, div[data-controller='swipe-card']) [data-restore] {
 	align-self: flex-start;
 }
 
-:is([data-example='swipe-card'], .primitive-example:has(> recipe-swipe-card)) [data-restore][hidden] {
+:is([data-example='swipe-card'], swipe-card-element, swipe-card-app, div[data-controller='swipe-card'])
+	[data-restore][hidden] {
 	display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	:is([data-example='swipe-card'], swipe-card-element, swipe-card-app, div[data-controller='swipe-card'])
+		[data-swipe-card] {
+		transition: none;
+	}
 }

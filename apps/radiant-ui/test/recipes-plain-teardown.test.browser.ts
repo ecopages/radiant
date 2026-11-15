@@ -19,8 +19,8 @@ const engage: Record<string, (root: HTMLElement) => void> = {
 	modal: (root) => root.querySelector<HTMLElement>('[data-delete]')!.click(),
 	'popover-menu': (root) => root.querySelector<HTMLElement>('button')!.click(),
 	'sortable-list': (root) => pointerdown(root.querySelector('li')!),
-	board: (root) => pointerdown(root.querySelector('[data-card]')!),
-	'swipe-card': (root) => pointerdown(root.querySelector('[data-card]')!),
+	board: (root) => pointerdown(root.querySelector('[data-board-card]')!),
+	'swipe-card': (root) => pointerdown(root.querySelector('[data-swipe-card]')!),
 };
 
 afterEach(() => {

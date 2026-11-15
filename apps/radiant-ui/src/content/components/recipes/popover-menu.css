@@ -1,31 +1,49 @@
-:is([data-example='popover-menu'], .primitive-example:has(> recipe-popover-menu)) {
+.primitive-example[data-example='popover-menu'],
+.primitive-example:has(> popover-menu-element, > popover-menu-app, > [data-controller='popover-menu']) {
 	flex-direction: column;
 	align-items: flex-start;
 	min-height: 13rem;
 }
 
-:is([data-example='popover-menu'], .primitive-example:has(> recipe-popover-menu)) [role='menu'] {
+:is([data-example='popover-menu'], popover-menu-element, popover-menu-app, div[data-controller='popover-menu'])
+	[role='menu'] {
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
 	min-width: 10rem;
-	box-shadow: 0 var(--space-1) var(--space-3) color-mix(in srgb, var(--on-surface) 20%, transparent);
+	margin: 0;
+	padding: var(--space-1);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-control);
+	background: var(--surface-container);
+	color: var(--on-surface-container);
+	box-shadow: var(--shadow-overlay);
 }
 
-:is([data-example='popover-menu'], .primitive-example:has(> recipe-popover-menu)) [role='menu'][hidden] {
+:is([data-example='popover-menu'], popover-menu-element, popover-menu-app, div[data-controller='popover-menu'])
+	[role='menu'][hidden] {
 	display: none;
 }
 
-:is([data-example='popover-menu'], .primitive-example:has(> recipe-popover-menu)) [role='menuitem'] {
+:is([data-example='popover-menu'], popover-menu-element, popover-menu-app, div[data-controller='popover-menu'])
+	[role='menuitem'] {
 	padding: var(--space-2) var(--space-3);
 	border: 0;
 	border-radius: var(--radius-control);
 	background: transparent;
 	color: var(--on-surface-container);
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
 }
 
-:is([data-example='popover-menu'], .primitive-example:has(> recipe-popover-menu)) [role='menuitem']:hover {
+:is([data-example='popover-menu'], popover-menu-element, popover-menu-app, div[data-controller='popover-menu'])
+	[role='menuitem']:hover {
 	background: var(--surface-container-high);
 }
 
-:is([data-example='popover-menu'], .primitive-example:has(> recipe-popover-menu)) [role='menuitem']:focus-visible {
+:is([data-example='popover-menu'], popover-menu-element, popover-menu-app, div[data-controller='popover-menu'])
+	[role='menuitem']:focus-visible {
 	background: var(--primary);
 	color: var(--on-primary);
 	outline-offset: -2px;

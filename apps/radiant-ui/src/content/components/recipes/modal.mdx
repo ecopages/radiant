@@ -5,11 +5,12 @@ order: 6
 ---
 
 import { PrimitiveExample } from '@/components/primitive-example';
+import { RecipeCode, RecipeExample, RecipePattern, RecipePatterns } from '@/components/recipe-patterns';
 
 export const config = {
 	dependencies: {
-		components: [PrimitiveExample],
-		scripts: ['./modal.script.ts', './modal.element.ts'],
+		components: [PrimitiveExample, RecipePatterns, RecipeCode, RecipeExample],
+		scripts: ['./modal.script.ts', './modal.element.ts', './modal.component.tsx', './modal.controller.ts'],
 		stylesheets: ['./modal.css'],
 	},
 };
@@ -37,460 +38,64 @@ Escape stays with DismissController: its `onDismiss` closes the dialog, and the 
 
 ## Example
 
-Press Delete on a file: the example frame dims behind the dialog. Press Tab to see focus stay inside, then close it with a button, Escape or a press on the dimmed area. Cancel, Escape and a press outside keep the file and return focus to its Delete button. Delete in the dialog removes the file and moves focus to the Delete button of the next file through `getReturnFocus`; delete the last one and focus goes to Reset, which restores the list. The status line says what happened. The two forms below behave the same.
+Press Delete on a file: the example frame dims behind the dialog. Press Tab to see focus stay inside, then close it with a button, Escape or a press on the dimmed area. Cancel, Escape and a press outside keep the file and return focus to its Delete button. Delete in the dialog removes the file and moves focus to the Delete button of the next file through `getReturnFocus`; delete the last one and focus goes to Reset, which restores the list. The status line says what happened. Pick an authoring pattern below; they all behave the same, and the one you pick is remembered on the other recipes.
 
-### Plain JavaScript
+<RecipePatterns patterns={['element', 'component', 'controller', 'plain']}>
 
-A `mount` function wires the controllers to one element and returns the cleanup that undoes it.
-
-<PrimitiveExample name="modal">
-	<div data-origin>
-		<ul data-list aria-label="Files">
-			<li>
-				<span>Brief</span>
-				<button type="button" data-delete aria-label="Delete Brief">
-					Delete
-				</button>
-			</li>
-			<li>
-				<span>Report</span>
-				<button type="button" data-delete aria-label="Delete Report">
-					Delete
-				</button>
-			</li>
-			<li>
-				<span>Notes</span>
-				<button type="button" data-delete aria-label="Delete Notes">
-					Delete
-				</button>
-			</li>
-		</ul>
-		<div data-empty hidden>
-			<span>No files left</span>
-			<button type="button" data-reset>
-				Reset
-			</button>
-		</div>
-		<div data-layer hidden>
-			<div data-dialog role="dialog" aria-modal="true" aria-labelledby="modal-title">
-				<h3 id="modal-title">Delete this file?</h3>
-				<p>This cannot be undone.</p>
-				<div data-actions>
-					<button type="button" data-close>
-						Cancel
-					</button>
-					<button type="button" data-confirm>
-						Delete
-					</button>
-				</div>
-			</div>
-		</div>
-	</div>
-	<p data-status aria-live="polite">
-		Delete a file to see where focus goes
-	</p>
-</PrimitiveExample>
-
-```html
-<div data-example="modal">
-	<div data-origin>
-		<ul data-list aria-label="Files">
-			<li>
-				<span>Brief</span>
-				<button type="button" data-delete aria-label="Delete Brief">Delete</button>
-			</li>
-			<li>
-				<span>Report</span>
-				<button type="button" data-delete aria-label="Delete Report">Delete</button>
-			</li>
-			<li>
-				<span>Notes</span>
-				<button type="button" data-delete aria-label="Delete Notes">Delete</button>
-			</li>
-		</ul>
-		<div data-empty hidden>
-			<span>No files left</span>
-			<button type="button" data-reset>Reset</button>
-		</div>
-		<div data-layer hidden>
-			<div data-dialog role="dialog" aria-modal="true" aria-labelledby="modal-title">
-				<h3 id="modal-title">Delete this file?</h3>
-				<p>This cannot be undone.</p>
-				<div data-actions>
-					<button type="button" data-close>Cancel</button>
-					<button type="button" data-confirm>Delete</button>
-				</div>
-			</div>
-		</div>
-	</div>
-	<p data-status aria-live="polite">Delete a file to see where focus goes</p>
-</div>
-```
-
-```ts
-import {
-	DismissController,
-	FocusTrapController,
-	PortalController,
-	ScrollLockController,
-} from '@ecopages/radiant-ui/controllers';
-
-export function mount(root: HTMLElement): () => void {
-	const list = root.querySelector<HTMLElement>('[data-list]')!;
-	const empty = root.querySelector<HTMLElement>('[data-empty]')!;
-	const reset = root.querySelector<HTMLElement>('[data-reset]')!;
-	const layer = root.querySelector<HTMLElement>('[data-layer]')!;
-	const dialog = root.querySelector<HTMLElement>('[data-dialog]')!;
-	const heading = dialog.querySelector('h3')!;
-	const status = root.querySelector('[data-status]')!;
-
-	const rows = [...list.children] as HTMLElement[];
-	const nameOf = (row: Element) => row.firstElementChild!.textContent;
-	let pending: HTMLElement | null = null;
-	let returnTo: HTMLElement | null = null;
-
-	const portal = new PortalController({ getNode: () => layer, getContainer: () => root });
-	const trap = new FocusTrapController({ getSurface: () => dialog, getReturnFocus: () => returnTo });
-	const lock = new ScrollLockController({
-		getTarget: () => root.closest<HTMLElement>('.docs-layout__content') ?? document.documentElement,
-	});
-	const dismiss = new DismissController({
-		getSurface: () => dialog,
-		triggers: ['pointer', 'escape'],
-		onDismiss: () => close(`Kept ${nameOf(pending!)}`),
-	});
-
-	function open(row: HTMLElement): void {
-		pending = row;
-		heading.textContent = `Delete ${nameOf(row)}?`;
-		layer.hidden = false;
-		portal.attach();
-		lock.attach();
-		trap.attach();
-		dismiss.attach();
-		status.textContent = `Delete ${nameOf(row)}?`;
-	}
-
-	function release(): void {
-		dismiss.destroy();
-		layer.hidden = true;
-		trap.destroy();
-		returnTo = null;
-		pending = null;
-		lock.destroy();
-		portal.destroy();
-	}
-
-	function close(message: string): void {
-		release();
-		status.textContent = message;
-	}
-
-	function confirm(): void {
-		const row = pending!;
-		const name = nameOf(row);
-		const neighbour = row.nextElementSibling ?? row.previousElementSibling;
-		row.remove();
-		empty.hidden = list.children.length > 0;
-		returnTo = neighbour?.querySelector<HTMLElement>('[data-delete]') ?? reset;
-		close(`Deleted ${name}, ${list.children.length} left`);
-	}
-
-	list.addEventListener('click', (event) => {
-		const button = (event.target as Element).closest('[data-delete]');
-		if (button) open(button.closest('li')!);
-	});
-	reset.addEventListener('click', () => {
-		list.replaceChildren(...rows);
-		empty.hidden = true;
-		list.querySelector<HTMLElement>('[data-delete]')!.focus();
-		status.textContent = 'List restored';
-	});
-	dialog.querySelector('[data-confirm]')!.addEventListener('click', confirm);
-	dialog.querySelector('[data-close]')!.addEventListener('click', () => close(`Kept ${nameOf(pending!)}`));
-	return release;
-}
-```
-
-`mount` runs once for each example element on the page, and the function it returns undoes it; see [how the examples run](/docs/recipes/overview#how-the-examples-run).
-
-### Radiant element
+<RecipePattern id="element">
 
 The same behavior as a `RadiantElement`. The markup is authored inside the element and the element finds its parts with `@query`; there is nothing to mount, clean up or run again.
 
-<PrimitiveExample host>
-	<recipe-modal>
-		<div data-origin>
-			<ul data-list aria-label="Files">
-				<li>
-					<span>Brief</span>
-					<button type="button" data-delete aria-label="Delete Brief">
-						Delete
-					</button>
-				</li>
-				<li>
-					<span>Report</span>
-					<button type="button" data-delete aria-label="Delete Report">
-						Delete
-					</button>
-				</li>
-				<li>
-					<span>Notes</span>
-					<button type="button" data-delete aria-label="Delete Notes">
-						Delete
-					</button>
-				</li>
-			</ul>
-			<div data-empty hidden>
-				<span>No files left</span>
-				<button type="button" data-reset>
-					Reset
-				</button>
-			</div>
-			<div data-layer hidden>
-				<div data-dialog role="dialog" aria-modal="true" aria-labelledby="radiant-modal-title">
-					<h3 id="radiant-modal-title">Delete this file?</h3>
-					<p>This cannot be undone.</p>
-					<div data-actions>
-						<button type="button" data-close>
-							Cancel
-						</button>
-						<button type="button" data-confirm>
-							Delete
-						</button>
-					</div>
-				</div>
-			</div>
-		</div>
-		<p data-status aria-live="polite">
-			Delete a file to see where focus goes
-		</p>
-	</recipe-modal>
-</PrimitiveExample>
+<RecipeExample recipe="modal" pattern="element" />
 
-```html
-<recipe-modal>
-	<div data-origin>
-		<ul data-list aria-label="Files">
-			<li>
-				<span>Brief</span>
-				<button type="button" data-delete aria-label="Delete Brief">Delete</button>
-			</li>
-			<li>
-				<span>Report</span>
-				<button type="button" data-delete aria-label="Delete Report">Delete</button>
-			</li>
-			<li>
-				<span>Notes</span>
-				<button type="button" data-delete aria-label="Delete Notes">Delete</button>
-			</li>
-		</ul>
-		<div data-empty hidden>
-			<span>No files left</span>
-			<button type="button" data-reset>Reset</button>
-		</div>
-		<div data-layer hidden>
-			<div data-dialog role="dialog" aria-modal="true" aria-labelledby="radiant-modal-title">
-				<h3 id="radiant-modal-title">Delete this file?</h3>
-				<p>This cannot be undone.</p>
-				<div data-actions>
-					<button type="button" data-close>Cancel</button>
-					<button type="button" data-confirm>Delete</button>
-				</div>
-			</div>
-		</div>
-	</div>
-	<p data-status aria-live="polite">Delete a file to see where focus goes</p>
-</recipe-modal>
-```
-
-```ts
-import { RadiantElement, customElement, onEvent, query } from '@ecopages/radiant';
-import {
-	DismissController,
-	FocusTrapController,
-	PortalController,
-	ScrollLockController,
-} from '@ecopages/radiant-ui/controllers';
-
-/**
- * @remarks
- * The four controllers are constructed directly, not through `createX(this, ...)`: they start and stop with the
- * dialog, not with the element's connection. `registerCleanupCallback` releases them if the element leaves the page
- * while the dialog is open.
- */
-@customElement('recipe-modal')
-export class RecipeModal extends RadiantElement {
-	@query({ selector: '[data-list]' }) private list!: HTMLElement;
-	@query({ selector: '[data-empty]' }) private empty!: HTMLElement;
-	@query({ selector: '[data-reset]' }) private reset!: HTMLElement;
-	@query({ selector: '[data-layer]' }) private layer!: HTMLElement;
-	@query({ selector: '[data-dialog]' }) private dialog!: HTMLElement;
-	@query({ selector: '[data-dialog] h3' }) private heading!: HTMLElement;
-	@query({ selector: '[data-status]' }) private status!: HTMLElement;
-
-	private rows: HTMLElement[] = [];
-	private pending: HTMLElement | null = null;
-	private returnTo: HTMLElement | null = null;
-	private readonly portal = new PortalController({ getNode: () => this.layer, getContainer: () => this });
-	private readonly trap = new FocusTrapController({
-		getSurface: () => this.dialog,
-		getReturnFocus: () => this.returnTo,
-	});
-	private readonly lock = new ScrollLockController({
-		getTarget: () => this.closest<HTMLElement>('.docs-layout__content') ?? document.documentElement,
-	});
-	private readonly dismiss = new DismissController({
-		getSurface: () => this.dialog,
-		triggers: ['pointer', 'escape'],
-		onDismiss: () => this.close(`Kept ${this.nameOf(this.pending!)}`),
-	});
-
-	constructor() {
-		super();
-		this.registerCleanupCallback(() => this.release());
-	}
-
-	override onConnected(): void {
-		this.rows = [...this.list.children] as HTMLElement[];
-	}
-
-	@onEvent({ selector: '[data-delete]', type: 'click' })
-	ask(event: Event): void {
-		const row = (event.target as Element).closest('li')!;
-		this.pending = row;
-		this.heading.textContent = `Delete ${this.nameOf(row)}?`;
-		this.layer.hidden = false;
-		this.portal.attach();
-		this.lock.attach();
-		this.trap.attach();
-		this.dismiss.attach();
-		this.status.textContent = `Delete ${this.nameOf(row)}?`;
-	}
-
-	@onEvent({ selector: '[data-confirm]', type: 'click' })
-	confirm(): void {
-		const row = this.pending!;
-		const name = this.nameOf(row);
-		const neighbour = row.nextElementSibling ?? row.previousElementSibling;
-		row.remove();
-		this.empty.hidden = this.list.children.length > 0;
-		this.returnTo = neighbour?.querySelector<HTMLElement>('[data-delete]') ?? this.reset;
-		this.close(`Deleted ${name}, ${this.list.children.length} left`);
-	}
-
-	@onEvent({ selector: '[data-close]', type: 'click' })
-	cancel(): void {
-		this.close(`Kept ${this.nameOf(this.pending!)}`);
-	}
-
-	@onEvent({ selector: '[data-reset]', type: 'click' })
-	restore(): void {
-		this.list.replaceChildren(...this.rows);
-		this.empty.hidden = true;
-		this.list.querySelector<HTMLElement>('[data-delete]')!.focus();
-		this.status.textContent = 'List restored';
-	}
-
-	private nameOf(row: Element): string | null {
-		return row.firstElementChild!.textContent;
-	}
-
-	private release(): void {
-		this.dismiss.destroy();
-		this.layer.hidden = true;
-		this.trap.destroy();
-		this.returnTo = null;
-		this.pending = null;
-		this.lock.destroy();
-		this.portal.destroy();
-	}
-
-	private close(message: string): void {
-		this.release();
-		this.status.textContent = message;
-	}
-}
-```
+<RecipeCode recipe="modal" pattern="element" />
 
 The four controllers are built directly because the dialog starts and stops them, and the `@onEvent` listeners keep working after the layer is portaled because the container is the element itself. The cleanup callback closes the dialog if the element is removed while the dialog is open. What the Radiant form removes: the `mount` function and its registration, the cleanup to return and call, and the re-run after a client-side navigation.
 
+</RecipePattern>
+
+<RecipePattern id="component">
+
+The same dialog as one self-contained tag. The element owns its markup: it keeps the files and the file being deleted as state and draws the list, the dialog and the status line with `render()`, so there is no markup to author or copy and the page holds only the tag.
+
+<PrimitiveExample host>
+	<modal-app></modal-app>
+</PrimitiveExample>
+
+<RecipeCode recipe="modal" pattern="component" />
+
+The dialog is open while `pending` names a file, so the click handlers only write state: asking sets `pending`, and Cancel, Escape, a press outside and Delete clear it. The controllers start and stop in `updated()`, after the render that shows or hides the layer. That order is what makes the focus rules work without a manual step: the layer is visible when the trap looks for something to focus, and the list is already redrawn when `getReturnFocus` looks up the Delete button of the next file, or Reset when none is left, by attribute instead of holding a node that the render replaces.
+
+Compared with the Radiant element above, the data is state you can change and the focus targets are found from it, but restyling the structure means editing the class. The layer is portaled into the element and put back on close, so the render must find it again where the controller left it; the element keeps the layer in one place in its markup and never keys it away. It also needs the render path on the server to have content before the script runs: this docs build prerenders the tag empty and the client draws it, so the page shows nothing until the script loads, which a page of authored children does not.
+
+</RecipePattern>
+
+<RecipePattern id="controller">
+
+The same behavior as a `RadiantController` attached to markup that already exists. The markup carries `data-controller="modal"` and the class finds its parts with `@query`, exactly as the element does.
+
+<RecipeExample recipe="modal" pattern="controller" />
+
+<RecipeCode recipe="modal" pattern="controller" />
+
+There is no custom element tag to define, so the markup can come from a server template or a CMS and stay plain HTML until the controller attaches. One registry the docs site starts over the document connects `data-controller="modal"` elements, including ones inserted later, and disconnects the ones that are removed. The class only registers itself with `@controller('modal')`. The four controllers are still built directly, and the cleanup callback closes the dialog, restores the scroll lock and the portaled layer when the element is removed while the dialog is open. Differences from the element form: the root is reached through `this.host` instead of `this`, and `connect()` replaces `onConnected()`.
+
+</RecipePattern>
+
+<RecipePattern id="plain">
+
+A `mount` function wires the controllers to one element and returns the cleanup that undoes it.
+
+<RecipeExample recipe="modal" pattern="plain" />
+
+<RecipeCode recipe="modal" pattern="plain" />
+
+`mount` runs once for each example element on the page, and the function it returns undoes it; see [how the examples run](/docs/recipes/overview#how-the-examples-run).
+
+</RecipePattern>
+
+</RecipePatterns>
+
 ### Styles
 
-The layer is positioned with `inset: 0` against the nearest positioned ancestor, here the example frame, dims what is behind and centers the dialog. Use `position: fixed` to cover the whole page.
-
-```css
-.primitive-example[data-example='modal'],
-.primitive-example:has(> recipe-modal) {
-	min-height: 18rem;
-	align-content: flex-start;
-	align-items: flex-start;
-}
-
-:is([data-example='modal'], recipe-modal) :where([data-origin]) {
-	display: flex;
-	flex-direction: column;
-	gap: var(--space-3);
-	width: min(100%, 22rem);
-}
-
-:is([data-example='modal'], recipe-modal) :where([data-list] li) {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: var(--space-3);
-}
-
-:is([data-example='modal'], recipe-modal) :where([data-empty]:not([hidden])) {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: var(--space-3);
-	margin: 0;
-}
-
-:is([data-example='modal'], recipe-modal) :where([data-layer]:not([hidden])) {
-	position: absolute;
-	inset: 0;
-	z-index: 2;
-	display: grid;
-	place-items: center;
-	padding: var(--space-3);
-	border-radius: inherit;
-	background: color-mix(in srgb, var(--on-surface) 50%, transparent);
-}
-
-:is([data-example='modal'], recipe-modal) :where([data-dialog]) {
-	box-sizing: border-box;
-	display: flex;
-	flex-direction: column;
-	gap: var(--space-2);
-	width: min(100%, 22rem);
-	padding: var(--space-4);
-	border: 1px solid var(--border);
-	border-radius: var(--radius-container);
-	background: var(--surface);
-	color: var(--on-surface);
-}
-
-:is([data-example='modal'], recipe-modal) :where([data-dialog] > *) {
-	margin: 0;
-}
-
-:is([data-example='modal'], recipe-modal) :where([data-dialog] h3) {
-	font-size: 1rem;
-}
-
-:is([data-example='modal'], recipe-modal) :where([data-actions]) {
-	display: flex;
-	flex-wrap: wrap;
-	justify-content: flex-end;
-	gap: var(--space-2);
-	margin-block-start: var(--space-2);
-}
-
-:is([data-example='modal'], recipe-modal) :where([data-confirm]) {
-	background: var(--primary);
-	color: var(--on-primary);
-}
-```
+The layer is positioned with `inset: 0` against the nearest positioned ancestor, here the example frame, dims what is behind and centers the dialog. Use `position: fixed` to cover the whole page. The stylesheet is the `modal.css` tab in the files above.

@@ -1,0 +1,8 @@
+recipe-patterns {
+	display: block;
+	margin-block: var(--space-4);
+}
+
+recipe-patterns > .recipe-patterns__stage {
+	padding-block-start: var(--space-4);
+}

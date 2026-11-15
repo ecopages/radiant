@@ -3,7 +3,7 @@ import { resolveSwipeDirection } from '@ecopages/radiant-ui/helpers';
 import { mountExample } from '../../../components/primitive-example/mount-example';
 
 export function mount(root: HTMLElement): () => void {
-	const card = root.querySelector<HTMLElement>('[data-card]')!;
+	const card = root.querySelector<HTMLElement>('[data-swipe-card]')!;
 	const dismissButton = root.querySelector<HTMLElement>('[data-dismiss]')!;
 	const restoreButton = root.querySelector<HTMLElement>('[data-restore]')!;
 	const status = root.querySelector('[data-status]')!;
@@ -54,6 +54,7 @@ export function mount(root: HTMLElement): () => void {
 
 	dismissButton.addEventListener('click', () => {
 		setShown(false, 'Card dismissed');
+		restoreButton.focus();
 	});
 	restoreButton.addEventListener('click', () => {
 		setShown(true, 'The card is shown');
