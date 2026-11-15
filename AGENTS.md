@@ -7,6 +7,7 @@ Package indexes:
 - [`packages/radiant/README.md`](./packages/radiant/README.md)
 - [`packages/jsx/README.md`](./packages/jsx/README.md) — JSX and SSR entrypoints
 - [`packages/radiant-ui/README.md`](./packages/radiant-ui/README.md)
+- [`packages/radiant-ui/src/controllers/README.md`](./packages/radiant-ui/src/controllers/README.md) — primitives catalog (`@ecopages/radiant-ui/controllers` and `/helpers`); read before writing bespoke component logic
 
 Catalog authoring for `@ecopages/radiant-ui` is in [`packages/radiant-ui/src/components/ui/README.md`](./packages/radiant-ui/src/components/ui/README.md). Playbooks: [`.agents/skills/radiant-ui-authoring/`](./.agents/skills/radiant-ui-authoring/SKILL.md) (implement), [`.agents/skills/radiant-ui-docs/`](./.agents/skills/radiant-ui-docs/SKILL.md) (document). Do not load CONTEXT.md for catalog-only edits.
 

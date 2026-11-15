@@ -1,7 +1,7 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, onEvent, prop } from '@ecopages/radiant';
-import { queryRovingTabindexItems } from '@/lib/focusable-elements';
-import { applyRovingTabindex, navigateRovingTabindex } from '@/lib/roving-tabindex';
+import { createRovingController } from '../../../controllers/roving-controller';
+import { queryRovingTabindexItems } from '../../../controllers/focusable-elements';
 
 export type RuiToolbarProps = {
 	label?: string;
@@ -48,28 +48,17 @@ export class RuiToolbar extends RadiantElement {
 	@prop({ type: String, defaultValue: '' }) label: string;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) exclusiveToggles: boolean;
 
+	private readonly roving = createRovingController(this, {
+		getItems: () => this.getItems(),
+		getTarget: (): HTMLElement => this,
+	});
+
 	private getItems(): HTMLElement[] {
 		return queryRovingTabindexItems(this);
 	}
 
 	protected override onConnected(): void {
-		applyRovingTabindex(this.getItems(), 0);
-	}
-
-	@onEvent({ type: 'keydown', selector: 'button, a[href], input, select, [tabindex]' })
-	onKeydown(event: KeyboardEvent): void {
-		const items = this.getItems();
-		const current = (event.target as HTMLElement).closest(
-			'button, a[href], input, select, [tabindex]',
-		) as HTMLElement | null;
-		const result = navigateRovingTabindex({
-			items,
-			current,
-			key: event.key,
-			orientation: 'horizontal',
-		});
-		if (!result.handled) return;
-		event.preventDefault();
+		this.roving.sync();
 	}
 
 	private getToggleButtons(): HTMLButtonElement[] {

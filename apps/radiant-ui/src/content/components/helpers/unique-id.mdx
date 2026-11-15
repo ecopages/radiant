@@ -1,0 +1,39 @@
+---
+title: Unique id
+description: 'A CSS-safe, document-unique id.'
+order: 8
+---
+
+import { HelperResults } from '@/components/primitive-example/helper-results';
+import { uniqueId, isCssSafeId } from '@ecopages/radiant-ui/helpers';
+
+# Unique id
+
+<p class="docs-lede">A CSS-safe, document-unique id.</p>
+
+Reach for it for the targets of `aria-controls` and `aria-labelledby`. The helpers are pure: no DOM at import time or in the call path, so they run on the server and in tests. Each result below is computed when the page is built, by running the call shown.
+
+## Import
+
+```ts
+import { uniqueId, isCssSafeId } from '@ecopages/radiant-ui/helpers';
+```
+
+## Ids
+
+`uniqueId(prefix)` returns `${prefix}-${uuid}` with the dashes of the UUID removed. A prefix that is not CSS-safe (it must start with a letter) is prefixed with `rui-`, or replaced by `rui`. It needs a global `crypto`.
+
+<HelperResults
+	rows={[
+		{
+			code: "uniqueId('menu').replace(/[0-9a-f]{32}$/, '<32 hex digits>')",
+			result: uniqueId('menu').replace(/[0-9a-f]{32}$/, '<32 hex digits>'),
+		},
+		{
+			code: "uniqueId('1').replace(/[0-9a-f]{32}$/, '<32 hex digits>')",
+			result: uniqueId('1').replace(/[0-9a-f]{32}$/, '<32 hex digits>'),
+		},
+		{ code: "isCssSafeId('menu-1')", result: isCssSafeId('menu-1') },
+		{ code: "isCssSafeId('1menu')", result: isCssSafeId('1menu') },
+	]}
+/>

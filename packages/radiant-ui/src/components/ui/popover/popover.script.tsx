@@ -3,12 +3,10 @@ import { RadiantElement, bound, customElement, event, onEvent, onUpdated, prop, 
 import { isServer } from '@ecopages/radiant/is-server';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { uniqueId } from '@/lib/unique-id';
-import {
-	PopoverController,
-	shouldDismissPopoverFocus,
-	shouldDismissPopoverPointer,
-} from '../shared/popover-controller';
-import type { RuiPlacement } from '../shared/placement';
+import type { DismissReason } from '../../../controllers/dismiss-controller';
+import { createEventListenerController } from '../../../controllers/event-listener-controller';
+import { createPopoverController } from '../../../controllers/popover-controller';
+import type { RuiPlacement } from '../../../controllers/placement';
 
 export type RuiPopoverOpenChangeDetail = {
 	open: boolean;
@@ -97,18 +95,29 @@ export class RuiPopover extends RadiantElement {
 	openChangeEvent: EventEmitter<RuiPopoverOpenChangeDetail>;
 
 	private readonly surfaceId = uniqueId('rui-popover');
-	private controller: PopoverController | null = null;
-	private anchorClickTarget: HTMLElement | null = null;
+	private readonly controller = createPopoverController(this, {
+		getAnchor: () => this.getAnchorElement(),
+		getFloating: () => this.surfaceTarget,
+		getOpen: () => this.open,
+		getPlacement: () => this.placement,
+		onDismiss: (reason, event) => this.dismiss(reason, event),
+	});
+	/** @remarks An `anchor` selector can match an element outside this host that a re-render replaces, so the match is made on `document` at event time. */
+	constructor() {
+		super();
+		createEventListenerController(this, {
+			getTarget: () => document,
+			type: 'click',
+			listener: (event) => {
+				if (this.usesExternalAnchor() && this.getAnchorElement()?.contains(event.target as Node)) {
+					this.setOpen(!this.open);
+				}
+			},
+		});
+	}
 
 	protected override onConnected(): void {
 		this.syncPopover();
-	}
-
-	override disconnectedCallback(): void {
-		this.unbindExternalAnchorClick();
-		this.controller?.destroy();
-		this.controller = null;
-		super.disconnectedCallback();
 	}
 
 	private getAnchorElement(): HTMLElement | null {
@@ -134,21 +143,6 @@ export class RuiPopover extends RadiantElement {
 		return null;
 	}
 
-	private ensureController(): PopoverController {
-		if (!this.controller) {
-			this.controller = new PopoverController({
-				getAnchor: () => this.getAnchorElement(),
-				getFloating: () => this.surfaceTarget,
-				getOpen: () => this.open,
-				getPlacement: () => this.placement,
-				gap: this.offset,
-				portal: this.portal,
-				matchAnchorWidth: this.matchAnchorWidth,
-			});
-		}
-		return this.controller;
-	}
-
 	@bound
 	@onUpdated(['open', 'placement', 'portal', 'matchAnchorWidth', 'offset', 'anchor'])
 	syncPopover(): void {
@@ -162,19 +156,13 @@ export class RuiPopover extends RadiantElement {
 			anchor.setAttribute('aria-controls', this.surfaceId);
 			anchor.setAttribute('aria-expanded', String(this.open));
 		}
-		this.syncExternalAnchorClick(anchor);
 
-		const controller = this.ensureController();
-		controller.updateConfig({
-			getAnchor: () => this.getAnchorElement(),
-			getFloating: () => this.surfaceTarget,
-			getOpen: () => this.open,
-			getPlacement: () => this.placement,
+		this.controller.updateConfig({
 			gap: this.offset,
 			portal: this.portal,
 			matchAnchorWidth: this.matchAnchorWidth,
 		});
-		controller.sync();
+		this.controller.sync();
 	}
 
 	setOpen(next: boolean, emit = true): void {
@@ -189,39 +177,12 @@ export class RuiPopover extends RadiantElement {
 		this.syncPopover();
 	}
 
-	@onEvent({ document: true, type: 'pointerdown' })
-	onDocumentPointerDown(event: PointerEvent): void {
-		if (!this.open) {
-			return;
-		}
-		const target = event.target as Node | null;
-		if (
-			!shouldDismissPopoverPointer(
-				this.getAnchorElement(),
-				this.controller?.getFloatingElement() ?? this.surfaceTarget,
-				target,
-			)
-		) {
-			return;
-		}
+	private dismiss(reason: DismissReason, event: Event): void {
 		this.setOpen(false);
-	}
-
-	@onEvent({ ref: 'host', type: 'focusout' })
-	onFocusOut(event: FocusEvent): void {
-		if (!this.open) {
-			return;
+		if (reason === 'escape') {
+			event.preventDefault();
+			this.getAnchorElement()?.focus();
 		}
-		if (
-			!shouldDismissPopoverFocus(
-				this.getAnchorElement(),
-				this.controller?.getFloatingElement() ?? this.surfaceTarget,
-				event.relatedTarget,
-			)
-		) {
-			return;
-		}
-		this.setOpen(false);
 	}
 
 	private usesExternalAnchor(): boolean {
@@ -232,45 +193,6 @@ export class RuiPopover extends RadiantElement {
 			return false;
 		}
 		return !this.querySelector('[data-popover-trigger]');
-	}
-
-	private syncExternalAnchorClick(anchor: HTMLElement | null): void {
-		if (!this.usesExternalAnchor() || !anchor) {
-			this.unbindExternalAnchorClick();
-			return;
-		}
-
-		if (this.anchorClickTarget === anchor) {
-			return;
-		}
-
-		this.unbindExternalAnchorClick();
-		anchor.addEventListener('click', this.onExternalAnchorClick);
-		this.anchorClickTarget = anchor;
-	}
-
-	private unbindExternalAnchorClick(): void {
-		if (!this.anchorClickTarget) {
-			return;
-		}
-		this.anchorClickTarget.removeEventListener('click', this.onExternalAnchorClick);
-		this.anchorClickTarget = null;
-	}
-
-	@bound
-	private onExternalAnchorClick(): void {
-		this.setOpen(!this.open);
-	}
-
-	@onEvent({ document: true, type: 'keydown' })
-	onDocumentKeydown(event: KeyboardEvent): void {
-		if (!this.open || event.key !== 'Escape') {
-			return;
-		}
-		event.preventDefault();
-		this.setOpen(false);
-		const anchor = this.getAnchorElement();
-		anchor?.focus();
 	}
 }
 

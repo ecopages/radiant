@@ -1,8 +1,8 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, bindTo, customElement, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
+import { createSwipeController } from '../../../controllers/swipe-controller';
 import { uniqueId } from '@/lib/unique-id';
 import { CarouselAutoplay } from './carousel-autoplay';
-import { CarouselSwipe } from './carousel-swipe';
 import {
 	advanceIndex,
 	carouselGapCount,
@@ -180,13 +180,25 @@ export class RuiCarousel extends RadiantElement {
 	private readonly uid = uniqueId('rui-carousel');
 	/** User explicitly resumed rotation (e.g. via rotation control) despite reduced motion. */
 	private userOverrideReducedMotion = false;
-	private readonly swipe = new CarouselSwipe();
 	private readonly autoplayController = new CarouselAutoplay({
 		getInterval: () => this.interval,
 		canRotate: () => this.canAutoplayRotate(),
 		onTick: () => this.onAutoplayTick(),
 		onRunningChange: () => this.syncAriaLive(),
 	});
+
+	constructor() {
+		super();
+		createSwipeController(this, {
+			getTarget: (): HTMLElement => this,
+			getHandle: () => this.viewportTarget,
+			exclude: (target) => this.isSwipeExcludedTarget(target),
+			onSwipe: (direction) => {
+				const forward = getComputedStyle(this).direction === 'rtl' ? 'right' : 'left';
+				this.userNavigate(direction === forward ? 1 : -1);
+			},
+		});
+	}
 
 	protected override onConnected(): void {
 		if (this.autoplay && this.prefersReducedMotion()) {
@@ -625,26 +637,6 @@ export class RuiCarousel extends RadiantElement {
 
 		this.focusWithin = false;
 		this.syncAutoplay();
-	}
-
-	@onEvent({ ref: 'viewport', type: 'pointerdown' })
-	onViewportPointerDown(event: PointerEvent): void {
-		this.swipe.onPointerDown(event, this.isSwipeExcludedTarget(event.target));
-	}
-
-	@onEvent({ ref: 'viewport', type: 'pointerup' })
-	onViewportPointerUp(event: PointerEvent): void {
-		const direction = this.swipe.onPointerUp(event);
-		if (direction === 'next') {
-			this.next();
-		} else if (direction === 'prev') {
-			this.prev();
-		}
-	}
-
-	@onEvent({ ref: 'viewport', type: 'pointercancel' })
-	onViewportPointerCancel(event: PointerEvent): void {
-		this.swipe.onPointerCancel(event);
 	}
 }
 

@@ -69,3 +69,29 @@ describe('RuiCycleToggle hydration', () => {
 		expect(button?.className).not.toContain('rui-button--filled');
 	});
 });
+
+describe('RuiCycleToggle child observation', () => {
+	const item = (value: string) => {
+		const element = document.createElement('span');
+		element.dataset.cycleValue = value;
+		return element;
+	};
+
+	it('shows only the selected item when items arrive later, and stops after removal', async () => {
+		const host = document.createElement('rui-cycle-toggle') as RuiCycleToggleElement;
+		host.append(item('a'));
+		document.body.append(host);
+		await settled();
+
+		const late = item('b');
+		host.append(late);
+		await settled();
+		expect(late.hidden).toBe(true);
+
+		host.remove();
+		const afterRemoval = item('c');
+		host.append(afterRemoval);
+		await settled();
+		expect(afterRemoval.hidden).toBe(false);
+	});
+});

@@ -1,0 +1,85 @@
+---
+title: Decisions
+description: 'Swipe direction from a delta, the wrap target of a focus trap, a wrapped index, and where a floating surface goes.'
+order: 10
+---
+
+import { HelperResults } from '@/components/primitive-example/helper-results';
+import {
+	resolveSwipeDirection,
+	DEFAULT_SWIPE_THRESHOLD_PX,
+	resolveTrapMove,
+	wrapCollectionIndex,
+} from '@ecopages/radiant-ui/helpers';
+
+# Decisions
+
+<p class="docs-lede">Swipe direction from a delta, the wrap target of a focus trap, a wrapped index, and where a floating surface goes.</p>
+
+Reach for them for custom gestures, focus loops and option lists. The helpers are pure: no DOM at import time or in the call path, so they run on the server and in tests. Each result below is computed when the page is built, by running the call shown.
+
+## Import
+
+```ts
+import {
+	resolveSwipeDirection,
+	DEFAULT_SWIPE_THRESHOLD_PX,
+	resolveTrapMove,
+	wrapCollectionIndex,
+	computeFloatingCoords,
+	computeFloatingPosition,
+	type FloatingViewport,
+	type SwipeDirection,
+	type SwipeAxis,
+	type SwipeOptions,
+	type TrapMove,
+} from '@ecopages/radiant-ui/helpers';
+```
+
+## Swipe
+
+`resolveSwipeDirection(dx, dy, options)` needs travel of at least `threshold` along the axis that also exceeds the travel on the other axis. It is the default of the `resolveDirection` hook of [SwipeController](/docs/controllers/swipe).
+
+<HelperResults
+	rows={[
+		{ code: 'resolveSwipeDirection(-60, 5)', result: resolveSwipeDirection(-60, 5) },
+		{ code: 'resolveSwipeDirection(10, 5)', result: resolveSwipeDirection(10, 5) },
+		{ code: 'resolveSwipeDirection(5, 60)', result: resolveSwipeDirection(5, 60) },
+		{
+			code: "resolveSwipeDirection(5, 60, { axis: 'both' })",
+			result: resolveSwipeDirection(5, 60, { axis: 'both' }),
+		},
+		{ code: 'DEFAULT_SWIPE_THRESHOLD_PX', result: DEFAULT_SWIPE_THRESHOLD_PX },
+	]}
+/>
+
+## Focus trap and collections
+
+`resolveTrapMove` says where Tab goes inside a trapped surface, generic over the item so it needs no DOM. `wrapCollectionIndex` moves an active index by one and wraps.
+
+<HelperResults
+	rows={[
+		{
+			code: "resolveTrapMove(['a', 'b', 'c'], 'c', false, false)",
+			result: resolveTrapMove(['a', 'b', 'c'], 'c', false, false),
+		},
+		{
+			code: "resolveTrapMove(['a', 'b', 'c'], 'b', false, false)",
+			result: resolveTrapMove(['a', 'b', 'c'], 'b', false, false),
+		},
+		{ code: "resolveTrapMove([], 'a', false, false)", result: resolveTrapMove([], 'a', false, false) },
+		{ code: 'wrapCollectionIndex(2, 1, 3)', result: wrapCollectionIndex(2, 1, 3) },
+		{ code: 'wrapCollectionIndex(0, -1, 3)', result: wrapCollectionIndex(0, -1, 3) },
+	]}
+/>
+
+## Floating position
+
+`computeFloatingCoords(anchor, size, placement, gap, viewport)` returns the fixed coordinates of a surface beside an anchor rect, flipping to the opposite side when it overflows and clamping on the cross axis. `computeFloatingPosition` also returns the resolved placement. The caller passes the viewport, so nothing here reads `window`; `applyFloatingPosition` in `@ecopages/radiant-ui/controllers` does that for an element.
+
+```ts
+const anchor = button.getBoundingClientRect();
+const viewport = { width: window.innerWidth, height: window.innerHeight, padding: 8 };
+
+const { coords, placement } = computeFloatingPosition(anchor, { width: 120, height: 28 }, 'bottom-start', 8, viewport);
+```

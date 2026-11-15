@@ -94,4 +94,33 @@ describe('RuiListbox', () => {
 		expect(list.value).toEqual(['banana']);
 		cleanup();
 	});
+
+	it('selects the option an arrow key moves to in single mode and ignores arrows when embedded', async () => {
+		const { host, cleanup } = mount(
+			<RuiListbox value="apple">
+				<RuiListboxOption value="apple">Apple</RuiListboxOption>
+				<RuiListboxOption value="banana">Banana</RuiListboxOption>
+			</RuiListbox>,
+		);
+		await settled();
+
+		const list = host.querySelector('rui-listbox') as RuiListboxElement;
+		const options = optionsOf(host);
+		options[0].focus();
+		options[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+		await settled();
+
+		expect(list.value).toEqual(['banana']);
+		expect(document.activeElement).toBe(options[1]);
+		expect(options.map((option) => option.tabIndex)).toEqual([-1, 0]);
+
+		list.embedded = true;
+		await settled();
+		const event = new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, cancelable: true });
+		options[1].dispatchEvent(event);
+		expect(event.defaultPrevented).toBe(false);
+		expect(list.value).toEqual(['banana']);
+		expect(options.map((option) => option.tabIndex)).toEqual([-1, -1]);
+		cleanup();
+	});
 });

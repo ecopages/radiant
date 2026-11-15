@@ -130,12 +130,27 @@ Reuse fixtures such as option lists from `src/content/stories/demo-data.ts` when
 
 - `test/story-previews.test.browser.ts` — complex `render` output smoke tests
 - `test/canvas.test.browser.ts` — client repaint when story context args change
+- `test/controller-examples.test.browser.ts` — one test per controller page example; it mounts the `html` fence of the page and runs the page's `<slug>.script.ts`
+- `test/recipes.test.browser.ts` and `test/recipes-lists.test.browser.ts` — the same for recipe pages, one test per recipe
+- `test/mount-example.test.browser.ts` — `mountExample` mounts each element once, re-mounts after the router events and cleans up an element that left the page
+- `test/primitive-example.test.browser.ts` — with the frame CSS loaded: menu items sit in a column and popups sit above the code block that follows
+- `test/recipe-imports.test.ts` — recipe scripts import only the `controllers` and `helpers` entries, plus `mountExample`
 - `test/mdx-code-copy.test.browser.ts` — the copy button is a sibling of `pre`
 - `src/layouts/base-layout/code-copy.test.browser.ts` — the click handler copies from `data-rehype-pretty-copy`, keeps the accessible name "Copy code" and announces the result through the base layout's `role="status"` region
 
 Add a render test when a story layout is easy to regress (trees, sidebars, overlays).
 
 `*.test.ts` files run on Node and own server rendering. `*.test.browser.ts` files run in Chromium through Vitest browser mode. A component that is server-rendered and then hydrated is split in two: a `*.ssr.test.ts` writes its markup to `__snapshots__/`, and the browser test hydrates that snapshot.
+
+## Controllers, helpers and recipes
+
+Three sections sit after the component sections: `controllers`, `helpers` and `recipes` (`DOCS_SECTION_ORDER` in `src/content/components.ts`). They are not catalog components, so `NON_COMPONENT_SECTIONS` keeps them out of the component count, the home page groups and the theme lab. Each folder under `src/content/components/` has an `overview.mdx` with `order: 0`.
+
+- **Controller page** (`controllers/<slug>.mdx`): lede, import line, the example, config table, lifecycle and protected hooks. The example is `<PrimitiveExample name="<slug>">` (`src/components/primitive-example`) around plain elements, plus `controllers/<slug>.script.ts` listed in the page's `config.dependencies.scripts`. The page shows the markup in an `html` fence wrapped in `<div data-example="<slug>">` and the script in a `ts` fence; keep both identical to what runs, except that the fence leaves out the `mountExample` import and its closing call. The script exports `mount(root: HTMLElement): () => void`: it wires one example element and returns the cleanup that destroys its controllers. It ends with `mountExample('<slug>', mount)` (`src/components/primitive-example/mount-example.ts`). The page script is a module, so it runs once per tab; `mountExample` mounts every element once and mounts the new elements again on `eco:page-load` and `eco:after-swap`, and it runs the cleanup of an element that left the page. Never query the page at module level. The frame styles the plain elements and `data-box`, `data-status` hooks from the theme variables, so add no colors of your own. `<PrimitiveExample layout="stack">` lays the children out as one full-width column and styles a labelled `input`, a bordered `ul` and a muted `data-status` caption; omit it for the default wrapping row. Text on its own line inside a text element such as `p`, `button` or `li` stays that element's content (`src/mdx/remark-unwrap-jsx-text.ts`); without it MDX would wrap the text in a loose `<p>`. The router morphs the page and can keep an example element while changing its `data-example`; `mountExample` then cleans up the old mount and mounts the new name. The frame is its own stacking context (`z-index: 1`), so a popup that overflows it stays above the code block that follows; give a new floating surface a role the frame styles or `data-box`.
+- **Helper page** (`helpers/<slug>.mdx`): `<HelperResults rows={[{ code, result }]} />` lists calls with results computed while the page renders, so the output cannot drift from the helper.
+- **Recipe page** (`recipes/<slug>.mdx`): the shape is described in `recipes/overview.mdx`. A recipe's example follows the controller page pattern; its full source goes in a fence.
+
+Add a test to `test/controller-examples.test.browser.ts` for every interactive controller example, and to `test/recipes.test.browser.ts` or `test/recipes-lists.test.browser.ts` for a recipe. Descriptions in frontmatter are quoted when they contain a colon.
 
 ## LLM docs export
 

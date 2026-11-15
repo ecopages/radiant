@@ -6,9 +6,9 @@ import { textContains } from '@/lib/text-filter';
 import { uniqueId } from '@/lib/unique-id';
 import type { RuiAutocomplete } from '../autocomplete/autocomplete.script';
 import { findAssociatedLabel, syncFieldLabel } from '../shared/field-label';
-import { ListboxHostController } from '../shared/listbox-host-controller';
+import { ListboxHost } from '../shared/listbox-host';
 import { getListboxOptionLabel, getListboxOptionValue } from '../shared/listbox-option';
-import { ListboxPopoverBehavior } from '../shared/listbox-popover-behavior';
+import { createListboxPopoverController } from '../../../controllers/listbox-popover-controller';
 import { multiValuePropOptions, type ViewMultiValue } from '../shared/multi-value';
 
 export type RuiComboboxSelectionMode = 'single' | 'multiple';
@@ -115,7 +115,7 @@ export class RuiCombobox extends RadiantElement {
 
 	private open = false;
 	private readonly uid = uniqueId('rui-combobox');
-	private readonly collection = new ListboxHostController({
+	private readonly collection = new ListboxHost({
 		getRoot: () => this,
 		getSelectionMode: () => this.selectionMode,
 		getValue: () => this.value,
@@ -125,13 +125,14 @@ export class RuiCombobox extends RadiantElement {
 		getPopup: () => this.getListboxPopup(),
 		tagGroupSelector: '[data-combobox-value] rui-tag-group',
 	});
-	private readonly listboxBehavior = new ListboxPopoverBehavior({
+	private readonly listboxPopover = createListboxPopoverController(this, {
 		getAnchor: () => this.rootTarget,
 		getFloating: () => this.getListboxPopup(),
 		getOpen: () => this.open,
 		getOptions: () => this.collection.getOptions(),
 		getActiveDescendantHost: () => this.getInput(),
 		getOptionIdPrefix: () => `${this.uid}-option`,
+		onDismiss: () => this.setOpen(false),
 	});
 
 	@query({ ref: 'root' }) rootTarget: HTMLElement | null;
@@ -169,7 +170,7 @@ export class RuiCombobox extends RadiantElement {
 	}
 
 	private ensureOptionIds(): void {
-		this.listboxBehavior.ensureOptionIds();
+		this.listboxPopover.ensureOptionIds();
 	}
 
 	private getAccessibleName(): string {
@@ -257,7 +258,7 @@ export class RuiCombobox extends RadiantElement {
 	}
 
 	private setVisualFocusCombobox(): void {
-		this.listboxBehavior.clearActiveOption();
+		this.listboxPopover.clearActiveOption();
 		this.collection.syncOptionSelection();
 	}
 
@@ -275,27 +276,27 @@ export class RuiCombobox extends RadiantElement {
 		this.syncTrigger();
 
 		if (!next) {
-			this.listboxBehavior.clearActiveOption();
-			this.listboxBehavior.syncPopoverPosition();
+			this.listboxPopover.clearActiveOption();
+			this.listboxPopover.syncPopoverPosition();
 			return;
 		}
 
 		this.ensureOptionIds();
-		this.listboxBehavior.syncPopoverPosition();
+		this.listboxPopover.syncPopoverPosition();
 
 		if (activate === 'first') {
-			const visible = this.listboxBehavior.getVisibleOptions();
-			this.listboxBehavior.setActiveOption(visible.length ? 0 : -1);
+			const visible = this.listboxPopover.getVisibleOptions();
+			this.listboxPopover.setActiveOption(visible.length ? 0 : -1);
 			return;
 		}
 
 		if (activate === 'last') {
-			const visible = this.listboxBehavior.getVisibleOptions();
-			this.listboxBehavior.setActiveOption(visible.length ? visible.length - 1 : -1);
+			const visible = this.listboxPopover.getVisibleOptions();
+			this.listboxPopover.setActiveOption(visible.length ? visible.length - 1 : -1);
 			return;
 		}
 
-		this.listboxBehavior.clearActiveOption();
+		this.listboxPopover.clearActiveOption();
 	}
 
 	private getAutocomplete(): RuiAutocomplete | null {
@@ -409,11 +410,6 @@ export class RuiCombobox extends RadiantElement {
 		this.initialize();
 	}
 
-	override disconnectedCallback(): void {
-		this.listboxBehavior.destroy();
-		super.disconnectedCallback();
-	}
-
 	@onUpdated(['value', 'label', 'placeholder', 'disabled', 'triggerKind', 'selectionMode', 'shouldCloseOnSelect'])
 	onPropsUpdated(): void {
 		this.syncLabel();
@@ -477,7 +473,7 @@ export class RuiCombobox extends RadiantElement {
 		const input = event.target;
 		this.syncFilter();
 		const hasQuery = input.value.trim() !== '';
-		const hasVisibleOptions = this.listboxBehavior.getVisibleOptions().length > 0;
+		const hasVisibleOptions = this.listboxPopover.getVisibleOptions().length > 0;
 		if (hasQuery && hasVisibleOptions && (this.open || this.triggerKind !== 'manual')) {
 			this.setOpen(true);
 		} else if (!hasQuery && this.triggerKind === 'focus') {
@@ -524,12 +520,12 @@ export class RuiCombobox extends RadiantElement {
 
 		if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
 			this.syncFilter();
-			if (!this.listboxBehavior.getVisibleOptions().length) {
+			if (!this.listboxPopover.getVisibleOptions().length) {
 				this.showAllOptions();
 			}
 		}
 
-		this.listboxBehavior.handleKeydown(event, {
+		this.listboxPopover.handleKeydown(event, {
 			isOpen: this.open,
 			canUseSpace: false,
 			closesOnTab: true,
@@ -541,7 +537,7 @@ export class RuiCombobox extends RadiantElement {
 			},
 			onClose: () => this.setOpen(false),
 			onSelectActive: () => {
-				const option = this.listboxBehavior.getVisibleOptions()[this.listboxBehavior.activeOptionIndex];
+				const option = this.listboxPopover.getVisibleOptions()[this.listboxPopover.activeOptionIndex];
 				if (option) {
 					this.select(option);
 				}
@@ -588,10 +584,10 @@ export class RuiCombobox extends RadiantElement {
 			return;
 		}
 
-		const visible = this.listboxBehavior.getVisibleOptions();
+		const visible = this.listboxPopover.getVisibleOptions();
 		const index = visible.indexOf(option);
 		if (index >= 0) {
-			this.listboxBehavior.setActiveOption(index);
+			this.listboxPopover.setActiveOption(index);
 		}
 	}
 
@@ -619,26 +615,6 @@ export class RuiCombobox extends RadiantElement {
 		event.preventDefault();
 		event.stopPropagation();
 		this.clearSelection();
-	}
-
-	@onEvent({ ref: 'root', type: 'focusout' })
-	onFocusOut(event: FocusEvent): void {
-		if (!this.listboxBehavior.shouldDismissFocus(event.relatedTarget)) {
-			return;
-		}
-
-		this.setOpen(false);
-	}
-
-	@onEvent({ document: true, type: 'pointerdown' })
-	onDocumentPointerDown(event: PointerEvent): void {
-		if (!this.open) {
-			return;
-		}
-		if (!this.listboxBehavior.shouldDismissPointer(event.target as Node)) {
-			return;
-		}
-		this.setOpen(false);
 	}
 }
 

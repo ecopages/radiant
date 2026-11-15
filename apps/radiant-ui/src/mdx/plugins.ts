@@ -4,6 +4,7 @@ import { transformerCopyButton } from '@rehype-pretty/transformers';
 import type { PluggableList } from 'unified';
 import { withContentMdxPlugins } from '@ecopages/content-processor/mdx';
 import { rehypeHeadingIds } from './rehype-heading-ids';
+import { remarkUnwrapJsxText } from './remark-unwrap-jsx-text';
 import { rehypePrettyCopyCompatibility } from './rehype-pretty-copy-compatibility';
 import { DOCS_SHIKI_THEMES } from './shiki-themes';
 
@@ -29,7 +30,7 @@ export function createDocsMdxPlugins(options: DocsMdxPluginsOptions = {}) {
 	];
 
 	return withContentMdxPlugins({
-		remarkPlugins: [remarkGfm, ...(options.remarkPlugins ?? [])],
+		remarkPlugins: [remarkGfm, remarkUnwrapJsxText, ...(options.remarkPlugins ?? [])],
 		rehypePlugins: [
 			rehypeHeadingIds,
 			prettyCodePlugin,

@@ -11,11 +11,12 @@ import {
 	query,
 } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
-import { findFirstFocusableCandidate } from '@/lib/focusable-elements';
+import { findFirstFocusableCandidate } from '../../../controllers/focusable-elements';
 import { uniqueId } from '@/lib/unique-id';
 import { notePreviewClosed, notePreviewOpened, resolvePreviewOpenDelay } from '../shared/preview-timing';
-import { PopoverController, shouldDismissPopoverFocus } from '../shared/popover-controller';
-import type { RuiPlacement } from '../shared/placement';
+import { createEventListenerController } from '../../../controllers/event-listener-controller';
+import { createPopoverController } from '../../../controllers/popover-controller';
+import type { RuiPlacement } from '../../../controllers/placement';
 
 export type RuiHoverCardOpenChangeDetail = {
 	open: boolean;
@@ -121,7 +122,19 @@ export class RuiHoverCard extends RadiantElement {
 	openChangeEvent: EventEmitter<RuiHoverCardOpenChangeDetail>;
 
 	private readonly contentId = uniqueId('rui-hover-card');
-	private controller: PopoverController | null = null;
+	private readonly controller = createPopoverController(this, {
+		getAnchor: () => this.getAnchor(),
+		getFloating: () => this.contentTarget,
+		getOpen: () => this.open,
+		getPlacement: () => this.placement,
+		onDismiss: (_reason, event) => this.dismissWithEscape(event),
+		dismissOn: ['escape'],
+	});
+	private readonly surfaceBridge = createEventListenerController(this, {
+		getTarget: () => (this.open ? this.getFloatingElement() : null),
+		type: ['pointerenter', 'pointerleave'],
+		listener: (event) => (event.type === 'pointerenter' ? this.onPointerEnter(event) : this.onPointerLeave(event)),
+	});
 	private showTimer: ReturnType<typeof setTimeout> | null = null;
 	private hideTimer: ReturnType<typeof setTimeout> | null = null;
 	private longPressTimer: ReturnType<typeof setTimeout> | null = null;
@@ -143,8 +156,6 @@ export class RuiHoverCard extends RadiantElement {
 		if (this.open) {
 			notePreviewClosed();
 		}
-		this.controller?.destroy();
-		this.controller = null;
 		super.disconnectedCallback();
 	}
 
@@ -166,21 +177,7 @@ export class RuiHoverCard extends RadiantElement {
 	}
 
 	private getFloatingElement(): HTMLElement | null {
-		return this.controller?.getFloatingElement() ?? this.contentTarget;
-	}
-
-	private ensureController(): PopoverController {
-		if (!this.controller) {
-			this.controller = new PopoverController({
-				getAnchor: () => this.getAnchor(),
-				getFloating: () => this.contentTarget,
-				getOpen: () => this.open,
-				getPlacement: () => this.placement,
-				gap: HOVER_CARD_GAP,
-				portal: this.portal,
-			});
-		}
-		return this.controller;
+		return this.controller.getFloatingElement();
 	}
 
 	@bound
@@ -197,32 +194,12 @@ export class RuiHoverCard extends RadiantElement {
 			anchor.setAttribute('aria-expanded', String(this.open));
 		}
 
-		const controller = this.ensureController();
-		controller.updateConfig({
-			getAnchor: () => this.getAnchor(),
-			getFloating: () => this.contentTarget,
-			getOpen: () => this.open,
-			getPlacement: () => this.placement,
+		this.controller.updateConfig({
 			gap: HOVER_CARD_GAP,
 			portal: this.portal,
 		});
-		controller.sync();
-		this.syncContentPointerBridge();
-	}
-
-	private syncContentPointerBridge(): void {
-		const surface = this.getFloatingElement();
-		if (!surface) {
-			return;
-		}
-
-		surface.removeEventListener('pointerenter', this.onPointerEnter);
-		surface.removeEventListener('pointerleave', this.onPointerLeave);
-
-		if (this.open) {
-			surface.addEventListener('pointerenter', this.onPointerEnter);
-			surface.addEventListener('pointerleave', this.onPointerLeave);
-		}
+		this.controller.sync();
+		this.surfaceBridge.attach();
 	}
 
 	setOpen(next: boolean, emit = true): void {
@@ -288,11 +265,7 @@ export class RuiHoverCard extends RadiantElement {
 		return event.pointerType === 'touch';
 	}
 
-	@onEvent({ document: true, type: 'keydown' })
-	onDocumentKeydown(event: KeyboardEvent): void {
-		if (!this.open || event.key !== 'Escape') {
-			return;
-		}
+	private dismissWithEscape(event: Event): void {
 		event.preventDefault();
 		const anchor = this.getAnchor();
 		this.dismissed = true;
@@ -307,7 +280,7 @@ export class RuiHoverCard extends RadiantElement {
 		if (this.dismissed) {
 			return;
 		}
-		if (!shouldDismissPopoverFocus(this.getAnchor(), this.getFloatingElement(), event.relatedTarget)) {
+		if (!this.controller.isOutside(event.relatedTarget)) {
 			return;
 		}
 		this.scheduleShow(true);
@@ -316,7 +289,7 @@ export class RuiHoverCard extends RadiantElement {
 	@onEvent({ type: 'focusout', ref: 'trigger' })
 	onFocusOut(event: FocusEvent): void {
 		this.dismissed = false;
-		if (!shouldDismissPopoverFocus(this.getAnchor(), this.getFloatingElement(), event.relatedTarget)) {
+		if (!this.controller.isOutside(event.relatedTarget)) {
 			return;
 		}
 		this.scheduleHide();

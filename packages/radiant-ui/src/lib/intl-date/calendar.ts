@@ -14,6 +14,12 @@ export type { CalendarSelectionMode, IsoRange };
  * Returns the JS weekday index (0 = Sunday) that starts the week for `locale`.
  *
  * @remarks Uses `Intl.Locale.weekInfo` when available; falls back to Monday except en-US.
+ *
+ * @example
+ * ```ts
+ * getWeekStartsOn('en-US'); // 0 (Sunday)
+ * getWeekStartsOn('en-GB'); // 1 (Monday)
+ * ```
  */
 export function getWeekStartsOn(locale: IntlLocale): number {
 	const tag = resolveLocaleTag(locale);
@@ -44,6 +50,9 @@ function isSameDay(a: Date, b: Date): boolean {
 	return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
+/**
+ * What `buildCalendarMonth` reads: the locale, the selection mode and value, the bounds and an optional range draft.
+ */
 export type BuildCalendarMonthOptions = {
 	locale: IntlLocale;
 	selectionMode?: CalendarSelectionMode;
@@ -91,7 +100,16 @@ function normalizeRangeFromDraft(anchor: string, hover: string): IsoRange {
 	return { start: hover, end: anchor };
 }
 
-/** Builds a month grid with leading/trailing days from adjacent months. */
+/**
+ * Builds a month grid with leading/trailing days from adjacent months.
+ *
+ * @example
+ * ```ts
+ * const weeks = buildCalendarMonth(2026, 10, { locale: 'en-US', value: '2026-11-14', min: '2026-11-10' });
+ * weeks[0][0].iso; // '2026-11-01'
+ * weeks.flat().find((cell) => cell.iso === '2026-11-14')?.isSelected; // true
+ * ```
+ */
 export function buildCalendarMonth(year: number, month: number, options: BuildCalendarMonthOptions): CalendarWeek[] {
 	const weekStartsOn = getWeekStartsOn(options.locale);
 	const today = startOfDay(options.today ?? new Date());

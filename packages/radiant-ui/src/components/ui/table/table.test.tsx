@@ -155,4 +155,27 @@ describe('RuiTable single selection with Space', () => {
 
 		cleanup();
 	});
+
+	it('keeps one tab stop on the cell the keyboard moved to, and on the same position after a re-render', async () => {
+		const { host, cleanup } = mount(selectableTable());
+		await settled();
+
+		const rowCells = (id: string) =>
+			Array.from(host.querySelectorAll<HTMLElement>(`[data-table-row="${id}"] [data-table-cell]`));
+		const stops = () =>
+			Array.from(host.querySelectorAll<HTMLElement>('[data-table-row] [data-table-cell]')).map((c) => c.tabIndex);
+		expect(stops()).toEqual([0, -1, -1, -1]);
+
+		const first = rowCells('aloe')[0];
+		first.focus();
+		first.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }));
+		expect(document.activeElement).toBe(rowCells('fern')[0]);
+		expect(stops()).toEqual([-1, -1, 0, -1]);
+
+		const fern = host.querySelector('[data-table-row="fern"]') as HTMLElement;
+		fern.replaceWith(fern.cloneNode(true));
+		await settled();
+		expect(stops()).toEqual([-1, -1, 0, -1]);
+		cleanup();
+	});
 });

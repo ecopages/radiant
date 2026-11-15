@@ -1,6 +1,6 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, onEvent, onUpdated, prop } from '@ecopages/radiant';
-import { applyRovingTabindex, navigateRovingTabindex } from '@/lib/roving-tabindex';
+import { createRovingController } from '../../../controllers/roving-controller';
 import type { RuiDisclosureToggleDetail } from './disclosure.script';
 import { RuiDisclosure } from './disclosure.script';
 
@@ -47,6 +47,12 @@ export class RuiDisclosureGroup extends RadiantElement {
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) multiple: boolean;
 	@prop({ type: Boolean, reflect: true, attribute: 'animated', defaultValue: false }) animated: boolean;
 
+	private readonly roving = createRovingController(this, {
+		getItems: () => this.getTriggers(),
+		getTarget: (): HTMLElement => this,
+		orientation: 'vertical',
+	});
+
 	protected override onConnected(): void {
 		this.syncChildrenAnimated();
 		this.syncTriggers();
@@ -61,16 +67,7 @@ export class RuiDisclosureGroup extends RadiantElement {
 	}
 
 	private syncTriggers(): void {
-		const triggers = this.getTriggers();
-		if (!triggers.length) {
-			return;
-		}
-
-		const activeIndex = Math.max(
-			0,
-			triggers.findIndex((trigger) => trigger.tabIndex === 0 || trigger === document.activeElement),
-		);
-		applyRovingTabindex(triggers, activeIndex);
+		this.roving.sync();
 	}
 
 	private syncChildrenAnimated(): void {
@@ -112,50 +109,34 @@ export class RuiDisclosureGroup extends RadiantElement {
 	 */
 	@onEvent({ selector: '[data-disclosure-trigger]', type: 'keydown' })
 	onTriggerKeydown(event: KeyboardEvent): void {
-		const triggers = this.getTriggers();
 		const current = (event.target as HTMLElement).closest<HTMLElement>('[data-disclosure-trigger]');
 		if (!current) {
 			return;
 		}
 
-		if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
-			const disclosure = this.getDisclosureForTrigger(current);
-			if (!disclosure) {
-				return;
-			}
-
-			const nextOpen = event.key === 'ArrowRight';
-			if (disclosure.open === nextOpen) {
-				event.preventDefault();
-				return;
-			}
-
-			event.preventDefault();
-			disclosure.open = nextOpen;
-
-			if (nextOpen && !this.multiple) {
-				for (const other of this.querySelectorAll<RuiDisclosure>('rui-disclosure')) {
-					if (other !== disclosure) {
-						other.open = false;
-					}
-				}
-			}
+		if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') {
 			return;
 		}
 
-		const result = navigateRovingTabindex({
-			items: triggers,
-			current,
-			key: event.key,
-			orientation: 'vertical',
-			wrap: true,
-		});
-
-		if (!result.handled) {
+		const disclosure = this.getDisclosureForTrigger(current);
+		if (!disclosure) {
 			return;
 		}
 
 		event.preventDefault();
+		const nextOpen = event.key === 'ArrowRight';
+		if (disclosure.open === nextOpen) {
+			return;
+		}
+
+		disclosure.open = nextOpen;
+		if (nextOpen && !this.multiple) {
+			for (const other of this.querySelectorAll<RuiDisclosure>('rui-disclosure')) {
+				if (other !== disclosure) {
+					other.open = false;
+				}
+			}
+		}
 	}
 }
 

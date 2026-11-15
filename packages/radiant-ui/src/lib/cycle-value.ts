@@ -4,6 +4,11 @@
  * @remarks
  * When `current` is missing or not found in `values`, returns the first entry so
  * callers can recover from stale or unset state.
+ *
+ * @example
+ * ```ts
+ * cycleValue(['light', 'dark', 'system'], 'system'); // 'light'
+ * ```
  */
 export function cycleValue<T extends string>(values: readonly T[], current: T | undefined): T {
 	if (values.length === 0) {

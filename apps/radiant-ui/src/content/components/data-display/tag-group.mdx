@@ -3,7 +3,7 @@ title: Tag Group
 description: Tag groups display selected values as removable chips, commonly used in multi-select fields and filter bars.
 ---
 
-import { meta as TagGroupMeta, Default } from '@/content/stories/tag-group';
+import { meta as TagGroupMeta, Default, Reorderable } from '@/content/stories/tag-group';
 import Canvas from '@/components/component-docs/canvas';
 import Demo from '@/components/component-docs/demo';
 
@@ -67,6 +67,14 @@ BEM classes are presentation-only. Omit `[data-tag-remove]` for a non-removable 
 
 <p>Set `embedded` when tags render inside a select or combobox trigger rather than standalone. Selection is disabled because the parent owns the value; removal still emits `rui-remove`.</p>
 
+## Reordering
+
+Set `reorderable` to let people reorder tags. Press and drag a tag, or focus it and press Space to lift it, arrow keys to move it, Space or Enter to drop it and Escape to cancel. Space lifts instead of selecting, so selection stays on click and Enter. Each step is announced through a visually hidden live region the host adds to itself. `value` is the selection and does not change with the order: listen for `rui-reorder` or read the tags in DOM order.
+
+<Canvas of={Reorderable} meta={TagGroupMeta} />
+
+While a tag is lifted the host sets `data-sortable-state="lifted"` on it and `data-sortable-drop="before"` or `"after"` on the tag it would land beside, and `--sortable-dx` and `--sortable-dy` on the lifted tag follow the pointer. The theme draws them; the default styles show an insertion bar and lift the tag with the overlay shadow.
+
 ## Theming
 
 Tag Group surfaces map to **semantic surface roles**, never Tailwind palette steps:
@@ -93,6 +101,7 @@ Override roles at the theme layer, not in component CSS.
 | `disabled` | `boolean` | `false` | Disable selection and removal. |
 | `selection-mode` | `single` · `multiple` | `multiple` | Allow one or many selected tags. |
 | `embedded` | `boolean` | `false` | Disable selection when a parent component owns the selected values. |
+| `reorderable` | `boolean` | `false` | Let tags be reordered by pointer drag or keyboard. See Reordering. |
 
 ### Light-DOM contract
 
@@ -113,6 +122,7 @@ Do not set `role`, `aria-selected`, or `tabIndex` on tags. Nested hosts: none.
 | --- | --- | --- |
 | `rui-change` | `{ value: string[] }` | Emitted when selection changes. |
 | `rui-remove` | `{ value: string }` | Emitted when a tag is removed; `value` is the removed tag's value. Also followed by `rui-change`. |
+| `rui-reorder` | `{ value: string; from: number; to: number }` | Emitted after a reorder is applied: the moved tag's value and its old and new index among the tags that take part in keyboard movement (not `hidden`, not `aria-disabled`). |
 
 ### Methods
 
@@ -149,6 +159,7 @@ Public BEM classes on the composed light-DOM surface (documented via `@cssclass`
 | Selected tag | `--primary`, `--on-primary` |
 | Remove hover | `--on-background` |
 | Disabled | `--opacity-muted` |
+| Reorder insertion bar | `--primary` |
 | Focus ring | `--focus-ring` |
 
 ## Accessibility
@@ -156,4 +167,5 @@ Public BEM classes on the composed light-DOM surface (documented via `@cssclass`
 - Each tag exposes its label text to screen readers.
 - Remove buttons have accessible names indicating which tag will be removed (`Remove {label}`).
 - A tag with `aria-disabled="true"` (`disabled` on `RuiTag`) is skipped by arrow keys and cannot be selected or removed: its remove control is disabled, and Delete and Backspace do nothing. After changing `aria-disabled` in place, call `resync()`.
+- With `reorderable`, lifting, moving, dropping and cancelling are announced through a polite live region (`[data-tag-announcer]`). While a tag is lifted the arrow keys move it instead of moving focus.
 - The group has an accessible name via `label` when not described by surrounding text.

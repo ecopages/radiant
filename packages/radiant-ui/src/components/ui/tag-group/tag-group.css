@@ -57,4 +57,25 @@ rui-tag-group {
 	.rui-tag__remove:focus-visible {
 		@apply ring-2 ring-focus-ring opacity-100 outline-none;
 	}
+
+	.rui-tag-group__announcer {
+		@apply sr-only;
+	}
+
+	rui-tag-group[reorderable] .rui-tag {
+		@apply cursor-grab touch-none select-none;
+	}
+
+	.rui-tag[data-sortable-state='lifted'] {
+		@apply relative z-10 cursor-grabbing shadow-overlay;
+		transform: translate(var(--sortable-dx, 0), var(--sortable-dy, 0));
+	}
+
+	.rui-tag[data-sortable-drop='before'] {
+		box-shadow: -3px 0 0 0 var(--primary);
+	}
+
+	.rui-tag[data-sortable-drop='after'] {
+		box-shadow: 3px 0 0 0 var(--primary);
+	}
 }
