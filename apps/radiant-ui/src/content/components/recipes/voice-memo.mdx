@@ -1,0 +1,104 @@
+---
+title: Voice memo
+description: 'A microphone recorder with record, pause, stop and discard, a clock, a level meter, playback and download, built on the media recorder controller.'
+order: 10
+---
+
+import { PrimitiveExample } from '@/components/primitive-example';
+import { RecipeCode, RecipeExample, RecipePattern, RecipePatterns } from '@/components/recipe-patterns';
+
+export const config = {
+	dependencies: {
+		components: [PrimitiveExample, RecipePatterns, RecipeCode, RecipeExample],
+		scripts: [
+			'./voice-memo.script.ts',
+			'./voice-memo.element.ts',
+			'./voice-memo.component.tsx',
+			'./voice-memo.controller.ts',
+		],
+		stylesheets: ['./voice-memo.css'],
+	},
+};
+
+# Voice memo
+
+<p class="docs-lede">Record a short note from the microphone, listen to it and keep it.</p>
+
+## Goal
+
+A voice note for a form, a chat or a lesson: Record asks for the microphone, Pause and Resume hold the clock, Stop turns the take into an audio file you can play and download, and Discard throws it away. A take stops by itself after 60 seconds.
+
+## Primitives
+
+- [MediaRecorderController](/docs/controllers/media-recorder) is the recorder: it asks for the microphone, records, and reports one snapshot (`status`, `duration`, `level`) through `onState`, so the recipe never touches `getUserMedia`, `MediaRecorder` or a track. A refused permission is the `denied` status and a browser without the APIs is `unsupported`, so neither is an exception. It stops by itself at `maxDuration`, stops every track when the take ends, is discarded or the element leaves, and revokes the result's object URL on the next `start()`, on `discard()` and on `destroy()`.
+- `formatMediaTime` formats the clock, from the [media time helpers](/docs/helpers/media-time).
+
+The buttons are design-system [buttons](/docs/actions/button): icon buttons named Record, Pause (Resume while paused), Stop and Discard, and the download is a button-styled link.
+
+Left to the recipe: mapping the snapshot to what is drawn (`viewOf` in `voice-memo.data`, one pure function every form shares, so they cannot disagree), the status line, the level meter and the player. The status is a polite live region and says each of the eight states: `idle`, `requesting`, `recording`, `paused`, `stopped`, `denied` (with how to try again), `unsupported` and `error`, and says when the 60 second limit ended the take.
+
+The level meter uses the recorder's own `level`, which it measures when it is given `getAudioContext`, in place of an [AudioVisualizerController](/docs/controllers/audio-visualizer) fed with `getStream()`. The meter is one number from 0 to 1, which the recorder already reports with every `onState`, so a second controller, a second analyser and a canvas would add nothing; use the visualizer when you want bars or a wave. The recipe creates the `AudioContext` inside `getAudioContext`, which runs in `start()` from the click, and closes it with the memo. The stream is only read by an analyser that is connected to nothing, never to the speakers, so there is no feedback.
+
+## Example
+
+Press Record and allow the microphone. Speak and watch the meter, pause and resume, then stop: the take appears in an audio player with a Download link. Press Record again to make a new one, or Discard to drop it. If you block the microphone, the status explains how to allow it and try again.
+
+Pick an authoring pattern below; they all behave the same, and the one you pick is remembered on the other recipes.
+
+<RecipePatterns patterns={['element', 'component', 'controller', 'plain']}>
+
+<RecipePattern id="element">
+
+The same behavior as a `RadiantElement`. The markup is authored inside the element; there is nothing to mount, clean up or run again.
+
+<RecipeExample recipe="voice-memo" pattern="element" layout="stack" />
+
+<RecipeCode recipe="voice-memo" pattern="element" />
+
+`createMediaRecorderController(this, ...)` attaches the recorder when the element connects and destroys it when it leaves, which stops the microphone and revokes the URL. `@onEvent` delegates the four clicks. The player's source is cleared before `start()` and `discard()`, because the recorder revokes the previous URL there and an `audio` element that still held it would fail. A callback registered once in the constructor with `registerCleanupCallback` clears the player and closes the audio context; one registered in `onConnected` would be added again on every move.
+
+</RecipePattern>
+
+<RecipePattern id="component">
+
+The same behavior as a single `RadiantElement` that owns its markup: the view of the recorder is `@state` and `render()` draws the buttons, the clock and the status.
+
+<PrimitiveExample host layout="stack">
+	<voice-memo-app></voice-memo-app>
+</PrimitiveExample>
+
+<RecipeCode recipe="voice-memo" pattern="component" />
+
+`onState` fires about ten times a second while recording, so the component redraws only when something other than the level changed: the clock, the status or which buttons are enabled. The level is written to the meter's `--level` by hand. The player and the link are written by `showResult` and not by `render()`, since their value is an object URL the recorder owns. Compared with the element, the markup lives in the class and the buttons are `RuiButton`s, but the server renders the tag empty and the client draws it.
+
+</RecipePattern>
+
+<RecipePattern id="controller">
+
+The same behavior as a `RadiantController` attached to the authored markup, which carries `data-controller="voice-memo"` on a plain `div`.
+
+<RecipeExample recipe="voice-memo" pattern="controller" layout="stack" />
+
+<RecipeCode recipe="voice-memo" pattern="controller" />
+
+The element form's logic on a controller, with `connect()` in place of `onConnected()`. There is no tag to define, so the markup can come from a server template or a CMS and be any element; the registry attaches the class through `data-controller` and `createMediaRecorderController(this, ...)` takes the controller as its host.
+
+</RecipePattern>
+
+<RecipePattern id="plain">
+
+A `mount` function builds the recorder over the markup and returns the cleanup that undoes it.
+
+<RecipeExample recipe="voice-memo" pattern="plain" layout="stack" />
+
+<RecipeCode recipe="voice-memo" pattern="plain" />
+
+`mount` runs once for each example element on the page, and the function it returns undoes it; see [how the examples run](/docs/recipes/overview#how-the-examples-run). The cleanup removes the listeners, clears the player, destroys the recorder, which stops the microphone, and closes the audio context.
+
+</RecipePattern>
+
+</RecipePatterns>
+
+### Styles
+
+The state is `data-state` on the status line and the meter, so the stylesheet needs no class the script would keep in step: the meter is a bar scaled by `--level`, dimmed unless the state is `recording`, and a blocked, failed or unsupported state colours the status with the error token. Every colour is a theme token, so it follows the selected theme in light and dark, and the controls wrap at a phone width.
