@@ -155,7 +155,7 @@ Three sections sit after the component sections: `controllers`, `helpers` and `r
 
 ### Writing a recipe
 
-Searchable list (`recipes/searchable-list.*`) is the worked example. A recipe `<slug>` has these files in `src/content/components/recipes/`; the page lists every script and the stylesheet in `config.dependencies`, and `RecipePatterns`, `RecipeCode` and `RecipeExample` in `config.dependencies.components`.
+Searchable list (`recipes/searchable-list.*`) and Audio player (`recipes/audio-player.*`) are the worked examples. A recipe `<slug>` has these files in `src/content/components/recipes/`; the page lists every script and the stylesheet in `config.dependencies`, and `RecipePatterns`, `RecipeCode` and `RecipeExample` in `config.dependencies.components`.
 
 | File                                 | Holds                                                                                                                                          |
 | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |

@@ -1,0 +1,123 @@
+---
+title: Audio player
+description: 'A playlist player with seek, volume, loop, shuffle, a Bars or Wave visualizer and tracks you reorder by dragging or from the keyboard, built from the media, audio visualizer, sortable and roving controllers.'
+order: 8
+---
+
+import { PrimitiveExample } from '@/components/primitive-example';
+import { RecipeCode, RecipeExample, RecipePattern, RecipePatterns } from '@/components/recipe-patterns';
+
+export const config = {
+	dependencies: {
+		components: [PrimitiveExample, RecipePatterns, RecipeCode, RecipeExample],
+		scripts: [
+			'./audio-player.script.ts',
+			'./audio-player.element.ts',
+			'./audio-player.component.tsx',
+			'./audio-player.controller.ts',
+		],
+		stylesheets: ['./audio-player.css'],
+	},
+};
+
+# Audio player
+
+<p class="docs-lede">
+	A player with a playlist you reorder: pick a track, scrub through it, and drag a track to where you want it.
+</p>
+
+## Goal
+
+A music player, a podcast queue or a lesson playlist: the media is one `audio` element, and the list beside it is data the user edits. The current track keeps playing while the list is reordered, Enter or a click chooses a track, and the whole list works from the keyboard.
+
+## Primitives
+
+- [MediaController](/docs/controllers/media) is the playback core: it loads a track, plays, pauses, seeks and reports one state snapshot, so the player never listens to an `audio` event. The recipe loads each clip through a Blob with its `resolveSource` and `releaseSource` hooks, drives the seek bar with `scrub` (a debounced seek) and `skip`, and reads the position every animation frame from `onProgress`.
+- [AudioVisualizerController](/docs/controllers/audio-visualizer) feeds the cover the sound of the `audio` element. Both presets draw on a canvas the visualizer adds to the cover: `bars` draws 40 LED-style bars of 14 segments with peak caps that hold for 450 ms and then fall, and `wave` draws the waveform edge to edge. `setPreset` swaps one for the other while the track plays. Their colors are theme tokens and the bars keep drawing at rest, so the cover is never empty under reduced motion. The Play click calls `resume()` on the visualizer, which starts the audio context inside the gesture.
+- `formatMediaTime` formats the clock and the total, from the [media time helpers](/docs/helpers/media-time).
+- [SortableController](/docs/controllers/sortable) lets a track be dragged, or lifted with Space and moved with the arrows, and announces each step. It never moves a node, so the recipe keeps the order itself.
+- [reorder](/docs/helpers/ordering) turns the `from` and `to` of a change into the new order.
+- [RovingController](/docs/controllers/roving) gives the playlist one tab stop and moves it with the arrows. Its `getEnabled` is `false` while a track is lifted, so the arrows that steer the lifted track do not also move focus.
+- `PlaybackOrder` in `audio-player.data` is the order the player steps through: list order or a shuffle, with a loop mode, over tracks it holds by identity. It is plain TypeScript with an injectable random source, and its unit tests need no browser. In a shuffle, Previous steps back through the tracks played and Next returns to the track it left before drawing a new one; choosing a track by hand or toggling the shuffle forgets those.
+
+The recipe composes the design system, so it follows the selected theme: the seek bar and the volume are [`rui-slider`](/docs/forms/slider) elements, the Bars and Wave switch is a [`rui-toolbar`](/docs/actions/toolbar) of toggle buttons, and the transport buttons carry the Radiant button classes (`rui-button`, `rui-button--ghost` and `--filled`, `rui-button--square` for icon-only). Loop and shuffle are icon buttons in the same row, with no visible text. The component form renders them with the `RuiSlider`, `RuiToolbar` and `RuiButton` helpers. The plain, element and controller forms write the markup by hand, so they use the light-DOM contracts of the slider (see Custom markup on the slider page) and of the toolbar: a `rui-slider` host holding a root, a track with its fill and one `role="slider"` thumb, with the position seeded in the track's custom properties, and a `rui-toolbar` with `exclusive-toggles` around buttons that carry `data-toggle` and `aria-pressed`. The sound itself is one `audio` element, and the recipe needs no player library.
+
+Left to the recipe: the playlist (the order, which track is current, and `PlaybackOrder` for what Next, Previous and the end of a track do), going on to the next track when the controller reports `ended`, mirroring the state into the buttons, the clock and the seek bar, the status messages, the numbering after a reorder, and the `aria-valuetext` of the two sliders: a `rui-slider` writes its own, the bare value, whenever it repaints, so `ValueText` in `audio-player.data` keeps the player's text on the thumb with a `MutationObserver`. The controller reads the `audio` element's own properties, so the recipe never stores whether it is playing: the `status` of the state says so.
+
+## Example
+
+Choose a track with a click or Enter, press Play or Pause, drag the seek bar, change the volume, and switch the cover between Bars and Wave while it plays. Drag a track to a new place, or press Space on it, move it with the arrow keys and press Space to drop it: the track that is playing keeps playing. When a track ends the next one starts, and the last one stops the player unless the loop is on. The loop button cycles off, all and one, and its accessible name is the mode (`Loop: off`, `Loop: all`, `Loop: one`); it carries no `aria-pressed`, because a pressed state can only say two things. With `all` the last track wraps to the first when it ends, with `one` the same track starts again and Next still moves on, and with `off` the player stops at the end of the playlist with "End of the playlist". The shuffle button is an on and off toggle with the fixed name `Shuffle` and `aria-pressed`. While it is on, Next draws from a bag that holds every track once before any repeats and never plays the same track twice in a row, and Previous walks back through the tracks played. Previous restarts the current track when it has played for more than 3 seconds, in the list order and in a shuffle. Turning shuffle off continues in list order from the current track, and reordering the list keeps the bag and the history on the same tracks. Each change is announced through the status line ("Shuffle on", "Loop: all"). Nothing is stored between visits. Each row is described to a screen reader as "Enter plays, Space picks up to reorder". The seek thumb reads as "0:03 of 0:08" and the volume as "80%", not as the raw number of seconds. The four clips are short tones made for this page: `scripts/generate-audio-player-assets.mjs` renders them with Node alone, and running it again writes the same bytes.
+
+Pick an authoring pattern below; they all behave the same, and the one you pick is remembered on the other recipes.
+
+<RecipePatterns patterns={['element', 'component', 'controller', 'plain']}>
+
+<RecipePattern id="element">
+
+The same behavior as a `RadiantElement`. The markup is authored inside the element and the element finds its parts with `@query`; there is nothing to mount, clean up or run again.
+
+<RecipeExample recipe="audio-player" pattern="element" layout="stack" />
+
+<RecipeCode recipe="audio-player" pattern="element" />
+
+The element finds its parts with `@query`, and the rows with `@query` and `all: true`, which reads the live DOM on every access, so the numbers are still in document order after a reorder. The authored rows are read once into a `tracks` array of plain objects, so the title, artist and length of a track are never looked up in its row again. The text that follows the player, the toggle and the seek bar are `@state` fields that `@bindTo` copies onto the authored markup: setting `this.elapsed`, `this.playing` or `this.seekable` is the whole update. What the element still writes itself is the seek slider's `value` and `max`, which `@bindTo` has no target for, and the `aria-valuetext` of the two sliders. The observer that keeps it is stopped by a callback registered once in the constructor.
+
+The two controllers are made with `createMediaController(this, ...)` and `createAudioVisualizerController(this, ...)`, so they attach when the element connects and are destroyed when it leaves. The element listens to no media event and runs no animation frame loop. `onState` mirrors the status into `aria-pressed` and the status message, enables the seek bar and starts the next track when the status is `ended`; `onProgress` moves the thumb and the clock on every frame while the track plays. The clips are loaded into a `Blob` through `resolveSource` and revoked through `releaseSource`, so seeking works on servers without range support; serve long media with ranges and load its URL directly. A file that cannot be fetched reaches `onError`, which sets the status to "Could not load" and the track's title, and choosing the track again loads it again.
+
+`@onEvent` covers the clicks, the Enter key and the two sliders' `rui-change` events. The seek slider works in seconds and emits `rui-change` only for the reader, never for the position the player writes to it, so each one goes to `scrub`: the clock follows the thumb at once and the controller seeks once the slider has been idle for 120 ms. A key handler delegated in the capture phase moves the thumb by whole seconds with `skip`, because the slider's own step of 0.01 s, which keeps the per-frame position write smooth, is too small for an arrow key. `onConnected` starts the player again, from the first track and paused, when the element is moved to another parent. Sortable is given `liftKeys: [' ']` so that Enter is left to choose a track.
+
+The Bars and Wave buttons are a `rui-toolbar` with `exclusive-toggles`. The toolbar stops a click on a toggle in its own capture handler, so the element delegates the click in the capture phase from above it and calls `setPreset` with the `bars` or the `wave` preset; a click on the button that is already pressed is stopped there, so one of the two always stays pressed. The cover is an empty element: both presets add their own decorative `canvas` to it, and the stylesheet gives the cover a height, its rounded corners and `overflow: hidden`, which clips the wave to them. The loop and shuffle buttons are `@state` fields (`loopMode`, `loopName`, `shuffled`) bound to the button's `data-mode`, `aria-label` and `aria-pressed`, over a `PlaybackOrder` built when the element connects. What the Radiant form removes: the `mount` function and its registration, the cleanup to return and call, and the re-run after a client-side navigation.
+
+</RecipePattern>
+
+<RecipePattern id="component">
+
+The same behavior as a single `RadiantElement` that owns its markup: the track order, the current track and whether it plays are `@state`, and `render()` draws the player.
+
+<PrimitiveExample host layout="stack">
+	<audio-player-app></audio-player-app>
+</PrimitiveExample>
+
+<RecipeCode recipe="audio-player" pattern="component" />
+
+The order is an array of track ids, so a drop is a new array: `onChange` does not touch the DOM, it writes the reordered ids with `reorder`, and `render()` moves the keyed rows, numbers them again and keeps `aria-current` on the track that plays, which is why the sound is not interrupted. `@query` finds the `audio` element, the cover, the seek input and the rows, and the handlers are JSX `on:*` attributes. The one exception is the key handler of the seek slider, a delegated `@onEvent` in the capture phase, because it has to run before the slider's own.
+
+Playback and the cover belong to `createMediaController(this, ...)` and `createAudioVisualizerController(this, ...)`, so the `audio` element has no handler at all. The controllers attach when the element connects, before the first render, when there is no `audio` yet; `onConnected` runs after the render and attaches them again. `onState` mirrors the status into `playing` and `ready`, which drive `aria-pressed` and the seek bar, and starts the next track when the status is `ended`. The button keeps one name, "Play", as a toggle button should, and the CSS shows the matching icon. The clock and the status change several times a second, so they are bound with `this.$` and never re-render the list; the seek position is the one value written to the DOM by hand, from `onProgress`, because `this.$` binds text positions only.
+
+The seek slider works in seconds, its `max` is the track's duration once the state reports one, and it emits `rui-change` only for the reader. Each one goes to `scrub`, which previews the clock at once and seeks after 120 ms of quiet; its step of 0.01 s keeps the per-frame position write smooth and is too small for an arrow key, so the arrows and the page keys move by whole seconds with `skip` through the capture handler. `updated()` attaches the sortable and roving controllers to the committed list, because they attach before the first render, and focuses the track that moved. Every row renders `tabindex="-1"` and the roving controller owns the one tab stop: a row with no `tabindex` attribute already reports `-1`, so the controller would leave it unfocusable. Each clip goes through `resolveSource` into a `Blob` and is played from memory, so seeking works on servers that do not answer range requests; serve long media with ranges and load its URL directly. A file that cannot be fetched sets the status to "Could not load" and the track's title through `onError`, and choosing it again loads it again. `onConnected` starts the player on the first track, paused, each time the element connects, so an element moved to another parent starts again.
+
+The selected visualizer is `@state`: the Bars and Wave buttons are `RuiButton`s in a `RuiToolbar` whose `pressed` follows it, and a click sets it and calls `setPreset`. The buttons are controlled, so they carry no `data-toggle` and the toolbar leaves their state to the component; that is also why `exclusiveToggles` has nothing to do here and is left off. Both presets draw on a decorative `canvas` the visualizer adds to the cover, so the level never goes through `@state`, which would render the list every frame. The loop mode and the shuffle are `@state` that the buttons render: the loop button's name is `Loop: off`, `Loop: all` or `Loop: one` from the state, and `pressed` follows the shuffle. The visualizer builds nothing when the reader prefers reduced motion.
+
+Compared with the Radiant element above, the markup lives inside the element, so there is nothing to keep in step with the page and the playlist is state you can change, but restyling the structure means editing the class. It also needs the render path on the server to have content before the script runs: this docs build prerenders the tag empty and the client draws it, so the page shows nothing until the script loads, which a page of authored children does not.
+
+</RecipePattern>
+
+<RecipePattern id="controller">
+
+The same behavior as a `RadiantController` attached to the authored markup, which carries `data-controller="audio-player"` on a plain `div`.
+
+<RecipeExample recipe="audio-player" pattern="controller" layout="stack" />
+
+<RecipeCode recipe="audio-player" pattern="controller" />
+
+The class is the element form's logic on a `RadiantController`: the same `@query`, `@state` with `@bindTo` and `@onEvent` decorators, with `connect()` in place of `onConnected()`. Nothing differs in what it does. What differs is where it lives: there is no custom element tag to define, so the markup can come from a server template or a CMS and be any element, and the controller attaches to it through `data-controller`. The docs site starts one registry over the document, which connects the controller when the markup appears, including markup inserted later, and disconnects it when the element is removed, so the class only registers itself with `@controller`. `createMediaController`, `createAudioVisualizerController`, `createRovingController` and `createSortableController` take the controller as their host, as they do an element, so they attach on connect and are destroyed on disconnect. That is the whole cleanup: the media controller pauses the sound, drops its source and revokes the object URLs in a microtask, which a move to another parent cancels because the controller attaches again at once, and `connect()` starts the player again, from the first track and paused, when the element is moved. The Bars and Wave switch is wired as in the element form, with a capture handler delegated above the toolbar, and so are the loop and shuffle buttons.
+
+</RecipePattern>
+
+<RecipePattern id="plain">
+
+A `mount` function wires the controllers to the markup and returns the cleanup that undoes it.
+
+<RecipeExample recipe="audio-player" pattern="plain" layout="stack" />
+
+<RecipeCode recipe="audio-player" pattern="plain" />
+
+`mount` runs once for each example element on the page, and the function it returns undoes it; see [how the examples run](/docs/recipes/overview#how-the-examples-run). It builds a `MediaController` and an `AudioVisualizerController` over the `audio` element and the cover, and the cleanup destroys them with the sortable and roving controllers: the media controller pauses the sound, drops its source and revokes the object URLs, so a removed player stops making sound. The seek slider works in seconds and reports `rui-change` only for the reader, never for the position the player writes to it. Each one goes to `scrub`. Its step of 0.01 s keeps the per-frame position write smooth and is too small for an arrow key, so a capture-phase `keydown` listener moves the thumb by whole seconds with `skip` before the slider sees the key. The play button's hook is `data-playback` and not `data-toggle`, which `RuiButton` and the toolbar use for their own toggle buttons. Each clip goes through the controller's `resolveSource` into a `Blob` and is played from memory: a media element can only seek in a file whose server answers range requests, and many development and preview servers do not, so seeking would snap back to the start. For long media, serve the file with range support and load its URL directly. The Bars and Wave buttons are a `rui-toolbar` with `exclusive-toggles`; a click listener on the example in the capture phase calls `setPreset`, because the toolbar stops the click of a toggle before it reaches a listener on the button.
+
+</RecipePattern>
+
+</RecipePatterns>
+
+### Styles
+
+The current track is selected with `aria-current`, so the stylesheet needs no class the script would have to keep in step. The lifted track leaves the example while it is dragged, so its style selects it by `data-track` alone. The cover is a rounded box with `overflow: hidden` and no border, and the canvas the visualizer adds fills it, so the wave runs edge to edge and is clipped by the corners, while the bars keep their own padding through the preset's `padding` option. The loop button shows the pressed look for `all` and `one` through its `data-mode`, and the icon with the 1 only for `one`. The stylesheet is the `audio-player.css` tab in the files above.
