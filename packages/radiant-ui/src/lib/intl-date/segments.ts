@@ -2,8 +2,14 @@ import { getDateTimeFormat } from './formatters';
 import { dateToIso, isIsoInRange } from './iso';
 import type { DateGranularity, DatePartType, IntlLocale } from './types';
 
+/**
+ * An editable date part, or the literal text between parts.
+ */
 export type DateSegmentType = DatePartType | 'literal';
 
+/**
+ * One piece of a segmented date input: a part or a literal, with its value and placeholder.
+ */
 export type DateSegmentModel = {
 	type: DateSegmentType;
 	/** Visible text for literals; numeric string for editable segments. */
@@ -49,6 +55,11 @@ function formatPartValue(type: DatePartType, date: Date, locale: IntlLocale): st
  * Builds locale-ordered date segments from `Intl.DateTimeFormat.prototype.formatToParts()`.
  *
  * @remarks Mirrors the React Aria `DateInput` segment list — literals plus editable fields.
+ *
+ * @example
+ * ```ts
+ * buildDateSegments(null, 'en-US').map((segment) => segment.placeholder); // ['mm', '/', 'dd', '/', 'yyyy']
+ * ```
  */
 export function buildDateSegments(
 	date: Date | null,
@@ -111,6 +122,11 @@ function normalizeYear(value: number): number {
 /**
  * Converts editable segment values into a local calendar `Date`, or `null` when incomplete.
  *
+ *
+ * @example
+ * ```ts
+ * segmentsToDate(buildDateSegments(new Date(2026, 10, 14), 'en-US')); // Date for 14 November 2026
+ * ```
  */
 export function segmentsToDate(segments: DateSegmentModel[]): Date | null {
 	const values: Partial<Record<DatePartType, number>> = {};
@@ -138,10 +154,16 @@ export function segmentsToDate(segments: DateSegmentModel[]): Date | null {
 	return date;
 }
 
+/**
+ * Whether no editable segment holds a value.
+ */
 export function allSegmentsEmpty(segments: DateSegmentModel[]): boolean {
 	return segments.every((segment) => !segment.editable || segment.isPlaceholder || segment.value === '');
 }
 
+/**
+ * What an edited draft amounts to, see `draftStatus`.
+ */
 export type DraftStatus =
 	| { kind: 'partial-year' }
 	| { kind: 'empty' }
@@ -157,6 +179,11 @@ export type DraftStatus =
  * `incomplete` (a missing unit or an impossible date such as Feb 30), `out-of-range`, then `date`.
  * The four-digit rule lives here rather than in `segmentsToDate`, which still reads `1` as 2001
  * for callers that parse two-digit years.
+ *
+ * @example
+ * ```ts
+ * draftStatus(buildDateSegments(null, 'en-US')); // { kind: 'empty' }
+ * ```
  */
 export function draftStatus(segments: DateSegmentModel[], range: { min?: string; max?: string } = {}): DraftStatus {
 	const year = segments.find((segment) => segment.editable && segment.type === 'year');
@@ -177,10 +204,16 @@ export function draftStatus(segments: DateSegmentModel[], range: { min?: string;
 	return { kind: 'date', iso };
 }
 
+/**
+ * The indexes of the segments a user can edit.
+ */
 export function getEditableSegmentIndices(segments: DateSegmentModel[]): number[] {
 	return segments.map((segment, index) => (segment.editable ? index : -1)).filter((index) => index >= 0);
 }
 
+/**
+ * How many digits a part takes: four for the year, two otherwise.
+ */
 export function maxSegmentLength(type: DatePartType): number {
 	if (type === 'year') {
 		return 4;
@@ -188,11 +221,27 @@ export function maxSegmentLength(type: DatePartType): number {
 	return 2;
 }
 
+/**
+ * Keeps the digits of `raw` and cuts them to the part's length.
+ *
+ * @example
+ * ```ts
+ * clampSegmentValue('month', '123'); // '12'
+ * ```
+ */
 export function clampSegmentValue(type: DatePartType, raw: string): string {
 	const digits = raw.replace(/\D/g, '');
 	return digits.slice(0, maxSegmentLength(type));
 }
 
+/**
+ * Steps a part by `delta`, wrapping months and days.
+ *
+ * @example
+ * ```ts
+ * incrementSegment('month', '12', 1); // '01'
+ * ```
+ */
 export function incrementSegment(type: DatePartType, value: string, delta: number): string {
 	const numeric = Number(value || '0') + delta;
 	if (type === 'month') {

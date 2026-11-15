@@ -1,0 +1,69 @@
+---
+title: Numeric range
+description: 'Clamp to a stepped range, map a ratio to a value, and map slider keys to values.'
+order: 5
+---
+
+import { HelperResults } from '@/components/primitive-example/helper-results';
+import {
+	createNumericRange,
+	valueFromSliderKey,
+	fractionDigitsFromStep,
+	resolveValuePrecision,
+	formatNumericValue,
+	valuesAlignOnStep,
+} from '@ecopages/radiant-ui/helpers';
+
+export const range = createNumericRange(0, 100, 5);
+
+# Numeric range
+
+<p class="docs-lede">Clamp to a stepped range, map a ratio to a value, and map slider keys to values.</p>
+
+Reach for it for sliders, knobs and meters. The helpers are pure: no DOM at import time or in the call path, so they run on the server and in tests. Each result below is computed when the page is built, by running the call shown.
+
+## Import
+
+```ts
+import {
+	createNumericRange,
+	valueFromSliderKey,
+	fractionDigitsFromStep,
+	resolveValuePrecision,
+	formatNumericValue,
+	valuesAlignOnStep,
+} from '@ecopages/radiant-ui/helpers';
+```
+
+## Range
+
+`createNumericRange(min, max, step)` returns the bounds with `clamp`, `ratioFor` and `valueFromRatio`. A non-finite bound or a step that is not positive falls back to a default.
+
+```ts
+const range = createNumericRange(0, 100, 5);
+```
+
+<HelperResults
+	rows={[
+		{ code: 'range.clamp(7)', result: range.clamp(7) },
+		{ code: 'range.ratioFor(25)', result: range.ratioFor(25) },
+		{ code: 'range.valueFromRatio(0.5)', result: range.valueFromRatio(0.5) },
+		{ code: "valueFromSliderKey(range, 50, 'PageUp')", result: valueFromSliderKey(range, 50, 'PageUp') },
+		{ code: "valueFromSliderKey(range, 50, 'ArrowLeft')", result: valueFromSliderKey(range, 50, 'ArrowLeft') },
+		{ code: "valueFromSliderKey(range, 50, 'a')", result: valueFromSliderKey(range, 50, 'a') },
+	]}
+/>
+
+## Readout
+
+Fraction digits follow the step unless a precision is given.
+
+<HelperResults
+	rows={[
+		{ code: 'fractionDigitsFromStep(0.25)', result: fractionDigitsFromStep(0.25) },
+		{ code: 'resolveValuePrecision(0.25, undefined)', result: resolveValuePrecision(0.25, undefined) },
+		{ code: 'resolveValuePrecision(0.25, 1)', result: resolveValuePrecision(0.25, 1) },
+		{ code: 'formatNumericValue(2.5, 2)', result: formatNumericValue(2.5, 2) },
+		{ code: 'valuesAlignOnStep(0.1 + 0.2, 0.3, 0.1)', result: valuesAlignOnStep(0.1 + 0.2, 0.3, 0.1) },
+	]}
+/>

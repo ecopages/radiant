@@ -1,0 +1,104 @@
+---
+title: Date segments
+description: 'The model of a segmented date input: day, month and year fields with their literals.'
+order: 2
+---
+
+import { HelperResults } from '@/components/primitive-example/helper-results';
+import {
+	buildDateSegments,
+	segmentsToDate,
+	draftStatus,
+	applyDigitToSegment,
+	incrementSegmentValue,
+	getEditablePartTypes,
+} from '@ecopages/radiant-ui/helpers';
+
+# Date segments
+
+<p class="docs-lede">The model of a segmented date input: day, month and year fields with their literals.</p>
+
+Reach for them to build a date field with separate parts. The helpers are pure: no DOM at import time or in the call path, so they run on the server and in tests. Each result below is computed when the page is built, by running the call shown.
+
+## Import
+
+```ts
+import {
+	buildDateSegments,
+	segmentsToDate,
+	draftStatus,
+	allSegmentsEmpty,
+	applyDigitToSegment,
+	applyBackspaceToSegment,
+	incrementSegmentValue,
+	clearSegmentValue,
+	setSegmentNumeric,
+	focusPartAfter,
+	firstEmptyOrFirstPart,
+	getEditablePartTypes,
+	getSegmentBounds,
+	segmentAriaName,
+	segmentDisplayText,
+	segmentNumericValue,
+	getEditableSegmentIndices,
+	maxSegmentLength,
+	clampSegmentValue,
+	incrementSegment,
+} from '@ecopages/radiant-ui/helpers';
+```
+
+## Building and reading
+
+`buildDateSegments` returns the segments, literals included, in the locale's order. Editing functions return a new array and never change the one passed in.
+
+<HelperResults
+	rows={[
+		{
+			code: "buildDateSegments(null, 'en-US').map((segment) => segment.placeholder)",
+			result: buildDateSegments(null, 'en-US').map((segment) => segment.placeholder),
+		},
+		{
+			code: "buildDateSegments(new Date(2026, 10, 14), 'en-US').map((segment) => segment.value)",
+			result: buildDateSegments(new Date(2026, 10, 14), 'en-US').map((segment) => segment.value),
+		},
+		{
+			code: "segmentsToDate(buildDateSegments(new Date(2026, 10, 14), 'en-US'))",
+			result: segmentsToDate(buildDateSegments(new Date(2026, 10, 14), 'en-US')),
+		},
+		{
+			code: "draftStatus(buildDateSegments(null, 'en-US'))",
+			result: draftStatus(buildDateSegments(null, 'en-US')),
+		},
+		{
+			code: "draftStatus(buildDateSegments(new Date(2026, 10, 14), 'en-US'))",
+			result: draftStatus(buildDateSegments(new Date(2026, 10, 14), 'en-US')),
+		},
+	]}
+/>
+
+## Editing
+
+Typed digits, Backspace and arrow-key steps, following the React Aria `useDateSegment` entry rules. `focusNext` says the segment is complete.
+
+<HelperResults
+	rows={[
+		{
+			code: "applyDigitToSegment(buildDateSegments(null, 'en-US'), 'month', '1', '').focusNext",
+			result: applyDigitToSegment(buildDateSegments(null, 'en-US'), 'month', '1', '').focusNext,
+		},
+		{
+			code: "applyDigitToSegment(buildDateSegments(null, 'en-US'), 'month', '5', '').focusNext",
+			result: applyDigitToSegment(buildDateSegments(null, 'en-US'), 'month', '5', '').focusNext,
+		},
+		{
+			code: "incrementSegmentValue(buildDateSegments(new Date(2026, 10, 14), 'en-US'), 'month', 1).map((segment) => segment.value)",
+			result: incrementSegmentValue(buildDateSegments(new Date(2026, 10, 14), 'en-US'), 'month', 1).map(
+				(segment) => segment.value,
+			),
+		},
+		{
+			code: "getEditablePartTypes(buildDateSegments(null, 'en-US'))",
+			result: getEditablePartTypes(buildDateSegments(null, 'en-US')),
+		},
+	]}
+/>

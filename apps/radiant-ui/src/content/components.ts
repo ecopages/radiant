@@ -3,13 +3,16 @@ import type { JsxRenderable } from '@ecopages/jsx';
 import { z } from 'zod';
 import {
 	actionsIcon,
+	controllersIcon,
 	dataDisplayIcon,
 	feedbackIcon,
 	formsIcon,
 	gettingStartedIcon,
+	helpersIcon,
 	layoutIcon,
 	navigationIcon,
 	overlaysIcon,
+	recipesIcon,
 } from './section-icons';
 
 /** Public URL prefix for docs pages. */
@@ -25,6 +28,9 @@ export const DOCS_SECTION_ORDER = [
 	'overlays',
 	'feedback',
 	'data-display',
+	'controllers',
+	'helpers',
+	'recipes',
 ] as const;
 
 export type DocsSectionId = (typeof DOCS_SECTION_ORDER)[number];
@@ -44,10 +50,16 @@ export const DOCS_SECTION_CONFIG = {
 	overlays: { title: 'Overlays', icon: overlaysIcon },
 	feedback: { title: 'Feedback', icon: feedbackIcon },
 	'data-display': { title: 'Data display', icon: dataDisplayIcon },
+	controllers: { title: 'Controllers', icon: controllersIcon },
+	helpers: { title: 'Helpers', icon: helpersIcon },
+	recipes: { title: 'Recipes', icon: recipesIcon },
 } as const satisfies Record<DocsSectionId, { title: string; icon: JsxRenderable }>;
 
-/** Sections that list catalog components; every section except Getting started. */
-export type ComponentSectionId = Exclude<DocsSectionId, 'getting-started'>;
+/** Sections that are not catalog components: the guide and the primitives components are built from. */
+export const NON_COMPONENT_SECTIONS = ['getting-started', 'controllers', 'helpers', 'recipes'] as const;
+
+/** Sections that list catalog components. */
+export type ComponentSectionId = Exclude<DocsSectionId, (typeof NON_COMPONENT_SECTIONS)[number]>;
 
 export type ComponentCategory = (typeof DOCS_SECTION_CONFIG)[ComponentSectionId]['title'];
 

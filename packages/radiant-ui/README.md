@@ -8,11 +8,12 @@ This project is **not a React app**. JSX compiles through `@ecopages/jsx`.
 
 ## Packages
 
-| Path                                                            | Role                                                                |
-| --------------------------------------------------------------- | ------------------------------------------------------------------- |
-| `src/components/ui`                                             | **`@ecopages/radiant-ui`** component library (APG-oriented widgets) |
-| [`@ecopages/storybook-radiant-vite`](../storybook-radiant-vite) | Storybook framework for Radiant (client + SSR → hydrate)            |
-| `src/components/client`, `src/components/ssr`, `src/stories`    | Framework dogfood demos (not the published UI catalog)              |
+| Path                                                            | Role                                                                                                                                                                                                    |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/components/ui`                                             | **`@ecopages/radiant-ui`** component library (APG-oriented widgets)                                                                                                                                     |
+| `src/controllers`                                               | [Primitives catalog](./src/controllers/README.md): public `@ecopages/radiant-ui/controllers` and `@ecopages/radiant-ui/helpers` entries. The reusable controllers and helpers components are built from |
+| [`@ecopages/storybook-radiant-vite`](../storybook-radiant-vite) | Storybook framework for Radiant (client + SSR → hydrate)                                                                                                                                                |
+| `src/components/client`, `src/components/ssr`, `src/stories`    | Framework dogfood demos (not the published UI catalog)                                                                                                                                                  |
 
 Framework documentation (API, SSR contract, Vitest, limitations):  
 **[../storybook-radiant-vite/README.md](../storybook-radiant-vite/README.md)**
@@ -51,6 +52,8 @@ pnpm run build:lib       # generate exports + build JS/types + compile CSS
 Published CSS under `dist/` is **already compiled** (Tailwind `@apply` resolved). Theme and token values remain CSS custom properties so apps can swap themes at runtime. The package does not minify CSS. Published declaration imports are rewritten to package-relative paths during `build:lib`, and `test:package` rejects unresolved source aliases.
 
 Entries are code-split: a module imported by several entries, such as the field control protocol or a component class, is emitted once into `dist/chunks/` and listed in `sideEffects`. This keeps module state, like the `registerFieldControl` registry, and `instanceof` checks between entries on one copy. Chunk names are content hashes and must not be imported; use only the documented entries. Without a bundler, the root `index.js` loads many chunk files. `src/built-package/*.test.ts` import `dist/` and run in their own `built-package` vitest project, which the `unit` project excludes. Its `globalSetup` (`.storybook/built-package.global-setup.ts`) checks that `dist/` and `dist/chunks` exist and are newer than the shipped sources, and the project's tests fail with `pnpm --filter @ecopages/radiant-ui build:lib` as the fix; a bare `pnpm test` without a build still runs the other projects. The freshness check compares mtimes, so a formatting-only source edit also asks for a rebuild. `test:all` builds first. `build:lib` also bundles an entry with esbuild to confirm the `chunks/*.js` `sideEffects` glob keeps the registrations, and `test:package` fails when a `dist/chunks` file matches no `sideEffects` glob.
+
+`@ecopages/radiant-ui/controllers` and `@ecopages/radiant-ui/helpers` are built from `src/controllers.ts` and `src/helpers.ts` and are named so the `**/index.js` `sideEffects` entry does not match them: a bundler can drop every export a consumer does not import. Chunks they share match the `chunks/*.js` entry, which keeps the chunk files but still removes unused declarations inside them. `test:package` bundles one export from each entry, asserts the others are absent, and imports `helpers` in Node without a DOM.
 
 Component entries register their nested custom elements as well as their own host. The package's `sideEffects` list preserves source `*.script.ts` / `*.script.tsx` registration modules during the library build and built `index.js` entries during consumer bundling. Removing those source side effects can leave nested Derived Trees as empty tags during SSR. `build:lib` runs `test:package` against isolated imports of the built date compositions and sidebar trigger to verify registration and server-rendered markup.
 

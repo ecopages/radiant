@@ -1,6 +1,6 @@
 import type { JsxCustomElementAttributes, JsxElementProps } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
-import { formatNumericValue } from '../shared/numeric-range';
+import { formatNumericValue } from '@/lib/numeric-range';
 import { seedSliderView, RuiSlider as RuiSliderElement, type RuiSliderProps } from './slider.script';
 
 export type RuiSliderValueProps = JsxElementProps<HTMLSpanElement>;

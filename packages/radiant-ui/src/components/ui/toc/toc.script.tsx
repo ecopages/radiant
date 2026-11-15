@@ -3,6 +3,8 @@ import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, bound, customElement, onUpdated, prop, state } from '@ecopages/radiant';
 import { isServer } from '@ecopages/radiant/is-server';
 import { parseCommaSeparated } from '@/lib/comma-separated';
+import type { Controller } from '../../../controllers/controller';
+import { EventListenerController } from '../../../controllers/event-listener-controller';
 import {
 	ensureUniqueHeadingId,
 	querySelectorAllSafe,
@@ -86,10 +88,24 @@ export class RuiToc extends RadiantElement<RuiTocBindings> {
 
 	private headings: HTMLElement[] = [];
 	private scrollRoot: HTMLElement | Window | null = null;
-	private scrollCleanup: (() => void) | null = null;
-	private navigationCleanups: Array<() => void> = [];
+	private navigationListener: Controller | null = null;
 	private pendingScrollTargetId: string | null = null;
 	private scrollRafPending = false;
+	private readonly scrollListener = new EventListenerController({
+		getTarget: () => this.scrollRoot ?? window,
+		type: 'scroll',
+		listener: () => {
+			if (this.scrollRafPending) {
+				return;
+			}
+			this.scrollRafPending = true;
+			requestAnimationFrame(() => {
+				this.updateActiveHeading();
+				this.scrollRafPending = false;
+			});
+		},
+		options: { passive: true },
+	});
 	private readonly scrollOffsetTolerance = 4;
 
 	private readConfiguredProp(propValue: string, attributeName: string): string {
@@ -202,20 +218,17 @@ export class RuiToc extends RadiantElement<RuiTocBindings> {
 			return;
 		}
 
-		const handler = () => this.rebuild();
-		for (const eventName of parseCommaSeparated(
-			this.readConfiguredProp(this.navigationEvents, 'navigation-events'),
-		)) {
-			document.addEventListener(eventName, handler);
-			this.navigationCleanups.push(() => document.removeEventListener(eventName, handler));
-		}
+		this.navigationListener = new EventListenerController({
+			getTarget: () => document,
+			type: parseCommaSeparated(this.readConfiguredProp(this.navigationEvents, 'navigation-events')),
+			listener: () => this.rebuild(),
+		});
+		this.navigationListener.attach();
 	}
 
 	private detachNavigationListeners(): void {
-		for (const cleanup of this.navigationCleanups) {
-			cleanup();
-		}
-		this.navigationCleanups = [];
+		this.navigationListener?.destroy();
+		this.navigationListener = null;
 	}
 
 	private attachScrollListener(): void {
@@ -223,31 +236,11 @@ export class RuiToc extends RadiantElement<RuiTocBindings> {
 			return;
 		}
 
-		const onScroll = () => {
-			if (this.scrollRafPending) {
-				return;
-			}
-			this.scrollRafPending = true;
-			requestAnimationFrame(() => {
-				this.updateActiveHeading();
-				this.scrollRafPending = false;
-			});
-		};
-
-		const root = this.scrollRoot ?? window;
-		if (root === window) {
-			window.addEventListener('scroll', onScroll, { passive: true });
-			this.scrollCleanup = () => window.removeEventListener('scroll', onScroll);
-			return;
-		}
-
-		root.addEventListener('scroll', onScroll, { passive: true });
-		this.scrollCleanup = () => root.removeEventListener('scroll', onScroll);
+		this.scrollListener.attach();
 	}
 
 	private detachScrollListener(): void {
-		this.scrollCleanup?.();
-		this.scrollCleanup = null;
+		this.scrollListener.destroy();
 	}
 
 	private isScrollAtBottom(): boolean {

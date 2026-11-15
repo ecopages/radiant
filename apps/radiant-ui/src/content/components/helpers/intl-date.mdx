@@ -1,0 +1,199 @@
+---
+title: Dates
+description: 'Month grids, ISO day strings, selection state, locale formatting and locale parsing, with no time zones and no DOM.'
+order: 1
+---
+
+import { HelperResults } from '@/components/primitive-example/helper-results';
+import {
+	buildCalendarMonth,
+	getWeekStartsOn,
+	addMonths,
+	getVisibleMonthViews,
+	isoToDate,
+	dateToIso,
+	isIsoInRange,
+	compareIso,
+	normalizeRange,
+	parseIsoRange,
+	serializeIsoRange,
+	parseMultipleIsos,
+	toggleMultipleIso,
+	advanceRangeSelection,
+	getDaySelectionAppearance,
+	formatDisplayDate,
+	formatDateRange,
+	formatMonthYear,
+	formatTodayLabel,
+	getWeekdayLabels,
+	parseLocaleDateString,
+	getDatePartOrder,
+	getDateSeparators,
+} from '@ecopages/radiant-ui/helpers';
+
+export const weeks = buildCalendarMonth(2026, 10, {
+	locale: 'en-US',
+	value: '2026-11-14',
+	min: '2026-11-10',
+	today: new Date(2026, 10, 20),
+});
+
+# Dates
+
+<p class="docs-lede">
+	Month grids, ISO day strings, selection state, locale formatting and locale parsing, with no time zones and no DOM.
+</p>
+
+Reach for them for any calendar, scheduler or date grid, and for storing or comparing days without time zones. The helpers are pure: no DOM at import time or in the call path, so they run on the server and in tests. Each result below is computed when the page is built, by running the call shown.
+
+## Import
+
+```ts
+import {
+	buildCalendarMonth,
+	getWeekStartsOn,
+	addMonths,
+	getVisibleMonthViews,
+	isoToDate,
+	dateToIso,
+	isIsoInRange,
+	compareIso,
+	normalizeRange,
+	parseIsoRange,
+	serializeIsoRange,
+	parseMultipleIsos,
+	serializeMultipleIsos,
+	toggleMultipleIso,
+	advanceRangeSelection,
+	getActiveRangeBounds,
+	getDaySelectionAppearance,
+	isIsoInSpan,
+	formatDisplayDate,
+	formatDateRange,
+	formatMonthYear,
+	formatTodayLabel,
+	getWeekdayLabels,
+	getDateTimeFormat,
+	parseLocaleDateString,
+	getDatePartOrder,
+	getDateSeparators,
+} from '@ecopages/radiant-ui/helpers';
+```
+
+## Month grids
+
+`buildCalendarMonth` returns at most six weeks of day cells in the locale's week order, with `isToday`, `isSelected`, `isDisabled` and range flags. `addMonths` and `getVisibleMonthViews` move and list months; months are zero-based.
+
+```ts
+const weeks = buildCalendarMonth(2026, 10, {
+	locale: 'en-US',
+	value: '2026-11-14',
+	min: '2026-11-10',
+	today: new Date(2026, 10, 20),
+});
+```
+
+<HelperResults
+	rows={[
+		{ code: 'weeks[0][0].iso', result: weeks[0][0].iso },
+		{
+			code: "weeks.flat().find((cell) => cell.iso === '2026-11-14')?.isSelected",
+			result: weeks.flat().find((cell) => cell.iso === '2026-11-14')?.isSelected,
+		},
+		{
+			code: "weeks.flat().find((cell) => cell.iso === '2026-11-09')?.isDisabled",
+			result: weeks.flat().find((cell) => cell.iso === '2026-11-09')?.isDisabled,
+		},
+		{ code: "getWeekStartsOn('en-US')", result: getWeekStartsOn('en-US') },
+		{ code: "getWeekStartsOn('en-GB')", result: getWeekStartsOn('en-GB') },
+		{ code: 'addMonths(2026, 11, 1)', result: addMonths(2026, 11, 1) },
+		{ code: 'getVisibleMonthViews(2026, 10, 2)', result: getVisibleMonthViews(2026, 10, 2) },
+	]}
+/>
+
+## ISO dates
+
+`YYYY-MM-DD` strings to and from local dates, and a bounds check. An impossible date is `null`.
+
+<HelperResults
+	rows={[
+		{ code: "isoToDate('2026-11-14')", result: isoToDate('2026-11-14') },
+		{ code: "isoToDate('2026-02-30')", result: isoToDate('2026-02-30') },
+		{ code: 'dateToIso(new Date(2026, 10, 14))', result: dateToIso(new Date(2026, 10, 14)) },
+		{
+			code: "isIsoInRange('2026-11-14', '2026-11-01', '2026-11-30')",
+			result: isIsoInRange('2026-11-14', '2026-11-01', '2026-11-30'),
+		},
+		{ code: "compareIso('2026-11-14', '2026-11-20')", result: compareIso('2026-11-14', '2026-11-20') },
+	]}
+/>
+
+## Selection
+
+Single, multiple and range selection as pure state transitions on ISO strings. A range is `{ start, end }` and is serialized as `start/end`.
+
+<HelperResults
+	rows={[
+		{ code: "normalizeRange('2026-11-20', '2026-11-14')", result: normalizeRange('2026-11-20', '2026-11-14') },
+		{ code: "parseIsoRange('2026-11-20/2026-11-14')", result: parseIsoRange('2026-11-20/2026-11-14') },
+		{
+			code: "serializeIsoRange({ start: '2026-11-14', end: '2026-11-20' })",
+			result: serializeIsoRange({ start: '2026-11-14', end: '2026-11-20' }),
+		},
+		{ code: "parseMultipleIsos('2026-11-20, 2026-11-14')", result: parseMultipleIsos('2026-11-20, 2026-11-14') },
+		{
+			code: "toggleMultipleIso(['2026-11-14'], '2026-11-20')",
+			result: toggleMultipleIso(['2026-11-14'], '2026-11-20'),
+		},
+		{
+			code: "advanceRangeSelection(null, { anchor: null, hover: null }, '2026-11-14')",
+			result: advanceRangeSelection(null, { anchor: null, hover: null }, '2026-11-14'),
+		},
+		{
+			code: "getDaySelectionAppearance('2026-11-15', 'range', { range: { start: '2026-11-14', end: '2026-11-16' } })",
+			result: getDaySelectionAppearance('2026-11-15', 'range', {
+				range: { start: '2026-11-14', end: '2026-11-16' },
+			}),
+		},
+	]}
+/>
+
+## Formatting
+
+Localized labels, with a cached `Intl.DateTimeFormat` behind `getDateTimeFormat`.
+
+<HelperResults
+	rows={[
+		{
+			code: "formatDisplayDate(new Date(2026, 10, 14), 'en-US')",
+			result: formatDisplayDate(new Date(2026, 10, 14), 'en-US'),
+		},
+		{
+			code: "formatMonthYear(new Date(2026, 10, 14), 'en-US')",
+			result: formatMonthYear(new Date(2026, 10, 14), 'en-US'),
+		},
+		{
+			code: "formatDateRange(new Date(2026, 10, 14), new Date(2026, 10, 20), 'en-US')",
+			result: formatDateRange(new Date(2026, 10, 14), new Date(2026, 10, 20), 'en-US'),
+		},
+		{ code: "getWeekdayLabels('en-US', 0)", result: getWeekdayLabels('en-US', 0) },
+		{ code: "formatTodayLabel('en-US')", result: formatTodayLabel('en-US') },
+	]}
+/>
+
+## Parsing
+
+Typed dates in locale order: ISO, masked, locale-ordered numbers or month names.
+
+<HelperResults
+	rows={[
+		{ code: "getDatePartOrder('en-GB')", result: getDatePartOrder('en-GB') },
+		{ code: "getDateSeparators('en-US')", result: getDateSeparators('en-US') },
+		{ code: "parseLocaleDateString('21/08/2002', 'en-GB')", result: parseLocaleDateString('21/08/2002', 'en-GB') },
+		{
+			code: "parseLocaleDateString('Aug 21, 2002', 'en-US')",
+			result: parseLocaleDateString('Aug 21, 2002', 'en-US'),
+		},
+		{ code: "parseLocaleDateString('not a date', 'en-US')", result: parseLocaleDateString('not a date', 'en-US') },
+	]}
+/>

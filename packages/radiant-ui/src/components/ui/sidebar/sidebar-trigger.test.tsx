@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { page } from 'vitest/browser';
 import './sidebar.css';
 import { createRoot, type JsxRenderable, type JsxRoot } from '@ecopages/jsx';
@@ -23,6 +23,15 @@ async function settled(): Promise<void> {
 	await Promise.resolve();
 	await new Promise<void>((resolve) => setTimeout(resolve, 0));
 }
+
+/**
+ * @remarks The browser viewport persists across test files and the default one is narrower than the sidebar's
+ * mobile CSS breakpoint, which hides the pane until `data-mobile` flips. `mobileBreakpoint={0}` never flips it, so
+ * every test pins a desktop viewport instead of inheriting whatever an earlier test left behind.
+ */
+beforeEach(async () => {
+	await page.viewport(1280, 800);
+});
 
 afterEach(() => {
 	vi.restoreAllMocks();

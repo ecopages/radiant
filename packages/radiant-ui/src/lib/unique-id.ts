@@ -7,6 +7,12 @@ const CSS_SAFE_ID = /^[A-Za-z][A-Za-z0-9_-]*$/;
 
 /**
  * Whether `value` is safe as a CSS id selector (`#value`) without escaping.
+ *
+ * @example
+ * ```ts
+ * isCssSafeId('menu-1'); // true
+ * isCssSafeId('1menu'); // false
+ * ```
  */
 export function isCssSafeId(value: string): boolean {
 	return CSS_SAFE_ID.test(value);
@@ -31,6 +37,11 @@ function cssSafePrefix(prefix: string): string {
  *
  * @remarks Uses `crypto.randomUUID()` in secure contexts and random bytes on HTTP.
  * Prefix so the id never starts with a digit.
+ *
+ * @example
+ * ```ts
+ * uniqueId('menu'); // 'menu-' followed by 32 hex characters
+ * ```
  */
 export function uniqueId(prefix: string): string {
 	const token =

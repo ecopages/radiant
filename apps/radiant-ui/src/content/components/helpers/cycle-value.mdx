@@ -1,0 +1,45 @@
+---
+title: Cycle value
+description: 'The next value in a list, wrapping from the last to the first.'
+order: 7
+---
+
+import { HelperResults } from '@/components/primitive-example/helper-results';
+import { cycleValue } from '@ecopages/radiant-ui/helpers';
+
+# Cycle value
+
+<p class="docs-lede">The next value in a list, wrapping from the last to the first.</p>
+
+Reach for it for a cycle toggle. The helpers are pure: no DOM at import time or in the call path, so they run on the server and in tests. Each result below is computed when the page is built, by running the call shown.
+
+## Import
+
+```ts
+import { cycleValue } from '@ecopages/radiant-ui/helpers';
+```
+
+## Cycling
+
+A missing or unknown current value gives the first entry, so stale or unset state recovers. An empty list throws a `RangeError`.
+
+<HelperResults
+	rows={[
+		{
+			code: "cycleValue(['light', 'dark', 'system'], 'light')",
+			result: cycleValue(['light', 'dark', 'system'], 'light'),
+		},
+		{
+			code: "cycleValue(['light', 'dark', 'system'], 'system')",
+			result: cycleValue(['light', 'dark', 'system'], 'system'),
+		},
+		{
+			code: "cycleValue(['light', 'dark', 'system'], undefined)",
+			result: cycleValue(['light', 'dark', 'system'], undefined),
+		},
+		{
+			code: "cycleValue(['light', 'dark', 'system'], 'sepia')",
+			result: cycleValue(['light', 'dark', 'system'], 'sepia'),
+		},
+	]}
+/>
