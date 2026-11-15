@@ -13,6 +13,7 @@ rui-number-field {
 
 	.rui-number-field__group {
 		@apply inline-flex w-full min-w-0 items-stretch overflow-hidden border border-border bg-background;
+		min-height: var(--size-control-md);
 		border-radius: var(--radius-control);
 		transition-duration: var(--duration-normal);
 	}
@@ -34,7 +35,8 @@ rui-number-field {
 		@apply min-w-0 flex-1 border-0 bg-transparent text-on-background outline-none;
 		padding-inline: var(--space-control-x);
 		padding-block: 0;
-		min-height: calc(var(--size-control-md) - 2px);
+		min-height: 0;
+		line-height: normal;
 		font-size: var(--text-control-input);
 		font-variant-numeric: tabular-nums;
 	}

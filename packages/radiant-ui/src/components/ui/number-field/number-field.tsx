@@ -1,6 +1,8 @@
 import type { JsxCustomElementAttributes, JsxElementProps } from '@ecopages/jsx';
 import { withDefaultAriaLabel } from '@/lib/aria';
 import { cx } from '@/lib/cx';
+import { RuiIconMinus } from '@/lib/icons/minus';
+import { RuiIconPlus } from '@/lib/icons/plus';
 import type { NativeButtonProps, NativeInputProps } from '@/lib/native-element-props';
 import { RuiNumberField as RuiNumberFieldElement, type RuiNumberFieldProps } from './number-field.script';
 
@@ -87,7 +89,7 @@ export function RuiNumberFieldIncrementButton({
 			disabled={disabled}
 			tabIndex={-1}
 		>
-			{children ?? '+'}
+			{children ?? <RuiIconPlus />}
 		</button>
 	);
 }
@@ -114,7 +116,7 @@ export function RuiNumberFieldDecrementButton({
 			disabled={disabled}
 			tabIndex={-1}
 		>
-			{children ?? '−'}
+			{children ?? <RuiIconMinus />}
 		</button>
 	);
 }
