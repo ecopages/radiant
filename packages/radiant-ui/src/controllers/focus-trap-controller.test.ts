@@ -62,6 +62,53 @@ describe('FocusTrapController', () => {
 		expect(document.activeElement).toBe(last);
 	});
 
+	it('ignores hidden, inert and hidden-input candidates when looping', async () => {
+		const { surface, first, last } = setup();
+		const hiddenInput = document.createElement('input');
+		hiddenInput.type = 'hidden';
+		const hiddenBlock = document.createElement('div');
+		hiddenBlock.hidden = true;
+		hiddenBlock.append(document.createElement('button'));
+		const inertBlock = document.createElement('div');
+		inertBlock.setAttribute('inert', '');
+		inertBlock.append(document.createElement('button'));
+		const invisible = document.createElement('button');
+		invisible.style.display = 'none';
+		surface.append(hiddenInput, hiddenBlock, inertBlock, invisible);
+		const trap = new FocusTrapController({ getSurface: () => surface });
+		trap.attach();
+		await flush();
+
+		last.focus();
+		await userEvent.tab();
+		expect(document.activeElement).toBe(first);
+
+		await userEvent.tab({ shift: true });
+		expect(document.activeElement).toBe(last);
+	});
+
+	it('includes summary and contenteditable in the loop', async () => {
+		const surface = document.createElement('div');
+		surface.tabIndex = -1;
+		const details = document.createElement('details');
+		const summary = document.createElement('summary');
+		summary.textContent = 'More';
+		details.append(summary);
+		const editable = document.createElement('div');
+		editable.setAttribute('contenteditable', 'true');
+		surface.append(details, editable);
+		document.body.append(surface);
+		const trap = new FocusTrapController({ getSurface: () => surface });
+		trap.attach();
+		await flush();
+		expect(document.activeElement).toBe(summary);
+
+		trap.focusLast();
+		expect(document.activeElement).toBe(editable);
+		await userEvent.tab();
+		expect(document.activeElement).toBe(summary);
+	});
+
 	it('leaves Tab between two focusables to the browser', async () => {
 		const { surface, first, middle } = setup();
 		const trap = new FocusTrapController({ getSurface: () => surface });

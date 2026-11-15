@@ -84,7 +84,21 @@ BEM classes are presentation-only. Set `alert` on the host for `role="alertdialo
 
 ## Return focus on close
 
-<p>Focus returns to the element that opened the dialog. Avoid stacking multiple modal layers.</p>
+<p>Focus returns to the element that opened the dialog, also when the dialog closes while a popup inside it is open.</p>
+
+## Popups inside a dialog
+
+Select, combobox, menu button, popover, hover card, tooltip, date field and date range picker work inside a dialog; the tests in `dialog-composition*.test.tsx` drive each with real clicks and keys.
+
+- Stacking: a popup that opens from inside the dialog renders above it. `rui-popover` and `rui-hover-card` portal by default, and from inside a dialog they portal into the dialog surface (any `[aria-modal="true"]` or modal `<dialog>` ancestor of the anchor) instead of `document.body`, which would sit below the dialog. A `portal-container` you set wins. Positions stay correct when the surface is a containing block for fixed elements, such as the dialog's own enter transition or a modal centred with `transform`. Select, combobox, menu button, tooltip and the date pickers stay in place.
+- Pointer: choosing an item in a popup does not close the dialog. A click inside the dialog outside the popup closes the popup and keeps the dialog. A click on the backdrop that closes a popup (select, combobox, menu, popover, calendar) closes only that popup; the next backdrop click closes the dialog. A trigger that stays expanded, such as an always-open combobox, never keeps the backdrop from closing the dialog, and a hover card, which a press does not close, does not count.
+- Keyboard: Escape closes the top-most layer, so a popup, a tooltip or a hover card closes before the dialog; a combobox with text clears first. Focus returns to the popup trigger, and when the dialog closes it returns to the opener. Tab and Shift+Tab stay in the dialog. Arrow, Home, End and typing keys go to a text field, slider, listbox or tab list, not to the dialog.
+- Text fields: Escape in a text field closes the dialog.
+- Scroll: the page stays locked until the last open dialog closes; a long select list scrolls inside the list.
+- Toasts: a toast shows above the dialog, takes no focus and is not closed by Escape; Escape closes the dialog.
+- Nesting: set `open` on a `rui-dialog` inside another to stack them. Escape, the backdrop and the close button act on the inner one first, and focus returns to the inner opener. `openDialog` and `data-dialog-open` keep one dialog open and close the current one.
+- Popups that portal into the dialog surface inherit its text color, font and alignment, can be reached by descendant selectors on the dialog (`.my-dialog button`), join the dialog's Tab order at the end of the surface, and are not under `document.body`.
+- The page behind the dialog is not made `inert`; the focus trap, `aria-modal` and the backdrop keep keyboard and pointer inside.
 
 ## Theming
 

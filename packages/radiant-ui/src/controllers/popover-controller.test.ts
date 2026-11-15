@@ -326,3 +326,81 @@ describe('PopoverController portal container', () => {
 		controller.destroy();
 	});
 });
+
+describe('PopoverController default container inside a modal', () => {
+	afterEach(() => {
+		document.body.replaceChildren();
+	});
+
+	function setup(modal: HTMLElement, getPortalContainer?: () => ParentNode | null) {
+		const anchor = document.createElement('button');
+		const floating = document.createElement('div');
+		modal.append(anchor, floating);
+		document.body.append(modal);
+		const controller = new PopoverController({
+			getAnchor: () => anchor,
+			getFloating: () => floating,
+			getOpen: () => true,
+			getPlacement: () => 'bottom',
+			getPortalContainer,
+		});
+		controller.attach();
+		controller.sync();
+		return { floating, controller };
+	}
+
+	function ariaModal(): HTMLElement {
+		const modal = document.createElement('div');
+		modal.setAttribute('aria-modal', 'true');
+		return modal;
+	}
+
+	it('mounts the surface in the nearest aria-modal ancestor of the anchor', () => {
+		const modal = ariaModal();
+		const { floating, controller } = setup(modal);
+		expect(floating.parentNode).toBe(modal);
+		controller.destroy();
+	});
+
+	it('mounts the surface in an open modal dialog element, which sets no aria-modal', () => {
+		const dialog = document.createElement('dialog');
+		document.body.append(dialog);
+		const anchor = document.createElement('button');
+		const floating = document.createElement('div');
+		dialog.append(anchor, floating);
+		dialog.showModal();
+		const controller = new PopoverController({
+			getAnchor: () => anchor,
+			getFloating: () => floating,
+			getOpen: () => true,
+			getPlacement: () => 'bottom',
+		});
+		controller.attach();
+		controller.sync();
+		expect(floating.parentNode).toBe(dialog);
+		controller.destroy();
+		dialog.close();
+	});
+
+	it('goes to document.body when no modal holds the anchor', () => {
+		const section = document.createElement('section');
+		const { floating, controller } = setup(section);
+		expect(floating.parentNode).toBe(document.body);
+		controller.destroy();
+	});
+
+	it('lets an explicit container win over the modal', () => {
+		const frame = document.createElement('div');
+		document.body.append(frame);
+		const { floating, controller } = setup(ariaModal(), () => frame);
+		expect(floating.parentNode).toBe(frame);
+		controller.destroy();
+	});
+
+	it('falls back to the modal when the container getter returns null', () => {
+		const modal = ariaModal();
+		const { floating, controller } = setup(modal, () => null);
+		expect(floating.parentNode).toBe(modal);
+		controller.destroy();
+	});
+});

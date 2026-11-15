@@ -81,6 +81,10 @@ export function mount(root: HTMLElement): () => void {
 
 With a host, `createResizeController(host, config)` does the same on connect and disconnect; see [bindController](/docs/controllers/bind-controller).
 
+## Accessibility: what the controller does and what you must provide
+
+No accessibility behavior of its own. When `onResize` hides or reflows content, keep the reading and tab order meaningful.
+
 ## Protected hooks
 
 None. Change behavior through the config callbacks.

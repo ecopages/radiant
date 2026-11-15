@@ -31,8 +31,8 @@ export const SORTABLE_PLACEHOLDER_ATTRIBUTE = 'data-sortable-placeholder';
 /** Custom properties on the lifted item: how far the pointer moved since the press, in px. Pointer sorts only, and not with `preview`. */
 export const SORTABLE_OFFSET_PROPERTIES = { x: '--sortable-dx', y: '--sortable-dy' } as const;
 
-/** How the sort was driven. */
-export type SortableSource = 'pointer' | 'keyboard';
+/** How the sort was driven: a pointer drag, the keyboard, or a `move()` / `moveBy()` call. */
+export type SortableSource = 'pointer' | 'keyboard' | 'programmatic';
 
 /** A move the owner is asked to apply. */
 export type SortableChange = {
@@ -192,10 +192,21 @@ const DEFAULT_LIFT_KEYS = [' ', 'Enter'];
  *
  * Pointer: a press on an item (or on its handle) followed by `threshold` px of travel lifts it; the target index
  * comes from `resolveSortIndex` over the item rects, read on every move, so the owner must leave the DOM as it is
- * until `onChange`. Releasing, losing the pointer (`pointercancel`) and destroying the controller end the sort;
- * only a release applies it. Pointer capture is off so clicks inside items still reach them, and the click that
+ * until `onChange`. Releasing, losing the pointer (`pointercancel`), pressing Escape and destroying the controller end the sort;
+ * only a release applies it. Escape is heard on `document` (capture) during a pointer drag, wherever focus is, and is
+ * stopped so an enclosing dialog stays open; the release that follows is then swallowed like a drag's click. Pointer capture is off so clicks inside items still reach them, and the click that
  * would follow a drag is swallowed. The owner's CSS needs `touch-action: none` on the draggable part (the handle or
  * the item) for touch, and `user-select: none` to stop text selection while dragging.
+ *
+ * Non-drag alternative: `move(item, to)` and `moveBy(item, delta)` apply a move through `onChange` and the
+ * announcements without a sort, so the owner can wire "move up" and "move down" buttons (WCAG 2.5.7). Dragging
+ * alone, and a keyboard path that touch screen readers often cannot deliver Space or Enter to, is not enough.
+ *
+ * Accessibility the owner provides: `announce` into a live region (nothing is announced otherwise), focusable items
+ * with a `role` and `aria-roledescription` the owner picks, instructions for the keys, a target of at least 24px
+ * for the handle, and focus restored on the moved item after a drop. The controller sets no ARIA on the items.
+ * With `preview` inside an `aria-modal` dialog, return a node inside the dialog from `getPreviewLayer`: the default
+ * `document.body` is outside the modal, so assistive technology does not reach the lifted item there.
  *
  * Keyboard: Space or Enter (`liftKeys`) on the item itself (or its handle, not a button inside it) lifts it. Arrow keys of the
  * axis move the target one step, Home and End jump to the ends, Space or Enter drops and Escape cancels (Escape is
@@ -240,7 +251,10 @@ export class SortableController implements Controller {
 
 	private readonly pointer: PointerDragController;
 	private readonly keys: EventListenerController<HTMLElement, 'keydown' | 'focusout'>;
+	private readonly escape: EventListenerController<Document, 'keydown'>;
 	private readonly member: SortableMember;
+	/** True after Escape cancelled a pointer drag whose press has not ended yet. */
+	private pointerCancelled = false;
 
 	constructor(private readonly config: SortableControllerConfig) {
 		this.member = {
@@ -261,6 +275,23 @@ export class SortableController implements Controller {
 			type: ['keydown', 'focusout'],
 			listener: (event) => this.onKeyOrFocus(event),
 		});
+		this.escape = new EventListenerController({
+			getTarget: () => document,
+			type: 'keydown',
+			listener: (event) => this.onPointerEscape(event),
+			options: { capture: true },
+		});
+	}
+
+	private onPointerEscape(event: KeyboardEvent): void {
+		const session = this.session;
+		if (event.key !== 'Escape' || session?.source !== 'pointer') {
+			return;
+		}
+		event.preventDefault();
+		event.stopPropagation();
+		this.pointerCancelled = true;
+		this.cancel(session);
 	}
 
 	private onKeyOrFocus(event: KeyboardEvent | FocusEvent): void {
@@ -279,9 +310,66 @@ export class SortableController implements Controller {
 
 	destroy(): void {
 		this.keys.destroy();
+		this.escape.destroy();
 		this.pointer.destroy();
 		this.end();
 		this.config.group?.remove(this.member);
+	}
+
+	/**
+	 * Moves `item` to index `to` of this container through `onChange`, announcing it like a drop. Returns whether the
+	 * move was applied.
+	 *
+	 * @remarks
+	 * A single-pointer alternative to dragging, for "move up" and "move down" buttons. `to` is the index the item
+	 * takes among the items once moved and is clamped to the list. Nothing happens, and `false` is returned, when
+	 * a sort is in progress, `getEnabled` is `false`, `item` is not one of `getItems()`, the index does not change,
+	 * or `onChange` refuses the move (announced as a cancel). `onChange` receives `source: 'programmatic'`, and
+	 * `fromContainer` and `toContainer` are this container. It never moves an item to another container. As with
+	 * a drop, the owner applies the move and restores focus to the item (a button that moved it away loses focus
+	 * with the node in some browsers).
+	 */
+	move(item: HTMLElement, to: number): boolean {
+		const container = this.config.getContainer();
+		if (!container || this.session || this.candidate || this.config.getEnabled?.() === false) {
+			return false;
+		}
+		const items = this.config.getItems();
+		const from = items.indexOf(item);
+		const target = Math.max(0, Math.min(items.length - 1, to));
+		if (from < 0 || target === from) {
+			return false;
+		}
+		const context: SortableMessageContext = {
+			label: this.config.getLabel?.(item) ?? item.textContent.trim(),
+			from,
+			to: target,
+			position: target + 1,
+			total: items.length,
+			container: this.member.getLabel(),
+			fromContainer: this.member.getLabel(),
+			crossed: false,
+			containers: this.members().length,
+		};
+		const change: SortableChange = {
+			item,
+			from,
+			to: target,
+			source: 'programmatic',
+			fromContainer: container,
+			toContainer: container,
+		};
+		if (this.config.onChange?.(change) === false) {
+			this.announce('cancel', { ...context, to: from, position: from + 1 });
+			return false;
+		}
+		this.announce('drop', context);
+		return true;
+	}
+
+	/** Moves `item` by `delta` places (negative is up or before) as `move` does, so `moveBy(item, -1)` is "move up". */
+	moveBy(item: HTMLElement, delta: number): boolean {
+		return this.move(item, this.config.getItems().indexOf(item) + delta);
 	}
 
 	/** The sort in progress, or `null`. `to` and `toContainer` follow the pointer or keys until the drop. */
@@ -319,6 +407,9 @@ export class SortableController implements Controller {
 	}
 
 	private onPointerMove(info: PointerDragInfo): void {
+		if (!this.session && !this.candidate) {
+			return;
+		}
 		const session = this.session ?? this.liftPastThreshold(info);
 		if (!session) {
 			return;
@@ -392,6 +483,13 @@ export class SortableController implements Controller {
 		const session = this.session;
 		this.candidate = null;
 		if (!session) {
+			if (this.pointerCancelled && end.reason === 'release') {
+				const container = this.config.getContainer();
+				if (container) {
+					this.swallowClick(container);
+				}
+			}
+			this.pointerCancelled = false;
 			return;
 		}
 		if (end.reason === 'release') {
@@ -507,6 +605,10 @@ export class SortableController implements Controller {
 			preview: null,
 		};
 		this.session = session;
+		this.pointerCancelled = false;
+		if (source === 'pointer') {
+			this.escape.attach();
+		}
 		if (this.config.preview) {
 			session.preview = this.mountPreview(session, press);
 		}
@@ -656,6 +758,7 @@ export class SortableController implements Controller {
 		const session = this.session;
 		this.session = null;
 		this.candidate = null;
+		this.escape.destroy();
 		if (!session) {
 			return;
 		}

@@ -96,6 +96,7 @@ export {
 export {
 	applyRovingTabindex,
 	focusRovingItem,
+	isRovingKeyIgnored,
 	navigateRovingTabindex,
 	type RovingNavResult,
 	type RovingOrientation,

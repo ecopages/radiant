@@ -102,6 +102,10 @@ export function mount(root: HTMLElement): () => void {
 
 With a host, `createScrollLockController(host, config?)` does the same on connect and disconnect; see [bindController](/docs/controllers/bind-controller).
 
+## Accessibility: what the controller does and what you must provide
+
+The controller only stops scrolling. It sets no ARIA and moves no focus. A modal surface still needs `role="dialog"`, `aria-modal="true"`, an accessible name and an `inert` or `aria-hidden` background; see `FocusTrapController`.
+
 ## Protected hooks
 
 None. It decides nothing an owner would change.

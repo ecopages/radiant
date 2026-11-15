@@ -27,7 +27,7 @@ import { PopoverController, createPopoverController } from '@ecopages/radiant-ui
 
 ## Try it
 
-The button toggles an `open` flag and calls `sync()`, which shows the panel beside the button. A press outside, or focus leaving, calls `onDismiss`. The panel is portaled into the example frame with `getPortalContainer`; without it the panel goes to `document.body`, and `portal: false` keeps it where it is.
+The button toggles an `open` flag and calls `sync()`, which shows the panel beside the button. A press outside, or focus leaving, calls `onDismiss`. The panel is portaled into the example frame with `getPortalContainer`; without it the panel goes to the nearest modal surface that holds the button, else `document.body`, and `portal: false` keeps it where it is.
 
 <PrimitiveExample name="popover">
 	<button type="button">Toggle</button>
@@ -83,9 +83,9 @@ export function mount(root: HTMLElement): () => void {
 | `getOpen`            | Whether the popup is open.                                                                                                         |
 | `getPlacement`       | A `RuiPlacement`, such as `bottom-start`. Read when the popup is positioned.                                                       |
 | `gap`                | Pixels between anchor and popup. Default `8`.                                                                                      |
-| `portal`             | Mount the popup in `document.body` while open. Default `true`; `false` leaves it in place.                                         |
+| `portal`             | Mount the popup in its container while open: `getPortalContainer`, else the nearest modal surface holding the anchor, else `document.body`. Default `true`; `false` leaves it in place. |
 | `matchAnchorWidth`   | Give the popup the anchor width.                                                                                                   |
-| `getPortalContainer` | Where a portaled popup goes instead of `document.body`, read each time the popup opens. `document.body` when it returns `null`.    |
+| `getPortalContainer` | Where a portaled popup goes instead of `document.body`, read each time the popup opens. When it is omitted or returns `null`: the nearest `[aria-modal="true"]` or open modal `<dialog>` ancestor of the anchor, else `document.body`. |
 | `onDismiss`          | Called when the user dismisses the open popup. Dismissal listens only when this is set. Read on each `attach()`; `updateConfig` does not change it. |
 | `dismissOn`          | Which dismissals `onDismiss` hears about. Defaults to all. Read once, when the controller is created.                              |
 
@@ -94,6 +94,12 @@ export function mount(root: HTMLElement): () => void {
 `attach()` enables `sync()` and, when `onDismiss` is set, dismissal. `sync()` does nothing before `attach()` or after `destroy()`; call it whenever `open` changes. `destroy()` removes the floating listeners, ends dismissal, returns a portaled popup to its place and forgets the floating element. `teardown()` closes the popup the same way but stays attached, so the next `sync()` mounts it again. Also `updateConfig(patch)`, `contains(node)` and `isOutside(target)`. Dismissal counts a portaled popup that came from inside the surface (a portaled select or calendar inside the popover) as inside, so working in it does not close the popover.
 
 With a host, `createPopoverController(host, config)` does the same on connect and disconnect; see [bindController](/docs/controllers/bind-controller).
+
+## Accessibility: what the controller does and what you must provide
+
+The controller positions and dismisses; it sets no `aria-expanded`, `aria-controls` or `aria-haspopup` on the anchor and manages no focus. Set them yourself, and give the popup a `role` (`dialog`, `menu`, `listbox`) with a name. For a popup that holds interactive content, move focus into it on open and back to the anchor on close.
+
+With the default `portal: true` the popup sits at the end of `document.body`, or inside the nearest `[aria-modal="true"]` or modal `<dialog>` surface when the anchor is inside one (a body-level popup would stack below a modal), so Tab from the anchor skips it. Use `portal: false` or `getPortalContainer` to place it next to the anchor in DOM order when keyboard users must reach it, or move focus into it when it opens. Dismissal follows `DismissController`: Escape closes only the top-most layer, and a window blur does not close the popup.
 
 ## Protected hooks
 

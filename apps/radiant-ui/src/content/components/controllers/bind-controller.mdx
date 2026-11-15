@@ -92,3 +92,7 @@ export function mount(root: HTMLElement): () => void {
 `bindController` runs nothing itself: it registers `controller.attach()` as a connected callback and `controller.destroy()` as a cleanup callback. Every `createX(host, config)` factory is `bindController(host, new X(config))`.
 
 Components compose controllers, a controller can be extended through its documented `protected` hooks, and a component never extends a controller. See [Composing a component](/docs/getting-started/composing).
+
+## Accessibility: what the controller does and what you must provide
+
+Binding adds no accessibility behavior. Each controller page lists what that controller does and what the component must provide; a component that composes several (a dialog from `FocusTrapController`, `DismissController` and `ScrollLockController`) provides the union.

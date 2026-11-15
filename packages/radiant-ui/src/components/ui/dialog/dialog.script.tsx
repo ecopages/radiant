@@ -15,8 +15,10 @@ import {
 } from '@ecopages/radiant';
 import { isServer } from '@ecopages/radiant/is-server';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
-import { queryFocusableCandidates } from '../../../controllers/focusable-elements';
+import { getFocusableElements } from '../../../controllers/focusable-elements';
 import { uniqueId } from '@/lib/unique-id';
+
+const EXPANDED_TRIGGER = '[aria-expanded="true"]';
 
 export type RuiDialogProps = {
 	/** Whether the dialog is open. Default: `false`. */
@@ -61,7 +63,7 @@ export type RuiDialogCloseDetail = {
  * Provide either `[data-dialog-title]` with text or the `label` attribute for an accessible name.
  * Do not fight host-owned `aria-labelledby`, `aria-label`, `aria-describedby`, or `hidden` on `[data-ref="root"]`.
  *
- * Nested hosts: none.
+ * Nested hosts: another `rui-dialog` may sit inside the surface; it names, describes and closes itself, and Escape and the backdrop act on the inner one first.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/alertdialog/
@@ -109,13 +111,34 @@ export class RuiDialog extends RadiantElement {
 	@prop({ type: String, defaultValue: '' }) label: string;
 
 	@query({ ref: 'dialog' }) dialogTarget: HTMLElement | null;
-	@query({ selector: '[data-dialog-title]' }) titleTarget: HTMLElement | null;
-	@query({ selector: '[data-dialog-body]' }) descriptionTarget: HTMLElement | null;
+	private get titleTarget(): HTMLElement | null {
+		return this.ownElement('[data-dialog-title]');
+	}
+
+	private get descriptionTarget(): HTMLElement | null {
+		return this.ownElement('[data-dialog-body]');
+	}
+
+	/**
+	 * The first match that belongs to this dialog, not to a `rui-dialog` nested inside it.
+	 *
+	 * @remarks
+	 * A nested dialog's title, body and close controls sit inside this host, so a plain query or a delegated
+	 * listener would take them for its own and name, describe or close the outer dialog from the inner one.
+	 */
+	private ownElement(selector: string): HTMLElement | null {
+		return Array.from(this.querySelectorAll<HTMLElement>(selector)).find((node) => this.owns(node)) ?? null;
+	}
+
+	private owns(node: EventTarget | null): boolean {
+		return node instanceof Element && node.closest('rui-dialog') === this;
+	}
 
 	@event({ name: 'rui-close', bubbles: true, composed: true })
 	closeEvent: EventEmitter<RuiDialogCloseDetail>;
 
 	private lastOpen = false;
+	private expandedAtPress: Element[] = [];
 	private readonly focusTrap = new FocusTrapController({
 		getSurface: () => this.dialogTarget,
 		getFocusable: () => this.getFocusable(),
@@ -211,12 +234,12 @@ export class RuiDialog extends RadiantElement {
 		if (this.alert) {
 			const actions = Array.from(
 				this.dialogTarget.querySelectorAll<HTMLElement>('[data-dialog-actions]'),
-			).flatMap((row) => queryFocusableCandidates(row));
+			).flatMap((row) => getFocusableElements(row));
 			if (actions.length) {
 				return actions;
 			}
 		}
-		return queryFocusableCandidates(this.dialogTarget);
+		return getFocusableElements(this.dialogTarget);
 	}
 
 	private dismiss(reason: RuiDialogCloseDetail['reason']): void {
@@ -228,14 +251,52 @@ export class RuiDialog extends RadiantElement {
 		this.closeEvent.emit({ reason });
 	}
 
+	/**
+	 * @remarks
+	 * A popup inside the dialog closes on the press, before the click on the backdrop arrives, and the same gesture
+	 * must not then close the dialog. The press records the expanded triggers inside the dialog, and the click keeps
+	 * the dialog open only when one of them is no longer expanded or no longer connected, so a trigger that stays
+	 * expanded (a command palette's combobox, a disclosure) never swallows the click. A press elsewhere, a
+	 * cancelled press and a click without a press (assistive technology) leave nothing recorded.
+	 */
+	@onEvent({ ref: 'backdrop', type: 'pointerdown' })
+	onBackdropPress(event: Event): void {
+		this.expandedAtPress = this.owns(event.target)
+			? Array.from(this.dialogTarget?.querySelectorAll(EXPANDED_TRIGGER) ?? [])
+			: [];
+	}
+
+	@onEvent({ document: true, type: 'pointerdown' })
+	onDocumentPress(event: Event): void {
+		if (!this.owns(event.target) || (event.target as Element).closest('[data-ref="backdrop"]') === null) {
+			this.expandedAtPress = [];
+		}
+	}
+
+	@onEvent({ document: true, type: 'pointercancel' })
+	onPressCancel(): void {
+		this.expandedAtPress = [];
+	}
+
 	@onEvent({ ref: 'backdrop', type: 'click' })
-	onBackdropClick(): void {
-		this.dismiss('backdrop');
+	onBackdropClick(event: Event): void {
+		if (!this.owns(event.target)) {
+			return;
+		}
+		const closedAPopup = this.expandedAtPress.some(
+			(trigger) => !trigger.isConnected || trigger.getAttribute('aria-expanded') !== 'true',
+		);
+		this.expandedAtPress = [];
+		if (!closedAPopup) {
+			this.dismiss('backdrop');
+		}
 	}
 
 	@onEvent({ selector: '[data-dialog-close]', type: 'click' })
-	onCloseClick(): void {
-		this.dismiss('dismiss');
+	onCloseClick(event: Event): void {
+		if (this.owns(event.target)) {
+			this.dismiss('dismiss');
+		}
 	}
 }
 

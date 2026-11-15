@@ -17,10 +17,55 @@ function clearMatchAnchorWidthStyles(floating: HTMLElement): void {
 	matchAnchorWidthStylesApplied.delete(floating);
 }
 
+const CONTAINING_BLOCK_WILL_CHANGE = /transform|perspective|filter|contain/;
+const CONTAINING_BLOCK_CONTAIN = /layout|paint|strict|content/;
+
+/** Where `position: fixed` coordinates start inside an ancestor that acts as their containing block, and at what scale. */
+type FixedOrigin = { left: number; top: number; scale: number };
+
+const VIEWPORT_ORIGIN: FixedOrigin = { left: 0, top: 0, scale: 1 };
+
+function createsFixedContainingBlock(style: CSSStyleDeclaration): boolean {
+	return (
+		style.transform !== 'none' ||
+		style.translate !== 'none' ||
+		style.rotate !== 'none' ||
+		style.scale !== 'none' ||
+		style.perspective !== 'none' ||
+		style.filter !== 'none' ||
+		style.backdropFilter !== 'none' ||
+		CONTAINING_BLOCK_CONTAIN.test(style.contain) ||
+		CONTAINING_BLOCK_WILL_CHANGE.test(style.willChange)
+	);
+}
+
+/**
+ * Where the `left` and `top` of a `position: fixed` floating element start, and the scale they are drawn at.
+ *
+ * @remarks
+ * A fixed element is placed against the viewport unless an ancestor has a `transform`, `filter`, `perspective`,
+ * `contain` or `will-change` of those, which becomes its containing block. A popup portaled into a modal surface
+ * that is centred with `transform`, or into `rui-dialog`'s surface while its enter transition still scales it, then
+ * lands offset by the surface's own position. The nearest such ancestor's padding box and scale are measured so
+ * viewport coordinates can be converted. `body` is taken as the viewport.
+ */
+function fixedOrigin(floating: HTMLElement): FixedOrigin {
+	for (let node = floating.parentElement; node && node !== document.body; node = node.parentElement) {
+		if (createsFixedContainingBlock(getComputedStyle(node))) {
+			const rect = node.getBoundingClientRect();
+			const scale = node.offsetWidth === 0 ? 1 : rect.width / node.offsetWidth;
+			return { left: rect.left + node.clientLeft * scale, top: rect.top + node.clientTop * scale, scale };
+		}
+	}
+	return VIEWPORT_ORIGIN;
+}
+
 /**
  * Applies fixed coords to a floating element.
  *
- * @remarks Measuring below forces the style update that captures the enter transition's starting values, so a
+ * @remarks Coordinates are corrected for an ancestor that acts as the containing block of fixed elements; see `fixedOrigin`.
+ *
+ * Measuring below Measuring below forces the style update that captures the enter transition's starting values, so a
  * surface that has never been positioned gets the requested `data-placement` first. The origin and shift the
  * enter transition starts from then face the anchor; the resolved placement overwrites it after a flip.
  */
@@ -35,10 +80,12 @@ export function applyFloatingPosition(
 	if (!floating.hasAttribute('data-placement')) {
 		floating.setAttribute('data-placement', placement);
 	}
+	const origin = fixedOrigin(floating);
 	const anchorWidth = anchor.offsetWidth;
-	const size = matchAnchorWidth
-		? { width: anchorWidth, height: floating.offsetHeight }
-		: { width: floating.offsetWidth, height: floating.offsetHeight };
+	const size = {
+		width: (matchAnchorWidth ? anchorWidth : floating.offsetWidth) * origin.scale,
+		height: floating.offsetHeight * origin.scale,
+	};
 
 	if (matchAnchorWidth) {
 		floating.style.width = `${anchorWidth}px`;
@@ -59,8 +106,8 @@ export function applyFloatingPosition(
 	);
 	Object.assign(floating.style, {
 		position: 'fixed',
-		left: `${coords.x}px`,
-		top: `${coords.y}px`,
+		left: `${(coords.x - origin.left) / origin.scale}px`,
+		top: `${(coords.y - origin.top) / origin.scale}px`,
 		right: 'auto',
 		bottom: 'auto',
 		visibility: 'visible',
@@ -106,6 +153,14 @@ export function attachFloating({
 			options: { capture: true },
 		}),
 		new ResizeController({ getTargets: () => [anchor, floating], onResize: update }),
+		new EventListenerController({
+			getTarget: () => window,
+			type: ['transitionend', 'transitioncancel'],
+			listener: (event) => {
+				if (event.target instanceof Node && event.target.contains(floating)) update();
+			},
+			options: { capture: true },
+		}),
 	];
 	for (const controller of controllers) {
 		controller.attach();

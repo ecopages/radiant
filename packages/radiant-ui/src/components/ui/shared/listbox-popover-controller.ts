@@ -37,7 +37,7 @@ export type ListboxKeydownConfig = {
 	onOpen: (activation?: ListboxActivation) => void;
 	onClose: (reason: 'arrow' | 'escape' | 'enter' | 'tab') => void;
 	onSelectActive: () => void;
-	onEscapeWhenClosed?: () => void;
+	onEscapeWhenClosed?: () => boolean;
 };
 
 /**
@@ -179,13 +179,17 @@ export class ListboxPopoverController implements Controller {
 	/**
 	 * @remarks
 	 * Escape stays in this key handler instead of `DismissController` because it runs only for keys pressed on the
-	 * control, prevents the default even when the popup is closed, and lets the combobox clear its text through
-	 * `onEscapeWhenClosed`. A document-wide Escape would also fire for focus elsewhere on the page.
+	 * control and lets the combobox clear its text through `onEscapeWhenClosed`, which returns whether it did.
+	 * The default is prevented only when the key did something. A closed control leaves Escape alone so an
+	 * enclosing dialog or popover can still close, since `DismissController` skips a prevented Escape.
 	 */
 	private handleEscapeKey(event: KeyboardEvent, options: ListboxKeydownConfig): void {
-		event.preventDefault();
-		if (options.isOpen) options.onClose('escape');
-		else options.onEscapeWhenClosed?.();
+		if (options.isOpen) {
+			event.preventDefault();
+			options.onClose('escape');
+		} else if (options.onEscapeWhenClosed?.()) {
+			event.preventDefault();
+		}
 	}
 
 	private handleActivationKey(event: KeyboardEvent, options: ListboxKeydownConfig): void {

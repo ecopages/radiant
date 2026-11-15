@@ -54,6 +54,10 @@ The same entry exports functions that touch elements. They have no page of their
 | `getVisibleCollectionOptions`, `setCollectionActive`, `clearCollectionActive`                                 | `aria-activedescendant` and `data-active` bookkeeping for option collections.                                     | Active-descendant lists, such as a combobox you build yourself. |
 | `SORTABLE_*_ATTRIBUTE`, `SORTABLE_OFFSET_PROPERTIES`                                                          | The `data-sortable-*` attributes and `--sortable-dx` and `--sortable-dy` the sortable sets.                       | Styling a sortable.                                     |
 
+### Accessibility of the utilities
+
+`queryFocusableCandidates` matches links, buttons, form controls except `input[type=hidden]`, `summary`, `[contenteditable]`, `audio` and `video` with `controls`, `iframe` and `[tabindex]` other than `-1`; `getFocusableElements` also drops nodes that are not rendered, disabled (a `<fieldset disabled>` ancestor included) or inside `[hidden]` or `[inert]`. `setCollectionActive` gives an option without an `id` a document-unique one and sets `aria-activedescendant` on the host and `data-active` on the option; the caller provides `role="option"`, `aria-selected`, `aria-expanded` and the host's role. `isRovingKeyIgnored` tells a key press that belongs to the browser or to a text field (a textarea, contenteditable element or text-entry input) from one for roving navigation.
+
 ## How the examples run
 
 Each example on these pages is a `mount(root)` function in the page's script. It receives one `[data-example="<name>"]` element, wires the controllers to that element and returns the function that undoes it, which is where `destroy()` goes. A controller that listens on `document` or `window` must be destroyed there, or it keeps listening after the example is gone.

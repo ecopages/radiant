@@ -36,7 +36,7 @@ export type RuiHoverCardProps = {
 	delay?: number;
 	/** Delay in ms before hiding after pointer/focus leaves. Default: `200`. */
 	closeDelay?: number;
-	/** Teleport the surface to `document.body`. Default: `true`. */
+	/** Teleport the surface to `document.body`, or into the nearest modal surface that holds the anchor. Default: `true`. */
 	portal?: boolean;
 	/** CSS selector of the element a portaled surface goes to instead of `document.body`, resolved when it opens. */
 	portalContainer?: string;
@@ -92,7 +92,7 @@ const LONG_PRESS_MS = 500;
  * @attr {string} placement - Placement relative to the anchor. Default: `bottom-start`.
  * @attr {number} delay - Show delay in ms. Default: `600`.
  * @attr {number} close-delay - Hide delay in ms after pointer/focus leaves. Default: `200`.
- * @attr {boolean} portal - Teleport the surface to `document.body`. Default: `true`.
+ * @attr {boolean} portal - Teleport the surface to `document.body`, or into the nearest modal surface (`[aria-modal="true"]` or an open modal `<dialog>`) that holds the anchor. Default: `true`.
  * @attr {string} portal-container - CSS selector of the element a portaled surface goes to instead of `document.body`, resolved each time it opens. The `portalContainer` property also takes an element or a function that returns one.
  * @attr {boolean} disabled - Suppress hover/focus preview interactions. Default: `false`.
  * @attr {string} content-label - Accessible name for the preview dialog. Default: `Preview`.

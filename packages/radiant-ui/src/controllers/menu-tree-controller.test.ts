@@ -168,6 +168,99 @@ describe('MenuTreeController', () => {
 		cleanup();
 	});
 
+	it('closes only the focused submenu on Escape and returns focus to its parent item', () => {
+		const { share, submenu, tree, onCloseRoot, cleanup } = createTree();
+
+		tree.handleKeydown(keyEvent('ArrowRight', share));
+		const email = submenu.querySelector<HTMLElement>('[data-value="email"]')!;
+		expect(tree.handleKeydown(keyEvent('Escape', email))).toBe(true);
+
+		expect(onCloseRoot).not.toHaveBeenCalled();
+		expect(submenu.hidden).toBe(true);
+		expect(share.getAttribute('aria-expanded')).toBe('false');
+		expect(document.activeElement).toBe(share);
+
+		cleanup();
+	});
+
+	it('leaves keys with Alt, Ctrl or Meta held to the browser', () => {
+		const { rootMenu, tree, cleanup } = createTree();
+		const edit = rootMenu.querySelector<HTMLElement>('[data-value="edit"]')!;
+
+		for (const modifier of ['altKey', 'ctrlKey', 'metaKey'] as const) {
+			const event = new KeyboardEvent('keydown', {
+				key: 'Home',
+				bubbles: true,
+				cancelable: true,
+				[modifier]: true,
+			});
+			Object.defineProperty(event, 'target', { get: () => edit });
+			expect(tree.handleKeydown(event)).toBe(false);
+			expect(event.defaultPrevented).toBe(false);
+		}
+
+		cleanup();
+	});
+
+	it('navigates and activates menuitemcheckbox and menuitemradio items', () => {
+		const { root, rootMenu, tree, onActivate, cleanup } = createTree();
+		const checkbox = document.createElement('button');
+		checkbox.setAttribute('role', 'menuitemcheckbox');
+		const radio = document.createElement('button');
+		radio.setAttribute('role', 'menuitemradio');
+		rootMenu.prepend(checkbox, radio);
+		checkbox.focus();
+
+		expect(tree.handleKeydown(keyEvent('ArrowDown', checkbox))).toBe(true);
+		expect(document.activeElement).toBe(radio);
+		expect(tree.handleKeydown(keyEvent('End', radio))).toBe(true);
+		expect(tree.handleKeydown(keyEvent('Home', radio))).toBe(true);
+		expect(document.activeElement).toBe(checkbox);
+
+		tree.handleClick(clickEvent(radio));
+		expect(onActivate).toHaveBeenCalledWith(radio);
+		root.remove();
+		cleanup();
+	});
+
+	it('handles keys on menuitemradio items inside a role="group"', () => {
+		const { root, rootMenu, tree, onCloseRoot, cleanup } = createTree();
+		const group = document.createElement('div');
+		group.setAttribute('role', 'group');
+		group.innerHTML = `
+			<button type="button" role="menuitemradio" aria-checked="true" data-v="s">S</button>
+			<button type="button" role="menuitemradio" aria-checked="false" data-v="l">L</button>`;
+		rootMenu.prepend(group);
+		const small = group.querySelector<HTMLElement>('[data-v="s"]') as HTMLElement;
+		const large = group.querySelector<HTMLElement>('[data-v="l"]') as HTMLElement;
+		small.focus();
+
+		expect(tree.handleKeydown(keyEvent('ArrowDown', small))).toBe(true);
+		expect(document.activeElement).toBe(large);
+		expect(tree.handleKeydown(keyEvent('Escape', large))).toBe(true);
+		expect(onCloseRoot).toHaveBeenCalledWith(true);
+		root.remove();
+		cleanup();
+	});
+
+	it('does not open a submenu from an item that is not a menuitem', () => {
+		const { root, rootMenu, tree, cleanup } = createTree();
+		const checkbox = document.createElement('button');
+		checkbox.setAttribute('role', 'menuitemcheckbox');
+		const menu = document.createElement('div');
+		menu.setAttribute('role', 'menu');
+		menu.hidden = true;
+		menu.innerHTML = '<button type="button" role="menuitem">Inner</button>';
+		rootMenu.prepend(checkbox, menu);
+		checkbox.focus();
+
+		tree.handleKeydown(keyEvent('ArrowRight', checkbox));
+
+		expect(menu.hidden).toBe(true);
+		root.remove();
+		cleanup();
+	});
+
 	it('asks the host to close the root on Escape and destroy tears down open menus', () => {
 		const { share, submenu, tree, onCloseRoot, cleanup } = createTree();
 

@@ -31,6 +31,103 @@ describe('RovingController on plain elements', () => {
 	};
 	const tabStops = (items: HTMLElement[]) => items.map((item) => item.tabIndex);
 
+	it('leaves Alt, Ctrl and Meta arrows and Home/End to the browser', () => {
+		const { items, controller } = mount();
+		controller.attach();
+		controller.sync();
+		items[0].focus();
+
+		for (const modifier of ['altKey', 'ctrlKey', 'metaKey'] as const) {
+			const event = new KeyboardEvent('keydown', {
+				key: 'ArrowRight',
+				bubbles: true,
+				cancelable: true,
+				[modifier]: true,
+			});
+			items[0].dispatchEvent(event);
+			expect(event.defaultPrevented).toBe(false);
+			expect(document.activeElement).toBe(items[0]);
+		}
+		controller.destroy();
+	});
+
+	it('moves on Shift+Arrow', () => {
+		const { items, controller } = mount();
+		controller.attach();
+		controller.sync();
+		items[0].focus();
+
+		const event = new KeyboardEvent('keydown', {
+			key: 'ArrowRight',
+			bubbles: true,
+			cancelable: true,
+			shiftKey: true,
+		});
+		items[0].dispatchEvent(event);
+
+		expect(event.defaultPrevented).toBe(true);
+		expect(document.activeElement).toBe(items[1]);
+		controller.destroy();
+	});
+
+	it('leaves the caret keys of a text field nested inside an item alone', () => {
+		const { items, controller } = mount();
+		const field = document.createElement('input');
+		items[1].append(field);
+		controller.attach();
+		controller.sync();
+		field.focus();
+
+		expect(press(field, 'Home').defaultPrevented).toBe(false);
+		expect(press(field, 'ArrowRight').defaultPrevented).toBe(false);
+		expect(document.activeElement).toBe(field);
+		controller.destroy();
+	});
+
+	it.each(['checkbox', 'radio', 'button', 'range'])('keeps arrow navigation from a nested %s input', (type) => {
+		const { items, controller } = mount();
+		const field = document.createElement('input');
+		field.type = type;
+		items[1].append(field);
+		controller.attach();
+		controller.sync();
+		field.focus();
+
+		expect(press(field, 'Home').defaultPrevented).toBe(true);
+		expect(document.activeElement).toBe(items[0]);
+		controller.destroy();
+	});
+
+	it.each(['email', 'number', 'search', 'password', 'date'])(
+		'leaves the caret keys of a nested %s input alone',
+		(type) => {
+			const { items, controller } = mount();
+			const field = document.createElement('input');
+			field.type = type;
+			items[1].append(field);
+			controller.attach();
+			controller.sync();
+			field.focus();
+
+			expect(press(field, 'Home').defaultPrevented).toBe(false);
+			controller.destroy();
+		},
+	);
+
+	it('navigates from an input that is itself an item', () => {
+		const { root, items } = mount();
+		const field = document.createElement('input');
+		root.append(field);
+		const controller = new RovingController({ getItems: () => [...items, field], getTarget: () => root });
+		controller.attach();
+		controller.sync();
+		field.focus();
+
+		expect(press(field, 'Home').defaultPrevented).toBe(true);
+		expect(document.activeElement).toBe(items[0]);
+		controller.destroy();
+	});
+
 	it('makes one item tabbable on sync, the first by default', () => {
 		const { items, controller } = mount();
 

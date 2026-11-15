@@ -1,5 +1,6 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, bindTo, customElement, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
+import { createDismissController } from '../../../controllers/dismiss-controller';
 import { findFirstFocusableCandidate } from '../../../controllers/focusable-elements';
 import { uniqueId } from '@/lib/unique-id';
 import { applyFloatingPosition, attachFloating } from '../../../controllers/floating-position';
@@ -89,6 +90,24 @@ export class RuiTooltip extends RadiantElement {
 	private describedEl: HTMLElement | null = null;
 	private cleanupFloating: (() => void) | null = null;
 
+	/**
+	 * @remarks
+	 * Escape goes through `DismissController` so an open tooltip is the top-most layer: inside a dialog or popover
+	 * the first Escape hides the tooltip and the next one closes the surface around it.
+	 */
+	constructor() {
+		super();
+		createDismissController(this, {
+			getSurface: () => this.tooltipTarget,
+			getOpen: () => this.open,
+			onDismiss: (_reason, event) => {
+				event.preventDefault();
+				this.setOpen(false);
+			},
+			triggers: ['escape'],
+		});
+	}
+
 	override connectedCallback(): void {
 		super.connectedCallback();
 		queueMicrotask(() => this.wireTrigger());
@@ -165,12 +184,6 @@ export class RuiTooltip extends RadiantElement {
 	private scheduleHide(): void {
 		this.clearTimers();
 		this.hideTimer = setTimeout(() => this.setOpen(false), 80);
-	}
-
-	@onEvent({ document: true, type: 'keydown' })
-	onDocumentKeydown(event: KeyboardEvent): void {
-		if (!this.open || event.key !== 'Escape') return;
-		this.setOpen(false);
 	}
 
 	@onEvent({ type: 'focusin', ref: 'trigger' })

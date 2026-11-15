@@ -90,6 +90,12 @@ export function mount(root: HTMLElement): () => void {
 
 With a host, `createDismissController(host, config)` does the same on connect and disconnect; see [bindController](/docs/controllers/bind-controller).
 
+## Accessibility: what the controller does and what you must provide
+
+Escape goes to one layer per key press. Among the attached controllers that are open (with `escapeScope: 'tree'`, also containing the event target), the one whose surface is nested inside the others receives it, so a popover inside a dialog closes first and the dialog on the next press. Layers that are not nested are told apart by the one that holds the event target, then by the latest attached. Escape while an input method is composing is ignored. An Escape whose default a handler already prevented (`event.preventDefault()` closer to the target, such as a menu closing its submenu) reaches no layer, so a widget that handles Escape itself must prevent it only when it did something: a closed select that prevents every Escape would stop the dialog around it from closing. `onDismiss` may return `false` to decline an Escape (it left its surface open): the key is then offered to the next layer. Any other return value, including none, marks it handled, and no other layer sees that key press. A focus-out with no `relatedTarget` while `document.activeElement` is still the element that blurred is a window blur or tab switch, not leaving, and is ignored.
+
+The controller reports and does nothing else: restoring focus to the trigger, setting `aria-expanded` and hiding the surface are yours in `onDismiss`. A modal dialog also needs `role="dialog"`, `aria-modal="true"`, an accessible name and an `inert` or `aria-hidden` background.
+
 ## Protected hooks
 
 Extend the class and override these to change how it decides. A component never extends a controller; a subclass is registered with `bindController`.

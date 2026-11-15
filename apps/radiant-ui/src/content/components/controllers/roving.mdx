@@ -82,6 +82,12 @@ export function mount(root: HTMLElement): () => void {
 
 With a host, `createRovingController(host, config)` does the same on connect and disconnect; see [bindController](/docs/controllers/bind-controller).
 
+## Accessibility: what the controller does and what you must provide
+
+The controller keeps one tab stop and moves it with the arrows of `orientation`, Home and End. It ignores a key pressed with Alt, Ctrl or Meta held, and a key pressed in a text field that is not itself an item (a textarea, a contenteditable element, or an input of type text, search, email, url, tel, password, number, date, datetime-local, month, time or week), so a text field nested inside an item keeps its caret keys. Checkboxes, radios, buttons, ranges and selects nested in an item stay navigable. An input that is itself an item, such as a radio or a toolbar text field, navigates like any other item: keep a text field out of `getItems()` when it must keep Left, Right, Home and End. Shift does not stop navigation. Arrows are not mirrored for right-to-left: Left is always previous, so flip them in `resolveNext`.
+
+You provide the roles (`toolbar`, `tablist`, `listbox`), an accessible name, and the state: the caller owns `aria-selected`, `aria-current` and `aria-pressed`, as moving focus does not select. `sync()` writes `tabIndex` only when it differs from the item's current `tabIndex`, and an `li` or `div` without a `tabindex` attribute reports `-1`, so it never sets the attribute on the inactive ones. Give rows `tabindex="-1"` in the markup.
+
 ## Protected hooks
 
 Extend the class and override these to change how it decides. A component never extends a controller; a subclass is registered with `bindController`.

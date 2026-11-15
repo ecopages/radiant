@@ -96,6 +96,12 @@ export function mount(root: HTMLElement): () => void {
 
 With a host, `createFocusTrapController(host, config)` does the same on connect and disconnect; see [bindController](/docs/controllers/bind-controller).
 
+## Accessibility: what the controller does and what you must provide
+
+The controller loops Tab and Shift+Tab over the visible, non-inert focusable descendants of the surface: links, buttons, form controls except `input[type=hidden]`, `summary`, `[contenteditable]`, `audio` and `video` with `controls`, `iframe` and `[tabindex]` elements other than `-1`, skipping anything not rendered, disabled (a `<fieldset disabled>` ancestor included), inside `[hidden]` or inside `[inert]`. `getFocusable` replaces that list. It does not mark the surface as modal.
+
+You provide the modal pattern: `role="dialog"` (or `alertdialog`) and `aria-modal="true"` on the surface, an accessible name (`aria-labelledby` or `aria-label`), and an `inert` or `aria-hidden` background so assistive technology and find-in-page stay inside. Pair it with `DismissController` for Escape, and `ScrollLockController` to stop the page scrolling. Focus returns to the element that had it at `attach()`.
+
 ## Protected hooks
 
 None. Change behavior through the config callbacks.

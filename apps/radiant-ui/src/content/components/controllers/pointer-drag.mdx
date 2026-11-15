@@ -86,6 +86,10 @@ export function mount(root: HTMLElement): () => void {
 
 With a host, `createPointerDragController(host, config)` does the same on connect and disconnect; see [bindController](/docs/controllers/bind-controller).
 
+## Accessibility: what the controller does and what you must provide
+
+A drag is a pointer gesture only. WCAG 2.5.1 and 2.5.7 require a single-pointer, non-drag alternative and a keyboard path to the same result: provide buttons or keys (arrow keys on a slider or splitter, for example) that change the same value. The controller sets no ARIA, no `touch-action` and no focus; set `touch-action: none` on the draggable part for touch, and give the handle a role, a name and, for a slider or splitter, `aria-valuenow`, `aria-valuemin` and `aria-valuemax`.
+
 ## Protected hooks
 
 Extend the class and override these to change how it decides. A component never extends a controller; a subclass is registered with `bindController`.

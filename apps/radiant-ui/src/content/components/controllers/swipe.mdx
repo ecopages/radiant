@@ -80,6 +80,10 @@ export function mount(root: HTMLElement): () => void {
 
 With a host, `createSwipeController(host, config)` does the same on connect and disconnect; see [bindController](/docs/controllers/bind-controller).
 
+## Accessibility: what the controller does and what you must provide
+
+A swipe is a pointer gesture only. WCAG 2.5.1 requires that what it does is also reachable with a single pointer press and with the keyboard: provide previous and next buttons (or equivalent) that call the same code as `onSwipe`, and keep them focusable. The controller sets no ARIA and no `touch-action`; set `touch-action` on the target so the browser leaves the gesture to you.
+
 ## Protected hooks
 
 Extend the class and override these to change how it decides. A component never extends a controller; a subclass is registered with `bindController`.

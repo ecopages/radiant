@@ -3,7 +3,18 @@ import { userEvent } from 'vitest/browser';
 import { createRoot, type JsxRenderable } from '@ecopages/jsx';
 import { RuiDialog, RuiDialogActions, RuiDialogBody, RuiDialogClose } from './dialog';
 import { RuiDialog as RuiDialogScript } from './dialog.script';
+import { RuiSelect } from '../select/select';
+import { RuiSelect as RuiSelectScript } from '../select/select.script';
+import { RuiCombobox } from '../combobox/combobox';
+import { RuiCombobox as RuiComboboxScript } from '../combobox/combobox.script';
 void RuiDialogScript;
+void RuiSelectScript;
+void RuiComboboxScript;
+
+const ANIMALS = [
+	{ value: 'cat', label: 'Cat' },
+	{ value: 'dog', label: 'Dog' },
+];
 
 type DialogEl = HTMLElement & { open: boolean; alert: boolean };
 
@@ -82,6 +93,52 @@ describe('RuiDialog host alert', () => {
 		confirm.focus();
 		await userEvent.tab();
 		expect(document.activeElement).toBe(link);
+	});
+
+	it('loops over visible controls only, so a hidden last button does not end the loop', async () => {
+		const host = mount(
+			<RuiDialog open label="Settings">
+				<button type="button" data-test-first>
+					First
+				</button>
+				<button type="button" data-test-last>
+					Last
+				</button>
+				<div hidden>
+					<button type="button">Collapsed</button>
+				</div>
+			</RuiDialog>,
+		);
+		await settled();
+		const first = host.querySelector('[data-test-first]') as HTMLElement;
+		const last = host.querySelector('[data-test-last]') as HTMLElement;
+		last.focus();
+
+		await userEvent.tab();
+		expect(document.activeElement).toBe(first);
+	});
+
+	it('keeps Tab inside the dialog when the last control sits in a disabled fieldset', async () => {
+		const host = mount(
+			<RuiDialog open label="Settings">
+				<button type="button" data-test-first>
+					First
+				</button>
+				<button type="button" data-test-last>
+					Last
+				</button>
+				<fieldset disabled>
+					<button type="button">Disabled by fieldset</button>
+				</fieldset>
+			</RuiDialog>,
+		);
+		await settled();
+		const first = host.querySelector('[data-test-first]') as HTMLElement;
+		const last = host.querySelector('[data-test-last]') as HTMLElement;
+		last.focus();
+
+		await userEvent.tab();
+		expect(document.activeElement).toBe(first);
 	});
 
 	it('drives the surface role from the host alert live', async () => {
@@ -307,5 +364,62 @@ describe('RuiDialogClose label', () => {
 		const host = mount(<RuiDialogClose aria={{ label: 'Dismiss' }}>Cancel</RuiDialogClose>);
 		await settled();
 		expect((host.querySelector('button') as HTMLButtonElement).getAttribute('aria-label')).toBe('Dismiss');
+	});
+});
+
+describe('RuiDialog Escape from a closed listbox control', () => {
+	afterEach(() => {
+		document.body.innerHTML = '';
+	});
+
+	it('closes the dialog on Escape from a closed select trigger', async () => {
+		const host = mount(
+			<RuiDialog open label="Pets">
+				<RuiSelect options={ANIMALS} placeholder="Animals" />
+			</RuiDialog>,
+		);
+		await settled();
+		const dialog = host.querySelector('rui-dialog') as DialogEl;
+		(host.querySelector('[data-select-trigger]') as HTMLElement).focus();
+
+		await userEvent.keyboard('{Escape}');
+		await settled();
+
+		expect(dialog.open).toBe(false);
+	});
+
+	it('closes the dialog on Escape from an empty closed combobox', async () => {
+		const host = mount(
+			<RuiDialog open label="Pets">
+				<RuiCombobox options={ANIMALS} />
+			</RuiDialog>,
+		);
+		await settled();
+		const dialog = host.querySelector('rui-dialog') as DialogEl;
+		(host.querySelector('input') as HTMLElement).focus();
+
+		await userEvent.keyboard('{Escape}');
+		await settled();
+
+		expect(dialog.open).toBe(false);
+	});
+
+	it('clears a combobox with text on Escape and leaves the dialog open', async () => {
+		const host = mount(
+			<RuiDialog open label="Pets">
+				<RuiCombobox options={ANIMALS} />
+			</RuiDialog>,
+		);
+		await settled();
+		const dialog = host.querySelector('rui-dialog') as DialogEl;
+		const input = host.querySelector('input') as HTMLInputElement;
+		input.focus();
+		input.value = 'x';
+
+		await userEvent.keyboard('{Escape}');
+		await settled();
+
+		expect(input.value).toBe('');
+		expect(dialog.open).toBe(true);
 	});
 });

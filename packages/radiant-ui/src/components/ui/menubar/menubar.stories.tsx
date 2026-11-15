@@ -135,3 +135,27 @@ export const PointerOpening: Story = {
 		});
 	},
 };
+
+export const EscapeInSubmenu: Story = {
+	args: NestedSubmenus.args,
+	play: async ({ canvasElement, step }) => {
+		const file = canvasElement.querySelector('[data-ref="menubar-root"] > [role="menuitem"]') as HTMLElement;
+		file.focus();
+		await userEvent.keyboard('{ArrowDown}{ArrowDown}{ArrowRight}');
+		await expect(document.activeElement).toHaveAttribute('data-value', 'email');
+
+		await step('Escape closes only the submenu and focuses its parent item', async () => {
+			await userEvent.keyboard('{Escape}');
+			const share = canvasElement.querySelector('[data-value="share"]') as HTMLElement;
+			await expect(share.nextElementSibling).toHaveAttribute('hidden');
+			await expect(document.activeElement).toBe(share);
+			await expect(file).toHaveAttribute('aria-expanded', 'true');
+		});
+
+		await step('a second Escape closes the menu and returns focus to the top item', async () => {
+			await userEvent.keyboard('{Escape}');
+			await expect(file).toHaveAttribute('aria-expanded', 'false');
+			await expect(document.activeElement).toBe(file);
+		});
+	},
+};

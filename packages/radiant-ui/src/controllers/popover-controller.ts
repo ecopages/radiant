@@ -4,6 +4,15 @@ import { attachFloating } from './floating-position';
 import type { RuiPlacement } from './placement';
 import { PortalController } from './portal-controller';
 
+/**
+ * A modal surface: what a popup opened from inside it is portaled into by default.
+ *
+ * @remarks
+ * `dialog:modal` is the native `showModal()` case, which sets no `aria-modal` and renders in the top layer, above
+ * anything in `document.body`.
+ */
+const MODAL_SURFACE = '[aria-modal="true"], dialog:modal';
+
 /** The anchor, floating surface, open state and placement a `PopoverController` reads from its owner. */
 export type PopoverControllerConfig = {
 	getAnchor: () => HTMLElement | null;
@@ -19,7 +28,9 @@ export type PopoverControllerConfig = {
 	matchAnchorWidth?: boolean;
 	/**
 	 * Where the surface goes while it is open. Read each time the popover opens, so a container that exists only
-	 * later still works. `document.body` when omitted or when it returns `null`.
+	 * later still works. When omitted or when it returns `null`: the nearest `[aria-modal="true"]` or open modal
+	 * `<dialog>` ancestor of the anchor, so a popup opened inside a modal stacks above it (a body-level popup sits
+	 * below the modal's z-index or its top layer), else `document.body`.
 	 */
 	getPortalContainer?: () => ParentNode | null;
 	/**
@@ -56,7 +67,10 @@ export class PopoverController implements Controller {
 		this.config = config;
 		this.portal = new PortalController({
 			getNode: () => this.resolveFloating(),
-			getContainer: () => this.config.getPortalContainer?.() ?? document.body,
+			getContainer: () =>
+				this.config.getPortalContainer?.() ??
+				this.config.getAnchor()?.closest<HTMLElement>(MODAL_SURFACE) ??
+				document.body,
 		});
 		this.dismissal = new DismissController({
 			getSurface: () => this.resolveFloating(),
@@ -173,7 +187,7 @@ export class PopoverController implements Controller {
 	}
 
 	/**
-	 * Keeps the portaled surface in `document.body` until its exit transition ends.
+	 * Keeps the portaled surface in its container until its exit transition ends.
 	 *
 	 * @remarks Moving a node back to its placeholder detaches it, which drops the running transition and skips the
 	 * exit. Without animations (reduced motion, classic themes) the unmount stays synchronous.

@@ -79,6 +79,10 @@ export function mount(root: HTMLElement): () => void {
 
 With a host, `createEventListenerController(host, config)` does the same on connect and disconnect; see [bindController](/docs/controllers/bind-controller).
 
+## Accessibility: what the controller does and what you must provide
+
+No accessibility behavior of its own. Whatever the listener does (a key handler, a pointer gesture) must keep a keyboard and single-pointer path.
+
 ## Protected hooks
 
 None. Change behavior through the config callbacks.

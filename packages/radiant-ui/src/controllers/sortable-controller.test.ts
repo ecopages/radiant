@@ -157,6 +157,32 @@ describe('SortableController on a plain list', () => {
 			expect(announce).toHaveBeenLastCalledWith('Cancelled. Alpha returned to position 1 of 4.');
 		});
 
+		it('cancels a pointer drag on Escape from anywhere, stops it and swallows the click after release', () => {
+			const { list, items, onChange, announce, controller } = mount();
+			controller.attach();
+			const outside = vi.fn();
+			const click = vi.fn();
+			document.addEventListener('keydown', outside);
+			list.addEventListener('click', click);
+
+			pointer(items()[0], 'pointerdown', 10);
+			pointer(document, 'pointermove', 55);
+			const escape = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+			document.body.dispatchEvent(escape);
+			expect(() => pointer(document, 'pointermove', 60)).not.toThrow();
+			pointer(document, 'pointerup', 60);
+			items()[0].dispatchEvent(new MouseEvent('click', { bubbles: true }));
+			document.removeEventListener('keydown', outside);
+
+			expect(escape.defaultPrevented).toBe(true);
+			expect(outside).not.toHaveBeenCalled();
+			expect(click).not.toHaveBeenCalled();
+			expect(onChange).not.toHaveBeenCalled();
+			expect(controller.getState()).toBeNull();
+			expect(items()[0].hasAttribute(SORTABLE_STATE_ATTRIBUTE)).toBe(false);
+			expect(announce).toHaveBeenLastCalledWith('Cancelled. Alpha returned to position 1 of 4.');
+		});
+
 		it('only lifts from the handle when one is configured', () => {
 			const { items, onChange, controller } = mount({ getHandle: (item) => item.querySelector('i') });
 			for (const item of items()) {
@@ -506,5 +532,62 @@ describe('SortableController on a plain list', () => {
 		press(secondItem, ' ');
 		expect(moved.getState()).not.toBeNull();
 		moved.destroy();
+	});
+
+	describe('move', () => {
+		it('applies a move through onChange and announces it as a drop', () => {
+			const { list, items, onChange, announce, controller } = mount();
+			controller.attach();
+			const [, beta] = items();
+
+			expect(controller.move(beta, 3)).toBe(true);
+
+			expect(onChange).toHaveBeenCalledWith({
+				item: beta,
+				from: 1,
+				to: 3,
+				source: 'programmatic',
+				fromContainer: list,
+				toContainer: list,
+			});
+			expect(announce).toHaveBeenLastCalledWith('Dropped Beta, position 4 of 4.');
+			expect(controller.getState()).toBeNull();
+		});
+
+		it('moveBy steps by a delta and clamps at the ends', () => {
+			const { items, onChange, controller } = mount();
+			controller.attach();
+			const [alpha, beta] = items();
+
+			expect(controller.moveBy(beta, -1)).toBe(true);
+			expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ from: 1, to: 0 }));
+			expect(controller.moveBy(alpha, -1)).toBe(false);
+			expect(controller.moveBy(alpha, 99)).toBe(true);
+			expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ from: 0, to: 3 }));
+		});
+
+		it('does nothing for a foreign item, an unchanged index, a disabled controller or a sort in progress', () => {
+			let enabled = true;
+			const { items, onChange, controller } = mount({ getEnabled: () => enabled });
+			controller.attach();
+
+			expect(controller.move(document.createElement('li'), 1)).toBe(false);
+			expect(controller.move(items()[1], 1)).toBe(false);
+			enabled = false;
+			expect(controller.move(items()[1], 2)).toBe(false);
+			enabled = true;
+			press(items()[0], ' ');
+			expect(controller.move(items()[1], 2)).toBe(false);
+			expect(onChange).not.toHaveBeenCalled();
+		});
+
+		it('announces a cancel and reports false when onChange refuses', () => {
+			const { items, announce, controller } = mount({ onChange: () => false });
+			controller.attach();
+
+			expect(controller.move(items()[1], 2)).toBe(false);
+
+			expect(announce).toHaveBeenLastCalledWith('Cancelled. Beta returned to position 2 of 4.');
+		});
 	});
 });

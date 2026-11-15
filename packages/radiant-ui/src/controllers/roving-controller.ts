@@ -1,4 +1,9 @@
-import { navigateRovingTabindex, type RovingNavResult, type RovingOrientation } from './roving-tabindex';
+import {
+	isRovingKeyIgnored,
+	navigateRovingTabindex,
+	type RovingNavResult,
+	type RovingOrientation,
+} from './roving-tabindex';
 import { bindController, type Controller, type ControllerHost } from './controller';
 import { closestItem } from './closest-item';
 import { EventListenerController } from './event-listener-controller';
@@ -31,7 +36,10 @@ export type RovingControllerConfig = {
  * Selection is the component's: moving focus does not select. Use `onMove` to select on move (tabs with automatic
  * activation, a single-select listbox). Only the arrows of the configured axis and Home/End are consumed
  * (`preventDefault`), so Enter, Space, typeahead and expand/collapse keys stay with the component. A key pressed on
- * an element that is not an item, or inside a nested collection, is ignored.
+ * an element that is not an item, or inside a nested collection, is ignored. So is a key pressed with Alt, Ctrl or
+ * Meta held, and one pressed in an input, textarea, select or contenteditable element that is not itself an item
+ * (`isRovingKeyIgnored`); Shift does not ignore it. Arrows are not mirrored for right-to-left: Left always means
+ * previous, so a component in an RTL context flips them in `resolveNext`.
  *
  * The constructor reads nothing. `sync()` is not called on `attach()` because core runs connected callbacks before
  * attributes and children settle: call it from `onConnected` and whenever the items or the preferred active item
@@ -161,7 +169,11 @@ export class RovingController implements Controller {
 		if (this.config.getEnabled?.() === false) {
 			return;
 		}
-		const current = closestItem(event.target, this.config.getItems(), this.config.getTarget());
+		const items = this.config.getItems();
+		if (isRovingKeyIgnored(event, items)) {
+			return;
+		}
+		const current = closestItem(event.target, items, this.config.getTarget());
 		const result = this.navigate(current, event.key);
 		if (!result.handled) {
 			return;
