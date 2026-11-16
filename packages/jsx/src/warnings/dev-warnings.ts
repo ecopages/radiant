@@ -85,3 +85,15 @@ export function resetRuntimeWarningsForTests(): void {
 export function warnFunctionPosition(position: string): void {
 	warnRuntime(FUNCTION_POSITION_WARNING, position, { code: `function-position:${position}` });
 }
+
+/**
+ * Returns `true`, after warning, when `value` is a function that a text or attribute sink must render as nothing.
+ *
+ * @remarks Literal functions are skipped when the element is created. This covers one that a signal or subscribable
+ * resolves to, which only the renderer sees.
+ */
+export function isSkippedFunction(value: unknown, position: string): boolean {
+	if (typeof value !== 'function') return false;
+	warnFunctionPosition(position);
+	return true;
+}

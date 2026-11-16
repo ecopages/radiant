@@ -530,6 +530,67 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		}
 	});
 
+	test('a function that a subscribable resolves to renders as nothing and the next value takes over', async () => {
+		const [{ createSubscribableJsxValue, jsxs }, { createRoot }] = await Promise.all([
+			loadJsxRuntime(),
+			loadJsxModule(),
+		]);
+		const container = document.createElement('div');
+		const fn = () => 'secret source';
+		let value: unknown = 'one';
+		const subscribers = new Set<(value: unknown) => void>();
+		const bound = () =>
+			createSubscribableJsxValue({
+				getValue: () => value as never,
+				subscribe: (notify) => {
+					subscribers.add(notify as (value: unknown) => void);
+					return () => subscribers.delete(notify as (value: unknown) => void);
+				},
+			});
+		const set = async (next: unknown) => {
+			value = next;
+			for (const subscriber of subscribers) subscriber(value);
+			await Promise.resolve();
+		};
+
+		createRoot(container).render(
+			jsxs('p', { title: bound(), style: { color: bound() }, children: ['Before', bound(), 'After'] }),
+		);
+		const paragraph = container.querySelector('p');
+		expect(paragraph?.textContent).toBe('BeforeoneAfter');
+		expect(paragraph?.getAttribute('title')).toBe('one');
+
+		await set(fn);
+		expect(container.innerHTML).not.toContain('secret');
+		expect(paragraph?.textContent).toBe('BeforeAfter');
+		expect(paragraph?.hasAttribute('title')).toBe(false);
+		expect(paragraph?.getAttribute('style') ?? '').not.toContain('secret');
+
+		await set('two');
+		expect(paragraph?.textContent).toBe('BeforetwoAfter');
+		expect(paragraph?.getAttribute('title')).toBe('two');
+	});
+
+	test('hydrates server HTML that left a function child and attribute out', async () => {
+		const [{ createSubscribableJsxValue, jsxs }, { createRoot }] = await Promise.all([
+			loadJsxRuntime(),
+			loadJsxModule(),
+		]);
+		const container = document.createElement('div');
+		const fn = () => 'secret source';
+		const bound = () =>
+			createSubscribableJsxValue({ getValue: () => fn as never, subscribe: () => () => undefined });
+
+		container.innerHTML = '<p data-radiant-jsx-bind-0="attr:title">BeforeAfter</p>';
+		const paragraph = container.querySelector('p');
+		createRoot(container).hydrate(jsxs('p', { title: bound(), children: ['Before', bound(), 'After'] }));
+
+		expect(container.querySelector('p')).toBe(paragraph);
+		expect(container.innerHTML).not.toContain('secret');
+		expect(paragraph?.textContent).toBe('BeforeAfter');
+		expect(paragraph?.hasAttribute('title')).toBe(false);
+	});
+
 	test('hydrates a fragment with a conditional hole and keeps its sibling when the hole fills', async () => {
 		const [{ Fragment, jsx, jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');

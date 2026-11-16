@@ -1,6 +1,6 @@
 import { isSignalLikeValue, isSubscribableJsxValue } from '../types/renderable-guards.ts';
 import { SUBSCRIBABLE_JSX_VALUE_SYMBOL } from '../types/renderable-types.ts';
-import { warnFunctionPosition } from '../warnings/dev-warnings.ts';
+import { isSkippedFunction, warnFunctionPosition } from '../warnings/dev-warnings.ts';
 import { shouldUseBooleanAttributeBinding } from './binding-defaults.ts';
 
 /**
@@ -161,7 +161,7 @@ function appendClassTokens(tokens: string[], value: unknown): void {
 		return;
 	}
 
-	if (!isPlainObject(value)) {
+	if (isSkippedFunction(value, 'class value') || !isPlainObject(value)) {
 		return;
 	}
 
@@ -219,7 +219,7 @@ export function resolveAttributeText(name: string, value: unknown, presence = fa
 	if (presence && typeof value === 'string' && value !== '') return value;
 	if (presence || (typeof value === 'boolean' && shouldUseBooleanAttributeBinding(name)))
 		return value ? '' : undefined;
-	if (value === undefined || value === null) return undefined;
+	if (value == null || isSkippedFunction(value, `attribute ${name}`)) return undefined;
 	const lowerName = name.toLowerCase();
 	if (lowerName === 'style') return serializeStyleSnapshot(value);
 	if (lowerName === 'class' && (typeof value === 'object' || value === '')) return joinClassTokens(value, undefined);

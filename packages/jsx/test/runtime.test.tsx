@@ -139,6 +139,36 @@ describe('Radiant JSX runtime', () => {
 		expect(renderToString(jsx('textarea', { children: fn }))).not.toContain('secret');
 	});
 
+	test('a function that a signal or subscribable resolves to is never written out, in plain and hydrate mode', async () => {
+		const [{ createSubscribableJsxValue, jsx, jsxs }, { renderToString }] = await Promise.all([
+			loadJsxRuntime(),
+			loadServerRender(),
+		]);
+		const fn = () => 'secret source';
+		const bound = (value: unknown) =>
+			createSubscribableJsxValue({ getValue: () => value as never, subscribe: () => () => {} });
+		const template = jsxs('p', {
+			title: bound(fn),
+			style: bound(fn),
+			class: ['a', fn],
+			classes: [fn],
+			children: ['Before', bound(fn), 'After'],
+		});
+
+		for (const mode of ['plain', 'hydrate'] as const) {
+			const html = renderToString(template, { mode });
+
+			expect(html).not.toContain('secret');
+			expect(html).not.toContain('=>');
+			expect(html).not.toContain('title=');
+			expect(html).not.toContain('style=');
+			expect(html).toContain('class="a"');
+			expect(html).toContain('BeforeAfter');
+		}
+
+		expect(renderToString(jsx('textarea', { children: bound(fn) }))).not.toContain('secret');
+	});
+
 	test('a function in a style object value is dropped, in plain and hydrate mode, and warned about once', async () => {
 		const [{ jsxDEV: jsx, resetRuntimeWarningsForTests, setDevWarningsEnabled }, { renderToString }] =
 			await Promise.all([loadJsxDevRuntime(), loadServerRender()]);
@@ -205,8 +235,7 @@ describe('Radiant JSX runtime', () => {
 				expect.stringContaining('Skipped a function in <p bool:hidden>'),
 				expect.stringContaining('Skipped a function in <p attr:data-a>'),
 				expect.stringContaining('Skipped a function in child of <p>'),
-				expect.stringContaining('Skipped a function in <i class>'),
-				expect.stringContaining('Skipped a function in <i classes>'),
+				expect.stringContaining('Skipped a function in class value'),
 				expect.stringContaining('Skipped a function in <i style>'),
 			]);
 		} finally {

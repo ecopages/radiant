@@ -30,6 +30,7 @@ import type {
 	ReactiveChildSource,
 	TemplateInstance,
 } from './types.ts';
+import { isSkippedFunction } from '../warnings/dev-warnings.ts';
 
 /**
  * Reconciles the content of a child range against the next child value.
@@ -146,7 +147,8 @@ function updateSingleChildContent(
 function classifyChildValue(value: unknown): 'empty' | 'iterable' | 'template' | 'text' | 'nodes' {
 	if (isIterableRenderable(value)) return 'iterable';
 	if (isTemplateResultLike(value)) return 'template';
-	if (value === undefined || value === null || value === false || value === true) return 'empty';
+	if (value === undefined || value === null || typeof value === 'boolean' || isSkippedFunction(value, 'a child'))
+		return 'empty';
 	return canRenderAsTextNode(value) ? 'text' : 'nodes';
 }
 
