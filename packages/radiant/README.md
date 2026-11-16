@@ -350,3 +350,7 @@ For controller authoring, prefer a single import surface per module. If a file m
 Important: context APIs, controller registry helpers, helper factories, server APIs, and low-level tools have explicit public subpaths. Prefer those focused paths for library and adapter code, or when a module intentionally wants only the registry runtime without the broader client surface; the root entrypoint remains the ergonomic app entrypoint for the common client surface.
 
 For SSR-specific guidance and examples, see [src/server/README.md](src/server/README.md).
+
+## Bundle Size Checks
+
+Run `pnpm run build:all` before `pnpm --filter @ecopages/radiant size:check` so the measurements use current workspace builds. The check enforces separate client and Node server budgets. The client surface excludes JSX and signals; the second client measurement includes signals while leaving JSX external, and it fails if that bundle does not include signals or is not larger than the plain client surface. The server measurements also leave JSX and signals external. `size:report` reports the same measurements without failing on an exceeded limit.
