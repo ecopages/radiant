@@ -473,6 +473,52 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(container.querySelector('demo-card')?.className).toBe('card');
 	});
 
+	test('a function in a native child or attribute is skipped with a warning; events and custom-element properties keep it', async () => {
+		const [{ jsxDEV, resetRuntimeWarningsForTests, setDevWarningsEnabled }, { createRoot }] = await Promise.all([
+			loadJsxDevRuntime(),
+			loadJsxModule(),
+		]);
+		const container = document.createElement('div');
+		const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+		const fn = () => 'secret source';
+		const onClick = vi.fn();
+
+		resetRuntimeWarningsForTests();
+		setDevWarningsEnabled(true);
+
+		try {
+			createRoot(container).render(
+				jsxDEV('div', {
+					children: [
+						jsxDEV('p', { title: fn, 'attr:data-a': fn, style: fn, children: [fn, 'kept'] }),
+						jsxDEV('button', { 'on:click': onClick, children: 'go' }),
+						jsxDEV(booleanPropertyTagName, { enabled: fn }),
+					],
+				}),
+			);
+
+			const paragraph = container.querySelector('p');
+			expect(paragraph?.textContent).toBe('kept');
+			expect(paragraph?.getAttributeNames()).toEqual([]);
+			expect(container.innerHTML).not.toContain('secret');
+			expect((container.querySelector(booleanPropertyTagName) as BooleanPropertyElement).enabled).toBe(fn);
+
+			container.querySelector('button')?.click();
+			expect(onClick).toHaveBeenCalledTimes(1);
+
+			expect(warnSpy.mock.calls.map((call) => String(call[0]))).toEqual([
+				expect.stringContaining('Skipped a function in <p title>'),
+				expect.stringContaining('Skipped a function in <p attr:data-a>'),
+				expect.stringContaining('Skipped a function in <p style>'),
+				expect.stringContaining('Skipped a function in child of <p>'),
+			]);
+		} finally {
+			resetRuntimeWarningsForTests();
+			setDevWarningsEnabled(undefined);
+			warnSpy.mockRestore();
+		}
+	});
+
 	test('hydrates a fragment with a conditional hole and keeps its sibling when the hole fills', async () => {
 		const [{ Fragment, jsx, jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');

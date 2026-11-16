@@ -1,3 +1,4 @@
+import { FUNCTION_POSITION_WARNING, warnRuntime } from '../warnings/dev-warnings.ts';
 import { shouldDelegateEventBinding } from './event-binding-policy.ts';
 import { forEachNormalizedAttribute } from './attribute-normalize.ts';
 import { shouldUseAttributeBindingByDefaultForElement, shouldUseBooleanAttributeBinding } from './binding-defaults.ts';
@@ -157,7 +158,7 @@ export function createJsxElement<Props extends object>(
 	// otherwise assembled identically.
 	if (!voidElementNames.has(type)) {
 		if (hasChildren && !childrenAsValue) {
-			appendChildren(strings, values, parts, children, childSlotMode);
+			appendChildren(strings, values, parts, children, childSlotMode, type);
 		}
 		strings[strings.length - 1] += `</${type}>`;
 	}
@@ -204,8 +205,19 @@ export function takesChildrenValue(type: string): boolean {
 	);
 }
 
+/** Prop names whose function value is not text, so it is not skipped from an attribute position. */
+const FUNCTION_VALUE_NAMES = new Set<string>(['ref']);
+
+function warnFunctionPosition(position: string): void {
+	warnRuntime(FUNCTION_POSITION_WARNING, position, { code: `function-position:${position}` });
+}
+
 /**
- * @remarks `className` on a native element is skipped: it is not an HTML attribute, and writing it would leave the
+ * @remarks A function in an `attr`, `bool` or `style` binding, or in a child, is skipped and
+ * warned about in development: stringified, it would write its source code. `prop:`, event bindings and a
+ * custom element's property bindings keep their function, which is a value there.
+ *
+ * `className` on a native element is skipped: it is not an HTML attribute, and writing it would leave the
  * element without its class. `jsxDEV` from `@ecopages/jsx/jsx-dev-runtime` warns about it. A custom element keeps it
  * as a property binding.
  */
@@ -225,7 +237,18 @@ function appendBinding(
 		return;
 	}
 
-	parts.push(getBindingPart(elementName, name, value));
+	const part = getBindingPart(elementName, name, value);
+
+	if (
+		typeof value === 'function' &&
+		(part.kind === 'attr' || part.kind === 'bool') &&
+		!FUNCTION_VALUE_NAMES.has(name)
+	) {
+		warnFunctionPosition(`<${elementName} ${name}>`);
+		return;
+	}
+
+	parts.push(part);
 	values.push(value);
 	strings.push('');
 }
@@ -345,13 +368,16 @@ function appendChildren(
 	parts: TemplatePartDescriptor[],
 	children: JsxRenderable | undefined,
 	childSlotMode: ChildSlotMode,
+	owner: string,
 ): void {
 	if (childSlotMode === 'multiple' && isIterableJsxChild(children)) {
-		for (const child of children) appendChildSlot(strings, values, parts, toChildSlot(child as JsxRenderable));
+		for (const child of children) {
+			appendChildSlot(strings, values, parts, toChildSlot(child as JsxRenderable, owner));
+		}
 		return;
 	}
 
-	appendChildSlot(strings, values, parts, toChildSlot(children));
+	appendChildSlot(strings, values, parts, toChildSlot(children, owner));
 }
 
 function appendChildSlot(strings: string[], values: unknown[], parts: TemplatePartDescriptor[], slot: unknown): void {
@@ -377,8 +403,13 @@ function appendChildSlot(strings: string[], values: unknown[], parts: TemplatePa
  * keyed reconciliation matches by key, so positions do not matter. An empty list is
  * `null`, like any other empty child.
  */
-function toChildSlot(child: JsxRenderable | undefined): unknown {
+function toChildSlot(child: JsxRenderable | undefined, owner?: string): unknown {
 	if (child === undefined || child === null || child === false) {
+		return null;
+	}
+
+	if (typeof child === 'function' && owner !== undefined) {
+		warnFunctionPosition(`child of <${owner}>`);
 		return null;
 	}
 
@@ -386,7 +417,7 @@ function toChildSlot(child: JsxRenderable | undefined): unknown {
 		return child;
 	}
 
-	const slots = Array.from(child, (entry) => toChildSlot(entry as JsxRenderable));
+	const slots = Array.from(child, (entry) => toChildSlot(entry as JsxRenderable, owner));
 	const filledSlots = slots.filter((slot) => slot !== null);
 
 	if (filledSlots.length === 0) {
