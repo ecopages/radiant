@@ -2,6 +2,9 @@ import { assertSignalAccessAllowed, defaultEquals } from './runtime';
 import { SignalNode } from './signal-node';
 import type { SignalEquals, SignalOptions, SignalSubscriber, WritableSignal } from './types';
 
+/** @remarks Internal symbol prevents store batching from changing ordinary State notifications. */
+export const STATE_NOTIFY = Symbol('store-state-notify');
+
 /**
  * Writable state signal.
  *
@@ -49,19 +52,18 @@ export class State<Value> extends SignalNode<Value> implements WritableSignal<Va
 		this.value = nextValue;
 		this.version += 1;
 
-		let watcherError: unknown;
+		this[STATE_NOTIFY]();
+	}
 
+	protected [STATE_NOTIFY](): void {
+		let watcherError: unknown;
 		try {
 			this.notifyWatchers();
 		} catch (error) {
 			watcherError = error;
 		}
-
-		this.publish(nextValue);
-
-		if (watcherError) {
-			throw watcherError;
-		}
+		this.publish(this.value);
+		if (watcherError) throw watcherError;
 	}
 
 	/**
