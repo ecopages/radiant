@@ -18,7 +18,7 @@
 	"scripts": {
 		"build:lib": "pnpm run clean && pnpm run build:files && pnpm run build:types",
 		"build:files": "node --import tsx ./build.ts",
-		"build:types": "pnpm --filter @ecopages/signals build:types && pnpm --filter @ecopages/jsx build:types && tsc -p tsconfig.build.json && tsc-alias",
+		"build:types": "pnpm --filter @ecopages/signals build:types && pnpm --filter @ecopages/jsx build:types && tsc -p tsconfig.build.json && tsc-alias && node --import tsx ../../scripts/rewrite-dts-extensions.ts",
 		"clean": "rm -rf ./dist",
 		"watch:lib": "node --import tsx ./build.ts --watch",
 		"size:check": "node --import tsx ./check-size.ts",

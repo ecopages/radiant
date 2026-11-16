@@ -51,7 +51,7 @@
 		"./package.json": "./package.json"
 	},
 	"scripts": {
-		"build:lib": "tsup && tsc -p tsconfig.build.json",
+		"build:lib": "tsup && tsc -p tsconfig.build.json && node --import tsx ../../scripts/rewrite-dts-extensions.ts",
 		"clean": "rm -rf dist",
 		"dev": "tsup --watch",
 		"test:all": "pnpm run test:lib",

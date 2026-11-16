@@ -14,6 +14,7 @@
 		"prepare:husky": "husky",
 		"build:all": "pnpm --filter @ecopages/signals build:lib && pnpm --filter @ecopages/jsx build:lib && pnpm --filter @ecopages/radiant build:lib && pnpm --filter @ecopages/vite-plugin-radiant build:lib && pnpm --filter @ecopages/storybook-radiant-vite build && pnpm --filter @ecopages/radiant-ui build:lib && pnpm --filter @ecopages/radiant-themes build:lib",
 		"test:all": "pnpm -r --sequential test:all",
+		"test:declarations": "node --import tsx --test scripts/rewrite-dts-extensions.test.ts scripts/published-declarations.test.ts && node scripts/test-consumer-types.mjs",
 		"size:check": "pnpm -r --filter \"@ecopages/jsx\" --filter \"@ecopages/signals\" --filter \"@ecopages/radiant\" run size:check",
 		"size:report": "pnpm -r --filter \"@ecopages/jsx\" --filter \"@ecopages/signals\" --filter \"@ecopages/radiant\" run size:report",
 		"changeset": "changeset",

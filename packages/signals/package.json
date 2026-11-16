@@ -42,7 +42,7 @@
 	"scripts": {
 		"build:lib": "pnpm run clean && pnpm run build:files && pnpm run build:types",
 		"build:files": "node --import tsx ./build.ts",
-		"build:types": "tsc -p tsconfig.build.json",
+		"build:types": "tsc -p tsconfig.build.json && node --import tsx ../../scripts/rewrite-dts-extensions.ts",
 		"clean": "rm -rf ./dist",
 		"size:check": "node --import tsx ./check-size.ts",
 		"size:report": "node --import tsx ./check-size.ts --report-only",
