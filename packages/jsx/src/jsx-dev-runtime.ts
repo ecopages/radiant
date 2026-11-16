@@ -1,4 +1,4 @@
-import { CLASS_NAME_ATTRIBUTE_WARNING, FUNCTION_POSITION_WARNING, warnRuntime } from './warnings/dev-warnings.ts';
+import { CLASS_NAME_ATTRIBUTE_WARNING, warnFunctionPosition, warnRuntime } from './warnings/dev-warnings.ts';
 import { installDefaultDevWarningFormatter } from './warnings/jsx-dev-warnings.ts';
 import { Fragment, jsx, jsxDEV as createDevElement, jsxs } from './jsx-runtime.ts';
 
@@ -25,8 +25,7 @@ export const jsxDEV: typeof createDevElement = (type, props, key, isStaticChildr
 	if (typeof type === 'string') {
 		for (const name of ['class', 'classes'] as const) {
 			if (typeof (props as Record<string, unknown>)[name] === 'function') {
-				const position = `<${type} ${name}>`;
-				warnRuntime(FUNCTION_POSITION_WARNING, position, { code: `function-position:${position}` });
+				warnFunctionPosition(`<${type} ${name}>`);
 			}
 		}
 	}

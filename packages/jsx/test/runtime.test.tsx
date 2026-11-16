@@ -126,7 +126,17 @@ describe('Radiant JSX runtime', () => {
 			expect(html).not.toContain('title=');
 			expect(html).not.toContain('style=');
 			expect(html).not.toContain('class=');
+			expect(html).not.toMatch(/\bhidden\b/);
 		}
+	});
+
+	test('a function in a Fragment or textarea child is never written out; a custom-element children value keeps it', async () => {
+		const [{ Fragment, jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+		const fn = () => 'secret source';
+
+		expect(renderToString(jsx(Fragment, { children: fn }))).toBe('');
+		expect(renderToString(jsx(Fragment, { children: [fn, 'a'] }))).toBe('a');
+		expect(renderToString(jsx('textarea', { children: fn }))).not.toContain('secret');
 	});
 
 	test('a function in a style object value is dropped, in plain and hydrate mode, and warned about once', async () => {
@@ -182,7 +192,9 @@ describe('Radiant JSX runtime', () => {
 		setDevWarningsEnabled(true);
 
 		try {
-			expect(renderToString(jsx('p', { title: fn, children: fn }))).toBe('<p></p>');
+			expect(renderToString(jsx('p', { title: fn, 'bool:hidden': fn, 'attr:data-a': fn, children: fn }))).toBe(
+				'<p></p>',
+			);
 			jsx('p', { title: fn, children: fn });
 			jsx('i', { style: fn, class: fn, classes: fn });
 			jsx('input', { 'on:click': fn, 'prop:value': fn, ref: fn });
@@ -190,6 +202,8 @@ describe('Radiant JSX runtime', () => {
 
 			expect(warnSpy.mock.calls.map((call) => String(call[0]))).toEqual([
 				expect.stringContaining('Skipped a function in <p title>'),
+				expect.stringContaining('Skipped a function in <p bool:hidden>'),
+				expect.stringContaining('Skipped a function in <p attr:data-a>'),
 				expect.stringContaining('Skipped a function in child of <p>'),
 				expect.stringContaining('Skipped a function in <i class>'),
 				expect.stringContaining('Skipped a function in <i classes>'),

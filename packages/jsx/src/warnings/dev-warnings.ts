@@ -80,3 +80,8 @@ export function warnRuntime(kind: DevWarningKind, detail: string | undefined, op
 export function resetRuntimeWarningsForTests(): void {
 	issuedRuntimeWarnings.clear();
 }
+
+/** Warns once per `position` that a function there is skipped rather than written out as text. */
+export function warnFunctionPosition(position: string): void {
+	warnRuntime(FUNCTION_POSITION_WARNING, position, { code: `function-position:${position}` });
+}

@@ -490,7 +490,13 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 			createRoot(container).render(
 				jsxDEV('div', {
 					children: [
-						jsxDEV('p', { title: fn, 'attr:data-a': fn, style: fn, children: [fn, 'kept'] }),
+						jsxDEV('p', {
+							title: fn,
+							'attr:data-a': fn,
+							'bool:hidden': fn,
+							style: fn,
+							children: [fn, 'kept'],
+						}),
 						jsxDEV('button', { 'on:click': onClick, children: 'go' }),
 						jsxDEV('b', { style: { color: fn, marginTop: '4px' } }),
 						jsxDEV(booleanPropertyTagName, { enabled: fn }),
@@ -501,6 +507,7 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 			const paragraph = container.querySelector('p');
 			expect(paragraph?.textContent).toBe('kept');
 			expect(paragraph?.getAttributeNames()).toEqual([]);
+			expect(paragraph?.hasAttribute('hidden')).toBe(false);
 			expect(container.querySelector('b')?.getAttribute('style')).toBe('margin-top: 4px');
 			expect(container.innerHTML).not.toContain('secret');
 			expect((container.querySelector(booleanPropertyTagName) as BooleanPropertyElement).enabled).toBe(fn);
@@ -511,6 +518,7 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 			expect(warnSpy.mock.calls.map((call) => String(call[0]))).toEqual([
 				expect.stringContaining('Skipped a function in <p title>'),
 				expect.stringContaining('Skipped a function in <p attr:data-a>'),
+				expect.stringContaining('Skipped a function in <p bool:hidden>'),
 				expect.stringContaining('Skipped a function in <p style>'),
 				expect.stringContaining('Skipped a function in child of <p>'),
 				expect.stringContaining('Skipped a function in style value color'),

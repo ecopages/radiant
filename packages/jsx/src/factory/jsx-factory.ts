@@ -1,4 +1,4 @@
-import { FUNCTION_POSITION_WARNING, warnRuntime } from '../warnings/dev-warnings.ts';
+import { warnFunctionPosition } from '../warnings/dev-warnings.ts';
 import { shouldDelegateEventBinding } from './event-binding-policy.ts';
 import { forEachNormalizedAttribute } from './attribute-normalize.ts';
 import { shouldUseAttributeBindingByDefaultForElement, shouldUseBooleanAttributeBinding } from './binding-defaults.ts';
@@ -129,7 +129,7 @@ export function createJsxElement<Props extends object>(
 	if (type === fragmentSymbol) {
 		const fragmentChildren = (props as JsxPropsWithChildren).children;
 
-		return wrapKeyedValue((toChildSlot(fragmentChildren) ?? '') as JsxRenderable, keyedValue);
+		return wrapKeyedValue((toChildSlot(fragmentChildren, 'Fragment') ?? '') as JsxRenderable, keyedValue);
 	}
 
 	if (typeof type !== 'string') {
@@ -148,7 +148,7 @@ export function createJsxElement<Props extends object>(
 
 	if (childrenAsValue) {
 		parts.push(CHILDREN_PART);
-		values.push(toChildSlot(children));
+		values.push(toChildSlot(children, valueChildOwner(type)));
 		strings.push('');
 	}
 
@@ -208,8 +208,8 @@ export function takesChildrenValue(type: string): boolean {
 /** Prop names whose function value is not text, so it is not skipped from an attribute position. */
 const FUNCTION_VALUE_NAMES = new Set<string>(['ref']);
 
-function warnFunctionPosition(position: string): void {
-	warnRuntime(FUNCTION_POSITION_WARNING, position, { code: `function-position:${position}` });
+function valueChildOwner(type: string): string | undefined {
+	return type.includes('-') ? undefined : type;
 }
 
 /**
@@ -402,6 +402,9 @@ function appendChildSlot(strings: string[], values: unknown[], parts: TemplatePa
  * every filled item is itself keyed, the list is those keyed items without the holes:
  * keyed reconciliation matches by key, so positions do not matter. An empty list is
  * `null`, like any other empty child.
+ *
+ * A function child is skipped and warned about when `owner` names the element or `Fragment` that holds it. Without
+ * `owner` (a custom element that takes its children as a value) it passes through as that value.
  */
 function toChildSlot(child: JsxRenderable | undefined, owner?: string): unknown {
 	if (child === undefined || child === null || child === false) {

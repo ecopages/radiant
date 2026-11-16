@@ -1,6 +1,6 @@
 import { isSignalLikeValue, isSubscribableJsxValue } from '../types/renderable-guards.ts';
 import { SUBSCRIBABLE_JSX_VALUE_SYMBOL } from '../types/renderable-types.ts';
-import { FUNCTION_POSITION_WARNING, warnRuntime } from '../warnings/dev-warnings.ts';
+import { warnFunctionPosition } from '../warnings/dev-warnings.ts';
 import { shouldUseBooleanAttributeBinding } from './binding-defaults.ts';
 
 /**
@@ -188,8 +188,7 @@ export function serializeStyleSnapshot(value: unknown): string {
 		}
 
 		if (typeof entry === 'function') {
-			const position = `style value ${name}`;
-			warnRuntime(FUNCTION_POSITION_WARNING, position, { code: `function-position:${position}` });
+			warnFunctionPosition(`style value ${name}`);
 			continue;
 		}
 
