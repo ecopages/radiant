@@ -157,6 +157,31 @@ describe('@ref on a Controller Host', () => {
 	});
 });
 
+describe('@ref across reconnect on a Controller Host', () => {
+	test('still resolves the owned part after disconnect and connect', async () => {
+		const root = await mount<HTMLElement>('<section><i id="own" data-ref="status"></i></section>');
+		const controller = new RefController(root);
+		controller.connect();
+		controller.disconnect();
+		controller.connect();
+
+		expect(controller.status).toBe(byId('own'));
+	});
+});
+
+describe('@ref names that collide with element members', () => {
+	test('a given name finds the part where the field name would shadow an element member', async () => {
+		@customElement('ref-title-host')
+		class RefTitleHost extends RadiantElement {
+			@ref('title') headline!: HTMLElement | null;
+		}
+
+		const host = await mount<RefTitleHost>('<ref-title-host><h1 id="h" data-ref="title"></h1></ref-title-host>');
+
+		expect(host.headline).toBe(byId('h'));
+	});
+});
+
 describe('@ref private fields', () => {
 	test('standard decorators reject a # field, which cannot hold a getter', () => {
 		const context = { name: '#panel', private: true, addInitializer: vi.fn() };
@@ -205,6 +230,24 @@ describe('@ref development warnings', () => {
 		expect(messages[1]).toContain('@refAll "cells"');
 	});
 
+	test('a required part the host renders itself does not warn', async () => {
+		@customElement('ref-rendering-host')
+		class RefRenderingHost extends RadiantElement {
+			@ref({ required: true }) panel!: HTMLElement | null;
+
+			override render() {
+				const panel = document.createElement('div');
+				panel.dataset.ref = 'panel';
+				return panel;
+			}
+		}
+
+		const host = await mount<RefRenderingHost>('<ref-rendering-host></ref-rendering-host>');
+
+		expect(host.panel).not.toBeNull();
+		expect(refWarnings()).toHaveLength(0);
+	});
+
 	test('a required part that is present does not warn', async () => {
 		@customElement('ref-present-host')
 		class RefPresentHost extends RadiantElement {
@@ -251,7 +294,11 @@ describe('@ref development warnings', () => {
 		await mount<RefDuplicateHost>(
 			'<ref-duplicate-host><i data-ref="panel"></i><i data-ref="panel"></i><i data-ref="cells"></i><i data-ref="cells"></i></ref-duplicate-host>',
 		);
-		document.body.append(document.createElement('ref-duplicate-host'));
+		document.body.insertAdjacentHTML(
+			'beforeend',
+			'<ref-duplicate-host><i data-ref="panel"></i><i data-ref="panel"></i></ref-duplicate-host>',
+		);
+		await Promise.resolve();
 
 		const messages = refWarnings();
 		expect(messages).toHaveLength(1);

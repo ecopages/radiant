@@ -85,7 +85,7 @@ Read only the modules relevant to the task. Each file is one level deep from thi
 | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | [reference/reactive-model.md](reference/reactive-model.md) | Bindings vs plain reads vs `@bindTo`, attribute rules (`bool:`, `false`, `class`), derived `.map`, class/style                            |
 | [reference/hosts.md](reference/hosts.md)                   | Element vs controller, public props vs internal bindings types, children and named regions                                                |
-| [reference/decorators.md](reference/decorators.md)         | `@prop` / `@attr` / `@state` / `@signal`, field types, `@bindTo`, `@query`, `@onEvent`, `@onUpdated`, `@bound`, `@debounce`               |
+| [reference/decorators.md](reference/decorators.md)         | `@prop` / `@attr` / `@state` / `@signal`, field types, `@bindTo`, `@query`, `@ref`, `@onEvent`, `@onUpdated`, `@bound`, `@debounce`       |
 | [reference/context.md](reference/context.md)               | Provide/consume, `@contextSelector` vs `@onContextUpdate`, manual `ContextRequestEvent` and other protocol libraries, context field types |
 | [reference/ssr.md](reference/ssr.md)                       | Server entrypoints, hydrate modes, nested and page-level hydration, render scope                                                          |
 | [reference/authoring.md](reference/authoring.md)           | Authoring rules, development warnings, review checklist, output shape                                                                     |

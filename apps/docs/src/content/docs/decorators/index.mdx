@@ -94,7 +94,7 @@ Write the type yourself for:
 
 - a string literal union, such as `size: Size = 'md'`
 - a field with no initializer: `?` when the value can be absent, which adds `undefined`, and `!` when the decorator or a default supplies it, which only silences the missing-initializer error
-- `@signal`, `@query` and the other fields a decorator installs, which have no initializer to infer from
+- `@signal`, `@query`, `@ref`, `@refAll` and the other fields a decorator installs, which have no initializer to infer from
 
 Declare a decorated field as a plain field. TypeScript rejects `declare` on it under standard decorators (TS1206), and an `accessor` field is not a target of these decorators.
 

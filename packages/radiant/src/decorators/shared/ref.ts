@@ -76,9 +76,10 @@ export function installRefField(host: RefDecoratorHost, propertyName: string, co
 		if (config.required) {
 			warnOnceInDevelopment(`${decorator}:required:${owner}`, () => {
 				const found = read();
-				return (Array.isArray(found) ? found.length : found)
-					? undefined
-					: `[@ecopages/radiant] ${where} is required but no part data-ref="${name}" belongs to this host after its first connect. Check the name, or that the markup is not inside a nested host.`;
+				const missing = Array.isArray(found) ? found.length === 0 : found === null;
+				return missing
+					? `[@ecopages/radiant] ${where} is required but no part data-ref="${name}" belongs to this host after its first connect. Check the name, or that the markup is not inside a nested host.`
+					: undefined;
 			});
 		}
 
