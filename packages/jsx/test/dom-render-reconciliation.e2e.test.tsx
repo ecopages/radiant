@@ -571,6 +571,74 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(paragraph?.getAttribute('title')).toBe('two');
 	});
 
+	test('a textarea whose subscribable child resolves to a function shows no source', async () => {
+		const [{ createSubscribableJsxValue, jsx }, { createRoot }] = await Promise.all([
+			loadJsxRuntime(),
+			loadJsxModule(),
+		]);
+		const container = document.createElement('div');
+		const fn = () => 'secret source';
+		let value: unknown = 'one';
+		const subscribers = new Set<(value: unknown) => void>();
+		const bound = createSubscribableJsxValue({
+			getValue: () => value as never,
+			subscribe: (notify) => {
+				subscribers.add(notify as (value: unknown) => void);
+				return () => subscribers.delete(notify as (value: unknown) => void);
+			},
+		});
+
+		createRoot(container).render(jsx('textarea', { children: bound }));
+		const textarea = container.querySelector('textarea') as HTMLTextAreaElement;
+		expect(textarea.value).toBe('one');
+
+		value = fn;
+		for (const subscriber of subscribers) subscriber(value);
+		await Promise.resolve();
+
+		expect(textarea.value).toBe('');
+		expect(textarea.textContent).toBe('');
+	});
+
+	test('server light DOM renders a function that a subscribable resolves to as no node', async () => {
+		const [{ createSubscribableJsxValue }, { renderServerLightDom }] = await Promise.all([
+			loadJsxRuntime(),
+			loadModule<typeof import('../src/server.ts')>('../src/server.ts'),
+		]);
+		const fn = () => 'secret source';
+		const bound = createSubscribableJsxValue({ getValue: () => fn as never, subscribe: () => () => undefined });
+
+		expect(renderServerLightDom(['a', bound, 'b'] as never, document).map((node) => node.textContent)).toEqual([
+			'a',
+			'b',
+		]);
+	});
+
+	test('hydration adopts the server elements around a function child that rendered no node', async () => {
+		const [{ createSubscribableJsxValue, jsx, jsxs }, { createRoot }] = await Promise.all([
+			loadJsxRuntime(),
+			loadJsxModule(),
+		]);
+		const container = document.createElement('div');
+		const fn = () => 'secret source';
+		const bound = () =>
+			createSubscribableJsxValue({ getValue: () => fn as never, subscribe: () => () => undefined });
+
+		container.innerHTML = '<div data-radiant-jsx-bind-0="attr:title" title="t"><b>y</b><i>z</i></div>';
+		const bold = container.querySelector('b');
+		const italic = container.querySelector('i');
+		createRoot(container).hydrate(
+			jsxs('div', {
+				title: 't',
+				children: [bound(), jsx('b', { children: 'y' }), bound(), jsx('i', { children: 'z' })],
+			}),
+		);
+
+		expect(container.querySelector('b')).toBe(bold);
+		expect(container.querySelector('i')).toBe(italic);
+		expect(container.querySelector('div')?.textContent).toBe('yz');
+	});
+
 	test('hydrates server HTML that left a function child and attribute out', async () => {
 		const [{ createSubscribableJsxValue, jsxs }, { createRoot }] = await Promise.all([
 			loadJsxRuntime(),
