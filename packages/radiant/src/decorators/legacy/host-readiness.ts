@@ -1,4 +1,8 @@
-import { runLegacyInstanceInitializers, runLegacyPostConstructionInitializers } from './instance-initializers';
+import {
+	hasAllLegacyPostConstructionFields,
+	runLegacyInstanceInitializers,
+	runLegacyPostConstructionInitializers,
+} from './instance-initializers';
 
 export type LegacyHostReadinessPhase = 'construct' | 'connect' | 'ssr';
 
@@ -70,10 +74,11 @@ const legacyControllerHosts = new WeakMap<object, object>();
  * @remarks
  * Custom elements cannot return a substitute instance, so they keep {@link withLegacyConstructionEnd}
  * from `@customElement`. Controllers can: the constructor returns this proxy, class-field
- * `defineProperty` and initializer writes go through, and the first author-facing get after `new`
- * installs the accessors. A set during field initialization would run too early and register SSR
- * work twice. Keys in `internalKeys` are the controller's own constructor fields (`host`, `$`, …)
- * so a field initializer that reads `this.$` does not install too early.
+ * `defineProperty` and initializer writes go through, and the first author-facing get after every
+ * decorated field exists installs the accessors. A get during an earlier field initializer would
+ * install getters that a later class field then overwrites. Keys in `internalKeys` are the
+ * controller's own constructor fields (`host`, `$`, …) so a field initializer that reads `this.$`
+ * does not install too early.
  */
 export function completeLegacyControllerConstruction<T extends object>(
 	instance: T,
@@ -101,7 +106,12 @@ function unwrapLegacyControllerHost<T extends object>(host: T): T {
 }
 
 function completeIfAuthorKey(target: object, prop: PropertyKey, internalKeys: ReadonlySet<PropertyKey>): void {
-	if (completingLegacyConstruction.has(target) || internalKeys.has(prop) || typeof prop === 'symbol') {
+	if (
+		completingLegacyConstruction.has(target) ||
+		internalKeys.has(prop) ||
+		typeof prop === 'symbol' ||
+		!hasAllLegacyPostConstructionFields(target)
+	) {
 		return;
 	}
 

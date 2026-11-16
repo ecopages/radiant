@@ -9,9 +9,13 @@ export function reactiveField(target: ReactiveHostLike, propertyKey: string) {
 		bootstrapReactiveMember(element, propertyKey, element[propertyKey as keyof typeof element]);
 	});
 
-	registerLegacyPostConstructionInitializer(target, (element) => {
-		element.createReactiveField(propertyKey, element[propertyKey as keyof typeof element], {
-			suppressInitialNotify: true,
-		});
-	});
+	registerLegacyPostConstructionInitializer(
+		target,
+		(element) => {
+			element.createReactiveField(propertyKey, element[propertyKey as keyof typeof element], {
+				suppressInitialNotify: true,
+			});
+		},
+		propertyKey,
+	);
 }

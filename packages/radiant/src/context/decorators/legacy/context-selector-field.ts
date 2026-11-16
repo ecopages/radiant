@@ -16,41 +16,45 @@ export function contextSelectorField<T extends Context<unknown, unknown>, Select
 	const { context, select, subscribe = true } = options;
 
 	return (target: ContextHostLike, propertyName: string) => {
-		registerLegacyPostConstructionInitializer(target, (element) => {
-			let activeUnsubscribe: (() => void) | undefined;
-			const applyValue = createContextSelectionDelivery<Selected>(
-				element,
-				(value) => {
-					(element as unknown as Record<string, unknown>)[propertyName] = value;
-				},
-				true,
-			);
-
-			bootstrapSsrContextSelection<T, Selected>(element, context, applyValue, select);
-
-			const connectSelection = () =>
-				connectContextSelection<T, Selected>(element, context, applyValue, {
-					onSubscribe: (unsubscribe) => {
-						activeUnsubscribe = unsubscribe;
+		registerLegacyPostConstructionInitializer(
+			target,
+			(element) => {
+				let activeUnsubscribe: (() => void) | undefined;
+				const applyValue = createContextSelectionDelivery<Selected>(
+					element,
+					(value) => {
+						(element as unknown as Record<string, unknown>)[propertyName] = value;
 					},
-					select,
-					subscribe,
+					true,
+				);
+
+				bootstrapSsrContextSelection<T, Selected>(element, context, applyValue, select);
+
+				const connectSelection = () =>
+					connectContextSelection<T, Selected>(element, context, applyValue, {
+						onSubscribe: (unsubscribe) => {
+							activeUnsubscribe = unsubscribe;
+						},
+						select,
+						subscribe,
+					});
+
+				element.registerCleanupCallback(() => {
+					activeUnsubscribe?.();
+					activeUnsubscribe = undefined;
 				});
 
-			element.registerCleanupCallback(() => {
-				activeUnsubscribe?.();
-				activeUnsubscribe = undefined;
-			});
+				element.registerConnectedCallback(() => {
+					if (connectSelection()) {
+						return;
+					}
 
-			element.registerConnectedCallback(() => {
-				if (connectSelection()) {
-					return;
-				}
-
-				queueMicrotask(() => {
-					connectSelection();
+					queueMicrotask(() => {
+						connectSelection();
+					});
 				});
-			});
-		});
+			},
+			propertyName,
+		);
 	};
 }
