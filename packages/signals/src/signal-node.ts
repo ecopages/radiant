@@ -65,10 +65,10 @@ export abstract class SignalNode<Value> implements Signal<Value>, DependencyNode
 	 *
 	 * @remarks
 	 * Adding is atomic: if `watched` or the first-watcher work throws, the listener
-	 * and, unless a listener was added meanwhile, anything the first-watcher work
-	 * subscribed are released, `unwatched` is
-	 * not called for this node (it never became watched), and the original error
-	 * is rethrown. An error thrown while releasing is dropped in favor of it.
+	 * is removed, `unwatched` is not called for this node (it never became watched),
+	 * and the original error is rethrown. When this node's own `watched` hook
+	 * throws, the work the first watcher started is also released, unless a
+	 * listener was added meanwhile. An error thrown while releasing is dropped in favor of it.
 	 *
 	 * The returned unsubscriber always finishes releasing the node before it
 	 * rethrows an error from a dependency's or this node's `unwatched` hook.

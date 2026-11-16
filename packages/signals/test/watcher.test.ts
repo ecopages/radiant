@@ -457,6 +457,27 @@ describe('Watcher', () => {
 			expect(failing.getWatcherCount()).toBe(0);
 		});
 
+		test('keeps an invalidation of a signal that stays watched when a watch fails', () => {
+			const events: string[] = [];
+			const other = hooks('other', events);
+			const writer = new State(0, {
+				[subtle.watched]() {
+					other.set(1);
+				},
+			});
+			const failing = hooks('failing', events, { watched: new Error('x') });
+			const notifications: number[] = [];
+			const watcher = new subtle.Watcher(() => {
+				notifications.push(1);
+			});
+
+			watcher.watch(other);
+			expect(() => watcher.watch(writer, failing)).toThrow('x');
+
+			expect(notifications).toEqual([1]);
+			expect(watcher.getPending()).toEqual([other]);
+		});
+
 		test('keeps a listener added during a failed first watch connected to its dependencies', () => {
 			const notifications: string[] = [];
 			let late: InstanceType<typeof subtle.Watcher>;
