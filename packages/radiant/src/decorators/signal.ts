@@ -23,8 +23,8 @@ export function signal<THost extends ReactiveHostLike, T>(
  *
  * Connected signals still flow through Radiant's update callback channel so
  * `@onUpdated(...)` and `this.$.name` bindings continue to work. On
- * `RadiantElement`, any signal or store reads performed during `render()`
- * participate in rerender invalidation directly, which makes module-level
+ * render-owning Element and Controller Hosts, signal reads and `createStore(...)`
+ * property reads during `render()` participate in rerender invalidation directly, which makes module-level
  * shared stores a natural fit without prop-bridging them through a second
  * reactive layer.
  *

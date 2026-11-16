@@ -42,7 +42,7 @@ Application code does not need to import JSX helpers or Signals primitives direc
 - `@prop({ attribute: false })` makes a prop property-only: no observed attribute, an authored attribute of that name is ignored, it is never reflected and never serialized by server rendering. Use it for live objects such as class instances, which would otherwise leak their fields into the markup, lose their methods and, if cyclic, throw during SSR; `reflect: true` with it throws. Serialized props are public markup, so keep private or large data out of a prop that keeps its attribute. In development, server rendering warns once per tag and prop when a prop that keeps its attribute holds a class instance, function or cycle.
 - Reflected properties serialize the current value on each write. A synchronous callback (`@bindTo`, `registerUpdateCallback`) that normalizes the assignment is reflected too.
 - `@bindTo(...)` copies a reactive field onto existing DOM when the host does not own a `render()` tree.
-- `@onUpdated(...)` runs once for members changed in the same batch, before the render commits. If its callback changes a watched member, it can run again in the same cycle until state settles. Use it for procedures and for asking a render-owning host to `update()` / `requestUpdate()` when the view structure must change. `updated()` is for work that needs the committed DOM.
+- `@onUpdated(...)` runs once for members changed in the same batch, before the render commits. If its callback changes a watched member, it can run again in the same cycle until state settles. Use it for procedures that react to member changes. `updated()` is for work that needs the committed DOM.
 - `this.bindings.key`, `this.$.key`, and `this.bind('key')` expose stable, per-instance JSX bindings for reactive members.
 - A binding such as `this.$.data.position` follows changes to a `createStore(...)` path and replacement of `data`.
 - If `render()` is omitted, authored light-DOM children pass through unchanged. Copy fields onto that DOM with `@bindTo(...)`.
@@ -53,10 +53,10 @@ Application code does not need to import JSX helpers or Signals primitives direc
 The key distinction is this:
 
 - Use `@bindTo` when the host keeps authored DOM and a field should appear as an attribute, property, or text.
-- Use bindings such as `this.$.count` when the host owns `render()`, the shape of the view stays the same, and only child values need to change.
-- Use `update()` or `requestUpdate()` when a reactive change affects the structure of the JSX tree.
+- Use bindings such as `this.$.count` when the host owns `render()`, the shape of the view stays the same, and only text, attribute, or child-value positions need to change.
+- Read a reactive value directly in `render()` when it affects the structure of the JSX tree; changes to that value schedule a rerender.
 
-Signal and store reads performed directly inside `render()` also participate in rerender invalidation, so shared reactive data can drive `RadiantElement` views without an extra wrapper layer.
+Signal reads and `createStore(...)` property reads performed directly inside `render()` also participate in rerender invalidation, so shared reactive data can drive `RadiantElement` views without an extra wrapper layer.
 
 ## Counter Example
 
@@ -109,29 +109,28 @@ How this works:
 - `@prop(...)` makes `label` part of the component's public reactive property and attribute surface.
 - `@state` is internal mutable state.
 - `this.$.label` and `this.$.count` are cached JSX bindings, so those text positions can update directly when the underlying reactive members change.
-- This example does not call `update()` because the view structure is stable. Only the bound child values change.
+- This example does not call `update()`: the bindings patch child values directly.
 - `JSX_PROPS` declares a public type that is narrower than the internal binding shape. That is usually the right split.
 
 If the same type truly represents both internal bindings and public JSX attributes, you can reuse it for both. Otherwise, keep those contracts separate.
 
 ### When To Call `update()`
 
-Call `update()` or `requestUpdate()` when a reactive change affects which elements should exist, not just their child values.
+A reactive value read directly in `render()` schedules a rerender when it changes, including when it controls which elements exist.
 
-```ts
-import { RadiantElement, onUpdated, state } from '@ecopages/radiant';
+```tsx
+import { RadiantElement, state } from '@ecopages/radiant';
 
-export class ResultsPanel extends RadiantElement<{ expanded: boolean }> {
+export class ResultsPanel extends RadiantElement {
 	@state expanded = false;
 
-	@onUpdated('expanded')
-	protected rerenderView(): void {
-		this.requestUpdate();
+	override render() {
+		return this.expanded ? <p>Results</p> : <p>Collapsed</p>;
 	}
 }
 ```
 
-Use `update()` when you want the rerender immediately. Use `requestUpdate()` when several changes may happen in the same turn and one final rerender is enough.
+Use `update()` for an immediate update or `requestUpdate()` for a scheduled one when the host must respond to a change outside the tracked reactive graph.
 
 ## Reactive JSX Bindings
 
@@ -155,7 +154,7 @@ Use bindings when:
 - only text, attribute, or child-value positions need to change
 - you want the renderer to patch the owned child range instead of rerunning the whole component view
 
-Use `@onUpdated(...)` with `update()` or `requestUpdate()` when the reactive change should rebuild the JSX tree.
+A direct reactive read in `render()` rebuilds the JSX tree when that value changes.
 
 ## SSR And Hydration
 
