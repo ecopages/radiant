@@ -10,6 +10,22 @@ The `@query` decorator provides a convenient way to query (and optionally cache)
 
 It works on both `RadiantElement` and `RadiantController`.
 
+## Selector forms
+
+`@query(selector)` returns the first element matching a CSS selector, or `null`. `@queryAll(selector)` returns every match in document order, `[]` when nothing matches. Both read live on every access (no cache), and both are unscoped: they reach into nested hosts.
+
+```typescript
+import { RadiantElement, customElement, query, queryAll } from '@ecopages/radiant';
+
+@customElement('user-profile')
+export class UserProfile extends RadiantElement {
+	@query('[data-ref="avatar"]') avatar!: HTMLImageElement | null;
+	@queryAll('.item') items!: HTMLElement[];
+}
+```
+
+Under standard decorators the field type is checked: `@query` needs a field that accepts `null`, and `@queryAll` needs an array of elements. The options-object form below is the older one and still works.
+
 ## Usage
 
 ```typescript

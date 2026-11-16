@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import { RadiantElement } from '../../src/core/radiant-element';
-import { createQuery } from '../../src/helpers/create-query';
+import { createQuery, createQueryAll } from '../../src/helpers/create-query';
 
 class QueryHelperElement extends RadiantElement {}
 customElements.define('query-helper-element', QueryHelperElement);
@@ -91,5 +91,25 @@ describe('createQuery', () => {
 
 		host.appendChild(createElementWithRef('Ref 3', 'my-ref'));
 		expect(accessor.value).toHaveLength(3);
+	});
+});
+
+describe('createQuery(target, selector) and createQueryAll', () => {
+	test('createQuery with a selector reads the first match live, or null', () => {
+		const host = createHost();
+		const accessor = createQuery(host, '.my-class');
+		expect(accessor.value?.textContent).toBe('Class 1');
+		expect(createQuery(host, '.missing').value).toBeNull();
+		accessor.value?.replaceWith(createElementWithClass('Swapped', 'my-class'));
+		expect(accessor.value?.textContent).toBe('Swapped');
+	});
+
+	test('createQueryAll reads every match in order, live', () => {
+		const host = createHost();
+		const accessor = createQueryAll(host, '.my-class');
+		expect(accessor.value.map((node) => node.textContent)).toEqual(['Class 1', 'Class 2', 'Class 3']);
+		host.appendChild(createElementWithClass('Class 4', 'my-class'));
+		expect(accessor.value).toHaveLength(4);
+		expect(createQueryAll(host, '.missing').value).toEqual([]);
 	});
 });

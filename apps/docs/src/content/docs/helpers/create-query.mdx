@@ -32,6 +32,19 @@ customElements.define('user-profile', UserProfile);
 
 The accessor returns an object with a `.value` getter. Each read of `.value` runs the query unless caching is enabled.
 
+## Selector forms
+
+`createQuery<T>(host, selector)` reads the first match or `null`, and `createQueryAll<T>(host, selector)` reads an array of every match in document order, `[]` when nothing matches. They are the functional equivalents of `@query(selector)` and `@queryAll(selector)`: live on every read, unscoped, no cache.
+
+```typescript
+import { createQuery, createQueryAll } from '@ecopages/radiant/helpers/create-query';
+
+const avatar = createQuery<HTMLImageElement>(host, '.avatar');
+const items = createQueryAll<HTMLElement>(host, '.item');
+```
+
+The options-object form below is the older one and still works.
+
 ## Parameters
 
 `createQuery<T>(host, options)` accepts:

@@ -18,8 +18,8 @@ import { consumeContext } from '../../src/context/decorators/consume-context';
 import { contextSelector } from '../../src/context/decorators/context-selector';
 import { provideContext } from '../../src/context/decorators/provide-context';
 import { event } from '../../src/decorators/event';
-import { query } from '../../src/decorators/query';
-import { createQuery } from '../../src/helpers/create-query';
+import { query, queryAll } from '../../src/decorators/query';
+import { createQuery, createQueryAll } from '../../src/helpers/create-query';
 import type { EventEmitter } from '../../src/tools/event-emitter';
 
 const ctxA = createContext<{ count: number }>('a');
@@ -29,7 +29,14 @@ declare const host: Element;
 export const item: HTMLLIElement | null = createQuery<HTMLLIElement>(host, { ref: 'r' }).value;
 export const items: HTMLLIElement[] = createQuery<HTMLLIElement>(host, { ref: 'r', all: true }).value;
 
+export const itemBySelector: HTMLLIElement | null = createQuery<HTMLLIElement>(host, 'li').value;
+export const itemsBySelector: HTMLLIElement[] = createQueryAll<HTMLLIElement>(host, 'li').value;
+
 export class ValidElementInstallers extends RadiantElement {
+	@query('.r') s1: HTMLElement | null;
+	@query<HTMLButtonElement>('button') s2!: HTMLButtonElement | null;
+	@queryAll('.r') s3: HTMLElement[];
+	@queryAll<HTMLLIElement>('li') s4!: HTMLLIElement[];
 	@query({ ref: 'r' }) q1: HTMLElement | null;
 	@query({ ref: 'r' }) q2!: HTMLButtonElement | null;
 	@query({ selector: '.r' }) q3: Element | null;
