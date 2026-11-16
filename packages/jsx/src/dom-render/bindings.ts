@@ -92,6 +92,7 @@ function applyAttributeBinding(
 	updatePreviousValue(livePart, cachedValue);
 }
 
+/** @remarks Read the live attribute so a render restores the authored value or absence after external changes. */
 function applyBooleanBinding(
 	element: Element,
 	name: string,
@@ -99,8 +100,10 @@ function applyBooleanBinding(
 	livePart: LiveAttributePart | undefined,
 ): void {
 	const text = resolveAttributeText(name, value, true);
-	if (text === undefined) element.removeAttribute(name);
-	else element.setAttribute(name, text);
+	if (getElementAttributeValue(element, name) !== (text ?? null)) {
+		if (text === undefined) removeElementAttribute(element, name);
+		else setElementAttributeValue(element, name, text);
+	}
 	updatePreviousValue(livePart, value);
 }
 
