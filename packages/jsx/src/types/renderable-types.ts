@@ -167,12 +167,12 @@ export interface SubscribableJsxValue<Value extends JsxBindingSourceValue = JsxR
 
 /**
  * Maps a binding value to a subscribable per member key. For object-like values
- * this is the type behind ergonomic member access (`value.key`); the runtime
- * Proxy in `createSubscribableJsxValue` provides the matching behavior.
+ * this is the type behind ergonomic member access (`value.key`). JSX derives
+ * each member from its source and updates it when that source notifies.
  */
 type SubscribableMemberAccess<Value> = Value extends object
 	? {
-			readonly [K in keyof Value]: SubscribableJsxValue<Extract<Value[K], JsxRenderable>>;
+			readonly [K in keyof Value]: SubscribableJsxValueWithAccess<Extract<Value[K], JsxBindingSourceValue>>;
 		}
 	: Record<string, never>;
 

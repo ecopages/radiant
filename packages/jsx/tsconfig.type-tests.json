@@ -15,6 +15,7 @@
 		"./test/types/style-value.ts",
 		"./test/types/boolean-attributes.tsx",
 		"./test/types/map-items.tsx",
-		"./test/types/class-value.tsx"
+		"./test/types/class-value.tsx",
+		"./test/types/nested-bindings.tsx"
 	]
 }

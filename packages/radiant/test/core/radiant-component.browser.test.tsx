@@ -156,6 +156,39 @@ describe('RadiantElement', () => {
 		});
 	});
 
+	test('store path bindings update for writes and replacement without rerendering', async () => {
+		type Store = { position?: number; nested: { label: string } };
+		class StoreBindingCard extends RadiantElement<{ data: Store }> {
+			@state data: Store = createStore({ nested: { label: 'track' } });
+			renders = 0;
+			override render() {
+				this.renders += 1;
+				return (
+					<p>
+						{this.$.data.position} {this.$.data.nested.label}{' '}
+						<span>{this.$.data.map((data) => data.nested.label)}</span>
+					</p>
+				);
+			}
+		}
+		customElements.define('store-binding-card-test', StoreBindingCard);
+		const element = createCustomElement<StoreBindingCard>('store-binding-card-test');
+		document.body.appendChild(element);
+		await waitFor(() => expect(element.textContent).toBe(' track track'));
+		expect(element.renders).toBe(1);
+		element.data.position = 2;
+		await waitFor(() => expect(element.textContent).toBe('2 track track'));
+		delete element.data.position;
+		await waitFor(() => expect(element.textContent).toBe(' track track'));
+		element.data.position = 3;
+		await waitFor(() => expect(element.textContent).toBe('3 track track'));
+		element.data.nested.label = 'updated';
+		await waitFor(() => expect(element.textContent).toBe('3 updated updated'));
+		element.data = createStore({ position: 4, nested: { label: 'new' } });
+		await waitFor(() => expect(element.textContent).toBe('4 new new'));
+		expect(element.renders).toBe(1);
+	});
+
 	test('rerenders when render() reads shared signals and stores directly', async () => {
 		const sharedCount = createSignalState(1);
 		const sharedStore = createStore({ status: 'idle' });
