@@ -1,5 +1,15 @@
 # @ecopages/vite-plugin-radiant
 
+## 0.2.3
+
+### Patch Changes
+
+- [#738](https://github.com/ecopages/radiant/pull/738) [`d787d54`](https://github.com/ecopages/radiant/commit/d787d54d9dd244280f6b2123cf57a1d2c54bacbd) Thanks [@andeeplus](https://github.com/andeeplus)! - Published type declarations now use explicit file extensions on relative imports, so TypeScript projects on `moduleResolution` `node16` or `nodenext` resolve the packages' types.
+- Updated dependencies [[`a5aca39`](https://github.com/ecopages/radiant/commit/a5aca39abf138870d9642d7b1996d5c2fca643d1), [`075da44`](https://github.com/ecopages/radiant/commit/075da444e9d2d903b2100f99cc294c27cc0e5d1b), [`d787d54`](https://github.com/ecopages/radiant/commit/d787d54d9dd244280f6b2123cf57a1d2c54bacbd), [`4bfd993`](https://github.com/ecopages/radiant/commit/4bfd993d735b3f29aeb4fe37840ba01a174954b0), [`cb85c93`](https://github.com/ecopages/radiant/commit/cb85c93eac1732f30f82c4b5cb83d56e187bb8a0), [`ed3c7f0`](https://github.com/ecopages/radiant/commit/ed3c7f0f2718ae26cf32403333a0bf129587ed32), [`c8239ff`](https://github.com/ecopages/radiant/commit/c8239ff1b73b5fa740b8cdf6479c3af6259a71ab), [`175124f`](https://github.com/ecopages/radiant/commit/175124f3c59a0cb12caa0f35d9d4ae5b9588aa79), [`1052bcc`](https://github.com/ecopages/radiant/commit/1052bcc9312db7490ee264f5ca303a4c6912044a), [`45d2dbb`](https://github.com/ecopages/radiant/commit/45d2dbbad4e2c4c7028afd74d4edfac7e03df8a4)]:
+    - @ecopages/jsx@0.10.0
+    - @ecopages/radiant@0.10.0
+    - @ecopages/signals@0.10.0
+
 ## 0.2.2
 
 ### Patch Changes

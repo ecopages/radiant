@@ -1,5 +1,0 @@
----
-'@ecopages/radiant-ui': patch
----
-
-Animate the `rui-sidebar` mobile drawer. The pane now keeps a fixed width and slides in from its edge with `transform` (300ms decelerating in, 200ms accelerating out, from `--duration-slow`, `--duration-normal`, `--ease-out` and the new `--ease-in` token) instead of animating its width, and the scrim fades with it. The drawer stays visible until the slide-out ends, with pointer events off and the pane `inert` from the moment it closes, and a toggle mid-transition reverses from the current position. Under `prefers-reduced-motion` the pane and scrim cross-fade instead of sliding, and nothing animates on first paint or when the viewport crosses the breakpoint. The scrim is no longer toggled with the `hidden` attribute (custom `data-ref="scrim"` markup should drop `hidden`; CSS shows it only on mobile), and the mobile pane keeps `box-shadow` in both states (the closed drawer is `visibility: hidden`), so a `sidebar.docs.css`-style override should target the pane without a `data-state` selector. Style the timing through `--rui-sidebar-enter` and `--rui-sidebar-exit`.
