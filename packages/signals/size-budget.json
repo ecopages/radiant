@@ -3,8 +3,8 @@
 		{
 			"label": "index",
 			"entrypoint": "./index.ts",
-			"maxBytes": 12160,
-			"maxGzipBytes": 3968
+			"maxBytes": 13568,
+			"maxGzipBytes": 4352
 		}
 	]
 }

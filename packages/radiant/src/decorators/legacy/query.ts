@@ -1,25 +1,13 @@
-import { createQuery } from '../../helpers/create-query';
 import type { QueryConfig } from '../query';
-import { registerLegacyInstanceInitializer } from './instance-initializers';
+import { installQueryField, type QueryDecoratorHost } from '../shared/query';
+import { registerLegacyPostConstructionInitializer } from './instance-initializers';
 
-export type QueryDecoratorHost = (Element | { host: Element }) & {
-	registerConnectedCallback(callback: () => void): void;
-};
+export type { QueryDecoratorHost };
 
 export function query(options: QueryConfig): (proto: QueryDecoratorHost, propertyName: string | symbol) => void {
 	return (proto: QueryDecoratorHost, propertyKey: string | symbol) => {
-		registerLegacyInstanceInitializer(proto, (element) => {
-			element.registerConnectedCallback(() => {
-				const accessor = createQuery(element, options);
-
-				Object.defineProperty(element, propertyKey, {
-					get() {
-						return accessor.value;
-					},
-					enumerable: true,
-					configurable: true,
-				});
-			});
+		registerLegacyPostConstructionInitializer(proto, (element) => {
+			installQueryField(element, propertyKey, options);
 		});
 	};
 }

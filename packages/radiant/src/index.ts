@@ -25,7 +25,7 @@ export {
 	type ResourceRequestContext,
 } from './signals/host-resource';
 export type { BoundedFieldDecorator, ValueFieldDecorator } from './decorators/bridge';
-export type { QueryDecoratorHost } from './decorators/legacy/query';
+export type { QueryDecoratorHost } from './decorators/shared/query';
 export type { BindToHost } from './decorators/shared/bind-to';
 export type { ReactiveAttributeHostLike } from './decorators/shared/reactive-attr';
 export type { ReactivePropHost } from './decorators/standard/reactive-prop';

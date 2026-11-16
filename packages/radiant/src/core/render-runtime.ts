@@ -1,12 +1,7 @@
 import { hasHydrationMarkers, hydrate as hydrateJsx, render as renderJsx, type JsxRenderable } from '@ecopages/jsx';
 import { isMinimalDomElement } from './minimal-dom-identity';
 import { areJsxDevWarningsEnabled } from '../helpers/dev-warnings';
-import {
-	createReactiveComputed,
-	createReactiveWatcher,
-	type ReactiveComputed,
-	type ReactiveWatcher,
-} from './reactivity-adapter';
+import { TrackedRender } from './tracked-render';
 import {
 	captureSlottedNodes,
 	collectAuthoredHydrationScriptMarkup,
@@ -35,15 +30,12 @@ export class RenderRuntime {
 	#hasViewSlotted = false;
 	#capturedSlotted = false;
 	#slottedBounds?: [Text, Text];
-	#renderSignal?: ReactiveComputed<JsxRenderable>;
-	readonly #renderWatcher: ReactiveWatcher;
+	readonly #trackedRender: TrackedRender<JsxRenderable>;
 	#hasMounted = false;
 
 	constructor(host: RenderRuntimeHost) {
 		this.#host = host;
-		this.#renderWatcher = createReactiveWatcher(() => {
-			this.#host.requestUpdate();
-		});
+		this.#trackedRender = new TrackedRender(() => this.#host.requestUpdate());
 	}
 
 	/**
@@ -130,13 +122,12 @@ export class RenderRuntime {
 		this.#slotted = value;
 	}
 
-	disconnectRenderWatcher(): void {
-		if (!this.#renderSignal) {
-			return;
-		}
+	reconnectRenderWatcher(): void {
+		this.#trackedRender.reconnect();
+	}
 
-		this.#renderWatcher.unwatch(this.#renderSignal);
-		this.#renderSignal = undefined;
+	disconnectRenderWatcher(): void {
+		this.#trackedRender.disconnect();
 	}
 
 	/**
@@ -146,20 +137,10 @@ export class RenderRuntime {
 	 */
 	resolveTrackedRenderOutput(projectForeign?: ForeignSlottedProjector): { value: JsxRenderable } {
 		this.ensureSlotted();
-		const nextRenderSignal = createReactiveComputed(() => {
-			const value = this.#host.render();
-			return projectForeign ? projectForeignSlotted(value, this.getSlotted(), projectForeign) : value;
-		});
-		const value = nextRenderSignal.get();
-
-		if (this.#host.isConnected) {
-			if (this.#renderSignal) {
-				this.#renderWatcher.unwatch(this.#renderSignal);
-			}
-
-			this.#renderSignal = nextRenderSignal;
-			this.#renderWatcher.watch(nextRenderSignal);
-		}
+		const value = this.#trackedRender.evaluate(() => {
+			const output = this.#host.render();
+			return projectForeign ? projectForeignSlotted(output, this.getSlotted(), projectForeign) : output;
+		}, this.#host.isConnected);
 
 		return { value };
 	}

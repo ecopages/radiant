@@ -397,6 +397,8 @@ export class RadiantElement<Bindings extends object = {}>
 					}
 				} else if (!this.isReconnectWithCapturedSlotted(renderRuntime)) {
 					this.update();
+				} else {
+					renderRuntime.reconnectRenderWatcher();
 				}
 			}
 

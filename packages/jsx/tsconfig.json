@@ -27,5 +27,11 @@
 
 		"types": ["node"]
 	},
-	"exclude": ["dist", "node_modules", "./test/types/custom-element-class.tsx", "./test/types/map-items.tsx"]
+	"exclude": [
+		"dist",
+		"node_modules",
+		"./test/types/custom-element-class.tsx",
+		"./test/types/map-items.tsx",
+		"./test/types/nested-bindings.tsx"
+	]
 }

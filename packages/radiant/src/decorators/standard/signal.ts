@@ -1,7 +1,6 @@
 import type { WritableSignal } from '@ecopages/signals';
-import { REACTIVE_HOST, type ReactiveHostLike } from '../../core/reactive-host';
-import { warnDiscardedPreUpgradeValue } from '../shared/pre-upgrade-warning';
-import { createHostSignal, isWritableSignalLike } from '../../signals/host-signal';
+import type { ReactiveHostLike } from '../../core/reactive-host';
+import { installHostSignal } from '../shared/signal';
 import type { SignalDecoratorOptions } from '../shared/signal-options';
 
 export function signal<Value = unknown>(options: SignalDecoratorOptions<Value> = {}) {
@@ -12,39 +11,7 @@ export function signal<Value = unknown>(options: SignalDecoratorOptions<Value> =
 		const propertyName = String(context.name);
 
 		return function (this: T, initialValue: Value | WritableSignal<Value>): WritableSignal<Value> {
-			const resolvedSource =
-				typeof options.source === 'function'
-					? options.source(this)
-					: (options.source ?? (isWritableSignalLike<Value>(initialValue) ? initialValue : undefined));
-			const resolvedInitialValue =
-				resolvedSource !== undefined
-					? options.initial
-					: ((initialValue === undefined ? options.initial : initialValue) as Value);
-
-			warnDiscardedPreUpgradeValue(this, propertyName, '@signal');
-
-			const hostSignal = createHostSignal({
-				host: this,
-				hydrate: options.hydrate,
-				hydrationKey: propertyName,
-				initialValue: resolvedInitialValue,
-				property: propertyName,
-				source: resolvedSource,
-			});
-
-			this.registerConnectedCallback(() => {
-				hostSignal.hydrateFromHost();
-				hostSignal.connectToSource();
-			});
-			this.registerCleanupCallback(() => {
-				hostSignal.disconnectFromSource();
-			});
-
-			if (options.hydrate) {
-				this[REACTIVE_HOST].ssrRegistry.registerHydrationBinding(propertyName, hostSignal);
-			}
-
-			return hostSignal;
+			return installHostSignal(this, propertyName, options, initialValue);
 		};
 	};
 }

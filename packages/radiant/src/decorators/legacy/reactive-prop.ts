@@ -77,7 +77,9 @@ export function reactiveProp<T = unknown>(propOptions: ReactivePropertyOptions<T
 				reflect,
 				attribute: attributeKey ?? false,
 				transform,
-				...((hasDefaultValue || resolvedDefaultValue !== undefined) && { defaultValue: resolvedDefaultValue }),
+				...((hasDefaultValue || resolvedDefaultValue !== undefined) && {
+					defaultValue: resolvedDefaultValue,
+				}),
 			});
 		});
 	};

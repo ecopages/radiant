@@ -1,6 +1,7 @@
 # Radiant Core
 
-Reactive members expose JSX bindings through `this.$`, `this.bindings`, and `this.bind(...)` on each host instance.
+Reactive members expose JSX bindings through `this.$`, `this.bindings`, and `this.bind(...)` on each host instance. Element and Controller Hosts share the same tracked-render implementation.
+Member access on a binding follows `createStore(...)` path writes and replacement of the host member. A plain object member updates nested bindings when the member is replaced.
 
 Reflected properties serialize the current member state on each write. A reflected attribute change is not fed back into the property: setting a string property to `''`, or an array transform to a value that omits the attribute, keeps the assigned property value. A synchronous callback (`@bindTo`, `registerUpdateCallback`) that normalizes an assignment is reflected too. `@onUpdated` does not run at that moment; it waits for the update cycle.
 

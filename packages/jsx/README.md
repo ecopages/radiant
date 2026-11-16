@@ -388,6 +388,8 @@ for (const subscriber of subscribers) {
 
 That contract is intentionally small. The package does not impose a single state container, computed graph, or scheduler. It just gives the renderer a stable subscription surface for either signal-like values or explicit subscribable wrappers.
 
+Object-valued bindings expose typed nested members such as `binding.profile.name`. A member binding projects its source and updates when the source notifies. Mutating a nested plain object alone does not notify it.
+
 Arrays and other iterables render as a list of children. A generator, or any other one-shot iterator, is consumed once for that iterator object; the runtime reuses that snapshot while the object remains reachable, including across later renders. JSX `children` normalization consumes the iterator when the element is created, so pass a new iterator to each `jsx()` call if those children should be yielded again.
 
 ## Empty Values And Removal
@@ -950,6 +952,7 @@ Key types:
 - `JSX_PROPS` (type-only; import with `import type`)
 - `JsxPublicProps`
 - `SubscribableJsxValue`
+- `SubscribableJsxValueWithAccess`
 - `TemplateResultLike`
 
 The automatic development runtime also exports `jsxDEV` from `@ecopages/jsx/jsx-dev-runtime`. It passes static children (the ones the production transform hands to `jsxs`) to `jsxs`, so development and production builds give the same template shape, and it warns about `className` on a native element. The `jsxDEV` from `@ecopages/jsx/jsx-runtime` and the package root does not warn.

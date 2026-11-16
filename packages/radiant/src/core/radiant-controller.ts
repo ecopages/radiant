@@ -1,5 +1,5 @@
 import { render as renderJsx, type JsxRenderable, type SubscribableJsxValueWithAccess } from '@ecopages/jsx';
-import { createReactiveComputed, createReactiveWatcher, type ReactiveComputed } from './reactivity-adapter';
+import { TrackedRender } from './tracked-render';
 import type { UnknownContext } from '../context/types';
 import { ensureLegacyHostReady } from '../decorators/legacy/host-readiness';
 import { REACTIVE_HOST, ReactiveHost, type ReactiveHostInternals, type ReactiveHostLike } from './reactive-host';
@@ -40,10 +40,7 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 	private connected = false;
 	private readonly updateCycle: UpdateCycle;
 	private isSsrLifecycle = false;
-	private renderSignal?: ReactiveComputed<JsxRenderable>;
-	private readonly renderWatcher = createReactiveWatcher(() => {
-		this.requestUpdate();
-	});
+	private readonly trackedRender = new TrackedRender<JsxRenderable>(() => this.requestUpdate());
 
 	constructor(host: Element) {
 		this.host = host;
@@ -306,29 +303,11 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 	}
 
 	private disconnectRenderWatcher(): void {
-		if (!this.renderSignal) {
-			return;
-		}
-
-		this.renderWatcher.unwatch(this.renderSignal);
-		this.renderSignal = undefined;
+		this.trackedRender.disconnect();
 	}
 
 	private resolveTrackedRenderOutput(): JsxRenderable {
-		const nextRenderSignal = createReactiveComputed(() => this.render());
-		const output = nextRenderSignal.get();
-
-		if (!this.connected) {
-			return output;
-		}
-
-		if (this.renderSignal) {
-			this.renderWatcher.unwatch(this.renderSignal);
-		}
-
-		this.renderSignal = nextRenderSignal;
-		this.renderWatcher.watch(nextRenderSignal);
-		return output;
+		return this.trackedRender.evaluate(() => this.render(), this.connected);
 	}
 }
 

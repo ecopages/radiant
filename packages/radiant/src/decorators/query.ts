@@ -1,7 +1,10 @@
 import type { QueryConfig } from '../helpers/create-query';
-import { query as legacyQuery, type QueryDecoratorHost } from './legacy/query';
+import { query as legacyQuery } from './legacy/query';
 import { query as standardQuery } from './standard/query';
 import { fieldDecorator, type ValueFieldDecorator } from './bridge';
+import type { QueryDecoratorHost } from './shared/query';
+
+export type { QueryDecoratorHost };
 
 export type { QueryConfig };
 

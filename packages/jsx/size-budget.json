@@ -3,26 +3,26 @@
 		{
 			"label": "client",
 			"entrypoint": "./src/client.ts",
-			"maxBytes": 44736,
-			"maxGzipBytes": 14592
+			"maxBytes": 45760,
+			"maxGzipBytes": 15104
 		},
 		{
 			"label": "index",
 			"entrypoint": "./src/index.ts",
-			"maxBytes": 44928,
-			"maxGzipBytes": 14752
+			"maxBytes": 45952,
+			"maxGzipBytes": 15264
 		},
 		{
 			"label": "jsx-runtime",
 			"entrypoint": "./src/jsx-runtime.ts",
-			"maxBytes": 13536,
-			"maxGzipBytes": 5120
+			"maxBytes": 14560,
+			"maxGzipBytes": 5632
 		},
 		{
 			"label": "jsx-dev-runtime",
 			"entrypoint": "./src/jsx-dev-runtime.ts",
-			"maxBytes": 10600,
-			"maxGzipBytes": 3904
+			"maxBytes": 11624,
+			"maxGzipBytes": 4416
 		}
 	]
 }

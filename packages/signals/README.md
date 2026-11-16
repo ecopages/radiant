@@ -80,7 +80,7 @@ It is best understood as proposal-aligned in its core semantics, but not yet ful
 - `subscribe(...)` is intended for adapter-style push integration. Application-level derived work is usually better expressed with `Computed`, `effect(...)`, or `watch(...)`.
 - `watch(...)` is built on top of a computed signal plus an effect, so it inherits computed equality behavior and effect scheduling. It notifies on change, not per flush: a set followed by a set-back before the scheduler runs does not notify, and `previousValue` is the last value delivered.
 - `subtle.Watcher` reports staleness rather than recalculated values. Calling `watch(...)` is both registration and reset.
-- `createStore(...)` wraps nested plain objects and arrays, while `snapshot(...)` detaches the current plain value graph for logging, serialization, or comparison.
+- `createStore(...)` wraps nested plain objects and arrays, while `snapshot(...)` detaches the current plain value graph for logging, serialization, or comparison. Assigning a plain object to an existing plain-object branch updates that branch in place and notifies readers after the replacement is complete; unchanged values do not notify. Arrays and non-plain values are replaced.
 - Reads of missing store keys track changes to the object's shape, so adding a key updates computed values and effects that read it.
 - `mapItems(source, project, options?)` keeps each item's result by item identity, so only new items are projected and the others keep the same result object. `project` runs untracked, so a result that reads its item's signals does not re-map the list. A renderer such as `@ecopages/jsx` skips rows whose value is unchanged; JSX users can use `<MapItems each={list}>` instead.
 
@@ -116,7 +116,7 @@ This implementation is still smaller than the current TC39 proposal draft.
 
 - no full TC39 `Watcher` and subtle semantics surface yet
 - no full proposal-style subtle introspection helpers yet
-- no batching or transaction model
+- no public batching or transaction API
 - no framework-owned disposal tree or component ownership integration yet
 
 Those omissions are deliberate. The goal is to keep a small, useful standalone package while leaving room to align further as the proposal evolves.

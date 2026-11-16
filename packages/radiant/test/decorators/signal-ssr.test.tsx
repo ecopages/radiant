@@ -4,11 +4,7 @@ import { describe, expect, test } from 'vitest';
 import { renderRadiantElementHostToString } from '../../src/server/radiant-element-ssr';
 import { SignalComponent } from '../fixtures/signal-component';
 
-declare const __LEGACY_ENVIRONMENT__: boolean;
-
-const describeWhenStandard = __LEGACY_ENVIRONMENT__ ? describe.skip : describe;
-
-describeWhenStandard('pre-connect signal and SSR', () => {
+describe('pre-connect signal and SSR', () => {
 	test('supports pre-connect signal reads and writes for host rendering', () => {
 		const element = new SignalComponent();
 

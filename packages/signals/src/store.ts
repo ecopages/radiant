@@ -1,6 +1,13 @@
-import { State } from './state';
+import { batchStoreWrites, deferStoreNotification } from './runtime';
+import { State, STATE_NOTIFY } from './state';
 import { peek } from './tracking';
 import type { SignalStore } from './types';
+
+class StoreState<Value> extends State<Value> {
+	protected override [STATE_NOTIFY](): void {
+		if (!deferStoreNotification(this, () => super[STATE_NOTIFY]())) super[STATE_NOTIFY]();
+	}
+}
 
 const STORE_BRANCH_SYMBOL = Symbol.for('@ecopages/signals.store-branch');
 const STORE_ABSENT = Symbol.for('@ecopages/signals.store-absent');
@@ -81,13 +88,13 @@ function createStoreNode<Value extends object>(initialValue: Value): StoreNode<V
 	const node: StoreNode<Value> = {
 		entries: new Map(),
 		proxy: undefined as unknown as Value,
-		shape: new State(0),
+		shape: new StoreState(0),
 		target,
 		valueType,
 	};
 
 	for (const key of Reflect.ownKeys(initialValue)) {
-		const entry = new State<StoreEntryValue>(
+		const entry = new StoreState<StoreEntryValue>(
 			createStoreEntryValue((initialValue as Record<PropertyKey, unknown>)[key]),
 		);
 		node.entries.set(key, entry);
@@ -175,7 +182,12 @@ function getStoreNode(value: object): StoreNode<object> {
 	return node;
 }
 
-function applyStoreSet<Value extends object>(node: StoreNode<Value>, key: PropertyKey, value: unknown): boolean {
+function applyStoreSet<Value extends object>(
+	node: StoreNode<Value>,
+	key: PropertyKey,
+	value: unknown,
+	detached = false,
+): boolean {
 	if (node.valueType === 'array' && key === 'length') {
 		return setStoreArrayLength(node as StoreNode<any[]>, value);
 	}
@@ -183,7 +195,19 @@ function applyStoreSet<Value extends object>(node: StoreNode<Value>, key: Proper
 	const entry = ensureStoreEntry(node, key);
 	const hadOwn = hasOwnProperty.call(node.target, key);
 	const previousLength = node.valueType === 'array' ? (node.target as unknown as any[]).length : undefined;
-	const nextEntryValue = createStoreEntryValue(value);
+	const current = peek(entry);
+	const normalized = isStore(value) ? snapshot(value) : value;
+	if (
+		isStoreBranch(current) &&
+		current.node.valueType === 'object' &&
+		isStoreBranchValue(normalized) &&
+		!Array.isArray(normalized)
+	) {
+		const next = detached ? normalized : snapshotNestedValue(normalized);
+		batchStoreWrites(() => reconcileStoreNode(current.node, next));
+		return true;
+	}
+	const nextEntryValue = createStoreEntryValue(normalized);
 	entry.set(nextEntryValue);
 	Reflect.set(node.target as object, key, unwrapStoreEntryValue(nextEntryValue));
 
@@ -200,6 +224,15 @@ function applyStoreSet<Value extends object>(node: StoreNode<Value>, key: Proper
 	}
 
 	return true;
+}
+
+function reconcileStoreNode(node: StoreNode<object>, next: object): void {
+	for (const key of Reflect.ownKeys(node.target)) {
+		if (!hasOwnProperty.call(next, key)) deleteStoreProperty(node, key);
+	}
+	for (const key of Reflect.ownKeys(next)) {
+		applyStoreSet(node, key, (next as Record<PropertyKey, unknown>)[key], true);
+	}
 }
 
 function deleteStoreProperty<Value extends object>(node: StoreNode<Value>, key: PropertyKey): boolean {
@@ -221,7 +254,7 @@ function ensureStoreEntry<Value extends object>(node: StoreNode<Value>, key: Pro
 	let entry = node.entries.get(key);
 
 	if (!entry) {
-		entry = new State<StoreEntryValue>(STORE_ABSENT);
+		entry = new StoreState<StoreEntryValue>(STORE_ABSENT);
 		node.entries.set(key, entry);
 	}
 
@@ -271,12 +304,12 @@ function setStoreArrayLength(node: StoreNode<any[]>, value: unknown): boolean {
 }
 
 function snapshotNestedValue<Value>(value: Value): Value {
-	if (Array.isArray(value)) {
-		return value.map((item) => snapshotNestedValue(item)) as Value;
-	}
-
 	if (isStore(value)) {
 		return snapshot(value);
+	}
+
+	if (Array.isArray(value)) {
+		return value.map((item) => snapshotNestedValue(item)) as Value;
 	}
 
 	if (isStoreBranchValue(value)) {
