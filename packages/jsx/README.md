@@ -400,6 +400,7 @@ Use this rule of thumb:
 - `null` and `undefined` remove normal attributes; `false` on a normal attribute such as `aria-expanded` or `data-open` is written as `"false"`, on the server and on the client
 - `false` removes boolean attributes such as `hidden` or `disabled`, whatever the binding's first value, and under `attr:` too
 - `bool:name` binds any attribute by presence: `true` writes it empty; `false`, `null`, `undefined` and `''` remove it; a non-empty string is written as given
+- a later client render of a boolean or `bool:` binding leaves the live attribute alone when it matches the binding and restores the authored value or absence when it differs
 - `null` removes delegated and native event handlers by omitting the next listener
 - an existing deferred property binding can be cleared by writing `undefined`; a plain `undefined` part is omitted during normalization
 

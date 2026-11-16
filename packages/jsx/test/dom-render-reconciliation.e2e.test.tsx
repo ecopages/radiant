@@ -2622,6 +2622,40 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(mutations.find((mutation) => mutation.type === 'characterData')?.oldValue).toBe('3');
 	});
 
+	test('unchanged boolean bindings do not rewrite attributes and restore external changes', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const render = () => root.render(jsx('input', { required: true, 'bool:inert': false }));
+		render();
+		const input = container.querySelector('input')!;
+		const observer = new MutationObserver(() => {});
+		observer.observe(input, { attributes: true });
+		render();
+		expect(observer.takeRecords()).toHaveLength(0);
+		input.removeAttribute('required');
+		input.setAttribute('inert', '');
+		observer.takeRecords();
+		render();
+		expect(input.hasAttribute('required')).toBe(true);
+		expect(input.hasAttribute('inert')).toBe(false);
+		expect(observer.takeRecords()).toHaveLength(2);
+		observer.disconnect();
+	});
+
+	test('boolean bindings update namespaced attributes', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const render = (enabled: boolean) =>
+			root.render(jsx('svg', { children: jsx('use', { 'bool:xlink:href': enabled }) }));
+		render(true);
+		const use = container.querySelector('use')!;
+		expect(use.getAttributeNS('http://www.w3.org/1999/xlink', 'href')).toBe('');
+		render(false);
+		expect(use.hasAttributeNS('http://www.w3.org/1999/xlink', 'href')).toBe(false);
+	});
+
 	test('a boolean attribute whose signal starts undefined is absent for false and present for true', async () => {
 		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');
