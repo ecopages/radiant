@@ -57,27 +57,14 @@ export class Watcher {
 			}
 		}
 
-		const unsubscribers: (() => void)[] = [];
-
-		for (const signal of signals) {
-			const node = resolveSignalNode(signal);
-			const unsubscribe = this.unsubscribers.get(node);
-
-			if (unsubscribe) {
-				unsubscribers.push(unsubscribe);
-			}
-
-			this.pendingSignals.delete(node);
-			this.signals.delete(node);
-			this.unsubscribers.delete(node);
-		}
+		const errors = this.release(signals.map(resolveSignalNode));
 
 		if (this.signals.size === 0) {
 			this.pendingSignals.clear();
 			this.notified = false;
 		}
 
-		throwCollected(collectErrors(unsubscribers), 'Multiple unwatched hooks failed.');
+		throwCollected(errors, 'Multiple unwatched hooks failed.');
 	}
 
 	/**
@@ -115,7 +102,17 @@ export class Watcher {
 				);
 			}
 		} catch (error) {
-			const rollback = added.reverse().map((node) => {
+			this.release(added.reverse());
+			throw error;
+		}
+
+		this.pendingSignals.clear();
+		this.notified = false;
+	}
+
+	private release(nodes: WatchableSignal[]): unknown[] {
+		return collectErrors(
+			nodes.map((node) => {
 				const unsubscribe = this.unsubscribers.get(node);
 
 				this.pendingSignals.delete(node);
@@ -123,14 +120,8 @@ export class Watcher {
 				this.unsubscribers.delete(node);
 
 				return () => unsubscribe?.();
-			});
-
-			collectErrors(rollback);
-			throw error;
-		}
-
-		this.pendingSignals.clear();
-		this.notified = false;
+			}),
+		);
 	}
 
 	private handleSignalChange(node: WatchableSignal): void {

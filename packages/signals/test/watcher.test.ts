@@ -156,6 +156,7 @@ describe('Watcher', () => {
 			'secondary:unwatched',
 		]);
 	});
+
 	describe('a throwing watched hook', () => {
 		const boom = new Error('watched failed');
 
@@ -343,6 +344,123 @@ describe('Watcher', () => {
 				expect(error).toBeInstanceOf(AggregateError);
 				expect((error as AggregateError).errors).toEqual([first, second]);
 			}
+		});
+	});
+
+	describe('release details', () => {
+		const hooks = (name: string, events: string[], options: { watched?: Error; unwatched?: Error } = {}) =>
+			new State(0, {
+				[subtle.watched]() {
+					events.push(`${name}:watched`);
+
+					if (options.watched) {
+						throw options.watched;
+					}
+				},
+				[subtle.unwatched]() {
+					events.push(`${name}:unwatched`);
+
+					if (options.unwatched) {
+						throw options.unwatched;
+					}
+				},
+			});
+
+		test('releases the dependencies a computed watched in reverse order', () => {
+			const events: string[] = [];
+			const a = hooks('a', events);
+			const b = hooks('b', events);
+			const c = hooks('c', events, { watched: new Error('c') });
+			const derived = new Computed(() => a.get() + b.get() + c.get());
+			const watcher = new subtle.Watcher(() => undefined);
+
+			expect(() => watcher.watch(derived)).toThrow('c');
+			expect(events).toEqual(['a:watched', 'b:watched', 'c:watched', 'b:unwatched', 'a:unwatched']);
+		});
+
+		test('keeps pending signals and the notification latch when a watch fails', () => {
+			const events: string[] = [];
+			const first = hooks('first', events);
+			const failing = hooks('failing', events, { watched: new Error('x') });
+			const notifications: number[] = [];
+			const watcher = new subtle.Watcher(() => {
+				notifications.push(1);
+			});
+
+			watcher.watch(first);
+			first.set(1);
+			expect(() => watcher.watch(failing)).toThrow('x');
+			first.set(2);
+
+			expect(watcher.getPending()).toEqual([first]);
+			expect(notifications).toHaveLength(1);
+			expect(failing.getWatcherCount()).toBe(0);
+		});
+
+		test('drops errors thrown while rolling back in favor of the watched error', () => {
+			const events: string[] = [];
+			const watchedError = new Error('watched');
+			const earlier = hooks('earlier', events, { unwatched: new Error('unwatched') });
+			const failing = hooks('failing', events, { watched: watchedError });
+			const watcher = new subtle.Watcher(() => undefined);
+
+			expect(() => watcher.watch(earlier, failing)).toThrow(watchedError);
+			expect(earlier.getWatcherCount()).toBe(0);
+		});
+
+		test('reports every failing unwatched hook of a computed and its dependencies', () => {
+			const events: string[] = [];
+			const e1 = new Error('dep1');
+			const e2 = new Error('dep2');
+			const e3 = new Error('own');
+			const dep1 = hooks('dep1', events, { unwatched: e1 });
+			const dep2 = hooks('dep2', events, { unwatched: e2 });
+			const derived = new Computed(() => dep1.get() + dep2.get(), {
+				[subtle.unwatched]() {
+					events.push('own:unwatched');
+					throw e3;
+				},
+			});
+			const watcher = new subtle.Watcher(() => undefined);
+
+			watcher.watch(derived);
+
+			try {
+				watcher.unwatch(derived);
+				expect.unreachable();
+			} catch (error) {
+				expect(error).toBeInstanceOf(AggregateError);
+				const [inner, own] = (error as AggregateError).errors;
+
+				expect(inner).toBeInstanceOf(AggregateError);
+				expect((inner as AggregateError).errors).toEqual([e1, e2]);
+				expect(own).toBe(e3);
+			}
+
+			expect(events).toContain('own:unwatched');
+			expect(dep1.getWatcherCount()).toBe(0);
+			expect(dep2.getWatcherCount()).toBe(0);
+
+			watcher.watch(derived);
+			expect(dep1.getWatcherCount()).toBe(1);
+		});
+
+		test('releases a dropped dependency and watches the new one before rethrowing', () => {
+			const events: string[] = [];
+			const boom = new Error('dropped');
+			const flag = new State(true);
+			const a = hooks('a', events, { unwatched: boom });
+			const b = hooks('b', events);
+			const derived = new Computed(() => (flag.get() ? a.get() : b.get()));
+			const watcher = new subtle.Watcher(() => undefined);
+
+			watcher.watch(derived);
+			flag.set(false);
+
+			expect(() => derived.get()).toThrow(boom);
+			expect(a.getWatcherCount()).toBe(0);
+			expect(b.getWatcherCount()).toBe(1);
+			expect(derived.get()).toBe(0);
 		});
 	});
 });

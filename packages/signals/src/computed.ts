@@ -235,11 +235,12 @@ export class Computed<Value> extends SignalNode<Value> {
 	 * Brings the dependency watchers in line with the current dependencies.
 	 *
 	 * @remarks
-	 * If a dependency's `watched` hook throws, the dependencies watched by this
+	 * If a dependency's `watched` hook throws, the dependencies added by this
 	 * call are released in reverse order and the error is rethrown, so a failed
 	 * first watch leaves nothing subscribed. Dependencies dropped by this call
 	 * are released first and stay released; an error from their `unwatched` hooks
-	 * is rethrown once the new dependencies are watched.
+	 * is rethrown once the new dependencies are watched, and dropped if a `watched`
+	 * hook throws, in favor of that error.
 	 */
 	private syncDependencyWatcherSubscriptions(): void {
 		const dropped: (() => void)[] = [];
@@ -254,7 +255,7 @@ export class Computed<Value> extends SignalNode<Value> {
 		}
 
 		const droppedErrors = collectErrors(dropped);
-		const added: DependencyNode[] = [];
+		const added: (() => void)[] = [];
 
 		try {
 			for (const dependency of this.dependencies.keys()) {
@@ -262,22 +263,16 @@ export class Computed<Value> extends SignalNode<Value> {
 					continue;
 				}
 
-				this.dependencyWatcherUnsubscribers.set(
-					dependency,
-					dependency.addWatcher(this.handleDependencyWatcherChange),
-				);
-				added.push(dependency);
+				const unsubscribe = dependency.addWatcher(this.handleDependencyWatcherChange);
+
+				this.dependencyWatcherUnsubscribers.set(dependency, unsubscribe);
+				added.push(() => {
+					this.dependencyWatcherUnsubscribers.delete(dependency);
+					unsubscribe();
+				});
 			}
 		} catch (error) {
-			const rollback = added.reverse().map((dependency) => {
-				const unsubscribe = this.dependencyWatcherUnsubscribers.get(dependency)!;
-
-				this.dependencyWatcherUnsubscribers.delete(dependency);
-
-				return unsubscribe;
-			});
-
-			collectErrors(rollback);
+			collectErrors(added.reverse());
 			throw error;
 		}
 
