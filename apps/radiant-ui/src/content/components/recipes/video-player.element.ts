@@ -1,5 +1,10 @@
 import { RadiantElement, bindTo, customElement, onEvent, query, state } from '@ecopages/radiant';
-import { createCaptionsController, createMediaController, type MediaState } from '@ecopages/radiant-ui/controllers';
+import {
+	createCaptionsController,
+	createHotkeyController,
+	createMediaController,
+	type MediaState,
+} from '@ecopages/radiant-ui/controllers';
 import '@ecopages/radiant-ui/slider';
 import type { RuiSliderChangeDetail, RuiSliderElement } from '@ecopages/radiant-ui/slider';
 import { cycleValue, formatMediaTime } from '@ecopages/radiant-ui/helpers';
@@ -8,10 +13,11 @@ import {
 	CAPTIONS,
 	HIDE_CONTROLS_MS,
 	RATES,
+	SEEK_KEYS,
+	SHORTCUTS,
 	bufferedSegments,
-	seekFromKey,
+	isOwnedByControl,
 	seekValueText,
-	shortcutFor,
 	stageState,
 	type Shortcut,
 	type StageState,
@@ -120,6 +126,25 @@ export class VideoPlayerElement extends RadiantElement {
 
 	constructor() {
 		super();
+		createHotkeyController(this, {
+			getTarget: () => this.stage,
+			hotkeys: Array.from(SHORTCUTS, ([keys, shortcut]) => ({
+				keys,
+				handler: (event: KeyboardEvent) => (isOwnedByControl(event) ? false : this.run(shortcut)),
+			})),
+		});
+		createHotkeyController(this, {
+			getTarget: () => this.seek,
+			capture: true,
+			hotkeys: Array.from(SEEK_KEYS, ([keys, seconds]) => ({
+				keys,
+				handler: (event: KeyboardEvent) => {
+					event.stopPropagation();
+					this.wake();
+					this.media.skip(seconds);
+				},
+			})),
+		});
 		this.registerCleanupCallback(() => {
 			clearTimeout(this.hideTimer);
 			this.valueTextObserver.disconnect();
@@ -242,13 +267,10 @@ export class VideoPlayerElement extends RadiantElement {
 		}
 	}
 
+	/** Every key on the stage shows the controls, a shortcut or not, so this listener is separate from the hotkeys. */
 	@onEvent({ selector: '[data-stage]', type: 'keydown' })
-	shortcut(event: Event): void {
+	wakeOnKey(): void {
 		this.wake();
-		const shortcut = shortcutFor(event as KeyboardEvent);
-		if (!shortcut) return;
-		event.preventDefault();
-		this.run(shortcut);
 	}
 
 	/**
@@ -318,22 +340,6 @@ export class VideoPlayerElement extends RadiantElement {
 	@onEvent({ selector: '[data-seek]', type: 'rui-change' })
 	scrub(event: Event): void {
 		this.media.scrub((event as CustomEvent<RuiSliderChangeDetail>).detail.value[0]);
-	}
-
-	/**
-	 * Delegated in the capture phase, which runs before the slider's own key handler and lets this stop it for the
-	 * keys the player moves by whole seconds, so the slider's 0.01 s step never applies to an arrow key. Home and
-	 * End are left to the slider.
-	 */
-	@onEvent({ selector: '[data-seek]', type: 'keydown', options: { capture: true } })
-	scrubWithKey(event: Event): void {
-		const key = event as KeyboardEvent;
-		const seconds = seekFromKey(key.key);
-		if (seconds === undefined) return;
-		key.preventDefault();
-		key.stopPropagation();
-		this.wake();
-		this.media.skip(seconds);
 	}
 
 	@onEvent({ selector: '[data-volume-input]', type: 'rui-change' })

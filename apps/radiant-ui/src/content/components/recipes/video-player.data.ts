@@ -49,8 +49,9 @@ export type Shortcut =
 	| { type: 'start' }
 	| { type: 'end' };
 
-const SHORTCUTS = new Map<string, Shortcut>([
-	[' ', { type: 'toggle' }],
+/** The player's keys as hotkey strings, and what each asks the player to do. */
+export const SHORTCUTS: ReadonlyMap<string, Shortcut> = new Map<string, Shortcut>([
+	['Space', { type: 'toggle' }],
 	['k', { type: 'toggle' }],
 	['j', { type: 'skip', seconds: -LONG_SEEK_STEP }],
 	['l', { type: 'skip', seconds: LONG_SEEK_STEP }],
@@ -72,24 +73,28 @@ const SHORTCUTS = new Map<string, Shortcut>([
 const SLIDER_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown']);
 
 /**
- * The shortcut a key event asks for, or `undefined` when the player must leave it alone.
+ * Whether the focused control keeps this key, so the player declines it.
  *
  * @remarks
- * A key that carries Ctrl, Alt or Meta belongs to the browser. A button owns Space and Enter, which activate it. A
- * slider thumb owns the arrows, Home, End and the page keys, which move it; the letters and digits still reach the
- * player. The target is the element the key was pressed on, which a `keydown` listener on the stage always has.
+ * A button keeps Space and Enter, which activate it. A slider thumb keeps the arrows, Home, End and the page keys,
+ * which move it; letters and digits still reach the player. The slider rule stays although the slider prevents the
+ * keys it handles, because a disabled slider prevents nothing.
  */
-export function shortcutFor(
-	event: Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'altKey' | 'metaKey' | 'target'>,
-): Shortcut | undefined {
-	if (event.ctrlKey || event.altKey || event.metaKey) return undefined;
+export function isOwnedByControl(event: Pick<KeyboardEvent, 'key' | 'target'>): boolean {
 	const target = event.target as Element;
-	if (target.closest('button') && (event.key === ' ' || event.key === 'Enter')) return undefined;
-	if (target.closest('[role="slider"]') && SLIDER_KEYS.has(event.key)) return undefined;
-	return SHORTCUTS.get(event.key.length === 1 ? event.key.toLowerCase() : event.key);
+	if (target.closest('button') && (event.key === ' ' || event.key === 'Enter')) return true;
+	return target.closest('[role="slider"]') !== null && SLIDER_KEYS.has(event.key);
 }
 
-const SEEK_KEYS = new Map([
+/**
+ * Seconds each key on the seek thumb moves the playback by, as hotkey strings.
+ *
+ * @remarks
+ * The slider works in seconds with a step of 0.01, fine enough that the per-frame position write is not rounded and
+ * the thumb glides. A step that fine would make an arrow key inaudible, so the player handles these keys before the
+ * slider does and leaves it Home and End.
+ */
+export const SEEK_KEYS: ReadonlyMap<string, number> = new Map([
 	['ArrowRight', SEEK_STEP],
 	['ArrowUp', SEEK_STEP],
 	['ArrowLeft', -SEEK_STEP],
@@ -97,18 +102,6 @@ const SEEK_KEYS = new Map([
 	['PageUp', LONG_SEEK_STEP],
 	['PageDown', -LONG_SEEK_STEP],
 ]);
-
-/**
- * Seconds a key moves the seek slider by, or `undefined` for any other key.
- *
- * @remarks
- * The slider works in seconds with a step of 0.01, fine enough that the per-frame position write is not rounded and
- * the thumb glides. A step that fine would make an arrow key inaudible, so the player handles these keys and the
- * slider keeps Home and End.
- */
-export function seekFromKey(key: string): number | undefined {
-	return SEEK_KEYS.get(key);
-}
 
 /** The state of the stage for a snapshot of the media element. */
 export function stageState(state: Pick<MediaState, 'status' | 'waiting' | 'error'>): StageState {

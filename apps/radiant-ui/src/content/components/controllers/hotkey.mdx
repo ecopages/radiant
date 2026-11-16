@@ -1,0 +1,101 @@
+---
+title: HotkeyController
+description: 'Runs a handler for a key string such as mod+k or ArrowLeft on a target, skipping text fields and keys another handler already took.'
+order: 18
+---
+
+import { PrimitiveExample } from '@/components/primitive-example';
+
+export const config = {
+	dependencies: {
+		components: [PrimitiveExample],
+		scripts: ['./hotkey.script.ts'],
+	},
+};
+
+# HotkeyController
+
+<p class="docs-lede">Runs a handler for a key string such as <code>mod+k</code> or <code>ArrowLeft</code> on a target, skipping text fields and keys another handler already took.</p>
+
+Reach for it for keyboard shortcuts in a widget, a player or a page, where each key does one thing and a typed letter in a text field must not trigger it.
+
+## Import
+
+```ts
+import { HotkeyController, createHotkeyController } from '@ecopages/radiant-ui/controllers';
+```
+
+## Try it
+
+Focus the box, then press <kbd>K</kbd>, <kbd>ArrowLeft</kbd>, <kbd>Shift</kbd>+<kbd>ArrowLeft</kbd> or <kbd>ArrowRight</kbd>. The status line is a polite live region.
+
+<PrimitiveExample name="hotkey">
+	<div data-stage tabindex="0" role="group" aria-label="Player, press K, the arrow keys or Shift and ArrowLeft">Stage</div>
+	<p data-status role="status"></p>
+</PrimitiveExample>
+
+```html
+<div data-example="hotkey">
+	<div data-stage tabindex="0" role="group" aria-label="Player, press K, the arrow keys or Shift and ArrowLeft">Stage</div>
+	<p data-status role="status"></p>
+</div>
+```
+
+```ts
+import { HotkeyController } from '@ecopages/radiant-ui/controllers';
+
+export function mount(root: HTMLElement): () => void {
+	const stage = root.querySelector<HTMLElement>('[data-stage]')!;
+	const status = root.querySelector('[data-status]')!;
+	let playing = false;
+	let position = 0;
+	const show = (message: string) => (status.textContent = message);
+
+	const hotkeys = new HotkeyController({
+		getTarget: () => stage,
+		hotkeys: [
+			{
+				keys: 'k',
+				handler: () => {
+					playing = !playing;
+					show(playing ? `Playing at ${position} s` : `Paused at ${position} s`);
+				},
+			},
+			{
+				keys: 'shift+ArrowLeft',
+				handler: () => show(`Back 1 s to ${(position = Math.max(0, position - 1))} s`),
+			},
+			{
+				keys: 'ArrowLeft',
+				handler: () => show(`Back 5 s to ${(position = Math.max(0, position - 5))} s`),
+			},
+			{
+				keys: 'ArrowRight',
+				handler: () => show(`Forward 5 s to ${(position += 5)} s`),
+			},
+		],
+	});
+	hotkeys.attach();
+	return () => hotkeys.destroy();
+}
+```
+
+`mount` runs once for each example element on the page, and the function it returns undoes it; see [how the examples run](/docs/controllers/overview#how-the-examples-run).
+
+## Key strings
+
+A key string is modifiers and one key, joined by `+`: `k`, `ArrowLeft`, `mod+k`, `shift+ArrowLeft`.
+
+- **Modifiers** are `mod` and `shift`, in any order, each at most once. `mod` is Meta or Ctrl on every platform.
+- **Keys** are a single character or a `KeyboardEvent.key` name, compared without case. The space bar is `Space` and the `+` key is `Plus`; whitespace is reserved. A name that does not exist never matches.
+- **Alt** must be up for every binding, and without `mod` both Meta and Ctrl must be up, so `k` is not Ctrl+K.
+- **Shift** is checked only when the string names it. `ArrowLeft` also matches Shift+ArrowLeft, so list `shift+ArrowLeft` first when both are bound.
+- A bad string, such as `alt+k`, a bare `shift` or `g g`, throws a `SyntaxError` from the constructor.
+
+## What it skips
+
+Keys typed in a text field (a text-like `input`, a `textarea` or a contenteditable element), keys while composing, and keys whose default another handler already prevented. The first match whose handler does not return `false` gets `preventDefault()`. Return `false` to decline: the default is left alone and the next match is tried, which is how a hotkey leaves Space to a focused button.
+
+## Scope and accessibility
+
+`getTarget` is required. Pass `() => document` for page-wide keys with a modifier, and an element for single characters, so they work only while focus is inside it (WCAG 2.1.4; a screen reader's browse mode swallows plain letters elsewhere). Pass `capture: true` to run before the target's own handlers; call `event.stopPropagation()` in the handler to hide the key from them. `aria-keyshortcuts` and any visible key label are yours.

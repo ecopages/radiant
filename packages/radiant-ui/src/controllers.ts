@@ -65,6 +65,12 @@ export {
 	type DismissReason,
 } from './controllers/dismiss-controller';
 export {
+	HotkeyController,
+	createHotkeyController,
+	type Hotkey,
+	type HotkeyControllerConfig,
+} from './controllers/hotkey-controller';
+export {
 	EventListenerController,
 	createEventListenerController,
 	type EventListenerControllerConfig,

@@ -1,10 +1,12 @@
 import { afterEach, describe, expect, test } from 'vitest';
+import { HotkeyController } from '@ecopages/radiant-ui/controllers';
 import {
 	Announcer,
+	SEEK_KEYS,
+	SHORTCUTS,
 	bufferedSegments,
-	seekFromKey,
+	isOwnedByControl,
 	seekValueText,
-	shortcutFor,
 	stageState,
 	statusMessage,
 } from '../src/content/components/recipes/video-player.data';
@@ -72,50 +74,55 @@ describe('video player data: the stage state and the live region', () => {
 });
 
 describe('video player data: keys and values', () => {
-	test('shortcutFor maps the player keys, ignoring case, and leaves a key with Ctrl, Alt or Meta alone', () => {
-		const stage = document.body.appendChild(document.createElement('div'));
-		const press = (name: string, modifiers: Partial<KeyboardEventInit> = {}) =>
-			shortcutFor({ key: name, ctrlKey: false, altKey: false, metaKey: false, ...modifiers, target: stage });
+	test('SHORTCUTS maps the player keys, written as hotkey strings, to what the player does', () => {
+		expect(SHORTCUTS.get('Space')).toEqual({ type: 'toggle' });
+		expect(SHORTCUTS.get('k')).toEqual({ type: 'toggle' });
+		expect(SHORTCUTS.get('j')).toEqual({ type: 'skip', seconds: -10 });
+		expect(SHORTCUTS.get('ArrowRight')).toEqual({ type: 'skip', seconds: 5 });
+		expect(SHORTCUTS.get('ArrowUp')).toEqual({ type: 'volume', delta: 0.1 });
+		expect(SHORTCUTS.get('7')).toEqual({ type: 'jump', fraction: 0.7 });
+		expect(SHORTCUTS.get('Home')).toEqual({ type: 'start' });
+		expect(SHORTCUTS.get('End')).toEqual({ type: 'end' });
+		expect(SHORTCUTS.has(' ')).toBe(false);
+		expect(SHORTCUTS.has('x')).toBe(false);
+	});
 
-		expect(press(' ')).toEqual({ type: 'toggle' });
-		expect(press('K')).toEqual({ type: 'toggle' });
-		expect(press('j')).toEqual({ type: 'skip', seconds: -10 });
-		expect(press('ArrowRight')).toEqual({ type: 'skip', seconds: 5 });
-		expect(press('ArrowUp')).toEqual({ type: 'volume', delta: 0.1 });
-		expect(press('7')).toEqual({ type: 'jump', fraction: 0.7 });
-		expect(press('Home')).toEqual({ type: 'start' });
-		expect(press('End')).toEqual({ type: 'end' });
-		expect(press('x')).toBeUndefined();
-		for (const modifier of ['ctrlKey', 'altKey', 'metaKey'] as const)
-			expect(press('k', { [modifier]: true })).toBeUndefined();
+	test('every key string of SHORTCUTS and SEEK_KEYS is one the hotkey grammar accepts', () => {
+		const handler = () => {};
+		const hotkeys = (keys: Iterable<string>) => [...keys].map((key) => ({ keys: key, handler }));
+
+		expect(
+			() => new HotkeyController({ getTarget: () => document, hotkeys: hotkeys(SHORTCUTS.keys()) }),
+		).not.toThrow();
+		expect(
+			() => new HotkeyController({ getTarget: () => document, hotkeys: hotkeys(SEEK_KEYS.keys()) }),
+		).not.toThrow();
 	});
 
 	test('a button keeps Space and Enter, and a slider thumb keeps the arrows, Home, End and the page keys', () => {
 		document.body.innerHTML = '<button type="button"><svg></svg></button><button role="slider"></button>';
 		const [button, thumb] = [...document.querySelectorAll('button')];
-		const press = (name: string, target: Element) =>
-			shortcutFor({ key: name, ctrlKey: false, altKey: false, metaKey: false, target });
 
-		expect(press(' ', button)).toBeUndefined();
-		expect(press('Enter', button.querySelector('svg')!)).toBeUndefined();
-		expect(press('k', button)).toEqual({ type: 'toggle' });
-		expect(press(' ', thumb)).toBeUndefined();
+		expect(isOwnedByControl({ key: ' ', target: button })).toBe(true);
+		expect(isOwnedByControl({ key: 'Enter', target: button.querySelector('svg')! })).toBe(true);
+		expect(isOwnedByControl({ key: 'k', target: button })).toBe(false);
+		expect(isOwnedByControl({ key: ' ', target: thumb })).toBe(true);
 		for (const name of ['ArrowLeft', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown']) {
-			expect(press(name, thumb)).toBeUndefined();
+			expect(isOwnedByControl({ key: name, target: thumb })).toBe(true);
 		}
-		expect(press('m', thumb)).toEqual({ type: 'mute' });
-		expect(press('5', thumb)).toEqual({ type: 'jump', fraction: 0.5 });
+		expect(isOwnedByControl({ key: 'm', target: thumb })).toBe(false);
+		expect(isOwnedByControl({ key: '5', target: thumb })).toBe(false);
 	});
 
-	test('seekFromKey gives the seconds of the arrows and the page keys, and nothing for Home and End', () => {
-		expect(seekFromKey('ArrowRight')).toBe(5);
-		expect(seekFromKey('ArrowUp')).toBe(5);
-		expect(seekFromKey('ArrowLeft')).toBe(-5);
-		expect(seekFromKey('ArrowDown')).toBe(-5);
-		expect(seekFromKey('PageUp')).toBe(10);
-		expect(seekFromKey('PageDown')).toBe(-10);
-		expect(seekFromKey('Home')).toBeUndefined();
-		expect(seekFromKey('End')).toBeUndefined();
+	test('SEEK_KEYS gives the seconds of the arrows and the page keys, and nothing for Home and End', () => {
+		expect(SEEK_KEYS.get('ArrowRight')).toBe(5);
+		expect(SEEK_KEYS.get('ArrowUp')).toBe(5);
+		expect(SEEK_KEYS.get('ArrowLeft')).toBe(-5);
+		expect(SEEK_KEYS.get('ArrowDown')).toBe(-5);
+		expect(SEEK_KEYS.get('PageUp')).toBe(10);
+		expect(SEEK_KEYS.get('PageDown')).toBe(-10);
+		expect(SEEK_KEYS.has('Home')).toBe(false);
+		expect(SEEK_KEYS.has('End')).toBe(false);
 	});
 
 	test('bufferedSegments turns ranges into percentages, clamps the end and is empty without a duration', () => {
