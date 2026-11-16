@@ -1,5 +1,6 @@
 import { waitFor } from '@testing-library/dom';
-import { jsx } from '@ecopages/jsx';
+import { jsx, jsxs } from '@ecopages/jsx';
+import { state as createSignalState } from '@ecopages/signals';
 import { beforeEach, describe, expect, test } from 'vitest';
 import { installRadiantHydrator, uninstallRadiantHydrator } from '../../src/client/hydrator';
 import { RadiantElement } from '../../src/core/radiant-element';
@@ -411,6 +412,40 @@ describe('RadiantElement', () => {
 
 		expect(element.updateCount).toBe(1);
 		expect(element.querySelector('[data-ref="content"]')).toBe(content);
+	});
+
+	test('restores tracked reads after reconnecting with captured children', async () => {
+		const source = createSignalState('first');
+		class ReconnectedSlottedElement extends RadiantElement {
+			renders = 0;
+			override render() {
+				this.renders += 1;
+				return jsxs('div', { children: [jsx('p', { children: source.get() }), this.slotted] });
+			}
+		}
+		customElements.define('reconnected-slotted-element', ReconnectedSlottedElement);
+		const element = document.createElement('reconnected-slotted-element') as ReconnectedSlottedElement;
+		const child = document.createElement('input');
+		element.appendChild(child);
+		document.body.appendChild(element);
+		await waitFor(() => expect(element.querySelector('p')?.textContent).toBe('first'));
+		element.remove();
+		document.body.appendChild(element);
+		await Promise.resolve();
+		source.set('after unchanged reconnect');
+		await waitFor(() => expect(element.querySelector('p')?.textContent).toBe('after unchanged reconnect'));
+		element.remove();
+		const renders = element.renders;
+		source.set('while detached');
+		await Promise.resolve();
+		expect(element.renders).toBe(renders);
+		document.body.appendChild(element);
+		await waitFor(() => expect(element.querySelector('p')?.textContent).toBe('while detached'));
+		await new Promise((resolve) => setTimeout(resolve));
+		expect(element.renders).toBe(renders + 1);
+		expect(element.querySelector('input')).toBe(child);
+		source.set('after reconnect');
+		await waitFor(() => expect(element.querySelector('p')?.textContent).toBe('after reconnect'));
 	});
 
 	test('reactive updates are triggered by reference change, not in-place mutation', () => {

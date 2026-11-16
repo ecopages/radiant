@@ -1,5 +1,5 @@
 import { jsx, jsxs } from '@ecopages/jsx';
-import type { WritableSignal } from '@ecopages/signals';
+import { state as createSignalState, type WritableSignal } from '@ecopages/signals';
 import { waitFor } from '@testing-library/dom';
 import { describe, expect, test } from 'vitest';
 import {
@@ -17,10 +17,6 @@ import { onUpdated } from '../../src/decorators/on-updated';
 import { signal } from '../../src/decorators/signal';
 import { state } from '../../src/decorators/state';
 import { createCustomElement } from '../utils/create-custom-element';
-
-declare const __LEGACY_ENVIRONMENT__: boolean;
-
-const describeWhenStandard = __LEGACY_ENVIRONMENT__ ? describe.skip : describe;
 
 const controllerContext = createContext<{ count: number }>(Symbol('controller-context'));
 const controllerStatusContext = createContext<{ label: string }>(Symbol('controller-status-context'));
@@ -167,9 +163,10 @@ class ShadowBoundaryHost extends HTMLElement {
 
 customElements.define('controller-shadow-boundary', ShadowBoundaryHost);
 
-describeWhenStandard('RadiantController', () => {
+describe('RadiantController', () => {
 	test('supports shared reactive field bindings', () => {
 		const controller = new CounterController(document.createElement('div'));
+		controller.connect();
 
 		expect(controller.count).toBe(1);
 		expect(controller.bind('count').getValue()).toBe(1);
@@ -226,6 +223,49 @@ describeWhenStandard('RadiantController', () => {
 			expect(host.querySelector('[data-ref="count"]')?.textContent).toBe('2');
 			expect(host.querySelector('[data-ref="status"]')?.textContent).toBe('ready');
 		});
+	});
+
+	test('tracks shared render dependencies again after reconnecting', async () => {
+		const source = createSignalState(1);
+		class SharedRenderController extends RadiantController {
+			renders = 0;
+			override render() {
+				this.renders += 1;
+				return jsx('p', { children: String(source.get()) });
+			}
+		}
+		const host = document.createElement('div');
+		const controller = new SharedRenderController(host);
+		controller.connect();
+		expect(host.textContent).toBe('1');
+		source.set(2);
+		await waitFor(() => expect(host.textContent).toBe('2'));
+		controller.disconnect();
+		const renders = controller.renders;
+		source.set(3);
+		await Promise.resolve();
+		expect(controller.renders).toBe(renders);
+		controller.connect();
+		expect(host.textContent).toBe('3');
+		source.set(4);
+		await waitFor(() => expect(host.textContent).toBe('4'));
+		controller.disconnect();
+	});
+
+	test('renders a decorated controller that reads its own private fields', async () => {
+		class PrivateFieldController extends RadiantController {
+			#label = 'count';
+			@state count = 1;
+			override render() {
+				return jsx('p', { children: `${this.#label}:${this.count}` });
+			}
+		}
+		const host = document.createElement('div');
+		const controller = new PrivateFieldController(host);
+		controller.connect();
+		expect(host.textContent).toBe('count:1');
+		controller.count = 2;
+		await waitFor(() => expect(host.textContent).toBe('count:2'));
 	});
 
 	test('runs subclass connect logic during SSR setup without performing a client DOM render', () => {

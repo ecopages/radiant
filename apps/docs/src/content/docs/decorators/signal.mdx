@@ -57,17 +57,17 @@ The field is typed `WritableSignal<number>`, and `initial` must be a `number` an
 - the field becomes a real writable signal instance
 - connected signals still flow through Radiant's update callback channel
 - `@onUpdated(...)` and JSX bindings keep working with the same host update model
-- on render-owning `RadiantElement` hosts, signal and store reads performed during `render()` participate in rerender invalidation directly
+- on a render-owning `RadiantElement` or `RadiantController`, signal reads and `createStore(...)` property reads during `render()` participate in rerender invalidation directly
 
-That last point is the main difference from `@state`: a render method can read the signal directly and let the signals runtime invalidate the view.
+Both `@signal` and `@state` participate in tracked rendering. A plain `@state` read such as `this.count` in `render()` tracks the value; use `this.$.count` to patch a child. For `@signal`, passing the signal itself as a child patches that child, while calling `get()` inside `render()` tracks the read and reruns the view.
 
 ```tsx
 override render() {
-	return <p>Count: {this.count}</p>;
+	return <p>{this.count.get() > 0 ? 'Has count' : 'Empty'}</p>;
 }
 ```
 
-If the signal changes through `this.count.set(...)`, the rendered output updates without an extra imperative sync step.
+When `this.count.set(...)` changes the value, the tracked read schedules a rerender without an imperative sync step.
 
 ## Shared Signals
 

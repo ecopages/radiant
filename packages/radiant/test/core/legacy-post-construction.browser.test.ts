@@ -5,6 +5,7 @@ import {
 	postConstructionContext,
 } from '../fixtures/legacy-post-construction-controller';
 import { setCustomElementTagName } from '../../src/core/custom-element-metadata';
+import { RadiantController } from '../../src/core/radiant-controller';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { customElement } from '../../src/decorators/custom-element';
 import {
@@ -14,6 +15,7 @@ import {
 import { ensureLegacyHostReady } from '../../src/decorators/legacy/host-readiness';
 import { reactiveProp as legacyReactiveProp } from '../../src/decorators/legacy/reactive-prop';
 import { prop } from '../../src/decorators/prop';
+import { query } from '../../src/decorators/query';
 import { state } from '../../src/decorators/state';
 import { installLightDomShim } from '../../src/server/light-dom-shim';
 import { REACTIVE_HOST } from '../../src/core/reactive-host';
@@ -94,6 +96,22 @@ describe('legacy post-construction decorator setup', () => {
 		calls.length = 0;
 		runLegacyPostConstructionInitializers(new GrandchildHost(), 'ssr');
 		expect(calls).toEqual(['base', 'derived']);
+	});
+
+	test('keeps a later @query field after an earlier field initializer reads an author key', () => {
+		class SearchController extends RadiantController {
+			@state query = '';
+			placeholder = `Search ${this.query}`;
+			@query({ ref: 'input' }) input!: HTMLInputElement | null;
+		}
+
+		const host = document.createElement('div');
+		host.innerHTML = '<input data-ref="input">';
+		const controller = new SearchController(host);
+		controller.connect();
+
+		expect(controller.placeholder).toBe('Search ');
+		expect(controller.input).toBeInstanceOf(HTMLInputElement);
 	});
 
 	test('makes post-construction decorated fields available during controller connect()', () => {
