@@ -94,6 +94,24 @@ function registerInitializer<T extends object>(
 	});
 }
 
+/**
+ * Whether this instance's prototype chain registered any legacy post-construction work.
+ *
+ * @remarks
+ * Used by `RadiantController` to finish that work after subclass fields without wrapping
+ * the author's class. Standard decorator mode never registers any.
+ */
+export function hasLegacyPostConstructionInitializers(instance: object): boolean {
+	for (const prototype of collectPrototypeChain(instance)) {
+		const initializers = getOwnInitializerList(prototype, LEGACY_POST_CONSTRUCTION_INITIALIZERS);
+		if (initializers?.length) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 function getOwnInitializerList<T>(prototype: object, key: symbol): T[] | undefined {
 	if (!Object.prototype.hasOwnProperty.call(prototype, key)) {
 		return undefined;

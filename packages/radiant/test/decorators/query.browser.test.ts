@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import { RadiantController } from '../../src/core/radiant-controller';
 import { RadiantElement } from '../../src/core/radiant-element';
+import { customElement } from '../../src/decorators/custom-element';
 import { query } from '../../src/decorators/query';
 
+@customElement('my-query-element')
 class MyQueryElement extends RadiantElement {
 	@query({ ref: 'my-ref' }) myRef: HTMLDivElement | null;
 	@query({ ref: 'my-ref', all: true, cache: false }) myRefs: HTMLDivElement[];
@@ -19,8 +21,6 @@ class MyQueryElement extends RadiantElement {
 		this.appendChild(div);
 	}
 }
-
-customElements.define('my-query-element', MyQueryElement);
 
 class QueryController extends RadiantController {
 	@query({ ref: 'form' }) form!: HTMLFormElement | null;
@@ -96,6 +96,16 @@ describe('@query', () => {
 	test('decorator queries ref correctly', async () => {
 		const customElement = createTemplate();
 		document.body.appendChild(customElement);
+		expect(customElement.myRef?.textContent).toEqual('My Ref 1');
+	});
+
+	test('decorator reads null before connect when nothing matches', () => {
+		const customElement = document.createElement('my-query-element') as MyQueryElement;
+		expect(customElement.missing).toBeNull();
+	});
+
+	test('decorator finds authored children before connect', () => {
+		const customElement = createTemplate();
 		expect(customElement.myRef?.textContent).toEqual('My Ref 1');
 	});
 

@@ -10,11 +10,8 @@ import {
 	provideContext,
 } from '../../src/context';
 import { RadiantElement } from '../../src/core/radiant-element';
+import { customElement } from '../../src/decorators/custom-element';
 import { createCustomElement } from '../utils/create-custom-element';
-
-declare const __LEGACY_ENVIRONMENT__: boolean;
-
-const describeWhenStandard = __LEGACY_ENVIRONMENT__ ? describe.skip : describe;
 
 type TestContext = {
 	value: number;
@@ -169,6 +166,7 @@ class LazySelectedConsumer extends RadiantElement {
 
 customElements.define('lazy-selected-consumer', LazySelectedConsumer);
 
+@customElement('logger-context-provider')
 class LoggerContextProvider extends RadiantElement {
 	@provideContext<typeof loggerContext>({
 		context: loggerContext,
@@ -179,7 +177,6 @@ class LoggerContextProvider extends RadiantElement {
 	context!: ContextProvider<typeof loggerContext>;
 }
 
-customElements.define('logger-context-provider', LoggerContextProvider);
 
 describe('Context', () => {
 	beforeEach(() => {
@@ -487,7 +484,7 @@ describe('Context', () => {
 		expect(scriptMarkup).not.toContain('logger');
 	});
 
-	describeWhenStandard('pre-connect provider initialization', () => {
+	describe('pre-connect provider initialization', () => {
 		test('it initializes a provided context before connect so server helpers can configure it', () => {
 			const contextProvider = new LoggerContextProvider();
 

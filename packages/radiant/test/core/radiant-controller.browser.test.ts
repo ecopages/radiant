@@ -18,10 +18,6 @@ import { signal } from '../../src/decorators/signal';
 import { state } from '../../src/decorators/state';
 import { createCustomElement } from '../utils/create-custom-element';
 
-declare const __LEGACY_ENVIRONMENT__: boolean;
-
-const describeWhenStandard = __LEGACY_ENVIRONMENT__ ? describe.skip : describe;
-
 const controllerContext = createContext<{ count: number }>(Symbol('controller-context'));
 const controllerStatusContext = createContext<{ label: string }>(Symbol('controller-status-context'));
 
@@ -167,7 +163,7 @@ class ShadowBoundaryHost extends HTMLElement {
 
 customElements.define('controller-shadow-boundary', ShadowBoundaryHost);
 
-describeWhenStandard('RadiantController', () => {
+describe('RadiantController', () => {
 	test('supports shared reactive field bindings', () => {
 		const controller = new CounterController(document.createElement('div'));
 

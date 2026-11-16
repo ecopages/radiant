@@ -22,10 +22,6 @@ import { renderComponentToString } from '../../src/server/render-component';
 import { createServerRenderEnvironment, installLightDomShim } from '../../src/server/light-dom-shim';
 import { REACTIVE_HOST } from '../../src/core/reactive-host';
 
-declare const __LEGACY_ENVIRONMENT__: boolean;
-
-const describeWhenStandard = __LEGACY_ENVIRONMENT__ ? describe.skip : describe;
-
 @customElement('ssr-array-prop-card-test')
 class SsrArrayPropCard extends RadiantElement {
 	@prop({ type: Array }) items = [] as Array<{ label: string }>;
@@ -765,7 +761,7 @@ describe('RadiantElement SSR', () => {
 		expect(html).not.toContain('"Tom & Jerry');
 	});
 
-	describeWhenStandard('SSR ordering with generated hydration scripts', () => {
+	describe('SSR ordering with generated hydration scripts', () => {
 		test("renderRadiantElementHostToString({ mode: 'hydrate' }) emits host content, with its slotted content, before hydration scripts", () => {
 			@customElement('server-host-ordering-card-test')
 			class ServerHostOrderingCard extends RadiantElement {
@@ -992,8 +988,9 @@ describe('RadiantElement SSR', () => {
 		);
 	});
 
-	describeWhenStandard('pre-connect SSR accessors', () => {
+	describe('pre-connect SSR accessors', () => {
 		test("renderRadiantElementHostToString({ mode: 'hydrate' }) appends signal hydration scripts automatically", () => {
+			@customElement('server-host-signal-card-test')
 			class ServerHostSignalCard extends RadiantElement {
 				@signal({ hydrate: String, initial: 'idle' }) status!: WritableSignal<string>;
 
@@ -1001,9 +998,6 @@ describe('RadiantElement SSR', () => {
 					return <p>{this.status}</p>;
 				}
 			}
-
-			customElements.define('server-host-signal-card-test', ServerHostSignalCard);
-			setCustomElementTagName(ServerHostSignalCard, 'server-host-signal-card-test');
 
 			const element = new ServerHostSignalCard();
 			element.status.set('ready');
