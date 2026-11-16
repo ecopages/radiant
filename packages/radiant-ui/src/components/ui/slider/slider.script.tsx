@@ -713,7 +713,7 @@ export class RuiSlider extends FormAssociatedElement {
 
 	@onEvent({ selector: '[data-thumb]', type: 'keydown' })
 	onThumbKeydown(event: KeyboardEvent): void {
-		if (this.effectiveDisabled || this.readOnly) {
+		if (this.effectiveDisabled || this.readOnly || event.altKey || event.ctrlKey || event.metaKey) {
 			return;
 		}
 

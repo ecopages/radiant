@@ -143,6 +143,25 @@ describe('RuiSlider single thumb keyboard and pointer', () => {
 		cleanup();
 	});
 
+	it.each(['altKey', 'ctrlKey', 'metaKey'] as const)(
+		'leaves a key with %s to the browser: the value and the default stay',
+		async (modifier) => {
+			const { slider, thumb, cleanup } = await mountSingle(40);
+			const event = new KeyboardEvent('keydown', {
+				key: 'ArrowLeft',
+				[modifier]: true,
+				bubbles: true,
+				cancelable: true,
+			});
+
+			thumb.dispatchEvent(event);
+
+			expect(slider.value).toEqual([40]);
+			expect(event.defaultPrevented).toBe(false);
+			cleanup();
+		},
+	);
+
 	it('drags the thumb along the track and emits rui-change', async () => {
 		const { host, slider, thumb, cleanup } = await mountSingle(10);
 		const track = host.querySelector('[data-ref="rangeTrack"]') as HTMLElement;
