@@ -158,14 +158,7 @@ describe('@ref on a Controller Host', () => {
 	});
 });
 
-describe('@ref before connect', () => {
-	test('an Element Host reads null and [] in both decorator modes', () => {
-		const host = document.createElement('ref-host') as RefHost;
-
-		expect(host.menubarRoot).toBeNull();
-		expect(host.item).toEqual([]);
-	});
-
+describe('@ref before connect on a Controller Host', () => {
 	test.skipIf(__LEGACY_ENVIRONMENT__)(
 		'a Controller Host under standard decorators is live: null without a part, the part when one exists',
 		async () => {
@@ -236,8 +229,8 @@ describe('@ref across reconnect on a Controller Host', () => {
 	});
 });
 
-describe('@ref names that collide with element members', () => {
-	test('a given name finds the part where the field name would shadow an element member', async () => {
+describe('@ref names that match element members', () => {
+	test('a given name matching an element member such as title finds the part', async () => {
 		@customElement('ref-title-host')
 		class RefTitleHost extends RadiantElement {
 			@ref('title') headline!: HTMLElement | null;

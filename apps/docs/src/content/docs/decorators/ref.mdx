@@ -48,7 +48,7 @@ A part belongs to the nearest enclosing Element Host (once upgraded) or Controll
 
 ## Before connect and types
 
-Both read `null` or `[]` while no owned part exists, including before connect. Reads are live, so a part already in the markup is found even before connect. Under legacy decorators a `RadiantController` field is set up at `connect()` and reads `undefined` before it, like [@query](/docs/decorators/query); a `RadiantElement` reads `null` or `[]` in both modes. Under standard decorators the field must accept `null` for `@ref` and be an array for `@refAll`; any other type does not compile (see [Typing Decorated Fields](/docs/decorators#typing-decorated-fields)).
+Both read `null` or `[]` while no owned part exists, including before connect. Reads are live, so a part already in the markup is found even before connect. Under legacy decorators a `RadiantController` field is set up at `connect()` and reads `undefined` before it, like [@query](/docs/decorators/query); a `RadiantElement` registered with `@customElement` reads `null` or `[]` in both modes. Under standard decorators the field must accept `null` for `@ref` and be an array for `@refAll`; any other type does not compile (see [Typing Decorated Fields](/docs/decorators#typing-decorated-fields)).
 
 ```typescript
 @ref() trigger!: HTMLElement; // does not compile: a part can be missing
@@ -59,7 +59,7 @@ A `#private` field cannot hold the getter, so standard decorators throw when app
 
 ## Development warnings
 
-Warnings are stripped from production builds and silenced by the shared development-warning switch. The checks run on the client's first connect, not during server rendering, where the host's view has not rendered its parts yet.
+Warnings are stripped from production builds and silenced by the shared development-warning switch. An Element Host runs the checks on the client's first connect, not during server rendering, where its view has not rendered its parts yet. A Controller Host runs them on its first connect, including a server render, since its markup is authored.
 
 - `required: true` warns once per class and field when the part is still missing after first connect.
 - More than one part under the same name in one scope warns once per class and field, on first connect. `@refAll` does not check, since several parts under one name are what it reads. A duplicate that a later render adds is not reported.

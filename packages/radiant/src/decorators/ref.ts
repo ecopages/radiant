@@ -17,9 +17,10 @@ export type { RefDecoratorHost, RefOptions };
  * Scoped: a part inside a nested Element Host or Controller Host belongs to that host, not to this one.
  * Use `@query(selector)` to reach into another host. Development warnings: `{ required: true }` warns once
  * per class and field when no part is found after the first connect, and more than one part under the same
- * name in this scope warns once per class and field, on first connect. Not supported on a `#private` field under standard decorators, which
- * cannot hold a getter; use a TypeScript `private` field. Under legacy decorators a `RadiantController` field
- * is set up at `connect()` and reads `undefined` before it, as `@query` does.
+ * name in this scope warns once per class and field, on first connect. Not supported on a `#private` field
+ * under standard decorators, which cannot hold a getter; use a TypeScript `private` field. Under legacy
+ * decorators a `RadiantController` field is set up at `connect()` and reads `undefined` before it, as
+ * `@query` does.
  */
 export function ref<T extends Element = Element>(): ValueFieldDecorator<RefDecoratorHost, T | null>;
 export function ref<T extends Element = Element>(name: string): ValueFieldDecorator<RefDecoratorHost, T | null>;

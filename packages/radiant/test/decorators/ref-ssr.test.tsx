@@ -18,13 +18,11 @@ class _RefSsrInner extends RadiantElement {}
 @customElement('ref-ssr-required-host')
 class RefSsrRequiredHost extends RadiantElement {
 	@ref({ required: true }) panel!: HTMLElement | null;
-	@ref() cell!: HTMLElement | null;
 
 	override render() {
 		return (
 			<div>
 				<i data-ref="panel" />
-				<i data-ref="cell" />
 			</div>
 		);
 	}

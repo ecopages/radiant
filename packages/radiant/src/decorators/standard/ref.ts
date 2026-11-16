@@ -10,7 +10,7 @@ export function ref(config: RefFieldConfig) {
 
 		if (context.private) {
 			throw new TypeError(
-				`@${config.all ? 'refAll' : 'ref'} cannot decorate the private field ${propertyName}: a getter cannot be installed on a # field. Use a public or TypeScript-private field.`,
+				`@${config.all ? 'refAll' : 'ref'} cannot decorate the private field ${propertyName}: a getter cannot be installed on a # field. Use a TypeScript private field.`,
 			);
 		}
 
