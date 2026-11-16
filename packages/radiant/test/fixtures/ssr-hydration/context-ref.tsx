@@ -16,6 +16,7 @@ const panelContext = createContext<PanelContext>(Symbol('hydrated-ref-panel-cont
 @customElement('hydrated-ref-provider-test')
 export class HydratedRefProvider extends RadiantElement {
 	static panel: HTMLElement | null = null;
+	static calls: (HTMLElement | null)[] = [];
 
 	@provideContext({
 		context: panelContext,
@@ -23,6 +24,7 @@ export class HydratedRefProvider extends RadiantElement {
 			label: 'panel',
 			attachPanel: (node) => {
 				HydratedRefProvider.panel = node;
+				HydratedRefProvider.calls.push(node);
 			},
 		},
 		hydrate: Object,

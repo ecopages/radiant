@@ -112,6 +112,57 @@ describe('JSX ref', () => {
 		expect(ref.mock.calls).toEqual([[node], [null]]);
 	});
 
+	test('a ref that becomes null detaches the old callback', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const ref = vi.fn();
+
+		root.render(jsx('p', { ref }));
+		const node = container.querySelector('p');
+		root.render(jsx('p', { ref: null }));
+
+		expect(container.querySelector('p')).toBe(node);
+		expect(ref.mock.calls).toEqual([[node], [null]]);
+	});
+
+	test('a ref that stays bound while another attribute is added is not called again', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const ref = vi.fn();
+
+		root.render(jsx('p', { ref }));
+		const node = container.querySelector('p');
+		root.render(jsx('p', { id: 'x', ref }));
+
+		expect(container.querySelector('p')).toBe(node);
+		expect(ref.mock.calls).toEqual([[node]]);
+	});
+
+	test('a ref inside a reactive child attaches and detaches with the child', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const ref = vi.fn();
+		let current: unknown = jsx('p', { ref });
+		const listeners = new Set<(value: unknown) => void>();
+		const source = {
+			get: () => current,
+			subscribe: (listener: (value: unknown) => void) => {
+				listeners.add(listener);
+				return () => listeners.delete(listener);
+			},
+		};
+
+		createRoot(container).render(jsx('div', { children: source }));
+		const node = container.querySelector('p');
+		current = jsx('span', {});
+		for (const listener of listeners) listener(current);
+
+		expect(node).not.toBeNull();
+		expect(ref.mock.calls).toEqual([[node], [null]]);
+	});
+
 	test('removing the element calls the callback with null, or runs the returned cleanup', async () => {
 		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');
@@ -197,7 +248,7 @@ describe('JSX ref', () => {
 		expect(ref).toHaveBeenCalledWith(container.querySelector('input'));
 	});
 
-	test('a spread that gains and loses ref attaches and detaches it', async () => {
+	test('a ref that is gained and then dropped attaches and detaches it', async () => {
 		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');
 		const root = createRoot(container);
@@ -264,5 +315,24 @@ describe('JSX ref', () => {
 
 		expect(ref.mock.calls).toEqual([[serverInput]]);
 		expect(onClick).toHaveBeenCalledTimes(1);
+	});
+
+	test('hydrate mode: a ref under a reactive root receives the server node', async () => {
+		const [{ jsx }, { createRoot }, { renderToString }] = await Promise.all([
+			loadJsxRuntime(),
+			loadJsxModule(),
+			loadServerRender(),
+		]);
+		const container = document.createElement('div');
+		const ref = vi.fn();
+		const view = () => jsx('input', { class: 'field', ref });
+		const source = { get: view, subscribe: () => () => {} };
+
+		container.innerHTML = renderToString(view(), { mode: 'hydrate' });
+		const serverInput = container.querySelector('input');
+		createRoot(container).hydrate(source);
+
+		expect(container.querySelector('input')).toBe(serverInput);
+		expect(ref.mock.calls).toEqual([[serverInput]]);
 	});
 });

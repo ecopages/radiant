@@ -3,7 +3,7 @@ import { attachEventBindingListener, detachEventBindingListener, isEventListener
 import { getElementAttributeValue, removeElementAttribute, setElementAttributeValue } from './namespaces.ts';
 import { detachRef } from './mounted-disposal.ts';
 import { resolveReactiveSnapshot } from './runtime-helpers.ts';
-import { CUSTOM_ELEMENT_CHILDREN_SYMBOL } from '../types/index.ts';
+import { CUSTOM_ELEMENT_CHILDREN_SYMBOL, type JsxRefCallback } from '../types/index.ts';
 import type { BindingDescriptor, DeferredPropertyBinding, LiveAttributePart } from './types.ts';
 
 type ApplyBindingOptions = {
@@ -177,7 +177,7 @@ function applyRefBinding(
 	livePart: LiveAttributePart | undefined,
 ): void {
 	if (!livePart) return;
-	const callback = typeof value === 'function' ? (value as (node: Element | null) => unknown) : undefined;
+	const callback = typeof value === 'function' ? (value as JsxRefCallback) : undefined;
 	if (livePart.previousValue === callback) return;
 
 	detachRef(livePart);
@@ -188,7 +188,7 @@ function applyRefBinding(
 		run: () => {
 			if (livePart.previousValue !== callback) return;
 			const cleanup = callback(element);
-			livePart.refCleanup = typeof cleanup === 'function' ? (cleanup as () => void) : () => callback(null);
+			livePart.refCleanup = typeof cleanup === 'function' ? cleanup : () => callback(null);
 		},
 	});
 }

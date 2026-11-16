@@ -464,6 +464,7 @@ describe('hydrating server-rendered markup', () => {
 		expect(markup).not.toContain('ref=');
 		expect(markup).not.toContain('attachPanel');
 		HydratedRefProvider.panel = null;
+		HydratedRefProvider.calls = [];
 		installRadiantHydrator();
 		document.body.innerHTML = markup;
 		const element = document.querySelector('hydrated-ref-provider-test') as HTMLElement;
@@ -473,6 +474,7 @@ describe('hydrating server-rendered markup', () => {
 		await waitFor(() => expect(hasHydrationMarkers(element)).toBe(false));
 
 		expect(HydratedRefProvider.panel).toBe(serverPanel);
+		expect(HydratedRefProvider.calls).toEqual([serverPanel]);
 		expect(element.querySelector('section')).toBe(serverPanel);
 		expect(serverPanel?.textContent).toBe('panel');
 	});

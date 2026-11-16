@@ -279,7 +279,7 @@ function getBindingPart(elementName: string, name: string, value: unknown): Attr
 /**
  * Resolves an authored prop name to the binding kind and attribute name it denotes.
  *
- * Explicit prefixes (`on-native:`, `on:`, `prop:`, `attr:`, `bool:`) select a kind directly.
+ * The reserved name `ref` is always a `ref` binding. Explicit prefixes (`on-native:`, `on:`, `prop:`, `attr:`, `bool:`) select a kind directly.
  * Unprefixed names fall back to per-element defaults: boolean attributes bind by
  * presence, custom elements bind by property unless the name is a known attribute.
  *

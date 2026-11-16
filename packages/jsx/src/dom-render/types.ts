@@ -22,7 +22,8 @@ export type BindingDescriptor =
  *
  * Property writes are collected here rather than applied immediately so that
  * custom elements see their final DOM shape (including children) before
- * receiving bound property values.
+ * receiving bound property values. An entry with `run` is deferred work other than a
+ * property write, such as the attach of a `ref` callback.
  */
 export type DeferredPropertyBinding =
 	| {

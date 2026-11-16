@@ -825,19 +825,19 @@ Use `prop:*` when the target must receive a real property value instead of a ser
 ### Refs
 
 ```tsx
-<input ref={(node) => (this.input = node)} />
+<input ref={(node) => { this.input = node; }} />
 <canvas ref={(node) => { if (node) return observe(node); }} />
 ```
 
 `ref` is reserved on every intrinsic element, custom elements included. Its value is a callback typed per element as `JsxRefCallback<HTMLInputElement>`:
 
 - It is called with the node once the node is in the page: on a client render, and on hydration with the server node the hydrator adopted, not a clone.
-- If it returns a function, that function runs when the element is removed or the callback is replaced. Otherwise the callback is called once more with `null` at that point, so its parameter is `Element | null`. An arrow that assigns a field and so returns the node (`(node) => (this.input = node)`) returns a non-function, which is ignored.
+- If it returns a function, that function runs when the element is removed or the callback is replaced. Otherwise the callback is called once more with `null` at that point, so its parameter is `Element | null`. A callback must return nothing or a function: the types reject an arrow that assigns a field and so returns the node, and at runtime any other return value is ignored. A `ref` value that is not a function binds nothing.
 - Passing the same callback on a re-render does nothing; passing another detaches the old one and attaches the new one. A keyed move keeps the node and does not call it again. Dropping `ref` detaches it, and `ref={undefined}` binds nothing.
 - It never runs on the server and is never written out: no `ref` attribute or function source reaches the DOM or the HTML, in plain or hydrate mode. A hydrate-mode element carries a `data-radiant-jsx-bind-N="ref:ref"` marker, like any client-only binding, and the hydrator removes it. The marker exists only while `ref` is not `undefined`, so pass it on the server and the client alike: when only one side has it, the later markers of that view are numbered differently, the hydrator does not remove them, and they stay in the page.
 - It is an ordinary prop on a function component: the component receives it, and passes it on to an element or ignores it.
 
-A ref is not a signal, and a re-render does not run it again. Use it to own nodes a view wrote into another host's children, which `data-ref` lookup cannot attribute, or to hand a callback to descendants through props or context.
+A ref is not a signal, and a re-render does not run it again. Use it to own nodes a view wrote into another host's children, or to hand a callback to descendants through props or context.
 
 ### Structured `data`, `aria`, `class`, and `style`
 
