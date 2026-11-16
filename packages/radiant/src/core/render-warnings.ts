@@ -1,7 +1,6 @@
 import { warnOnceInDevelopment } from '../helpers/dev-warnings';
 import type { ReactiveState } from './reactivity-contract';
 
-/** Re-runs of one host's `render()` caused by one field that count as hot when they fall inside the window. */
 const HOT_RENDER_COUNT = 30;
 const HOT_RENDER_WINDOW_MS = 1000;
 
@@ -38,15 +37,13 @@ function describeHost(host: object): string {
  * facts the host already has: the members that changed since the last render, and the members the previous
  * `render()` read through their accessors. A field in both re-ran the render. Two cases warn, once per class and
  * field: the field also patches a `this.$` Binding (the change does the work twice), or it re-ran the render
- * {@link HOT_RENDER_COUNT} times within {@link HOT_RENDER_WINDOW_MS} ms. A render that reads a field directly
- * without either pattern never warns.
+ * {@link HOT_RENDER_COUNT} times within {@link HOT_RENDER_WINDOW_MS} ms.
  *
- * The host creates this only behind its `process.env.NODE_ENV` guard, and wires every hook through the instance
- * (or through a getter it wraps once at definition time), so a production build drops the class and its text.
+ * The host creates this only behind its `process.env.NODE_ENV` guard, so a production build drops the class and
+ * its text.
  */
 export class RenderWarnings {
 	private reads?: Set<string>;
-	private previousReads?: ReadonlySet<string>;
 	private lastReads?: ReadonlySet<string>;
 	private readonly changed = new Set<string>();
 	private readonly bindingSubscribers = new Map<string, number>();
@@ -54,7 +51,6 @@ export class RenderWarnings {
 
 	constructor(private readonly host: object) {}
 
-	/** Wraps a member getter so reads made while `render()` runs are recorded. */
 	public trackReads<Value>(name: string, read: () => Value): () => Value {
 		return () => {
 			this.reads?.add(name);
@@ -88,24 +84,19 @@ export class RenderWarnings {
 		};
 	}
 
-	/** Runs `render` and records which members it read. */
+	/** Runs `render`, then attributes it to the fields that changed since the previous one and that it read. */
 	public run<Value>(render: () => Value): Value {
-		this.previousReads = this.lastReads;
+		const previous = this.lastReads;
 		const reads = new Set<string>();
 		this.reads = reads;
+		let value: Value;
 
 		try {
-			return render();
+			value = render();
 		} finally {
 			this.reads = undefined;
 			this.lastReads = reads;
 		}
-	}
-
-	/** Attributes the render that just ran to the fields that changed since the previous one. */
-	public afterRender(): void {
-		const previous = this.previousReads;
-		this.previousReads = undefined;
 
 		if (previous) {
 			for (const name of this.changed) {
@@ -114,6 +105,7 @@ export class RenderWarnings {
 		}
 
 		this.changed.clear();
+		return value;
 	}
 
 	private attribute(name: string): void {

@@ -26,13 +26,15 @@ let tagCounter = 0;
  * Defines a host class of `kind` whose view reads `count` as `variant` says and never reads `other`.
  *
  * @remarks `redundant` reads `count` directly and binds it with `this.$`, `direct` only reads it directly, and
- * `bound-only` only binds it.
+ * `bound-only` only binds it. Every variant also reads `other` directly; tests that change only `count` must not
+ * see `other` named.
  */
 function defineHost(kind: HostKind, variant: Variant): () => Promise<Mounted> {
-	const view = (host: { count: number; $: { count: unknown } }) => (
+	const view = (host: { count: number; other: number; $: { count: unknown } }) => (
 		<div>
 			{variant === 'bound-only' ? null : <p>{host.count}</p>}
 			{variant === 'direct' ? null : <b>{host.$.count as number}</b>}
+			<i>{host.other}</i>
 		</div>
 	);
 
@@ -78,6 +80,10 @@ function defineHost(kind: HostKind, variant: Variant): () => Promise<Mounted> {
 
 async function write(host: TestHost, value: number): Promise<void> {
 	host.count = value;
+	await host.updateComplete;
+}
+
+async function writeOther(host: TestHost, value: number): Promise<void> {
 	host.other = value;
 	await host.updateComplete;
 }
@@ -106,6 +112,7 @@ describe.each<HostKind>(['element', 'controller'])('whole-render read warnings o
 		const message = String(warn.mock.calls[0]?.[0]);
 		expect(message).toContain(name);
 		expect(message).toContain('"count"');
+		expect(message).toContain('also reads it in render()');
 		expect(message).toContain('this.$.count');
 		expect(message).not.toContain('"other"');
 	});
@@ -120,6 +127,12 @@ describe.each<HostKind>(['element', 'controller'])('whole-render read warnings o
 		await write(second.host, 1);
 
 		expect(warn).toHaveBeenCalledTimes(1);
+
+		const other = await defineHost(kind, 'redundant')();
+		await write(other.host, 1);
+
+		expect(warn).toHaveBeenCalledTimes(2);
+		expect(String(warn.mock.calls[1]?.[0])).toContain(other.name);
 	});
 
 	test('a field read directly in render() without a binding does not warn', async () => {
@@ -156,11 +169,28 @@ describe.each<HostKind>(['element', 'controller'])('whole-render read warnings o
 		const message = String(warn.mock.calls[0]?.[0]);
 		expect(message).toContain(name);
 		expect(message).toContain('"count"');
+		expect(message).toContain('times within');
 		expect(message).toContain('this.$.count');
 		expect(message).not.toContain('"other"');
 
 		for (let value = 31; value <= 60; value++) await write(host, value);
 		expect(warn).toHaveBeenCalledTimes(1);
+	});
+
+	test('each field that re-runs render() 30 times within a second warns once, by name', async () => {
+		vi.useFakeTimers({ toFake: ['Date'] });
+		vi.setSystemTime(0);
+		const { host } = await defineHost(kind, 'direct')();
+
+		for (let value = 1; value <= 30; value++) {
+			await write(host, value);
+			await writeOther(host, value);
+		}
+
+		expect(warn).toHaveBeenCalledTimes(2);
+		const messages = warn.mock.calls.map((call: unknown[]) => String(call[0]));
+		expect(messages.filter((message: string) => message.includes('"count"'))).toHaveLength(1);
+		expect(messages.filter((message: string) => message.includes('"other"'))).toHaveLength(1);
 	});
 
 	test('the hot-field warning does not repeat for another instance of the same class', async () => {

@@ -163,12 +163,12 @@ Use the raw value in imperative code and render logic. Use bindings in stable JS
 
 A direct read in `render()` makes the whole view depend on the field: each change runs `render()` again. That is the right choice for branching, list shape and `class` or `style` composition. `{this.$.count}` patches one node and leaves `render()` alone, so it suits a value that changes often, such as a media position.
 
-In development, Radiant warns once per class and field when a direct read is clearly wasteful, naming the field and the host and pointing to `this.$`:
+In development, Radiant warns once per class and field when a direct read is clearly wasteful, naming the field and the host and pointing to `this.$`. The warnings cover `@state` and `@prop` fields; a `@signal` field, an `@attr` field and a `createStore(...)` read or path write do not warn.
 
-- **Redundant path:** the field is bound with `this.$` and also read directly in `render()`, so each change patches the node and then re-renders the view.
+- **Redundant path:** the field is bound with `this.$` and also read directly in `render()`, so each change patches the node and then re-renders the view. A binding passed to a child host counts as bound.
 - **Hot field:** the field re-runs one host's `render()` 30 times within a second.
 
-A host that reads a field directly without either pattern does not warn. The warnings follow the rules of every Radiant development warning: a production build drops them, and `setDevWarningsEnabled(false)` from `@ecopages/jsx/jsx-dev-runtime` silences them.
+A host that reads a field directly without either pattern does not warn. A production build drops the warnings, and `setDevWarningsEnabled(false)` from `@ecopages/jsx/jsx-dev-runtime` silences them.
 
 ## Derived Bindings
 

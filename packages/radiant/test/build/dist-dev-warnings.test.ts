@@ -12,7 +12,7 @@ const DEVELOPMENT_WARNING_TEXTS = [
 	'Delegated @onEvent listens',
 	'was defined after a JSX view rendered it',
 	'and also reads it in render()',
-	'times within',
+	're-ran render()',
 ];
 const NODE_ENV_READ = /process\.env\.NODE_ENV/g;
 /** Matches the check as the first expression in a `try` block, whether esbuild kept the `if` or minified it to `&&`. */

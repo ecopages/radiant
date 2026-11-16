@@ -8,7 +8,6 @@ export class TrackedRender<Value> {
 	private refreshed = false;
 	private readonly watcher: InstanceType<typeof subtle.Watcher>;
 
-	/** @param warnings Development diagnostics; the host passes it only in a development build. */
 	constructor(
 		private readonly requestUpdate: () => void,
 		private readonly warnings?: RenderWarnings,
@@ -22,14 +21,12 @@ export class TrackedRender<Value> {
 			this.refreshed = false;
 			const value = this.signal.get();
 			this.watcher.watch(this.signal);
-			this.warnings?.afterRender();
 			return value;
 		}
 
 		const warnings = this.warnings;
 		const signal = new Computed(warnings ? () => warnings.run(render) : render);
 		const value = signal.get();
-		warnings?.afterRender();
 		if (connected) {
 			this.disconnect();
 			this.signal = signal;
