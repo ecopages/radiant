@@ -441,6 +441,8 @@ describe('RadiantElement', () => {
 		expect(element.renders).toBe(renders);
 		document.body.appendChild(element);
 		await waitFor(() => expect(element.querySelector('p')?.textContent).toBe('while detached'));
+		await new Promise((resolve) => setTimeout(resolve));
+		expect(element.renders).toBe(renders + 1);
 		expect(element.querySelector('input')).toBe(child);
 		source.set('after reconnect');
 		await waitFor(() => expect(element.querySelector('p')?.textContent).toBe('after reconnect'));

@@ -20,19 +20,18 @@ type Constructable = new (...args: any[]) => HTMLElement;
  * only execute each registered initializer once per instance.
  */
 export function ensureLegacyHostReady<T extends object>(host: T, phase: LegacyHostReadinessPhase): void {
-	const instance = unwrapLegacyControllerHost(host);
-
-	switch (phase) {
-		case 'construct':
-			runLegacyInstanceInitializers(instance);
-			break;
-		case 'connect':
-			runLegacyPostConstructionInitializers(instance, 'connect');
-			break;
-		case 'ssr':
-			runLegacyPostConstructionInitializers(instance, 'ssr');
-			break;
+	if (phase === 'construct') {
+		runLegacyInstanceInitializers(host);
+		return;
 	}
+
+	const target = legacyControllerTargets.get(host);
+
+	if (target) {
+		completingLegacyConstruction.add(target);
+	}
+
+	runLegacyPostConstructionInitializers(host, phase);
 }
 
 /**
@@ -66,7 +65,7 @@ export function withLegacyConstructionEnd<T extends Constructable>(decorated: T)
 }
 
 const completingLegacyConstruction = new WeakSet<object>();
-const legacyControllerHosts = new WeakMap<object, object>();
+const legacyControllerTargets = new WeakMap<object, object>();
 
 /**
  * Runs legacy post-construction once the author's subclass fields exist, without wrapping that class.
@@ -79,42 +78,27 @@ const legacyControllerHosts = new WeakMap<object, object>();
  * install getters that a later class field then overwrites. Keys in `internalKeys` are the
  * controller's own constructor fields (`host`, `$`, …) so a field initializer that reads `this.$`
  * does not install too early.
+ *
+ * The controller must create the proxy before anything captures `this` and use it everywhere,
+ * because the subclass constructor then runs on the proxy: its `#private` fields live on the proxy,
+ * and a method called on the raw instance could not read them.
  */
-export function completeLegacyControllerConstruction<T extends object>(
-	instance: T,
-	internalKeys: ReadonlySet<PropertyKey>,
-): T {
+export function createLegacyControllerSurface<T extends object>(instance: T, internalKeys: ReadonlySet<PropertyKey>): T {
 	const surface = new Proxy(instance, {
 		get(target, prop, receiver) {
-			completeIfAuthorKey(target, prop, internalKeys);
+			if (
+				!completingLegacyConstruction.has(target) &&
+				!internalKeys.has(prop) &&
+				typeof prop !== 'symbol' &&
+				hasAllLegacyPostConstructionFields(target)
+			) {
+				ensureLegacyHostReady(surface, 'connect');
+			}
+
 			return Reflect.get(target, prop, receiver);
-		},
-		set(target, prop, value) {
-			return Reflect.set(target, prop, value, target);
-		},
-		defineProperty(target, prop, descriptor) {
-			return Reflect.defineProperty(target, prop, descriptor);
 		},
 	});
 
-	legacyControllerHosts.set(surface, instance);
+	legacyControllerTargets.set(surface, instance);
 	return surface;
-}
-
-function unwrapLegacyControllerHost<T extends object>(host: T): T {
-	return (legacyControllerHosts.get(host) as T | undefined) ?? host;
-}
-
-function completeIfAuthorKey(target: object, prop: PropertyKey, internalKeys: ReadonlySet<PropertyKey>): void {
-	if (
-		completingLegacyConstruction.has(target) ||
-		internalKeys.has(prop) ||
-		typeof prop === 'symbol' ||
-		!hasAllLegacyPostConstructionFields(target)
-	) {
-		return;
-	}
-
-	completingLegacyConstruction.add(target);
-	ensureLegacyHostReady(target, 'connect');
 }
