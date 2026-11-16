@@ -1,5 +1,5 @@
 import { assertSignalAccessAllowed, runWatcherNotify } from './runtime';
-import { resolveSignalNode } from './signal-node';
+import { collectErrors, resolveSignalNode, throwCollected } from './signal-node';
 import type { Signal } from './types';
 
 type WatchableSignal = ReturnType<typeof resolveSignalNode>;
@@ -38,6 +38,12 @@ export class Watcher {
 	 *
 	 * Removing the last watched signal also clears the pending set and resets the
 	 * notification latch.
+	 *
+	 * @remarks
+	 * Release is not interrupted by a throwing `unwatched` hook: every signal is
+	 * removed from the watcher and every hook runs first, then the error is
+	 * rethrown (several become an `AggregateError`). The signals are no longer
+	 * watched afterwards, so a retry reports them as not watched.
 	 */
 	public unwatch(...signals: Signal<unknown>[]): void {
 		assertSignalAccessAllowed();
@@ -51,11 +57,16 @@ export class Watcher {
 			}
 		}
 
+		const unsubscribers: (() => void)[] = [];
+
 		for (const signal of signals) {
 			const node = resolveSignalNode(signal);
 			const unsubscribe = this.unsubscribers.get(node);
 
-			unsubscribe?.();
+			if (unsubscribe) {
+				unsubscribers.push(unsubscribe);
+			}
+
 			this.pendingSignals.delete(node);
 			this.signals.delete(node);
 			this.unsubscribers.delete(node);
@@ -65,10 +76,18 @@ export class Watcher {
 			this.pendingSignals.clear();
 			this.notified = false;
 		}
+
+		throwCollected(collectErrors(unsubscribers), 'Multiple unwatched hooks failed.');
 	}
 
 	/**
 	 * Starts watching the provided signals.
+	 *
+	 * @remarks
+	 * Atomic: if a `watched` hook throws, every signal this call had started
+	 * watching is released in reverse order (so each `unwatched` hook runs), the
+	 * watcher is left as it was before the call, and the original error is
+	 * rethrown. Errors thrown while releasing are dropped in favor of it.
 	 *
 	 * Re-watching is also a reset point, so `getPending()` only reports
 	 * invalidations that happen after this call.
@@ -76,20 +95,38 @@ export class Watcher {
 	public watch(...signals: Signal<unknown>[]): void {
 		assertSignalAccessAllowed();
 
-		for (const signal of signals) {
-			const node = resolveSignalNode(signal);
+		const added: WatchableSignal[] = [];
 
-			if (this.signals.has(node)) {
-				continue;
+		try {
+			for (const signal of signals) {
+				const node = resolveSignalNode(signal);
+
+				if (this.signals.has(node)) {
+					continue;
+				}
+
+				this.signals.set(node, signal);
+				added.push(node);
+				this.unsubscribers.set(
+					node,
+					node.addWatcher(() => {
+						this.handleSignalChange(node);
+					}),
+				);
 			}
+		} catch (error) {
+			const rollback = added.reverse().map((node) => {
+				const unsubscribe = this.unsubscribers.get(node);
 
-			this.signals.set(node, signal);
-			this.unsubscribers.set(
-				node,
-				node.addWatcher(() => {
-					this.handleSignalChange(node);
-				}),
-			);
+				this.pendingSignals.delete(node);
+				this.signals.delete(node);
+				this.unsubscribers.delete(node);
+
+				return () => unsubscribe?.();
+			});
+
+			collectErrors(rollback);
+			throw error;
 		}
 
 		this.pendingSignals.clear();

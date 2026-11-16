@@ -7,7 +7,7 @@ import {
 	setActiveComputedSignal,
 	setActiveDependencyRecorder,
 } from './runtime';
-import { SignalNode } from './signal-node';
+import { collectErrors, SignalNode, throwCollected } from './signal-node';
 import type { ComputedCallback, DependencyNode, SignalEquals, SignalOptions, SignalSubscriber } from './types';
 
 const COMPUTED_NO_ERROR = Symbol.for('@ecopages/signals.computed-no-error');
@@ -103,11 +103,10 @@ export class Computed<Value> extends SignalNode<Value> {
 	}
 
 	private clearDependencyWatcherSubscriptions(): void {
-		for (const unsubscribe of this.dependencyWatcherUnsubscribers.values()) {
-			unsubscribe();
-		}
+		const unsubscribers = [...this.dependencyWatcherUnsubscribers.values()];
 
 		this.dependencyWatcherUnsubscribers.clear();
+		throwCollected(collectErrors(unsubscribers), 'Multiple unwatched hooks failed.');
 	}
 
 	private handleDependencyChange = () => {
@@ -232,26 +231,57 @@ export class Computed<Value> extends SignalNode<Value> {
 		}
 	}
 
+	/**
+	 * Brings the dependency watchers in line with the current dependencies.
+	 *
+	 * @remarks
+	 * If a dependency's `watched` hook throws, the dependencies watched by this
+	 * call are released in reverse order and the error is rethrown, so a failed
+	 * first watch leaves nothing subscribed. Dependencies dropped by this call
+	 * are released first and stay released; an error from their `unwatched` hooks
+	 * is rethrown once the new dependencies are watched.
+	 */
 	private syncDependencyWatcherSubscriptions(): void {
+		const dropped: (() => void)[] = [];
+
 		for (const [dependency, unsubscribe] of this.dependencyWatcherUnsubscribers) {
 			if (this.dependencies.has(dependency)) {
 				continue;
 			}
 
-			unsubscribe();
+			dropped.push(unsubscribe);
 			this.dependencyWatcherUnsubscribers.delete(dependency);
 		}
 
-		for (const dependency of this.dependencies.keys()) {
-			if (this.dependencyWatcherUnsubscribers.has(dependency)) {
-				continue;
-			}
+		const droppedErrors = collectErrors(dropped);
+		const added: DependencyNode[] = [];
 
-			this.dependencyWatcherUnsubscribers.set(
-				dependency,
-				dependency.addWatcher(this.handleDependencyWatcherChange),
-			);
+		try {
+			for (const dependency of this.dependencies.keys()) {
+				if (this.dependencyWatcherUnsubscribers.has(dependency)) {
+					continue;
+				}
+
+				this.dependencyWatcherUnsubscribers.set(
+					dependency,
+					dependency.addWatcher(this.handleDependencyWatcherChange),
+				);
+				added.push(dependency);
+			}
+		} catch (error) {
+			const rollback = added.reverse().map((dependency) => {
+				const unsubscribe = this.dependencyWatcherUnsubscribers.get(dependency)!;
+
+				this.dependencyWatcherUnsubscribers.delete(dependency);
+
+				return unsubscribe;
+			});
+
+			collectErrors(rollback);
+			throw error;
 		}
+
+		throwCollected(droppedErrors, 'Multiple unwatched hooks failed.');
 	}
 
 	private trackDependency(dependency: DependencyNode): void {

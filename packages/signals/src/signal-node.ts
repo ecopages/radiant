@@ -9,6 +9,36 @@ import {
 } from './types';
 
 /**
+ * Runs every task even when earlier ones throw, and returns what they threw.
+ */
+export function collectErrors(tasks: Iterable<() => void>): unknown[] {
+	const errors: unknown[] = [];
+
+	for (const task of tasks) {
+		try {
+			task();
+		} catch (error) {
+			errors.push(error);
+		}
+	}
+
+	return errors;
+}
+
+/**
+ * Throws the only error as is, or several as an `AggregateError`.
+ */
+export function throwCollected(errors: unknown[], message: string): void {
+	if (errors.length === 1) {
+		throw errors[0];
+	}
+
+	if (errors.length > 1) {
+		throw new AggregateError(errors, message);
+	}
+}
+
+/**
  * Shared signal implementation used by writable and computed signals.
  *
  * It centralizes subscriber delivery, monotonic versioning, and the low-level
@@ -29,6 +59,18 @@ export abstract class SignalNode<Value> implements Signal<Value>, DependencyNode
 	abstract get(): Value;
 	abstract subscribe(notify: SignalSubscriber<Value>): () => void;
 
+	/**
+	 * Registers a watcher listener, running `watched` when it is the first.
+	 *
+	 * @remarks
+	 * Adding is atomic: if `watched` or the first-watcher work throws, the listener
+	 * and anything the first-watcher work subscribed are released, `unwatched` is
+	 * not called for this node (it never became watched), and the original error
+	 * is rethrown. An error thrown while releasing is dropped in favor of it.
+	 *
+	 * The returned unsubscriber always finishes releasing the node before it
+	 * rethrows an error from a dependency's or this node's `unwatched` hook.
+	 */
 	public addWatcher(notify: () => void): () => void {
 		const wasEmpty = this.watcherListeners.size === 0;
 		this.watcherListeners.add(notify);
@@ -39,6 +81,7 @@ export abstract class SignalNode<Value> implements Signal<Value>, DependencyNode
 				this.onWatched?.call(this);
 			} catch (error) {
 				this.watcherListeners.delete(notify);
+				collectErrors([() => this.handleLastWatcherRemoved()]);
 				throw error;
 			}
 		}
@@ -49,8 +92,10 @@ export abstract class SignalNode<Value> implements Signal<Value>, DependencyNode
 			}
 
 			if (this.watcherListeners.size === 0) {
-				this.handleLastWatcherRemoved();
-				this.onUnwatched?.call(this);
+				throwCollected(
+					collectErrors([() => this.handleLastWatcherRemoved(), () => this.onUnwatched?.call(this)]),
+					'Multiple unwatched hooks failed.',
+				);
 			}
 		};
 	}
@@ -78,23 +123,7 @@ export abstract class SignalNode<Value> implements Signal<Value>, DependencyNode
 	}
 
 	protected notifyWatchers(): void {
-		const errors: unknown[] = [];
-
-		for (const listener of this.watcherListeners) {
-			try {
-				listener();
-			} catch (error) {
-				errors.push(error);
-			}
-		}
-
-		if (errors.length === 1) {
-			throw errors[0];
-		}
-
-		if (errors.length > 1) {
-			throw new AggregateError(errors, 'Multiple watcher notifications failed.');
-		}
+		throwCollected(collectErrors(this.watcherListeners), 'Multiple watcher notifications failed.');
 	}
 }
 
