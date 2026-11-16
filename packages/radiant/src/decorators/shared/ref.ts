@@ -1,4 +1,5 @@
 import { resolvePart, resolveParts } from '../../core/parts';
+import { RADIANT_ELEMENT_BRAND } from '../../core/radiant-element-brand';
 import { REACTIVE_HOST, type ReactiveHostInternals } from '../../core/reactive-host';
 import { warnOnceInDevelopment } from '../../helpers/dev-warnings';
 import type { QueryHostTarget } from '../../helpers/create-query';
@@ -45,9 +46,12 @@ function hasReactiveHost(
  * Standard adapters run this from `addInitializer`, legacy adapters from post-construction, like
  * `installQueryField`. Reads resolve through the scoped resolver every time, with no cache.
  *
- * The development checks run once per instance, from the host's post-sync pass on first connect, so a read
- * never pays for them. A duplicate that a later render introduces is not reported. `@refAll` skips the
- * duplicate check, since several parts under one name are what it reads.
+ * The development checks run once per instance on first connect, so a read never pays for them. An Element
+ * Host runs them from its connect-sync pass, which only the client connect path flushes: the post-sync pass
+ * also runs during server rendering, before the view exists, and would report parts the view is about to
+ * render. A Controller Host has no connect-sync pass and runs them from post-sync. A duplicate that a later
+ * render introduces is not reported. `@refAll` skips the duplicate check, since several parts under one
+ * name are what it reads.
  */
 export function installRefField(host: RefDecoratorHost, propertyName: string, config: RefFieldConfig): void {
 	const element = resolveHostElement(host);
@@ -65,7 +69,9 @@ export function installRefField(host: RefDecoratorHost, propertyName: string, co
 	}
 
 	let checked = false;
-	host[REACTIVE_HOST].registerPostSync(() => {
+	const internals = host[REACTIVE_HOST];
+	const register = RADIANT_ELEMENT_BRAND in host ? internals.registerConnectSync : internals.registerPostSync;
+	register.call(internals, () => {
 		if (checked) return;
 		checked = true;
 

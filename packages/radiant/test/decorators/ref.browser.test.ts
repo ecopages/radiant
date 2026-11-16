@@ -2,8 +2,9 @@ import { afterEach, beforeEach, describe, expect, test, vi, type MockInstance } 
 import { RadiantController } from '../../src/core/radiant-controller';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { customElement } from '../../src/decorators/custom-element';
-import { ref, refAll, type RefDecoratorHost } from '../../src/decorators/ref';
-import { ref as standardRef } from '../../src/decorators/standard/ref';
+import { ref, refAll } from '../../src/decorators/ref';
+
+declare const __LEGACY_ENVIRONMENT__: boolean;
 
 const WARNINGS_ENABLED = Symbol.for('@ecopages/jsx.dev-warnings-enabled');
 
@@ -157,6 +158,72 @@ describe('@ref on a Controller Host', () => {
 	});
 });
 
+describe('@ref before connect', () => {
+	test('an Element Host reads null and [] in both decorator modes', () => {
+		const host = document.createElement('ref-host') as RefHost;
+
+		expect(host.menubarRoot).toBeNull();
+		expect(host.item).toEqual([]);
+	});
+
+	test.skipIf(__LEGACY_ENVIRONMENT__)(
+		'a Controller Host under standard decorators is live: null without a part, the part when one exists',
+		async () => {
+			const empty = new RefController(await mount<HTMLElement>('<section></section>'));
+			expect(empty.status).toBeNull();
+			expect(empty.item).toEqual([]);
+
+			const root = await mount<HTMLElement>('<section><i id="s" data-ref="status"></i></section>');
+			expect(new RefController(root).status).toBe(byId('s'));
+		},
+	);
+
+	test.skipIf(!__LEGACY_ENVIRONMENT__)(
+		'a Controller Host under legacy decorators reads undefined, since its fields are set up at connect()',
+		async () => {
+			const controller = new RefController(await mount<HTMLElement>('<section></section>'));
+
+			expect(controller.status).toBeUndefined();
+			expect(controller.item).toBeUndefined();
+
+			controller.connect();
+			expect(controller.status).toBeNull();
+			expect(controller.item).toEqual([]);
+		},
+	);
+});
+
+describe('@ref with initializers and inheritance', () => {
+	test('a field initializer does not replace the live getter', async () => {
+		@customElement('ref-initializer-host')
+		class RefInitializerHost extends RadiantElement {
+			@ref() panel: HTMLElement | null = null;
+			@refAll() cells: HTMLElement[] = [];
+		}
+
+		const host = await mount<RefInitializerHost>(
+			'<ref-initializer-host><i id="p" data-ref="panel"></i><i id="c" data-ref="cells"></i></ref-initializer-host>',
+		);
+
+		expect(host.panel).toBe(byId('p'));
+		expect(host.cells).toEqual([byId('c')]);
+	});
+
+	test('a subclass reads its own parts and the ones it inherits', async () => {
+		@customElement('ref-child-host')
+		class RefChildHost extends RefHost {
+			@ref() extra!: HTMLElement | null;
+		}
+
+		const host = await mount<RefChildHost>(
+			'<ref-child-host><i id="a" data-ref="menubar-root"></i><i id="b" data-ref="extra"></i></ref-child-host>',
+		);
+
+		expect(host.menubarRoot).toBe(byId('a'));
+		expect(host.extra).toBe(byId('b'));
+	});
+});
+
 describe('@ref across reconnect on a Controller Host', () => {
 	test('still resolves the owned part after disconnect and connect', async () => {
 		const root = await mount<HTMLElement>('<section><i id="own" data-ref="status"></i></section>');
@@ -183,15 +250,17 @@ describe('@ref names that collide with element members', () => {
 });
 
 describe('@ref private fields', () => {
-	test('standard decorators reject a # field, which cannot hold a getter', () => {
-		const context = { name: '#panel', private: true, addInitializer: vi.fn() };
+	test.skipIf(__LEGACY_ENVIRONMENT__)('standard decorators reject a # field, which cannot hold a getter', () => {
+		expect(() => {
+			class PrivateRefHost extends RadiantElement {
+				@ref() #panel: HTMLElement | null = null;
 
-		expect(() =>
-			standardRef({ all: false, required: false })(
-				undefined,
-				context as unknown as ClassFieldDecoratorContext<RefDecoratorHost, Element | null>,
-			),
-		).toThrow(/private field #panel/);
+				get panel() {
+					return this.#panel;
+				}
+			}
+			return PrivateRefHost;
+		}).toThrow(/private field #panel/);
 	});
 });
 

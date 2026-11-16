@@ -1,9 +1,10 @@
 // @vitest-environment node
 import '../../src/server/install-ssr-runtime';
-import { describe, expect, test } from 'vitest';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { customElement } from '../../src/decorators/custom-element';
 import { ref, refAll } from '../../src/decorators/ref';
+import { renderRadiantElementHostToString } from '../../src/server/radiant-element-ssr';
 
 @customElement('ref-ssr-host')
 class RefSsrHost extends RadiantElement {
@@ -13,6 +14,21 @@ class RefSsrHost extends RadiantElement {
 
 @customElement('ref-ssr-inner')
 class _RefSsrInner extends RadiantElement {}
+
+@customElement('ref-ssr-required-host')
+class RefSsrRequiredHost extends RadiantElement {
+	@ref({ required: true }) panel!: HTMLElement | null;
+	@ref() cell!: HTMLElement | null;
+
+	override render() {
+		return (
+			<div>
+				<i data-ref="panel" />
+				<i data-ref="cell" />
+			</div>
+		);
+	}
+}
 
 const part = (name: string) => {
 	const node = document.createElement('i');
@@ -40,5 +56,18 @@ describe('@ref on the server', () => {
 
 		expect(host.menubarRoot).toBe(root);
 		expect(host.item).toEqual([first, second]);
+	});
+});
+
+describe('@ref development checks on the server', () => {
+	afterEach(() => vi.restoreAllMocks());
+
+	test('do not report a part the host renders itself', () => {
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+		const html = renderRadiantElementHostToString(new RefSsrRequiredHost(), { mode: 'hydrate' });
+
+		expect(html).toContain('data-ref="panel"');
+		expect(warn.mock.calls.filter(([message]) => String(message).includes('@ref'))).toEqual([]);
 	});
 });
