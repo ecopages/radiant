@@ -3,7 +3,7 @@ import { TrackedRender } from './tracked-render';
 import type { UnknownContext } from '../context/types';
 import { ensureLegacyHostReady } from '../decorators/legacy/host-readiness';
 import { REACTIVE_HOST, ReactiveHost, type ReactiveHostInternals, type ReactiveHostLike } from './reactive-host';
-import type { ReactiveState } from './reactivity-contract';
+import type { ReactiveState, ReadonlyReactiveState } from './reactivity-contract';
 import {
 	resolveReactiveDefault,
 	validateReactivePropertyDefault,
@@ -252,11 +252,11 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 		return this.reactiveHost.createReactiveMember(propertyName, initialValue);
 	}
 
-	public registerReactiveMember<T>(propertyName: string, signal: ReactiveState<T>): void {
+	public registerReactiveMember<T>(propertyName: string, signal: ReadonlyReactiveState<T>): void {
 		this.reactiveHost.registerReactiveMember(propertyName, signal);
 	}
 
-	public getReactiveMember<T = unknown>(propertyName: string): ReactiveState<T> | undefined {
+	public getReactiveMember<T = unknown>(propertyName: string): ReadonlyReactiveState<T> | undefined {
 		return this.reactiveHost.getReactiveMember(propertyName);
 	}
 

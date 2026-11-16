@@ -33,6 +33,7 @@ export function installHostSignal<Value>(
 			? options.initial
 			: ((initialValue === undefined ? options.initial : initialValue) as Value);
 
+	host[REACTIVE_HOST].getWritableMember(propertyName);
 	warnDiscardedPreUpgradeValue(host, propertyName, '@signal');
 
 	const hostSignal = createHostSignal({

@@ -1,4 +1,4 @@
-import type { ReactiveHostLike } from '../../core/reactive-host';
+import { REACTIVE_HOST, type ReactiveHostLike } from '../../core/reactive-host';
 import { validateReactivePropertyDefault } from '../../core/reactive-prop-core';
 import { resolveHostElement } from '../../helpers/resolve-host-element';
 import {
@@ -118,6 +118,8 @@ export function installReactiveAttribute<TBindings extends object, TValue>(
 	const hostRecord = host as unknown as Record<PropertyKey, unknown>;
 	const attributeName = options.source ?? toKebabCaseAttributeName(propertyName);
 	const observerKey = Symbol(`@ecopages/radiant/attr:${propertyName}:observer`);
+
+	host[REACTIVE_HOST].getWritableMember(propertyName);
 
 	const initialValue = readReactiveAttributeValue(host, attributeName, options);
 	const signal = host.createReactiveMember(propertyName, initialValue);
