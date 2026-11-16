@@ -2,7 +2,7 @@ import { HAS_PRE_UPGRADE_VALUE } from './pre-upgrade-value';
 import type { JsxBindingSourceValue, SubscribableJsxValueWithAccess } from '@ecopages/jsx';
 import { HostSsrRegistry } from './host-ssr-registry';
 import { adaptReactiveStateToJsxBinding } from './reactive-binding-adapter';
-import { getReactiveRuntime } from './reactivity-runtime';
+import { state } from '@ecopages/signals';
 import type { ReactiveState } from './reactivity-contract';
 import type {
 	ReactiveAccessorDefinition,
@@ -283,7 +283,7 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	 * Creates a new reactive member state and registers it under `propertyName`.
 	 */
 	public createReactiveMember<T>(propertyName: string, initialValue: T): ReactiveState<T> {
-		const signal = getReactiveRuntime().createState(initialValue) as ReactiveState<T>;
+		const signal = state(initialValue);
 		this.registerMember(propertyName, signal as ReactiveState<unknown>);
 		return signal;
 	}

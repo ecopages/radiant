@@ -1,5 +1,5 @@
 import { jsx, jsxs } from '@ecopages/jsx';
-import type { WritableSignal } from '@ecopages/signals';
+import { state as createSignalState, type WritableSignal } from '@ecopages/signals';
 import { waitFor } from '@testing-library/dom';
 import { describe, expect, test } from 'vitest';
 import {
@@ -226,6 +226,33 @@ describeWhenStandard('RadiantController', () => {
 			expect(host.querySelector('[data-ref="count"]')?.textContent).toBe('2');
 			expect(host.querySelector('[data-ref="status"]')?.textContent).toBe('ready');
 		});
+	});
+
+	test('tracks shared render dependencies again after reconnecting', async () => {
+		const source = createSignalState(1);
+		class SharedRenderController extends RadiantController {
+			renders = 0;
+			override render() {
+				this.renders += 1;
+				return jsx('p', { children: String(source.get()) });
+			}
+		}
+		const host = document.createElement('div');
+		const controller = new SharedRenderController(host);
+		controller.connect();
+		expect(host.textContent).toBe('1');
+		source.set(2);
+		await waitFor(() => expect(host.textContent).toBe('2'));
+		controller.disconnect();
+		const renders = controller.renders;
+		source.set(3);
+		await Promise.resolve();
+		expect(controller.renders).toBe(renders);
+		controller.connect();
+		expect(host.textContent).toBe('3');
+		source.set(4);
+		await waitFor(() => expect(host.textContent).toBe('4'));
+		controller.disconnect();
 	});
 
 	test('runs subclass connect logic during SSR setup without performing a client DOM render', () => {
