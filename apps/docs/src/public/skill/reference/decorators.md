@@ -37,6 +37,7 @@ Under standard decorators the declared field type is the source of truth. Option
 
 - A decorated field cannot be `declare` (TS1206) or `accessor`.
 - `@queryAll(selector)`: `T[]` of elements. `@query(selector)` follows the single-element rule below.
+- `@ref`: `T | null`; `@refAll`: `T[]`. A wrong field type does not compile.
 - `@query`: `T | null`, or `T[]` with `all: true` (`all` must be a literal). A single-element query is `null` when nothing matches, so guard it with `?.` or an early return; use `!` only where the host's own markup always renders the node.
 - `@prop` and `@attr`: the `type` constant must fit the field (`String` a `string`, `Number` a `number`, `Boolean` a `boolean`, `Array` an array, `Object` a non-array object; `null` and `undefined` always fit; a union of parsed types fits none). A parser owns the value type instead, so `type` is not checked against the field: `transform.fromAttribute` on `@prop`, `converter.fromAttribute` on `@attr`. Pass the parser inline or with `satisfies`.
 - `@attr` without `type` or a parser holds the raw string, so the field is `string | null | undefined` (a string literal union fits). A number or boolean field needs `type` or a parser.
@@ -77,8 +78,11 @@ Avoid updating the same watched property inside its own `@onUpdated(...)` unless
 
 - `@query(...)` — rendered descendants by `data-ref` or selector, on a `RadiantElement` or a `RadiantController`
 - `@query(selector)` and `@queryAll(selector)` — first match or `null`, and an array of every match; live and unscoped (they reach into nested hosts)
+- `@ref(...)` / `@refAll(...)` — the `data-ref` parts this host owns, scoped so a nested host's same-named part is left out
 
 `@query` options: `ref` or `selector`; `all` for `T[]`; `cache` (default `false`: each read queries the DOM). Prefer `ref` over broad selectors. A `ref` lookup only sees parts the host owns (a nested Element Host's or attached Controller Host's same-named part is skipped); `selector` is unscoped. Field types and null-safe use: see [Field types](#field-types).
+
+`@ref()` reads `data-ref` named after the field (`menubarRoot` finds `menubar-root`, `listboxID` finds `listbox-id`); `@ref('l1234')` uses the name as written; `@ref({ required: true })` and `@ref('name', { required: true })` warn once in development when the part is missing after first connect. `@refAll` returns every owned part in document order. Both read live, are `null` / `[]` before connect, and cannot decorate a `#private` field under standard decorators. Prefer them over `@query({ ref })` for parts of the host's own markup; `@query(selector)` stays the way to reach into another host.
 
 Use `@query` for a live element handle (focus, observers, third-party APIs). If a `@query` exists only so you can copy a field into `.textContent` / `.setAttribute` / `toggleAttribute`, use `@bindTo` instead. If the host owns `render()` and the node is a leaf in that view, use `this.$`.
 

@@ -7,6 +7,7 @@
  * names has to be reachable from a package `exports` entry, or the emit fails with TS2883.
  */
 import { attr, bindTo, debounce, event, onEvent, onUpdated, prop, query, queryAll, signal } from '@ecopages/radiant';
+import { ref, refAll } from '@ecopages/radiant/decorators/ref';
 import type { WritableSignal } from '@ecopages/signals';
 import {
 	consumeContext,
@@ -35,3 +36,6 @@ export const myOnEvent = onEvent({ type: 'click', mediaQuery: '(min-width: 1px)'
 export const myDebounce = debounce(300);
 export const myOnUpdated = onUpdated('count');
 export const myOnContextUpdate = onContextUpdate({ context: ctx });
+export const myRef = ref();
+export const myNamedRef = ref('x', { required: true });
+export const myRefAll = refAll();
