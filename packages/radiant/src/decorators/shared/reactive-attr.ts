@@ -106,6 +106,12 @@ function writeReactiveAttributeValue<T>(
 	target.setAttribute(attributeName, attributeValue);
 }
 
+/**
+ * Installs the reactive attribute member for `@attr`.
+ *
+ * @remarks
+ * `getWritableMember` runs first for its throw: a read-only member under this name must fail before the member is replaced.
+ */
 export function installReactiveAttribute<TBindings extends object, TValue>(
 	host: ReactiveAttributeHostLike<TBindings>,
 	propertyName: string,

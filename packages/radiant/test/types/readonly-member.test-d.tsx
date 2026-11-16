@@ -27,3 +27,7 @@ export const controllerMember = controller.getReactiveMember<number>('count');
 elementMember?.set(1);
 // @ts-expect-error getReactiveMember returns the read-only view
 controllerMember?.set(1);
+
+export type CreatedMemberStaysWritable = Assert<
+	ReturnType<RadiantElement['createReactiveMember']> extends ReactiveState<unknown> ? true : false
+>;

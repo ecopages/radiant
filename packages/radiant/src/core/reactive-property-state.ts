@@ -89,6 +89,7 @@ export class ReactivePropertyState {
 		createReactiveMember: <U>(propertyName: string, initialValue: U) => ReactiveState<U>,
 	): void {
 		const { type, reflect, defaultValue, transform } = options;
+		const existingMember = this.host[REACTIVE_HOST].getWritableMember<T>(propertyName);
 		const attributeKey = attributeNameForProp(propertyName, options);
 		const hasPreUpgradeValue = this.preUpgradePropertyValues.has(propertyName);
 
@@ -112,7 +113,6 @@ export class ReactivePropertyState {
 
 		this.register(propertyMapping as ReactiveProperty<unknown>);
 
-		const existingMember = this.host[REACTIVE_HOST].getWritableMember<T>(propertyName);
 		const signal = existingMember ?? createReactiveMember(propertyName, initialValue as T);
 
 		if (existingMember && initialValue !== undefined) {

@@ -144,6 +144,32 @@ describe('read-only reactive members on an element', () => {
 	});
 });
 
+describe('replacing a member keeps working across the read-only split', () => {
+	test('a read-only member replaces a writable one and drives this.$', () => {
+		const source = createReadonlySource(10);
+		customElements.define('readonly-replace-writable', class extends RadiantElement<{ count: number }> {});
+		const host = document.createElement('readonly-replace-writable') as RadiantElement<{ count: number }>;
+		host.createReactiveMember('count', 1);
+
+		host.registerReactiveMember('count', source.member);
+
+		expect(host.$.count.getValue()).toBe(10);
+		source.push(11);
+		expect(host.$.count.getValue()).toBe(11);
+	});
+
+	test('a writable member replaces a read-only one without throwing', () => {
+		customElements.define('readonly-replace-readonly', class extends RadiantElement<{ count: number }> {});
+		const host = document.createElement('readonly-replace-readonly') as RadiantElement<{ count: number }>;
+		host.registerReactiveMember('count', createReadonlySource(1).member);
+
+		const next = host.createReactiveMember('count', 2);
+		next.set(3);
+
+		expect(host.$.count.getValue()).toBe(3);
+	});
+});
+
 describe('writable decorators on a name held by a read-only member', () => {
 	const message = /"count" is already registered as a read-only member/;
 
@@ -240,5 +266,14 @@ describe('read-only reactive members on a controller', () => {
 		await waitFor(() => expect(calls).toEqual([3]));
 
 		controller.disconnect();
+	});
+
+	test('createReactiveProp throws on a name held by a read-only member', () => {
+		const controller = new RadiantController<{ count: number }>(document.createElement('div'));
+		controller.registerReactiveMember('count', createReadonlySource(1).member);
+
+		expect(() => controller.createReactiveProp('count', { type: Number, defaultValue: 0 })).toThrow(
+			/"count" is already registered as a read-only member/,
+		);
 	});
 });
