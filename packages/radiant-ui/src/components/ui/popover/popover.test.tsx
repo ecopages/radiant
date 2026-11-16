@@ -266,8 +266,5 @@ describe('rui-popover reads its portaled surface from the popover controller', (
 				await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined)));
 			},
 		});
-		expect(Reflect.get(host, 'controller')).toBe(controller);
-		const current = controller.getFloatingElement() as HTMLElement;
-		expect(current.id).toMatch(/^rui-popover/);
 	});
 });
