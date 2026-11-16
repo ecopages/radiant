@@ -587,7 +587,7 @@ describe('RadiantElement SSR', () => {
 
 		@customElement('server-host-bound-hydrate-card-test')
 		class ServerHostBoundHydrateCard extends RadiantElement<ServerHostBoundHydrateCardBindings> {
-			@prop({ type: Number, reflect: true, defaultValue: 3, bind: true }) count!: number;
+			@prop({ type: Number, reflect: true, defaultValue: 3 }) count!: number;
 			@prop({ type: String, defaultValue: 'SSR counter rendered in Nitro' }) label!: string;
 
 			override render() {
@@ -626,7 +626,7 @@ describe('RadiantElement SSR', () => {
 		@customElement('server-host-deep-tree-test')
 		class ServerHostDeepTree extends RadiantElement<ServerHostDeepTreeBindings> {
 			@prop({ type: String, defaultValue: 'Deep SSR' }) label!: string;
-			@prop({ type: Number, reflect: true, defaultValue: 11, bind: true }) count!: number;
+			@prop({ type: Number, reflect: true, defaultValue: 11 }) count!: number;
 
 			override render() {
 				return (

@@ -7,7 +7,6 @@ import type { ReactiveState } from './reactivity-contract';
 import {
 	resolveReactiveDefault,
 	validateReactivePropertyDefault,
-	type ReactiveBindingOption,
 	type ReactivePropertyOptions,
 	type ReactiveBindingValue,
 	type ReactiveBindings,
@@ -67,10 +66,7 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 			this,
 			{
 				defineProperty: (target, property, descriptor) => Object.defineProperty(target, property, descriptor),
-				hasProperty: (target, property) => property in target,
-				readProperty: (target, property) => (target as Record<string, unknown>)[property],
 			},
-			() => this.shouldAutoBindReactiveMembers(),
 			(propertyName) => this.updateCycle.markChanged(propertyName),
 		);
 		this.bindings = this.reactiveHost.bindings;
@@ -205,7 +201,7 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 	 * structured values such as arrays or objects directly on `controller.host`.
 	 */
 	public createReactiveProp<T = unknown>(propertyName: string, options: ReactivePropertyOptions<T>): void {
-		const { type, defaultValue, bind, transform } = options;
+		const { type, defaultValue, transform } = options;
 
 		validateReactivePropertyDefault(type, defaultValue, !!transform?.fromAttribute);
 
@@ -216,20 +212,13 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 
 		const signal = this.reactiveHost.createReactiveMember(propertyName, initialValue);
 
-		this.reactiveHost.defineReactiveAccessor(propertyName, { bind, signal, fromProperty: transform?.fromProperty });
+		this.reactiveHost.defineReactiveAccessor(propertyName, { signal, fromProperty: transform?.fromProperty });
 
 		hostPropertyBridge.install();
 
 		this.registerCleanupCallback(() => {
 			hostPropertyBridge.restore();
 		});
-	}
-
-	/**
-	 * Defines a JSX binding companion such as `$count` for a reactive member.
-	 */
-	public defineReactiveBinding(property: string, bind: ReactiveBindingOption = true): void {
-		this.reactiveHost.defineReactiveBinding(property, bind);
 	}
 
 	public registerUpdateCallback(property: string, update: () => void): () => void {
@@ -306,10 +295,6 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 		}
 
 		return (this.host.querySelector(selector) as T) ?? null;
-	}
-
-	protected shouldAutoBindReactiveMembers(): boolean {
-		return true;
 	}
 
 	protected shouldRunRenderLifecycle(): boolean {

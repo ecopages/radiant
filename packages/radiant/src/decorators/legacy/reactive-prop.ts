@@ -7,7 +7,7 @@ import {
 import type { ReactiveHostLike } from '../../core/reactive-host';
 import { attributeNameForProp, registerReactivePropDefinition } from '../../core/reactive-prop-metadata';
 import { registerLegacyInstanceInitializer, registerLegacyPostConstructionInitializer } from './instance-initializers';
-import { bootstrapReactiveMemberBinding } from './member-bootstrap';
+import { bootstrapReactiveMember } from './member-bootstrap';
 import type { ReactivePropHost } from '../standard/reactive-prop';
 
 /**
@@ -18,7 +18,7 @@ import type { ReactivePropHost } from '../standard/reactive-prop';
  * decorator while keeping their runtime channels different.
  */
 export function reactiveProp<T = unknown>(propOptions: ReactivePropertyOptions<T>) {
-	const { type, reflect, defaultValue, bind, transform } = propOptions;
+	const { type, reflect, defaultValue, transform } = propOptions;
 	const hasDefaultValue = 'defaultValue' in propOptions;
 	validateReactivePropertyDefault(type, defaultValue, !!transform?.fromAttribute);
 
@@ -30,7 +30,6 @@ export function reactiveProp<T = unknown>(propOptions: ReactivePropertyOptions<T
 			reflect,
 			attribute: attributeKey ?? false,
 			defaultValue,
-			bind,
 			transform: transform as PropTransform<unknown> | undefined,
 		};
 
@@ -54,7 +53,7 @@ export function reactiveProp<T = unknown>(propOptions: ReactivePropertyOptions<T
 		registerLegacyInstanceInitializer(target, (element) => {
 			const initializerValue = element[propertyName as keyof typeof element] as T | undefined;
 			const bootstrapValue = (initializerValue ?? defaultValue) as T;
-			bootstrapReactiveMemberBinding(element as unknown as ReactiveHostLike, propertyName, bootstrapValue, bind);
+			bootstrapReactiveMember(element as unknown as ReactiveHostLike, propertyName, bootstrapValue);
 		});
 
 		registerLegacyPostConstructionInitializer(target, (element, phase) => {
@@ -77,7 +76,6 @@ export function reactiveProp<T = unknown>(propOptions: ReactivePropertyOptions<T
 				type,
 				reflect,
 				attribute: attributeKey ?? false,
-				bind,
 				transform,
 				...((hasDefaultValue || resolvedDefaultValue !== undefined) && { defaultValue: resolvedDefaultValue }),
 			});

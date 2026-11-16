@@ -1,4 +1,3 @@
-import type { ReactiveBindingOption } from '../../core/reactive-prop-core';
 import type { ReactiveHostLike } from '../../core/reactive-host';
 
 /**
@@ -8,19 +7,10 @@ import type { ReactiveHostLike } from '../../core/reactive-host';
  * Post-construction setup still runs afterward to install accessors, SSR prop
  * resolution, and attribute channels once class fields have finished writing.
  */
-export function bootstrapReactiveMemberBinding(
-	host: ReactiveHostLike,
-	propertyName: string,
-	initialValue: unknown,
-	bind: ReactiveBindingOption = false,
-): void {
+export function bootstrapReactiveMember(host: ReactiveHostLike, propertyName: string, initialValue: unknown): void {
 	if (host.getReactiveMember(propertyName)) {
 		return;
 	}
 
 	host.createReactiveMember(propertyName, initialValue);
-
-	if (bind !== undefined && bind !== false) {
-		host.defineReactiveBinding(propertyName, bind);
-	}
 }

@@ -120,7 +120,6 @@ export class ReactivePropertyState {
 		}
 
 		defineReactiveAccessor(propertyName, {
-			bind: options.bind,
 			signal,
 			fromProperty: transform?.fromProperty,
 			onSet: () => {

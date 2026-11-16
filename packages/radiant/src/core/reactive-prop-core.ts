@@ -81,15 +81,11 @@ export type ReactivePropertyOptions<T, C extends AttributeTypeConstant = Attribu
 	 * `defaultValue: undefined` for a property that stays `undefined` until set.
 	 */
 	defaultValue?: T;
-	bind?: boolean | string;
 	/** Overrides default type converters for the attribute channel and optional JS writes. */
 	transform?: PropTransform<T>;
 };
 
-export type ReactiveBindingOption = boolean | string;
-
 export type ReactiveFieldOptions = {
-	bind?: ReactiveBindingOption;
 	/** When true, skip the initial notifyUpdate emitted while defining the field. */
 	suppressInitialNotify?: boolean;
 };
@@ -106,7 +102,6 @@ export type ReactiveBindings<Bindings extends object> = {
 };
 
 export type ReactiveAccessorDefinition<T> = {
-	bind?: ReactiveBindingOption;
 	signal: ReactiveState<T>;
 	onSet?: (value: T) => void;
 	/** Normalizes JS property writes before the reactive member is updated. */

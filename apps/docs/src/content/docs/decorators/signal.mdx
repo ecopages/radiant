@@ -48,7 +48,6 @@ The field is typed `WritableSignal<number>`, and `initial` must be a `number` an
 
 | Option | Type | Description |
 | :-- | :-- | :-- |
-| `bind` | `boolean \| string` | Exposes a JSX binding companion such as `$count` or a custom binding name |
 | `initial` | `T` | Optional initial value when the field does not provide one directly |
 | `source` | `WritableSignal<T> \| (host) => WritableSignal<T>` | Connects an existing writable signal instead of creating a host-owned one |
 | `hydrate` | `String \| Number \| Boolean \| Object \| Array` | Serializes the current signal value into SSR host output and restores it during hydration |

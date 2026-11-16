@@ -37,6 +37,8 @@ export class ValidElementFields extends RadiantElement {
 	@prop({ type: Object, transform: { fromProperty: (v) => v as { a: number } } }) p7?: { a: number };
 	@prop<Mode>({ type: String, defaultValue: 'a' }) p8: Mode;
 	@prop<number | undefined>({ type: Number }) p9?: number;
+	// @ts-expect-error bind is no longer a reactive member option
+	@prop({ type: Number, defaultValue: 0, bind: true }) pBind: number;
 
 	@attr() a1?: string;
 	@attr() a2: string | undefined;

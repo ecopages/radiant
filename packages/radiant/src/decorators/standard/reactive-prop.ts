@@ -26,7 +26,7 @@ export type ReactivePropHost<P> = {
  * `@customElement` can populate `observedAttributes` before `customElements.define`.
  */
 export function reactiveProp<P = unknown>(propOptions: ReactivePropertyOptions<P>) {
-	const { type, reflect, defaultValue, bind, transform } = propOptions;
+	const { type, reflect, defaultValue, transform } = propOptions;
 	const hasDefaultValue = 'defaultValue' in propOptions;
 	validateReactivePropertyDefault(type, defaultValue, !!transform?.fromAttribute);
 	return function <T extends ReactivePropHost<P>>(_: undefined, context: ClassFieldDecoratorContext<T, P>) {
@@ -39,7 +39,6 @@ export function reactiveProp<P = unknown>(propOptions: ReactivePropertyOptions<P
 			reflect,
 			attribute: attributeKey ?? false,
 			defaultValue,
-			bind,
 			transform: transform as PropTransform<unknown> | undefined,
 		};
 
@@ -65,7 +64,6 @@ export function reactiveProp<P = unknown>(propOptions: ReactivePropertyOptions<P
 				type,
 				reflect,
 				attribute: attributeKey ?? false,
-				bind,
 				transform,
 				...((hasDefaultValue || resolvedDefaultValue !== undefined) && { defaultValue: resolvedDefaultValue }),
 			});

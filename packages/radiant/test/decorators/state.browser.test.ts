@@ -20,7 +20,7 @@ class MyStateElement extends RadiantElement {
 	}
 }
 
-class MyComponentStateElement extends RadiantElement {
+class MyComponentStateElement extends RadiantElement<{ numberOfClicks: number }> {
 	@state numberOfClicks = 1;
 
 	override connectedCallback() {
@@ -49,26 +49,24 @@ describe('@state', () => {
 		document.body.appendChild(customElement);
 
 		expect(customElement.innerHTML).toEqual('1');
-		expect(Object.prototype.hasOwnProperty.call(customElement, '$numberOfClicks')).toBe(false);
+		expect('$numberOfClicks' in customElement).toBe(false);
 
 		customElement.addClick();
 
 		expect(customElement.innerHTML).toEqual('2');
 	});
 
-	test('enables a bound companion accessor by default on RadiantElement', () => {
-		const customElement = document.createElement('my-component-state-field') as MyComponentStateElement & {
-			$numberOfClicks: ReturnType<MyComponentStateElement['bind']>;
-		};
+	test('exposes state through the binding namespace on RadiantElement', () => {
+		const customElement = document.createElement('my-component-state-field') as MyComponentStateElement;
 		customElement.innerHTML = '1';
 		document.body.appendChild(customElement);
 
 		expect(customElement.innerHTML).toEqual('1');
-		expect(customElement.$numberOfClicks.getValue()).toEqual(1);
+		expect(customElement.$.numberOfClicks.getValue()).toEqual(1);
 
 		customElement.addClick();
 
 		expect(customElement.innerHTML).toEqual('2');
-		expect(customElement.$numberOfClicks.getValue()).toEqual(2);
+		expect(customElement.$.numberOfClicks.getValue()).toEqual(2);
 	});
 });

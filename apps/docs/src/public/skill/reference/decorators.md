@@ -17,7 +17,7 @@
 
 ## Reactive data
 
-- `@prop(...)` — public custom-element API: attribute conversion, reflection, optional bindings. The attribute is the kebab-case property name (`minWidth` is `min-width`, `max_width` is `max-width`); `attribute` sets another name, kept as written, so make it lowercase when authors write it in HTML. An authored attribute is read at upgrade and stays on the host; `reflect: true` only adds writing property changes back to it. Pass `transform` to override default converters (`type: Array` is JSON). `fromProperty` normalizes JS/JSX writes; `toAttribute` returning `null` or `''` omits the reflected attribute. `attribute: false` makes a prop property-only (no observed attribute, never reflected or serialized by SSR; `reflect: true` with it throws): use it for a live object such as a class instance, which a lossy JSON attribute would replace. Development SSR warns when a prop that keeps its attribute holds a class instance, function or cycle.
+- `@prop(...)` — public custom-element API: attribute conversion and reflection. The attribute is the kebab-case property name (`minWidth` is `min-width`, `max_width` is `max-width`); `attribute` sets another name, kept as written, so make it lowercase when authors write it in HTML. An authored attribute is read at upgrade and stays on the host; `reflect: true` only adds writing property changes back to it. Pass `transform` to override default converters (`type: Array` is JSON). `fromProperty` normalizes JS/JSX writes; `toAttribute` returning `null` or `''` omits the reflected attribute. `attribute: false` makes a prop property-only (no observed attribute, never reflected or serialized by SSR; `reflect: true` with it throws): use it for a live object such as a class instance, which a lossy JSON attribute would replace. Development SSR warns when a prop that keeps its attribute holds a class instance, function or cycle.
 - `@attr(...)` — a field bound to a host attribute, read from and written to it; `source` names the attribute; it defaults to the kebab-case field name, as for `@prop`. Use it for `data-*` / `aria-*` configuration on a controller or an HTML-authored host, and `@prop` for a custom element's property API.
 - `@state` — internal mutable UI state
 - Upgrade safety: outside code may assign a `@prop` before the element is defined and the value is adopted (it wins over an authored attribute), so never defer a definition. `@state` and `@signal` are internal: a pre-upgrade value is discarded and development builds warn. A pre-upgrade value that shadows a class accessor (`get`/`set`, `accessor` field, MobX `@observable accessor`) also warns. Declare public input with `@prop`.
@@ -25,7 +25,6 @@
 
 `@signal` options:
 
-- `bind` — JSX binding companion (`true`, or a custom name string)
 - `initial` — default when the field initializer is omitted
 - `source` — existing shared `WritableSignal` or `(host) => WritableSignal`
 - `hydrate` — attribute type constant for SSR hydration via keyed JSON script

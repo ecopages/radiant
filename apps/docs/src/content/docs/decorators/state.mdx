@@ -52,11 +52,10 @@ That split matters in docs, code review, and JSX typing because it keeps the pub
 
 Unlike [@signal](/docs/decorators/signal), the field stays a plain host property. You read and write it with normal property syntax such as `this.count += 1`.
 
-## JSX Binding Defaults
+## JSX Bindings
 
-Just like `@prop(...)`, `@state` exposes companion bindings by default when `bind` is omitted.
 
-So `@state count = 0` gives you `this.$.count` automatically on `RadiantElement` hosts. To type `this.$.count`, pass the binding shape as the host's type argument: see [RadiantElement](/docs/components/radiant-element).
+`@state count = 0` gives you `this.$.count` on `RadiantElement` hosts. To type `this.$.count`, pass the binding shape as the host's type argument: see [RadiantElement](/docs/components/radiant-element).
 
 ```tsx
 override render() {

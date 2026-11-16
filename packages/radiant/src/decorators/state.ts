@@ -9,10 +9,8 @@ export function state(protoOrTarget: ReactiveHostLike, nameOrContext: string): v
  *
  * Each write updates the member state, which notifies `@onUpdated` listeners and
  * keeps JSX bindings in sync. Render invalidation happens through the reactive
- * render path when `render()` reads reactive members. When no explicit binding option
- * is supplied, `RadiantElement` hosts expose a JSX companion binding
- * accessor automatically while plain imperative hosts keep binding
- * opt-in.
+ * render path when `render()` reads reactive members. JSX bindings are available
+ * through the host's binding namespace.
  *
  * @remarks
  * `@state` is applied directly rather than returned by a factory, so it
