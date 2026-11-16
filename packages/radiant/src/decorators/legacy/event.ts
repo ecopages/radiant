@@ -5,12 +5,8 @@ import { registerLegacyPostConstructionInitializer } from './instance-initialize
 
 export function event(eventConfig: EventEmitterConfig) {
 	return (proto: RadiantElement, propertyKey: string) => {
-		registerLegacyPostConstructionInitializer(
-			proto,
-			(element) => {
-				installEventField(element, propertyKey, eventConfig);
-			},
-			propertyKey,
-		);
+		registerLegacyPostConstructionInitializer(proto, (element) => {
+			installEventField(element, propertyKey, eventConfig);
+		});
 	};
 }

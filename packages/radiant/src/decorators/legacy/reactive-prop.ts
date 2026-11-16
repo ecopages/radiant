@@ -56,35 +56,31 @@ export function reactiveProp<T = unknown>(propOptions: ReactivePropertyOptions<T
 			bootstrapReactiveMember(element as unknown as ReactiveHostLike, propertyName, bootstrapValue);
 		});
 
-		registerLegacyPostConstructionInitializer(
-			target,
-			(element, phase) => {
-				const host = element as ReactivePropHost<T> & Record<PropertyKey, unknown>;
-				const initializerValue = element[propertyName as keyof typeof element] as T | undefined;
-				const wasAssigned = host[ssrAssignedKey] === true;
-				const hasOwnStagingValue = Object.prototype.hasOwnProperty.call(element, propertyName);
-				const ownStagingValue = hasOwnStagingValue
-					? ((element as Record<PropertyKey, unknown>)[propertyName] as T)
-					: undefined;
-				const resolvedDefaultValue = wasAssigned
-					? initializerValue
-					: phase === 'ssr' && hasOwnStagingValue && ownStagingValue !== defaultValue
-						? ownStagingValue
-						: defaultValue === undefined
-							? initializerValue
-							: defaultValue;
+		registerLegacyPostConstructionInitializer(target, (element, phase) => {
+			const host = element as ReactivePropHost<T> & Record<PropertyKey, unknown>;
+			const initializerValue = element[propertyName as keyof typeof element] as T | undefined;
+			const wasAssigned = host[ssrAssignedKey] === true;
+			const hasOwnStagingValue = Object.prototype.hasOwnProperty.call(element, propertyName);
+			const ownStagingValue = hasOwnStagingValue
+				? ((element as Record<PropertyKey, unknown>)[propertyName] as T)
+				: undefined;
+			const resolvedDefaultValue = wasAssigned
+				? initializerValue
+				: phase === 'ssr' && hasOwnStagingValue && ownStagingValue !== defaultValue
+					? ownStagingValue
+					: defaultValue === undefined
+						? initializerValue
+						: defaultValue;
 
-				element.createReactiveProp(propertyName, {
-					type,
-					reflect,
-					attribute: attributeKey ?? false,
-					transform,
-					...((hasDefaultValue || resolvedDefaultValue !== undefined) && {
-						defaultValue: resolvedDefaultValue,
-					}),
-				});
-			},
-			propertyName,
-		);
+			element.createReactiveProp(propertyName, {
+				type,
+				reflect,
+				attribute: attributeKey ?? false,
+				transform,
+				...((hasDefaultValue || resolvedDefaultValue !== undefined) && {
+					defaultValue: resolvedDefaultValue,
+				}),
+			});
+		});
 	};
 }

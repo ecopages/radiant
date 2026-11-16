@@ -1,16 +1,25 @@
-import { Computed, peek, subtle } from '@ecopages/signals';
+import { Computed, subtle } from '@ecopages/signals';
 
 /** Tracks a host render and schedules its next update when a dependency changes. */
 export class TrackedRender<Value> {
 	private signal?: Computed<Value>;
 	private watching = false;
+	private refreshed = false;
 	private readonly watcher: InstanceType<typeof subtle.Watcher>;
 
 	constructor(private readonly requestUpdate: () => void) {
 		this.watcher = new subtle.Watcher(requestUpdate);
 	}
 
+	/** @remarks Reuses the output that {@link reconnect} already computed instead of rendering again. */
 	public evaluate(render: () => Value, connected: boolean): Value {
+		if (this.refreshed && connected && this.signal) {
+			this.refreshed = false;
+			const value = this.signal.get();
+			this.watcher.watch(this.signal);
+			return value;
+		}
+
 		const signal = new Computed(render);
 		const value = signal.get();
 		if (connected) {
@@ -22,17 +31,23 @@ export class TrackedRender<Value> {
 		return value;
 	}
 
-	/** @remarks A reconnect can preserve the DOM without rendering, so restore its previous dependency watch. */
+	/**
+	 * @remarks A reconnect can preserve the DOM without rendering, so restore its previous dependency watch.
+	 * Watching refreshes the computed, which reruns the render only when a dependency changed while detached.
+	 */
 	public reconnect(): void {
 		if (!this.signal || this.watching) return;
 		const previousVersion = this.signal.getVersion();
-		peek(this.signal);
 		this.watcher.watch(this.signal);
 		this.watching = true;
-		if (this.signal.getVersion() !== previousVersion) this.requestUpdate();
+		if (this.signal.getVersion() !== previousVersion) {
+			this.refreshed = true;
+			this.requestUpdate();
+		}
 	}
 
 	public disconnect(): void {
+		this.refreshed = false;
 		if (!this.signal || !this.watching) return;
 		this.watcher.unwatch(this.signal);
 		this.watching = false;

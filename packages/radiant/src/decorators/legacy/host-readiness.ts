@@ -1,8 +1,4 @@
-import {
-	hasAllLegacyPostConstructionFields,
-	runLegacyInstanceInitializers,
-	runLegacyPostConstructionInitializers,
-} from './instance-initializers';
+import { runLegacyInstanceInitializers, runLegacyPostConstructionInitializers } from './instance-initializers';
 
 export type LegacyHostReadinessPhase = 'construct' | 'connect' | 'ssr';
 
@@ -20,19 +16,12 @@ type Constructable = new (...args: any[]) => HTMLElement;
  * only execute each registered initializer once per instance.
  */
 export function ensureLegacyHostReady<T extends object>(host: T, phase: LegacyHostReadinessPhase): void {
-	const instance = unwrapLegacyControllerHost(host);
-
-	switch (phase) {
-		case 'construct':
-			runLegacyInstanceInitializers(instance);
-			break;
-		case 'connect':
-			runLegacyPostConstructionInitializers(instance, 'connect');
-			break;
-		case 'ssr':
-			runLegacyPostConstructionInitializers(instance, 'ssr');
-			break;
+	if (phase === 'construct') {
+		runLegacyInstanceInitializers(host);
+		return;
 	}
+
+	runLegacyPostConstructionInitializers(host, phase);
 }
 
 /**
@@ -63,58 +52,4 @@ export function withLegacyConstructionEnd<T extends Constructable>(decorated: T)
 
 	Object.defineProperty(Constructed, 'name', { value: decorated.name, configurable: true });
 	return Constructed as T;
-}
-
-const completingLegacyConstruction = new WeakSet<object>();
-const legacyControllerHosts = new WeakMap<object, object>();
-
-/**
- * Runs legacy post-construction once the author's subclass fields exist, without wrapping that class.
- *
- * @remarks
- * Custom elements cannot return a substitute instance, so they keep {@link withLegacyConstructionEnd}
- * from `@customElement`. Controllers can: the constructor returns this proxy, class-field
- * `defineProperty` and initializer writes go through, and the first author-facing get after every
- * decorated field exists installs the accessors. A get during an earlier field initializer would
- * install getters that a later class field then overwrites. Keys in `internalKeys` are the
- * controller's own constructor fields (`host`, `$`, …) so a field initializer that reads `this.$`
- * does not install too early.
- */
-export function completeLegacyControllerConstruction<T extends object>(
-	instance: T,
-	internalKeys: ReadonlySet<PropertyKey>,
-): T {
-	const surface = new Proxy(instance, {
-		get(target, prop, receiver) {
-			completeIfAuthorKey(target, prop, internalKeys);
-			return Reflect.get(target, prop, receiver);
-		},
-		set(target, prop, value) {
-			return Reflect.set(target, prop, value, target);
-		},
-		defineProperty(target, prop, descriptor) {
-			return Reflect.defineProperty(target, prop, descriptor);
-		},
-	});
-
-	legacyControllerHosts.set(surface, instance);
-	return surface;
-}
-
-function unwrapLegacyControllerHost<T extends object>(host: T): T {
-	return (legacyControllerHosts.get(host) as T | undefined) ?? host;
-}
-
-function completeIfAuthorKey(target: object, prop: PropertyKey, internalKeys: ReadonlySet<PropertyKey>): void {
-	if (
-		completingLegacyConstruction.has(target) ||
-		internalKeys.has(prop) ||
-		typeof prop === 'symbol' ||
-		!hasAllLegacyPostConstructionFields(target)
-	) {
-		return;
-	}
-
-	completingLegacyConstruction.add(target);
-	ensureLegacyHostReady(target, 'connect');
 }

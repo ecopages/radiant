@@ -1,8 +1,7 @@
 import { render as renderJsx, type JsxRenderable, type SubscribableJsxValueWithAccess } from '@ecopages/jsx';
 import { TrackedRender } from './tracked-render';
 import type { UnknownContext } from '../context/types';
-import { completeLegacyControllerConstruction, ensureLegacyHostReady } from '../decorators/legacy/host-readiness';
-import { hasLegacyPostConstructionInitializers } from '../decorators/legacy/instance-initializers';
+import { ensureLegacyHostReady } from '../decorators/legacy/host-readiness';
 import { REACTIVE_HOST, ReactiveHost, type ReactiveHostInternals, type ReactiveHostLike } from './reactive-host';
 import type { ReactiveState } from './reactivity-contract';
 import {
@@ -16,19 +15,6 @@ import {
 import { UpdateCycle } from './update-cycle';
 
 type StringPropertyKey<Value> = Extract<keyof Value, string>;
-
-const CONTROLLER_INTERNAL_KEYS: ReadonlySet<PropertyKey> = new Set([
-	'host',
-	'element',
-	'bindings',
-	'$',
-	'reactiveHost',
-	'connected',
-	'updateCycle',
-	'isSsrLifecycle',
-	'trackedRender',
-	'constructor',
-]);
 
 /**
  * Attaches Radiant reactivity to an existing DOM element without defining a
@@ -83,10 +69,6 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 		this.bindings = this.reactiveHost.bindings;
 		this.$ = this.reactiveHost.$;
 		ensureLegacyHostReady(this, 'construct');
-
-		if (hasLegacyPostConstructionInitializers(this)) {
-			return completeLegacyControllerConstruction(this, CONTROLLER_INTERNAL_KEYS);
-		}
 	}
 
 	/**

@@ -166,6 +166,7 @@ customElements.define('controller-shadow-boundary', ShadowBoundaryHost);
 describe('RadiantController', () => {
 	test('supports shared reactive field bindings', () => {
 		const controller = new CounterController(document.createElement('div'));
+		controller.connect();
 
 		expect(controller.count).toBe(1);
 		expect(controller.bind('count').getValue()).toBe(1);
@@ -249,6 +250,22 @@ describe('RadiantController', () => {
 		source.set(4);
 		await waitFor(() => expect(host.textContent).toBe('4'));
 		controller.disconnect();
+	});
+
+	test('renders a decorated controller that reads its own private fields', async () => {
+		class PrivateFieldController extends RadiantController {
+			#label = 'count';
+			@state count = 1;
+			override render() {
+				return jsx('p', { children: `${this.#label}:${this.count}` });
+			}
+		}
+		const host = document.createElement('div');
+		const controller = new PrivateFieldController(host);
+		controller.connect();
+		expect(host.textContent).toBe('count:1');
+		controller.count = 2;
+		await waitFor(() => expect(host.textContent).toBe('count:2'));
 	});
 
 	test('runs subclass connect logic during SSR setup without performing a client DOM render', () => {
