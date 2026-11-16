@@ -110,7 +110,10 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	/** Names with a field accessor, which closes over the member it was defined with. */
 	private accessorNames = new Set<string>();
 	private jsxBindings = new Map<string, SubscribableJsxValueWithAccess<JsxBindingSourceValue>>();
-	/** Synchronous per-member callbacks keyed by property; values track the subscribed signal so replacements can resubscribe. */
+	/**
+	 * Synchronous per-member callbacks keyed by property; values track the subscribed signal so replacements can
+	 * resubscribe. A value is set only while members are observed.
+	 */
 	private updateCallbacks = new Map<string, Map<() => void, UpdateSubscription | undefined>>();
 	private updatedCallbacks: UpdatedRegistration[] = [];
 	/** Change reports to the update cycle; held only while members are observed. */
@@ -167,9 +170,11 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	 *
 	 * @remarks
 	 * Members that changed while unobserved are reported first, so writes made
-	 * before connect or while detached still reach `@onUpdated`. Observation is
-	 * scoped to connection (and SSR preparation) so a shared `@signal` source
-	 * never holds a detached or server-only host.
+	 * before connect or while detached still reach `@onUpdated` and the
+	 * synchronous update callbacks (`@bindTo`). Observation is scoped to
+	 * connection (and SSR preparation) so a shared `@signal` source never holds
+	 * a detached or server-only host; update callbacks subscribe and release
+	 * with it.
 	 *
 	 * @returns Stops the observation this call started; a no-op when members were already observed.
 	 */
@@ -182,6 +187,12 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 
 		for (const [propertyName, signal] of this.reactiveMembers) {
 			this.observeMember(propertyName, signal);
+		}
+
+		for (const [propertyName, callbacks] of this.updateCallbacks) {
+			for (const update of callbacks.keys()) {
+				this.subscribeCallback(propertyName, update);
+			}
 		}
 
 		return () => this.unobserveMembers();
@@ -201,6 +212,13 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 		}
 
 		this.changeSubscriptions.clear();
+
+		for (const callbacks of this.updateCallbacks.values()) {
+			for (const [update, subscription] of callbacks) {
+				subscription?.unsubscribe();
+				callbacks.set(update, undefined);
+			}
+		}
 	}
 
 	/**
@@ -385,6 +403,10 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 			!Object.is(this.memberSnapshots.get(propertyName), signal.get())
 		) {
 			this.memberChanged(propertyName);
+
+			for (const update of [...(this.updateCallbacks.get(propertyName)?.keys() ?? [])]) {
+				update();
+			}
 		}
 
 		this.memberSnapshots.delete(propertyName);
@@ -401,7 +423,7 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 
 	/**
 	 * Subscribes a synchronous callback to the member state if the member is
-	 * already registered.
+	 * already registered and members are observed.
 	 *
 	 * Re-subscribes only when the member signal identity changes (for example
 	 * `registerReactiveMember` replacing a previous state). Same-signal calls
@@ -411,7 +433,7 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 		const callbacks = this.updateCallbacks.get(propertyName);
 		const signal = this.reactiveMembers.get(propertyName);
 
-		if (!callbacks || !signal) {
+		if (!callbacks || !signal || !this.observing) {
 			return;
 		}
 
