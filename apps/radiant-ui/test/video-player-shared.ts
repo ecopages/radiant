@@ -340,6 +340,23 @@ export function describeVideoPlayerForm(name: string, unframed: VideoPlayerForm)
 			await expect.poll(() => video(root).currentTime).toBeCloseTo(0, 0);
 		});
 
+		test('a key with a modifier on the seek thumb is left to the browser: no skip and no slider step', async () => {
+			const root = await ready(await form.mount());
+			stage(root).focus();
+			await userEvent.keyboard('5');
+			await expect.poll(() => video(root).currentTime).toBeCloseTo(video(root).duration / 2, 0);
+			await settle(200);
+			const position = video(root).currentTime;
+			const value = seek(root).value[0];
+
+			thumb(root).focus();
+			await userEvent.keyboard('{Control>}{ArrowRight}{/Control}{Alt>}{ArrowLeft}{/Alt}{Meta>}{PageUp}{/Meta}');
+			await settle(200);
+
+			expect(video(root).currentTime).toBeCloseTo(position, 3);
+			expect(seek(root).value[0]).toBeCloseTo(value, 3);
+		});
+
 		test('a burst of scrub input applies one seek to the last value while the clock follows at once', async () => {
 			const root = await ready(await form.mount());
 			let seeks = 0;

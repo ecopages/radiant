@@ -1,6 +1,11 @@
 import '@ecopages/radiant-ui/slider';
 import type { RuiSliderChangeDetail, RuiSliderElement } from '@ecopages/radiant-ui/slider';
-import { CaptionsController, MediaController, type MediaState } from '@ecopages/radiant-ui/controllers';
+import {
+	CaptionsController,
+	HotkeyController,
+	MediaController,
+	type MediaState,
+} from '@ecopages/radiant-ui/controllers';
 import { cycleValue, formatMediaTime } from '@ecopages/radiant-ui/helpers';
 import { mountExample } from '../../../components/primitive-example/mount-example';
 import {
@@ -8,10 +13,11 @@ import {
 	CAPTIONS,
 	HIDE_CONTROLS_MS,
 	RATES,
+	SEEK_KEYS,
+	SHORTCUTS,
 	bufferedSegments,
-	seekFromKey,
+	isOwnedByControl,
 	seekValueText,
-	shortcutFor,
 	stageState,
 	type Shortcut,
 } from './video-player.data';
@@ -168,17 +174,7 @@ export function mount(root: HTMLElement): () => void {
 		}
 	}
 
-	stage.addEventListener(
-		'keydown',
-		(event) => {
-			wake();
-			const shortcut = shortcutFor(event);
-			if (!shortcut) return;
-			event.preventDefault();
-			run(shortcut);
-		},
-		{ signal },
-	);
+	stage.addEventListener('keydown', wake, { signal });
 	/**
 	 * A touch on the video is a tap that shows or hides the controls, which the click handler below decides, so it is
 	 * not activity here.
@@ -223,22 +219,6 @@ export function mount(root: HTMLElement): () => void {
 		{ signal },
 	);
 
-	/**
-	 * The capture phase runs before the slider's own key handler, which this stops for the keys the player moves by
-	 * whole seconds, so the slider's 0.01 s step never applies to an arrow key.
-	 */
-	seek.addEventListener(
-		'keydown',
-		(event) => {
-			const seconds = seekFromKey(event.key);
-			if (seconds === undefined) return;
-			event.preventDefault();
-			event.stopPropagation();
-			wake();
-			media.skip(seconds);
-		},
-		{ signal, capture: true },
-	);
 	volume.addEventListener(
 		'rui-change',
 		(event) => {
@@ -254,16 +234,44 @@ export function mount(root: HTMLElement): () => void {
 		{ signal },
 	);
 
+	const stageKeys = new HotkeyController({
+		getTarget: () => stage,
+		hotkeys: Array.from(SHORTCUTS, ([keys, shortcut]) => ({
+			keys,
+			handler: (event: KeyboardEvent) => (isOwnedByControl(event) ? false : run(shortcut)),
+		})),
+	});
+	/**
+	 * The seek keys listen on the slider in the capture phase, which runs before its own key handler, and stop the
+	 * key for the keys the player moves by whole seconds, so the slider's 0.01 s step never applies to an arrow key.
+	 */
+	const seekKeys = new HotkeyController({
+		getTarget: () => seek,
+		capture: true,
+		hotkeys: Array.from(SEEK_KEYS, ([keys, seconds]) => ({
+			keys,
+			handler: (event: KeyboardEvent) => {
+				event.stopPropagation();
+				wake();
+				media.skip(seconds);
+			},
+		})),
+	});
+
 	const valueTextObserver = new MutationObserver(keepValueText);
 	valueTextObserver.observe(seekThumb, { attributes: true, attributeFilter: ['aria-valuetext'] });
 	fullscreen.hidden = !document.fullscreenEnabled;
 	captionsController.attach();
 	media.attach();
+	stageKeys.attach();
+	seekKeys.attach();
 	void media.load(video.dataset.src!);
 	return () => {
 		listeners.abort();
 		clearTimeout(hideTimer);
 		valueTextObserver.disconnect();
+		stageKeys.destroy();
+		seekKeys.destroy();
 		captionsController.destroy();
 		media.destroy();
 	};

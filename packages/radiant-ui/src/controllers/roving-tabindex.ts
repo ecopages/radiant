@@ -40,7 +40,12 @@ const TEXT_ENTRY_INPUT_TYPES: ReadonlySet<string> = new Set([
 	'week',
 ]);
 
-function isTextEntry(target: EventTarget | null): boolean {
+/**
+ * Whether a target is a text field: a `textarea`, a contenteditable element, or an `input` of type text, search,
+ * email, url, tel, password, number, date, datetime-local, month, time or week. Checkboxes, radios, buttons,
+ * ranges and selects are not.
+ */
+export function isTextEntry(target: EventTarget | null): boolean {
 	if (target instanceof HTMLInputElement) {
 		return TEXT_ENTRY_INPUT_TYPES.has(target.type);
 	}

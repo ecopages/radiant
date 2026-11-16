@@ -1,5 +1,10 @@
 import { RadiantElement, customElement, onEvent, query, state } from '@ecopages/radiant';
-import { createCaptionsController, createMediaController, type MediaState } from '@ecopages/radiant-ui/controllers';
+import {
+	createCaptionsController,
+	createHotkeyController,
+	createMediaController,
+	type MediaState,
+} from '@ecopages/radiant-ui/controllers';
 import { RuiButton } from '@ecopages/radiant-ui/button';
 import { cycleValue, formatMediaTime } from '@ecopages/radiant-ui/helpers';
 import { RuiSlider } from '@ecopages/radiant-ui/slider';
@@ -10,11 +15,12 @@ import {
 	CAPTIONS,
 	HIDE_CONTROLS_MS,
 	RATES,
+	SEEK_KEYS,
+	SHORTCUTS,
 	VIDEO,
 	bufferedSegments,
-	seekFromKey,
+	isOwnedByControl,
 	seekValueText,
-	shortcutFor,
 	stageState,
 	type Shortcut,
 	type StageState,
@@ -87,6 +93,27 @@ export class VideoPlayerApp extends RadiantElement<{ status: string; elapsed: st
 		onProgress: (state) => this.renderProgress(state),
 	});
 
+	private readonly stageKeys = createHotkeyController(this, {
+		getTarget: () => this.stageNode,
+		hotkeys: Array.from(SHORTCUTS, ([keys, shortcut]) => ({
+			keys,
+			handler: (event: KeyboardEvent) => (isOwnedByControl(event) ? false : this.run(shortcut)),
+		})),
+	});
+
+	private readonly seekKeys = createHotkeyController(this, {
+		getTarget: () => this.seek,
+		capture: true,
+		hotkeys: Array.from(SEEK_KEYS, ([keys, seconds]) => ({
+			keys,
+			handler: (event: KeyboardEvent) => {
+				event.stopPropagation();
+				this.wake();
+				this.media.skip(seconds);
+			},
+		})),
+	});
+
 	constructor() {
 		super();
 		this.registerCleanupCallback(() => {
@@ -111,6 +138,8 @@ export class VideoPlayerApp extends RadiantElement<{ status: string; elapsed: st
 		this.fullscreenAvailable = document.fullscreenEnabled;
 		this.announcer.reset();
 		this.media.attach();
+		this.stageKeys.attach();
+		this.seekKeys.attach();
 		void this.media.load(this.video.dataset.src!);
 	}
 
@@ -271,14 +300,6 @@ export class VideoPlayerApp extends RadiantElement<{ status: string; elapsed: st
 		}
 	}
 
-	private onKey(event: KeyboardEvent): void {
-		this.wake();
-		const shortcut = shortcutFor(event);
-		if (!shortcut) return;
-		event.preventDefault();
-		this.run(shortcut);
-	}
-
 	/**
 	 * A touch on the video is a tap that shows or hides the controls, which the click handler decides, so it is not
 	 * activity here.
@@ -310,22 +331,6 @@ export class VideoPlayerApp extends RadiantElement<{ status: string; elapsed: st
 		if (level > 0) this.media.setMuted(false);
 	}
 
-	/**
-	 * @remarks
-	 * The one handler that is not a JSX `on:*` attribute: it is delegated in the capture phase, which runs before the
-	 * slider's own key handler and lets this stop it for the keys the player moves by whole seconds, so the slider's
-	 * 0.01 s step never applies to an arrow key.
-	 */
-	@onEvent({ selector: '[data-seek]', type: 'keydown', options: { capture: true } })
-	onSeekKey(event: KeyboardEvent): void {
-		const seconds = seekFromKey(event.key);
-		if (seconds === undefined) return;
-		event.preventDefault();
-		event.stopPropagation();
-		this.wake();
-		this.media.skip(seconds);
-	}
-
 	override render() {
 		return (
 			<>
@@ -337,7 +342,7 @@ export class VideoPlayerApp extends RadiantElement<{ status: string; elapsed: st
 					aria-label="Video player"
 					aria-describedby="video-player-app-help"
 					tabindex="0"
-					on:keydown={(event: KeyboardEvent) => this.onKey(event)}
+					on:keydown={() => this.wake()}
 					on:pointermove={(event: PointerEvent) => this.onActivity(event)}
 					on:pointerdown={(event: PointerEvent) => this.onActivity(event)}
 					on:pointerleave={(event: PointerEvent) => this.onActivity(event)}

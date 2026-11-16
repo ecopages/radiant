@@ -307,6 +307,22 @@ describe('controller page examples', () => {
 		expect(status(root).textContent).toBe('Copied');
 	});
 
+	test('HotkeyController runs the matching key, prefers the Shift form and announces it', async () => {
+		const root = await mountExample('hotkey');
+		const stage = root.querySelector<HTMLElement>('[data-stage]')!;
+		const press = (key: string, init: KeyboardEventInit = {}) =>
+			stage.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...init }));
+
+		press('ArrowRight');
+		expect(status(root).textContent).toBe('Forward 5 s to 5 s');
+		press('ArrowLeft', { shiftKey: true });
+		expect(status(root).textContent).toBe('Back 1 s to 4 s');
+		press('ArrowLeft');
+		expect(status(root).textContent).toBe('Back 5 s to 0 s');
+		press('k');
+		expect(status(root).textContent).toBe('Playing at 0 s');
+	});
+
 	test('MediaRecorderController reports a refused microphone as denied and keeps Record usable', async () => {
 		vi.spyOn(navigator.mediaDevices, 'getUserMedia').mockRejectedValue(new DOMException('no', 'NotAllowedError'));
 		const root = await mountExample('media-recorder');
