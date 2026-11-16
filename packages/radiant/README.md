@@ -114,7 +114,7 @@ How this works:
 
 If the same type truly represents both internal bindings and public JSX attributes, you can reuse it for both. Otherwise, keep those contracts separate.
 
-### When To Call `update()`
+### Structural Changes
 
 A reactive value read directly in `render()` schedules a rerender when it changes, including when it controls which elements exist.
 
