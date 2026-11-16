@@ -73,8 +73,8 @@ export class Watcher {
 	 * @remarks
 	 * Atomic: if a `watched` hook throws, every signal this call had started
 	 * watching is released in reverse order (so each `unwatched` hook runs), the
-	 * watcher is left as it was before the call, and the original error is
-	 * rethrown. Errors thrown while releasing are dropped in favor of it. The
+	 * watcher keeps only the signals it watched before the call, and the original
+	 * error is rethrown. Errors thrown while releasing are dropped in favor of it. The
 	 * signals this call added are removed from the pending set, other pending
 	 * signals stay, and the notification latch returns to its value before the
 	 * call unless a signal is still pending. A `watched` hook that wrote to a
