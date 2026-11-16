@@ -1,4 +1,5 @@
 import { waitFor } from '@testing-library/dom';
+import { state as signalState } from '@ecopages/signals';
 import type { WritableSignal } from '@ecopages/signals';
 import { afterEach, describe, expect, test } from 'vitest';
 import { RadiantController } from '../../src/core/radiant-controller';
@@ -167,6 +168,81 @@ describe('replacing a member keeps working across the read-only split', () => {
 		next.set(3);
 
 		expect(host.$.count.getValue()).toBe(3);
+	});
+});
+
+describe('a read-only member over a writable field', () => {
+	const message = /"count" is a writable field and cannot be replaced by a read-only member/;
+
+	test('registerReactiveMember throws after @state installed the field', () => {
+		@customElement('readonly-over-state')
+		class Host extends RadiantElement<{ count: number }> {
+			@state count = 0;
+		}
+		const element = new Host();
+
+		expect(() => element.registerReactiveMember('count', createReadonlySource(1).member)).toThrow(message);
+		element.count = 4;
+		expect(element.$.count.getValue()).toBe(4);
+	});
+
+	test('registerReactiveMember throws after @prop installed the field', () => {
+		@customElement('readonly-over-prop')
+		class Host extends RadiantElement<{ count: number }> {
+			@prop({ type: Number, defaultValue: 0 }) count = 0;
+		}
+
+		const element = new Host();
+
+		expect(() => element.registerReactiveMember('count', createReadonlySource(1).member)).toThrow(message);
+		expect(element.$.count.getValue()).toBe(0);
+	});
+
+	test('registerReactiveMember throws after createReactiveField on an element', () => {
+		customElements.define('readonly-over-field', class extends RadiantElement<{ count: number }> {});
+		const element = document.createElement('readonly-over-field') as RadiantElement<{ count: number }>;
+		element.createReactiveField('count', 0);
+
+		expect(() => element.registerReactiveMember('count', createReadonlySource(1).member)).toThrow(message);
+		expect(element.$.count.getValue()).toBe(0);
+	});
+
+	test('registerReactiveMember throws after createReactiveField on a controller', () => {
+		const controller = new RadiantController<{ count: number }>(document.createElement('div'));
+		controller.createReactiveField('count', 0);
+
+		expect(() => controller.registerReactiveMember('count', createReadonlySource(1).member)).toThrow(message);
+		expect(controller.$.count.getValue()).toBe(0);
+	});
+
+	test('registerReactiveMember throws after createReactiveProp on a controller', () => {
+		const controller = new RadiantController<{ count: number }>(document.createElement('div'));
+		controller.createReactiveProp('count', { type: Number, defaultValue: 0 });
+
+		expect(() => controller.registerReactiveMember('count', createReadonlySource(1).member)).toThrow(message);
+		expect(controller.$.count.getValue()).toBe(0);
+	});
+
+	test('a writable member still replaces a writable field member', () => {
+		const controller = new RadiantController<{ count: number }>(document.createElement('div'));
+		controller.createReactiveField('count', 0);
+		const next = signalState(5);
+
+		controller.registerReactiveMember('count', next);
+
+		expect(controller.$.count.getValue()).toBe(5);
+	});
+
+	test('a read-only member replaces a plain member on a controller', () => {
+		const source = createReadonlySource(10);
+		const controller = new RadiantController<{ count: number }>(document.createElement('div'));
+		controller.createReactiveMember('count', 1);
+
+		controller.registerReactiveMember('count', source.member);
+
+		expect(controller.$.count.getValue()).toBe(10);
+		source.push(11);
+		expect(controller.$.count.getValue()).toBe(11);
 	});
 });
 

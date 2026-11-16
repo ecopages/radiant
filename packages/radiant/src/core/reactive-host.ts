@@ -100,6 +100,8 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	public readonly renderWarnings?: RenderWarnings;
 
 	private reactiveMembers = new Map<string, ReadonlyReactiveState<unknown>>();
+	/** Names with a field accessor, which closes over the member it was defined with. */
+	private accessorNames = new Set<string>();
 	private jsxBindings = new Map<string, SubscribableJsxValueWithAccess<JsxBindingSourceValue>>();
 	/** Synchronous per-member callbacks keyed by property; values track the subscribed signal so replacements can resubscribe. */
 	private updateCallbacks = new Map<string, Map<() => void, UpdateSubscription | undefined>>();
@@ -289,9 +291,11 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	}
 
 	/**
-	 * Returns the read-only view of the member registered under `propertyName`, if any.
+	 * Returns the member registered under `propertyName`, typed read-only, if any.
 	 *
-	 * @remarks Writes go through the host field, not the member.
+	 * @remarks The read-only type is the whole contract: this is the registered object itself, not
+	 * a wrapper, so member identity stays stable for bindings and callbacks. Write through the
+	 * host field, not the member.
 	 */
 	public getReactiveMember<T = unknown>(propertyName: string): ReadonlyReactiveState<T> | undefined {
 		return this.reactiveMembers.get(propertyName) as ReadonlyReactiveState<T> | undefined;
@@ -322,8 +326,19 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	 * Registers an externally-owned reactive member state (used by the
 	 * `signal()` decorator, whose state is a user-provided signals `Signal`).
 	 * A read-only `{ get, subscribe }` object is enough.
+	 *
+	 * @throws When a read-only member would replace the member behind a field accessor: the
+	 * accessor and `@bindTo` would keep the old state while `this.$` followed the new one.
+	 *
+	 * @remarks Replacing a writable member with another writable one is unchanged and not guarded.
 	 */
 	public registerReactiveMember<T>(propertyName: string, signal: ReadonlyReactiveState<T>): void {
+		if (this.accessorNames.has(propertyName) && typeof (signal as Partial<ReactiveState<T>>).set !== 'function') {
+			throw new Error(
+				`[@ecopages/radiant] "${propertyName}" is a writable field and cannot be replaced by a read-only member; register a writable state or use another name.`,
+			);
+		}
+
 		this.registerMember(propertyName, signal as ReadonlyReactiveState<unknown>);
 	}
 
@@ -472,6 +487,7 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	 * `State`.
 	 */
 	public defineReactiveAccessor<T>(propertyName: string, options: ReactiveAccessorDefinition<T>): void {
+		this.accessorNames.add(propertyName);
 		const read = () => options.signal.get();
 
 		this.access.defineProperty(this.host, propertyName, {
