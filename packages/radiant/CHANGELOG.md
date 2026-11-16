@@ -1,5 +1,36 @@
 # @ecopages/radiant
 
+## 0.10.0
+
+### Minor Changes
+
+- [#736](https://github.com/ecopages/radiant/pull/736) [`4bfd993`](https://github.com/ecopages/radiant/commit/4bfd993d735b3f29aeb4fe37840ba01a174954b0) Thanks [@andeeplus](https://github.com/andeeplus)! - Remove `$name` companion bindings and the `bind` option on reactive members and decorators. Replace `{this.$count}` with `{this.$.count}` and declare the binding shape with `RadiantElement<{ count: number }>`. When `bind` supplied a custom name, use the reactive field's name in `this.$`.
+
+    Remove `ReactiveBindingOption` from `@ecopages/radiant/core/radiant-element` and remove the host's `defineReactiveBinding` and `shouldAutoBindReactiveMembers` methods. Use the host's binding namespace for reactive members.
+
+### Patch Changes
+
+- [#742](https://github.com/ecopages/radiant/pull/742) [`075da44`](https://github.com/ecopages/radiant/commit/075da444e9d2d903b2100f99cc294c27cc0e5d1b) Thanks [@andeeplus](https://github.com/andeeplus)! - Make `size:check` measure the client bundle with signals included, enforce the server budgets, and leave headroom in the JSX budgets for the ref track.
+
+- [#738](https://github.com/ecopages/radiant/pull/738) [`d787d54`](https://github.com/ecopages/radiant/commit/d787d54d9dd244280f6b2123cf57a1d2c54bacbd) Thanks [@andeeplus](https://github.com/andeeplus)! - Published type declarations now use explicit file extensions on relative imports, so TypeScript projects on `moduleResolution` `node16` or `nodenext` resolve the packages' types.
+
+- [#744](https://github.com/ecopages/radiant/pull/744) [`cb85c93`](https://github.com/ecopages/radiant/commit/cb85c93eac1732f30f82c4b5cb83d56e187bb8a0) Thanks [@andeeplus](https://github.com/andeeplus)! - Install `@query`, `@event`, `@attr`, and `@signal` the same way in both decorator modes. Under legacy decorators, a field on a `@customElement` class now reads `null` or its value right after construction instead of `undefined`. Legacy controller fields are still set up at `connect()`.
+
+- [#740](https://github.com/ecopages/radiant/pull/740) [`ed3c7f0`](https://github.com/ecopages/radiant/commit/ed3c7f0f2718ae26cf32403333a0bf129587ed32) Thanks [@andeeplus](https://github.com/andeeplus)! - Share one tracked-render implementation between element and controller hosts, restore updates after a reconnect with captured children, and remove the unused pluggable reactive runtime.
+
+- [#737](https://github.com/ecopages/radiant/pull/737) [`175124f`](https://github.com/ecopages/radiant/commit/175124f3c59a0cb12caa0f35d9d4ae5b9588aa79) Thanks [@andeeplus](https://github.com/andeeplus)! - **@ecopages/radiant**
+
+    - Bindings such as `this.$.data.position` update when a `createStore(...)` path changes, a missing key is added, or the host member is replaced.
+
+    **@ecopages/jsx**
+
+    - Object-valued bindings expose typed nested members such as `binding.profile.name`.
+
+- [#741](https://github.com/ecopages/radiant/pull/741) [`45d2dbb`](https://github.com/ecopages/radiant/commit/45d2dbbad4e2c4c7028afd74d4edfac7e03df8a4) Thanks [@andeeplus](https://github.com/andeeplus)! - Clarify when tracked reads rerender a host and when JSX bindings patch individual values.
+- Updated dependencies [[`a5aca39`](https://github.com/ecopages/radiant/commit/a5aca39abf138870d9642d7b1996d5c2fca643d1), [`075da44`](https://github.com/ecopages/radiant/commit/075da444e9d2d903b2100f99cc294c27cc0e5d1b), [`d787d54`](https://github.com/ecopages/radiant/commit/d787d54d9dd244280f6b2123cf57a1d2c54bacbd), [`c8239ff`](https://github.com/ecopages/radiant/commit/c8239ff1b73b5fa740b8cdf6479c3af6259a71ab), [`175124f`](https://github.com/ecopages/radiant/commit/175124f3c59a0cb12caa0f35d9d4ae5b9588aa79), [`1052bcc`](https://github.com/ecopages/radiant/commit/1052bcc9312db7490ee264f5ca303a4c6912044a)]:
+    - @ecopages/jsx@0.10.0
+    - @ecopages/signals@0.10.0
+
 ## 0.9.0
 
 ### Minor Changes

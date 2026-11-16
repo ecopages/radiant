@@ -1,5 +1,24 @@
 # @ecopages/jsx
 
+## 0.10.0
+
+### Patch Changes
+
+- [#734](https://github.com/ecopages/radiant/pull/734) [`a5aca39`](https://github.com/ecopages/radiant/commit/a5aca39abf138870d9642d7b1996d5c2fca643d1) Thanks [@andeeplus](https://github.com/andeeplus)! - Rerender boolean and `bool:` bindings without rewriting attributes that already match. The next render restores the authored value or absence after an external change.
+
+- [#742](https://github.com/ecopages/radiant/pull/742) [`075da44`](https://github.com/ecopages/radiant/commit/075da444e9d2d903b2100f99cc294c27cc0e5d1b) Thanks [@andeeplus](https://github.com/andeeplus)! - Make `size:check` measure the client bundle with signals included, enforce the server budgets, and leave headroom in the JSX budgets for the ref track.
+
+- [#737](https://github.com/ecopages/radiant/pull/737) [`175124f`](https://github.com/ecopages/radiant/commit/175124f3c59a0cb12caa0f35d9d4ae5b9588aa79) Thanks [@andeeplus](https://github.com/andeeplus)! - **@ecopages/radiant**
+
+    - Bindings such as `this.$.data.position` update when a `createStore(...)` path changes, a missing key is added, or the host member is replaced.
+
+    **@ecopages/jsx**
+
+    - Object-valued bindings expose typed nested members such as `binding.profile.name`.
+
+- Updated dependencies [[`d787d54`](https://github.com/ecopages/radiant/commit/d787d54d9dd244280f6b2123cf57a1d2c54bacbd), [`c8239ff`](https://github.com/ecopages/radiant/commit/c8239ff1b73b5fa740b8cdf6479c3af6259a71ab), [`1052bcc`](https://github.com/ecopages/radiant/commit/1052bcc9312db7490ee264f5ca303a4c6912044a)]:
+    - @ecopages/signals@0.10.0
+
 ## 0.9.0
 
 ### Patch Changes
