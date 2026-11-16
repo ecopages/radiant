@@ -144,11 +144,16 @@ describe.each<HostKind>(['element', 'controller'])('whole-render read warnings o
 		expect(warn).not.toHaveBeenCalled();
 	});
 
-	test('a field only bound with this.$ neither re-renders nor warns', async () => {
+	test('a field only bound with this.$ does not warn while a field the view reads re-renders the host', async () => {
 		const { host } = await defineHost(kind, 'bound-only')();
+		const root = host instanceof HTMLElement ? host : document.body;
 
-		for (let value = 1; value <= 40; value++) await write(host, value);
+		for (let value = 1; value <= 10; value++) {
+			await write(host, value);
+			await writeOther(host, value);
+		}
 
+		expect(root.querySelector('i')?.textContent).toBe('10');
 		expect(warn).not.toHaveBeenCalled();
 	});
 
