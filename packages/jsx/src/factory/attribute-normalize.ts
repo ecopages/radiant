@@ -216,10 +216,11 @@ export function serializeStyleSnapshot(value: unknown): string {
  * binding kind rather than the value, so callers decide that before calling.
  */
 export function resolveAttributeText(name: string, value: unknown, presence = false): string | undefined {
+	if (isSkippedFunction(value, 'an attribute')) return undefined;
 	if (presence && typeof value === 'string' && value !== '') return value;
 	if (presence || (typeof value === 'boolean' && shouldUseBooleanAttributeBinding(name)))
 		return value ? '' : undefined;
-	if (value == null || isSkippedFunction(value, `attribute ${name}`)) return undefined;
+	if (value == null) return undefined;
 	const lowerName = name.toLowerCase();
 	if (lowerName === 'style') return serializeStyleSnapshot(value);
 	if (lowerName === 'class' && (typeof value === 'object' || value === '')) return joinClassTokens(value, undefined);

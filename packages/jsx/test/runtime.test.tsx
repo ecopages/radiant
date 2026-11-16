@@ -152,6 +152,7 @@ describe('Radiant JSX runtime', () => {
 			style: bound(fn),
 			class: ['a', fn],
 			classes: [fn],
+			'bool:hidden': bound(fn),
 			children: ['Before', bound(fn), 'After'],
 		});
 
@@ -162,6 +163,7 @@ describe('Radiant JSX runtime', () => {
 			expect(html).not.toContain('=>');
 			expect(html).not.toContain('title=');
 			expect(html).not.toContain('style=');
+			expect(html).not.toMatch(/\shidden\b/);
 			expect(html).toContain('class="a"');
 			expect(html).toContain('BeforeAfter');
 		}
