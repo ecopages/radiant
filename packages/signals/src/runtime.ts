@@ -56,3 +56,53 @@ export function runWatcherNotify(callback: () => void): void {
 		frozenWatcherDepth -= 1;
 	}
 }
+
+let storeBatchDepth = 0;
+let flushingStoreNotifications = false;
+const pendingStoreNotifications = new Map<object, () => void>();
+
+/**
+ * @remarks During reconciliation, defer each state until all branch writes are visible.
+ * A reentrant write to a state already queued replaces its pending notification.
+ */
+export function deferStoreNotification(key: object, notify: () => void): boolean {
+	if (storeBatchDepth === 0 && (!flushingStoreNotifications || !pendingStoreNotifications.has(key))) return false;
+	pendingStoreNotifications.set(key, notify);
+	return true;
+}
+
+/**
+ * @remarks Drain every pending notification even if a write or subscriber throws,
+ * so observers of other changed values are not left stale.
+ */
+export function batchStoreWrites(write: () => void): void {
+	storeBatchDepth += 1;
+	const errors: unknown[] = [];
+	try {
+		write();
+	} catch (error) {
+		errors.push(error);
+	} finally {
+		storeBatchDepth -= 1;
+	}
+	if (storeBatchDepth === 0 && !flushingStoreNotifications) {
+		flushingStoreNotifications = true;
+		try {
+			while (pendingStoreNotifications.size > 0) {
+				const next = pendingStoreNotifications.entries().next();
+				if (next.done) break;
+				const [key, notify] = next.value;
+				pendingStoreNotifications.delete(key);
+				try {
+					notify();
+				} catch (error) {
+					errors.push(error);
+				}
+			}
+		} finally {
+			flushingStoreNotifications = false;
+		}
+	}
+	if (errors.length === 1) throw errors[0];
+	if (errors.length > 1) throw new AggregateError(errors, 'Multiple store updates or notifications failed.');
+}
