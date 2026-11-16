@@ -22,12 +22,6 @@ const ctxA = createContext<{ count: number }>('a');
 const ctxB = createContext<{ name: string }>('b');
 
 declare const host: Element;
-declare const flag: boolean;
-
-// @ts-expect-error a single-element query can be null
-export const item: HTMLElement = createQuery<HTMLElement>(host, { ref: 'r' }).value;
-// @ts-expect-error all: true returns an array
-export const items: HTMLElement | null = createQuery<HTMLElement>(host, { ref: 'r', all: true }).value;
 
 // @ts-expect-error a single-element query can be null
 export const itemBySelector: HTMLElement = createQuery<HTMLElement>(host, 'li').value;
@@ -47,16 +41,14 @@ export class StandardElementInstallers extends RadiantElement {
 	@queryAll('.r') s5: HTMLElement[] | null;
 	// @ts-expect-error not an array of elements
 	@queryAll('.r') s6: string[];
-	// @ts-expect-error a single-element query can be null
-	@query({ ref: 'r' }) q1: HTMLElement;
-	// @ts-expect-error not an element
-	@query({ ref: 'r' }) q2: string | null;
-	// @ts-expect-error an array needs all: true
-	@query({ ref: 'r' }) q3: HTMLElement[];
-	// @ts-expect-error all: true returns an array
-	@query({ ref: 'r', all: true }) q4: HTMLElement | null;
-	// @ts-expect-error all picks the field type, so it must be a literal
-	@query({ ref: 'r', all: flag }) q5: HTMLElement | null;
+	// @ts-expect-error the type argument names the element the field holds
+	@query<HTMLButtonElement>('button') s7!: HTMLInputElement | null;
+	// @ts-expect-error the type argument names the element the field holds
+	@queryAll<HTMLButtonElement>('button') s8!: HTMLInputElement[];
+	// @ts-expect-error the selector is a string
+	@query(1) s9!: HTMLElement | null;
+	// @ts-expect-error the selector is a string
+	@queryAll({ selector: '.r' }) s10!: HTMLElement[];
 
 	// @ts-expect-error the decorator installs an EventEmitter
 	@event({ name: 'x' }) e1: string;
@@ -98,5 +90,5 @@ export class StandardGenericSelector<T extends number> extends RadiantElement {
 
 export class StandardControllerInstallers extends RadiantController {
 	// @ts-expect-error a single-element query can be null
-	@query({ ref: 'r' }) q1: HTMLElement;
+	@query('.r') q1: HTMLElement;
 }

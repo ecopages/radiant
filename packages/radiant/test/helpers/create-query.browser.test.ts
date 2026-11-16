@@ -32,69 +32,11 @@ const createHost = () => {
 	return host;
 };
 
-describe('createQuery', () => {
+describe('createQuery and createQueryAll', () => {
 	beforeEach(() => {
 		document.body.innerHTML = '';
 	});
 
-	test('queries single element by ref', () => {
-		const host = createHost();
-		const accessor = createQuery<HTMLDivElement>(host, { ref: 'my-ref' });
-		expect(accessor.value?.textContent).toBe('Ref 1');
-	});
-
-	test('queries all elements by ref', () => {
-		const host = createHost();
-		const accessor = createQuery<HTMLDivElement>(host, { ref: 'my-ref', all: true });
-		expect(accessor.value).toHaveLength(2);
-		expect(accessor.value![0].textContent).toBe('Ref 1');
-		expect(accessor.value![1].textContent).toBe('Ref 2');
-	});
-
-	test('queries single element by selector', () => {
-		const host = createHost();
-		const accessor = createQuery<HTMLDivElement>(host, { selector: '.my-class' });
-		expect(accessor.value?.textContent).toBe('Class 1');
-	});
-
-	test('queries all elements by selector', () => {
-		const host = createHost();
-		const accessor = createQuery<HTMLDivElement>(host, { selector: '.my-class', all: true });
-		expect(accessor.value).toHaveLength(3);
-	});
-
-	test('returns null when no element matches', () => {
-		const host = createHost();
-		const accessor = createQuery<HTMLDivElement>(host, { selector: '.non-existent' });
-		expect(accessor.value).toBeNull();
-	});
-
-	test('returns empty array when no elements match with all: true', () => {
-		const host = createHost();
-		const accessor = createQuery<HTMLDivElement>(host, { selector: '.non-existent', all: true });
-		expect(accessor.value).toEqual([]);
-	});
-
-	test('caches result when cache is true', () => {
-		const host = createHost();
-		const accessor = createQuery<HTMLDivElement>(host, { ref: 'my-ref', all: true, cache: true });
-		expect(accessor.value).toHaveLength(2);
-
-		host.appendChild(createElementWithRef('Ref 3', 'my-ref'));
-		expect(accessor.value).toHaveLength(2);
-	});
-
-	test('does not cache when cache is not set', () => {
-		const host = createHost();
-		const accessor = createQuery<HTMLDivElement>(host, { ref: 'my-ref', all: true });
-		expect(accessor.value).toHaveLength(2);
-
-		host.appendChild(createElementWithRef('Ref 3', 'my-ref'));
-		expect(accessor.value).toHaveLength(3);
-	});
-});
-
-describe('createQuery(target, selector) and createQueryAll', () => {
 	test('createQuery with a selector reads the first match live, or null', () => {
 		const host = createHost();
 		const accessor = createQuery(host, '.my-class');
@@ -102,6 +44,14 @@ describe('createQuery(target, selector) and createQueryAll', () => {
 		expect(createQuery(host, '.missing').value).toBeNull();
 		accessor.value?.replaceWith(createElementWithClass('Swapped', 'my-class'));
 		expect(accessor.value?.textContent).toBe('Swapped');
+	});
+
+	test('createQuery reads the data-ref attribute only as a selector, so a nested host part is found', () => {
+		const host = createHost();
+		const nested = document.createElement('query-helper-element');
+		nested.appendChild(createElementWithRef('Nested', 'nested-ref'));
+		host.prepend(nested);
+		expect(createQuery(host, '[data-ref="nested-ref"]').value?.textContent).toBe('Nested');
 	});
 
 	test('both accept a controller-style { host } target', () => {

@@ -4,7 +4,8 @@ import { RadiantElement } from '../../src/core/radiant-element';
 import { bindTo } from '../../src/decorators/bind-to';
 import { customElement } from '../../src/decorators/custom-element';
 import { onEvent } from '../../src/decorators/on-event';
-import { query } from '../../src/decorators/query';
+import { queryAll } from '../../src/decorators/query';
+import { ref, refAll } from '../../src/decorators/ref';
 import { state } from '../../src/decorators/state';
 
 afterEach(() => {
@@ -18,13 +19,12 @@ class _PartsInner extends RadiantElement {}
 class PartsOuter extends RadiantElement {
 	clicks = 0;
 
-	@query({ ref: 'item' }) item!: HTMLElement | null;
-	@query({ ref: 'item', all: true }) items!: HTMLElement[];
-	@query({ ref: 'item', cache: true }) cachedItem!: HTMLElement | null;
-	@query({ ref: 'say "hi"' }) quoted!: HTMLElement | null;
-	@query({ ref: 'back\\slash' }) backslashed!: HTMLElement | null;
-	@query({ ref: '1abc' }) digitLed!: HTMLElement | null;
-	@query({ selector: '[data-ref="item"]', all: true }) everyItem!: HTMLElement[];
+	@ref() item!: HTMLElement | null;
+	@refAll('item') items!: HTMLElement[];
+	@ref('say "hi"') quoted!: HTMLElement | null;
+	@ref('back\\slash') backslashed!: HTMLElement | null;
+	@ref('1abc') digitLed!: HTMLElement | null;
+	@queryAll('[data-ref="item"]') everyItem!: HTMLElement[];
 
 	@state
 	@bindTo({ ref: 'item', text: true })
@@ -39,7 +39,7 @@ class PartsOuter extends RadiantElement {
 class PartsController extends RadiantController {
 	clicks = 0;
 
-	@query({ ref: 'item' }) item!: HTMLElement | null;
+	@ref() item!: HTMLElement | null;
 
 	@onEvent({ ref: 'item', type: 'click' })
 	onItemClick() {
@@ -93,17 +93,16 @@ const NESTED = `
 </parts-outer>`;
 
 describe('scoped parts, Element Host', () => {
-	test('@query({ ref }) and getRef skip a nested host part, single and all', async () => {
+	test('@ref, @refAll and getRef skip a nested host part, single and all', async () => {
 		const host = await mount<PartsOuter>(NESTED);
 
 		expect(host.item).toBe(byId('outer'));
 		expect(host.getRef('item')).toBe(byId('outer'));
 		expect(host.items).toEqual([byId('outer')]);
 		expect(host.getRef('item', true)).toEqual([byId('outer')]);
-		expect(host.cachedItem).toBe(byId('outer'));
 	});
 
-	test('@query({ selector }) still reaches into the nested host', async () => {
+	test('@queryAll(selector) still reaches into the nested host', async () => {
 		const host = await mount<PartsOuter>(NESTED);
 
 		expect(host.everyItem).toEqual([byId('inner'), byId('outer')]);

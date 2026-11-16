@@ -15,7 +15,7 @@ import {
 import { ensureLegacyHostReady } from '../../src/decorators/legacy/host-readiness';
 import { reactiveProp as legacyReactiveProp } from '../../src/decorators/legacy/reactive-prop';
 import { prop } from '../../src/decorators/prop';
-import { query } from '../../src/decorators/query';
+import { ref } from '../../src/decorators/ref';
 import { state } from '../../src/decorators/state';
 import { installLightDomShim } from '../../src/server/light-dom-shim';
 import { REACTIVE_HOST } from '../../src/core/reactive-host';
@@ -102,7 +102,7 @@ describe('legacy post-construction decorator setup', () => {
 		class SearchController extends RadiantController {
 			@state query = '';
 			placeholder = `Search ${this.query}`;
-			@query({ ref: 'input' }) input!: HTMLInputElement | null;
+			@ref() input!: HTMLInputElement | null;
 		}
 
 		const host = document.createElement('div');

@@ -1,25 +1,6 @@
-import { resolvePart, resolveParts } from '../core/parts';
 import { resolveHostElement } from './resolve-host-element';
 
-type BaseQueryConfig = {
-	all?: boolean;
-	/**
-	 * Keeps the first result instead of querying on every read. Off by default, in both decorator modes.
-	 *
-	 * @remarks
-	 * The result is not refreshed while the host stays connected: the lookup repeats only while it finds
-	 * nothing, so a re-render that replaces the node leaves the cached one stale.
-	 */
-	cache?: boolean;
-};
-
-type QueryBySelector = { selector: string };
-
-type QueryByRef = { ref: string };
-
 export type QueryHostTarget = Element | { host: Element };
-
-export type QueryConfig = BaseQueryConfig & (QueryBySelector | QueryByRef);
 
 type QueryResult<T> = {
 	get value(): T;
@@ -37,54 +18,22 @@ export function resolveQueryHost(target: QueryHostTarget): Element {
 }
 
 /**
- * Creates a lazy DOM query accessor bound to an element host or controller.
- * Functional equivalent of the `@query` decorator for vanilla JS usage.
- * With a selector string the value is the first match or `null`, read live on every access. The options
- * object is the older form: with `all: true` the value is an array, and `cache` keeps the first result.
- * @param target The element host or controller to query within.
+ * Creates a live accessor for the first element matching `selector` inside an element host or controller,
+ * or `null`. Functional equivalent of the `@query` decorator for vanilla JS usage.
  *
  * @remarks
- * The type argument is the element type, and `all` picks the value type, so it must be a literal: with a
- * `boolean` variable the value is `Element[] | Element | null` and there is no type argument.
+ * Unscoped: a match inside a nested host is found. The lookup repeats on every read, with no cache. For
+ * the parts a host owns, use `getRef`.
  */
 export function createQuery<T extends Element = Element>(
 	target: QueryHostTarget,
 	selector: string,
-): QueryResult<T | null>;
-export function createQuery<T extends Element = Element>(
-	target: QueryHostTarget,
-	options: QueryConfig & { all: true },
-): QueryResult<T[]>;
-export function createQuery<T extends Element = Element>(
-	target: QueryHostTarget,
-	options: QueryConfig & { all?: false },
-): QueryResult<T | null>;
-export function createQuery(target: QueryHostTarget, options: QueryConfig): QueryResult<Element[] | Element | null>;
-export function createQuery(
-	target: QueryHostTarget,
-	input: QueryConfig | string,
-): QueryResult<Element[] | Element | null> {
-	const options: QueryConfig = typeof input === 'string' ? { selector: input } : input;
+): QueryResult<T | null> {
 	const host = resolveQueryHost(target);
-	let cached: Element[] | Element | null = null;
-
-	const executeQuery = (): Element[] | Element | null => {
-		if ('ref' in options) {
-			return options.all ? resolveParts(host, options.ref) : resolvePart(host, options.ref);
-		}
-
-		return options.all ? Array.from(host.querySelectorAll(options.selector)) : host.querySelector(options.selector);
-	};
 
 	return {
-		get value(): Element[] | Element | null {
-			if (options.cache) {
-				if (cached === null || (options.all && Array.isArray(cached) && !cached.length)) {
-					cached = executeQuery();
-				}
-				return cached;
-			}
-			return executeQuery();
+		get value(): T | null {
+			return host.querySelector<T>(selector);
 		},
 	};
 }
@@ -101,5 +50,11 @@ export function createQueryAll<T extends Element = Element>(
 	target: QueryHostTarget,
 	selector: string,
 ): QueryResult<T[]> {
-	return createQuery<T>(target, { selector, all: true });
+	const host = resolveQueryHost(target);
+
+	return {
+		get value(): T[] {
+			return Array.from(host.querySelectorAll<T>(selector));
+		},
+	};
 }

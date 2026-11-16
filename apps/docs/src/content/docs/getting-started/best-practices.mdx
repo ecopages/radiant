@@ -226,7 +226,7 @@ In that example, the `class` expression still belongs to the host render pass, w
 
 ```tsx
 // Avoid
-@query({ ref: 'count' }) countEl!: HTMLElement | null;
+@ref('count') countEl!: HTMLElement | null;
 
 @onUpdated('count')
 syncCount() {
