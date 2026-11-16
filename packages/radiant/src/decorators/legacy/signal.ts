@@ -6,21 +6,17 @@ import type { SignalDecoratorOptions } from '../shared/signal-options';
 
 export function signal<Value = unknown>(options: SignalDecoratorOptions<Value> = {}) {
 	return (target: ReactiveHostLike, propertyName: string) => {
-		registerLegacyPostConstructionInitializer(
-			target,
-			(element) => {
-				const currentValue = (element as unknown as Record<string, unknown>)[propertyName] as Value | undefined;
-				const hostSignal = installHostSignal(element, propertyName, options, currentValue);
-				(element as unknown as Record<string, unknown>)[propertyName] = hostSignal;
+		registerLegacyPostConstructionInitializer(target, (element) => {
+			const currentValue = (element as unknown as Record<string, unknown>)[propertyName] as Value | undefined;
+			const hostSignal = installHostSignal(element, propertyName, options, currentValue);
+			(element as unknown as Record<string, unknown>)[propertyName] = hostSignal;
 
-				element.registerConnectedCallback(() => {
-					const current = (element as unknown as Record<string, unknown>)[propertyName];
-					if (!(current instanceof HostSignal)) {
-						(element as unknown as Record<string, unknown>)[propertyName] = hostSignal;
-					}
-				});
-			},
-			propertyName,
-		);
+			element.registerConnectedCallback(() => {
+				const current = (element as unknown as Record<string, unknown>)[propertyName];
+				if (!(current instanceof HostSignal)) {
+					(element as unknown as Record<string, unknown>)[propertyName] = hostSignal;
+				}
+			});
+		});
 	};
 }

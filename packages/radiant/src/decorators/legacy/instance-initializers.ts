@@ -8,7 +8,6 @@ type LegacyPostConstructionInitializer<T extends object = object> = (
 
 const LEGACY_INSTANCE_INITIALIZERS = Symbol.for('@ecopages/radiant.legacy-instance-initializers');
 const LEGACY_POST_CONSTRUCTION_INITIALIZERS = Symbol.for('@ecopages/radiant.legacy-post-construction-initializers');
-const LEGACY_POST_CONSTRUCTION_FIELDS = Symbol.for('@ecopages/radiant.legacy-post-construction-fields');
 const LEGACY_EXECUTED_POST_CONSTRUCTION_INITIALIZERS = Symbol.for(
 	'@ecopages/radiant.legacy-executed-post-construction-initializers',
 );
@@ -36,13 +35,8 @@ export function registerLegacyInstanceInitializer<T extends object>(
 export function registerLegacyPostConstructionInitializer<T extends object>(
 	proto: T,
 	initializer: LegacyPostConstructionInitializer<T>,
-	propertyKey?: PropertyKey,
 ): void {
 	registerInitializer(proto, LEGACY_POST_CONSTRUCTION_INITIALIZERS, initializer);
-
-	if (propertyKey !== undefined) {
-		registerFieldKey(proto, propertyKey);
-	}
 }
 
 /**
@@ -98,74 +92,6 @@ function registerInitializer<T extends object>(
 	Object.defineProperty(target, key, {
 		value: [initializer],
 	});
-}
-
-/**
- * Whether this instance's prototype chain registered any legacy post-construction work.
- *
- * @remarks
- * Used by `RadiantController` to finish that work after subclass fields without wrapping
- * the author's class. Standard decorator mode never registers any.
- */
-/**
- * Whether every decorated instance field on this host already exists as an own property.
- *
- * @remarks
- * Used by the controller construction proxy so a get during an earlier field initializer
- * cannot install accessors that a later class field would overwrite.
- */
-export function hasAllLegacyPostConstructionFields(instance: object): boolean {
-	for (const prototype of collectPrototypeChain(instance)) {
-		const keys = getOwnFieldKeys(prototype);
-
-		if (!keys) {
-			continue;
-		}
-
-		for (const key of keys) {
-			if (!Object.prototype.hasOwnProperty.call(instance, key)) {
-				return false;
-			}
-		}
-	}
-
-	return true;
-}
-
-export function hasLegacyPostConstructionInitializers(instance: object): boolean {
-	for (const prototype of collectPrototypeChain(instance)) {
-		const initializers = getOwnInitializerList(prototype, LEGACY_POST_CONSTRUCTION_INITIALIZERS);
-		if (initializers?.length) {
-			return true;
-		}
-	}
-
-	return false;
-}
-
-function registerFieldKey<T extends object>(proto: T, propertyKey: PropertyKey): void {
-	const target = proto as Record<PropertyKey, unknown>;
-	const ownKeys = Object.prototype.hasOwnProperty.call(target, LEGACY_POST_CONSTRUCTION_FIELDS)
-		? target[LEGACY_POST_CONSTRUCTION_FIELDS]
-		: undefined;
-
-	if (Array.isArray(ownKeys)) {
-		ownKeys.push(propertyKey);
-		return;
-	}
-
-	Object.defineProperty(target, LEGACY_POST_CONSTRUCTION_FIELDS, {
-		value: [propertyKey],
-	});
-}
-
-function getOwnFieldKeys(prototype: object): PropertyKey[] | undefined {
-	if (!Object.prototype.hasOwnProperty.call(prototype, LEGACY_POST_CONSTRUCTION_FIELDS)) {
-		return undefined;
-	}
-
-	const keys = (prototype as Record<PropertyKey, unknown>)[LEGACY_POST_CONSTRUCTION_FIELDS];
-	return Array.isArray(keys) ? (keys as PropertyKey[]) : undefined;
 }
 
 function getOwnInitializerList<T>(prototype: object, key: symbol): T[] | undefined {

@@ -25,24 +25,20 @@ export function consumeContext(context: UnknownContext) {
 			return connectConsumedContext(element, context, assignerFor(element));
 		};
 
-		registerLegacyPostConstructionInitializer(
-			proto,
-			(element) => {
-				bootstrapSsrConsumedContext(element, context, (provider) => {
-					assignContextProvider(element, provider);
-				});
+		registerLegacyPostConstructionInitializer(proto, (element) => {
+			bootstrapSsrConsumedContext(element, context, (provider) => {
+				assignContextProvider(element, provider);
+			});
 
-				element.registerConnectedCallback(() => {
-					if (initializeConsumedContextForHost(element)) {
-						return;
-					}
+			element.registerConnectedCallback(() => {
+				if (initializeConsumedContextForHost(element)) {
+					return;
+				}
 
-					queueMicrotask(() => {
-						initializeConsumedContextForHost(element);
-					});
+				queueMicrotask(() => {
+					initializeConsumedContextForHost(element);
 				});
-			},
-			propertyKey,
-		);
+			});
+		});
 	};
 }

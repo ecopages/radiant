@@ -1,8 +1,7 @@
 import { render as renderJsx, type JsxRenderable, type SubscribableJsxValueWithAccess } from '@ecopages/jsx';
 import { TrackedRender } from './tracked-render';
 import type { UnknownContext } from '../context/types';
-import { createLegacyControllerSurface, ensureLegacyHostReady } from '../decorators/legacy/host-readiness';
-import { hasLegacyPostConstructionInitializers } from '../decorators/legacy/instance-initializers';
+import { ensureLegacyHostReady } from '../decorators/legacy/host-readiness';
 import { REACTIVE_HOST, ReactiveHost, type ReactiveHostInternals, type ReactiveHostLike } from './reactive-host';
 import type { ReactiveState } from './reactivity-contract';
 import {
@@ -16,19 +15,6 @@ import {
 import { UpdateCycle } from './update-cycle';
 
 type StringPropertyKey<Value> = Extract<keyof Value, string>;
-
-const CONTROLLER_INTERNAL_KEYS: ReadonlySet<PropertyKey> = new Set([
-	'host',
-	'element',
-	'bindings',
-	'$',
-	'reactiveHost',
-	'connected',
-	'updateCycle',
-	'isSsrLifecycle',
-	'trackedRender',
-	'constructor',
-]);
 
 /**
  * Attaches Radiant reactivity to an existing DOM element without defining a
@@ -54,47 +40,35 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 	private connected = false;
 	private readonly updateCycle: UpdateCycle;
 	private isSsrLifecycle = false;
-	private readonly trackedRender: TrackedRender<JsxRenderable>;
+	private readonly trackedRender = new TrackedRender<JsxRenderable>(() => this.requestUpdate());
 
-	/**
-	 * @remarks Under legacy decorators the constructor returns a proxy, and every closure here
-	 * captures that proxy so author methods always run with the same `this`.
-	 */
 	constructor(host: Element) {
-		const self = hasLegacyPostConstructionInitializers(this)
-			? createLegacyControllerSurface(this, CONTROLLER_INTERNAL_KEYS)
-			: this;
 		this.host = host;
 		this.element = host;
 		this.updateCycle = new UpdateCycle({
-			canFlush: () => self.connected,
-			runCallbacks: (changed) => self.reactiveHost.runUpdatedCallbacks(changed),
+			canFlush: () => this.connected,
+			runCallbacks: (changed) => this.reactiveHost.runUpdatedCallbacks(changed),
 			commit: () => {
-				const renderTarget = self.getRenderTarget();
+				const renderTarget = this.getRenderTarget();
 
 				if (!renderTarget) {
 					return;
 				}
 
-				renderJsx(self.resolveTrackedRenderOutput(), renderTarget);
+				renderJsx(this.resolveTrackedRenderOutput(), renderTarget);
 			},
-			updated: (changed) => self.updated(changed),
+			updated: (changed) => this.updated(changed),
 		});
 		this.reactiveHost = new ReactiveHost<this, Bindings>(
-			self,
+			this,
 			{
 				defineProperty: (target, property, descriptor) => Object.defineProperty(target, property, descriptor),
 			},
-			(propertyName) => self.updateCycle.markChanged(propertyName),
+			(propertyName) => this.updateCycle.markChanged(propertyName),
 		);
 		this.bindings = this.reactiveHost.bindings;
 		this.$ = this.reactiveHost.$;
-		this.trackedRender = new TrackedRender(() => self.requestUpdate());
-		ensureLegacyHostReady(self, 'construct');
-
-		if (self !== this) {
-			return self;
-		}
+		ensureLegacyHostReady(this, 'construct');
 	}
 
 	/**

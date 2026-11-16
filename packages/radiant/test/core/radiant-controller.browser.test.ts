@@ -166,6 +166,7 @@ customElements.define('controller-shadow-boundary', ShadowBoundaryHost);
 describe('RadiantController', () => {
 	test('supports shared reactive field bindings', () => {
 		const controller = new CounterController(document.createElement('div'));
+		controller.connect();
 
 		expect(controller.count).toBe(1);
 		expect(controller.bind('count').getValue()).toBe(1);
