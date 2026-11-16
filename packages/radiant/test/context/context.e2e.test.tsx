@@ -177,7 +177,6 @@ class LoggerContextProvider extends RadiantElement {
 	context!: ContextProvider<typeof loggerContext>;
 }
 
-
 describe('Context', () => {
 	beforeEach(() => {
 		document.body.innerHTML = '';

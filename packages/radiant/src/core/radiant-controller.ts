@@ -1,10 +1,7 @@
 import { render as renderJsx, type JsxRenderable, type SubscribableJsxValueWithAccess } from '@ecopages/jsx';
 import { TrackedRender } from './tracked-render';
 import type { UnknownContext } from '../context/types';
-import {
-	completeLegacyControllerConstruction,
-	ensureLegacyHostReady,
-} from '../decorators/legacy/host-readiness';
+import { completeLegacyControllerConstruction, ensureLegacyHostReady } from '../decorators/legacy/host-readiness';
 import { hasLegacyPostConstructionInitializers } from '../decorators/legacy/instance-initializers';
 import { REACTIVE_HOST, ReactiveHost, type ReactiveHostInternals, type ReactiveHostLike } from './reactive-host';
 import type { ReactiveState } from './reactivity-contract';

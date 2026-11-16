@@ -9,7 +9,11 @@ import type { EventEmitterConfig } from '../../tools/event-emitter';
  * Standard adapters run this from `addInitializer`. Legacy adapters run it from post-construction so
  * class-field definition does not overwrite the getter.
  */
-export function installEventField(host: RadiantElement, propertyName: string | symbol, eventConfig: EventEmitterConfig): void {
+export function installEventField(
+	host: RadiantElement,
+	propertyName: string | symbol,
+	eventConfig: EventEmitterConfig,
+): void {
 	const emitter = createEvent(host, eventConfig);
 
 	Object.defineProperty(host, propertyName, {
