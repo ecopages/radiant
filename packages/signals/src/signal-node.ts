@@ -26,9 +26,10 @@ export function collectErrors(tasks: Iterable<() => void>): unknown[] {
 }
 
 /**
- * Throws the only error as is, or several as an `AggregateError`.
+ * Throws the only error as is, or several as an `AggregateError` whose message
+ * defaults to the unwatched-hook one.
  */
-export function throwCollected(errors: unknown[], message: string): void {
+export function throwCollected(errors: unknown[], message = 'Multiple unwatched hooks failed.'): void {
 	if (errors.length === 1) {
 		throw errors[0];
 	}
@@ -64,7 +65,8 @@ export abstract class SignalNode<Value> implements Signal<Value>, DependencyNode
 	 *
 	 * @remarks
 	 * Adding is atomic: if `watched` or the first-watcher work throws, the listener
-	 * and anything the first-watcher work subscribed are released, `unwatched` is
+	 * and, unless a listener was added meanwhile, anything the first-watcher work
+	 * subscribed are released, `unwatched` is
 	 * not called for this node (it never became watched), and the original error
 	 * is rethrown. An error thrown while releasing is dropped in favor of it.
 	 *
@@ -81,7 +83,9 @@ export abstract class SignalNode<Value> implements Signal<Value>, DependencyNode
 				this.onWatched?.call(this);
 			} catch (error) {
 				this.watcherListeners.delete(notify);
-				collectErrors([() => this.handleLastWatcherRemoved(true)]);
+				if (this.watcherListeners.size === 0) {
+					collectErrors([() => this.handleLastWatcherRemoved(true)]);
+				}
 				throw error;
 			}
 		}
@@ -94,7 +98,6 @@ export abstract class SignalNode<Value> implements Signal<Value>, DependencyNode
 			if (this.watcherListeners.size === 0) {
 				throwCollected(
 					collectErrors([() => this.handleLastWatcherRemoved(false), () => this.onUnwatched?.call(this)]),
-					'Multiple unwatched hooks failed.',
 				);
 			}
 		};

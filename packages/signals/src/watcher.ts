@@ -64,7 +64,7 @@ export class Watcher {
 			this.notified = false;
 		}
 
-		throwCollected(errors, 'Multiple unwatched hooks failed.');
+		throwCollected(errors);
 	}
 
 	/**
@@ -74,7 +74,10 @@ export class Watcher {
 	 * Atomic: if a `watched` hook throws, every signal this call had started
 	 * watching is released in reverse order (so each `unwatched` hook runs), the
 	 * watcher is left as it was before the call, and the original error is
-	 * rethrown. Errors thrown while releasing are dropped in favor of it.
+	 * rethrown. Errors thrown while releasing are dropped in favor of it. The
+	 * pending set and notification latch are restored to their values before the
+	 * call, so a `watched` hook that wrote to a signal added earlier in the call
+	 * may have run the callback once more than the restored latch would allow.
 	 *
 	 * Re-watching is also a reset point, so `getPending()` only reports
 	 * invalidations that happen after this call.
@@ -83,6 +86,8 @@ export class Watcher {
 		assertSignalAccessAllowed();
 
 		const added: WatchableSignal[] = [];
+		const wasNotified = this.notified;
+		const pending = new Map(this.pendingSignals);
 
 		try {
 			for (const signal of signals) {
@@ -103,6 +108,9 @@ export class Watcher {
 			}
 		} catch (error) {
 			this.release(added.reverse());
+			this.notified = wasNotified;
+			this.pendingSignals.clear();
+			pending.forEach((signal, node) => this.pendingSignals.set(node, signal));
 			throw error;
 		}
 

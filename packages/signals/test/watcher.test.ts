@@ -432,23 +432,56 @@ describe('Watcher', () => {
 			expect(derived.get()).toBe(6);
 		});
 
-		test('keeps pending signals and the notification latch when a watch fails', () => {
+		test('restores pending signals and the notification latch when a watch fails', () => {
 			const events: string[] = [];
-			const first = hooks('first', events);
+			const other = hooks('other', events);
 			const failing = hooks('failing', events, { watched: new Error('x') });
+			const writer: State<number> = new State(0, {
+				[subtle.watched]() {
+					writer.set(1);
+				},
+			});
 			const notifications: number[] = [];
 			const watcher = new subtle.Watcher(() => {
 				notifications.push(1);
 			});
 
-			watcher.watch(first);
-			first.set(1);
-			expect(() => watcher.watch(failing)).toThrow('x');
-			first.set(2);
+			watcher.watch(other);
+			expect(() => watcher.watch(writer, failing)).toThrow('x');
 
-			expect(watcher.getPending()).toEqual([first]);
-			expect(notifications).toHaveLength(1);
+			expect(watcher.getPending()).toEqual([]);
+			other.set(1);
+
+			expect(notifications).toEqual([1, 1]);
+			expect(watcher.getPending()).toEqual([other]);
 			expect(failing.getWatcherCount()).toBe(0);
+		});
+
+		test('keeps a listener added during a failed first watch connected to its dependencies', () => {
+			const notifications: string[] = [];
+			let late: InstanceType<typeof subtle.Watcher>;
+			let derived: Computed<number>;
+			const source = new State(0, {
+				[subtle.watched]() {
+					late.watch(derived);
+				},
+			});
+			derived = new Computed(() => source.get(), {
+				[subtle.watched]() {
+					throw new Error('own');
+				},
+			});
+			late = new subtle.Watcher(() => {
+				notifications.push('late');
+			});
+			const first = new subtle.Watcher(() => undefined);
+
+			expect(() => first.watch(derived)).toThrow('own');
+			expect(derived.getWatcherCount()).toBe(1);
+			expect(source.getWatcherCount()).toBe(1);
+
+			source.set(5);
+			expect(notifications).toEqual(['late']);
 		});
 
 		test('drops errors thrown while rolling back in favor of the watched error', () => {

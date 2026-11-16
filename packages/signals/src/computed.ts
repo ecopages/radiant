@@ -110,7 +110,7 @@ export class Computed<Value> extends SignalNode<Value> {
 		}
 
 		this.dependencyWatcherUnsubscribers.clear();
-		throwCollected(collectErrors(unsubscribers), 'Multiple unwatched hooks failed.');
+		throwCollected(collectErrors(unsubscribers));
 	}
 
 	private handleDependencyChange = () => {
@@ -286,7 +286,7 @@ export class Computed<Value> extends SignalNode<Value> {
 			throw error;
 		}
 
-		throwCollected(droppedErrors, 'Multiple unwatched hooks failed.');
+		throwCollected(droppedErrors);
 	}
 
 	private trackDependency(dependency: DependencyNode): void {
