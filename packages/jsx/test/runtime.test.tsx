@@ -129,6 +129,33 @@ describe('Radiant JSX runtime', () => {
 		}
 	});
 
+	test('a function in a style object value is dropped, in plain and hydrate mode, and warned about once', async () => {
+		const [{ jsxDEV: jsx, resetRuntimeWarningsForTests, setDevWarningsEnabled }, { renderToString }] =
+			await Promise.all([loadJsxDevRuntime(), loadServerRender()]);
+		const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+		const fn = () => 'secret source';
+
+		resetRuntimeWarningsForTests();
+		setDevWarningsEnabled(true);
+
+		try {
+			for (const mode of ['plain', 'hydrate'] as const) {
+				const html = renderToString(jsx('p', { style: { color: fn, marginTop: '4px' } }), { mode });
+
+				expect(html).toContain('style="margin-top: 4px"');
+				expect(html).not.toContain('secret');
+			}
+
+			expect(warnSpy.mock.calls.map((call) => String(call[0]))).toEqual([
+				expect.stringContaining('Skipped a function in style value color'),
+			]);
+		} finally {
+			resetRuntimeWarningsForTests();
+			setDevWarningsEnabled(undefined);
+			warnSpy.mockRestore();
+		}
+	});
+
 	test('a function value is kept for events, prop bindings and custom-element properties', async () => {
 		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
 		const fn = () => 'secret source';

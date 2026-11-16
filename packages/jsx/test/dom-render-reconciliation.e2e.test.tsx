@@ -492,6 +492,7 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 					children: [
 						jsxDEV('p', { title: fn, 'attr:data-a': fn, style: fn, children: [fn, 'kept'] }),
 						jsxDEV('button', { 'on:click': onClick, children: 'go' }),
+						jsxDEV('b', { style: { color: fn, marginTop: '4px' } }),
 						jsxDEV(booleanPropertyTagName, { enabled: fn }),
 					],
 				}),
@@ -500,6 +501,7 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 			const paragraph = container.querySelector('p');
 			expect(paragraph?.textContent).toBe('kept');
 			expect(paragraph?.getAttributeNames()).toEqual([]);
+			expect(container.querySelector('b')?.getAttribute('style')).toBe('margin-top: 4px');
 			expect(container.innerHTML).not.toContain('secret');
 			expect((container.querySelector(booleanPropertyTagName) as BooleanPropertyElement).enabled).toBe(fn);
 
@@ -511,6 +513,7 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 				expect.stringContaining('Skipped a function in <p attr:data-a>'),
 				expect.stringContaining('Skipped a function in <p style>'),
 				expect.stringContaining('Skipped a function in child of <p>'),
+				expect.stringContaining('Skipped a function in style value color'),
 			]);
 		} finally {
 			resetRuntimeWarningsForTests();
