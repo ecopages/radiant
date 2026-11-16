@@ -486,9 +486,13 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	/**
 	 * Registers a synchronous callback for a named reactive member.
 	 *
-	 * @remarks Runs on every write of the member, before the batched cycle. Used
-	 * by `@bindTo`, whose DOM writes must land with the value like `$` bindings.
-	 * Use {@link registerUpdatedCallback} for procedures.
+	 * @remarks Runs on every write of the member, before the batched cycle, while
+	 * members are observed (host connected, or SSR preparation). The subscription is
+	 * released on disconnect and re-established on connect; writes made before
+	 * connect or while detached do not run it, but it runs once on connect when the
+	 * member's value differs from its last observed value. Used by `@bindTo`, whose
+	 * DOM writes must land with the value like `$` bindings. Use
+	 * {@link registerUpdatedCallback} for procedures.
 	 */
 	public registerUpdateCallback(property: string, update: () => void): () => void {
 		let callbacks = this.updateCallbacks.get(property);

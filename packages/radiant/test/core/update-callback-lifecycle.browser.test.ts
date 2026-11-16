@@ -184,5 +184,56 @@ describe('update callback subscriptions follow host connection', () => {
 
 		controller.connect();
 		expect(seen).toEqual([2, 3]);
+		controller.disconnect();
+	});
+
+	test('registerUpdateCallback does not run when the value changed and changed back while detached', async () => {
+		elementSource.source.set(1);
+		const element = document.createElement('update-callback-raw-element') as RawElement;
+		document.body.append(element);
+		await flush();
+		element.seen.length = 0;
+
+		element.remove();
+		elementSource.source.set(2);
+		elementSource.source.set(1);
+		document.body.append(element);
+		await flush();
+
+		expect(element.seen).toEqual([]);
+	});
+
+	test('a disposed registerUpdateCallback stays released across reconnect', async () => {
+		elementSource.source.set(1);
+		const element = document.createElement('update-callback-raw-element') as RawElement;
+		document.body.append(element);
+		await flush();
+		element.seen.length = 0;
+
+		element.remove();
+		element.stop?.();
+		elementSource.source.set(2);
+		document.body.append(element);
+		await flush();
+		elementSource.source.set(3);
+
+		expect(element.seen).toEqual([]);
+	});
+
+	test('registerUpdateCallback on a Controller Host that was never connected does not subscribe', () => {
+		controllerSource.source.set(1);
+		const controller = new BindToController(document.createElement('section'));
+		const seen: number[] = [];
+		controller.registerUpdateCallback('n', () => seen.push(controller.n.get()));
+
+		expect(controllerSource.counter.listeners).toBe(0);
+		controllerSource.source.set(2);
+		expect(seen).toEqual([]);
+
+		controller.connect();
+		seen.length = 0;
+		controllerSource.source.set(3);
+		expect(seen).toEqual([3]);
+		controller.disconnect();
 	});
 });
