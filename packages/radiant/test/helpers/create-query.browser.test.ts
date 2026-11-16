@@ -104,6 +104,12 @@ describe('createQuery(target, selector) and createQueryAll', () => {
 		expect(accessor.value?.textContent).toBe('Swapped');
 	});
 
+	test('both accept a controller-style { host } target', () => {
+		const host = createHost();
+		expect(createQuery({ host }, '.my-class').value?.textContent).toBe('Class 1');
+		expect(createQueryAll({ host }, '.my-class').value).toHaveLength(3);
+	});
+
 	test('createQueryAll reads every match in order, live', () => {
 		const host = createHost();
 		const accessor = createQueryAll(host, '.my-class');

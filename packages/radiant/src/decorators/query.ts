@@ -9,8 +9,8 @@ export type { QueryDecoratorHost };
 export type { QueryConfig };
 
 /**
- * A decorator to query by CSS selector or data-ref attribute. A `ref` lookup only finds parts the host owns,
- * a nested host's same-named part is skipped; `selector` is unscoped.
+ * A decorator to query by CSS selector, which reaches into nested hosts. The options object also takes a
+ * `data-ref` name, which only finds parts the host owns.
  * `@query(selector)` returns the first match or `null`, read live on every access. The options object is the
  * older form: it can query for all elements with `all: true`, and it caches the result only when `cache` is enabled.
  *
@@ -44,6 +44,5 @@ export function query<Value extends Element[] | Element | null>(
  * Unscoped: matches inside nested hosts are included.
  */
 export function queryAll<T extends Element = Element>(selector: string): ValueFieldDecorator<QueryDecoratorHost, T[]> {
-	const config = { selector, all: true };
-	return fieldDecorator<QueryDecoratorHost, T[]>(standardQuery(config), legacyQuery(config));
+	return query<T>({ selector, all: true });
 }

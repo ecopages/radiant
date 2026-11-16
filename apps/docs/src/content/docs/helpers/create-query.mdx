@@ -39,6 +39,8 @@ The accessor returns an object with a `.value` getter. Each read of `.value` run
 ```typescript
 import { createQuery, createQueryAll } from '@ecopages/radiant/helpers/create-query';
 
+declare const host: HTMLElement;
+
 const avatar = createQuery<HTMLImageElement>(host, '.avatar');
 const items = createQueryAll<HTMLElement>(host, '.item');
 ```

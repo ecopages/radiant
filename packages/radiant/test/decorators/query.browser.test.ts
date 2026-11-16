@@ -201,7 +201,23 @@ describe('@query', () => {
 	});
 });
 
+class SelectorQueryController extends RadiantController {
+	@query('.item') first!: HTMLElement | null;
+	@queryAll('.item') items!: HTMLElement[];
+}
+
 describe('RadiantController @query', () => {
+	test('reads the selector forms inside the controller host', () => {
+		const host = document.createElement('section');
+		host.innerHTML = '<i class="item">a</i><b><i class="item">b</i></b>';
+
+		const controller = new SelectorQueryController(host);
+		controller.connect();
+
+		expect(controller.first?.textContent).toBe('a');
+		expect(controller.items.map((node) => node.textContent)).toEqual(['a', 'b']);
+	});
+
 	test('queries authored form markup inside the controller host', () => {
 		const host = document.createElement('section');
 		host.innerHTML = `
@@ -233,9 +249,17 @@ describe('@query(selector)', () => {
 		expect(host.missing).toBeNull();
 	});
 
-	test('reads null before connect', () => {
+	test('reads null on a host with no children', () => {
 		const host = document.createElement('my-selector-query-element') as MySelectorQueryElement;
 		expect(host.first).toBeNull();
+	});
+
+	test('reaches into a nested host', () => {
+		const host = createSelectorHost(
+			'<my-selector-query-element><i class="item">nested</i></my-selector-query-element><i class="item">a</i>',
+		);
+		document.body.appendChild(host);
+		expect(host.first?.textContent).toBe('nested');
 	});
 
 	test('reads live after the node is replaced', () => {
@@ -255,7 +279,7 @@ describe('@queryAll(selector)', () => {
 		expect(host.items.map((node) => node.textContent)).toEqual(['a', 'b', 'c']);
 	});
 
-	test('reads an empty array when nothing matches and before connect', () => {
+	test('reads an empty array when nothing matches', () => {
 		const host = document.createElement('my-selector-query-element') as MySelectorQueryElement;
 		expect(host.items).toEqual([]);
 		document.body.appendChild(host);

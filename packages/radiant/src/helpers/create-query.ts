@@ -59,15 +59,12 @@ export function createQuery<T extends Element = Element>(
 	target: QueryHostTarget,
 	options: QueryConfig & { all?: false },
 ): QueryResult<T | null>;
+export function createQuery(target: QueryHostTarget, options: QueryConfig): QueryResult<Element[] | Element | null>;
 export function createQuery(
 	target: QueryHostTarget,
-	options: QueryConfig | string,
-): QueryResult<Element[] | Element | null>;
-export function createQuery(
-	target: QueryHostTarget,
-	config: QueryConfig | string,
+	input: QueryConfig | string,
 ): QueryResult<Element[] | Element | null> {
-	const options: QueryConfig = typeof config === 'string' ? { selector: config } : config;
+	const options: QueryConfig = typeof input === 'string' ? { selector: input } : input;
 	const host = resolveQueryHost(target);
 	let cached: Element[] | Element | null = null;
 
