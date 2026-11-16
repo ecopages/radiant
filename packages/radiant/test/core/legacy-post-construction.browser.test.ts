@@ -98,7 +98,7 @@ describe('legacy post-construction decorator setup', () => {
 		expect(calls).toEqual(['base', 'derived']);
 	});
 
-	test('keeps a later @query field after an earlier field initializer reads an author key', () => {
+	test('keeps a later @ref field after an earlier field initializer reads an author key', () => {
 		class SearchController extends RadiantController {
 			@state query = '';
 			placeholder = `Search ${this.query}`;

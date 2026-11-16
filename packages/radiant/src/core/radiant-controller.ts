@@ -283,7 +283,7 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 	 * Finds one or more elements inside the attached host by `data-ref`, among the parts the host owns: a nested
 	 * Element Host's or attached Controller Host's same-named part is skipped. `all` returns document order.
 	 *
-	 * Prefer `@query(...)` for stable, decorator-backed refs and use `getRef(...)`
+	 * Prefer `@ref(...)` for decorator-backed parts and use `getRef(...)`
 	 * for one-off lookups.
 	 */
 	public getRef<T extends Element = Element>(ref: string, all: true): T[];

@@ -75,7 +75,7 @@ Under standard decorators, TypeScript passes each field decorator the declared f
 Prefer an initializer, so TypeScript infers the field type and there is no annotation to keep in sync:
 
 ```ts
-import { RadiantElement, customElement, prop, query, signal, queryAll, ref, refAll } from '@ecopages/radiant';
+import { RadiantElement, customElement, prop, signal, ref } from '@ecopages/radiant';
 import type { WritableSignal } from '@ecopages/signals';
 
 type Size = 'sm' | 'md' | 'lg';

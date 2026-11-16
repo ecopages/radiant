@@ -115,7 +115,7 @@ export class DisclosureController extends RadiantController {
 When the host markup already exists, let the controller read stable refs with `@ref(...)` and bind behavior with `@onEvent(...)`.
 
 ```ts
-import { RadiantController, attr, controller, onEvent, query, state, ref } from '@ecopages/radiant';
+import { RadiantController, attr, controller, onEvent, state, ref } from '@ecopages/radiant';
 
 @controller('newsletter-form')
 export class NewsletterFormController extends RadiantController {
@@ -221,7 +221,7 @@ Prefer the focused registry subpath for `startControllers(...)` in setup modules
 - `getRef('panel')` returns the first matching element or `null`
 - `getRef('item', true)` returns all matching elements, in document order
 
-`getRef`, `@ref(ref)`, `@onEvent({ ref })` and `@bindTo({ ref })` only see parts the controller's host owns. A part belongs to the nearest enclosing upgraded Element Host or attached Controller Host, so the parts of a nested Element Host or of a nested Controller Host (while attached) are not returned. The host element is never its own part. A part that is itself a nested host is returned. Use `@query(selector)` to reach into a nested host on purpose.
+`getRef`, `@ref`, `@refAll`, `@onEvent({ ref })` and `@bindTo({ ref })` only see parts the controller's host owns. A part belongs to the nearest enclosing upgraded Element Host or attached Controller Host, so the parts of a nested Element Host or of a nested Controller Host (while attached) are not returned. The host element is never its own part. A part that is itself a nested host is returned. Use `@query(selector)` to reach into a nested host on purpose.
 
 ## Reactive Surface
 
@@ -280,8 +280,8 @@ These decorators are part of the `RadiantController` authoring model today:
 - `@controller(...)`
 - `@attr(...)`
 - `@prop(...)`
-- `@query(...)`
-- `@ref(...)`
+- `@query(...)` and `@queryAll(...)`
+- `@ref(...)` and `@refAll(...)`
 - `@state`
 - `@signal`
 - `@bindTo(...)`
@@ -319,6 +319,7 @@ For the Vite and Ecopages opt-in and what a save does to live controllers, see [
 - [@controller](/docs/decorators/controller)
 - [Controller Tooling & HMR](/docs/tools/controller-tooling-hmr)
 - [@attr](/docs/decorators/attr)
+- [@ref](/docs/decorators/ref)
 - [@query](/docs/decorators/query)
 - [@bindTo](/docs/decorators/bind-to)
 - [Context](/docs/context/context)

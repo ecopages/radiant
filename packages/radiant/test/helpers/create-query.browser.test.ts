@@ -46,12 +46,13 @@ describe('createQuery and createQueryAll', () => {
 		expect(accessor.value?.textContent).toBe('Swapped');
 	});
 
-	test('createQuery reads the data-ref attribute only as a selector, so a nested host part is found', () => {
+	test('createQuery reaches into a nested host that getRef skips', () => {
 		const host = createHost();
 		const nested = document.createElement('query-helper-element');
 		nested.appendChild(createElementWithRef('Nested', 'nested-ref'));
 		host.prepend(nested);
 		expect(createQuery(host, '[data-ref="nested-ref"]').value?.textContent).toBe('Nested');
+		expect(host.getRef('nested-ref')).toBeNull();
 	});
 
 	test('both accept a controller-style { host } target', () => {

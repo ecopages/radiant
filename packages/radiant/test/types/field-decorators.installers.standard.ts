@@ -25,6 +25,8 @@ declare const host: Element;
 
 // @ts-expect-error a single-element query can be null
 export const itemBySelector: HTMLElement = createQuery<HTMLElement>(host, 'li').value;
+// @ts-expect-error createQuery takes a selector string
+export const itemByOptions = createQuery(host, { ref: 'r' }).value;
 // @ts-expect-error createQueryAll returns an array
 export const itemsBySelector: HTMLElement = createQueryAll<HTMLElement>(host, 'li').value;
 
