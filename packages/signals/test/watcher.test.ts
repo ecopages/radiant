@@ -378,6 +378,60 @@ describe('Watcher', () => {
 			expect(events).toEqual(['a:watched', 'b:watched', 'c:watched', 'b:unwatched', 'a:unwatched']);
 		});
 
+		test('releases the dependencies of a computed whose own watched hook throws in reverse order', () => {
+			const events: string[] = [];
+			const a = hooks('a', events);
+			const b = hooks('b', events);
+			const derived = new Computed(() => a.get() + b.get(), {
+				[subtle.watched]() {
+					throw new Error('own');
+				},
+			});
+			const watcher = new subtle.Watcher(() => undefined);
+
+			expect(() => watcher.watch(derived)).toThrow('own');
+			expect(events).toEqual(['a:watched', 'b:watched', 'b:unwatched', 'a:unwatched']);
+		});
+
+		test('retries the sync on the next read when a recompute of a watched computed fails to watch', () => {
+			const events: string[] = [];
+			const boom = new Error('b');
+			let failing = true;
+			const flag = new State(false);
+			const a = hooks('a', events);
+			const b = new State(0, {
+				[subtle.watched]() {
+					events.push('b:watched');
+
+					if (failing) {
+						throw boom;
+					}
+				},
+			});
+			const derived = new Computed(() => (flag.get() ? a.get() + b.get() : a.get()));
+			const notifications: number[] = [];
+			const watcher = new subtle.Watcher(() => {
+				notifications.push(1);
+			});
+
+			watcher.watch(derived);
+			flag.set(true);
+
+			expect(() => derived.get()).toThrow(boom);
+			expect(b.getWatcherCount()).toBe(0);
+			expect(() => derived.get()).toThrow(boom);
+
+			failing = false;
+			b.set(5);
+			expect(derived.get()).toBe(5);
+			expect(b.getWatcherCount()).toBe(1);
+
+			watcher.watch(derived);
+			b.set(6);
+			expect(notifications).toHaveLength(2);
+			expect(derived.get()).toBe(6);
+		});
+
 		test('keeps pending signals and the notification latch when a watch fails', () => {
 			const events: string[] = [];
 			const first = hooks('first', events);

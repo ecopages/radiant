@@ -81,7 +81,7 @@ export abstract class SignalNode<Value> implements Signal<Value>, DependencyNode
 				this.onWatched?.call(this);
 			} catch (error) {
 				this.watcherListeners.delete(notify);
-				collectErrors([() => this.handleLastWatcherRemoved()]);
+				collectErrors([() => this.handleLastWatcherRemoved(true)]);
 				throw error;
 			}
 		}
@@ -93,7 +93,7 @@ export abstract class SignalNode<Value> implements Signal<Value>, DependencyNode
 
 			if (this.watcherListeners.size === 0) {
 				throwCollected(
-					collectErrors([() => this.handleLastWatcherRemoved(), () => this.onUnwatched?.call(this)]),
+					collectErrors([() => this.handleLastWatcherRemoved(false), () => this.onUnwatched?.call(this)]),
 					'Multiple unwatched hooks failed.',
 				);
 			}
@@ -114,7 +114,12 @@ export abstract class SignalNode<Value> implements Signal<Value>, DependencyNode
 
 	protected handleFirstWatcherAdded(): void {}
 
-	protected handleLastWatcherRemoved(): void {}
+	/**
+	 * @remarks
+	 * `rollback` is true when a failed first watch is being undone, so dependencies
+	 * are released in the reverse of the order they were watched.
+	 */
+	protected handleLastWatcherRemoved(_rollback: boolean): void {}
 
 	protected publish(nextValue: Value): void {
 		for (const subscriber of this.subscribers) {

@@ -102,8 +102,12 @@ export class Computed<Value> extends SignalNode<Value> {
 		this.dependencyUnsubscribers.clear();
 	}
 
-	private clearDependencyWatcherSubscriptions(): void {
+	private clearDependencyWatcherSubscriptions(rollback: boolean): void {
 		const unsubscribers = [...this.dependencyWatcherUnsubscribers.values()];
+
+		if (rollback) {
+			unsubscribers.reverse();
+		}
 
 		this.dependencyWatcherUnsubscribers.clear();
 		throwCollected(collectErrors(unsubscribers), 'Multiple unwatched hooks failed.');
@@ -202,7 +206,12 @@ export class Computed<Value> extends SignalNode<Value> {
 		}
 
 		if (this.getWatcherCount() > 0) {
-			this.syncDependencyWatcherSubscriptions();
+			try {
+				this.syncDependencyWatcherSubscriptions();
+			} catch (error) {
+				this.stale = true;
+				throw error;
+			}
 		}
 	}
 
@@ -240,7 +249,8 @@ export class Computed<Value> extends SignalNode<Value> {
 	 * first watch leaves nothing subscribed. Dependencies dropped by this call
 	 * are released first and stay released; an error from their `unwatched` hooks
 	 * is rethrown once the new dependencies are watched, and dropped if a `watched`
-	 * hook throws, in favor of that error.
+	 * hook throws, in favor of that error. A recompute that fails here leaves the
+	 * computed stale, so the next read recomputes and retries the sync.
 	 */
 	private syncDependencyWatcherSubscriptions(): void {
 		const dropped: (() => void)[] = [];
@@ -288,8 +298,8 @@ export class Computed<Value> extends SignalNode<Value> {
 		this.syncDependencyWatcherSubscriptions();
 	}
 
-	protected override handleLastWatcherRemoved(): void {
-		this.clearDependencyWatcherSubscriptions();
+	protected override handleLastWatcherRemoved(rollback: boolean): void {
+		this.clearDependencyWatcherSubscriptions(rollback);
 	}
 }
 
