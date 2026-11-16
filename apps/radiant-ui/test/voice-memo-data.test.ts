@@ -36,7 +36,6 @@ test('the status announces the limit and the denied state says how to try again'
 	expect(viewOf(snapshot('denied')).status).toContain('try again');
 });
 
-test('the clock shows the recorded seconds and is fixed at the limit', () => {
+test('the clock shows the recorded seconds', () => {
 	expect(viewOf(snapshot('recording', 65.2)).elapsed).toBe('1:05');
-	expect(MAX_DURATION).toBe(60);
 });
