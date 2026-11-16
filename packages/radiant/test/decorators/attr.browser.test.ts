@@ -10,7 +10,7 @@ import { prop } from '../../src/decorators/prop';
 @customElement('attr-element-test')
 class AttrElement extends RadiantElement<{ count: number; state: string | undefined }> {
 	@attr({ source: 'data-state' }) state?: string;
-	@attr({ bind: true, source: 'data-count', type: Number })
+	@attr({ source: 'data-count', type: Number })
 	count = 0;
 	@attr({ source: 'data-active', type: Boolean })
 	active = false;
@@ -91,7 +91,7 @@ describe('@attr', () => {
 		expect(element.state).toBe('ready');
 		expect(element.count).toBe(2);
 		expect(element.active).toBe(true);
-		expect((element as AttrElement & { $count: ReturnType<AttrElement['bind']> }).$count.getValue()).toBe(2);
+		expect(element.$.count.getValue()).toBe(2);
 
 		element.setAttribute('data-state', 'done');
 		element.setAttribute('data-count', '4');

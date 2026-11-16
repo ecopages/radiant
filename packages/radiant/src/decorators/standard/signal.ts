@@ -1,6 +1,5 @@
 import type { WritableSignal } from '@ecopages/signals';
 import { REACTIVE_HOST, type ReactiveHostLike } from '../../core/reactive-host';
-import { resolveHostAutoBind } from '../shared/auto-bind';
 import { warnDiscardedPreUpgradeValue } from '../shared/pre-upgrade-warning';
 import { createHostSignal, isWritableSignalLike } from '../../signals/host-signal';
 import type { SignalDecoratorOptions } from '../shared/signal-options';
@@ -21,11 +20,8 @@ export function signal<Value = unknown>(options: SignalDecoratorOptions<Value> =
 				resolvedSource !== undefined
 					? options.initial
 					: ((initialValue === undefined ? options.initial : initialValue) as Value);
-			const bind = options.bind ?? resolveHostAutoBind(this);
 
 			warnDiscardedPreUpgradeValue(this, propertyName, '@signal');
-
-			this.defineReactiveBinding(propertyName, bind);
 
 			const hostSignal = createHostSignal({
 				host: this,

@@ -11,7 +11,7 @@ const sharedSignalElementCount = createSignalState(2);
 
 @customElement('shared-signal-element-test')
 class SharedSignalElement extends RadiantElement<{ count: number }> {
-	@signal({ bind: true, source: sharedSignalElementCount }) count!: WritableSignal<number>;
+	@signal({ source: sharedSignalElementCount }) count!: WritableSignal<number>;
 
 	override connectedCallback(): void {
 		super.connectedCallback();

@@ -401,7 +401,7 @@ describe('RadiantElement', () => {
 
 			constructor() {
 				super();
-				this.createReactiveProp('count', { type: Number, defaultValue: 1, bind: true });
+				this.createReactiveProp('count', { type: Number, defaultValue: 1 });
 				this.createReactiveProp('label', { type: String, defaultValue: 'Count' });
 			}
 
@@ -465,7 +465,7 @@ describe('RadiantElement', () => {
 		expect(element.renderCount).toBe(initialRenderCount + 1);
 	});
 
-	test('@prop({ bind: true }) exposes a stable companion binding accessor', () => {
+	test('binding accessors remain stable', () => {
 		type BoundPropBindings = {
 			count: number;
 		};
@@ -475,7 +475,7 @@ describe('RadiantElement', () => {
 
 			constructor() {
 				super();
-				this.createReactiveProp('count', { type: Number, defaultValue: 1, bind: true });
+				this.createReactiveProp('count', { type: Number, defaultValue: 1 });
 			}
 		}
 
@@ -496,27 +496,23 @@ describe('RadiantElement', () => {
 		expect(element.bindings.count.getValue()).toBe(4);
 	});
 
-	test('createReactiveProp and createReactiveField auto-bind on RadiantElement when bind is omitted', () => {
-		class AutoBoundMembersElement extends RadiantElement {
+	test('two instances use their own binding namespace without companion properties', () => {
+		class IndependentBindingsElement extends RadiantElement<{ count: number }> {
 			declare count: number;
-			declare draft: string;
-
 			constructor() {
 				super();
-				this.createReactiveProp('count', { type: Number, defaultValue: 1 });
-				this.createReactiveField('draft', 'ready');
+				this.createReactiveField('count', 0);
 			}
 		}
-
-		customElements.define('auto-bound-members-element-test', AutoBoundMembersElement);
-
-		const element = document.createElement('auto-bound-members-element-test') as AutoBoundMembersElement & {
-			$count: ReturnType<AutoBoundMembersElement['bind']>;
-			$draft: ReturnType<AutoBoundMembersElement['bind']>;
-		};
-
-		expect(element.$count.getValue()).toBe(1);
-		expect(element.$draft.getValue()).toBe('ready');
+		customElements.define('independent-bindings-element-test', IndependentBindingsElement);
+		const first = document.createElement('independent-bindings-element-test') as IndependentBindingsElement;
+		const second = document.createElement('independent-bindings-element-test') as IndependentBindingsElement;
+		first.count = 1;
+		second.count = 2;
+		expect(first.$.count.getValue()).toBe(1);
+		expect(second.$.count.getValue()).toBe(2);
+		expect('$count' in first).toBe(false);
+		expect('$count' in second).toBe(false);
 	});
 
 	test('tracks plain @prop and @state reads during render without manual rerender wiring', async () => {

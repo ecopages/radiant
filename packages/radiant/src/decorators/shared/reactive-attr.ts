@@ -1,7 +1,6 @@
 import type { ReactiveHostLike } from '../../core/reactive-host';
-import { type ReactiveBindingOption, validateReactivePropertyDefault } from '../../core/reactive-prop-core';
+import { validateReactivePropertyDefault } from '../../core/reactive-prop-core';
 import { resolveHostElement } from '../../helpers/resolve-host-element';
-import { resolveHostAutoBind } from './auto-bind';
 import {
 	defaultValueForType,
 	readAttributeValue,
@@ -29,7 +28,6 @@ export type AttrOptions<T = string | undefined, C extends AttributeTypeConstant 
 	 * `boolean` field needs `type: Number` or `type: Boolean`, or a parser.
 	 */
 	type?: C;
-	bind?: ReactiveBindingOption;
 	defaultValue?: T;
 	converter?: AttrConverter<T>;
 };
@@ -120,9 +118,6 @@ export function installReactiveAttribute<TBindings extends object, TValue>(
 	const hostRecord = host as unknown as Record<PropertyKey, unknown>;
 	const attributeName = options.source ?? toKebabCaseAttributeName(propertyName);
 	const observerKey = Symbol(`@ecopages/radiant/attr:${propertyName}:observer`);
-	const bind = options.bind ?? resolveHostAutoBind(host);
-
-	host.defineReactiveBinding(propertyName, bind);
 
 	const initialValue = readReactiveAttributeValue(host, attributeName, options);
 	const signal = host.createReactiveMember(propertyName, initialValue);

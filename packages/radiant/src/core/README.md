@@ -1,5 +1,7 @@
 # Radiant Core
 
+Reactive members expose JSX bindings through `this.$`, `this.bindings`, and `this.bind(...)` on each host instance.
+
 Reflected properties serialize the current member state on each write. A reflected attribute change is not fed back into the property: setting a string property to `''`, or an array transform to a value that omits the attribute, keeps the assigned property value. A synchronous callback (`@bindTo`, `registerUpdateCallback`) that normalizes an assignment is reflected too. `@onUpdated` does not run at that moment; it waits for the update cycle.
 
 ## RadiantElement Flow

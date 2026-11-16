@@ -25,7 +25,6 @@ const AUTHORING = [
 	'createReactiveField',
 	'createReactiveMember',
 	'createReactiveProp',
-	'defineReactiveBinding',
 	'getReactiveMember',
 	'registerCleanupCallback',
 	'registerConnectedCallback',

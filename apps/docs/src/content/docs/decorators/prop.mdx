@@ -88,7 +88,6 @@ Prefer `@ecopages/radiant/controller-registry` for `startControllers(...)` when 
 | `reflect` | `boolean` | Write property changes back to the host attribute. Without it, an authored attribute stays on the host and is read at upgrade, but later property writes do not touch it. |
 | `attribute` | `string \| false` | Override the attribute name, or pass `false` to make the prop property-only (see [Property-only props](#property-only-props)). |
 | `defaultValue` | `T` | Default property value when the attribute is absent. Pass a fresh array or object on each decorator call. `null` is accepted. Without `transform.fromAttribute`, a default that does not match `type` throws when the class loads. |
-| `bind` | `boolean \| string` | Expose a JSX binding companion such as `$count` or a custom binding name. |
 | `transform` | `PropTransform<T>` | Override attribute conversion and optional JS writes. `fromAttribute` parses the attribute and owns the field type, so `type` is no longer checked against it. |
 
 ## Property-only props
@@ -152,7 +151,7 @@ Without `transform`, `element.value = ['a', 'b']` still works as a JS property w
 - writes the property back through the converter when reflection is enabled
 - stores reactive metadata for SSR host serialization
 - notifies `@onUpdated` listeners when the member state changes
-- can expose a subscribable JSX binding companion
+- exposes a subscribable JSX binding through the host's binding namespace
 
 On `RadiantController`, the same decorator reads and writes a real property on the attached host element instead of going through attribute serialization.
 
@@ -161,11 +160,10 @@ That means this split is intentional:
 - use `@attr(...)` when the value should stay in markup
 - use `@prop(...)` when JS code should pass structured values directly
 
-## JSX Binding Defaults
+## JSX Bindings
 
-When you omit `bind`, Radiant exposes companion bindings by default.
 
-So this:
+A host's binding namespace exposes its reactive members:
 
 ```typescript
 class CounterCard extends RadiantElement {

@@ -1,5 +1,4 @@
 import type { ReactiveHostLike } from '../../core/reactive-host';
-import { resolveHostAutoBind } from '../shared/auto-bind';
 import { warnDiscardedPreUpgradeValue } from '../shared/pre-upgrade-warning';
 
 export function reactiveField<T extends ReactiveHostLike, V>(_: undefined, context: ClassFieldDecoratorContext<T, V>) {
@@ -10,7 +9,6 @@ export function reactiveField<T extends ReactiveHostLike, V>(_: undefined, conte
 		warnDiscardedPreUpgradeValue(this, contextName, '@state');
 		const initializerValue = (this as Record<PropertyKey, V | undefined>)[initializerValueKey];
 		this.createReactiveField(contextName, initializerValue as V, {
-			bind: resolveHostAutoBind(this),
 			suppressInitialNotify: true,
 		});
 	});

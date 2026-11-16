@@ -126,7 +126,6 @@ describe('legacy post-construction decorator setup', () => {
 			type: Number,
 			reflect: true,
 			defaultValue: 3,
-			bind: true,
 		})(LegacySsrBindingCard.prototype, 'count');
 
 		setCustomElementTagName(LegacySsrBindingCard, 'legacy-ssr-binding-card-test');
@@ -150,7 +149,7 @@ describe('legacy post-construction decorator setup', () => {
 		@customElement('legacy-field-initializer-lab-test')
 		class LegacyFieldInitializerLab extends RadiantElement<LegacyFieldInitializerBindings> {
 			@state preference = 'light';
-			@prop({ type: Object, defaultValue: { label: 'Hello' }, bind: true })
+			@prop({ type: Object, defaultValue: { label: 'Hello' } })
 			config: { label: string } = { label: 'Hello' };
 
 			private readonly preferenceLabel = this.$.preference.map((preference) => `pref:${preference}`);

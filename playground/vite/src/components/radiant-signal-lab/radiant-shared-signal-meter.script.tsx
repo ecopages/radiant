@@ -8,7 +8,7 @@ import { sharedSignalMeterCount } from './radiant-signal-lab.store';
 
 @customElement('radiant-shared-signal-meter')
 export class RadiantSharedSignalMeter extends RadiantElement<{ count: number }> {
-	@signal({ bind: true, source: sharedSignalMeterCount }) count!: WritableSignal<number>;
+	@signal({ source: sharedSignalMeterCount }) count!: WritableSignal<number>;
 
 	override connectedCallback(): void {
 		super.connectedCallback();

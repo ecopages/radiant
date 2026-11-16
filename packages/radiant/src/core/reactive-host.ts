@@ -6,7 +6,6 @@ import { getReactiveRuntime } from './reactivity-runtime';
 import type { ReactiveState } from './reactivity-contract';
 import type {
 	ReactiveAccessorDefinition,
-	ReactiveBindingOption,
 	ReactiveBindingValue,
 	ReactiveBindings,
 	ReactiveFieldOptions,
@@ -67,7 +66,6 @@ export interface ReactiveHostLike<Bindings extends object = {}> {
 	registerReactiveMember<T>(propertyName: string, signal: ReactiveState<T>): void;
 	/** Whether a value was assigned to the host under `propertyName` before it was upgraded; only elements can tell. */
 	[HAS_PRE_UPGRADE_VALUE]?(propertyName: string): boolean;
-	defineReactiveBinding(property: string, bind?: ReactiveBindingOption): void;
 	registerCleanupCallback(callback: () => void): void;
 	registerConnectedCallback(callback: () => void): void;
 	registerUpdateCallback(property: string, update: () => void): () => void;
@@ -109,8 +107,7 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 
 	constructor(
 		private readonly host: Host,
-		private readonly access: ReactiveHostAccess<Host>,
-		private readonly shouldAutoBind: () => boolean,
+		private readonly access: ReactiveHostAccess,
 		private readonly onMemberChanged: (propertyName: string) => void,
 	) {
 		const bindingNamespace = this.createReactiveBindingNamespace();
@@ -436,33 +433,10 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	}
 
 	/**
-	 * Defines a stable binding companion property such as `$count` on the host or
-	 * its chosen binding target.
-	 */
-	public defineReactiveBinding(property: string, bind: ReactiveBindingOption = true): void {
-		const bindingPropertyName = typeof bind === 'string' ? bind : bind ? `$${property}` : undefined;
-		const bindingTarget = this.access.getBindingTarget?.(this.host) ?? this.host;
-
-		if (!bindingPropertyName || this.access.hasProperty(this.host, bindingPropertyName)) {
-			return;
-		}
-
-		this.access.defineProperty(bindingTarget, bindingPropertyName, {
-			get: () => this.getReactiveBinding(property as StringPropertyKey<Bindings>),
-			enumerable: false,
-			configurable: true,
-		});
-	}
-
-	/**
 	 * Defines a reactive getter/setter pair on the host backed by a member
-	 * `State`, and wires it into the jsx binding namespace.
+	 * `State`.
 	 */
 	public defineReactiveAccessor<T>(propertyName: string, options: ReactiveAccessorDefinition<T>): void {
-		const bind = options.bind ?? this.shouldAutoBind();
-
-		this.defineReactiveBinding(propertyName, bind);
-
 		this.access.defineProperty(this.host, propertyName, {
 			get: () => options.signal.get(),
 			set: (newValue: T) => {
@@ -476,8 +450,7 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	}
 
 	/**
-	 * Defines a controller- or element-local reactive field with optional JSX
-	 * binding exposure.
+	 * Defines a controller- or element-local reactive field.
 	 *
 	 * @remarks A member bootstrapped earlier (legacy decorators register it before
 	 * class fields run) adopts `initialValue` as initialization: while members are
@@ -505,7 +478,7 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 			}
 		}
 
-		this.defineReactiveAccessor(propertyName, { bind: options.bind, signal });
+		this.defineReactiveAccessor(propertyName, { signal });
 
 		if (!options.suppressInitialNotify) {
 			this.notifyUpdate(propertyName, undefined, signal.get());
@@ -525,9 +498,6 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	}
 }
 
-type ReactiveHostAccess<Host extends object> = {
+type ReactiveHostAccess = {
 	defineProperty(target: object, property: string, descriptor: PropertyDescriptor): void;
-	getBindingTarget?(host: Host): object;
-	hasProperty(host: Host, property: string): boolean;
-	readProperty(host: Host, property: string): unknown;
 };

@@ -453,7 +453,7 @@ describe('@prop', () => {
 			document.body.appendChild(customElement);
 
 			expect(customElement.count).toEqual(2);
-			expect(Object.prototype.hasOwnProperty.call(customElement, '$count')).toBe(false);
+			expect('$count' in customElement).toBe(false);
 
 			customElement.count = 7;
 
@@ -464,38 +464,30 @@ describe('@prop', () => {
 
 	describe('@prop on RadiantElement', () => {
 		@customElement('my-component-prop-element')
-		class MyComponentPropElement extends RadiantElement {
+		class MyComponentPropElement extends RadiantElement<{ count: number; silent: number }> {
 			@prop({ type: Number, reflect: true, defaultValue: 3 }) count: number;
-			@prop({ type: Number, defaultValue: 9, bind: false }) silent: number;
+			@prop({ type: Number, defaultValue: 9 }) silent: number;
 		}
 
-		test('alias enables a bound companion accessor by default', () => {
+		test('alias exposes the reactive binding namespace', () => {
 			const customElement = document.createElement('my-component-prop-element') as MyComponentPropElement;
 			document.body.appendChild(customElement);
 
 			expect(customElement.count).toEqual(3);
-			expect(
-				(
-					customElement as MyComponentPropElement & { $count: ReturnType<MyComponentPropElement['bind']> }
-				).$count.getValue(),
-			).toEqual(3);
-			expect(Object.prototype.hasOwnProperty.call(customElement, '$silent')).toBe(false);
+			expect(customElement.$.count.getValue()).toEqual(3);
+			expect('$silent' in customElement).toBe(false);
 
 			customElement.count = 8;
 
 			expect(customElement.count).toEqual(8);
 			expect(customElement.getAttribute('count')).toEqual('8');
-			expect(
-				(
-					customElement as MyComponentPropElement & { $count: ReturnType<MyComponentPropElement['bind']> }
-				).$count.getValue(),
-			).toEqual(8);
+			expect(customElement.$.count.getValue()).toEqual(8);
 		});
 	});
 
 	describe('field initializers', () => {
 		@customElement('my-inferred-reactive-prop')
-		class MyInferredReactiveProp extends RadiantElement {
+		class MyInferredReactiveProp extends RadiantElement<{ count: number; label: string; enabled: boolean }> {
 			@prop({ type: Number, reflect: true }) count = 4;
 			@prop({ type: String }) label = 'Hello Radiant';
 			@prop({ type: Boolean }) enabled = false;
@@ -511,21 +503,9 @@ describe('@prop', () => {
 			expect(customElement.label).toEqual('Hello Radiant');
 			expect(customElement.enabled).toEqual(false);
 			expect(customElement.getAttribute('count')).toEqual('4');
-			expect(
-				(
-					customElement as MyInferredReactiveProp & { $count: ReturnType<MyInferredReactiveProp['bind']> }
-				).$count.getValue(),
-			).toEqual(4);
-			expect(
-				(
-					customElement as MyInferredReactiveProp & { $label: ReturnType<MyInferredReactiveProp['bind']> }
-				).$label.getValue(),
-			).toEqual('Hello Radiant');
-			expect(
-				(
-					customElement as MyInferredReactiveProp & { $enabled: ReturnType<MyInferredReactiveProp['bind']> }
-				).$enabled.getValue(),
-			).toEqual(false);
+			expect(customElement.$.count.getValue()).toEqual(4);
+			expect(customElement.$.label.getValue()).toEqual('Hello Radiant');
+			expect(customElement.$.enabled.getValue()).toEqual(false);
 		});
 
 		@customElement('my-inferred-reactive-prop-with-explicit-default')

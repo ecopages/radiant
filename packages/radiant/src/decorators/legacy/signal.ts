@@ -1,6 +1,5 @@
 import { createHostSignal, HostSignal, isWritableSignalLike } from '../../signals/host-signal';
 import { REACTIVE_HOST, type ReactiveHostLike } from '../../core/reactive-host';
-import { resolveHostAutoBind } from '../shared/auto-bind';
 import { warnDiscardedPreUpgradeValue } from '../shared/pre-upgrade-warning';
 import { registerLegacyPostConstructionInitializer } from './instance-initializers';
 import type { SignalDecoratorOptions } from '../shared/signal-options';
@@ -19,15 +18,12 @@ export function signal<Value = unknown>(options: SignalDecoratorOptions<Value> =
 					? options.source(element)
 					: (options.source ?? (isWritableSignalLike(currentValue) ? currentValue : undefined));
 
-			const bind = options.bind ?? resolveHostAutoBind(element);
-
 			warnDiscardedPreUpgradeValue(element, propertyName, '@signal');
 
 			const resolvedInitialValue =
 				resolvedSource !== undefined
 					? options.initial
 					: ((currentValue === undefined ? options.initial : currentValue) as Value);
-			element.defineReactiveBinding(propertyName, bind);
 
 			const hostSignal = createHostSignal({
 				host: element,
