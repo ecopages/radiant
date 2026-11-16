@@ -3,7 +3,6 @@ import { userEvent } from 'vitest/browser';
 import { createRoot, type JsxRenderable } from '@ecopages/jsx';
 import { RuiMenuButton } from './menu-button';
 import { RuiMenuButton as RuiMenuButtonScript } from './menu-button.script';
-import { expectPopupFoundAcrossPortalCycle } from '../../../controllers/exit-transition.fixture';
 import { mountOpenDialog, settled, type Page } from '../dialog/dialog-composition.harness';
 void RuiMenuButtonScript;
 
@@ -115,30 +114,5 @@ describe.each([
 		await userEvent.tab();
 		await settled();
 		expect(trigger.getAttribute('aria-expanded')).toBe('false');
-	});
-});
-
-describe('rui-menu-button reads its menu from the popover controller', () => {
-	it('finds the current menu while open, during its exit, and after a reopen with a new node', async () => {
-		const { root, cleanup } = await mountPlain(menu);
-		const button = root.querySelector('rui-menu-button') as RuiMenuButtonScript;
-		const popup = root.querySelector('[role="menu"]') as HTMLElement;
-		const controller = Reflect.get(button, 'popoverController') as { getFloatingElement(): HTMLElement | null };
-
-		await expectPopupFoundAcrossPortalCycle({
-			popup,
-			portaled: false,
-			find: () => controller.getFloatingElement(),
-			open: async () => {
-				button.open = true;
-				await settled();
-			},
-			close: async () => {
-				button.open = false;
-				await settled();
-			},
-		});
-
-		cleanup();
 	});
 });

@@ -1,6 +1,6 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
 import { isResetBy } from '../shared/form-owner';
-import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
+import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop, ref } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { textContains } from '@/lib/text-filter';
 import { uniqueId } from '@/lib/unique-id';
@@ -152,7 +152,7 @@ export class RuiCombobox extends RadiantElement {
 		onDismiss: () => this.setOpen(false),
 	});
 
-	@query({ ref: 'root' }) rootTarget: HTMLElement | null;
+	@ref('root') rootTarget: HTMLElement | null;
 
 	/** @remarks Read from the popover controller, which finds the popup while it is portaled out of the host. */
 	private get popupTarget(): HTMLElement | null {

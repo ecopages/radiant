@@ -4,8 +4,8 @@ import { reorder } from '@ecopages/radiant-ui/helpers';
 
 @customElement('sortable-list-element')
 export class SortableListElement extends RadiantElement {
-	@query({ selector: 'ul' }) private list!: HTMLElement;
-	@query({ selector: '[data-status]' }) private status!: HTMLElement;
+	@query('ul') private list!: HTMLElement;
+	@query('[data-status]') private status!: HTMLElement;
 
 	private items: HTMLElement[] = [];
 

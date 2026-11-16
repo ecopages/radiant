@@ -1,5 +1,5 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
-import { RadiantElement, bindTo, customElement, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
+import { RadiantElement, bindTo, customElement, onEvent, onUpdated, prop, ref } from '@ecopages/radiant';
 import { createDismissController } from '../../../controllers/dismiss-controller';
 import { findFirstFocusableCandidate } from '../../../controllers/focusable-elements';
 import { uniqueId } from '@/lib/unique-id';
@@ -74,7 +74,7 @@ export class RuiTooltip extends RadiantElement {
 	@prop({ type: String, defaultValue: 'top' }) placement: RuiPlacement;
 	@prop({ type: Number, defaultValue: 200 }) delay: number;
 
-	@query({ ref: 'tooltip' }) tooltipTarget: HTMLElement | null;
+	@ref('tooltip') tooltipTarget: HTMLElement | null;
 
 	/**
 	 * Plain (non-reactive) field, not a JSX binding target: `hidden` is toggled

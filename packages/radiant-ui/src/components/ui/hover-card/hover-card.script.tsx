@@ -1,5 +1,5 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
-import { RadiantElement, bound, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
+import { RadiantElement, bound, customElement, event, onEvent, onUpdated, prop, ref } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { findFirstFocusableCandidate } from '../../../controllers/focusable-elements';
 import { uniqueId } from '@/lib/unique-id';
@@ -114,7 +114,7 @@ export class RuiHoverCard extends RadiantElement {
 	@prop({ type: String, attribute: 'content-label', reflect: true, defaultValue: HOVER_CARD_DEFAULT_CONTENT_LABEL })
 	contentLabel: string;
 
-	@query({ ref: 'content' }) contentTarget: HTMLElement | null;
+	@ref('content') contentTarget: HTMLElement | null;
 
 	@event({ name: 'rui-open-change', bubbles: true, composed: true })
 	openChangeEvent: EventEmitter<RuiHoverCardOpenChangeDetail>;

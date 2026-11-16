@@ -1,15 +1,5 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
-import {
-	RadiantElement,
-	bindTo,
-	customElement,
-	event,
-	onEvent,
-	onUpdated,
-	prop,
-	query,
-	state,
-} from '@ecopages/radiant';
+import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop, state, ref } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { isServer } from '@ecopages/radiant/is-server';
 import { parseCommaSeparated } from '@/lib/comma-separated';
@@ -172,10 +162,10 @@ export class RuiSidebar extends RadiantElement {
 	@prop({ type: Boolean, attribute: 'scroll-active-on-mount' }) scrollActiveOnMount = false;
 	@prop({ type: String, attribute: 'navigation-events', defaultValue: '' }) navigationEvents = '';
 
-	@query({ ref: 'root' }) rootTarget: HTMLElement | null;
-	@query({ ref: 'pane' }) paneTarget: HTMLElement | null;
-	@query({ ref: 'handle' }) handleTarget: HTMLElement | null;
-	@query({ ref: 'scrim' }) scrimTarget: HTMLButtonElement | null;
+	@ref('root') rootTarget: HTMLElement | null;
+	@ref('pane') paneTarget: HTMLElement | null;
+	@ref('handle') handleTarget: HTMLElement | null;
+	@ref('scrim') scrimTarget: HTMLButtonElement | null;
 
 	@event({ name: 'rui-sidebar-toggle', bubbles: true, composed: true })
 	toggleEvent: EventEmitter<RuiSidebarToggleDetail>;

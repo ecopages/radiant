@@ -1,5 +1,5 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
-import { RadiantElement, bindTo, customElement, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
+import { RadiantElement, bindTo, customElement, onEvent, onUpdated, prop, ref } from '@ecopages/radiant';
 import { createSwipeController } from '../../../controllers/swipe-controller';
 import { uniqueId } from '@/lib/unique-id';
 import { CarouselAutoplay } from './carousel-autoplay';
@@ -163,10 +163,10 @@ export class RuiCarousel extends RadiantElement {
 	slidesPerGroup: number;
 	@prop({ type: Number, defaultValue: 0 }) slideCount: number;
 
-	@query({ ref: 'root' }) rootTarget: HTMLElement | null;
-	@query({ ref: 'track' }) trackTarget: HTMLElement | null;
-	@query({ ref: 'indicators' }) indicatorsTarget: HTMLElement | null;
-	@query({ ref: 'viewport' }) viewportTarget: HTMLElement | null;
+	@ref('root') rootTarget: HTMLElement | null;
+	@ref('track') trackTarget: HTMLElement | null;
+	@ref('indicators') indicatorsTarget: HTMLElement | null;
+	@ref('viewport') viewportTarget: HTMLElement | null;
 
 	private paused = false;
 	/**

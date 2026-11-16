@@ -1,5 +1,5 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
-import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
+import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop, queryAll } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { nonEmpty } from '@/lib/non-empty';
 
@@ -91,7 +91,7 @@ export class RuiRadioGroup extends RadiantElement {
 	})
 	disabled: boolean;
 
-	@query({ selector: 'input[type="radio"]', all: true, cache: false }) radioTargets: HTMLInputElement[];
+	@queryAll('input[type="radio"]') radioTargets: HTMLInputElement[];
 
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiRadioGroupChangeDetail>;

@@ -1,5 +1,5 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
-import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
+import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop, ref } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { createPointerDragController } from '../../../controllers/pointer-drag-controller';
 
@@ -92,8 +92,8 @@ export class RuiWindowSplitter extends RadiantElement {
 	@bindTo({ ref: 'separator', attr: 'aria-label' })
 	label: string;
 
-	@query({ ref: 'primary' }) primaryTarget: HTMLElement | null;
-	@query({ ref: 'separator' }) separatorTarget: HTMLElement | null;
+	@ref('primary') primaryTarget: HTMLElement | null;
+	@ref('separator') separatorTarget: HTMLElement | null;
 
 	@event({ name: 'rui-splitter-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiWindowSplitterChangeDetail>;

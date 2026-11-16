@@ -1,5 +1,5 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
-import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
+import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop, ref } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { uniqueId } from '@/lib/unique-id';
 import { findAssociatedLabel, syncFieldLabel } from '../shared/field-label';
@@ -165,7 +165,7 @@ export class RuiSelect extends RadiantElement {
 		onDismiss: () => this.setOpen(false),
 	});
 
-	@query({ ref: 'root' }) rootTarget: HTMLElement | null;
+	@ref('root') rootTarget: HTMLElement | null;
 
 	/** @remarks Read from the popover controller, which finds the popup while it is portaled out of the host. */
 	private get popupTarget(): HTMLElement | null {

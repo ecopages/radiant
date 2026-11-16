@@ -1,4 +1,4 @@
-import { RadiantElement, customElement, onEvent, query, state } from '@ecopages/radiant';
+import { RadiantElement, customElement, onEvent, query, state, queryAll } from '@ecopages/radiant';
 import {
 	createAudioVisualizerController,
 	createMediaController,
@@ -57,12 +57,12 @@ export class AudioPlayerApp extends RadiantElement<{ status: string; elapsed: st
 	@state duration = 1;
 	@state status = PLAYLIST_HINT;
 
-	@query({ selector: '[data-audio]' }) private audio!: HTMLAudioElement;
-	@query({ selector: '[data-cover]' }) private cover!: HTMLElement;
-	@query({ selector: '[data-seek]' }) private seek!: RuiSliderElement;
-	@query({ selector: '[data-volume-input]' }) private volume!: RuiSliderElement;
-	@query({ selector: '[data-tracks]' }) private list!: HTMLElement;
-	@query({ selector: '[data-track]', all: true }) private rows!: HTMLElement[];
+	@query('[data-audio]') private audio!: HTMLAudioElement;
+	@query('[data-cover]') private cover!: HTMLElement;
+	@query('[data-seek]') private seek!: RuiSliderElement;
+	@query('[data-volume-input]') private volume!: RuiSliderElement;
+	@query('[data-tracks]') private list!: HTMLElement;
+	@queryAll('[data-track]') private rows!: HTMLElement[];
 
 	private focusTrack: string | null = null;
 	private playback = new PlaybackOrder(this.order, this.current);

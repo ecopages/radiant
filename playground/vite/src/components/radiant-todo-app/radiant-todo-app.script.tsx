@@ -41,7 +41,7 @@ class Logger {
 @customElement('radiant-todo-item')
 export class RadiantTodoItem extends RadiantElement {
 	declare readonly [JSX_PROPS]?: RadiantTodoProps;
-	@query({ selector: 'input[type="checkbox"]' }) checkbox!: HTMLInputElement | null;
+	@query('input[type="checkbox"]') checkbox!: HTMLInputElement | null;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) complete!: boolean;
 	@consumeContext(todoContext) context!: ContextProvider<typeof todoContext>;
 

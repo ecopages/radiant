@@ -8,6 +8,8 @@ export {
 	onUpdated,
 	onEvent,
 	query,
+	queryAll,
+	ref,
 	state,
 	customElement,
 } from '@ecopages/radiant';

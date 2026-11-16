@@ -1,5 +1,5 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
-import { bindTo, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
+import { bindTo, customElement, event, onEvent, onUpdated, prop, ref } from '@ecopages/radiant';
 import { FormAssociatedElement, type FormValue } from '@ecopages/radiant/form-associated-element';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { createPointerDragController } from '../../../controllers/pointer-drag-controller';
@@ -136,13 +136,13 @@ export class RuiKnob extends FormAssociatedElement {
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiKnobChangeDetail>;
 
-	@query({ ref: 'root' }) rootTarget: HTMLElement | null;
-	@query({ ref: 'label' }) labelTarget: HTMLElement | null;
-	@query({ ref: 'control' }) controlTarget: HTMLButtonElement | null;
-	@query({ ref: 'track' }) trackTarget: SVGCircleElement | null;
-	@query({ ref: 'progress' }) progressTarget: SVGCircleElement | null;
-	@query({ ref: 'centerValue' }) centerValueTarget: HTMLElement | null;
-	@query({ ref: 'belowValue' }) belowValueTarget: HTMLElement | null;
+	@ref('root') rootTarget: HTMLElement | null;
+	@ref('label') labelTarget: HTMLElement | null;
+	@ref('control') controlTarget: HTMLButtonElement | null;
+	@ref('track') trackTarget: SVGCircleElement | null;
+	@ref('progress') progressTarget: SVGCircleElement | null;
+	@ref('centerValue') centerValueTarget: HTMLElement | null;
+	@ref('belowValue') belowValueTarget: HTMLElement | null;
 
 	private lastEmitted: number | null = null;
 	private rangeCommitQueued = false;

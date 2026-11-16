@@ -1,12 +1,12 @@
-import { RadiantElement, customElement, onEvent, query } from '@ecopages/radiant';
+import { RadiantElement, customElement, onEvent, query, queryAll } from '@ecopages/radiant';
 import { createPopoverController, createRovingController } from '@ecopages/radiant-ui/controllers';
 
 @customElement('popover-menu-element')
 export class PopoverMenuElement extends RadiantElement {
-	@query({ selector: 'button' }) private trigger!: HTMLElement;
-	@query({ selector: '[role="menu"]' }) private menu!: HTMLElement;
-	@query({ selector: '[role="menuitem"]', all: true }) private items!: HTMLElement[];
-	@query({ selector: '[data-status]' }) private status!: HTMLElement;
+	@query('button') private trigger!: HTMLElement;
+	@query('[role="menu"]') private menu!: HTMLElement;
+	@queryAll('[role="menuitem"]') private items!: HTMLElement[];
+	@query('[data-status]') private status!: HTMLElement;
 
 	private open = false;
 

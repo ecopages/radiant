@@ -3,7 +3,7 @@ import { RadiantElement } from '@ecopages/radiant/core/radiant-element';
 import { customElement } from '@ecopages/radiant/decorators/custom-element';
 import { onEvent } from '@ecopages/radiant/decorators/on-event';
 import { onUpdated } from '@ecopages/radiant/decorators/on-updated';
-import { query } from '@ecopages/radiant/decorators/query';
+import { ref } from '@ecopages/radiant/decorators/ref';
 import { prop } from '@ecopages/radiant/decorators/prop';
 
 export type RadiantValueTesterProps = {
@@ -23,11 +23,11 @@ export class RadiantValueTester extends RadiantElement {
 	@prop({ type: Object, reflect: true, defaultValue: { key: 'value' } }) object!: Record<string, unknown>;
 	@prop({ type: Array, reflect: true, defaultValue: ['value'] }) array!: unknown[];
 
-	@query({ ref: 'number' }) numberText!: HTMLElement | null;
-	@query({ ref: 'string' }) stringText!: HTMLElement | null;
-	@query({ ref: 'boolean' }) booleanText!: HTMLElement | null;
-	@query({ ref: 'object' }) objectText!: HTMLElement | null;
-	@query({ ref: 'array' }) arrayText!: HTMLElement | null;
+	@ref('number') numberText!: HTMLElement | null;
+	@ref('string') stringText!: HTMLElement | null;
+	@ref('boolean') booleanText!: HTMLElement | null;
+	@ref('object') objectText!: HTMLElement | null;
+	@ref('array') arrayText!: HTMLElement | null;
 
 	@onEvent({ ref: 'increment-number', type: 'click' })
 	incrementNumber() {
