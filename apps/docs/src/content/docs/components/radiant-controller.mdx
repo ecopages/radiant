@@ -1,6 +1,6 @@
 ---
-title: "RadiantController"
-description: "RadiantController adds Radiant reactivity to existing HTML with a controller authoring model close to RadiantElement."
+title: 'RadiantController'
+description: 'RadiantController adds Radiant reactivity to existing HTML with a controller authoring model close to RadiantElement.'
 order: 2
 ---
 
@@ -221,7 +221,7 @@ Prefer the focused registry subpath for `startControllers(...)` in setup modules
 - `getRef('panel')` returns the first matching element or `null`
 - `getRef('item', true)` returns all matching elements, in document order
 
-`getRef`, `@query({ ref })`, `@onEvent({ ref })` and `@bindTo({ ref })` only see parts the controller's host owns. A part belongs to the nearest enclosing upgraded `RadiantElement` or attached controller host, so the parts of a nested element or of a nested controller host (while attached) are not returned. A part that is itself a nested host is returned. Use `@query({ selector })` to reach into a nested host on purpose.
+`getRef`, `@query({ ref })`, `@onEvent({ ref })` and `@bindTo({ ref })` only see parts the controller's host owns. A part belongs to the nearest enclosing upgraded Element Host or attached Controller Host, so the parts of a nested Element Host or of a nested Controller Host (while attached) are not returned. The host element is never its own part. A part that is itself a nested host is returned. Use `@query({ selector })` to reach into a nested host on purpose.
 
 ## Reactive Surface
 

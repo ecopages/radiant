@@ -22,6 +22,8 @@ class PartsOuter extends RadiantElement {
 	@query({ ref: 'item', all: true }) items!: HTMLElement[];
 	@query({ ref: 'item', cache: true }) cachedItem!: HTMLElement | null;
 	@query({ ref: 'say "hi"' }) quoted!: HTMLElement | null;
+	@query({ ref: 'back\\slash' }) backslashed!: HTMLElement | null;
+	@query({ ref: '1abc' }) digitLed!: HTMLElement | null;
 	@query({ selector: '[data-ref="item"]', all: true }) everyItem!: HTMLElement[];
 
 	@state
@@ -169,6 +171,53 @@ describe('scoped parts, Element Host', () => {
 	});
 });
 
+describe('scoped parts, edge cases', () => {
+	test('a part owned only by a nested host reads null and []', async () => {
+		const host = await mount<PartsOuter>(
+			'<parts-outer><parts-inner><b data-ref="item"></b></parts-inner></parts-outer>',
+		);
+
+		expect(host.item).toBeNull();
+		expect(host.items).toEqual([]);
+		expect(host.getRef('item')).toBeNull();
+		expect(host.getRef('item', true)).toEqual([]);
+	});
+
+	test('a wrapper element and two levels of nesting are walked past', async () => {
+		const host = await mount<PartsOuter>(
+			'<parts-outer><div><parts-inner><div><parts-inner><b id="deep" data-ref="item"></b></parts-inner><b id="mid" data-ref="item"></b></div></parts-inner></div><div><b id="outer" data-ref="item"></b></div></parts-outer>',
+		);
+
+		expect(host.item).toBe(byId('outer'));
+		expect(host.items).toEqual([byId('outer')]);
+	});
+
+	test('a name with a backslash or a leading digit resolves', async () => {
+		const host = await mount<PartsOuter>(
+			'<parts-outer><b id="bs" data-ref="back\\slash"></b><b id="dg" data-ref="1abc"></b></parts-outer>',
+		);
+
+		expect(host.backslashed).toBe(byId('bs'));
+		expect(host.digitLed).toBe(byId('dg'));
+		expect(host.getRef('back\\slash')).toBe(byId('bs'));
+		expect(host.getRef('1abc')).toBe(byId('dg'));
+	});
+
+	test('the host is never its own part', async () => {
+		const host = await mount<PartsOuter>(
+			'<parts-outer data-ref="item"><b id="child" data-ref="item"></b></parts-outer>',
+		);
+
+		expect(host.item).toBe(byId('child'));
+		expect(host.items).toEqual([byId('child')]);
+
+		host.click();
+		expect(host.clicks).toBe(0);
+		byId('child').click();
+		expect(host.clicks).toBe(1);
+	});
+});
+
 describe('scoped parts, Controller Host', () => {
 	test('an outer controller ignores a nested Element Host part', async () => {
 		const root = await mount<HTMLElement>(NESTED.replace(/parts-outer/g, 'section'));
@@ -211,5 +260,41 @@ describe('scoped parts, Controller Host', () => {
 
 		expect(outer.item).toBe(byId('seek'));
 		expect(outer.items).toEqual([byId('seek')]);
+	});
+
+	test('@onEvent({ ref }) on an Element Host ignores a click on an attached nested Controller Host part', async () => {
+		const outer = await mount<PartsOuter>(
+			'<parts-outer><section id="nested"><b id="inner" data-ref="item"></b></section><b id="outer" data-ref="item"></b></parts-outer>',
+		);
+		const nested = new PartsController(byId('nested'));
+
+		byId('inner').click();
+		expect(outer.clicks).toBe(1);
+
+		nested.connect();
+		byId('inner').click();
+		expect(outer.clicks).toBe(1);
+		expect(nested.clicks).toBe(1);
+
+		nested.disconnect();
+		byId('inner').click();
+		expect(outer.clicks).toBe(2);
+	});
+
+	test('a root shared by two controllers stays a scope until the last detaches, and connect twice is idempotent', async () => {
+		const outer = await mount<PartsOuter>(
+			'<parts-outer><section id="nested"><b id="inner" data-ref="item"></b></section><b id="outer" data-ref="item"></b></parts-outer>',
+		);
+		const first = new PartsController(byId('nested'));
+		const second = new PartsController(byId('nested'));
+
+		first.connect();
+		first.connect();
+		second.connect();
+		first.disconnect();
+		expect(outer.item).toBe(byId('outer'));
+
+		second.disconnect();
+		expect(outer.item).toBe(byId('inner'));
 	});
 });

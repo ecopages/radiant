@@ -12,7 +12,7 @@ import type { Method } from '../../types';
  *
  * @param eventConfig The event configuration.
  * @param eventConfig.selectors The CSS selector(s) of the target element(s).
- * @param eventConfig.ref The data-ref attribute of the target element.
+ * @param eventConfig.ref The data-ref attribute of the target element, among the parts the host owns.
  * @param eventConfig.type The type of the event to listen for.
  * @param eventConfig.options Optional. An options object that specifies characteristics about the event listener.
  */

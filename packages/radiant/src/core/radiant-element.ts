@@ -180,7 +180,8 @@ export interface IRadiantElement<Bindings extends object = {}> {
 	connectedContextCallback(context: UnknownContext): void;
 
 	/**
-	 * Gets a reference to a child element by its data-ref attribute.
+	 * Gets a reference to a child element by its data-ref attribute, among the parts this host owns: a nested
+	 * Element Host's or attached Controller Host's same-named part is skipped. `all` returns document order.
 	 * @param ref - The data-ref attribute value of the element to get.
 	 * @param all - Whether to get all elements with the specified data-ref attribute value.
 	 * @returns The element with the specified data-ref attribute value, an array of elements or null if no element was found.

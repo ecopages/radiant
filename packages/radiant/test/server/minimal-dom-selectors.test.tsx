@@ -8,6 +8,7 @@ import { alignMinimalDomHostTagName } from '../../src/server/shim/minimal-dom/al
 import { MinimalHTMLElement, MinimalTextNode } from '../../src/server/shim/minimal-dom/nodes';
 import { renderRadiantElementHostToString } from '../../src/server/radiant-element-ssr';
 import * as selectors from '../../src/server/shim/minimal-dom/selectors';
+import { partSelector, resolvePart, resolveParts } from '../../src/core/parts';
 
 describe('minimal-dom selectors', () => {
 	beforeEach(() => {
@@ -27,6 +28,26 @@ describe('minimal-dom selectors', () => {
 		expect(element.matches('[data-ref="submit"]')).toBe(true);
 		expect(element.matches('button.primary[data-ref="submit"]')).toBe(true);
 		expect(element.matches('div')).toBe(false);
+	});
+
+	test('part names with quotes, backslashes, brackets and a leading digit resolve through partSelector', () => {
+		const names = ['say "hi"', 'back\\slash', 'a]b', '1abc', "it's"];
+		const host = document.createElement('section');
+
+		for (const name of names) {
+			const part = document.createElement('b');
+			part.setAttribute('data-ref', name);
+			host.appendChild(part);
+		}
+
+		for (const [index, name] of names.entries()) {
+			expect(host.querySelector(partSelector(name))).toBe(host.children[index]);
+			expect(resolvePart(host, name)).toBe(host.children[index]);
+			expect(resolveParts(host, name)).toEqual([host.children[index]]);
+		}
+
+		expect(resolvePart(host, 'missing')).toBeNull();
+		expect(resolveParts(host, 'missing')).toEqual([]);
 	});
 
 	test('matches the universal selector, bare and in a combinator chain', () => {

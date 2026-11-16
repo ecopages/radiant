@@ -75,8 +75,8 @@ export function isPartOwnedBy(part: Element, host: Element): boolean {
  * First part named `name` that `host` owns, in document order, or `null`.
  *
  * @remarks
- * Checks the first `querySelector` match before scanning every match, because the common case is that the
- * first match is owned and the scan cannot stop early.
+ * Checks the first `querySelector` match before scanning every match, so the common case, where that match is
+ * owned, skips `querySelectorAll` and the extra ownership walks.
  */
 export function resolvePart<T extends Element = Element>(host: Element, name: string): T | null {
 	const selector = partSelector(name);

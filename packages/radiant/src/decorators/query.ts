@@ -9,7 +9,8 @@ export type { QueryDecoratorHost };
 export type { QueryConfig };
 
 /**
- * A decorator to query by CSS selector or data-ref attribute.
+ * A decorator to query by CSS selector or data-ref attribute. A `ref` lookup only finds parts the host owns,
+ * a nested host's same-named part is skipped; `selector` is unscoped.
  * By default it queries for the first element that matches the selector, but it can be configured to query for all elements.
  * It caches the result only when `cache` is enabled.
  *

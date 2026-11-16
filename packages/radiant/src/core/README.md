@@ -109,7 +109,8 @@ A part is a node named with `data-ref`. It belongs to the nearest enclosing scop
 - Third-party custom elements and catalog controllers (`createXController`) do not start a scope.
 - `getRef(name, true)` and `@query({ ref, all: true })` leave out nested hosts' parts and return document order. `@onEvent({ ref })` takes the closest `[data-ref=name]` from the event target and ignores it when another host owns it.
 - `@query({ selector })` is not scoped: it is the explicit way into a nested host.
-- The part name is escaped inside a quoted attribute selector (`\` and `"`). The server DOM shim does not decode escapes in attribute values, so a name containing either matches in the browser only.
+- The part name is escaped inside a quoted attribute selector (`\` and `"`), and the server DOM shim decodes those escapes, so any name resolves the same in the browser and on the server.
+- `@onEvent({ ref })` does not fire for a `data-ref` on the host element itself: the host is never its own part.
 
 ## SSR Flow
 
