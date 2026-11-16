@@ -159,6 +159,17 @@ Most elements do not need this hook. Do not use it to copy a reactive value into
 
 Use the raw value in imperative code and render logic. Use bindings in stable JSX leaf positions such as text, attributes, `aria`, `data`, and boolean props. On hosts that do not override `render()`, use [@bindTo](/docs/decorators/bind-to) for the same leaf writes against existing DOM.
 
+### `{this.count}` vs `{this.$.count}`
+
+A direct read in `render()` makes the whole view depend on the field: each change runs `render()` again. That is the right choice for branching, list shape and `class` or `style` composition. `{this.$.count}` patches one node and leaves `render()` alone, so it suits a value that changes often, such as a media position.
+
+In development, Radiant warns once per class and field when a direct read is clearly wasteful, naming the field and the host and pointing to `this.$`:
+
+- **Redundant path:** the field is bound with `this.$` and also read directly in `render()`, so each change patches the node and then re-renders the view.
+- **Hot field:** the field re-runs one host's `render()` 30 times within a second.
+
+A host that reads a field directly without either pattern does not warn. The warnings follow the rules of every Radiant development warning: a production build drops them, and `setDevWarningsEnabled(false)` from `@ecopages/jsx/jsx-dev-runtime` silences them.
+
 ## Derived Bindings
 
 Bindings expose the current reactive value, but sometimes JSX needs a **projection** of that value — a record lookup, an object key, or a transform.

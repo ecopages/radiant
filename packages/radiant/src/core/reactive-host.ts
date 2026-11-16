@@ -3,6 +3,7 @@ import type { JsxBindingSourceValue, SubscribableJsxValueWithAccess } from '@eco
 import { HostSsrRegistry } from './host-ssr-registry';
 import { adaptReactiveStateToJsxBinding } from './reactive-binding-adapter';
 import { state } from '@ecopages/signals';
+import { RenderWarnings } from './render-warnings';
 import type { ReactiveState } from './reactivity-contract';
 import type {
 	ReactiveAccessorDefinition,
@@ -88,6 +89,8 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	public readonly bindings: ReactiveBindings<Bindings>;
 	public readonly $: ReactiveBindings<Bindings>;
 	public readonly ssrRegistry = new HostSsrRegistry();
+	/** Development diagnostics for whole-render reads; absent in a production build. */
+	public readonly renderWarnings?: RenderWarnings;
 
 	private reactiveMembers = new Map<string, ReactiveState<unknown>>();
 	private jsxBindings = new Map<string, SubscribableJsxValueWithAccess<JsxBindingSourceValue>>();
@@ -113,6 +116,12 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 		const bindingNamespace = this.createReactiveBindingNamespace();
 		this.bindings = bindingNamespace;
 		this.$ = bindingNamespace;
+
+		try {
+			if (process.env.NODE_ENV !== 'production') {
+				this.renderWarnings = new RenderWarnings(host);
+			}
+		} catch {}
 	}
 
 	/**
@@ -327,14 +336,19 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 			this.memberSnapshots.has(propertyName) &&
 			!Object.is(this.memberSnapshots.get(propertyName), signal.get())
 		) {
-			this.onMemberChanged(propertyName);
+			this.memberChanged(propertyName);
 		}
 
 		this.memberSnapshots.delete(propertyName);
 		this.changeSubscriptions.set(
 			propertyName,
-			signal.subscribe(() => this.onMemberChanged(propertyName)),
+			signal.subscribe(() => this.memberChanged(propertyName)),
 		);
+	}
+
+	private memberChanged(propertyName: string): void {
+		this.renderWarnings?.noteChange(propertyName);
+		this.onMemberChanged(propertyName);
 	}
 
 	/**
@@ -392,9 +406,8 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 			throw new Error(`No reactive binding registered for "${String(property)}".`);
 		}
 
-		const binding = adaptReactiveStateToJsxBinding(
-			signal as ReactiveState<ReactiveBindingValue<Bindings, Property>>,
-		);
+		const source = signal as ReactiveState<ReactiveBindingValue<Bindings, Property>>;
+		const binding = adaptReactiveStateToJsxBinding(this.renderWarnings?.observeBinding(key, source) ?? source);
 
 		this.jsxBindings.set(key, binding);
 		return binding;
@@ -437,8 +450,10 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	 * `State`.
 	 */
 	public defineReactiveAccessor<T>(propertyName: string, options: ReactiveAccessorDefinition<T>): void {
+		const read = () => options.signal.get();
+
 		this.access.defineProperty(this.host, propertyName, {
-			get: () => options.signal.get(),
+			get: this.renderWarnings ? this.renderWarnings.trackReads(propertyName, read) : read,
 			set: (newValue: T) => {
 				const next = options.fromProperty ? options.fromProperty(newValue) : newValue;
 				options.signal.set(next);

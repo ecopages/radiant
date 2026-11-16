@@ -1,4 +1,5 @@
 import { Computed, subtle } from '@ecopages/signals';
+import type { RenderWarnings } from './render-warnings';
 
 /** Tracks a host render and schedules its next update when a dependency changes. */
 export class TrackedRender<Value> {
@@ -7,7 +8,11 @@ export class TrackedRender<Value> {
 	private refreshed = false;
 	private readonly watcher: InstanceType<typeof subtle.Watcher>;
 
-	constructor(private readonly requestUpdate: () => void) {
+	/** @param warnings Development diagnostics; the host passes it only in a development build. */
+	constructor(
+		private readonly requestUpdate: () => void,
+		private readonly warnings?: RenderWarnings,
+	) {
 		this.watcher = new subtle.Watcher(requestUpdate);
 	}
 
@@ -17,11 +22,14 @@ export class TrackedRender<Value> {
 			this.refreshed = false;
 			const value = this.signal.get();
 			this.watcher.watch(this.signal);
+			this.warnings?.afterRender();
 			return value;
 		}
 
-		const signal = new Computed(render);
+		const warnings = this.warnings;
+		const signal = new Computed(warnings ? () => warnings.run(render) : render);
 		const value = signal.get();
+		warnings?.afterRender();
 		if (connected) {
 			this.disconnect();
 			this.signal = signal;

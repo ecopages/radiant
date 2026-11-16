@@ -40,7 +40,7 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 	private connected = false;
 	private readonly updateCycle: UpdateCycle;
 	private isSsrLifecycle = false;
-	private readonly trackedRender = new TrackedRender<JsxRenderable>(() => this.requestUpdate());
+	private readonly trackedRender: TrackedRender<JsxRenderable>;
 
 	constructor(host: Element) {
 		this.host = host;
@@ -65,6 +65,10 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 				defineProperty: (target, property, descriptor) => Object.defineProperty(target, property, descriptor),
 			},
 			(propertyName) => this.updateCycle.markChanged(propertyName),
+		);
+		this.trackedRender = new TrackedRender<JsxRenderable>(
+			() => this.requestUpdate(),
+			this.reactiveHost.renderWarnings,
 		);
 		this.bindings = this.reactiveHost.bindings;
 		this.$ = this.reactiveHost.$;
