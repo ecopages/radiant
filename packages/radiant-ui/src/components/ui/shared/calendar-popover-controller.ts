@@ -59,7 +59,7 @@ export class CalendarPopoverController implements Controller {
 			},
 		});
 		this.dismissal = new DismissController({
-			getSurface: () => this.config.getFloating(),
+			getSurface: () => this.getFloatingElement(),
 			getRelated: () => [this.config.getHost()],
 			getOpen: () => this.config.getOpen(),
 			onDismiss: (reason, event) => this.onDismiss(reason, event),
@@ -72,6 +72,14 @@ export class CalendarPopoverController implements Controller {
 	/** Changes whether the popup portals, from the next `syncPopover()`. */
 	updateConfig(patch: Pick<CalendarPopoverControllerConfig, 'portal'>): void {
 		this.popoverController.updateConfig({ portal: patch.portal ?? false });
+	}
+
+	/**
+	 * The popup now: the element `getFloating` finds, or, while it is portaled and the host cannot find it, the
+	 * portal's mounted node, including during the exit transition. `null` when the host has no popup.
+	 */
+	getFloatingElement(): HTMLElement | null {
+		return this.popoverController.getFloatingElement();
 	}
 
 	/** Starts listening for mobile layout changes until `destroy()`. */
@@ -118,7 +126,7 @@ export class CalendarPopoverController implements Controller {
 	}
 
 	syncPopover(): void {
-		const popover = this.config.getFloating();
+		const popover = this.getFloatingElement();
 		if (!popover) {
 			return;
 		}
@@ -137,7 +145,7 @@ export class CalendarPopoverController implements Controller {
 			return;
 		}
 		event.preventDefault();
-		if (event.target instanceof Node && this.config.getFloating()?.contains(event.target)) {
+		if (event.target instanceof Node && this.getFloatingElement()?.contains(event.target)) {
 			this.closeAndRestoreFocus();
 		} else {
 			this.setOpen(false);

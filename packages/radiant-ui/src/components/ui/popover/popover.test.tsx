@@ -2,6 +2,7 @@ import { createRoot } from '@ecopages/jsx';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { RuiPopover } from './popover';
 import { RuiPopover as RuiPopoverElement } from './popover.script';
+import { expectPopupFoundAcrossPortalCycle } from '../../../controllers/exit-transition.fixture';
 void RuiPopoverElement;
 
 describe('rui-popover dismissal', () => {
@@ -231,5 +232,42 @@ describe('rui-popover trigger wiring', () => {
 		await vi.waitFor(() => expect(second.getAttribute('aria-controls')).toBeTruthy());
 		expect(first.hasAttribute('aria-controls')).toBe(false);
 		expect(first.hasAttribute('aria-haspopup')).toBe(false);
+	});
+});
+
+describe('rui-popover reads its portaled surface from the popover controller', () => {
+	afterEach(() => {
+		document.body.innerHTML = '';
+	});
+
+	it('finds the current surface while open, during its exit, and after a reopen with a new node', async () => {
+		const container = document.createElement('div');
+		document.body.append(container);
+		createRoot(container).render(
+			<RuiPopover trigger={<button type="button">Open</button>}>
+				<span>Inside</span>
+			</RuiPopover>,
+		);
+		const host = container.querySelector('rui-popover') as RuiPopoverElement;
+		await vi.waitFor(() => expect(host.querySelector('[data-popover-trigger] button')).toBeTruthy());
+		const surface = host.querySelector('[data-ref="surface"]') as HTMLElement;
+		const controller = Reflect.get(host, 'controller') as { getFloatingElement(): HTMLElement | null };
+
+		await expectPopupFoundAcrossPortalCycle({
+			popup: surface,
+			portaled: true,
+			find: () => controller.getFloatingElement(),
+			open: async () => {
+				host.setOpen(true);
+				await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined)));
+			},
+			close: async () => {
+				host.setOpen(false);
+				await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined)));
+			},
+		});
+		expect(Reflect.get(host, 'controller')).toBe(controller);
+		const current = controller.getFloatingElement() as HTMLElement;
+		expect(current.id).toMatch(/^rui-popover/);
 	});
 });

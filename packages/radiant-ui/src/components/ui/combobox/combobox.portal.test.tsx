@@ -3,6 +3,7 @@ import { userEvent } from 'vitest/browser';
 import { createRoot } from '@ecopages/jsx';
 import { RuiCombobox } from './combobox';
 import { RuiCombobox as RuiComboboxElement } from './combobox.script';
+import { expectPopupFoundAcrossPortalCycle } from '../../../controllers/exit-transition.fixture';
 void RuiComboboxElement;
 
 const OPTIONS = [
@@ -174,5 +175,29 @@ describe('RuiCombobox portal container', () => {
 		trigger.click();
 		await settled();
 		expect(popup.parentElement).toBe(other);
+	});
+});
+
+describe('RuiCombobox reads its portaled popup from the popover controller', () => {
+	afterEach(() => {
+		document.body.innerHTML = '';
+	});
+
+	it('finds the current popup while open, during its exit, and after a reopen with a new node', async () => {
+		const { combobox, trigger, input, popup } = await mountCombobox(true);
+
+		await expectPopupFoundAcrossPortalCycle({
+			popup,
+			portaled: true,
+			find: () => Reflect.get(combobox, 'popupTarget'),
+			open: async () => {
+				trigger.click();
+				await settled();
+			},
+			close: async () => {
+				press(input, 'Escape');
+				await settled();
+			},
+		});
 	});
 });

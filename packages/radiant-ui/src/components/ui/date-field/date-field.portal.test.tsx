@@ -4,6 +4,7 @@ import { createRoot } from '@ecopages/jsx';
 import { RuiDateField } from './date-field';
 import { RuiDateField as RuiDateFieldScript } from './date-field.script';
 import { RuiDateInput as RuiDateInputScript } from '../date-input/date-input.script';
+import { expectPopupFoundAcrossPortalCycle } from '../../../controllers/exit-transition.fixture';
 void RuiDateFieldScript;
 void RuiDateInputScript;
 
@@ -144,5 +145,30 @@ describe('RuiDateField portal container', () => {
 		toggle.click();
 		await settled();
 		expect(popup.parentElement).toBe(other);
+	});
+});
+
+describe('RuiDateField reads its portaled popup from the popover controller', () => {
+	afterEach(() => {
+		document.body.innerHTML = '';
+	});
+
+	it('finds the current popup while open, during its exit, and after a reopen with a new node', async () => {
+		const { field, toggle, popup } = await mountField(true);
+
+		await expectPopupFoundAcrossPortalCycle({
+			popup,
+			portaled: true,
+			find: () => Reflect.get(field, 'popoverTarget'),
+			open: async () => {
+				toggle.click();
+				await settled();
+			},
+			close: async () => {
+				const current = Reflect.get(field, 'popoverTarget') as HTMLElement;
+				current.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+				await settled();
+			},
+		});
 	});
 });

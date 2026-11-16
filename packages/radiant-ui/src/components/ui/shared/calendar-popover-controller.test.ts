@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { withSlowExit } from '../../../controllers/exit-transition.fixture';
 import {
 	CalendarPopoverController,
 	createCalendarPopoverController,
@@ -218,6 +219,48 @@ describe('CalendarPopoverController on a plain element', () => {
 		expect(listeners.size).toBe(0);
 
 		host.remove();
+	});
+});
+
+describe('CalendarPopoverController floating element while portaled', () => {
+	afterEach(() => {
+		vi.restoreAllMocks();
+		document.body.replaceChildren();
+	});
+
+	it('returns the popup while it is portaled out of a host that cannot find it, and during its exit', () => {
+		vi.spyOn(window, 'matchMedia').mockImplementation(
+			() => ({ matches: false, addEventListener() {}, removeEventListener() {} }) as unknown as MediaQueryList,
+		);
+		const host = document.createElement('div');
+		const popup = withSlowExit(document.createElement('div'));
+		host.append(popup);
+		document.body.append(host);
+		let open = true;
+		const controller = new CalendarPopoverController({
+			getHost: () => host,
+			getAnchor: () => host,
+			getFloating: () => host.querySelector<HTMLElement>('[data-slow-exit]'),
+			getOpen: () => open,
+			getCalendar: () => null,
+			getFocusIso: () => undefined,
+			getToggle: () => null,
+			setOpenState: (next) => (open = next),
+			onLayoutChange: () => {},
+			portal: true,
+		});
+		controller.attach();
+
+		controller.syncPopover();
+		expect(host.contains(popup)).toBe(false);
+		expect(controller.getFloatingElement()).toBe(popup);
+
+		open = false;
+		controller.syncPopover();
+		expect(popup.parentNode).toBe(document.body);
+		expect(popup.hidden).toBe(true);
+		expect(controller.getFloatingElement()).toBe(popup);
+		controller.destroy();
 	});
 });
 

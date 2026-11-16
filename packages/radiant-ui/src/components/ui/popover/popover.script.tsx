@@ -180,7 +180,7 @@ export class RuiPopover extends RadiantElement {
 	@onUpdated(['open', 'placement', 'portal', 'matchAnchorWidth', 'offset', 'anchor'])
 	syncPopover(): void {
 		const anchor = this.getAnchorElement();
-		const surface = this.surfaceTarget;
+		const surface = this.controller.getFloatingElement();
 
 		if (surface) {
 			surface.id = this.surfaceId;

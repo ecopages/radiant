@@ -4,6 +4,7 @@ import { createRoot } from '@ecopages/jsx';
 import { RuiDateRangePicker } from './date-range-picker';
 import { RuiDateRangePicker as RuiDateRangePickerScript } from './date-range-picker.script';
 import { RuiDateInput as RuiDateInputScript } from '../date-input/date-input.script';
+import { expectPopupFoundAcrossPortalCycle } from '../../../controllers/exit-transition.fixture';
 void RuiDateRangePickerScript;
 void RuiDateInputScript;
 
@@ -142,5 +143,30 @@ describe('RuiDateRangePicker portal container', () => {
 		toggle.click();
 		await settled();
 		expect(popup.parentElement).toBe(other);
+	});
+});
+
+describe('RuiDateRangePicker reads its portaled popup from the popover controller', () => {
+	afterEach(() => {
+		document.body.innerHTML = '';
+	});
+
+	it('finds the current popup while open, during its exit, and after a reopen with a new node', async () => {
+		const { picker, toggle, popup } = await mountField(true);
+
+		await expectPopupFoundAcrossPortalCycle({
+			popup,
+			portaled: true,
+			find: () => Reflect.get(picker, 'popoverTarget'),
+			open: async () => {
+				toggle.click();
+				await settled();
+			},
+			close: async () => {
+				const current = Reflect.get(picker, 'popoverTarget') as HTMLElement;
+				current.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+				await settled();
+			},
+		});
 	});
 });

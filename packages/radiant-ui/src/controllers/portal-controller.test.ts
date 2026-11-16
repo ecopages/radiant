@@ -29,6 +29,18 @@ describe('PortalController', () => {
 		expect(origin.childNodes).toHaveLength(3);
 	});
 
+	it('exposes the mounted node from attach until destroy', () => {
+		const { node } = setup();
+		const portal = new PortalController({ getNode: () => node });
+		expect(portal.mountedNode).toBeNull();
+
+		portal.attach();
+		expect(portal.mountedNode).toBe(node);
+
+		portal.destroy();
+		expect(portal.mountedNode).toBeNull();
+	});
+
 	it('records where the node came from for itself and its descendants, until destroy', () => {
 		const { origin, before, node } = setup();
 		const child = document.createElement('i');
