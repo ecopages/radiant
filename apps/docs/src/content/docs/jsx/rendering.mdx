@@ -83,6 +83,8 @@ For render-owning `RadiantElement` custom-element hosts, there is one extra gate
 
 ## Checking SSR Output
 
+On hydration, a `ref` callback receives the server node that was adopted, never a clone. See [Refs](/docs/jsx/authoring#refs).
+
 Use `hasHydrationMarkers(...)` when you need to detect whether a target contains SSR binding markers before attempting client attach behavior.
 
 ```tsx

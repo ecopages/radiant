@@ -24,11 +24,16 @@ export type BindingDescriptor =
  * custom elements see their final DOM shape (including children) before
  * receiving bound property values.
  */
-export type DeferredPropertyBinding = {
-	element: Element;
-	name: PropertyKey;
-	value: unknown;
-};
+export type DeferredPropertyBinding =
+	| {
+			element: Element;
+			name: PropertyKey;
+			value: unknown;
+	  }
+	| {
+			/** Runs with the property writes, once the nodes are in place. A `ref` part attaches its callback here. */
+			run: () => void;
+	  };
 
 /**
  * Static metadata for a dynamic attribute binding inside a compiled template blueprint.
@@ -104,6 +109,8 @@ export type LiveAttributePart = {
 	/** The wrapper a `native-event` part registered on its element, which calls the handler. */
 	nativeListener?: EventListener;
 	previousValue?: unknown;
+	/** Runs when a `ref` part detaches: the cleanup its callback returned, or a call of the callback with `null`. */
+	refCleanup?: () => void;
 	rootTarget: HTMLElement;
 	/**
 	 * Currently bound reactive source for this attribute part, when the binding value is subscribable.

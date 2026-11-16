@@ -21,6 +21,7 @@ export {
 	type JsxNodeLike,
 	type JsxPropsWithChildren,
 	type JsxPrimitive,
+	type JsxRefCallback,
 	type JsxRenderable,
 	isKeyedJsxValue,
 	isSubscribableJsxValue,

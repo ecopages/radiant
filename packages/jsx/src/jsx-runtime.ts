@@ -47,6 +47,7 @@ export type {
 	JsxEventListenerObject,
 	JsxIntrinsicAttributes,
 	JsxKey,
+	JsxRefCallback,
 	JSX_PROPS,
 	JsxNodeLike,
 	JsxNodeType,

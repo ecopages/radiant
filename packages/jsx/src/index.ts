@@ -39,6 +39,7 @@ export type {
 	JsxIntrinsicAttributes,
 	JsxKey,
 	JsxNodeLike,
+	JsxRefCallback,
 	JsxNodeType,
 	JsxPrimitive,
 	JsxPropsWithChildren,

@@ -484,7 +484,6 @@ export class RuiToast extends RadiantElement<RuiToastBindings> {
 
 		return (
 			<div
-				ref="toast"
 				class={`rui-toast rui-toast--${variant}`}
 				role={isError ? 'alert' : 'status'}
 				aria-live={isError ? 'assertive' : 'off'}

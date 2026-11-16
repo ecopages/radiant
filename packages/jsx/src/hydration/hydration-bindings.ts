@@ -150,7 +150,7 @@ export function parseBindingDescriptor(value: string): Pick<HydrationBinding, 'k
 	const kind = value.slice(0, separatorIndex) as BindingKind;
 	const name = value.slice(separatorIndex + 1);
 
-	if (!name || !['attr', 'bool', 'event', 'native-event', 'prop'].includes(kind)) {
+	if (!name || !['attr', 'bool', 'event', 'native-event', 'prop', 'ref'].includes(kind)) {
 		return undefined;
 	}
 

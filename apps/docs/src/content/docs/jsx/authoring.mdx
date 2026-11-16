@@ -67,8 +67,24 @@ Unprefixed names follow element-aware defaults. Prefixes make intent explicit:
 | `prop:` | element property assignment | non-string values (objects, functions, DOM nodes) |
 | `on:` | delegated-or-direct event | normal event authoring |
 | `on-native:` | direct `addEventListener(...)` | exact element-level listener semantics |
+| `ref` (reserved name, no prefix) | callback with the node | own a node the view created; see [Refs](#refs) |
 
 See [JSX Event Handling](/docs/jsx/events) and [JSX Custom Element Types](/docs/jsx/custom-element-types) for full contracts.
+
+## Refs
+
+`ref` is reserved on every intrinsic element, custom elements included. It takes a callback typed per element (`JsxRefCallback<HTMLInputElement>` for `input`):
+
+```tsx
+<input ref={(node) => { this.input = node; }} />
+<canvas ref={(node) => (node ? observe(node) : undefined)} />
+```
+
+- The callback is called with the node once it is in the page, on a client render and on hydration with the adopted server node.
+- A function it returns runs when the element is removed or the callback is replaced. Otherwise the callback is called once more with `null`, so the parameter is `Element | null`.
+- The same callback on a re-render does nothing; a different one detaches the old and attaches the new. A keyed move does not call it again.
+- It never runs on the server and is never written out as an attribute. In hydrate mode the element carries a `ref:ref` marker with no function in it. Pass `ref` on the server and the client alike: when only one side has it, the later markers of that view are numbered differently and stay in the page after hydration.
+- A function component receives `ref` as an ordinary prop.
 
 ## Attribute Normalization
 

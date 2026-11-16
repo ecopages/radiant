@@ -292,6 +292,10 @@ function resolveBindingPart(
 	name: string,
 	value: unknown,
 ): Extract<TemplatePartDescriptor, { type: 'attribute' }> {
+	if (name === 'ref') {
+		return { kind: 'ref', name, type: 'attribute' };
+	}
+
 	if (name.startsWith('on-native:')) {
 		return { kind: 'native-event', name: name.slice('on-native:'.length), type: 'attribute' };
 	}

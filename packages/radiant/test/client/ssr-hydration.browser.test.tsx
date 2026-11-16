@@ -36,6 +36,7 @@ import {
 	staticPageSlotCardView,
 } from '../fixtures/ssr-hydration/components';
 import '../fixtures/ssr-hydration/components';
+import { HydratedRefProvider } from '../fixtures/ssr-hydration/context-ref';
 import {
 	LIFECYCLE_PREFIX,
 	defineLifecycleChild,
@@ -456,6 +457,24 @@ describe('hydrating server-rendered markup', () => {
 		await waitFor(() =>
 			expect(element.querySelector('hydrated-third-party-box-test > b')?.getAttribute('title')).toBe('inside-1'),
 		);
+	});
+
+	test('a JSX ref callback handed down through a provider context receives the server node', async () => {
+		const markup = serverMarkup('context-ref-provider');
+		expect(markup).not.toContain('ref=');
+		expect(markup).not.toContain('attachPanel');
+		HydratedRefProvider.panel = null;
+		installRadiantHydrator();
+		document.body.innerHTML = markup;
+		const element = document.querySelector('hydrated-ref-provider-test') as HTMLElement;
+		const serverPanel = element.querySelector('section');
+		expect(serverPanel).not.toBeNull();
+
+		await waitFor(() => expect(hasHydrationMarkers(element)).toBe(false));
+
+		expect(HydratedRefProvider.panel).toBe(serverPanel);
+		expect(element.querySelector('section')).toBe(serverPanel);
+		expect(serverPanel?.textContent).toBe('panel');
 	});
 
 	test('keeps a nested host whose tag is defined before its parent over parsed markup', async () => {
