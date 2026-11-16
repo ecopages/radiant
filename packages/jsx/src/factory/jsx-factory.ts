@@ -148,7 +148,7 @@ export function createJsxElement<Props extends object>(
 
 	if (childrenAsValue) {
 		parts.push(CHILDREN_PART);
-		values.push(toChildSlot(children, valueChildOwner(type)));
+		values.push(toChildSlot(children));
 		strings.push('');
 	}
 
@@ -207,10 +207,6 @@ export function takesChildrenValue(type: string): boolean {
 
 /** Prop names whose function value is not text, so it is not skipped from an attribute position. */
 const FUNCTION_VALUE_NAMES = new Set<string>(['ref']);
-
-function valueChildOwner(type: string): string | undefined {
-	return type.includes('-') ? undefined : type;
-}
 
 /**
  * @remarks A function in an `attr`, `bool` or `style` binding, or in a child, is skipped and

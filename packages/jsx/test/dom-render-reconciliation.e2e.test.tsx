@@ -538,37 +538,46 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		const container = document.createElement('div');
 		const fn = () => 'secret source';
 		let value: unknown = 'one';
-		const subscribers = new Set<(value: unknown) => void>();
-		const bound = () =>
+		let styleValue: unknown = { top: '1px' };
+		const subscribers = new Map<(value: unknown) => void, () => unknown>();
+		const bound = (read: () => unknown) =>
 			createSubscribableJsxValue({
-				getValue: () => value as never,
+				getValue: () => read() as never,
 				subscribe: (notify) => {
-					subscribers.add(notify as (value: unknown) => void);
+					subscribers.set(notify as (value: unknown) => void, read);
 					return () => subscribers.delete(notify as (value: unknown) => void);
 				},
 			});
-		const set = async (next: unknown) => {
+		const set = async (next: unknown, nextStyle: unknown) => {
 			value = next;
-			for (const subscriber of subscribers) subscriber(value);
+			styleValue = nextStyle;
+			for (const [notify, read] of subscribers) notify(read());
 			await Promise.resolve();
 		};
+		const readValue = () => value;
 
 		createRoot(container).render(
-			jsxs('p', { title: bound(), style: { color: bound() }, children: ['Before', bound(), 'After'] }),
+			jsxs('p', {
+				title: bound(readValue),
+				style: bound(() => styleValue),
+				children: ['Before', bound(readValue), 'After'],
+			}),
 		);
 		const paragraph = container.querySelector('p');
 		expect(paragraph?.textContent).toBe('BeforeoneAfter');
 		expect(paragraph?.getAttribute('title')).toBe('one');
+		expect(paragraph?.getAttribute('style')).toBe('top: 1px');
 
-		await set(fn);
+		await set(fn, { color: fn, top: '2px' });
 		expect(container.innerHTML).not.toContain('secret');
 		expect(paragraph?.textContent).toBe('BeforeAfter');
 		expect(paragraph?.hasAttribute('title')).toBe(false);
-		expect(paragraph?.getAttribute('style') ?? '').not.toContain('secret');
+		expect(paragraph?.getAttribute('style')).toBe('top: 2px');
 
-		await set('two');
+		await set('two', { top: '3px' });
 		expect(paragraph?.textContent).toBe('BeforetwoAfter');
 		expect(paragraph?.getAttribute('title')).toBe('two');
+		expect(paragraph?.getAttribute('style')).toBe('top: 3px');
 	});
 
 	test('a textarea whose subscribable child resolves to a function shows no source', async () => {

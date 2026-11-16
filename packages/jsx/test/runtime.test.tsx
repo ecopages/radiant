@@ -130,7 +130,7 @@ describe('Radiant JSX runtime', () => {
 		}
 	});
 
-	test('a function in a Fragment or textarea child is never written out; a custom-element children value keeps it', async () => {
+	test('a function in a Fragment or textarea child is never written out', async () => {
 		const [{ Fragment, jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
 		const fn = () => 'secret source';
 
