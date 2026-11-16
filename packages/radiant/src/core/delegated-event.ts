@@ -22,14 +22,26 @@ function closestFromTarget(event: Event, selector: string): Element | null {
 }
 
 /**
- * Returns whether a bubbling event came from a part named `ref` that `root` owns.
+ * Returns whether a bubbling event happened inside a part named `ref` that `root` owns.
  *
  * @remarks
- * Takes the closest `[data-ref=ref]` from the target and accepts it only when `root` owns it, so a click
- * on a nested host's same-named part does not fire the outer handler. A `data-ref` on `root` itself never
- * matches, unlike the selector path, which accepts `root`.
+ * Walks up from the target to `root`, skipping same-named parts that another host owns, and accepts the
+ * nearest one `root` owns. Matching by containment keeps an event on a nested host's part from firing the
+ * outer handler unless that part sits inside an outer part of the same name, and lets a container part
+ * hear events from nested hosts that reuse a common name such as `root` or `trigger`. A `data-ref` on
+ * `root` itself never matches, unlike the selector path, which accepts `root`. The walk ends at `root`.
  */
 export function eventMatchesDelegatedRef(event: Event, root: Element, ref: string): boolean {
-	const matched = closestFromTarget(event, partSelector(ref));
-	return Boolean(matched && isPartOwnedBy(matched, root));
+	const selector = partSelector(ref);
+	let matched = closestFromTarget(event, selector);
+
+	while (matched && matched !== root && root.contains(matched)) {
+		if (isPartOwnedBy(matched, root)) {
+			return true;
+		}
+
+		matched = matched.parentElement?.closest(selector) ?? null;
+	}
+
+	return false;
 }

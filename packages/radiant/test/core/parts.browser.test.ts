@@ -47,6 +47,37 @@ class PartsController extends RadiantController {
 	}
 }
 
+@customElement('parts-focus')
+class PartsFocusElement extends RadiantElement {
+	focuses = 0;
+	triggerClicks = 0;
+
+	@onEvent({ ref: 'root', type: 'focusin' })
+	onRootFocus() {
+		this.focuses += 1;
+	}
+
+	@onEvent({ ref: 'trigger', type: 'click' })
+	onTriggerClick() {
+		this.triggerClicks += 1;
+	}
+}
+
+class PartsFocusController extends RadiantController {
+	focuses = 0;
+	triggerClicks = 0;
+
+	@onEvent({ ref: 'root', type: 'focusin' })
+	onRootFocus() {
+		this.focuses += 1;
+	}
+
+	@onEvent({ ref: 'trigger', type: 'click' })
+	onTriggerClick() {
+		this.triggerClicks += 1;
+	}
+}
+
 async function mount<T extends HTMLElement>(markup: string): Promise<T> {
 	document.body.innerHTML = markup;
 	await Promise.resolve();
@@ -296,5 +327,74 @@ describe('scoped parts, Controller Host', () => {
 
 		second.disconnect();
 		expect(outer.item).toBe(byId('inner'));
+	});
+});
+
+describe.each([
+	{
+		kind: 'Element Host',
+		tag: 'parts-focus',
+		attach: (root: HTMLElement) => root as unknown as PartsFocusElement,
+	},
+	{
+		kind: 'Controller Host',
+		tag: 'section',
+		attach: (root: HTMLElement) => {
+			const controller = new PartsFocusController(root);
+			controller.connect();
+			return controller;
+		},
+	},
+])('delegated ref matches by containment, $kind', ({ tag, attach }) => {
+	async function setup(inner: string) {
+		const root = await mount<HTMLElement>(`<${tag}>${inner}</${tag}>`);
+		return attach(root);
+	}
+
+	const focusIn = (id: string) => byId(id).dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+
+	test('fires for focus inside a nested host that has its own part of the same name, inside the outer part', async () => {
+		const host = await setup(
+			'<div data-ref="root"><parts-inner><div data-ref="root"><input id="focused" /></div></parts-inner></div>',
+		);
+
+		focusIn('focused');
+		expect(host.focuses).toBe(1);
+	});
+
+	test('ignores focus inside a nested host part that is not inside an outer part of that name', async () => {
+		const host = await setup(
+			'<parts-inner><div data-ref="root"><input id="focused" /></div></parts-inner><div data-ref="root"></div>',
+		);
+
+		focusIn('focused');
+		expect(host.focuses).toBe(0);
+	});
+
+	test('ignores a click on a nested host trigger that is not inside an outer trigger', async () => {
+		const host = await setup(
+			'<parts-inner><b id="nested" data-ref="trigger"></b></parts-inner><b data-ref="trigger"></b>',
+		);
+
+		byId('nested').click();
+		expect(host.triggerClicks).toBe(0);
+	});
+
+	test('fires for a click on a nested host trigger inside an outer trigger', async () => {
+		const host = await setup(
+			'<span data-ref="trigger"><parts-inner><b id="nested" data-ref="trigger"></b></parts-inner></span>',
+		);
+
+		byId('nested').click();
+		expect(host.triggerClicks).toBe(1);
+	});
+
+	test('fires for a click inside a nested host that is itself the trigger part', async () => {
+		const host = await setup(
+			'<parts-inner data-ref="trigger"><b id="nested" data-ref="trigger"></b></parts-inner>',
+		);
+
+		byId('nested').click();
+		expect(host.triggerClicks).toBe(1);
 	});
 });

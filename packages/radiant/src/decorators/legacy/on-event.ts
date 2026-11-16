@@ -13,7 +13,7 @@ import { registerLegacyInstanceInitializer } from './instance-initializers';
  *
  * @param eventConfig The event configuration.
  * @param eventConfig.selectors The CSS selector(s) of the target element(s).
- * @param eventConfig.ref The data-ref attribute of the target element, among the parts the host owns.
+ * @param eventConfig.ref The data-ref attribute of the target element, among the parts the host owns. Matches when the event happened inside such a part, even through a nested host that reuses the name.
  * @param eventConfig.type The type of the event to listen for.
  * @param eventConfig.options Optional. An options object that specifies characteristics about the event listener.
  * @remarks Legacy decorators apply bottom-up, so a `@bound` below this one hands over its accessor descriptor.
