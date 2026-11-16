@@ -130,6 +130,7 @@ export function installReactiveAttribute<TBindings extends object, TValue>(
 	const initialValue = readReactiveAttributeValue(host, attributeName, options);
 	const signal = host.createReactiveMember(propertyName, initialValue);
 
+	host[REACTIVE_HOST].markFieldAccessor(propertyName);
 	Object.defineProperty(host, propertyName, {
 		get() {
 			return signal.get();

@@ -186,6 +186,17 @@ describe('a read-only member over a writable field', () => {
 		expect(element.$.count.getValue()).toBe(4);
 	});
 
+	test('registerReactiveMember throws after @attr installed the field', () => {
+		@customElement('readonly-over-attr')
+		class Host extends RadiantElement<{ count: number }> {
+			@attr({ type: Number, defaultValue: 0 }) count = 0;
+		}
+		const element = new Host();
+
+		expect(() => element.registerReactiveMember('count', createReadonlySource(1).member)).toThrow(message);
+		expect(element.$.count.getValue()).toBe(0);
+	});
+
 	test('registerReactiveMember throws after @prop installed the field', () => {
 		@customElement('readonly-over-prop')
 		class Host extends RadiantElement<{ count: number }> {

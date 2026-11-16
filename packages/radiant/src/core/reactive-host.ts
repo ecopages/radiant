@@ -47,6 +47,13 @@ export interface ReactiveHostInternals {
 	 * fails loudly instead of calling a missing `set`.
 	 */
 	getWritableMember<T = unknown>(propertyName: string): ReactiveState<T> | undefined;
+	/**
+	 * Records that the host defines its own accessor for `propertyName`.
+	 *
+	 * @remarks For accessors defined outside {@link ReactiveHost.defineReactiveAccessor}, such as
+	 * `@attr`'s. A read-only member may not replace the member behind a marked name.
+	 */
+	markFieldAccessor(propertyName: string): void;
 	registerPostSync(callback: () => void): void;
 	registerConnectSync(callback: () => void): void;
 	registerUpdatedCallback(keys: readonly string[], callback: UpdatedCallback): () => void;
@@ -301,6 +308,10 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 		return this.reactiveMembers.get(propertyName) as ReadonlyReactiveState<T> | undefined;
 	}
 
+	public markFieldAccessor(propertyName: string): void {
+		this.accessorNames.add(propertyName);
+	}
+
 	public getWritableMember<T = unknown>(propertyName: string): ReactiveState<T> | undefined {
 		const member = this.reactiveMembers.get(propertyName);
 
@@ -487,7 +498,7 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	 * `State`.
 	 */
 	public defineReactiveAccessor<T>(propertyName: string, options: ReactiveAccessorDefinition<T>): void {
-		this.accessorNames.add(propertyName);
+		this.markFieldAccessor(propertyName);
 		const read = () => options.signal.get();
 
 		this.access.defineProperty(this.host, propertyName, {
