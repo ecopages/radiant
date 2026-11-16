@@ -52,7 +52,7 @@
 		"LICENSE"
 	],
 	"scripts": {
-		"build": "tsup && tsc -p tsconfig.build.json --noCheck",
+		"build": "tsup && tsc -p tsconfig.build.json --noCheck && node --import tsx ../../scripts/rewrite-dts-extensions.ts",
 		"dev": "tsup --watch",
 		"clean": "rm -rf dist",
 		"test": "vitest run",
