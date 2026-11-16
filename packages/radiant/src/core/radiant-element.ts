@@ -28,6 +28,7 @@ import { runSsrPreparationCallbacks } from './ssr-preparation';
 import { isRadiantHydratorInstalled } from './radiant-hydrator-state';
 import { SERVER_RENDERED_CHILDREN_STAMP, SERVER_RENDERED_HOST_ATTRIBUTE } from './server-rendered-host';
 import { RADIANT_ELEMENT_BRAND } from './radiant-element-brand';
+import { resolvePart, resolveParts } from './parts';
 
 export type {
 	PropTransform,
@@ -679,11 +680,7 @@ export class RadiantElement<Bindings extends object = {}>
 	public getRef<T extends Element = Element>(ref: string, all: true): T[];
 	public getRef<T extends Element = Element>(ref: string, all?: false): T | null;
 	public getRef<T extends Element = Element>(ref: string, all = false): T | T[] | null {
-		const selector = `[data-ref="${ref}"]`;
-		if (all) {
-			return Array.from(this.querySelectorAll(selector)) as T[];
-		}
-		return (this.querySelector(selector) as T) ?? null;
+		return all ? resolveParts<T>(this, ref) : resolvePart<T>(this, ref);
 	}
 
 	/** @internal Whether a value was assigned to this host under `propertyName` before it was upgraded. */

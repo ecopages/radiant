@@ -34,7 +34,7 @@ The decorator accepts a configuration object with exactly one target and an even
 | Parameter | Type | Description |
 | :-------- | :--- | :---------- |
 | `selector` | `string` | CSS selector to match target elements (uses event delegation). |
-| `ref` | `string` | Value of `data-ref` attribute to match (uses event delegation). |
+| `ref` | `string` | Value of `data-ref` attribute to match (uses event delegation). Fires only for a part the host owns: a click on a nested host's same-named part is ignored. |
 | `host` | `true` | Listen on the Element Host itself, so non-bubbling events such as `pointerenter` and `pointerleave` work. |
 | `window` | `true` | Listen on the global `window` object. |
 | `document` | `true` | Listen on the global `document` object. |

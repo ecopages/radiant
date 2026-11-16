@@ -100,6 +100,17 @@ When page-level JSX hydrates over a host the server rendered with Authored Child
 
 While connected, `slotted` comes wrapped in two empty text nodes, so place it once per render. `slottedElements` reads the top-level elements between them; it is empty before the first client render and on the server.
 
+## Part Scope
+
+A part is a node named with `data-ref`. It belongs to the nearest enclosing scope root: an upgraded Element Host, or the root element of a Controller Host while its controller is attached. `src/core/parts.ts` holds the rule, and `@query({ ref })`, `getRef` on both hosts, `@onEvent({ ref })` and `@bindTo({ ref })` all resolve through it, so an outer host never gets the same-named part of a nested host.
+
+- A part that is itself a nested host belongs to the host around it: `<rui-slider data-ref="seek">` is the outer host's `seek`.
+- Ownership is read from the current DOM on every read, with no cache. A nested Element Host starts a scope only once it has upgraded; before that its subtree belongs to the outer host. `RadiantController.connect()` starts a Controller Host scope and `disconnect()` ends it.
+- Third-party custom elements and catalog controllers (`createXController`) do not start a scope.
+- `getRef(name, true)` and `@query({ ref, all: true })` leave out nested hosts' parts and return document order. `@onEvent({ ref })` takes the closest `[data-ref=name]` from the event target and ignores it when another host owns it.
+- `@query({ selector })` is not scoped: it is the explicit way into a nested host.
+- The part name is escaped inside a quoted attribute selector (`\` and `"`). The server DOM shim does not decode escapes in attribute values, so a name containing either matches in the browser only.
+
 ## SSR Flow
 
 SSR works like this:

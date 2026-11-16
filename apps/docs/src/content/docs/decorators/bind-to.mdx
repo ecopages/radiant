@@ -46,7 +46,7 @@ Each target sets exactly one of `attr`, `bool`, `prop`, or `text`. `ref` and `se
 
 | Parameter | Type | Required | Description |
 | :-------- | :--- | :------- | :---------- |
-| `ref` | `string` | No | `data-ref` of a descendant. Omit both `ref` and `selector` to patch the host. |
+| `ref` | `string` | No | `data-ref` of a descendant the host owns, resolved on every write: a nested host's same-named part is not written. Omit both `ref` and `selector` to patch the host. |
 | `selector` | `string` | No | CSS selector of a descendant. |
 | `attr` | `string` | One write kind | `setAttribute` / `removeAttribute` (`null`/`undefined` removes). |
 | `bool` | `string` | One write kind | `toggleAttribute` from a boolean value. |
