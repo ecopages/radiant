@@ -41,6 +41,7 @@ Do not treat bindings as raw values. If logic needs a boolean, string, or number
 
 - A boolean on a standard HTML boolean attribute (`hidden`, `disabled`, `checked`, `open`, ...) binds by presence, with or without `attr:`: `true` writes it empty, `false` removes it. It is never written as `"false"`. A non-empty string such as `hidden="until-found"` is written as given.
 - Any other attribute writes `false` as `"false"` (`aria-expanded`, `data-open`). `null` and `undefined` remove it.
+- A signal or binding follows these rules for each value it holds, the same as a static value: a boolean binds by presence, any other value binds as that value written statically would. Binding a boolean attribute never re-runs `render()`.
 - `bool:name` binds any attribute by presence, such as a custom element's boolean attribute: `<x-panel bool:expanded={this.$.open} />`. It takes `boolean | null | undefined`.
 - `attr:name` forces a string attribute and `prop:name` forces a property, for example on a custom element.
 - Write `class`, never `className`: on a native element `className` is a type error and is not rendered.
@@ -79,7 +80,8 @@ Rules:
 
 - member access inline in JSX is fine for simple object keys
 - hoist `map` to a field initializer or cached host field — each `.map(...)` in `render()` creates a new derived binding
-- object props are shallow — projections update on whole-object replacement, not in-place nested mutation
+- a `createStore(...)` member binds by path: `this.$.media.position` patches when that path changes, a missing key is added, or `media` is replaced, without re-running `render()`; keep fast-changing values (a playhead, a level meter) in one store and bind their paths
+- plain object props are shallow — projections update on whole-object replacement, not in-place nested mutation
 - bracket lookups need `map`: `this.$.preference.map((p) => THEME_CONFIG[p].label)`, never `THEME_CONFIG[this.$.preference]`
 
 ## Class and style
