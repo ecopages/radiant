@@ -81,7 +81,9 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 	 *
 	 * @remarks Runs the first update cycle synchronously: batched `@onUpdated`
 	 * callbacks for changes queued before connection, the first render when the
-	 * controller overrides `render()`, `@bindTo`, then `updated(changed)`.
+	 * controller overrides `render()`, `@bindTo`, then `updated(changed)`. It returns
+	 * without the cycle when a connection callback disconnected the host, or
+	 * disconnected and reconnected it, in which case the nested connect ran the cycle.
 	 */
 	public connect(): void {
 		ensureLegacyHostReady(this, 'connect');
@@ -210,7 +212,6 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 	public createReactiveProp<T = unknown>(propertyName: string, options: ReactivePropertyOptions<T>): void {
 		const { type, defaultValue, transform } = options;
 
-		this.reactiveHost.getWritableMember(propertyName);
 		validateReactivePropertyDefault(type, defaultValue, !!transform?.fromAttribute);
 
 		const hostPropertyBridge = new ControllerHostPropertyBridge<T>(this.host, this, propertyName);

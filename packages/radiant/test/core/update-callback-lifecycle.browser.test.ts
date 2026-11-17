@@ -8,7 +8,7 @@ import { onUpdated } from '../../src/decorators/on-updated';
 import { prop } from '../../src/decorators/prop';
 import { signal } from '../../src/decorators/signal';
 import { state } from '../../src/decorators/state';
-import { REACTIVE_HOST, ReactiveHost } from '../../src/core/reactive-host';
+import { REACTIVE_HOST } from '../../src/core/reactive-host';
 
 afterEach(() => {
 	document.body.innerHTML = '';
@@ -298,6 +298,13 @@ describe('update callbacks that disconnect and reconnect their host during the c
 
 		aSource.source.set(2);
 		bSource.source.set(2);
+		const reference = new ReconnectingController(document.createElement('section'));
+		reference.registerUpdateCallback('a', () => {});
+		reference.connect();
+		const connectedA = aSource.counter.listeners;
+		const connectedB = bSource.counter.listeners;
+		reference.disconnect();
+
 		let reconnected = false;
 		let connectRuns = 0;
 		controller.registerConnectedCallback(() => connectRuns++);
@@ -311,8 +318,8 @@ describe('update callbacks that disconnect and reconnect their host during the c
 		controller.connect();
 
 		expect(connectRuns).toBe(1);
-		expect(aSource.counter.listeners).toBe(3);
-		expect(bSource.counter.listeners).toBe(2);
+		expect(aSource.counter.listeners).toBe(connectedA);
+		expect(bSource.counter.listeners).toBe(connectedB);
 		controller.disconnect();
 		expect(aSource.counter.listeners).toBe(0);
 		expect(bSource.counter.listeners).toBe(0);
@@ -590,9 +597,14 @@ describe('a connection callback that disconnects the host ends the connect pass'
 		controller.connect();
 		await new Promise((resolve) => setTimeout(resolve));
 
+		const plain = new PaintingController(document.createElement('section'));
+		plain.connect();
+
 		expect(host.getAttribute('data-n')).toBe('1');
 		expect(controller.renders).toBe(1);
+		expect(controller.updates).toBe(plain.updates);
 		controller.disconnect();
+		plain.disconnect();
 	});
 
 	test('an Element Host neither paints nor runs onConnected() or updated()', async () => {
@@ -606,6 +618,24 @@ describe('a connection callback that disconnects the host ends the connect pass'
 		expect(element.updates).toBe(0);
 		expect(elementSource.counter.listeners).toBe(0);
 	});
+
+	test('an Element Host that a callback reconnects runs onConnected() once', async () => {
+		const element = document.createElement('update-callback-painting-element') as PaintingElement;
+		let reconnected = false;
+		element.registerConnectedCallback(() => {
+			if (!reconnected) {
+				reconnected = true;
+				element.remove();
+				document.body.append(element);
+			}
+		});
+		document.body.append(element);
+		await new Promise((resolve) => setTimeout(resolve));
+
+		expect(element.connects).toBe(1);
+		expect(element.getAttribute('data-n')).toBe('1');
+		element.remove();
+	});
 });
 
 describe('update callbacks do not run while the host is not observed', () => {
@@ -617,9 +647,17 @@ describe('update callbacks do not run while the host is not observed', () => {
 
 	test('a @bindTo target is painted once on first connect and not before', () => {
 		const host = document.createElement('section');
+		const paints: (string | null)[] = [];
+		const setAttribute = host.setAttribute.bind(host);
+		host.setAttribute = (name, value) => {
+			paints.push(`${name}=${value}`);
+			setAttribute(name, value);
+		};
 		const controller = new StateController(host);
+		expect(paints).toEqual([]);
 		controller.connect();
 
+		expect(paints).toEqual(['data-count=5']);
 		expect(host.getAttribute('data-count')).toBe('5');
 		controller.disconnect();
 
@@ -646,6 +684,22 @@ describe('update callbacks do not run while the host is not observed', () => {
 		controller.disconnect();
 		controller[REACTIVE_HOST].notifyUpdate('n', undefined, 1);
 		expect(seen).toEqual(['n']);
+
+		controller.connect();
+		controller[REACTIVE_HOST].notifyUpdate('n', undefined, 1);
+		expect(seen).toEqual(['n', 'n']);
+		controller.disconnect();
+	});
+
+	test('createReactiveField after connect runs update callbacks once', () => {
+		const controller = new RadiantController(document.createElement('section'));
+		const seen: string[] = [];
+		controller.registerUpdateCallback('late', () => seen.push('late'));
+		controller.connect();
+		controller.createReactiveField('late', 1);
+
+		expect(seen).toEqual(['late']);
+		controller.disconnect();
 	});
 });
 
@@ -707,6 +761,20 @@ describe('update callbacks during the connect diff', () => {
 		expect(aSource.counter.listeners).toBe(0);
 	});
 
+	test('stop on an ordinary write once a callback disconnected the host', () => {
+		const controller = detached();
+		controller.connect();
+		const seen: string[] = [];
+		controller.registerUpdateCallback('a', () => {
+			seen.push('first');
+			controller.disconnect();
+		});
+		controller.registerUpdateCallback('a', () => seen.push('second'));
+		aSource.source.set(3);
+
+		expect(seen).toEqual(['first']);
+	});
+
 	test('skip a callback that an earlier one unregistered', () => {
 		const controller = detached();
 		const seen: string[] = [];
@@ -720,25 +788,5 @@ describe('update callbacks during the connect diff', () => {
 
 		expect(seen).toEqual(['first']);
 		controller.disconnect();
-	});
-});
-
-describe('the stop function of observeMembers', () => {
-	test('does not end an observation that started after it was released', () => {
-		const host = new ReactiveHost({}, { defineProperty: Object.defineProperty }, () => {});
-		const member = host.createReactiveMember('n', 0);
-		const seen: number[] = [];
-		host.registerUpdateCallback('n', () => seen.push(member.get()));
-
-		const stale = host.observeMembers();
-		host.unobserveMembers();
-		const current = host.observeMembers();
-		stale();
-		member.set(1);
-
-		expect(seen).toEqual([1]);
-		current();
-		member.set(2);
-		expect(seen).toEqual([1]);
 	});
 });

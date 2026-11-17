@@ -17,6 +17,14 @@ import type { ReactivePropHost } from '../standard/reactive-prop';
  * The decorated host is expected to expose `createReactiveProp(...)`, which
  * lets both `RadiantElement` and `RadiantController` share the same public
  * decorator while keeping their runtime channels different.
+ *
+ * @remarks A Controller Host has no construction-end hook, so its initializer runs at first connect and cannot
+ * tell a write made after `new` from a field initializer: both are an own data property. A defined own value
+ * that differs from the decorator default is replayed through the accessor once it exists, matching the standard
+ * decorators, where it is an ordinary write. As a consequence a legacy controller field initializer that differs
+ * from an explicit `defaultValue` wins over it, unlike on an Element Host and the standard decorators. A written
+ * value equal to the default, or any value when the prop has no `defaultValue`, is not replayed, so a value the
+ * host element already held wins over it.
  */
 export function reactiveProp<T = unknown>(propOptions: ReactivePropertyOptions<T>) {
 	const { type, reflect, defaultValue, transform } = propOptions;
@@ -57,20 +65,11 @@ export function reactiveProp<T = unknown>(propOptions: ReactivePropertyOptions<T
 			bootstrapReactiveMember(element as unknown as ReactiveHostLike, propertyName, bootstrapValue);
 		});
 
-		/**
-		 * @remarks
-		 * A Controller Host has no construction-end hook, so this runs at its first connect and cannot tell a
-		 * write made after `new` from a field initializer: both are an own data property. A defined own value that
-		 * differs from the decorator default is replayed through the accessor once it exists, matching the standard
-		 * decorators, where it is an ordinary write. As a consequence a legacy controller field initializer that
-		 * differs from an explicit `defaultValue` wins over it, unlike on an Element Host.
-		 */
 		registerLegacyPostConstructionInitializer(target, (element, phase) => {
 			const host = element as ReactivePropHost<T> & Record<PropertyKey, unknown>;
 			const initializerValue = element[propertyName as keyof typeof element] as T | undefined;
 			const wasAssigned = host[ssrAssignedKey] === true;
-			const hasOwnStagingValue = Object.prototype.hasOwnProperty.call(element, propertyName);
-			const ownStagingValue = hasOwnStagingValue
+			const ownStagingValue = Object.prototype.hasOwnProperty.call(element, propertyName)
 				? ((element as Record<PropertyKey, unknown>)[propertyName] as T)
 				: undefined;
 			const resolvedDefaultValue = wasAssigned

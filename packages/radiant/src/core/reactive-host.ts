@@ -155,7 +155,8 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	 *
 	 * @returns Whether observation is still the one this pass started. When it is not, the host
 	 * disconnected under the pass, or a nested connect already ran the rest of the connect work, so
-	 * the caller must not flush.
+	 * the caller must not flush. A host that was already observing keeps its observation, so the pass
+	 * is still its own.
 	 */
 	public connectHost(): boolean {
 		const epoch = this.startObservation();
@@ -202,6 +203,7 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 		}
 
 		const epoch = this.startObservation();
+
 		return () => {
 			if (epoch === this.observationEpoch) {
 				this.unobserveMembers();
@@ -313,9 +315,10 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	 *
 	 * @remarks Runs the synchronous callbacks (`@bindTo`) now, only while members
 	 * are observed, and queues the member for the next batched cycle. Used for the
-	 * first-connect emit of `@prop` members. While unobserved the callbacks wait for
-	 * the connect diff, like the subscriptions they replace. Value changes flow
-	 * through the member `State`'s own subscription instead.
+	 * first-connect emit of `@prop` members. While unobserved the callbacks are skipped:
+	 * the connect diff runs them when the value differs from its snapshot, and the
+	 * post-sync pass paints `@bindTo`. Value changes flow through the member `State`'s
+	 * own subscription instead.
 	 */
 	public notifyUpdate(changedProperty: string, _oldValue: unknown, _value: unknown): void {
 		if (this.observing) {
@@ -551,11 +554,10 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	 * members are observed (host connected, or SSR preparation). The subscription is
 	 * released on disconnect and re-established on connect; writes made before
 	 * connect or while detached do not run it, but it runs once on connect when the
-	 * member's value differs from its last observed value. The connect diff visits
-	 * members in registration order with every subscription already in place: a write
-	 * during it to a member already visited runs its callbacks like any write, and a
-	 * write to one not yet visited waits for that member's own diff, which covers it. Used by `@bindTo`, whose
-	 * DOM writes must land with the value like `$` bindings. Use
+	 * member's value differs from its last observed value. During that diff a write
+	 * to a member already visited runs its callbacks like any write, and a write to
+	 * one not yet visited is covered by that member's own diff. Used by `@bindTo`,
+	 * whose DOM writes must land with the value like `$` bindings. Use
 	 * {@link registerUpdatedCallback} for procedures.
 	 */
 	public registerUpdateCallback(property: string, update: () => void): () => void {

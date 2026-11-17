@@ -1,6 +1,6 @@
 // @vitest-environment node
 import '../../src/server/install-ssr-runtime';
-import { describe, expect, test } from 'vitest';
+import { beforeAll, describe, expect, test } from 'vitest';
 import { RadiantController } from '../../src/core/radiant-controller';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { customElement } from '../../src/decorators/custom-element';
@@ -20,6 +20,10 @@ class DeclaredElement extends RadiantElement {
 }
 
 describe('a declared @prop that nothing assigned, on the server', () => {
+	beforeAll(() => {
+		installLightDomShim();
+	});
+
 	test('resolves a Controller Host prop to its defaultValue', async () => {
 		const seen: string[] = [];
 		await renderController(DeclaredController, {
@@ -46,8 +50,6 @@ describe('a declared @prop that nothing assigned, on the server', () => {
 	});
 
 	test('resolves an Element Host prop to its defaultValue', () => {
-		installLightDomShim();
-
 		expect(renderRadiantElementHostToString(new DeclaredElement())).toContain('label="fallback"');
 	});
 });
