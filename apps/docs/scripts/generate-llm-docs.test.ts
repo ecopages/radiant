@@ -61,7 +61,7 @@ test('generateLlmDocs writes llms.txt and Markdown exports in sidebar order', as
 		expect(llmsTxt).toContain('This `llms.txt` file is an index only.');
 		expect(llmsTxt).toContain('/docs-llm/<section>/<slug>.md');
 		expect(llmsTxt).not.toContain('/llms-content/');
-		expect(llmsTxt).toContain('npm install @ecopages/radiant @ecopages/jsx');
+		expect(llmsTxt).toContain('npm install @ecopages/radiant @ecopages/jsx @ecopages/signals');
 		expect(llmsTxt).toContain('## Agent Skill');
 		expect(llmsTxt).not.toContain('Excluded');
 		expect(llmsTxt).not.toContain('## llms-fixture');

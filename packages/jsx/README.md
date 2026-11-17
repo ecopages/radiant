@@ -133,13 +133,13 @@ Radiant integrations should prefer Radiant-owned SSR entrypoints when they exist
 
 ## Install And Configure
 
-Install both packages:
+Install Radiant with its peer dependencies:
 
 ```bash
-npm install @ecopages/radiant @ecopages/jsx
+npm install @ecopages/radiant @ecopages/jsx @ecopages/signals
 ```
 
-`@ecopages/signals` is a peer dependency of jsx. Installing radiant brings signals transitively, which satisfies that peer requirement.
+`@ecopages/signals` is a peer dependency of both Radiant and JSX. Both packages must resolve the same Signals instance for shared reactivity.
 
 Minimum TypeScript setup:
 

@@ -30,9 +30,6 @@
 		"test:lib": "pnpm run test:standard && pnpm run test:legacy && pnpm run test:vite-plugin-radiant",
 		"test:lib:coverage": "vitest run --coverage --project node && vitest run --coverage --project node -- --legacy"
 	},
-	"dependencies": {
-		"@ecopages/signals": "workspace:>=0.11.0"
-	},
 	"devDependencies": {
 		"@babel/core": "^7.28.0",
 		"@babel/plugin-proposal-decorators": "^7.28.0",
@@ -56,7 +53,8 @@
 		"vitest": "^4.1.12"
 	},
 	"peerDependencies": {
-		"@ecopages/jsx": ">=0.11.0"
+		"@ecopages/jsx": ">=0.11.0",
+		"@ecopages/signals": ">=0.11.0"
 	},
 	"files": [
 		"dist/**"

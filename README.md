@@ -23,9 +23,9 @@ Internal tooling (not published): [shared Oxlint rules](./packages/oxlint-config
 The JSX package README is the source of truth for entrypoint boundaries. In particular, [packages/jsx/README.md](./packages/jsx/README.md) documents when to use `@ecopages/jsx/server` directly, including the SSR hydration binding scope helpers intended for framework integrations that compose one page from multiple server renders.
 
 ```sh
-bun add @ecopages/radiant @ecopages/jsx
+bun add @ecopages/radiant @ecopages/jsx @ecopages/signals
 ```
 
-`@ecopages/signals` installs transitively with `@ecopages/radiant`.
+`@ecopages/jsx` and `@ecopages/signals` are peer dependencies of `@ecopages/radiant`. Radiant and JSX must share one Signals instance.
 
 Maintainers: versioning and publishing live in [`.agents/skills/changesets/`](.agents/skills/changesets/SKILL.md).

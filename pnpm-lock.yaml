@@ -300,10 +300,6 @@ importers:
         version: 1.81.0
 
   packages/radiant:
-    dependencies:
-      '@ecopages/signals':
-        specifier: workspace:>=0.11.0
-        version: link:../signals/dist
     devDependencies:
       '@babel/core':
         specifier: ^7.28.0
@@ -317,6 +313,9 @@ importers:
       '@ecopages/jsx':
         specifier: workspace:*
         version: link:../jsx/dist
+      '@ecopages/signals':
+        specifier: workspace:*
+        version: link:../signals/dist
       '@oxc-project/runtime':
         specifier: ^0.141.0
         version: 0.141.0
