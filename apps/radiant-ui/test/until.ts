@@ -163,3 +163,23 @@ export async function sampleFrames<T>(count: number, read: () => T): Promise<T[]
 export function afterDeferredDestroy(): Promise<void> {
 	return new Promise((resolve) => setTimeout(resolve));
 }
+
+/**
+ * Records every value written to `media.currentTime` and still performs the write.
+ *
+ * @remarks A seek that the element drops, such as one overtaken by `load()`, never fires `seeking`, so the write
+ * itself is what shows that something tried to seek.
+ */
+export function recordSeekWrites(media: HTMLMediaElement): number[] {
+	const writes: number[] = [];
+	const descriptor = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'currentTime')!;
+	Object.defineProperty(media, 'currentTime', {
+		configurable: true,
+		get: () => descriptor.get!.call(media),
+		set: (value: number) => {
+			writes.push(value);
+			descriptor.set!.call(media, value);
+		},
+	});
+	return writes;
+}

@@ -6,7 +6,15 @@ import '../src/content/components/recipes/audio-player.css';
 import { syncExamples } from '../src/components/primitive-example/mount-example';
 import { barsFollow, barsRest, coverage, describeAudioPlayerForm, playToEnd } from './audio-player-shared';
 import { mountForm, trackListeners } from './mount-recipe';
-import { fakeTimers, sampleFrames, until, untilFrame, afterDeferredDestroy } from './until';
+import {
+	fakeTimers,
+	sampleFrames,
+	until,
+	untilFrame,
+	afterDeferredDestroy,
+	nothingFollows,
+	recordSeekWrites,
+} from './until';
 
 type Slider = HTMLElement & { value: number[]; disabled: boolean };
 
@@ -149,15 +157,15 @@ describe('audio player (element)', () => {
 		const seek = root.querySelector<Slider>('[data-seek]')!;
 		await until(() => expect(seek.disabled).toBe(false));
 		const player = audio(root);
-		const seeks: number[] = [];
-		player.addEventListener('seeking', () => seeks.push(player.currentTime));
+		const writes = recordSeekWrites(player);
 
 		fakeTimers();
 		drag(seek, audio(root).duration / 2);
 		root.remove();
-		vi.advanceTimersByTime(250);
+		await vi.advanceTimersByTimeAsync(250);
+		await nothingFollows('a seek from the scrub that was pending when the element left');
 
-		expect(seeks).toEqual([]);
+		expect(writes).toEqual([]);
 	});
 
 	test('removes every listener and stops the sound when the element leaves, and a fresh copy works', async () => {

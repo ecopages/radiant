@@ -5,7 +5,7 @@ import '../src/components/primitive-example/primitive-example.css';
 import '../src/content/components/recipes/audio-player.css';
 import { barsFollow, barsRest, coverage, describeAudioPlayerForm, playToEnd } from './audio-player-shared';
 import { mountComponent, trackListeners } from './mount-recipe';
-import { fakeTimers, sampleFrames, until, untilFrame, afterDeferredDestroy } from './until';
+import { fakeTimers, recordSeekWrites, sampleFrames, until, untilFrame, afterDeferredDestroy } from './until';
 
 type Slider = HTMLElement & { value: number[]; disabled: boolean };
 
@@ -150,12 +150,14 @@ describe('audio player (component)', () => {
 			await until(() => expect(audio(root).paused).toBe(false));
 			const player = audio(root);
 			const half = player.duration / 2;
+			const writes = recordSeekWrites(player);
 			const seek = root.querySelector<Slider>('[data-seek]')!;
 			fakeTimers();
 			drag(seek, audio(root).duration / 2);
 			root.remove();
 			await vi.advanceTimersByTimeAsync(200);
 
+			expect(writes).toEqual([]);
 			expect(player.currentTime).toBeLessThan(half - 1);
 			expect(player.paused).toBe(true);
 			expect(player.hasAttribute('src')).toBe(false);
