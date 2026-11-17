@@ -152,7 +152,6 @@ describe('RuiHoverCard', () => {
 		expect(document.activeElement).not.toBe(trigger);
 
 		document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-		vi.advanceTimersByTime(700);
 		await settled();
 
 		expect(document.activeElement).toBe(trigger);
@@ -160,6 +159,10 @@ describe('RuiHoverCard', () => {
 		expect(events).toEqual([true, false]);
 
 		trigger.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+		await settled();
+		expect(content.hidden).toBe(true);
+		expect(events).toEqual([true, false]);
+
 		vi.advanceTimersByTime(700);
 		await settled();
 		expect(content.hidden).toBe(true);
@@ -167,6 +170,39 @@ describe('RuiHoverCard', () => {
 
 		trigger.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
 		trigger.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+		vi.advanceTimersByTime(700);
+		await settled();
+		expect(content.hidden).toBe(false);
+
+		cleanup();
+	});
+
+	it('reopens at once on focus within the cooldown after a close, and waits the delay after it', async () => {
+		fakeTimers(['setTimeout', 'clearTimeout', 'Date']);
+		const { host, cleanup } = mount(
+			<RuiHoverCard delay={600} closeDelay={0}>
+				<RuiHoverCardTrigger>
+					<button type="button">Trigger</button>
+				</RuiHoverCardTrigger>
+				<RuiHoverCardContent>Preview</RuiHoverCardContent>
+			</RuiHoverCard>,
+		);
+		await settled();
+		const card = getCard(host);
+		const content = getContent(host);
+		const trigger = getTriggerButton(host);
+
+		card.setOpen(true);
+		card.setOpen(false);
+		trigger.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+		await settled();
+		expect(content.hidden).toBe(false);
+
+		card.setOpen(false);
+		vi.advanceTimersByTime(700);
+		trigger.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+		await settled();
+		expect(content.hidden).toBe(true);
 		vi.advanceTimersByTime(700);
 		await settled();
 		expect(content.hidden).toBe(false);
