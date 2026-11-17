@@ -4,6 +4,7 @@ import { state as createSignal, type WritableSignal } from '@ecopages/signals';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { customElement } from '../../src/decorators/custom-element';
 import { prop } from '../../src/decorators/prop';
+import { fromStore } from '../../src/decorators/from-store';
 import { signal } from '../../src/decorators/signal';
 import { state } from '../../src/decorators/state';
 
@@ -103,6 +104,31 @@ describe('pre-upgrade property assignment', () => {
 		const message = String(warn.mock.calls[0]?.[0]);
 		expect(message).toContain('"data"');
 		expect(message).toContain('discarded');
+		expect(message).toContain('@prop');
+	});
+
+	test('@fromStore keeps the store snapshot and warns once for a value assigned before upgrade', () => {
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+		const tag = nextTag('from-store');
+		const host = createUnupgradedHost(tag, 'count', 99);
+		const store = {
+			getState: () => 3,
+			subscribe: () => () => {},
+		};
+
+		@customElement(tag)
+		class Host extends RadiantElement {
+			@fromStore(store)
+			count!: number;
+		}
+
+		expect(customElements.get(tag)).toBe(Host);
+		expect((host as unknown as Host).count).toBe(3);
+		expect(warn).toHaveBeenCalledTimes(1);
+		const message = String(warn.mock.calls[0]?.[0]);
+		expect(message).toContain('"count"');
+		expect(message).toContain('discarded');
+		expect(message).toContain('@fromStore');
 		expect(message).toContain('@prop');
 	});
 

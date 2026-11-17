@@ -14,7 +14,7 @@ export const config = {
 
 # External stores
 
-Use `fromExternalStore(...)` when the source of truth is **already** a Zustand, Redux, or `useSyncExternalStore` store, and a Radiant host should read a slice of it. `createStore(...)` is the right choice when Radiant owns the data.
+Use `@fromStore(store, select)` on a host, or `fromExternalStore(...)` as the signal, when the source of truth is **already** a Zustand, Redux, or `useSyncExternalStore` store. `createStore(...)` is the right choice when Radiant owns the data.
 
 You need this when several things write the same cart, session, or feature flag: a checkout form, analytics, maybe a React island, and a Radiant badge on the header. Copying `store.getState()` into `@state` on every dispatch re-renders the whole host. The store stays in charge of writes. The host binds one slice.
 
@@ -28,7 +28,7 @@ The count patches in place (`this.$.count`). The list re-renders because its sha
 | --- | --- |
 | State that belongs to this host | `@state` / `@prop` |
 | Nested data Radiant owns | `createStore(...)` as a host member |
-| A store other code already writes | `fromExternalStore(...)` |
+| A store other code already writes | `@fromStore(...)` / `fromExternalStore(...)` |
 
 `fromExternalStore` is read-only. There is no `.set()`. Dispatch, `setState`, or the store's actions stay on the store.
 
@@ -42,18 +42,13 @@ const count = fromExternalStore(store, (state) => state.items.length);
 
 `store` is anything with `subscribe` and either `getSnapshot` (the React contract) or `getState` (Zustand and Redux). An optional `getServerSnapshot` is the value used until something subscribes.
 
-On a host:
+On a host, [@fromStore](/docs/decorators/from-store) is the field:
 
 ```tsx
 @customElement('cart-badge')
 class CartBadge extends RadiantElement<{ count: number }> {
-	constructor() {
-		super();
-		this.registerReactiveMember(
-			'count',
-			fromExternalStore(cartStore, (state) => state.items.length),
-		);
-	}
+	@fromStore(cartStore, (state) => state.items.length)
+	count!: number;
 
 	override render() {
 		return <span>{this.$.count}</span>;

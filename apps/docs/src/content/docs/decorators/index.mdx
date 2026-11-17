@@ -9,7 +9,7 @@ order: 999
 Radiant decorators fall into a few groups:
 
 - host registration and HTML input: [@customElement](/docs/decorators/custom-element), [@controller](/docs/decorators/controller), [@attr](/docs/decorators/attr), [@prop](/docs/decorators/prop)
-- reactive state and bindings: [@state](/docs/decorators/state), [@signal](/docs/decorators/signal), [@bindTo](/docs/decorators/bind-to), [@onUpdated](/docs/decorators/on-updated)
+- reactive state and bindings: [@state](/docs/decorators/state), [@signal](/docs/decorators/signal), [@fromStore](/docs/decorators/from-store), [@bindTo](/docs/decorators/bind-to), [@onUpdated](/docs/decorators/on-updated)
 - DOM and event wiring: [@onEvent](/docs/decorators/on-event), [@event](/docs/decorators/event), [@query](/docs/decorators/query) and `@queryAll`, [@ref](/docs/decorators/ref)
 - method helpers: [@bound](/docs/decorators/bound), [@debounce](/docs/decorators/debounce)
 
@@ -25,7 +25,7 @@ For the controller capability matrix, see [RadiantController](/docs/components/r
 Code outside a host can assign to an element before its tag is defined, for example to a server-rendered host whose definition loads later. The assignment becomes an own property of the not-yet-upgraded element. What happens to it at upgrade depends on the member:
 
 - `@prop` adopts it, and it wins over an authored attribute. Definition timing does not matter, so never defer an element definition to avoid losing input.
-- `@state` and `@signal` are internal, not public input. They keep their initializer and discard the value.
+- `@state`, `@signal` and `@fromStore` are internal, not public input. They keep their initializer (or the store snapshot) and discard the value.
 - A class accessor (hand-written `get`/`set`, an `accessor` field, or a library accessor decorator such as MobX `@observable accessor`) is shadowed by the own property, so the accessor and any reactivity behind it never sees the value.
 
 In development, the last two cases warn once per tag and member. Production builds drop the warnings, and `setDevWarningsEnabled(false)` from `@ecopages/jsx/jsx-dev-runtime` silences them.
@@ -65,6 +65,7 @@ To recover a shadowed accessor after upgrade, save the value, `delete` the own p
 - use [@prop](/docs/decorators/prop) when the value is public API on a host
 - use [@state](/docs/decorators/state) for plain internal host state
 - use [@signal](/docs/decorators/signal) when the field itself should be a writable signal
+- use [@fromStore](/docs/decorators/from-store) when the value is a slice of a Zustand, Redux, or `useSyncExternalStore` store this host does not own
 
 ## Typing Decorated Fields
 
@@ -112,6 +113,7 @@ A field that disagrees with an option is rejected on the decorator. TypeScript m
 
 - [@state](/docs/decorators/state): any type. It is the type [@bindTo](/docs/decorators/bind-to) passes to `map`.
 - [@signal](/docs/decorators/signal): `WritableSignal<T>`, with `initial` a `T` and `source` a `WritableSignal<T>`, or a function returning one.
+- [@fromStore](/docs/decorators/from-store): the value `select` returns, or the whole snapshot without it. That is the type [@bindTo](/docs/decorators/bind-to) passes to `map`.
 - [@bindTo](/docs/decorators/bind-to): `map` receives the field type, so `@bindTo({ attr: 'data-n', map: (v) => v.toFixed() }) @state n = 0` types `v` as `number`. On a `@signal` field declared `WritableSignal<number>` it also types `v` as `number`, the value the runtime passes.
 - [@query](/docs/decorators/query): `T | null`, the first match of a selector or `null`. [@queryAll](/docs/decorators/query): `T[]` of elements, never `null`.
 - [@ref](/docs/decorators/ref): `T | null`. [@refAll](/docs/decorators/ref): `T[]`.
@@ -159,7 +161,7 @@ To get the field checks and drop the type arguments, compile with standard decor
 
 ## Recommended Reading Order
 
-1. Start with [@attr](/docs/decorators/attr), [@state](/docs/decorators/state), and [@signal](/docs/decorators/signal).
+1. Start with [@attr](/docs/decorators/attr), [@state](/docs/decorators/state), and [@signal](/docs/decorators/signal). Add [@fromStore](/docs/decorators/from-store) when the host reads a store it does not own.
 2. If the host keeps authored light DOM, read [@bindTo](/docs/decorators/bind-to) for value-to-DOM paint and [@onEvent](/docs/decorators/on-event) for events.
 3. If the host renders, read [@onUpdated](/docs/decorators/on-updated) only for procedures that are not a straight DOM copy, and use `this.$` for leaves in `render()`.
 4. For custom-element public API, add [@prop](/docs/decorators/prop).

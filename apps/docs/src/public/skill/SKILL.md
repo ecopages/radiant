@@ -25,7 +25,7 @@ Use `llms.txt` for a compact map, then the full docs for API details.
 ## When to use this skill
 
 - Creating or editing a `RadiantElement` or `RadiantController`
-- Choosing `@prop` / `@state` / `@signal`, or `@customElement` / `@controller`
+- Choosing `@prop` / `@state` / `@signal` / `@fromStore`, or `@customElement` / `@controller`
 - Choosing plain reads (`this.count`) vs JSX bindings (`this.$.count`) vs `@bindTo`
 - Wiring SSR, hydration, host rendering, or slotted content
 - Reviewing docs or examples so they teach the Radiant model, not React habits
@@ -57,7 +57,7 @@ Three paint paths. They are not interchangeable:
 
 - `this.count` — raw reactive read; tracked in `render()`; drives host rerenders
 - `this.$.count` / `this.bindings.count` / `this.bind('count')` — JSX binding; patches a leaf the host's own `render()` / `hydrate()` created
-- `@bindTo(...)` — copy a `@prop` / `@state` / `@signal` field onto existing DOM (the host, or a `ref` / `selector` descendant). Sit it on the field. Do not `@query` a node only to write into it.
+- `@bindTo(...)` — copy a `@prop` / `@state` / `@signal` / `@fromStore` field onto existing DOM (the host, or a `ref` / `selector` descendant). Sit it on the field. Do not `@query` a node only to write into it.
 
 Use a **plain read** when the value shapes render logic (branches, comparisons, list shape, slot fallback, `class` / `style` composition, handlers). Use a **JSX binding** for leaf text, whole attribute values, boolean attrs (`hidden={this.$.closed}`, or `bool:name` for a non-standard one), and `prop:*` in `render()`. Use **`@bindTo`** for the same leaf writes when the host does not own that DOM. Pick one form per field: a `@state` or `@prop` field both bound with `this.$` and read in `render()`, or one that re-runs `render()` 30 times in a second, logs a development warning once per class and field (for a hot field that shapes structure, derive a coarser field for `render()`). Never use a JSX binding as a raw value in control flow. `@onUpdated` is a procedure (focus, timers, joined ARIA), not a paint API.
 
@@ -85,7 +85,7 @@ Read only the modules relevant to the task. Each file is one level deep from thi
 | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | [reference/reactive-model.md](reference/reactive-model.md) | Bindings vs plain reads vs `@bindTo`, attribute rules (`bool:`, `false`, `class`), derived `.map`, class/style                            |
 | [reference/hosts.md](reference/hosts.md)                   | Element vs controller, public props vs internal bindings types, children and named regions                                                |
-| [reference/decorators.md](reference/decorators.md)         | `@prop` / `@attr` / `@state` / `@signal`, field types, `@bindTo`, `@query`, `@ref`, `@onEvent`, `@onUpdated`, `@bound`, `@debounce`       |
+| [reference/decorators.md](reference/decorators.md)         | `@prop` / `@attr` / `@state` / `@signal` / `@fromStore`, field types, `@bindTo`, `@query`, `@ref`, `@onEvent`, `@onUpdated`, `@bound`, `@debounce` |
 | [reference/context.md](reference/context.md)               | Provide/consume, `@contextSelector` vs `@onContextUpdate`, manual `ContextRequestEvent` and other protocol libraries, context field types |
 | [reference/ssr.md](reference/ssr.md)                       | Server entrypoints, hydrate modes, nested and page-level hydration, render scope                                                          |
 | [reference/authoring.md](reference/authoring.md)           | Authoring rules, development warnings, review checklist, output shape                                                                     |

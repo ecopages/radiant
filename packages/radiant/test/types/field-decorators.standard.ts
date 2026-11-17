@@ -8,11 +8,12 @@
  * on the field type for contextual typing. Forms that must compile in both
  * decorator modes live in `field-decorators.ts`.
  */
-import { state as createState, type WritableSignal } from '@ecopages/signals';
+import { state as createState, type ExternalStoreSource, type WritableSignal } from '@ecopages/signals';
 import { RadiantController } from '../../src/core/radiant-controller';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { attr } from '../../src/decorators/attr';
 import { bindTo } from '../../src/decorators/bind-to';
+import { fromStore } from '../../src/decorators/from-store';
 import { prop } from '../../src/decorators/prop';
 import { signal } from '../../src/decorators/signal';
 import { state } from '../../src/decorators/state';
@@ -20,6 +21,11 @@ import { state } from '../../src/decorators/state';
 type Mode = 'a' | 'b';
 
 const label = createState('');
+
+const cartStore: ExternalStoreSource<{ n: number; label: string }> = {
+	getState: () => ({ n: 0, label: 'a' }),
+	subscribe: () => () => {},
+};
 
 export class StandardElementFields extends RadiantElement {
 	// @ts-expect-error defaultValue disagrees with the field
@@ -67,6 +73,15 @@ export class StandardElementFields extends RadiantElement {
 	@bindTo({ attr: 'data-n', map: (v) => v?.toFixed() })
 	@signal<number | undefined>({ initial: 0 })
 	b13!: WritableSignal<number | undefined>;
+	@bindTo({ attr: 'data-n', map: (v) => v.toFixed() })
+	@fromStore(cartStore, (s) => s.n)
+	f1!: number;
+	// @ts-expect-error select returns a number
+	@fromStore(cartStore, (s) => s.n) f2!: string;
+	// @ts-expect-error map receives the selected number
+	@bindTo({ attr: 'data-n', map: (v: string) => v })
+	@fromStore(cartStore, (s) => s.n)
+	f3!: number;
 }
 
 export class StandardControllerFields extends RadiantController {

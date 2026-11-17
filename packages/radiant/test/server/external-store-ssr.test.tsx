@@ -4,6 +4,7 @@ import { fromExternalStore } from '@ecopages/signals';
 import { describe, expect, test } from 'vitest';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { customElement } from '../../src/decorators/custom-element';
+import { fromStore } from '../../src/decorators/from-store';
 import { renderComponentToString } from '../../src/server/render-component';
 
 describe('fromExternalStore during server rendering', () => {
@@ -30,6 +31,37 @@ describe('fromExternalStore during server rendering', () => {
 				return <p data-ref="label">{this.$.label}</p>;
 			}
 		}
+
+		const html = await renderComponentToString(Host);
+
+		expect(html).toContain('server');
+		expect(html).not.toContain('client');
+		expect(store.listenerCount()).toBe(0);
+	});
+
+	test('@fromStore paints getServerSnapshot and leaves the store unsubscribed', async () => {
+		const listeners = new Set<() => void>();
+		const store = {
+			getSnapshot: () => 'client',
+			getServerSnapshot: () => 'server',
+			listenerCount: () => listeners.size,
+			subscribe(listener: () => void) {
+				listeners.add(listener);
+				return () => listeners.delete(listener);
+			},
+		};
+
+		@customElement('from-store-ssr-host')
+		class Host extends RadiantElement<{ label: string }> {
+			@fromStore(store)
+			label!: string;
+
+			override render() {
+				return <p data-ref="label">{this.$.label}</p>;
+			}
+		}
+
+		expect(customElements.get('from-store-ssr-host')).toBe(Host);
 
 		const html = await renderComponentToString(Host);
 

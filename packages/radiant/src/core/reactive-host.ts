@@ -54,6 +54,14 @@ export interface ReactiveHostInternals {
 	 * `@attr`'s. A read-only member may not replace the member behind a marked name.
 	 */
 	markFieldAccessor(propertyName: string): void;
+	/**
+	 * Defines a getter for a registered read-only member. Assignment throws.
+	 *
+	 * @remarks The getter reads the current member, so `registerReactiveMember` can
+	 * replace it (a store from context). It does not mark a field accessor: a marked
+	 * name cannot be replaced by a read-only member.
+	 */
+	defineReadonlyReactiveAccessor(propertyName: string): void;
 	registerPostSync(callback: () => void): void;
 	registerConnectSync(callback: () => void): void;
 	registerUpdatedCallback(keys: readonly string[], callback: UpdatedCallback): () => void;
@@ -621,6 +629,33 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 				const next = options.fromProperty ? options.fromProperty(newValue) : newValue;
 				options.signal.set(next);
 				options.onSet?.(next);
+			},
+			enumerable: true,
+			configurable: true,
+		});
+	}
+
+	public defineReadonlyReactiveAccessor(propertyName: string): void {
+		let get = () => {
+			const member = this.getReactiveMember(propertyName);
+
+			if (!member) {
+				throw new Error(`[@ecopages/radiant] "${propertyName}" is not registered as a reactive member.`);
+			}
+
+			return member.get();
+		};
+
+		try {
+			if (process.env.NODE_ENV !== 'production' && this.renderWarnings) {
+				get = this.renderWarnings.trackReads(propertyName, get);
+			}
+		} catch {}
+
+		this.access.defineProperty(this.host, propertyName, {
+			get,
+			set: () => {
+				throw new TypeError(`[@ecopages/radiant] "${propertyName}" is a read-only member and cannot be assigned.`);
 			},
 			enumerable: true,
 			configurable: true,

@@ -1,0 +1,55 @@
+---
+title: "@fromStore"
+description: "Read a Zustand or Redux store as a host field."
+order: 6
+---
+
+# @fromStore
+
+`@fromStore(store, select)` is a read-only host field over a Zustand, Redux, or `useSyncExternalStore` store. Use it when the source of truth is **already** that store. `@state` is for values this host owns. `createStore(...)` is for nested data Radiant owns.
+
+## Example
+
+```tsx
+import { RadiantElement, customElement, fromStore } from '@ecopages/radiant';
+
+@customElement('cart-badge')
+export class CartBadge extends RadiantElement<{ count: number }> {
+	@fromStore(cartStore, (state) => state.items.length)
+	count!: number;
+
+	override render() {
+		return <span>{this.$.count}</span>;
+	}
+}
+```
+
+The declared field type is the selected value, and is the type [@bindTo](/docs/decorators/bind-to) passes to `map`: see [Typing Decorated Fields](/docs/decorators#typing-decorated-fields).
+
+Assignment throws. Write through `cartStore.setState`, `dispatch`, or the store's actions.
+
+## When The Store Is Not Known On The Class
+
+A field decorator cannot see a store that arrives later through context. Provide the store object, then register a slice in `@onContextUpdate`:
+
+```tsx
+@onContextUpdate({ context: cartContext })
+onCart(store: typeof cartStore) {
+	this.registerReactiveMember(
+		'count',
+		fromExternalStore(store, (state) => state.items.length),
+	);
+}
+```
+
+`@contextSelector` is the wrong tool: it reacts when the context **value** is replaced, and a Zustand store is not replaced on `setState`.
+
+## Selectors
+
+The selector runs on every store notification. If the selected value is `Object.is` equal to the last one, nothing notifies. Return a stable slice (a primitive, `state.items`), or pass `{ equals }`. Do not return a new object or array on every call.
+
+## See Also
+
+- [External stores](/docs/signals/signals-external-store)
+- [@state](/docs/decorators/state)
+- [@signal](/docs/decorators/signal)

@@ -221,10 +221,10 @@ render() {
 Every reactive host member (`@state`, `@prop`, `@attr`, and `signal()`) is backed by a signals `State` inside the host. Decorator APIs are unchanged, but advanced integrations can work with that member registry directly:
 
 - `createReactiveMember(name, initialValue)` — create and register host-owned member state
-- `registerReactiveMember(name, signal)` — register externally owned state, such as a user `signal()`; a read-only `{ get, subscribe }` object is enough, and it drives `this.$`, `@onUpdated` and `@bindTo` but cannot be redeclared by `@prop`, `@state`, `@attr` or `@signal`, and cannot replace a member that backs a `@prop`, `@state` or `@attr` field
+- `registerReactiveMember(name, signal)` — register externally owned state, such as a user `signal()` or `fromExternalStore(...)`; a read-only `{ get, subscribe }` object is enough, and it drives `this.$`, `@onUpdated` and `@bindTo` but cannot be redeclared by `@prop`, `@state`, `@attr` or `@signal`, and cannot replace a member that backs a `@prop`, `@state` or `@attr` field. Prefer `@fromStore(store, select)` when the store is known on the class.
 - `getReactiveMember(name)` — read the member state registered for a property name; it returns the member typed read-only (`get` and `subscribe`; it is the same object, not a wrapper), so write through the host field instead of the member
 
-Use these when you build host adapters, tests, or custom decorators. Prefer `@state`, `@prop`, `@attr`, and `signal()` in application code.
+Use these when you build host adapters, tests, or custom decorators. Prefer `@state`, `@prop`, `@attr`, `@fromStore`, and `signal()` in application code.
 
 **Removed in 0.3.0:** `trackReactiveRead(...)`, `registerReactiveDependencyReader(...)`, and the exported `ReactiveField` metadata type. Dependency tracking now flows through member `State.get()` and JSX bindings adapted from that state.
 

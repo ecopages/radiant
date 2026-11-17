@@ -48,7 +48,7 @@ import { areJsxDevWarningsEnabled, warnOnceInDevelopment } from '../../helpers/d
 export function warnDiscardedPreUpgradeValue(
 	host: ReactiveHostLike,
 	memberName: string,
-	decorator: '@state' | '@signal',
+	decorator: '@state' | '@signal' | '@fromStore',
 ): void {
 	const tag = (host as unknown as Element).localName;
 	warnOnceInDevelopment(`${tag}:${memberName}`, () =>

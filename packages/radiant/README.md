@@ -169,16 +169,14 @@ A direct reactive read in `render()` rebuilds the JSX tree when that value chang
 
 ### External stores
 
-When the source of truth is a Zustand, Redux, or `useSyncExternalStore` store that other code already writes, do not copy snapshots into `@state`. `fromExternalStore(...)` from `@ecopages/signals` is a read-only signal over that store. Register it as a host member; the host subscribes while connected and paints one snapshot on the server.
+When the source of truth is a Zustand, Redux, or `useSyncExternalStore` store that other code already writes, do not copy snapshots into `@state`. `@fromStore(store, select)` is a read-only host field over that store. The host subscribes while connected and paints one snapshot on the server.
 
 ```tsx
-this.registerReactiveMember(
-	'count',
-	fromExternalStore(cartStore, (state) => state.items.length),
-);
+@fromStore(cartStore, (state) => state.items.length)
+count!: number;
 ```
 
-`{this.$.count}` patches that node. A list whose shape changes should read the selected value in `render()`. Writes stay on the store. Provide the store through context and let each descendant select its own slice; `@contextSelector` will not see `setState` because the store object is not replaced. See [External stores](https://radiant.ecopages.app/docs/signals/signals-external-store).
+`{this.$.count}` patches that node. Assignment throws; writes stay on the store. A list whose shape changes should read the selected value in `render()`. When the store arrives through context, `registerReactiveMember('count', fromExternalStore(store, select))` in `@onContextUpdate` instead: `@contextSelector` will not see `setState` because the store object is not replaced. See [External stores](https://radiant.ecopages.app/docs/signals/signals-external-store) and [@fromStore](https://radiant.ecopages.app/docs/decorators/from-store).
 
 ## SSR And Hydration
 
@@ -356,6 +354,7 @@ These are the documented public import paths exposed by the package.
 | `@ecopages/radiant/decorators/custom-element`     | `@customElement(...)`                                                                                                                                                               |
 | `@ecopages/radiant/decorators/debounce`           | `@debounce(...)`                                                                                                                                                                    |
 | `@ecopages/radiant/decorators/event`              | `@event(...)`                                                                                                                                                                       |
+| `@ecopages/radiant/decorators/from-store`         | `@fromStore(...)`                                                                                                                                                                   |
 | `@ecopages/radiant/decorators/on-event`           | `@onEvent(...)`                                                                                                                                                                     |
 | `@ecopages/radiant/decorators/on-updated`         | `@onUpdated(...)`                                                                                                                                                                   |
 | `@ecopages/radiant/decorators/prop`               | `@prop(...)`                                                                                                                                                                        |

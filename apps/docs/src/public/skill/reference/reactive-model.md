@@ -55,7 +55,7 @@ Do not treat bindings as raw values. If logic needs a boolean, string, or number
 open = false;
 ```
 
-Exactly one of `attr`, `bool`, `prop`, or `text`. `ref` and `selector` are mutually exclusive; omit both to patch the host. Sit `@bindTo` on a `@prop` / `@state` / `@signal` field. Missing nodes and non-reactive fields are skipped. Two write kinds, or both `ref` and `selector`, throw when the decorator is applied.
+Exactly one of `attr`, `bool`, `prop`, or `text`. `ref` and `selector` are mutually exclusive; omit both to patch the host. Sit `@bindTo` on a `@prop` / `@state` / `@signal` / `@fromStore` field. Missing nodes and non-reactive fields are skipped. Two write kinds, or both `ref` and `selector`, throw when the decorator is applied.
 
 `@onUpdated` does not replace this. Use it for procedures (focus, timers, joined ARIA, derived state).
 

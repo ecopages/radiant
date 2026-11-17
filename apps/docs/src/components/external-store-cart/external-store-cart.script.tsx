@@ -1,19 +1,13 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
-import { fromExternalStore } from '@ecopages/signals';
-import { RadiantElement, customElement, onEvent } from '@/utils/radiant-browser-runtime';
+import { RadiantElement, customElement, fromStore, onEvent } from '@/utils/radiant-browser-runtime';
 import { addCartItem, cartStore } from './cart-store';
 
 @customElement('radiant-cart-badge')
 export class RadiantCartBadge extends RadiantElement<{ count: number }> {
 	declare readonly [JSX_PROPS]?: Record<never, never>;
 
-	constructor() {
-		super();
-		this.registerReactiveMember(
-			'count',
-			fromExternalStore(cartStore, (state) => state.items.length),
-		);
-	}
+	@fromStore(cartStore, (state) => state.items.length)
+	count!: number;
 
 	override render() {
 		return (
@@ -28,20 +22,13 @@ export class RadiantCartBadge extends RadiantElement<{ count: number }> {
 export class RadiantCartList extends RadiantElement<{ items: string[] }> {
 	declare readonly [JSX_PROPS]?: Record<never, never>;
 
-	constructor() {
-		super();
-		this.registerReactiveMember(
-			'items',
-			fromExternalStore(cartStore, (state) => state.items),
-		);
-	}
+	@fromStore(cartStore, (state) => state.items)
+	items!: string[];
 
 	override render() {
-		const items = this.getReactiveMember<string[]>('items')?.get() ?? [];
-
 		return (
 			<ul class="m-0 grid list-none gap-2 p-0" data-ref="items">
-				{items.map((item) => (
+				{this.items.map((item) => (
 					<li class="rounded-sm border border-border bg-background px-3 py-2 text-sm text-on-background">
 						{item}
 					</li>

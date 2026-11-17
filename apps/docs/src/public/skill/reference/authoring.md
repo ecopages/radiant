@@ -9,12 +9,12 @@
 
 ## Rules
 
-1. **Prefer semantic decorators** — `@prop(...)` for public API, `@state` for internal mutable state. Reach for lower-level names only with a deliberate reason.
+1. **Prefer semantic decorators** — `@prop(...)` for public API, `@state` for internal mutable state, `@fromStore(...)` for a slice of a store this host does not own. Reach for lower-level names only with a deliberate reason.
 2. **Keep public props narrow** — do not leak internal state into the JSX contract unless that API is intentional.
 3. **Reassign arrays and objects** — do not rely on in-place mutation to trigger updates.
 4. **Keep event code plain** — ordinary methods or arrow functions; use the browser event object directly.
 5. **Keep JSX intentional** — avoid extra wrapper components, memoization-style patterns without need, and assuming cached JSX nodes with plain props stay live automatically.
-6. **Paint existing DOM with `@bindTo`** — sit it on a `@prop` / `@state` / `@signal` field. Do not `@query` + `@onUpdated` to copy a value into text, an attribute, or a DOM property. `@onUpdated` is for procedures (focus, timers, joined ARIA, derived state).
+6. **Paint existing DOM with `@bindTo`** — sit it on a `@prop` / `@state` / `@signal` / `@fromStore` field. Do not `@query` + `@onUpdated` to copy a value into text, an attribute, or a DOM property. `@onUpdated` is for procedures (focus, timers, joined ARIA, derived state).
 7. **Use slots deliberately** — a view hands a render-owning host a **Children Value**: `{this.slotted}` places it, and named regions are properties (`<x-card header={<h2 />}>`, a `JsxRenderable` field rendered with `{this.header}`). A host written in HTML captures its **Authored Children** once, into the same `this.slotted`. Change children in the parent view, not with DOM APIs, and define tags before rendering views that use them ([Children](hosts.md#children)). Radiant UI keeps Authored Children in the parent tree instead.
 8. **Document important APIs** — meaningful TSDoc for new public APIs or significant architecture. No noisy inline comments.
 9. **Keep docs examples minimal** — smallest number of hosts that still demonstrates the target API. A second custom element only when provider/consumer boundaries or leaf ownership is the lesson.

@@ -8,12 +8,13 @@
  * typing live in `field-decorators.standard.ts`, because legacy mode never sees
  * the field type.
  */
-import { state as createState, type WritableSignal } from '@ecopages/signals';
+import { state as createState, type ExternalStoreSource, type WritableSignal } from '@ecopages/signals';
 import { RadiantController } from '../../src/core/radiant-controller';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { attr } from '../../src/decorators/attr';
 import { bindTo } from '../../src/decorators/bind-to';
 import { customElement } from '../../src/decorators/custom-element';
+import { fromStore } from '../../src/decorators/from-store';
 import { prop } from '../../src/decorators/prop';
 import { signal } from '../../src/decorators/signal';
 import { state } from '../../src/decorators/state';
@@ -26,6 +27,11 @@ customElement('valid-custom-element-with-options', {});
 customElement('invalid-custom-element', { extends: 'button' });
 
 const count = createState(0);
+
+const cartStore: ExternalStoreSource<{ n: number; label: string }> = {
+	getState: () => ({ n: 0, label: 'a' }),
+	subscribe: () => () => {},
+};
 
 export class ValidElementFields extends RadiantElement {
 	@prop({ type: Number, defaultValue: 0 }) p1: number;
@@ -72,6 +78,12 @@ export class ValidElementFields extends RadiantElement {
 	@bindTo<WritableSignal<number>>({ attr: 'data-n', map: (v) => v.toFixed() })
 	@signal<number>({ initial: 0 })
 	b4!: WritableSignal<number>;
+
+	@fromStore(cartStore, (s) => s.n) f1!: number;
+	@fromStore(cartStore) f2!: { n: number; label: string };
+	@bindTo<number>({ attr: 'data-n', map: (v) => v.toFixed() })
+	@fromStore(cartStore, (s) => s.n)
+	f3!: number;
 }
 
 export class ValidControllerFields extends RadiantController {
@@ -117,4 +129,7 @@ export class ValidControllerFields extends RadiantController {
 	@bindTo<WritableSignal<number>>({ attr: 'data-n', map: (v) => v.toFixed() })
 	@signal<number>({ initial: 0 })
 	b4!: WritableSignal<number>;
+
+	@fromStore(cartStore, (s) => s.n) f1!: number;
+	@fromStore(cartStore) f2!: { n: number; label: string };
 }
