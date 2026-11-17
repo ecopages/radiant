@@ -291,9 +291,115 @@ export function readReactiveChildSourceValue(source: ReactiveChildSource): unkno
 	return isSubscribableJsxValue(source) ? source.getValue() : source.get();
 }
 
+type RootSubscription = {
+	readonly source: ReactiveChildSource;
+	readonly notify: (value: unknown) => void;
+	/** The value the binding showed when its root paused. */
+	delivered?: unknown;
+	release?: () => void;
+};
+
+/** The subscriptions of the bindings mounted into a target, and whether {@link pauseSubscriptions} paused them. */
+type RootSubscriptions = { paused: boolean; subscriptions: Set<RootSubscription> };
+
+const ROOT_SUBSCRIPTIONS = new WeakMap<HTMLElement, RootSubscriptions>();
+
+function rootSubscriptionsOf(rootTarget: HTMLElement): RootSubscriptions {
+	let root = ROOT_SUBSCRIPTIONS.get(rootTarget);
+
+	if (!root) {
+		root = { paused: false, subscriptions: new Set() };
+		ROOT_SUBSCRIPTIONS.set(rootTarget, root);
+	}
+
+	return root;
+}
+
+function openSubscription(subscription: RootSubscription): void {
+	const { notify, source } = subscription;
+	subscription.release = isSubscribableJsxValue(source)
+		? source.subscribe((value) => notify(value))
+		: source.subscribe(notify);
+}
+
+/**
+ * Subscribes a binding mounted into `rootTarget` to its source, unless {@link pauseSubscriptions} paused that target.
+ *
+ * @returns Releases the subscription and forgets it.
+ */
 export function subscribeToReactiveChildSource(
 	source: ReactiveChildSource,
 	notify: (value: unknown) => void,
+	rootTarget: HTMLElement,
 ): () => void {
-	return isSubscribableJsxValue(source) ? source.subscribe((value) => notify(value)) : source.subscribe(notify);
+	const root = rootSubscriptionsOf(rootTarget);
+	const subscription: RootSubscription = { notify, source };
+	root.subscriptions.add(subscription);
+
+	if (!root.paused) {
+		openSubscription(subscription);
+	}
+
+	return () => {
+		root.subscriptions.delete(subscription);
+		const release = subscription.release;
+		subscription.release = undefined;
+		release?.();
+	};
+}
+
+/**
+ * Releases the source subscriptions of every binding mounted into `target`, and keeps the bindings.
+ *
+ * @remarks For a host that leaves the document: a signal or binding its view reads, such as a module-level store,
+ * no longer holds the detached tree or patches it. {@link resumeSubscriptions} subscribes them again.
+ */
+export function pauseSubscriptions(target: HTMLElement): void {
+	const root = ROOT_SUBSCRIPTIONS.get(target);
+
+	if (!root || root.paused) {
+		return;
+	}
+
+	root.paused = true;
+
+	for (const subscription of root.subscriptions) {
+		const release = subscription.release;
+
+		if (release) {
+			subscription.delivered = readReactiveChildSourceValue(subscription.source);
+			subscription.release = undefined;
+			release();
+		}
+	}
+}
+
+/**
+ * Subscribes the bindings {@link pauseSubscriptions} paused again, and applies the value of each one whose source
+ * changed meanwhile.
+ *
+ * @remarks An applied value can replace part of the tree: a binding that it removes is skipped, and one that it
+ * mounts subscribes as it mounts.
+ */
+export function resumeSubscriptions(target: HTMLElement): void {
+	const root = ROOT_SUBSCRIPTIONS.get(target);
+
+	if (!root?.paused) {
+		return;
+	}
+
+	root.paused = false;
+
+	for (const subscription of [...root.subscriptions]) {
+		if (root.paused || subscription.release || !root.subscriptions.has(subscription)) {
+			continue;
+		}
+
+		openSubscription(subscription);
+		const value = readReactiveChildSourceValue(subscription.source);
+
+		if (!Object.is(value, subscription.delivered)) {
+			subscription.notify(value);
+		}
+	}
 }

@@ -13,11 +13,15 @@ import type { LiveTemplatePart, LiveTextContentPart } from './types.ts';
  * Reactive sources subscribe here the same way attribute parts do. A later
  * notification rewrites only the element that owns the notifying slot.
  */
-export function updateLiveTextContentParts(parts: readonly LiveTemplatePart[], values: readonly unknown[]): void {
+export function updateLiveTextContentParts(
+	parts: readonly LiveTemplatePart[],
+	values: readonly unknown[],
+	rootTarget: HTMLElement,
+): void {
 	const textContentParts = parts.filter((part): part is LiveTextContentPart => part.type === 'text-content');
 
 	for (const part of textContentParts) {
-		bindTextContentPart(part, values[part.index], textContentParts);
+		bindTextContentPart(part, values[part.index], textContentParts, rootTarget);
 	}
 
 	writeGroupedTextContent(textContentParts);
@@ -27,6 +31,7 @@ function bindTextContentPart(
 	part: LiveTextContentPart,
 	value: unknown,
 	siblings: readonly LiveTextContentPart[],
+	rootTarget: HTMLElement,
 ): void {
 	if (part.source) {
 		if (isReactiveChildSource(value) && part.source === value) {
@@ -51,7 +56,7 @@ function bindTextContentPart(
 
 		part.committedText = stringifyTextContentValue(nextValue);
 		writeGroupedTextContent(siblings, part.element);
-	});
+	}, rootTarget);
 	part.committedText = stringifyTextContentValue(readReactiveChildSourceValue(value));
 }
 

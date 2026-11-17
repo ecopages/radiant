@@ -1,4 +1,10 @@
-import { render as renderJsx, type JsxRenderable, type SubscribableJsxValueWithAccess } from '@ecopages/jsx';
+import {
+	pauseSubscriptions,
+	render as renderJsx,
+	resumeSubscriptions,
+	type JsxRenderable,
+	type SubscribableJsxValueWithAccess,
+} from '@ecopages/jsx';
 import { TrackedRender } from './tracked-render';
 import type { UnknownContext } from '../context/types';
 import { ensureLegacyControllerReady } from '../decorators/legacy/controller-readiness';
@@ -92,6 +98,12 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 			return;
 		}
 
+		const renderTarget = this.getRenderTarget();
+
+		if (renderTarget) {
+			resumeSubscriptions(renderTarget);
+		}
+
 		this.updateCycle.flush(() => {
 			this.updateCycle.runCallbacks();
 
@@ -123,6 +135,12 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 	public disconnect(): void {
 		this.connected = false;
 		unmarkControllerRoot(this.host, this);
+		const renderTarget = this.getRenderTarget();
+
+		if (renderTarget) {
+			pauseSubscriptions(renderTarget);
+		}
+
 		this.disconnectRenderWatcher();
 		this.reactiveHost.disconnectHost();
 	}

@@ -545,7 +545,7 @@ export function mountReactiveChildSource(
 		}
 
 		applyValue(nextValue);
-	});
+	}, rootTarget);
 
 	applyValue(readReactiveChildSourceValue(source));
 

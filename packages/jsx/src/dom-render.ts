@@ -13,6 +13,8 @@ import {
 	unwrapKeyedValue,
 } from './dom-render/runtime-helpers.ts';
 import type { DeferredPropertyBinding, MountedRangeContent, MountedRoot } from './dom-render/types.ts';
+
+export { pauseSubscriptions, resumeSubscriptions } from './dom-render/runtime-helpers.ts';
 import { visitHydrationBindingMarkers } from './hydration/hydration-bindings.ts';
 import { isIterableRenderable } from './types/renderable-guards.ts';
 import type { JsxRenderable } from './types/index.ts';

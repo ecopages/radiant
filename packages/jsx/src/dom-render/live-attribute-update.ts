@@ -49,6 +49,6 @@ export function updateLiveAttributePart(
 		const nextDeferredProperties: DeferredPropertyBinding[] = [];
 		applyToPart(part, nextValue, nextDeferredProperties);
 		flushDeferredProperties(nextDeferredProperties);
-	});
+	}, part.rootTarget);
 	applyToPart(part, readReactiveChildSourceValue(value), deferredProperties);
 }

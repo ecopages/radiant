@@ -392,6 +392,8 @@ That contract is intentionally small. The package does not impose a single state
 
 The renderer also reads a bound value once while the tree is built, to choose a presence binding for a standard boolean attribute such as `hidden`. When the tree is built inside a computation that tracks signal reads, as a Radiant host's `render()` is, that read would make the computation depend on the value and re-run it on every change. `setUntrackedRead(untrack)` tells the renderer to make such reads through the signal library's `untrack`; `@ecopages/radiant` installs the one from `@ecopages/signals`. The setting is global, so every `@ecopages/jsx` entry sees it.
 
+A binding stays subscribed to its source for as long as it is mounted, also while its target is out of the document. `pauseSubscriptions(target)` releases the source subscription of every binding mounted into `target` and keeps the bindings, so a long-lived signal or store no longer holds the detached tree or patches it. `resumeSubscriptions(target)` subscribes them again and applies the current value of each source that changed meanwhile; a value that replaces part of the tree releases the bindings it removes and subscribes the ones it mounts. Radiant hosts pause their view on disconnect and resume it on reconnect.
+
 Object-valued bindings expose typed nested members such as `binding.profile.name`. A member binding projects its source and updates when the source notifies. Mutating a nested plain object alone does not notify it.
 
 Arrays and other iterables render as a list of children. A generator, or any other one-shot iterator, is consumed once for that iterator object; the runtime reuses that snapshot while the object remains reachable, including across later renders. JSX `children` normalization consumes the iterator when the element is created, so pass a new iterator to each `jsx()` call if those children should be yielded again.
@@ -955,6 +957,7 @@ Main exports:
 - `render`
 - `hydrate`
 - `hasHydrationMarkers`
+- `pauseSubscriptions` and `resumeSubscriptions`
 - `createSubscribableJsxValue`
 - `isKeyedJsxValue`
 - `isSubscribableJsxValue`
