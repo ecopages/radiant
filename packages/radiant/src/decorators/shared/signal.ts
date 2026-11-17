@@ -1,5 +1,6 @@
 import type { WritableSignal } from '@ecopages/signals';
 import { createHostSignal, HostSignal, isWritableSignalLike } from '../../signals/host-signal';
+import { resolveHydrationKey } from '../../core/hydration-codec';
 import { REACTIVE_HOST, type ReactiveHostLike } from '../../core/reactive-host';
 import { warnDiscardedPreUpgradeValue } from './pre-upgrade-warning';
 import type { SignalDecoratorOptions } from './signal-options';
@@ -41,7 +42,7 @@ export function installHostSignal<Value>(
 	const hostSignal = createHostSignal({
 		host,
 		hydrate: options.hydrate,
-		hydrationKey: propertyName,
+		hydrationKey: resolveHydrationKey(host, propertyName),
 		initialValue: resolvedInitialValue,
 		property: propertyName,
 		source: resolvedSource,

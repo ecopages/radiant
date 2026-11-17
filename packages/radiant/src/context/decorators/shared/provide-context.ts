@@ -1,5 +1,6 @@
 import { ContextProvider } from '../../context-provider';
 import type { ContextHostLike } from '../../context-host';
+import { resolveHydrationKey } from '../../../core/hydration-codec';
 import { REACTIVE_HOST } from '../../../core/reactive-host';
 import type { UnknownContext } from '../../types';
 import type { ProvideContextOptions } from '../provide-context';
@@ -25,7 +26,7 @@ export function installContextProvider<T extends UnknownContext>(
 
 	const provider = new ContextProvider<T>(host, {
 		context,
-		hydrationKey: propertyKey,
+		hydrationKey: resolveHydrationKey(host, propertyKey),
 		initialValue,
 		hydrate,
 		serialize,
