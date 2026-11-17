@@ -1,0 +1,84 @@
+---
+title: Video player store
+description: 'The video player with its snapshot in one store, so mute and speed patch the controls without re-running render().'
+order: 10
+---
+
+import { PrimitiveExample } from '@/components/primitive-example';
+import { RecipeCode, RecipeExample, RecipePattern, RecipePatterns } from '@/components/recipe-patterns';
+
+export const config = {
+	dependencies: {
+		components: [PrimitiveExample, RecipePatterns, RecipeCode, RecipeExample],
+		scripts: ['./video-player-store.component.tsx', './video-player-store.script.ts'],
+		stylesheets: ['./video-player-store.css'],
+	},
+};
+
+# Video player store
+
+<p class="docs-lede">
+	The same player as [Video player](/docs/recipes/video-player), with the snapshot in one store so a binding such
+	as `this.$.media.muted` patches a node without redrawing the stage.
+</p>
+
+## Goal
+
+The original component already binds the clock with `this.$`, so a playing clip does not redraw the stage. Mute and speed still do, because `render()` reads those `@state` fields. This recipe keeps the same controls, keyboard, captions and fullscreen, and holds the snapshot in one `createStore`. A binding such as `this.$.media.muted` follows that path, so mute and speed patch without a render. Clicking play still redraws once. The [Video player](/docs/recipes/video-player) component form is the baseline this one is measured against.
+
+The store is a component-form technique: `render()` owns the tree, and `this.$` patches it. The element and controller forms of the original player already write the DOM without `render()`, so this page has the component and the plain form only.
+
+## Primitives
+
+- [MediaController](/docs/controllers/media) owns playback, as on the original player. `onState` and `onProgress` write paths on the store; they do not call `render()`.
+- [CaptionsController](/docs/controllers/captions) owns the captions. The recipe writes `media.captionsOn` from the state it reports.
+- [formatMediaTime](/docs/helpers/media-time) is applied with `this.$.media.position.map(formatMediaTime)`, so the clock is a projection of one field.
+- [cycleValue](/docs/helpers/overview) steps the speed button.
+- `createStore` from `@ecopages/signals` holds the snapshot. A binding such as `this.$.media.muted` updates when that path changes.
+- [`rui-slider`](/docs/forms/slider) still has `max` and `disabled` stamped from private fields `render()` reads, because its view helper snapshots those props: writing the host properties is not enough, and they only change when the clip becomes seekable. Per-frame `value` is written on the host by hand. The buffered layer stays a node the recipe inserts, because the slider has no region for it.
+
+Left to the recipe: the same keyboard, auto-hiding controls, fullscreen, live region and Blob load as the original. This form has no accessor (`() => …`) in a JSX position. Mute-as-zero volume and the thumb's time text are computed in the callbacks and written to the slider; they are not children of this host.
+
+## Example
+
+Press Play or click the video, drag the scrub bar, change the volume, cycle the speed and turn the captions on. The behaviour is the same as the video player; the difference is where the snapshot lives.
+
+<RecipePatterns patterns={['component', 'plain']}>
+
+<RecipePattern id="component">
+
+The player is a `RadiantElement` whose `render()` does not run per frame. One `@state` field holds a `createStore` of the snapshot, and the changing text, attributes and pressed buttons in this host's tree are paths on `this.$.media`.
+
+<PrimitiveExample host layout="stack">
+	<video-player-store-app></video-player-store-app>
+</PrimitiveExample>
+
+<RecipeCode recipe="video-player-store" pattern="component" />
+
+`render()` never reads a store path. `{this.media.position}` would subscribe the whole view to every frame; `{this.$.media.position}` patches one node. `map` covers a single-field projection such as each clock. `stage` is one store path, written from the controller's status in the same callback as the rest of the snapshot.
+
+`render()` still reads private `seekMax` and `seekable` so the slider helper can stamp `max` and `disabled` when the clip is ready; `requestUpdate()` runs for that one redraw, not per frame. Writing those properties on the host does not update the thumbs. Per-frame `value`, the buffered layer and the thumb's `aria-valuetext` stay hand written: those nodes are not positions in this host's tree that a binding can own. `data-controls-hidden` is a store path, so a touch tap hides or shows the bar in the same turn without waiting for a render. `fullscreenchange` writes `media.fullscreen` the same way.
+
+Compared with the original component, mute and speed no longer redraw the stage: they are bindings too. Clicking play still redraws once. The cost is the slider writes the helper still forces, and one render when the clip becomes seekable.
+
+</RecipePattern>
+
+<RecipePattern id="plain">
+
+The same player as a `mount` function. It has no store and no `this.$`: it writes the DOM from the controller callbacks, as the original plain form does.
+
+<RecipeExample recipe="video-player-store" pattern="plain" layout="stack" />
+
+<RecipeCode recipe="video-player-store" pattern="plain" />
+
+`mount` returns the cleanup that undoes it; see [how the examples run](/docs/recipes/overview#how-the-examples-run). This form is here because every recipe keeps a plain baseline. It is not a store rewrite: there is no `render()` to spare. Use it to compare what the component form removes (the queries, the listeners, the copies onto the markup) with what the store adds (one snapshot, path bindings, `map`).
+
+The clip, the captions and the stylesheet are the same files the original player uses in spirit, copied so this recipe does not import a sibling. For long media, serve the file with range support and give `load()` its URL without a `resolveSource`.
+
+</RecipePattern>
+
+</RecipePatterns>
+
+### Styles
+
+The stylesheet is the original player's, scoped to this recipe's tags. The stage, the controls and the captions behave the same way.

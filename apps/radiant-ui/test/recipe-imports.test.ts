@@ -28,6 +28,8 @@ const isSiblingOf = (file: string, specifier: string) =>
 	new RegExp(`^\\./${file.split('.')[0]}\\.(data|loader)$`).test(specifier);
 const isRadiantCore = (specifier: string) =>
 	specifier === '@ecopages/radiant' || specifier.startsWith('@ecopages/radiant/');
+const isSignals = (specifier: string) =>
+	specifier === '@ecopages/signals' || specifier.startsWith('@ecopages/signals/');
 
 describe('recipe scripts', () => {
 	test.each(plainScripts)('%s imports only public Radiant UI entries and the mount helper', (file) => {
@@ -44,7 +46,10 @@ describe('recipe scripts', () => {
 		(file) => {
 			const rejected = importsOf(file).filter(
 				(specifier) =>
-					!radiantUiEntry.test(specifier) && !isRadiantCore(specifier) && !isSiblingOf(file, specifier),
+					!radiantUiEntry.test(specifier) &&
+					!isRadiantCore(specifier) &&
+					!isSignals(specifier) &&
+					!isSiblingOf(file, specifier),
 			);
 
 			expect(rejected).toEqual([]);
@@ -125,8 +130,12 @@ describe('recipe pages', () => {
 	});
 
 	test.each(slugs)('%s renders the example elements its markup files carry', (slug) => {
-		expect(recipeMarkup(slug, 'element')).toMatch(new RegExp(`^<${slug}-element[\\s>]`));
-		expect(recipeMarkup(slug, 'controller')).toMatch(new RegExp(`^<[a-z]+[^>]* data-controller="${slug}"`));
+		if (recipeFiles.includes(`${slug}.element.html`)) {
+			expect(recipeMarkup(slug, 'element')).toMatch(new RegExp(`^<${slug}-element[\\s>]`));
+		}
+		if (recipeFiles.includes(`${slug}.controller.html`)) {
+			expect(recipeMarkup(slug, 'controller')).toMatch(new RegExp(`^<[a-z]+[^>]* data-controller="${slug}"`));
+		}
 		expect(recipeMarkup(slug, 'plain')).not.toContain('data-example');
 		expect(recipeMarkup(slug, 'plain').length).toBeGreaterThan(0);
 	});

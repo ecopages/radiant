@@ -3,7 +3,9 @@ import { userEvent } from 'vitest/browser';
 import '@ecopages/radiant-ui/themes/default';
 import '../src/components/primitive-example/primitive-example.css';
 import '../src/content/components/recipes/video-player.css';
+import { VideoPlayerApp } from '../src/content/components/recipes/video-player.component';
 import { mountComponent, trackListeners } from './mount-recipe';
+import { describePlayerRenderMetrics } from './video-player-render-metrics';
 import { describeVideoPlayerForm } from './video-player-shared';
 import { until, afterDeferredDestroy, nothingFollows } from './until';
 
@@ -148,16 +150,26 @@ function stageFocus(root: HTMLElement): void {
 	part(root, '[data-stage]').focus();
 }
 
-describeVideoPlayerForm('component', {
+const form = {
 	mount,
-	relocate: async (root) => {
+	relocate: async (root: HTMLElement) => {
 		const holder = document.createElement('div');
 		document.body.append(holder);
 		holder.append(root);
 		await afterDeferredDestroy();
 	},
-	remove: async (root) => {
+	remove: async (root: HTMLElement) => {
 		root.remove();
 		await afterDeferredDestroy();
 	},
+};
+
+describeVideoPlayerForm('component', form);
+
+describePlayerRenderMetrics('component', VideoPlayerApp, form, {
+	play: 1,
+	playFrames: 0,
+	seek: 0,
+	mute: 1,
+	rate: 1,
 });
