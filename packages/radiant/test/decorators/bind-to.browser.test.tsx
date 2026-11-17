@@ -273,6 +273,40 @@ describe('@bindTo', () => {
 		warn.mockRestore();
 	});
 
+	test('warns once for each text binding that receives a function, naming its target and host', async () => {
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+		@customElement('bind-to-function-text-a')
+		class BindToFunctionTextA extends RadiantElement {
+			@state
+			@bindTo({ ref: 'label', text: true })
+			value: unknown = () => 'a';
+		}
+
+		@customElement('bind-to-function-text-b')
+		class BindToFunctionTextB extends RadiantElement {
+			@state
+			@bindTo({ selector: '.title', text: true })
+			value: unknown = () => 'b';
+		}
+
+		const first = document.createElement('bind-to-function-text-a') as BindToFunctionTextA;
+		first.innerHTML = '<span data-ref="label">seeded</span>';
+		const second = document.createElement('bind-to-function-text-b') as BindToFunctionTextB;
+		second.innerHTML = '<span class="title">seeded</span>';
+		await connected(first);
+		await connected(second);
+
+		const messages = warn.mock.calls.map((call) => String(call[0]));
+		expect(
+			messages.filter((message) => message.includes('@bindTo text on ref "label" of BindToFunctionTextA')),
+		).toHaveLength(1);
+		expect(
+			messages.filter((message) => message.includes('@bindTo text on ".title" of BindToFunctionTextB')),
+		).toHaveLength(1);
+		warn.mockRestore();
+	});
+
 	test('throws when a target lists more than one write kind', () => {
 		expect(() =>
 			bindTo({

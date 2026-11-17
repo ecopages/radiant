@@ -110,7 +110,7 @@ function compileBindToTarget(target: BindToTarget): CompiledBindToTarget {
 	const map = target.map as ((value: unknown) => unknown) | undefined;
 	const invert = target.invert;
 	const resolve = compileResolve(target);
-	const write = compileWrite(target);
+	const write = compileWrite(target, describeBindToTarget(target));
 
 	return (host, rawValue) => {
 		const element = resolve(host);
@@ -120,7 +120,7 @@ function compileBindToTarget(target: BindToTarget): CompiledBindToTarget {
 		}
 
 		const value = map ? map(rawValue) : rawValue;
-		write(element, invert ? !value : value);
+		write(element, invert ? !value : value, host);
 	};
 }
 
@@ -138,17 +138,32 @@ function compileResolve(target: BindToTarget): (host: BindToHost) => Element | n
 	return resolveHostElementOrNull;
 }
 
-function compileWrite(target: BindToTarget): (element: Element, value: unknown) => void {
+function describeBindToTarget(target: BindToTarget): string {
+	const on = 'ref' in target ? ` on ref "${target.ref}"` : 'selector' in target ? ` on "${target.selector}"` : '';
+	const kind = 'bool' in target ? `bool "${target.bool}"` : 'attr' in target ? `attr "${target.attr}"` : 'text';
+	return `@bindTo ${kind}${on}`;
+}
+
+/**
+ * @param description - Names the target in the function-value warning, which also names the host class, so each
+ * binding warns once on its own.
+ */
+function compileWrite(
+	target: BindToTarget,
+	description: string,
+): (element: Element, value: unknown, host: BindToHost) => void {
+	const position = (host: BindToHost) => () => `${description} of ${host.constructor.name}`;
+
 	if ('bool' in target) {
 		const { bool } = target;
-		return (element, value) =>
-			element.toggleAttribute(bool, !isSkippedFunction(value, `@bindTo bool "${bool}"`) && Boolean(value));
+		return (element, value, host) =>
+			element.toggleAttribute(bool, !isSkippedFunction(value, position(host)) && Boolean(value));
 	}
 
 	if ('attr' in target) {
 		const { attr } = target;
-		return (element, value) => {
-			if (value == null || isSkippedFunction(value, `@bindTo attr "${attr}"`)) {
+		return (element, value, host) => {
+			if (value == null || isSkippedFunction(value, position(host))) {
 				element.removeAttribute(attr);
 				return;
 			}
@@ -164,7 +179,7 @@ function compileWrite(target: BindToTarget): (element: Element, value: unknown) 
 		};
 	}
 
-	return (element, value) => {
-		element.textContent = value == null || isSkippedFunction(value, '@bindTo text') ? '' : String(value);
+	return (element, value, host) => {
+		element.textContent = value == null || isSkippedFunction(value, position(host)) ? '' : String(value);
 	};
 }

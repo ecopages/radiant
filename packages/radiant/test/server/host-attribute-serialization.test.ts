@@ -103,7 +103,7 @@ describe('resolveHostAttributes', () => {
 		});
 
 		expect(attributes).toEqual({});
-		expect(warn.mock.calls.filter((call) => String(call[0]).includes('a reflected attribute'))).toHaveLength(1);
+		expect(warn.mock.calls.filter((call) => String(call[0]).includes('reflected attribute "'))).toHaveLength(1);
 		expect(warn.mock.calls.some((call) => String(call[0]).includes('secret source'))).toBe(false);
 		warn.mockRestore();
 	});

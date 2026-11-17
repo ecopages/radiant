@@ -96,7 +96,7 @@ function writeReactiveAttributeValue<T>(
 		: isSkippedFunction(value, `@attr "${attributeName}"`)
 			? null
 			: options.type
-				? writeAttributeValue(value, options.type)
+				? writeAttributeValue(value, options.type, attributeName)
 				: value == null
 					? null
 					: String(value);

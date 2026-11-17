@@ -171,6 +171,7 @@ function writeString(value: unknown) {
  * Reads the attribute value based on the provided type.
  * @param value - The attribute value to be read.
  * @param type - The type of the attribute.
+ * @param attributeName - Names the attribute in the function-value warning, so each attribute warns once.
  * @returns The parsed attribute value.
  * @throws {TypeError} If the provided type is unknown.
  */
@@ -191,8 +192,17 @@ export type ReadAttributeValueReturnType = ReturnType<typeof readAttributeValue>
  * its source.
  * @throws {TypeError} If the provided type is unknown.
  */
-export function writeAttributeValue(value: unknown, type: AttributeTypeConstant): string | null {
-	if (isSkippedFunction(value, 'a reflected attribute')) return null;
+export function writeAttributeValue(
+	value: unknown,
+	type: AttributeTypeConstant,
+	attributeName?: string,
+): string | null {
+	if (
+		isSkippedFunction(value, () =>
+			attributeName ? `reflected attribute "${attributeName}"` : 'a reflected attribute',
+		)
+	)
+		return null;
 	const writerType = parseAttributeTypeConstant(type);
 	if (!writerType) throw new TypeError(`[radiant-element] Unknown type "${type}"`);
 	const writer: Writer = writers[writerType] ?? writers.default ?? writeString;
