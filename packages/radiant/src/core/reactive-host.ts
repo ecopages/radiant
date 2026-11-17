@@ -137,6 +137,11 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	private observing = false;
 	/** Bumped each time observation starts or stops, so a pass can tell the host changed state under it. */
 	private observationEpoch = 0;
+	/** Whether the host is connected on the client; server lifecycles observe members without it. */
+	private clientConnected = false;
+	/** Subscriptions to read-only members that have listeners, open while {@link clientConnected}. */
+	private readonly liveSources = new Set<ClientConnectedSource<unknown>>();
+	private readonly connectedSources = new WeakMap<ReadonlyReactiveState<unknown>, ClientConnectedSource<unknown>>();
 	private onConnectedCallbacks: (() => void)[] = [];
 	private onDisconnectedCallback: (() => void)[] = [];
 	private postSyncCallbacks: (() => void)[] = [];
@@ -166,12 +171,25 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	 * connection callback would acquire resources nothing releases, and one that
 	 * also reconnects it has already run the whole pass.
 	 *
+	 * @param client - `false` for a server lifecycle (a Controller Host's server render): members are
+	 * observed, but the subscriptions to read-only members stay closed ({@link ClientConnectedSource}).
+	 *
 	 * @returns Whether observation is still the one this pass started. When it is not, the host
 	 * disconnected under the pass, or a nested connect already ran the rest of the connect work, so
 	 * the caller must not flush. A host that was already observing keeps its observation, so the pass
 	 * is still its own.
 	 */
-	public connectHost(): boolean {
+	public connectHost(client = true): boolean {
+		this.clientConnected = client;
+
+		for (const source of [...this.liveSources]) {
+			if (!this.clientConnected) {
+				break;
+			}
+
+			source.open();
+		}
+
 		const epoch = this.startObservation();
 
 		for (const callback of this.onConnectedCallbacks) {
@@ -189,11 +207,17 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	 * Runs all cleanup callbacks registered for host disconnect.
 	 */
 	public disconnectHost(): void {
+		this.clientConnected = false;
+
 		for (const cleanup of this.onDisconnectedCallback) {
 			cleanup();
 		}
 
 		this.unobserveMembers();
+
+		for (const source of this.liveSources) {
+			source.close();
+		}
 	}
 
 	/**
@@ -463,7 +487,7 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 		this.changeSubscriptions.get(propertyName)?.();
 		this.changeSubscriptions.set(
 			propertyName,
-			signal.subscribe(() => this.memberChanged(propertyName)),
+			this.subscribable(signal).subscribe(() => this.memberChanged(propertyName)),
 		);
 
 		if (changed) {
@@ -523,7 +547,7 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 		current?.unsubscribe();
 		callbacks.set(update, {
 			signal,
-			unsubscribe: signal.subscribe(() => {
+			unsubscribe: this.subscribable(signal).subscribe(() => {
 				if (!this.initializingReactiveFields.has(propertyName) && !this.memberSnapshots.has(propertyName)) {
 					update();
 				}
@@ -553,7 +577,7 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 			throw new Error(`No reactive binding registered for "${String(property)}".`);
 		}
 
-		const source = signal as ReadonlyReactiveState<ReactiveBindingValue<Bindings, Property>>;
+		const source = this.subscribable(signal) as ReadonlyReactiveState<ReactiveBindingValue<Bindings, Property>>;
 		let observed: Pick<
 			ReadonlyReactiveState<ReactiveBindingValue<Bindings, Property>>,
 			'get' | 'subscribe'
@@ -713,6 +737,22 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 		}
 	}
 
+	/** Returns what the host subscribes to for `member`: the member itself when writable, else its {@link ClientConnectedSource}. */
+	private subscribable(member: ReadonlyReactiveState<unknown>): ReadonlyReactiveState<unknown> {
+		if (isWritableState(member)) {
+			return member;
+		}
+
+		let source = this.connectedSources.get(member);
+
+		if (!source) {
+			source = new ClientConnectedSource(member, this.liveSources, () => this.clientConnected);
+			this.connectedSources.set(member, source);
+		}
+
+		return source;
+	}
+
 	private createReactiveBindingNamespace(): ReactiveBindings<Bindings> {
 		return new Proxy(Object.create(null) as ReactiveBindings<Bindings>, {
 			get: (_target, property) => {
@@ -729,3 +769,85 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 type ReactiveHostAccess = {
 	defineProperty(target: object, property: string, descriptor: PropertyDescriptor): void;
 };
+
+/**
+ * The host's subscriptions to one read-only member, forwarded to the member only while the host is connected on the
+ * client.
+ *
+ * @remarks A read-only member is owned outside the host, such as `fromExternalStore(...)`, so change reports,
+ * `@bindTo` and rendered `this.$` bindings must not subscribe to it on the server or hold it while the host is
+ * detached. Listeners stay registered across a disconnect, and {@link open} hands them the member's value when it
+ * changed while closed.
+ */
+class ClientConnectedSource<T> implements ReadonlyReactiveState<T> {
+	private readonly listeners = new Set<(value: T) => void>();
+	private delivered: T | undefined;
+	private release: (() => void) | undefined;
+
+	constructor(
+		private readonly member: ReadonlyReactiveState<T>,
+		private readonly live: Set<ClientConnectedSource<unknown>>,
+		private readonly isConnected: () => boolean,
+	) {}
+
+	public get(): T {
+		return this.member.get();
+	}
+
+	public subscribe(notify: (value: T) => void): () => void {
+		this.listeners.add(notify);
+
+		if (this.listeners.size === 1) {
+			this.delivered = this.member.get();
+			this.live.add(this as ClientConnectedSource<unknown>);
+
+			if (this.isConnected()) {
+				this.open();
+			}
+		}
+
+		return () => {
+			if (this.listeners.delete(notify) && this.listeners.size === 0) {
+				this.live.delete(this as ClientConnectedSource<unknown>);
+				this.close();
+			}
+		};
+	}
+
+	/**
+	 * @remarks A listener the member calls while subscribing can disconnect the host, or disconnect and reconnect
+	 * it; the subscription is then released, or kept only once.
+	 */
+	public open(): void {
+		if (!this.release) {
+			const release = this.member.subscribe((value) => this.deliver(value));
+
+			if (this.release || !this.isConnected() || this.listeners.size === 0) {
+				release();
+				return;
+			}
+
+			this.release = release;
+		}
+
+		const value = this.member.get();
+
+		if (!Object.is(value, this.delivered)) {
+			this.deliver(value);
+		}
+	}
+
+	public close(): void {
+		const release = this.release;
+		this.release = undefined;
+		release?.();
+	}
+
+	private deliver(value: T): void {
+		this.delivered = value;
+
+		for (const listener of [...this.listeners]) {
+			listener(value);
+		}
+	}
+}

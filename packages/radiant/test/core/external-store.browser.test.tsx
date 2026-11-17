@@ -7,6 +7,7 @@ import {
 	onContextUpdate,
 	provideContext,
 } from '../../src/context';
+import { RadiantController } from '../../src/core/radiant-controller';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { customElement } from '../../src/decorators/custom-element';
 import { onUpdated } from '../../src/decorators/on-updated';
@@ -100,11 +101,17 @@ describe('fromExternalStore on a host', () => {
 		document.body.appendChild(host);
 		await host.updateComplete;
 		expect(store.listenerCount()).toBeGreaterThan(0);
+		calls.length = 0;
+		store.setState({ items: ['mug', 'lamp'] });
+		await host.updateComplete;
+
+		expect(calls).toEqual([2]);
+
 		host.remove();
 		expect(store.listenerCount()).toBe(0);
 	});
 
-	test('reconnect takes over a write made while the host was detached', async () => {
+	test('a this.$ binding releases the store on disconnect and catches up on reconnect', async () => {
 		const store = createCartStore({ items: ['mug'], user: 'Ada' });
 		const tagName = nextTag('reconnect');
 
@@ -127,11 +134,22 @@ describe('fromExternalStore on a host', () => {
 		document.body.appendChild(host);
 		await host.updateComplete;
 		host.remove();
+
+		expect(store.listenerCount()).toBe(0);
+
 		store.setState({ items: ['mug', 'lamp', 'vase'] });
+
+		expect(host.querySelector('[data-ref="count"]')?.textContent).toBe('1');
+
 		document.body.appendChild(host);
 		await host.updateComplete;
 
 		expect(host.querySelector('[data-ref="count"]')?.textContent).toBe('3');
+		expect(store.listenerCount()).toBe(1);
+
+		store.setState({ items: ['mug'] });
+
+		expect(host.querySelector('[data-ref="count"]')?.textContent).toBe('1');
 	});
 
 	test('context descendants subscribe to their own slice of the provided store', async () => {
@@ -216,5 +234,44 @@ describe('fromExternalStore on a host', () => {
 		expect(user.querySelector('[data-ref="user"]')?.textContent).toBe('Grace');
 		expect(badgeRenders).toBe(badgeAfterConnect);
 		expect(userRenders).toBe(userAfterConnect);
+
+		document.body.innerHTML = '';
+
+		expect(store.listenerCount()).toBe(0);
+	});
+
+	test('a controller host subscribes while connected and releases the store on disconnect', async () => {
+		const store = createCartStore({ items: ['mug'], user: 'Ada' });
+
+		class BadgeController extends RadiantController<{ count: number }> {
+			constructor(host: Element) {
+				super(host);
+				this.registerReactiveMember(
+					'count',
+					fromExternalStore(store, (state) => state.items.length),
+				);
+			}
+
+			override render() {
+				return <span data-ref="count">{this.$.count}</span>;
+			}
+		}
+
+		const element = document.createElement('div');
+		document.body.append(element);
+		const badge = new BadgeController(element);
+
+		expect(store.listenerCount()).toBe(0);
+
+		badge.connect();
+		await badge.updateComplete;
+
+		expect(store.listenerCount()).toBe(1);
+		store.setState({ items: ['mug', 'lamp'] });
+		expect(element.querySelector('[data-ref="count"]')?.textContent).toBe('2');
+
+		badge.disconnect();
+
+		expect(store.listenerCount()).toBe(0);
 	});
 });

@@ -1,6 +1,6 @@
-import { waitFor } from '@testing-library/dom';
-import { afterEach, describe, expect, test } from 'vitest';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 import { RadiantElement } from '../../src/core/radiant-element';
+import { bindTo } from '../../src/decorators/bind-to';
 import { customElement } from '../../src/decorators/custom-element';
 import { fromStore } from '../../src/decorators/from-store';
 import { onUpdated } from '../../src/decorators/on-updated';
@@ -29,6 +29,7 @@ let tag = 0;
 const nextTag = (kind: string) => `from-store-${kind}-${++tag}`;
 
 afterEach(() => {
+	vi.restoreAllMocks();
 	document.body.innerHTML = '';
 });
 
@@ -118,8 +119,91 @@ describe('@fromStore', () => {
 		expect(store.listenerCount()).toBeGreaterThan(0);
 		calls.length = 0;
 		store.setState({ items: ['mug', 'lamp'] });
-		await waitFor(() => expect(calls).toEqual([2]));
+		await host.updateComplete;
+		expect(calls).toEqual([2]);
 		host.remove();
 		expect(store.listenerCount()).toBe(0);
+	});
+
+	test('reads the snapshot before connect without subscribing', () => {
+		const store = createCartStore({ items: ['mug', 'lamp'], user: 'Ada' });
+		const tagName = nextTag('unconnected');
+
+		@customElement(tagName)
+		class Badge extends RadiantElement<{ count: number }> {
+			@fromStore(store, (state) => state.items.length)
+			count!: number;
+		}
+
+		expect(customElements.get(tagName)).toBe(Badge);
+
+		const host = document.createElement(tagName) as Badge;
+
+		expect(host.count).toBe(2);
+		expect(store.listenerCount()).toBe(0);
+	});
+
+	test('@bindTo paints the selected slice and the store is released on disconnect', async () => {
+		const store = createCartStore({ items: ['mug'], user: 'Ada' });
+		const tagName = nextTag('bind-to');
+
+		@customElement(tagName)
+		class Badge extends RadiantElement<{ count: number }> {
+			@bindTo({ attr: 'data-count' })
+			@fromStore(store, (state) => state.items.length)
+			count!: number;
+		}
+
+		expect(customElements.get(tagName)).toBe(Badge);
+
+		const host = document.createElement(tagName) as Badge;
+		document.body.appendChild(host);
+		await host.updateComplete;
+
+		expect(host.getAttribute('data-count')).toBe('1');
+
+		store.setState({ items: ['mug', 'lamp'] });
+
+		expect(host.getAttribute('data-count')).toBe('2');
+
+		host.remove();
+
+		expect(store.listenerCount()).toBe(0);
+	});
+
+	test('a field bound with this.$ and also read in render() warns once, naming the field', async () => {
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+		const store = createCartStore({ items: ['mug'], user: 'Ada' });
+		const tagName = nextTag('redundant');
+
+		@customElement(tagName)
+		class Badge extends RadiantElement<{ count: number }> {
+			@fromStore(store, (state) => state.items.length)
+			count!: number;
+
+			override render() {
+				return (
+					<p>
+						{this.count} <b>{this.$.count}</b>
+					</p>
+				);
+			}
+		}
+
+		expect(customElements.get(tagName)).toBe(Badge);
+
+		const host = document.createElement(tagName) as Badge;
+		document.body.appendChild(host);
+		await host.updateComplete;
+		store.setState({ items: ['mug', 'lamp'] });
+		await host.updateComplete;
+		store.setState({ items: ['mug', 'lamp', 'vase'] });
+		await host.updateComplete;
+
+		expect(warn).toHaveBeenCalledTimes(1);
+		const message = String(warn.mock.calls[0]?.[0]);
+		expect(message).toContain(`<${tagName}>`);
+		expect(message).toContain('"count"');
+		expect(message).toContain('this.$.count');
 	});
 });

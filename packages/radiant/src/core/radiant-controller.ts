@@ -88,7 +88,7 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 		this.connected = true;
 		markControllerRoot(this.host, this);
 
-		if (!this.reactiveHost.connectHost()) {
+		if (!this.reactiveHost.connectHost(!this.isSsrLifecycle)) {
 			return;
 		}
 

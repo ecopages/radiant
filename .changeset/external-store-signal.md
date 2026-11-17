@@ -3,4 +3,4 @@
 '@ecopages/radiant': minor
 ---
 
-Add `fromExternalStore(...)` so a Zustand, Redux, or `useSyncExternalStore` store can be a read-only signal, and `@fromStore(store, select)` so a Radiant host field reads a slice of it. Select a slice, subscribe while the host is connected, and paint `getServerSnapshot()` until the client takes over. Writes stay on the store.
+Add `fromExternalStore(store, select?)`, a read-only signal over a Zustand, Redux, or `useSyncExternalStore` store, and `@fromStore(store, select?)`, a host field that reads a slice of it. The host subscribes to the store only while it is connected, and server rendering paints `getServerSnapshot()` without subscribing. Writes stay on the store. A host now holds any read-only member registered with `registerReactiveMember`, including the `this.$` bindings in its view, only while it is connected on the client.
