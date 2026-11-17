@@ -59,12 +59,7 @@ export function reactiveProp<P = unknown>(propOptions: ReactivePropertyOptions<P
 		context.addInitializer(function (this: T) {
 			const initializerValue = (this as T & Record<PropertyKey, P | undefined>)[initializerValueKey];
 			const resolvedDefaultValue = defaultValue === undefined ? initializerValue : defaultValue;
-			warnInitializerWithDefaultValue(
-				() => declaringClass(this, context.metadata),
-				propertyName,
-				initializerValue,
-				defaultValue,
-			);
+			warnInitializerWithDefaultValue(this, propertyName, initializerValue, defaultValue, context.metadata);
 
 			registerReactivePropDefinition(this, propertyName, options);
 			this.createReactiveProp(propertyName, {
@@ -81,27 +76,4 @@ export function reactiveProp<P = unknown>(propOptions: ReactivePropertyOptions<P
 			return value;
 		};
 	};
-}
-
-const METADATA_KEY: symbol = (Symbol as { metadata?: symbol }).metadata ?? Symbol.for('Symbol.metadata');
-
-/**
- * Finds the class on `host`'s chain whose own decorator metadata is `metadata`, so a prop is attributed to the class
- * that declares it rather than the most derived one. Falls back to the host's constructor when the runtime attaches
- * no metadata.
- */
-function declaringClass(host: object, metadata: object | null | undefined): Function {
-	for (
-		let prototype = Object.getPrototypeOf(host);
-		prototype && prototype !== Object.prototype;
-		prototype = Object.getPrototypeOf(prototype)
-	) {
-		const constructor = Object.getOwnPropertyDescriptor(prototype, 'constructor')?.value as Function | undefined;
-
-		if (constructor && metadata && Object.getOwnPropertyDescriptor(constructor, METADATA_KEY)?.value === metadata) {
-			return constructor;
-		}
-	}
-
-	return host.constructor;
 }
