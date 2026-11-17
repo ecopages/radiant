@@ -103,6 +103,150 @@ describe('Radiant JSX runtime', () => {
 		expect(renderToString(jsx('div', { className: 'card', id: 'a' }))).toBe('<div id="a"></div>');
 	});
 
+	test('a function in a native child, attribute, style or class position is never written out', async () => {
+		const [{ jsx, jsxs }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+		const fn = () => 'secret source';
+		const template = jsxs('div', {
+			title: fn,
+			'attr:data-a': fn,
+			'bool:hidden': fn,
+			style: fn,
+			class: fn,
+			classes: fn,
+			children: [jsx('span', { children: fn }), jsx('em', { children: [fn, 'kept'] }), 'tail'],
+		});
+
+		for (const mode of ['plain', 'hydrate'] as const) {
+			const html = renderToString(template, { mode });
+
+			expect(html).not.toContain('secret');
+			expect(html).not.toContain('=>');
+			expect(html).toContain('kept');
+			expect(html).toContain('tail');
+			expect(html).not.toContain('title=');
+			expect(html).not.toContain('style=');
+			expect(html).not.toContain('class=');
+			expect(html).not.toMatch(/\bhidden\b/);
+		}
+	});
+
+	test('a function in a Fragment or textarea child is never written out', async () => {
+		const [{ Fragment, jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+		const fn = () => 'secret source';
+
+		expect(renderToString(jsx(Fragment, { children: fn }))).toBe('');
+		expect(renderToString(jsx(Fragment, { children: [fn, 'a'] }))).toBe('a');
+		expect(renderToString(jsx('textarea', { children: fn }))).not.toContain('secret');
+	});
+
+	test('a function that a signal or subscribable resolves to is never written out, in plain and hydrate mode', async () => {
+		const [{ createSubscribableJsxValue, jsx, jsxs }, { renderToString }] = await Promise.all([
+			loadJsxRuntime(),
+			loadServerRender(),
+		]);
+		const fn = () => 'secret source';
+		const bound = (value: unknown) =>
+			createSubscribableJsxValue({ getValue: () => value as never, subscribe: () => () => {} });
+		const template = jsxs('p', {
+			title: bound(fn),
+			style: bound(fn),
+			class: ['a', fn],
+			classes: [fn],
+			'bool:hidden': bound(fn),
+			children: ['Before', bound(fn), 'After'],
+		});
+
+		for (const mode of ['plain', 'hydrate'] as const) {
+			const html = renderToString(template, { mode });
+
+			expect(html).not.toContain('secret');
+			expect(html).not.toContain('=>');
+			expect(html).not.toContain('title=');
+			expect(html).not.toContain('style=');
+			expect(html).not.toMatch(/\shidden\b/);
+			expect(html).toContain('class="a"');
+			expect(html).toContain('BeforeAfter');
+		}
+
+		expect(renderToString(jsx('textarea', { children: bound(fn) }))).not.toContain('secret');
+	});
+
+	test('a function in a style object value is dropped, in plain and hydrate mode, and warned about once', async () => {
+		const [{ jsxDEV: jsx, resetRuntimeWarningsForTests, setDevWarningsEnabled }, { renderToString }] =
+			await Promise.all([loadJsxDevRuntime(), loadServerRender()]);
+		const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+		const fn = () => 'secret source';
+
+		resetRuntimeWarningsForTests();
+		setDevWarningsEnabled(true);
+
+		try {
+			for (const mode of ['plain', 'hydrate'] as const) {
+				const html = renderToString(jsx('p', { style: { color: fn, marginTop: '4px' } }), { mode });
+
+				expect(html).toContain('style="margin-top: 4px"');
+				expect(html).not.toContain('secret');
+			}
+
+			expect(warnSpy.mock.calls.map((call) => String(call[0]))).toEqual([
+				expect.stringContaining('Skipped a function in style value color'),
+			]);
+		} finally {
+			resetRuntimeWarningsForTests();
+			setDevWarningsEnabled(undefined);
+			warnSpy.mockRestore();
+		}
+	});
+
+	test('a function value is kept for events, prop bindings and custom-element properties', async () => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+		const fn = () => 'secret source';
+		const template = jsx('demo-fn-host', { onThing: fn, 'on:click': fn, 'prop:other': fn, id: 'a' });
+		expectTemplateResultLike(template);
+
+		expect(renderToString(template)).toBe('<demo-fn-host id="a"></demo-fn-host>');
+		expect(template.parts.map((part) => (part.type === 'attribute' ? part.kind : part.type))).toEqual([
+			'prop',
+			'event',
+			'prop',
+			'attr',
+		]);
+		expect(template.values).toContain(fn);
+	});
+
+	test('jsxDEV warns once per position about a function that is skipped, and not where it is a value', async () => {
+		const [{ renderToString }, { jsxDEV: jsx, resetRuntimeWarningsForTests, setDevWarningsEnabled }] =
+			await Promise.all([loadServerRender(), loadJsxDevRuntime()]);
+		const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+		const fn = () => 'secret source';
+
+		resetRuntimeWarningsForTests();
+		setDevWarningsEnabled(true);
+
+		try {
+			expect(renderToString(jsx('p', { title: fn, 'bool:hidden': fn, 'attr:data-a': fn, children: fn }))).toBe(
+				'<p></p>',
+			);
+			jsx('p', { title: fn, children: fn });
+			jsx('i', { style: fn, class: fn, classes: fn });
+			jsx('input', { 'on:click': fn, 'prop:value': fn, ref: fn });
+			jsx('demo-fn-host', { onThing: fn, children: undefined });
+
+			expect(warnSpy.mock.calls.map((call) => String(call[0]))).toEqual([
+				expect.stringContaining('Skipped a function in <p title>'),
+				expect.stringContaining('Skipped a function in <p bool:hidden>'),
+				expect.stringContaining('Skipped a function in <p attr:data-a>'),
+				expect.stringContaining('Skipped a function in child of <p>'),
+				expect.stringContaining('Skipped a function in class value'),
+				expect.stringContaining('Skipped a function in <i style>'),
+			]);
+		} finally {
+			resetRuntimeWarningsForTests();
+			setDevWarningsEnabled(undefined);
+			warnSpy.mockRestore();
+		}
+	});
+
 	test('jsxDEV warns once per native tag about className, and not for a custom element', async () => {
 		const [{ renderToString }, { jsxDEV: jsx, resetRuntimeWarningsForTests, setDevWarningsEnabled }] =
 			await Promise.all([loadServerRender(), loadJsxDevRuntime()]);

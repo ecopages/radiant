@@ -8,6 +8,7 @@ import type { SignalDecoratorOptions } from './signal-options';
  * Builds the host signal for `@signal` and wires hydrate / source lifecycle.
  *
  * @remarks
+ * `getWritableMember` runs first for its throw: a read-only member under this name must fail before any source callback or registration.
  * Standard adapters return this from the field initializer. Legacy adapters assign it during
  * post-construction so class-field writes do not overwrite the signal with `undefined`.
  */
@@ -23,6 +24,8 @@ export function installHostSignal<Value>(
 	if (existing instanceof HostSignal) {
 		return existing as HostSignal<Value>;
 	}
+
+	host[REACTIVE_HOST].getWritableMember(propertyName);
 
 	const resolvedSource =
 		typeof options.source === 'function'

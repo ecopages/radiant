@@ -276,6 +276,15 @@ describe('custom elements that take their JSX children as a value', () => {
 		expect(receivedChildrenValues.at(-1)).toBe(children);
 	});
 
+	test('keep a function child as the children value', async () => {
+		const { isTemplateResultLike, jsx } = await loadJsxRuntime();
+		const fn = () => 'children render prop';
+		const template = jsx('jsx-children-value-element', { children: fn });
+
+		if (!isTemplateResultLike(template)) throw new Error('Expected a template result.');
+		expect(template.values).toContain(fn);
+	});
+
 	test('get no DOM children and receive the children again on every render', async () => {
 		const [{ jsx, jsxs }, { createRoot, CUSTOM_ELEMENT_CHILDREN_SYMBOL }] = await Promise.all([
 			loadJsxRuntime(),
