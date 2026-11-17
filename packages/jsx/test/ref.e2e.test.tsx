@@ -441,13 +441,17 @@ describe('JSX ref', () => {
 
 		beforeEach(() => {
 			errors = [];
-			const onError = (event: ErrorEvent) => {
-				event.preventDefault();
-				event.stopImmediatePropagation();
-				errors.push(event.error);
-			};
-			window.addEventListener('error', onError, true);
-			return () => window.removeEventListener('error', onError, true);
+			const queueMicrotaskNow = globalThis.queueMicrotask.bind(globalThis);
+			vi.spyOn(globalThis, 'queueMicrotask').mockImplementation((callback) => {
+				queueMicrotaskNow(() => {
+					try {
+						callback();
+					} catch (error) {
+						errors.push(error);
+					}
+				});
+			});
+			return () => vi.restoreAllMocks();
 		});
 
 		test('a throwing callback is reported and later refs in the flush still run', async () => {
