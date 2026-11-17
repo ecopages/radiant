@@ -235,7 +235,7 @@ Events outside the allowlist, such as `focus`, `blur`, `scroll`, `load`, `invali
 At the class level, `@onEvent(...)` is the main decorator for incoming DOM events. It can listen to:
 
 - descendants that match a CSS selector
-- descendants marked with `data-ref`
+- descendants marked with `data-ref` that the host owns (see [Part scope](./src/core/README.md#part-scope))
 - the host itself (`host: true`), including non-bubbling events such as `pointerenter` and `pointerleave`
 - global `window` events
 - global `document` events

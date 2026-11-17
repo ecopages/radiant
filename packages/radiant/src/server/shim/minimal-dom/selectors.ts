@@ -224,15 +224,36 @@ function parseSimplePart(
 	return { nextIndex: index + match[0].length, part: { type, value: match[1]! } };
 }
 
+/** Index of the `]` that closes the attribute selector opened at `index`, skipping quoted values and their backslash escapes. */
+function findAttributeClose(selector: string, index: number): number {
+	let quote: string | undefined;
+
+	for (let cursor = index + 1; cursor < selector.length; cursor++) {
+		const character = selector[cursor]!;
+
+		if (quote) {
+			if (character === '\\') cursor++;
+			else if (character === quote) quote = undefined;
+		} else if (character === '"' || character === "'") {
+			quote = character;
+		} else if (character === ']') {
+			return cursor;
+		}
+	}
+
+	return -1;
+}
+
 function parseAttributePart(selector: string, index: number): { nextIndex: number; part: SelectorPart } {
-	const closeIndex = selector.indexOf(']', index);
+	const closeIndex = findAttributeClose(selector, index);
 	if (closeIndex === -1) throwUnsupported(selector);
-	const match = /^([A-Za-z0-9_:.-]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s\]]+)))?$/.exec(
+	const match = /^([A-Za-z0-9_:.-]+)(?:\s*=\s*(?:"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)'|([^\s\]]+)))?$/.exec(
 		selector.slice(index + 1, closeIndex),
 	);
 	if (!match) throwUnsupported(selector);
 	const [, name, doubleQuoted, singleQuoted, bareValue] = match;
-	const value = doubleQuoted ?? singleQuoted ?? bareValue;
+	const quoted = doubleQuoted ?? singleQuoted;
+	const value = quoted === undefined ? bareValue : quoted.replace(/\\(.)/g, '$1');
 	return {
 		nextIndex: closeIndex + 1,
 		part: value === undefined ? { type: 'attr', name: name! } : { type: 'attr', name: name!, value },

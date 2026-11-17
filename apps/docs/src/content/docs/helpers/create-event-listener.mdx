@@ -54,7 +54,7 @@ Use it with authored light DOM:
 | Field | Type | Description |
 | :---- | :--- | :---------- |
 | `selector` | `string` | CSS selector for delegated matching. |
-| `ref` | `string` | Value of `data-ref` for delegated matching. |
+| `ref` | `string` | Value of `data-ref` for delegated matching. Matches only parts the host owns, not a nested host's same-named part. |
 | `window` | `true` | Listen on the global `window` object. |
 | `document` | `true` | Listen on the global `document` object. |
 

@@ -33,11 +33,15 @@ export class UserProfile extends RadiantElement {
 | Parameter | Type | Required | Description |
 | :-------- | :--- | :------- | :---------- |
 | `selector` | `string` | One of `selector`/`ref` | CSS selector to match elements. |
-| `ref` | `string` | One of `selector`/`ref` | Value of `data-ref` attribute to match. |
+| `ref` | `string` | One of `selector`/`ref` | Value of `data-ref` attribute to match. Only parts this host owns match: a nested Element Host's or attached Controller Host's same-named part does not. |
 | `all` | `true` or `false` | No | Query for all matching elements (default: `false`). Must be a literal, because it picks the field type. |
 | `cache` | `boolean` | No | Cache the query result (default: `false`). A query that finds nothing is not cached: it runs again on the next read. |
 
 ## Feature Highlight
+
+### Part Scope
+
+A `ref` lookup finds the parts the host owns. A part belongs to the nearest enclosing Element Host (once upgraded) or attached Controller Host, so an outer `@query({ ref: 'root' })` never returns the `root` of a nested host, with or without `all: true`. A part that is itself a nested host is returned. `selector` is not scoped: use `@query({ selector: '[data-ref="root"]' })` to reach into a nested host on purpose.
 
 ### Caching Behavior
 

@@ -1,3 +1,4 @@
+import { resolvePart, resolveParts } from '../core/parts';
 import { resolveHostElement } from './resolve-host-element';
 
 type BaseQueryConfig = {
@@ -56,15 +57,14 @@ export function createQuery<T extends Element = Element>(
 export function createQuery(target: QueryHostTarget, options: QueryConfig): QueryResult<Element[] | Element | null>;
 export function createQuery(target: QueryHostTarget, options: QueryConfig): QueryResult<Element[] | Element | null> {
 	const host = resolveQueryHost(target);
-	const selector = 'selector' in options ? options.selector : `[data-ref="${options.ref}"]`;
 	let cached: Element[] | Element | null = null;
 
 	const executeQuery = (): Element[] | Element | null => {
-		if (options.all) {
-			return Array.from(host.querySelectorAll(selector));
+		if ('ref' in options) {
+			return options.all ? resolveParts(host, options.ref) : resolvePart(host, options.ref);
 		}
 
-		return host.querySelector(selector);
+		return options.all ? Array.from(host.querySelectorAll(options.selector)) : host.querySelector(options.selector);
 	};
 
 	return {
