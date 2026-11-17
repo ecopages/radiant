@@ -620,6 +620,26 @@ describe('render-component server helpers', () => {
 		expect(rendered.markup).toContain('data-controller="flat-controller"');
 	});
 
+	test('renderController() skips a function attribute instead of writing its source, and warns once', async () => {
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+		const handler = () => 'secret source';
+
+		const rendered = await renderController(RenderControllerCard, {
+			attributes: { 'data-function-attr': handler, title: 'kept' } as unknown as Record<string, string>,
+			host: { data: { 'function-data': handler } as unknown as Record<string, string> },
+			tagName: 'div',
+		});
+
+		expect(rendered.markup).toContain('title="kept"');
+		expect(rendered.markup).not.toContain('data-function-attr');
+		expect(rendered.markup).not.toContain('data-function-data');
+		expect(rendered.markup).not.toContain('secret source');
+		expect(
+			warn.mock.calls.filter((call) => String(call[0]).includes('attribute "data-function-attr"')),
+		).toHaveLength(1);
+		warn.mockRestore();
+	});
+
 	test('renderController() infers data-controller metadata from programmatic registration', async () => {
 		const rendered = await renderController(ProgrammaticRenderControllerCard, {
 			tagName: 'article',

@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import type { ReactiveProperty } from '../../src/core/reactive-prop-core';
 import {
 	resolveHostAttributes,
@@ -78,5 +78,33 @@ describe('resolveHostAttributes', () => {
 
 		expect(attributes).toEqual({ 'min-width': '300', 'data-Open': 'true' });
 		expect(stringifyHostAttributes(attributes)).toBe(' min-width="300" data-Open="true"');
+	});
+
+	test('omits a function-valued prop from both reflection sources and warns without writing its source', () => {
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+		const handler = () => 'secret source';
+		const property: ReactiveProperty<unknown> = {
+			type: String,
+			name: 'viaProperty',
+			attribute: 'via-property',
+			reflect: true,
+			converter: {
+				fromAttribute: (value) => value,
+				toAttribute: (value) => (typeof value === 'function' ? null : String(value)),
+			},
+		};
+
+		const attributes = resolveHostAttributes({
+			getReactiveProperties: () => [property],
+			getReactivePropDefinitions: () => [{ name: 'viaDefinition', options: { type: String } }],
+			getPropertyValue: () => handler,
+			getAttributeNames: () => [],
+			getAttribute: () => null,
+		});
+
+		expect(attributes).toEqual({});
+		expect(warn.mock.calls.filter((call) => String(call[0]).includes('reflected attribute "'))).toHaveLength(1);
+		expect(warn.mock.calls.some((call) => String(call[0]).includes('secret source'))).toBe(false);
+		warn.mockRestore();
 	});
 });

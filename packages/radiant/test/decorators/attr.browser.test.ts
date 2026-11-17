@@ -1,5 +1,5 @@
 import { waitFor } from '@testing-library/dom';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import { RadiantController } from '../../src/core/radiant-controller';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { attr } from '../../src/decorators/attr';
@@ -117,6 +117,29 @@ describe('@attr', () => {
 			expect(element.getAttribute('data-count')).toBe('6');
 			expect(element.getAttribute('data-active')).toBe('true');
 		});
+	});
+});
+
+@customElement('attr-function-value-test')
+class AttrFunctionValue extends RadiantElement {
+	@attr({ source: 'data-fn' }) value?: string;
+}
+
+describe('@attr function values', () => {
+	test('removes the attribute instead of writing the function source, and warns once', async () => {
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+		const element = document.createElement('attr-function-value-test') as AttrFunctionValue;
+		element.setAttribute('data-fn', 'seeded');
+		document.body.appendChild(element);
+
+		element.value = (() => 'secret source') as unknown as string;
+		element.value = (() => 'other source') as unknown as string;
+
+		await waitFor(() => expect(element.hasAttribute('data-fn')).toBe(false));
+		const messages = warn.mock.calls.map((call) => String(call[0]));
+		expect(messages.filter((message) => message.includes('@attr "data-fn"'))).toHaveLength(1);
+		expect(messages.some((message) => message.includes('secret source'))).toBe(false);
+		warn.mockRestore();
 	});
 });
 

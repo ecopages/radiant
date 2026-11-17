@@ -209,7 +209,7 @@ Controller-specific server helpers live on `@ecopages/radiant/server/render-cont
 - `renderControllerToPayload()` returns the flat controller fragment payload shape directly.
 - `renderControllerWithPreview()` returns controller fragment fields plus a JSX-compatible preview value.
 
-Controller SSR follows one extra rule: the caller still owns the outer host markup contract. Pass the host `tagName`, use `host.data` and `host.aria` for JSX-like structured attributes, and let `renderController()` infer `data-controller` from `@controller(...)` metadata unless you need to override it through the low-level `attributes` option.
+Controller SSR follows one extra rule: the caller still owns the outer host markup contract. Pass the host `tagName`, use `host.data` and `host.aria` for JSX-like structured attributes, and let `renderController()` infer `data-controller` from `@controller(...)` metadata unless you need to override it through the low-level `attributes` option. A function value in `attributes`, `host.data` or `host.aria` is skipped, never written as its source, and development builds warn once per attribute.
 
 Note: the server helpers are transport-neutral. The package no longer ships the older fragment-header constants or header-builder helpers from this module. Adapter-specific response headers now belong in the integration layer that turns `RenderedComponent` metadata into HTTP responses.
 

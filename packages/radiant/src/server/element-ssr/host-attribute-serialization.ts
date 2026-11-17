@@ -130,8 +130,8 @@ function appendReactivePropDefinitionAttributes(
 		const { transform, type } = definition.options;
 		const serialized = transform?.toAttribute
 			? transform.toAttribute(currentValue as never)
-			: writeAttributeValue(currentValue, type);
-		if (transform?.toAttribute && (serialized == null || serialized === '')) {
+			: writeAttributeValue(currentValue, type, attributeName);
+		if (serialized == null || (transform?.toAttribute && serialized === '')) {
 			continue;
 		}
 

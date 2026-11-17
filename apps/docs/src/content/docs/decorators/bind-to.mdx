@@ -48,10 +48,10 @@ Each target sets exactly one of `attr`, `bool`, `prop`, or `text`. `ref` and `se
 | :-------- | :--- | :------- | :---------- |
 | `ref` | `string` | No | `data-ref` of a descendant the host owns, resolved on every write: a nested host's same-named part is not written. Omit both `ref` and `selector` to patch the host. |
 | `selector` | `string` | No | CSS selector of a descendant. |
-| `attr` | `string` | One write kind | `setAttribute` / `removeAttribute` (`null`/`undefined` removes). |
-| `bool` | `string` | One write kind | `toggleAttribute` from a boolean value. |
+| `attr` | `string` | One write kind | `setAttribute` / `removeAttribute` (`null`, `undefined` or a function removes). |
+| `bool` | `string` | One write kind | `toggleAttribute` from a boolean value (a function removes the attribute). |
 | `prop` | `string` | One write kind | DOM property write (`input.value`, `meter.value`). |
-| `text` | `true` | One write kind | `textContent`. |
+| `text` | `true` | One write kind | `textContent` (a function, like `null`, writes nothing). |
 | `invert` | `true` | No | Negate the value before writing (`open` → `hidden`). |
 | `map` | `(value: T) => unknown` | No | Transform the value before writing. `T` is the decorated field type, or `V` on a `@signal` field declared `WritableSignal<V>`. Under standard decorators leave the parameter unannotated; under legacy decorators pass the whole field type as a type argument, `undefined` included. |
 
