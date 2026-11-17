@@ -15,8 +15,8 @@ import { consumeContext } from '../../src/context/decorators/consume-context';
 import { contextSelector } from '../../src/context/decorators/context-selector';
 import { provideContext } from '../../src/context/decorators/provide-context';
 import { event } from '../../src/decorators/event';
-import { query } from '../../src/decorators/query';
-import { createQuery } from '../../src/helpers/create-query';
+import { query, queryAll } from '../../src/decorators/query';
+import { createQuery, createQueryAll } from '../../src/helpers/create-query';
 
 const ctxA = createContext<{ count: number }>('a');
 const ctxB = createContext<{ name: string }>('b');
@@ -29,7 +29,24 @@ export const item: HTMLElement = createQuery<HTMLElement>(host, { ref: 'r' }).va
 // @ts-expect-error all: true returns an array
 export const items: HTMLElement | null = createQuery<HTMLElement>(host, { ref: 'r', all: true }).value;
 
+// @ts-expect-error a single-element query can be null
+export const itemBySelector: HTMLElement = createQuery<HTMLElement>(host, 'li').value;
+// @ts-expect-error createQueryAll returns an array
+export const itemsBySelector: HTMLElement = createQueryAll<HTMLElement>(host, 'li').value;
+
 export class StandardElementInstallers extends RadiantElement {
+	// @ts-expect-error a single-element query can be null
+	@query('.r') s1!: HTMLElement;
+	// @ts-expect-error not an element
+	@query('.r') s2: string | null;
+	// @ts-expect-error @query(selector) is not an array
+	@query('.r') s3: HTMLElement[];
+	// @ts-expect-error @queryAll is an array, not a single element
+	@queryAll('.r') s4!: HTMLElement;
+	// @ts-expect-error @queryAll is never null
+	@queryAll('.r') s5: HTMLElement[] | null;
+	// @ts-expect-error not an array of elements
+	@queryAll('.r') s6: string[];
 	// @ts-expect-error a single-element query can be null
 	@query({ ref: 'r' }) q1: HTMLElement;
 	// @ts-expect-error not an element

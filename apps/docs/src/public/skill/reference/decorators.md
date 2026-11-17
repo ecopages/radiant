@@ -36,6 +36,7 @@ Bare `@signal` (no parentheses) creates a host-owned signal with defaults.
 Under standard decorators the declared field type is the source of truth. Options that carry a value (`defaultValue`, `initial`, `transform`, `converter`, `type`, and `source` on `@signal`) must agree with it, and a mismatch is a compile error on the decorator. Prefer an initializer so TypeScript infers the type (`@prop({ type: Number }) count = 0`). Write the type for a string literal union, for a field with no initializer (`?`, or `!` when a decorator or a default supplies the value) and for fields a decorator installs.
 
 - A decorated field cannot be `declare` (TS1206) or `accessor`.
+- `@queryAll(selector)`: `T[]` of elements. `@query(selector)` follows the single-element rule below.
 - `@query`: `T | null`, or `T[]` with `all: true` (`all` must be a literal). A single-element query is `null` when nothing matches, so guard it with `?.` or an early return; use `!` only where the host's own markup always renders the node.
 - `@prop` and `@attr`: the `type` constant must fit the field (`String` a `string`, `Number` a `number`, `Boolean` a `boolean`, `Array` an array, `Object` a non-array object; `null` and `undefined` always fit; a union of parsed types fits none). A parser owns the value type instead, so `type` is not checked against the field: `transform.fromAttribute` on `@prop`, `converter.fromAttribute` on `@attr`. Pass the parser inline or with `satisfies`.
 - `@attr` without `type` or a parser holds the raw string, so the field is `string | null | undefined` (a string literal union fits). A number or boolean field needs `type` or a parser.
@@ -75,6 +76,7 @@ Avoid updating the same watched property inside its own `@onUpdated(...)` unless
 ## DOM queries
 
 - `@query(...)` — rendered descendants by `data-ref` or selector, on a `RadiantElement` or a `RadiantController`
+- `@query(selector)` and `@queryAll(selector)` — first match or `null`, and an array of every match; live and unscoped (they reach into nested hosts)
 
 `@query` options: `ref` or `selector`; `all` for `T[]`; `cache` (default `false`: each read queries the DOM). Prefer `ref` over broad selectors. A `ref` lookup only sees parts the host owns (a nested Element Host's or attached Controller Host's same-named part is skipped); `selector` is unscoped. Field types and null-safe use: see [Field types](#field-types).
 

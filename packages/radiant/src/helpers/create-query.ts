@@ -39,13 +39,18 @@ export function resolveQueryHost(target: QueryHostTarget): Element {
 /**
  * Creates a lazy DOM query accessor bound to an element host or controller.
  * Functional equivalent of the `@query` decorator for vanilla JS usage.
- * With `all: true` the value is an array; otherwise it is the first match or `null`.
+ * With a selector string the value is the first match or `null`, read live on every access. The options
+ * object is the older form: with `all: true` the value is an array, and `cache` keeps the first result.
  * @param target The element host or controller to query within.
  *
  * @remarks
  * The type argument is the element type, and `all` picks the value type, so it must be a literal: with a
  * `boolean` variable the value is `Element[] | Element | null` and there is no type argument.
  */
+export function createQuery<T extends Element = Element>(
+	target: QueryHostTarget,
+	selector: string,
+): QueryResult<T | null>;
 export function createQuery<T extends Element = Element>(
 	target: QueryHostTarget,
 	options: QueryConfig & { all: true },
@@ -55,7 +60,11 @@ export function createQuery<T extends Element = Element>(
 	options: QueryConfig & { all?: false },
 ): QueryResult<T | null>;
 export function createQuery(target: QueryHostTarget, options: QueryConfig): QueryResult<Element[] | Element | null>;
-export function createQuery(target: QueryHostTarget, options: QueryConfig): QueryResult<Element[] | Element | null> {
+export function createQuery(
+	target: QueryHostTarget,
+	input: QueryConfig | string,
+): QueryResult<Element[] | Element | null> {
+	const options: QueryConfig = typeof input === 'string' ? { selector: input } : input;
 	const host = resolveQueryHost(target);
 	let cached: Element[] | Element | null = null;
 
@@ -78,4 +87,19 @@ export function createQuery(target: QueryHostTarget, options: QueryConfig): Quer
 			return executeQuery();
 		},
 	};
+}
+
+/**
+ * Creates a live accessor for every element matching `selector` inside an element host or controller,
+ * in document order. Functional equivalent of the `@queryAll` decorator, and the all-matches counterpart of
+ * {@link createQuery}.
+ *
+ * @remarks
+ * Unscoped: matches inside nested hosts are included. The array is rebuilt on every read.
+ */
+export function createQueryAll<T extends Element = Element>(
+	target: QueryHostTarget,
+	selector: string,
+): QueryResult<T[]> {
+	return createQuery<T>(target, { selector, all: true });
 }
