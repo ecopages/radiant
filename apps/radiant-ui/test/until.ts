@@ -1,4 +1,4 @@
-import { onTestFinished, vi } from 'vitest';
+import { onTestFailed, onTestFinished, vi } from 'vitest';
 
 const SIGNAL_EVENTS = [
 	'loadstart',
@@ -115,14 +115,24 @@ export function once<E extends Event = Event>(target: EventTarget, type: string)
 /** Installs fake timers for the two calls the players schedule with; the file's `afterEach` restores real ones. */
 export const fakeTimers = () => vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
 
+/** Appends `note` to the error of the test that failed, so the assertion message says what the test was waiting for. */
+function annotateFailure(note: string): void {
+	onTestFailed(({ task }) => {
+		for (const error of task.result?.errors ?? []) {
+			error.message = `${error.message}\n  while ${note}`;
+		}
+	});
+}
+
 /**
  * A negative assertion's wait: lets `count` animation frames pass so that a change the code should not make has had
  * its chance.
  *
  * @remarks Nothing signals an absence, so this is the only wait that is not on a signal. `reason` names the change
- * that would have shown up, which keeps the justification at the call site.
+ * that would have shown up, and is appended to the error of a test that fails while or after waiting.
  */
-export function nothingFollows(_reason: string, count = 5): Promise<void> {
+export function nothingFollows(reason: string, count = 5): Promise<void> {
+	annotateFailure(`expecting nothing to follow for ${count} frames: ${reason}`);
 	return new Promise((resolve) => {
 		const step = (left: number) => requestAnimationFrame(() => (left <= 1 ? resolve() : step(left - 1)));
 		step(count);
@@ -132,9 +142,10 @@ export function nothingFollows(_reason: string, count = 5): Promise<void> {
 /**
  * A wait on the wall clock, for what has no signal and no fake clock: a real capture, or a transition's own timing.
  *
- * @remarks `reason` states which of the two, so the justification sits at the call site.
+ * @remarks `reason` states which of the two, and is appended to the error of a test that fails or times out.
  */
-export function realWait(milliseconds: number, _reason: string): Promise<void> {
+export function realWait(milliseconds: number, reason: string): Promise<void> {
+	annotateFailure(`waiting ${milliseconds} ms on the wall clock: ${reason}`);
 	return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
@@ -148,7 +159,7 @@ export async function sampleFrames<T>(count: number, read: () => T): Promise<T[]
 	const values: T[] = [];
 	for (let frame = 0; frame < count; frame++) {
 		values.push(read());
-		await nothingFollows('sampling', 1);
+		await new Promise((resolve) => requestAnimationFrame(resolve));
 	}
 	return values;
 }
