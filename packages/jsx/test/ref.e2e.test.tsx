@@ -361,22 +361,27 @@ describe('JSX ref', () => {
 			expect(log).toEqual(['a-child:attach', 'a:attach', 'b:attach', 'section:attach', 'root:attach']);
 		});
 
-		test('a parent ref sees its descendants already attached, on a custom element too', async () => {
+		test('the ref of a defined custom element sees its bound property and its children already attached', async () => {
 			const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 			const container = document.createElement('div');
 			const attached = new Set<Element>();
-			let seenByHost: boolean | undefined;
+			let seenByHost: { childAttached: boolean; property: unknown } | undefined;
 
 			createRoot(container).render(
 				jsx('radiant-jsx-ref-host', {
-					ref: () => {
-						seenByHost = attached.has(container.querySelector('span')!);
+					'prop:ref': 'written',
+					ref: (node: Element | null) => {
+						if (!node) return;
+						seenByHost = {
+							childAttached: attached.has(container.querySelector('span')!),
+							property: (node as RefHostElement).ref,
+						};
 					},
 					children: jsx('span', { ref: (node: Element | null) => node && attached.add(node) }),
 				}),
 			);
 
-			expect(seenByHost).toBe(true);
+			expect(seenByHost).toEqual({ childAttached: true, property: 'written' });
 		});
 
 		test('detaches the parent ref before the child ref', async () => {
