@@ -1,5 +1,5 @@
 import { userEvent } from 'vitest/browser';
-import { describe, expect, test, vi } from 'vitest';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 import { until, untilFrame } from './until';
 import '@ecopages/radiant-ui/button/styles.css';
 import '@ecopages/radiant-ui/slider/styles.css';
@@ -55,7 +55,16 @@ export const barsFollow = async (root: HTMLElement, rest: number) =>
 /** Waits for the bars to be back at their resting coverage. */
 export const barsRest = async (root: HTMLElement, rest: number) =>
 	untilFrame(() => expect(Math.abs(coverage(root) - rest)).toBeLessThan(0.002));
-const settle = (milliseconds: number) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+const fakeTimers = () => vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+
+/** Lets `milliseconds` pass: on the fake clock when the test installed one, else for real. */
+const settle = async (milliseconds: number) => {
+	if (vi.isFakeTimers()) {
+		vi.advanceTimersByTime(milliseconds);
+		return;
+	}
+	await new Promise((resolve) => setTimeout(resolve, milliseconds));
+};
 const volumeThumb = (root: HTMLElement) => root.querySelector<HTMLElement>('[data-volume-input] [role="slider"]')!;
 const seekable = async (root: HTMLElement) => {
 	await until(() => expect(seek(root).disabled).toBe(false));
@@ -187,6 +196,10 @@ function trackObjectUrls() {
  */
 export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): void {
 	describe(`audio player lifecycle and input (${name})`, () => {
+		afterEach(() => {
+			vi.useRealTimers();
+		});
+
 		test('keeps the authored status hint when it connects', async () => {
 			const root = await form.mount();
 
@@ -246,6 +259,7 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 		});
 
 		test('the seek thumb announces the clock and the volume thumb a percentage, and both keep it', async () => {
+			fakeTimers();
 			const root = await seekable(await form.mount());
 			const text = (node: HTMLElement) => node.getAttribute('aria-valuetext');
 			await until(() => expect(text(thumb(root))).toBe('0:00 of 0:08'));
@@ -359,6 +373,7 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 		});
 
 		test('Next while a seek is pending does not apply it to the next track', async () => {
+			fakeTimers();
 			const root = await seekable(await form.mount());
 			await userEvent.click(track(root, 'Low Tide'));
 			await until(() => expect(audio(root).paused).toBe(false));
@@ -538,6 +553,10 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 	});
 
 	describe(`audio player order (${name})`, () => {
+		afterEach(() => {
+			vi.useRealTimers();
+		});
+
 		test('the loop button has an icon, no text, a name that follows the mode and no pressed state', async () => {
 			const root = await seekable(await form.mount());
 			const names: (string | null)[] = [];
@@ -641,6 +660,7 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 		});
 
 		test('a paused track sought to its end does not move on, in any loop mode', async () => {
+			fakeTimers();
 			const root = await seekable(await form.mount());
 			await clickLoopTo(root, 'Loop: all');
 			await seekable(root);

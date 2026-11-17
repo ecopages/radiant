@@ -1,5 +1,5 @@
 import { userEvent } from 'vitest/browser';
-import { describe, expect, test, vi } from 'vitest';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 import { until } from './until';
 import '@ecopages/radiant-ui/themes/default';
 import '@ecopages/radiant-ui/button/styles.css';
@@ -76,6 +76,10 @@ export async function flowOf(form: VoiceMemoForm): Promise<string[]> {
 /** The behaviour every form of the voice memo recipe shares, run against one form. */
 export function describeVoiceMemoForm(name: string, form: VoiceMemoForm): void {
 	describe(`voice memo (${name})`, () => {
+		afterEach(() => {
+			vi.useRealTimers();
+		});
+
 		test('starts idle with only Record enabled and the instructions in the status line', async () => {
 			const root = await form.mount();
 
@@ -114,20 +118,25 @@ export function describeVoiceMemoForm(name: string, form: VoiceMemoForm): void {
 
 		test('Pause holds the clock and Resume goes on', async () => {
 			const root = await form.mount();
+			vi.useFakeTimers({
+				toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'performance'],
+			});
 			await record(root);
-			await sleep(700);
+			vi.advanceTimersByTime(700);
 
 			await click(root, '[data-pause]');
 			await until(() => expect(stateOf(root)).toBe('paused'));
 			expect(part(root, '[data-pause]').getAttribute('aria-label')).toBe('Resume');
 			const held = elapsedOf(root);
-			await sleep(1200);
+			vi.advanceTimersByTime(1200);
 			expect(elapsedOf(root)).toBe(held);
 
 			await click(root, '[data-pause]');
 			await until(() => expect(stateOf(root)).toBe('recording'));
 			expect(part(root, '[data-pause]').getAttribute('aria-label')).toBe('Pause');
+			vi.advanceTimersByTime(1200);
 			await until(() => expect(elapsedOf(root)).not.toBe(held));
+			vi.useRealTimers();
 			await form.remove(root);
 		});
 

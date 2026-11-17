@@ -13,6 +13,7 @@ describe('MediaRecorderController', () => {
 
 	afterEach(() => {
 		controllers.splice(0).forEach((controller) => controller.destroy());
+		vi.useRealTimers();
 		vi.restoreAllMocks();
 		vi.unstubAllGlobals();
 	});
@@ -49,6 +50,12 @@ describe('MediaRecorderController', () => {
 			check();
 		});
 	}
+
+	/** Fakes the clocks the controller counts with; a real `MediaRecorder` and stream keep running on real time. */
+	const fakeClock = () =>
+		vi.useFakeTimers({
+			toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'performance'],
+		});
 
 	function sleep(ms: number): Promise<void> {
 		return new Promise((resolve) => setTimeout(resolve, ms));
@@ -109,19 +116,20 @@ describe('MediaRecorderController', () => {
 
 	it('pauses and resumes, without counting paused time in the duration', async () => {
 		const states: string[] = [];
+		fakeClock();
 		const controller = create({ onState: (snapshot) => states.push(snapshot.status) });
 		await controller.start();
-		await sleep(200);
+		vi.advanceTimersByTime(200);
 
 		controller.pause();
 		expect(controller.getState().status).toBe('paused');
 		const frozen = controller.getState().duration;
-		await sleep(300);
+		vi.advanceTimersByTime(300);
 		expect(controller.getState().duration).toBe(frozen);
 
 		controller.resume();
 		expect(controller.getState().status).toBe('recording');
-		await sleep(200);
+		vi.advanceTimersByTime(200);
 		expect(controller.getState().duration).toBeGreaterThan(frozen);
 
 		const result = (await controller.stop())!;
@@ -131,10 +139,11 @@ describe('MediaRecorderController', () => {
 
 	it('advances the duration through onState while recording', async () => {
 		const durations: number[] = [];
+		fakeClock();
 		const controller = create({ onState: (snapshot) => durations.push(snapshot.duration) });
 		await controller.start();
 
-		await sleep(450);
+		vi.advanceTimersByTime(450);
 
 		expect(durations.length).toBeGreaterThanOrEqual(4);
 		expect(durations.at(-1)!).toBeGreaterThan(durations[1]);
@@ -296,9 +305,11 @@ describe('MediaRecorderController', () => {
 
 	it('stops by itself after maxDuration', async () => {
 		const onStop = vi.fn();
+		fakeClock();
 		const controller = create({ maxDuration: 0.3, onStop });
 		await controller.start();
 
+		vi.advanceTimersByTime(300);
 		await until(controller, () => controller.getState().status === 'stopped');
 
 		expect(onStop).toHaveBeenCalledTimes(1);
@@ -307,17 +318,19 @@ describe('MediaRecorderController', () => {
 	});
 
 	it('does not count paused time toward maxDuration', async () => {
+		fakeClock();
 		const controller = create({ maxDuration: 0.5 });
 		await controller.start();
-		await sleep(150);
+		vi.advanceTimersByTime(150);
 		controller.pause();
-		await sleep(600);
+		vi.advanceTimersByTime(600);
 		expect(controller.getState().status).toBe('paused');
 
 		controller.resume();
-		await sleep(150);
+		vi.advanceTimersByTime(150);
 		expect(controller.getState().status).toBe('recording');
 
+		vi.advanceTimersByTime(400);
 		await until(controller, () => controller.getState().status === 'stopped');
 	});
 

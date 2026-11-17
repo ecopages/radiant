@@ -4,11 +4,34 @@ import { CaptionsController, createCaptionsController, type CaptionTrackSource }
 
 const frames = () =>
 	new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
-const settle = async (check: () => boolean, tries = 100) => {
-	for (let index = 0; index < tries && !check(); index++) {
-		await new Promise((resolve) => setTimeout(resolve, 20));
-	}
-};
+const SIGNALS = ['loadedmetadata', 'seeked', 'timeupdate', 'load', 'error', 'cuechange'];
+const waiters = new Set<() => void>();
+
+/**
+ * Resolves once `check` holds, re-checked on a controller callback, a DOM mutation or a media or track event.
+ *
+ * @remarks A track's `cuechange` does not bubble, so every `<track>` element's text track is listened to directly.
+ */
+const settle = (check: () => boolean): Promise<void> =>
+	new Promise((resolve) => {
+		const attempt = () => {
+			if (!check()) {
+				return;
+			}
+			observer.disconnect();
+			waiters.delete(attempt);
+			SIGNALS.forEach((type) => document.removeEventListener(type, attempt, true));
+			tracks.forEach((track) => track.removeEventListener('cuechange', attempt));
+			resolve();
+		};
+		const observer = new MutationObserver(attempt);
+		observer.observe(document, { attributes: true, childList: true, characterData: true, subtree: true });
+		waiters.add(attempt);
+		SIGNALS.forEach((type) => document.addEventListener(type, attempt, true));
+		const tracks = [...document.querySelectorAll('track')].map((element) => element.track);
+		tracks.forEach((track) => track.addEventListener('cuechange', attempt));
+		attempt();
+	});
 
 function silentWav(seconds: number): string {
 	const rate = 8000;
@@ -51,7 +74,18 @@ function video(): HTMLVideoElement {
 }
 
 function make(config: ConstructorParameters<typeof CaptionsController>[0]): CaptionsController {
-	const controller = new CaptionsController(config);
+	const notify = () => [...waiters].forEach((waiter) => waiter());
+	const controller = new CaptionsController({
+		...config,
+		onState: (state) => {
+			config.onState?.(state);
+			notify();
+		},
+		onError: (error, track) => {
+			config.onError?.(error, track);
+			notify();
+		},
+	});
 	controllers.push(controller);
 	return controller;
 }

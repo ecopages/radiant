@@ -47,7 +47,7 @@ describe('rui-popover dismissal', () => {
 
 		inside.focus();
 		trigger.focus();
-		await new Promise((resolve) => setTimeout(resolve, 20));
+		await new Promise((resolve) => setTimeout(resolve, 0));
 
 		expect(host.open).toBe(true);
 	});
@@ -67,14 +67,14 @@ describe('rui-popover external anchor', () => {
 		createRoot(container).render(<RuiPopover anchor="#external-anchor">Body</RuiPopover>);
 		const host = container.querySelector('rui-popover') as RuiPopoverElement;
 		await host.updateComplete;
-		await new Promise((resolve) => setTimeout(resolve, 20));
+		await new Promise((resolve) => setTimeout(resolve, 0));
 
 		const fresh = anchor.cloneNode(true) as HTMLElement;
 		if (change === 'replaced') {
 			anchor.replaceWith(fresh);
 		} else {
 			anchor.remove();
-			await new Promise((resolve) => setTimeout(resolve, 20));
+			await new Promise((resolve) => setTimeout(resolve, 0));
 			document.body.append(fresh);
 		}
 		fresh.click();
@@ -98,7 +98,7 @@ describe('rui-popover external anchor handlers', () => {
 		createRoot(container).render(<RuiPopover anchor="#external-anchor">Body</RuiPopover>);
 		const host = container.querySelector('rui-popover') as RuiPopoverElement;
 		await host.updateComplete;
-		await new Promise((resolve) => setTimeout(resolve, 20));
+		await new Promise((resolve) => setTimeout(resolve, 0));
 
 		anchor.click();
 

@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test } from 'vitest';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import '@ecopages/radiant-ui/themes/default';
 import '../src/components/primitive-example/primitive-example.css';
@@ -15,6 +15,7 @@ const seek = (root: HTMLElement) => root.querySelector<Slider>('[data-seek]')!;
 const wait = (milliseconds: number) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 afterEach(() => {
+	vi.useRealTimers();
 	document.body.innerHTML = '';
 	syncExamples();
 });
@@ -43,6 +44,7 @@ describe('video player (element)', () => {
 	});
 
 	test('stops the auto-hide timer when the element leaves while the controls are about to hide', async () => {
+		vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
 		const root = await mountForm('video-player', 'radiant');
 		await until(() => expect(seek(root).disabled).toBe(false));
 		await userEvent.click(root.querySelector('[data-playback]')!);
@@ -51,7 +53,7 @@ describe('video player (element)', () => {
 		await userEvent.hover(video(root), { position: { x: 8, y: 8 } });
 
 		root.remove();
-		await wait(2800);
+		vi.advanceTimersByTime(2800);
 
 		expect(stage.hasAttribute('data-controls-hidden')).toBe(false);
 	}, 10000);

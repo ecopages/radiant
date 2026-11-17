@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test } from 'vitest';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import '@ecopages/radiant-ui/themes/default';
 import '../src/components/primitive-example/primitive-example.css';
@@ -16,6 +16,7 @@ const ready = (root: HTMLElement) =>
 const macrotask = (milliseconds = 0) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 afterEach(() => {
+	vi.useRealTimers();
 	document.body.innerHTML = '';
 	syncExamples();
 });
@@ -45,6 +46,7 @@ describe('video player (controller)', () => {
 	});
 
 	test('stops the auto-hide timer when the element leaves while the controls are about to hide', async () => {
+		vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
 		const root = await mountController('video-player');
 		await ready(root);
 		await userEvent.click(root.querySelector('[data-playback]')!);
@@ -53,7 +55,8 @@ describe('video player (controller)', () => {
 		await userEvent.hover(video(root), { position: { x: 8, y: 8 } });
 
 		root.remove();
-		await macrotask(2800);
+		await Promise.resolve();
+		vi.advanceTimersByTime(2800);
 
 		expect(stage.hasAttribute('data-controls-hidden')).toBe(false);
 	}, 10000);

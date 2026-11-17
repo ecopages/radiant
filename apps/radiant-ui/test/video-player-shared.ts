@@ -1,5 +1,5 @@
 import { userEvent } from 'vitest/browser';
-import { describe, expect, test, vi } from 'vitest';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 import { until, untilFrame, once } from './until';
 
 type Slider = HTMLElement & { value: number[]; disabled: boolean };
@@ -32,7 +32,16 @@ const status = (root: HTMLElement) => hook(root, '[data-status]').textContent;
 const state = (root: HTMLElement) => stage(root).getAttribute('data-state');
 const text = (root: HTMLElement, selector: string) => hook(root, selector).textContent;
 const segments = (root: HTMLElement) => [...root.querySelectorAll<HTMLElement>('[data-buffered] i')];
-const settle = (milliseconds: number) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+const fakeTimers = () => vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+
+/** Lets `milliseconds` pass: on the fake clock when the test installed one, else for real. */
+const settle = async (milliseconds: number) => {
+	if (vi.isFakeTimers()) {
+		vi.advanceTimersByTime(milliseconds);
+		return;
+	}
+	await new Promise((resolve) => setTimeout(resolve, milliseconds));
+};
 const ready = async (root: HTMLElement) => {
 	await until(() => expect(seek(root).disabled).toBe(false));
 	return root;
@@ -117,6 +126,10 @@ function frame(root: HTMLElement): HTMLElement {
 export function describeVideoPlayerForm(name: string, unframed: VideoPlayerForm): void {
 	const form: VideoPlayerForm = { ...unframed, mount: async () => frame(await unframed.mount()) };
 	describe(`video player (${name})`, () => {
+		afterEach(() => {
+			vi.useRealTimers();
+		});
+
 		test('loads the clip into a seekable player, paused, with the duration, the poster and the buffered bar', async () => {
 			const root = await ready(await form.mount());
 
@@ -318,9 +331,11 @@ export function describeVideoPlayerForm(name: string, unframed: VideoPlayerForm)
 
 		test('the arrows and the page keys on the seek thumb move the playback by whole seconds, once', async () => {
 			const root = await ready(await form.mount());
+			fakeTimers();
 
 			thumb(root).focus();
 			await userEvent.keyboard('{ArrowRight}');
+			await settle(200);
 			await until(() => expect(video(root).currentTime).toBeCloseTo(5, 1));
 			await settle(200);
 			expect(video(root).currentTime).toBeCloseTo(5, 1);
@@ -329,20 +344,26 @@ export function describeVideoPlayerForm(name: string, unframed: VideoPlayerForm)
 			expect(thumb(root).getAttribute('aria-valuetext')).toBe('0:05 of 0:12');
 
 			await userEvent.keyboard('{PageUp}');
+			await settle(200);
 			await until(() => expect(video(root).currentTime).toBeCloseTo(video(root).duration, 0));
 			await userEvent.keyboard('{PageDown}');
+			await settle(200);
 			await until(() => expect(video(root).currentTime).toBeCloseTo(video(root).duration - 10, 0));
 			await userEvent.keyboard('{ArrowLeft}{ArrowLeft}');
+			await settle(200);
 			await until(() => expect(video(root).currentTime).toBeCloseTo(0, 0));
 			await until(() => expect(seek(root).value[0]).toBeCloseTo(0, 0));
 			await userEvent.keyboard('{End}');
+			await settle(200);
 			await until(() => expect(video(root).currentTime).toBeCloseTo(video(root).duration, 0));
 			await userEvent.keyboard('{Home}');
+			await settle(200);
 			await until(() => expect(video(root).currentTime).toBeCloseTo(0, 0));
 		});
 
 		test('a key with a modifier on the seek thumb is left to the browser: no skip and no slider step', async () => {
 			const root = await ready(await form.mount());
+			fakeTimers();
 			stage(root).focus();
 			await userEvent.keyboard('5');
 			await until(() => expect(video(root).currentTime).toBeCloseTo(video(root).duration / 2, 0));
@@ -360,6 +381,7 @@ export function describeVideoPlayerForm(name: string, unframed: VideoPlayerForm)
 
 		test('a burst of scrub input applies one seek to the last value while the clock follows at once', async () => {
 			const root = await ready(await form.mount());
+			fakeTimers();
 			let seeks = 0;
 			video(root).addEventListener('seeking', () => (seeks += 1));
 			const seeked = once(video(root), 'seeked');
@@ -369,6 +391,7 @@ export function describeVideoPlayerForm(name: string, unframed: VideoPlayerForm)
 			expect(text(root, '[data-elapsed]')).toBe('0:09');
 			expect(thumb(root).getAttribute('aria-valuetext')).toBe('0:09 of 0:12');
 			expect(video(root).currentTime).toBe(0);
+			await settle(200);
 			await seeked;
 			expect(video(root).currentTime).toBeCloseTo(video(root).duration * 0.75, 0);
 			expect(seeks).toBe(1);
@@ -487,7 +510,7 @@ export function describeVideoPlayerForm(name: string, unframed: VideoPlayerForm)
 		});
 
 		test('the controls hide after 2.5 seconds without activity while playing, and come back on movement', async () => {
-			vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+			fakeTimers();
 			try {
 				const root = await ready(await form.mount());
 				await playing(root);
@@ -507,7 +530,7 @@ export function describeVideoPlayerForm(name: string, unframed: VideoPlayerForm)
 		});
 
 		test('the controls stay visible while paused and while a control has keyboard focus', async () => {
-			vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+			fakeTimers();
 			try {
 				const root = await ready(await form.mount());
 				await playing(root);

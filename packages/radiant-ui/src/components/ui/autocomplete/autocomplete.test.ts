@@ -5,7 +5,7 @@ import { RuiCombobox } from '../combobox/combobox.script';
 void RuiAutocomplete;
 void RuiCombobox;
 
-const wait = () => new Promise((resolve) => setTimeout(resolve, 20));
+const wait = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 const AUTOCOMPLETE = `<rui-autocomplete><input data-autocomplete-input="" type="text" value="" /><div data-autocomplete-collection=""><div role="option" data-label="Germany">Germany</div><div role="option" data-label="Italy">Italy</div></div></rui-autocomplete>`;
 

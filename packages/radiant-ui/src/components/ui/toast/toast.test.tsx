@@ -10,6 +10,8 @@ void RuiToasterScript;
 
 const cleanups: Array<() => void> = [];
 
+const fakeTimers = () => vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
+
 function mount(element: JsxRenderable): { host: HTMLElement } {
 	const host = document.createElement('div');
 	document.body.appendChild(host);
@@ -24,7 +26,11 @@ function mount(element: JsxRenderable): { host: HTMLElement } {
 
 async function settled(): Promise<void> {
 	await Promise.resolve();
-	await new Promise((resolve) => setTimeout(resolve, 0));
+	await new Promise((resolve) => {
+		const channel = new MessageChannel();
+		channel.port1.onmessage = () => resolve(undefined);
+		channel.port2.postMessage(null);
+	});
 	await customElements.whenDefined('rui-toaster');
 	await customElements.whenDefined('rui-toast');
 	await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve(undefined))));
@@ -62,6 +68,7 @@ async function expectAnnouncement(host: ParentNode, text: string): Promise<void>
 
 describe('rui-toaster', () => {
 	afterEach(() => {
+		vi.useRealTimers();
 		vi.restoreAllMocks();
 		toast.dismiss();
 		toast.clear();
@@ -298,6 +305,7 @@ describe('rui-toaster', () => {
 	});
 
 	it('dismisses all toasts', async () => {
+		fakeTimers();
 		const { host } = mount(<RuiToaster />);
 		await settled();
 
@@ -307,7 +315,8 @@ describe('rui-toaster', () => {
 		expect(host.querySelectorAll('rui-toast').length).toBeGreaterThan(0);
 
 		toast.dismiss();
-		await new Promise((resolve) => setTimeout(resolve, 250));
+		await settled();
+		vi.advanceTimersByTime(250);
 		await settled();
 
 		expect(host.querySelectorAll('rui-toast').length).toBe(0);
@@ -347,6 +356,7 @@ describe('rui-toaster', () => {
 	});
 
 	it('auto-dismisses after duration when not hovered', async () => {
+		fakeTimers();
 		const { host } = mount(<RuiToaster position="bottom-end" duration={400} />);
 		await settled();
 
@@ -354,13 +364,14 @@ describe('rui-toaster', () => {
 		await settled();
 		expect(host.querySelectorAll('rui-toast').length).toBe(1);
 
-		await new Promise((resolve) => setTimeout(resolve, 700));
+		vi.advanceTimersByTime(700);
 		await settled();
 
 		expect(host.querySelectorAll('rui-toast').length).toBe(0);
 	});
 
 	it('auto-dismisses stacked toasts without resetting sibling timers', async () => {
+		fakeTimers();
 		const { host } = mount(<RuiToaster position="bottom-end" duration={500} />);
 		await settled();
 
@@ -369,13 +380,14 @@ describe('rui-toaster', () => {
 		await settled();
 		expect(host.querySelectorAll('rui-toast').length).toBe(2);
 
-		await new Promise((resolve) => setTimeout(resolve, 900));
+		vi.advanceTimersByTime(900);
 		await settled();
 
 		expect(host.querySelectorAll('rui-toast').length).toBe(0);
 	});
 
 	it('keeps lifetime running when expand prop is true', async () => {
+		fakeTimers();
 		const { host } = mount(<RuiToaster expand position="bottom-end" duration={400} />);
 		await settled();
 
@@ -383,7 +395,7 @@ describe('rui-toaster', () => {
 		await settled();
 		expect(host.querySelectorAll('rui-toast').length).toBe(1);
 
-		await new Promise((resolve) => setTimeout(resolve, 700));
+		vi.advanceTimersByTime(700);
 		await settled();
 
 		expect(host.querySelectorAll('rui-toast').length).toBe(0);
@@ -413,6 +425,7 @@ describe('rui-toaster', () => {
 	});
 
 	it('resumes leftover lifetime after a remount instead of restarting duration', async () => {
+		fakeTimers();
 		const { host } = mount(<RuiToaster position="bottom-end" duration={800} />);
 		await settled();
 
@@ -422,12 +435,12 @@ describe('rui-toaster', () => {
 		const el = host.querySelector('rui-toast') as RuiToast | null;
 		expect(el).not.toBeNull();
 
-		await new Promise((resolve) => setTimeout(resolve, 300));
+		vi.advanceTimersByTime(300);
 		el!.disconnectedCallback();
 		el!.connectedCallback();
 		await settledToasts(host);
 
-		await new Promise((resolve) => setTimeout(resolve, 650 + TOAST_EXIT_MS));
+		vi.advanceTimersByTime(650 + TOAST_EXIT_MS);
 		await settled();
 
 		expect(host.querySelectorAll('rui-toast').length).toBe(0);
@@ -513,13 +526,14 @@ describe('rui-toaster', () => {
 	});
 
 	it('pauses lifetime on hover and resumes leftover time after leave', async () => {
+		fakeTimers();
 		const { host } = mount(<RuiToaster position="bottom-end" duration={600} />);
 		await settled();
 
 		toast('Held on hover');
 		await settledToasts(host);
 
-		await new Promise((resolve) => setTimeout(resolve, 200));
+		vi.advanceTimersByTime(200);
 
 		const toaster = host.querySelector('rui-toaster') as unknown as {
 			interacting: boolean;
@@ -529,18 +543,18 @@ describe('rui-toaster', () => {
 		toaster.interacting = true;
 		toaster.syncPauseState();
 
-		await new Promise((resolve) => setTimeout(resolve, 900));
+		vi.advanceTimersByTime(900);
 		await settled();
 		expect(host.querySelectorAll('rui-toast').length).toBe(1);
 
 		toaster.interacting = false;
 		toaster.syncPauseState();
 
-		await new Promise((resolve) => setTimeout(resolve, 250));
+		vi.advanceTimersByTime(250);
 		await settled();
 		expect(host.querySelectorAll('rui-toast').length).toBe(1);
 
-		await new Promise((resolve) => setTimeout(resolve, 700));
+		vi.advanceTimersByTime(700);
 		await settled();
 		expect(host.querySelectorAll('rui-toast').length).toBe(0);
 	});
