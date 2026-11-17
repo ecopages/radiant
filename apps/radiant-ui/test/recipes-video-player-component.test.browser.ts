@@ -5,6 +5,7 @@ import '../src/components/primitive-example/primitive-example.css';
 import '../src/content/components/recipes/video-player.css';
 import { mountComponent, trackListeners } from './mount-recipe';
 import { describeVideoPlayerForm } from './video-player-shared';
+import { until } from './until';
 
 type Slider = HTMLElement & { value: number[]; disabled: boolean };
 
@@ -13,11 +14,11 @@ const part = <T extends HTMLElement = HTMLElement>(root: HTMLElement, selector: 
 const video = (root: HTMLElement) => part<HTMLVideoElement>(root, '[data-video]');
 const mount = async () => {
 	const root = await mountComponent('video-player');
-	await expect.poll(() => root.querySelector('[data-stage]')).not.toBeNull();
+	await until(() => expect(root.querySelector('[data-stage]')).not.toBeNull());
 	return root;
 };
 const ready = async (root: HTMLElement) => {
-	await expect.poll(() => part<Slider>(root, '[data-seek]').disabled).toBe(false);
+	await until(() => expect(part<Slider>(root, '[data-seek]').disabled).toBe(false));
 	return root;
 };
 
@@ -43,7 +44,7 @@ describe('video player (component)', () => {
 		const buttons = ['[data-playback]', '[data-mute]', '[data-rate]', '[data-captions]', '[data-fullscreen]'];
 		const nodes = buttons.map((selector) => part(root, selector));
 		await userEvent.click(part(root, '[data-playback]'));
-		await expect.poll(() => part(root, '[data-stage]').getAttribute('data-state')).toBe('playing');
+		await until(() => expect(part(root, '[data-stage]').getAttribute('data-state')).toBe('playing'));
 		await new Promise((resolve) => setTimeout(resolve, 50));
 		const records: MutationRecord[] = [];
 		const observer = new MutationObserver((batch) => records.push(...batch));
@@ -51,7 +52,7 @@ describe('video player (component)', () => {
 		observer.observe(part(root, '[data-stage]'), { attributes: true });
 		const before = part(root, '[data-elapsed]').textContent;
 
-		await expect.poll(() => part(root, '[data-elapsed]').textContent, { timeout: 8000 }).not.toBe(before);
+		await until(() => expect(part(root, '[data-elapsed]').textContent).not.toBe(before));
 		observer.disconnect();
 
 		expect(records).toEqual([]);
@@ -68,9 +69,9 @@ describe('video player (component)', () => {
 		await userEvent.click(rate);
 		await userEvent.click(part(root, '[data-mute]'));
 
-		await expect.poll(() => captions.getAttribute('aria-pressed')).toBe('true');
-		await expect.poll(() => rate.textContent).toBe('1.25x');
-		await expect.poll(() => part(root, '[data-mute]').getAttribute('aria-pressed')).toBe('true');
+		await until(() => expect(captions.getAttribute('aria-pressed')).toBe('true'));
+		await until(() => expect(rate.textContent).toBe('1.25x'));
+		await until(() => expect(part(root, '[data-mute]').getAttribute('aria-pressed')).toBe('true'));
 		expect(part(root, '[data-captions]')).toBe(captions);
 		expect(part(root, '[data-rate]')).toBe(rate);
 		expect(part(root, '[data-stage]')).toBe(stage);
@@ -82,9 +83,9 @@ describe('video player (component)', () => {
 		const root = await ready(await mount());
 		stageFocus(root);
 		await userEvent.keyboard('5');
-		await expect.poll(() => video(root).currentTime).toBeCloseTo(6, 0);
+		await until(() => expect(video(root).currentTime).toBeCloseTo(6, 0));
 		await userEvent.click(part(root, '[data-rate]'));
-		await expect.poll(() => part(root, '[data-rate]').textContent).toBe('1.25x');
+		await until(() => expect(part(root, '[data-rate]').textContent).toBe('1.25x'));
 
 		expect(part<Slider>(root, '[data-seek]').value[0]).toBeCloseTo(6, 0);
 		expect(part(root, '[data-seek] [role="slider"]').getAttribute('aria-valuetext')).toBe('0:06 of 0:12');
@@ -114,7 +115,7 @@ describe('video player (component)', () => {
 		const fullscreen = vi.spyOn(document, 'fullscreenEnabled', 'get');
 
 		part(root, '[data-rate]').click();
-		await expect.poll(() => part(root, '[data-rate]').textContent).toBe('1.25x');
+		await until(() => expect(part(root, '[data-rate]').textContent).toBe('1.25x'));
 
 		expect(fullscreen).not.toHaveBeenCalled();
 	});
@@ -124,7 +125,7 @@ describe('video player (component)', () => {
 		try {
 			const root = await ready(await mount());
 			await userEvent.click(part(root, '[data-playback]'));
-			await expect.poll(() => video(root).paused).toBe(false);
+			await until(() => expect(video(root).paused).toBe(false));
 			const player = video(root);
 
 			root.remove();

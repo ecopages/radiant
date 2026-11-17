@@ -1,5 +1,5 @@
 import { createRoot } from '@ecopages/jsx';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { RuiCalendar } from './index';
 
@@ -18,11 +18,14 @@ function previewedDays(container: HTMLElement): string[] {
 	);
 }
 
+const rendered = (container: HTMLElement) =>
+	(container.querySelector('rui-calendar') as HTMLElement & { updateComplete: Promise<void> }).updateComplete;
+
 async function mountRangeCalendar(): Promise<HTMLElement> {
 	const container = document.createElement('div');
 	document.body.append(container);
 	createRoot(container).render(<RuiCalendar selectionMode="range" value={`${START}/${START}`} />);
-	await vi.waitFor(() => expect(container.querySelector('[data-calendar-day]')).toBeTruthy());
+	await rendered(container);
 	return container;
 }
 
@@ -37,7 +40,7 @@ describe('RuiCalendar range hover preview', () => {
 		await userEvent.click(dayButton(container, START));
 		await userEvent.hover(dayButton(container, END));
 
-		await vi.waitFor(() => expect(previewedDays(container)).toHaveLength(3));
+		await rendered(container);
 		expect(previewedDays(container)).toEqual(['2030-05-06', '2030-05-07', '2030-05-08']);
 	});
 
@@ -46,11 +49,13 @@ describe('RuiCalendar range hover preview', () => {
 
 		await userEvent.click(dayButton(container, START));
 		await userEvent.hover(dayButton(container, END));
-		await vi.waitFor(() => expect(previewedDays(container).length).toBeGreaterThan(0));
+		await rendered(container);
+		expect(previewedDays(container).length).toBeGreaterThan(0);
 
 		await userEvent.hover(document.body);
 
-		await vi.waitFor(() => expect(previewedDays(container)).toEqual([]));
+		await rendered(container);
+		expect(previewedDays(container)).toEqual([]);
 	});
 
 	it('keeps the hovered and focused day cells in the document while previewing', async () => {
@@ -61,7 +66,8 @@ describe('RuiCalendar range hover preview', () => {
 		focused.focus();
 		const hovered = dayButton(container, END);
 		await userEvent.hover(hovered);
-		await vi.waitFor(() => expect(previewedDays(container).length).toBeGreaterThan(0));
+		await rendered(container);
+		expect(previewedDays(container).length).toBeGreaterThan(0);
 
 		expect(hovered.isConnected).toBe(true);
 		expect(document.activeElement).toBe(focused);
@@ -78,6 +84,7 @@ describe('RuiCalendar range hover preview', () => {
 		end.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
 		end.click();
 
-		await vi.waitFor(() => expect(host.getAttribute('value')).toBe(`${START}/${END}`));
+		await rendered(container);
+		expect(host.getAttribute('value')).toBe(`${START}/${END}`);
 	});
 });

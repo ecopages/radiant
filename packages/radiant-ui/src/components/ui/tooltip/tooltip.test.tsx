@@ -7,9 +7,12 @@ import { RuiMenuButton as RuiMenuButtonScript } from '../menu-button/menu-button
 void RuiTooltipScript;
 void RuiMenuButtonScript;
 
+const rendered = (host: Element) => (host as Element & { updateComplete: Promise<void> }).updateComplete;
+
 describe('RuiTooltip', () => {
 	afterEach(() => {
 		document.body.innerHTML = '';
+		vi.useRealTimers();
 	});
 
 	it('renders one trigger and one tooltip surface that the trigger describes', async () => {
@@ -22,7 +25,8 @@ describe('RuiTooltip', () => {
 		);
 		const button = container.querySelector('button');
 
-		await vi.waitFor(() => expect(button?.getAttribute('aria-describedby')).toBeTruthy());
+		await rendered(container.querySelector('rui-tooltip')!);
+		expect(button?.getAttribute('aria-describedby')).toBeTruthy();
 
 		const surfaces = container.querySelectorAll('[role="tooltip"]');
 		expect(container.querySelectorAll('[data-ref="trigger"]')).toHaveLength(1);
@@ -43,7 +47,8 @@ describe('RuiTooltip', () => {
 
 		host.setAttribute('content', 'Saved');
 
-		await vi.waitFor(() => expect(surface?.textContent).toBe('Saved'));
+		await rendered(host);
+		expect(surface?.textContent).toBe('Saved');
 	});
 
 	it('closes an open tooltip on Escape', async () => {
@@ -56,13 +61,16 @@ describe('RuiTooltip', () => {
 		);
 		const button = container.querySelector('button') as HTMLButtonElement;
 		const surface = container.querySelector('[role="tooltip"]') as HTMLElement;
-		await vi.waitFor(() => expect(button.getAttribute('aria-describedby')).toBeTruthy());
+		await rendered(container.querySelector('rui-tooltip')!);
+		expect(button.getAttribute('aria-describedby')).toBeTruthy();
 
+		vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
 		button.focus();
-		await vi.waitFor(() => expect(surface.hidden).toBe(false));
+		vi.advanceTimersByTime(200);
+		expect(surface.hidden).toBe(false);
 
 		document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-		await vi.waitFor(() => expect(surface.hidden).toBe(true));
+		expect(surface.hidden).toBe(true);
 	});
 
 	it('shows on keyboard focus of a wrapped host that owns its own trigger part', async () => {
@@ -73,16 +81,15 @@ describe('RuiTooltip', () => {
 				<RuiMenuButton trigger="Menu" items={[{ value: 'alpha', label: 'Alpha' }]} />
 			</RuiTooltip>,
 		);
-		const surface = (await vi.waitFor(() => {
-			const found = container.querySelector('rui-tooltip > .rui-tooltip > [role="tooltip"]');
-			expect(found).toBeTruthy();
-			return found;
-		})) as HTMLElement;
+		const surface = container.querySelector('rui-tooltip > .rui-tooltip > [role="tooltip"]') as HTMLElement;
+		expect(surface).toBeTruthy();
 
+		vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
 		(container.querySelector('rui-menu-button [data-ref="trigger"]') as HTMLElement).dispatchEvent(
 			new FocusEvent('focusin', { bubbles: true }),
 		);
 
-		await vi.waitFor(() => expect(surface.hidden).toBe(false));
+		vi.advanceTimersByTime(200);
+		expect(surface.hidden).toBe(false);
 	});
 });

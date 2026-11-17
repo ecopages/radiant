@@ -1,5 +1,5 @@
 import { createRoot } from '@ecopages/jsx';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { RuiPopover } from './popover';
 import { RuiPopover as RuiPopoverElement } from './popover.script';
 import { expectPopupFoundAcrossPortalCycle } from '../../../controllers/exit-transition.fixture';
@@ -22,10 +22,11 @@ describe('rui-popover dismissal', () => {
 			</RuiPopover>,
 		);
 		const host = container.querySelector('rui-popover') as RuiPopoverElement;
-		await vi.waitFor(() => expect(host.querySelector('[data-popover-trigger] button')).toBeTruthy());
+		await host.updateComplete;
 		host.setOpen(true);
 		const surface = document.querySelector('[data-ref="surface"]') as HTMLElement;
-		await vi.waitFor(() => expect(surface.parentElement).toBe(document.body));
+		await host.updateComplete;
+		expect(surface.parentElement).toBe(document.body);
 		return { host, surface, outside, inside: surface.querySelector('[data-inside]') as HTMLElement };
 	}
 
@@ -36,7 +37,8 @@ describe('rui-popover dismissal', () => {
 		expect(host.open).toBe(true);
 		outside.focus();
 
-		await vi.waitFor(() => expect(host.open).toBe(false));
+		await host.updateComplete;
+		expect(host.open).toBe(false);
 	});
 
 	it('stays open while focus moves within the portaled surface and its trigger', async () => {
@@ -64,7 +66,7 @@ describe('rui-popover external anchor', () => {
 		document.body.append(anchor);
 		createRoot(container).render(<RuiPopover anchor="#external-anchor">Body</RuiPopover>);
 		const host = container.querySelector('rui-popover') as RuiPopoverElement;
-		await vi.waitFor(() => expect(host.isConnected).toBe(true));
+		await host.updateComplete;
 		await new Promise((resolve) => setTimeout(resolve, 20));
 
 		const fresh = anchor.cloneNode(true) as HTMLElement;
@@ -95,7 +97,7 @@ describe('rui-popover external anchor handlers', () => {
 		document.body.append(anchor);
 		createRoot(container).render(<RuiPopover anchor="#external-anchor">Body</RuiPopover>);
 		const host = container.querySelector('rui-popover') as RuiPopoverElement;
-		await vi.waitFor(() => expect(host.isConnected).toBe(true));
+		await host.updateComplete;
 		await new Promise((resolve) => setTimeout(resolve, 20));
 
 		anchor.click();
@@ -120,7 +122,7 @@ describe('rui-popover portal container', () => {
 			</RuiPopover>,
 		);
 		const host = container.querySelector('rui-popover') as RuiPopoverElement;
-		await vi.waitFor(() => expect(host.querySelector('[data-popover-trigger] button')).toBeTruthy());
+		await host.updateComplete;
 		const surface = host.querySelector('[data-ref="surface"]') as HTMLElement;
 		return { host, surface, frame };
 	}
@@ -129,10 +131,12 @@ describe('rui-popover portal container', () => {
 		const { host, surface, frame } = await mountPopover({ portalContainer: '#frame' });
 
 		host.setOpen(true);
-		await vi.waitFor(() => expect(surface.parentElement).toBe(frame));
+		await host.updateComplete;
+		expect(surface.parentElement).toBe(frame);
 
 		host.setOpen(false);
-		await vi.waitFor(() => expect(host.contains(surface)).toBe(true));
+		await host.updateComplete;
+		expect(host.contains(surface)).toBe(true);
 	});
 
 	it('honors a container property changed between opens', async () => {
@@ -142,13 +146,16 @@ describe('rui-popover portal container', () => {
 
 		host.portalContainer = frame;
 		host.setOpen(true);
-		await vi.waitFor(() => expect(surface.parentElement).toBe(frame));
+		await host.updateComplete;
+		expect(surface.parentElement).toBe(frame);
 		host.setOpen(false);
-		await vi.waitFor(() => expect(host.contains(surface)).toBe(true));
+		await host.updateComplete;
+		expect(host.contains(surface)).toBe(true);
 
 		host.portalContainer = () => other;
 		host.setOpen(true);
-		await vi.waitFor(() => expect(surface.parentElement).toBe(other));
+		await host.updateComplete;
+		expect(surface.parentElement).toBe(other);
 	});
 });
 
@@ -172,7 +179,7 @@ describe('rui-popover trigger wiring', () => {
 			</RuiPopover>,
 		);
 		const host = container.querySelector('rui-popover') as RuiPopoverElement;
-		await vi.waitFor(() => expect(host.querySelector('[data-popover-trigger] button')).toBeTruthy());
+		await host.updateComplete;
 		host.setOpen(true);
 		return { host, trigger: host.querySelector('[data-popover-trigger] button') as HTMLElement };
 	}
@@ -225,11 +232,13 @@ describe('rui-popover trigger wiring', () => {
 		const host = container.querySelector('rui-popover') as RuiPopoverElement;
 		const first = container.querySelector('#first') as HTMLElement;
 		const second = container.querySelector('#second') as HTMLElement;
-		await vi.waitFor(() => expect(first.getAttribute('aria-controls')).toBeTruthy());
+		await host.updateComplete;
+		expect(first.getAttribute('aria-controls')).toBeTruthy();
 
 		host.anchor = '#second';
 
-		await vi.waitFor(() => expect(second.getAttribute('aria-controls')).toBeTruthy());
+		await host.updateComplete;
+		expect(second.getAttribute('aria-controls')).toBeTruthy();
 		expect(first.hasAttribute('aria-controls')).toBe(false);
 		expect(first.hasAttribute('aria-haspopup')).toBe(false);
 	});
@@ -249,7 +258,7 @@ describe('rui-popover reads its portaled surface from the popover controller', (
 			</RuiPopover>,
 		);
 		const host = container.querySelector('rui-popover') as RuiPopoverElement;
-		await vi.waitFor(() => expect(host.querySelector('[data-popover-trigger] button')).toBeTruthy());
+		await host.updateComplete;
 		const surface = host.querySelector('[data-ref="surface"]') as HTMLElement;
 		const controller = Reflect.get(host, 'controller') as { getFloatingElement(): HTMLElement | null };
 

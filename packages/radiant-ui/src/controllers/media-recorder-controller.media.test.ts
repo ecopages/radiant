@@ -17,11 +17,37 @@ describe('MediaRecorderController', () => {
 		vi.unstubAllGlobals();
 	});
 
+	const waiters = new WeakMap<MediaRecorderController, Set<() => void>>();
+
 	function create(config: MediaRecorderControllerConfig = {}): MediaRecorderController {
-		const controller = new MediaRecorderController(config);
+		const listeners = new Set<() => void>();
+		const controller = new MediaRecorderController({
+			...config,
+			onState: (snapshot) => {
+				config.onState?.(snapshot);
+				[...listeners].forEach((listener) => listener());
+			},
+		});
+		waiters.set(controller, listeners);
 		controllers.push(controller);
 		controller.attach();
 		return controller;
+	}
+
+	/** Resolves once `predicate` holds on the state, re-checked on every `onState` call. */
+	function until(controller: MediaRecorderController, predicate: () => boolean): Promise<void> {
+		const listeners = waiters.get(controller)!;
+		return new Promise((resolve) => {
+			const check = () => {
+				if (!predicate()) {
+					return;
+				}
+				listeners.delete(check);
+				resolve();
+			};
+			listeners.add(check);
+			check();
+		});
 	}
 
 	function sleep(ms: number): Promise<void> {
@@ -273,7 +299,7 @@ describe('MediaRecorderController', () => {
 		const controller = create({ maxDuration: 0.3, onStop });
 		await controller.start();
 
-		await vi.waitFor(() => expect(controller.getState().status).toBe('stopped'), { timeout: 2000 });
+		await until(controller, () => controller.getState().status === 'stopped');
 
 		expect(onStop).toHaveBeenCalledTimes(1);
 		expect(onStop.mock.calls[0][0].duration).toBeGreaterThanOrEqual(0.29);
@@ -292,7 +318,7 @@ describe('MediaRecorderController', () => {
 		await sleep(150);
 		expect(controller.getState().status).toBe('recording');
 
-		await vi.waitFor(() => expect(controller.getState().status).toBe('stopped'), { timeout: 2000 });
+		await until(controller, () => controller.getState().status === 'stopped');
 	});
 
 	it('keeps the state of two controllers apart', async () => {
@@ -405,7 +431,7 @@ describe('MediaRecorderController', () => {
 			await controller.start();
 			expect(controller.getAnalyser()).toBeInstanceOf(AnalyserNode);
 
-			await vi.waitFor(() => expect(controller.getState().level).toBeGreaterThan(0), { timeout: 3000 });
+			await until(controller, () => controller.getState().level > 0);
 			expect(controller.getState().level).toBeLessThanOrEqual(1);
 
 			await controller.stop();
@@ -468,7 +494,7 @@ describe('MediaRecorderController', () => {
 			const audio = await context();
 			const controller = create({ getAudioContext: () => audio });
 			await controller.start();
-			await vi.waitFor(() => expect(controller.getState().level).toBeGreaterThan(0), { timeout: 3000 });
+			await until(controller, () => controller.getState().level > 0);
 
 			controller.pause();
 
@@ -495,7 +521,7 @@ describe('MediaRecorderController', () => {
 
 			endAll(stream);
 
-			await vi.waitFor(() => expect(controller.getState().status).toBe('stopped'));
+			await until(controller, () => controller.getState().status === 'stopped');
 			expect(onStop).toHaveBeenCalledTimes(1);
 			expect(onStop.mock.calls[0][0].blob.size).toBeGreaterThan(0);
 			expect(controller.getStream()).toBeNull();
@@ -525,7 +551,7 @@ describe('MediaRecorderController', () => {
 
 			recorder.current().stop();
 
-			await vi.waitFor(() => expect(controller.getState().status).toBe('stopped'));
+			await until(controller, () => controller.getState().status === 'stopped');
 			expect(onStop).toHaveBeenCalledTimes(1);
 			expect(controller.getStream()).toBeNull();
 		});
@@ -539,7 +565,7 @@ describe('MediaRecorderController', () => {
 			expect(() => controller.pause()).not.toThrow();
 			expect(() => controller.resume()).not.toThrow();
 
-			await vi.waitFor(() => expect(controller.getState().status).toBe('stopped'));
+			await until(controller, () => controller.getState().status === 'stopped');
 		});
 
 		it('does not hang or keep a rejected promise when recorder.stop() throws', async () => {

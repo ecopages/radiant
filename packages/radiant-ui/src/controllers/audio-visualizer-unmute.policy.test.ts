@@ -1,4 +1,4 @@
-import { afterEach, expect, it, vi } from 'vitest';
+import { afterEach, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { AudioVisualizerController } from './audio-visualizer-controller';
 
@@ -45,10 +45,13 @@ it('starts the visualizer when the user unmutes an autoplaying muted video with 
 	document.body.append(video);
 	const target = document.createElement('div');
 	document.body.append(target);
+	let running!: () => void;
+	const isRunning = new Promise<void>((resolve) => (running = resolve));
 	const controller = new AudioVisualizerController({
 		getMedia: () => video,
 		getTarget: () => target,
 		preset: { mount() {}, draw() {}, rest() {}, destroy() {} },
+		onState: (state) => state === 'running' && running(),
 	});
 	controller.attach();
 
@@ -64,7 +67,7 @@ it('starts the visualizer when the user unmutes an autoplaying muted video with 
 	document.body.append(unmute);
 	await userEvent.click(unmute);
 
-	await vi.waitFor(() => expect(controller.getState()).toBe('running'), { timeout: 5000 });
+	await isRunning;
 	expect(video.paused).toBe(false);
 	controller.destroy();
 });

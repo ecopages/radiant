@@ -332,7 +332,7 @@ describe('tooltip and hover-card inside a modal rui-dialog', () => {
 		const trigger = page.dialog.querySelector('#tip-trigger') as HTMLElement;
 		await userEvent.hover(trigger);
 		const tip = page.dialog.querySelector('[role="tooltip"]') as HTMLElement;
-		await expect.poll(() => tip.hidden).toBe(false);
+		expect(tip.hidden).toBe(false);
 
 		await userEvent.keyboard('{Escape}');
 		await settled();

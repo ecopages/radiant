@@ -30,11 +30,26 @@ async function settled(): Promise<void> {
 	await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve(undefined))));
 }
 
+/** Resolves once `predicate` holds, re-checked on every DOM mutation under `target`, which is what the toast changes. */
+function untilMutated(target: Node, predicate: () => boolean): Promise<void> {
+	return new Promise((resolve) => {
+		if (predicate()) {
+			resolve();
+			return;
+		}
+		const observer = new MutationObserver(() => {
+			if (predicate()) {
+				observer.disconnect();
+				resolve();
+			}
+		});
+		observer.observe(target, { attributes: true, childList: true, characterData: true, subtree: true });
+	});
+}
+
 async function settledToasts(host: ParentNode): Promise<void> {
 	await settled();
-	await vi.waitFor(() => {
-		expect(toastElements(host).every((element) => element.dataset.mounted === 'true')).toBe(true);
-	});
+	await untilMutated(host, () => toastElements(host).every((element) => element.dataset.mounted === 'true'));
 }
 
 function toastElements(host: ParentNode): HTMLElement[] {
@@ -42,9 +57,7 @@ function toastElements(host: ParentNode): HTMLElement[] {
 }
 
 async function expectAnnouncement(host: ParentNode, text: string): Promise<void> {
-	await vi.waitFor(() => {
-		expect(host.querySelector('.rui-toaster-announcer')?.textContent).toBe(text);
-	});
+	await untilMutated(host, () => host.querySelector('.rui-toaster-announcer')?.textContent === text);
 }
 
 describe('rui-toaster', () => {
@@ -154,7 +167,7 @@ describe('rui-toaster', () => {
 		toast('Saved');
 		await expectAnnouncement(host, 'Saved');
 		toast('Saved');
-		await vi.waitFor(() => expect(seen.filter((text) => text === 'Saved')).toHaveLength(2));
+		await untilMutated(host, () => seen.filter((text) => text === 'Saved').length === 2);
 
 		expect(seen).toEqual(['Saved', '', 'Saved']);
 	});
@@ -208,9 +221,10 @@ describe('rui-toaster', () => {
 		await expectAnnouncement(host, 'Saving');
 		reject(new Error('offline'));
 
-		await vi.waitFor(() => {
-			expect(host.querySelector('.rui-toaster-announcer[data-assertive]')?.textContent).toBe('Save failed');
-		});
+		await untilMutated(
+			host,
+			() => host.querySelector('.rui-toaster-announcer[data-assertive]')?.textContent === 'Save failed',
+		);
 		expect(host.querySelector('.rui-toaster-announcer[data-assertive]')?.getAttribute('aria-live')).toBe(
 			'assertive',
 		);
@@ -236,7 +250,7 @@ describe('rui-toaster', () => {
 		await expectAnnouncement(host, 'Saved');
 		toast('Saved', { id: 'save' });
 
-		await vi.waitFor(() => expect(seen.filter((text) => text === 'Saved')).toHaveLength(2));
+		await untilMutated(host, () => seen.filter((text) => text === 'Saved').length === 2);
 	});
 
 	it('announces the supplied announcement text instead of the title', async () => {

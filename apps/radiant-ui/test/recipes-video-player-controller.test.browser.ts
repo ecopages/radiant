@@ -6,11 +6,13 @@ import '../src/content/components/recipes/video-player.css';
 import { syncExamples } from '../src/components/primitive-example/mount-example';
 import { mountController, trackListeners } from './mount-recipe';
 import { describeVideoPlayerForm } from './video-player-shared';
+import { until } from './until';
 
 type Slider = HTMLElement & { disabled: boolean };
 
 const video = (root: HTMLElement) => root.querySelector<HTMLVideoElement>('[data-video]')!;
-const ready = (root: HTMLElement) => expect.poll(() => root.querySelector<Slider>('[data-seek]')!.disabled).toBe(false);
+const ready = (root: HTMLElement) =>
+	until(() => expect(root.querySelector<Slider>('[data-seek]')!.disabled).toBe(false));
 const macrotask = (milliseconds = 0) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 afterEach(() => {
@@ -25,7 +27,7 @@ describe('video player (controller)', () => {
 			const root = await mountController('video-player');
 			await ready(root);
 			await userEvent.click(root.querySelector('[data-playback]')!);
-			await expect.poll(() => video(root).paused).toBe(false);
+			await until(() => expect(video(root).paused).toBe(false));
 			const player = video(root);
 			const stage = root.querySelector('[data-stage]')!;
 
@@ -46,7 +48,7 @@ describe('video player (controller)', () => {
 		const root = await mountController('video-player');
 		await ready(root);
 		await userEvent.click(root.querySelector('[data-playback]')!);
-		await expect.poll(() => video(root).paused).toBe(false);
+		await until(() => expect(video(root).paused).toBe(false));
 		const stage = root.querySelector('[data-stage]')!;
 		await userEvent.hover(video(root), { position: { x: 8, y: 8 } });
 
@@ -65,13 +67,13 @@ describe('video player (controller)', () => {
 		holder.append(root);
 		await macrotask(50);
 		await ready(root);
-		await expect.poll(() => video(root).src).toMatch(/^blob:/);
+		await until(() => expect(video(root).src).toMatch(/^blob:/));
 		const toggles: boolean[] = [];
 		video(root).addEventListener('play', () => toggles.push(true));
 		video(root).addEventListener('pause', () => toggles.push(false));
 		await userEvent.click(root.querySelector('[data-playback]')!);
 
-		await expect.poll(() => video(root).paused).toBe(false);
+		await until(() => expect(video(root).paused).toBe(false));
 		expect(toggles).toEqual([true]);
 		expect(root.querySelector('[data-stage]')!.getAttribute('data-state')).toBe('playing');
 	});

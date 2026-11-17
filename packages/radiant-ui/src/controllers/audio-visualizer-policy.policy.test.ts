@@ -48,10 +48,13 @@ it('leaves a muted autoplaying video on its native output while the context is b
 	const target = document.createElement('div');
 	document.body.append(target);
 	const draw = vi.fn();
+	let running!: () => void;
+	const isRunning = new Promise<void>((resolve) => (running = resolve));
 	const controller = new AudioVisualizerController({
 		getMedia: () => video,
 		getTarget: () => target,
 		preset: { mount() {}, draw, rest() {}, destroy() {} },
+		onState: (state) => state === 'running' && running(),
 	});
 	controller.attach();
 
@@ -70,7 +73,7 @@ it('leaves a muted autoplaying video on its native output while the context is b
 	});
 	document.body.append(toggle);
 	await userEvent.click(toggle);
-	await vi.waitFor(() => expect(controller.getState()).toBe('running'), { timeout: 5000 });
+	await isRunning;
 	expect(create).toHaveBeenCalledOnce();
 	expect(video.paused).toBe(false);
 	controller.destroy();

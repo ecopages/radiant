@@ -2,6 +2,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ControllerHost } from './controller';
 import { CopyController, createCopyController, type CopyControllerConfig } from './copy-controller';
 
+function deferred() {
+	let resolve!: () => void;
+	const promise = new Promise<void>((res) => (resolve = res));
+	return { promise, resolve };
+}
+
 describe('CopyController', () => {
 	const controllers: CopyController[] = [];
 
@@ -16,10 +22,19 @@ describe('CopyController', () => {
 		vi.spyOn(navigator.clipboard, 'writeText').mockImplementation(writeText);
 		const button = document.createElement('button');
 		document.body.append(button);
-		const controller = new CopyController({ getText: 'hello', getTrigger: () => button, ...config });
+		const copied = deferred();
+		const controller = new CopyController({
+			getText: 'hello',
+			getTrigger: () => button,
+			...config,
+			onCopy: (text) => {
+				config.onCopy?.(text);
+				copied.resolve();
+			},
+		});
 		controllers.push(controller);
 		controller.attach();
-		return { button, controller, writeText };
+		return { button, controller, writeText, copied: copied.promise };
 	}
 
 	function withoutAsyncClipboard(): void {
@@ -28,10 +43,11 @@ describe('CopyController', () => {
 
 	it('writes the text to the clipboard on click and shows the copied state', async () => {
 		const onCopy = vi.fn();
-		const { button, controller, writeText } = mount({ onCopy });
+		const { button, controller, writeText, copied } = mount({ onCopy });
 
 		button.click();
-		await vi.waitFor(() => expect(button.getAttribute('data-copy-state')).toBe('copied'));
+		await copied;
+		expect(button.getAttribute('data-copy-state')).toBe('copied');
 
 		expect(writeText).toHaveBeenCalledWith('hello');
 		expect(controller.getState()).toBe('copied');
@@ -122,10 +138,12 @@ describe('CopyController', () => {
 		root.innerHTML = '<button data-copy="a"><b>A</b></button><button data-copy="b">B</button><p>none</p>';
 		document.body.append(root);
 		const writeText = vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue();
+		const copied = deferred();
 		const controller = new CopyController({
 			getRoot: () => root,
 			selector: '[data-copy]',
 			getText: (trigger) => trigger!.dataset.copy!,
+			onCopy: copied.resolve,
 		});
 		controllers.push(controller);
 		controller.attach();
@@ -134,7 +152,8 @@ describe('CopyController', () => {
 		expect(writeText).not.toHaveBeenCalled();
 
 		root.querySelector('b')!.click();
-		await vi.waitFor(() => expect(writeText).toHaveBeenCalledWith('a'));
+		await copied.promise;
+		expect(writeText).toHaveBeenCalledWith('a');
 		expect(root.querySelector('[data-copy="a"]')!.getAttribute('data-copy-state')).toBe('copied');
 		expect(root.querySelector('[data-copy="b"]')!.hasAttribute('data-copy-state')).toBe(false);
 	});
@@ -235,12 +254,12 @@ describe('CopyController', () => {
 	});
 
 	it('listens once after destroy and attach again', async () => {
-		const { button, controller, writeText } = mount();
+		const { button, controller, writeText, copied } = mount();
 
 		controller.destroy();
 		controller.attach();
 		button.click();
-		await vi.waitFor(() => expect(controller.getState()).toBe('copied'));
+		await copied;
 
 		expect(writeText).toHaveBeenCalledTimes(1);
 	});
@@ -275,14 +294,16 @@ describe('CopyController', () => {
 		const button = document.createElement('button');
 		document.body.append(button);
 
-		const bound = createCopyController(host, { getText: 'x', getTrigger: () => button });
+		const copied = deferred();
+		const bound = createCopyController(host, { getText: 'x', getTrigger: () => button, onCopy: copied.resolve });
 		controllers.push(bound);
 		button.click();
 		expect(writeText).not.toHaveBeenCalled();
 
 		connected.forEach((callback) => callback());
 		button.click();
-		await vi.waitFor(() => expect(bound.getState()).toBe('copied'));
+		await copied.promise;
+		expect(bound.getState()).toBe('copied');
 
 		cleanup.forEach((callback) => callback());
 		expect(bound.getState()).toBe('idle');

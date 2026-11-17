@@ -12,6 +12,7 @@ function frame(level: number, fftSize = 1024): AudioFrame {
 	};
 }
 
+/** Two animation frames: a style change made now has been laid out and its resize observers have run. */
 const settle = () =>
 	new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
 
@@ -271,14 +272,17 @@ describe.each([
 		expect(canvas.width).toBe(Math.round(100 * ratio));
 
 		target.style.width = '60px';
-		await vi.waitFor(() => expect(canvas.width).toBe(Math.round(60 * ratio)));
+		await settle();
+		expect(canvas.width).toBe(Math.round(60 * ratio));
 
 		target.style.height = '0px';
-		await vi.waitFor(() => expect(canvas.height).toBe(0));
+		await settle();
+		expect(canvas.height).toBe(0);
 		expect(() => preset.draw(frame(255, preset.fftSize ?? 1024))).not.toThrow();
 
 		target.style.height = '30px';
-		await vi.waitFor(() => expect(canvas.height).toBe(Math.round(30 * ratio)));
+		await settle();
+		expect(canvas.height).toBe(Math.round(30 * ratio));
 		preset.destroy();
 	});
 
@@ -303,7 +307,8 @@ describe.each([
 		expect(canvas.height).toBe(Math.round(box.height * window.devicePixelRatio));
 
 		target.style.padding = '0px';
-		await vi.waitFor(() => expect(canvas.width).toBe(Math.round(100 * window.devicePixelRatio)));
+		await settle();
+		expect(canvas.width).toBe(Math.round(100 * window.devicePixelRatio));
 		preset.destroy();
 	});
 
@@ -576,10 +581,10 @@ describe('bars canvas look', () => {
 		const preset = bars({ mode: 'canvas', count: 1, floor: 0.5, idle: 'floor', color: 'rgb(0, 128, 0)' });
 		preset.mount(target);
 		preset.rest();
+		const canvas = target.querySelector('canvas')!;
 		target.style.width = '60px';
-		await vi.waitFor(() =>
-			expect(target.querySelector('canvas')!.width).toBe(Math.round(60 * window.devicePixelRatio)),
-		);
+		await settle();
+		expect(canvas.width).toBe(Math.round(60 * window.devicePixelRatio));
 		await settle();
 		expect(coverage(target.querySelector('canvas')!, 30).filter(Boolean).length).toBeGreaterThan(0);
 		preset.destroy();

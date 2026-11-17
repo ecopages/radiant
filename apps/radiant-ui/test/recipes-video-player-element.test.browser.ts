@@ -6,6 +6,7 @@ import '../src/content/components/recipes/video-player.css';
 import { syncExamples } from '../src/components/primitive-example/mount-example';
 import { mountForm, trackListeners } from './mount-recipe';
 import { describeVideoPlayerForm } from './video-player-shared';
+import { until } from './until';
 
 type Slider = HTMLElement & { disabled: boolean };
 
@@ -23,9 +24,9 @@ describe('video player (element)', () => {
 		const tracker = trackListeners();
 		try {
 			const root = await mountForm('video-player', 'radiant');
-			await expect.poll(() => seek(root).disabled).toBe(false);
+			await until(() => expect(seek(root).disabled).toBe(false));
 			await userEvent.click(root.querySelector('[data-playback]')!);
-			await expect.poll(() => video(root).paused).toBe(false);
+			await until(() => expect(video(root).paused).toBe(false));
 			const player = video(root);
 
 			root.remove();
@@ -38,14 +39,14 @@ describe('video player (element)', () => {
 			tracker.stop();
 		}
 		const again = await mountForm('video-player', 'radiant');
-		await expect.poll(() => seek(again).disabled).toBe(false);
+		await until(() => expect(seek(again).disabled).toBe(false));
 	});
 
 	test('stops the auto-hide timer when the element leaves while the controls are about to hide', async () => {
 		const root = await mountForm('video-player', 'radiant');
-		await expect.poll(() => seek(root).disabled).toBe(false);
+		await until(() => expect(seek(root).disabled).toBe(false));
 		await userEvent.click(root.querySelector('[data-playback]')!);
-		await expect.poll(() => video(root).paused).toBe(false);
+		await until(() => expect(video(root).paused).toBe(false));
 		const stage = root.querySelector('[data-stage]')!;
 		await userEvent.hover(video(root), { position: { x: 8, y: 8 } });
 
@@ -57,9 +58,9 @@ describe('video player (element)', () => {
 
 	test('moving the element keeps the clip loaded and the same video element, and playback restarts paused', async () => {
 		const root = await mountForm('video-player', 'radiant');
-		await expect.poll(() => seek(root).disabled).toBe(false);
+		await until(() => expect(seek(root).disabled).toBe(false));
 		await userEvent.click(root.querySelector('[data-playback]')!);
-		await expect.poll(() => video(root).paused).toBe(false);
+		await until(() => expect(video(root).paused).toBe(false));
 		const player = video(root);
 
 		const holder = document.createElement('div');
@@ -67,7 +68,7 @@ describe('video player (element)', () => {
 		holder.append(root);
 		await wait(100);
 
-		await expect.poll(() => seek(root).disabled).toBe(false);
+		await until(() => expect(seek(root).disabled).toBe(false));
 		expect(video(root)).toBe(player);
 		expect(player.src).toMatch(/^blob:/);
 		expect(root.querySelector('[data-stage]')!.getAttribute('data-state')).toBe('paused');

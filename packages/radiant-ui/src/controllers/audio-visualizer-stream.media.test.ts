@@ -7,20 +7,47 @@ import { AudioVisualizerController, type AudioFrame, type AudioVisualizerPreset 
  * a repeating beep and needs no permission.
  */
 
-type Recorder = AudioVisualizerPreset & { calls: string[]; loudest: number };
+type Recorder = AudioVisualizerPreset & {
+	calls: string[];
+	loudest: number;
+	reached: (predicate: () => boolean) => Promise<void>;
+};
 
+/**
+ * A preset whose `reached` resolves from its own calls, re-checking `predicate` on each one.
+ *
+ * @remarks A controller that is running draws every frame, and one that went idle calls `rest`, so a state
+ * change shows in the preset's calls without polling the controller.
+ */
 function recorder(): Recorder {
 	const calls: string[] = [];
+	const waiters = new Set<() => void>();
+	const record = (call: string) => {
+		calls.push(call);
+		[...waiters].forEach((waiter) => waiter());
+	};
 	const preset: Recorder = {
 		calls,
 		loudest: 0,
-		mount: () => calls.push('mount'),
+		mount: () => record('mount'),
 		draw(frame: AudioFrame) {
-			calls.push('draw');
 			preset.loudest = Math.max(preset.loudest, ...frame.frequency);
+			record('draw');
 		},
-		rest: () => calls.push('rest'),
-		destroy: () => calls.push('destroy'),
+		rest: () => record('rest'),
+		destroy: () => record('destroy'),
+		reached: (predicate) =>
+			new Promise<void>((resolve) => {
+				const check = () => {
+					if (!predicate()) {
+						return;
+					}
+					waiters.delete(check);
+					resolve();
+				};
+				waiters.add(check);
+				check();
+			}),
 	};
 	return preset;
 }
@@ -58,9 +85,9 @@ describe('AudioVisualizerController with a MediaStream', () => {
 		controller.attach();
 		controller.resume();
 
-		await expect.poll(() => controller.getState()).toBe('running');
-		await expect.poll(() => preset.loudest, { timeout: 8000 }).toBeGreaterThan(20);
-		await expect.poll(() => preset.calls.filter((call) => call === 'draw').length).toBeGreaterThan(3);
+		await preset.reached(() => controller.getState() === 'running');
+		await preset.reached(() => preset.loudest > 20);
+		await preset.reached(() => preset.calls.filter((call) => call === 'draw').length > 3);
 		controller.destroy();
 	});
 
@@ -82,15 +109,16 @@ describe('AudioVisualizerController with a MediaStream', () => {
 			sources.push(node);
 			return node;
 		});
+		const preset = recorder();
 		const controller = new AudioVisualizerController({
 			getStream: () => stream,
 			getTarget: () => document.body,
-			preset: recorder(),
+			preset,
 		});
 		await gesture();
 		controller.attach();
 		controller.resume();
-		await expect.poll(() => controller.getState()).toBe('running');
+		await preset.reached(() => controller.getState() === 'running');
 
 		expect(sources).toHaveLength(1);
 		const fromSource = connected.filter((link) => link.from === sources[0]);
@@ -124,15 +152,16 @@ describe('AudioVisualizerController with a MediaStream', () => {
 		await gesture();
 		controller.attach();
 		controller.resume();
-		await expect.poll(() => controller.getState()).toBe('running');
+		await preset.reached(() => controller.getState() === 'running');
 
 		current = second;
 		controller.refresh();
 
-		await expect.poll(() => made.map((entry) => entry.input)).toEqual([first, second]);
+		await preset.reached(() => made.length === 2);
+		expect(made.map((entry) => entry.input)).toEqual([first, second]);
 		expect(made[0].node.disconnect).toHaveBeenCalled();
 		expect(preset.calls).toContain('rest');
-		await expect.poll(() => controller.getState()).toBe('running');
+		await preset.reached(() => controller.getState() === 'running');
 		controller.destroy();
 	});
 
@@ -154,7 +183,7 @@ describe('AudioVisualizerController with a MediaStream', () => {
 		current = await open();
 		controller.refresh();
 		controller.resume();
-		await expect.poll(() => controller.getState()).toBe('running');
+		await preset.reached(() => controller.getState() === 'running');
 
 		current = null;
 		controller.refresh();
@@ -170,15 +199,16 @@ describe('AudioVisualizerController with a MediaStream', () => {
 	it('leaves the tracks live and the shared context running when it is destroyed', async () => {
 		const stream = await open();
 		const close = vi.spyOn(AudioContext.prototype, 'close');
+		const preset = recorder();
 		const controller = new AudioVisualizerController({
 			getStream: () => stream,
 			getTarget: () => document.body,
-			preset: recorder(),
+			preset,
 		});
 		await gesture();
 		controller.attach();
 		controller.resume();
-		await expect.poll(() => controller.getState()).toBe('running');
+		await preset.reached(() => controller.getState() === 'running');
 
 		controller.destroy();
 
@@ -202,10 +232,10 @@ describe('AudioVisualizerController with a MediaStream', () => {
 		await gesture();
 		controller.attach();
 		controller.resume();
-		await expect.poll(() => controller.getState()).toBe('running');
+		await preset.reached(() => controller.getState() === 'running');
 
 		stopped.getTracks().forEach((track) => track.stop());
-		await expect.poll(() => controller.getState()).toBe('idle');
+		await preset.reached(() => controller.getState() === 'idle');
 		const drawn = preset.calls.filter((call) => call === 'draw').length;
 		await new Promise((resolve) => setTimeout(resolve, 100));
 		expect(preset.calls.filter((call) => call === 'draw')).toHaveLength(drawn);
@@ -214,7 +244,7 @@ describe('AudioVisualizerController with a MediaStream', () => {
 
 		current = await open();
 		controller.refresh();
-		await expect.poll(() => controller.getState()).toBe('running');
+		await preset.reached(() => controller.getState() === 'running');
 		expect(states).toEqual(['running', 'idle', 'running']);
 		controller.destroy();
 	});
@@ -277,7 +307,7 @@ describe('AudioVisualizerController with a media element, unchanged', () => {
 		controller.resume();
 		await audio.play();
 
-		await expect.poll(() => controller.getState()).toBe('running');
+		await preset.reached(() => controller.getState() === 'running');
 		expect(connected.some((link) => link.to instanceof AudioDestinationNode)).toBe(true);
 		expect(connected.some((link) => link.to instanceof AnalyserNode)).toBe(true);
 		controller.destroy();

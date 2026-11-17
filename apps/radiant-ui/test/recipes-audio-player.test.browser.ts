@@ -6,6 +6,7 @@ import '../src/content/components/recipes/audio-player.css';
 import { syncExamples } from '../src/components/primitive-example/mount-example';
 import { barsFollow, barsRest, coverage, describeAudioPlayerForm, playToEnd } from './audio-player-shared';
 import { mountForm, trackListeners } from './mount-recipe';
+import { until, untilFrame, once } from './until';
 
 type Slider = HTMLElement & { value: number[]; disabled: boolean };
 
@@ -31,7 +32,7 @@ describe('audio player (plain)', () => {
 	test('loads the first track, paused, with the clock and title filled in', async () => {
 		const root = await mountForm('audio-player', 'plain');
 
-		await expect.poll(() => root.querySelector<Slider>('[data-seek]')!.disabled).toBe(false);
+		await until(() => expect(root.querySelector<Slider>('[data-seek]')!.disabled).toBe(false));
 		expect(current(root)).toBe('Morning Light');
 		expect(root.querySelector('[data-title]')!.textContent).toBe('Morning Light');
 		expect(audio(root).paused).toBe(true);
@@ -43,12 +44,12 @@ describe('audio player (plain)', () => {
 
 		await userEvent.click(root.querySelector('[data-playback]')!);
 
-		await expect.poll(() => audio(root).paused).toBe(false);
+		await until(() => expect(audio(root).paused).toBe(false));
 		expect(root.querySelector('[data-playback]')!.getAttribute('aria-label')).toBe('Play');
 		expect(root.querySelector('[data-playback]')!.getAttribute('aria-pressed')).toBe('true');
 		expect(root.querySelector('[data-status]')!.textContent).toBe('Playing Morning Light');
 		await userEvent.click(root.querySelector('[data-playback]')!);
-		await expect.poll(() => audio(root).paused).toBe(true);
+		await until(() => expect(audio(root).paused).toBe(true));
 		expect(root.querySelector('[data-playback]')!.getAttribute('aria-label')).toBe('Play');
 	});
 
@@ -56,8 +57,8 @@ describe('audio player (plain)', () => {
 		const root = await mountForm('audio-player', 'plain');
 
 		await userEvent.click(track(root, 'Neon Rain'));
-		await expect.poll(() => current(root)).toBe('Neon Rain');
-		await expect.poll(() => audio(root).paused).toBe(false);
+		await until(() => expect(current(root)).toBe('Neon Rain'));
+		await until(() => expect(audio(root).paused).toBe(false));
 
 		await userEvent.click(root.querySelector('[data-next]')!);
 		expect(current(root)).toBe('Paper Planes');
@@ -74,7 +75,7 @@ describe('audio player (plain)', () => {
 	test('the keyboard lifts a track, moves it and renumbers the list while the current track keeps playing', async () => {
 		const root = await mountForm('audio-player', 'plain');
 		await userEvent.click(track(root, 'Morning Light'));
-		await expect.poll(() => audio(root).paused).toBe(false);
+		await until(() => expect(audio(root).paused).toBe(false));
 
 		track(root, 'Low Tide').focus();
 		await userEvent.keyboard(' {ArrowUp} ');
@@ -110,13 +111,13 @@ describe('audio player (plain)', () => {
 	test('seeking moves the playback position and the volume input sets the volume', async () => {
 		const root = await mountForm('audio-player', 'plain');
 		const seek = root.querySelector<Slider>('[data-seek]')!;
-		await expect.poll(() => seek.disabled).toBe(false);
+		await until(() => expect(seek.disabled).toBe(false));
 
 		drag(seek, audio(root).duration / 2);
 		const volume = root.querySelector<Slider>('[data-volume-input]')!;
 		drag(volume, 0.3);
 
-		await expect.poll(() => audio(root).currentTime).toBeCloseTo(audio(root).duration / 2, 0);
+		await until(() => expect(audio(root).currentTime).toBeCloseTo(audio(root).duration / 2, 0));
 		expect(audio(root).volume).toBeCloseTo(0.3);
 	});
 
@@ -125,42 +126,43 @@ describe('audio player (plain)', () => {
 		try {
 			const root = await mountForm('audio-player', 'plain');
 			await userEvent.click(root.querySelector('[data-playback]')!);
-			await expect.poll(() => audio(root).paused).toBe(false);
+			await until(() => expect(audio(root).paused).toBe(false));
 			const player = audio(root);
 
 			root.remove();
 			syncExamples();
 
-			await expect.poll(() => player.paused).toBe(true);
-			await expect.poll(() => player.hasAttribute('src')).toBe(false);
+			await until(() => expect(player.paused).toBe(true), player);
+			await until(() => expect(player.hasAttribute('src')).toBe(false), player);
 			expect(tracker.live(player, document, window)).toEqual([]);
 		} finally {
 			tracker.stop();
 		}
 		const again = await mountForm('audio-player', 'plain');
-		await expect.poll(() => current(again)).toBe('Morning Light');
+		await until(() => expect(current(again)).toBe('Morning Light'));
 	});
 	test('when a track ends the next one starts, and the last one stops the playlist', async () => {
 		const root = await mountForm('audio-player', 'plain');
 		await userEvent.click(track(root, 'Paper Planes'));
-		await expect.poll(() => audio(root).paused).toBe(false);
+		await until(() => expect(audio(root).paused).toBe(false));
 
 		await playToEnd(audio(root));
-		await expect.poll(() => root.querySelector('[data-status]')!.textContent).toBe('End of the playlist');
+		await until(() => expect(root.querySelector('[data-status]')!.textContent).toBe('End of the playlist'));
 		expect(current(root)).toBe('Paper Planes');
 
 		await userEvent.click(track(root, 'Low Tide'));
-		await expect.poll(() => audio(root).paused).toBe(false);
+		await until(() => expect(audio(root).paused).toBe(false));
 		await playToEnd(audio(root));
-		await expect.poll(() => current(root)).toBe('Neon Rain');
-		await expect.poll(() => audio(root).paused).toBe(false);
+		await until(() => expect(current(root)).toBe('Neon Rain'));
+		await until(() => expect(audio(root).paused).toBe(false));
 	});
 	test('a burst of seek input applies one seek, to the last value, and the clock follows at once', async () => {
 		const root = await mountForm('audio-player', 'plain');
 		const seek = root.querySelector<Slider>('[data-seek]')!;
-		await expect.poll(() => seek.disabled).toBe(false);
+		await until(() => expect(seek.disabled).toBe(false));
 		let seeks = 0;
 		audio(root).addEventListener('seeking', () => (seeks += 1));
+		const seeked = once(audio(root), 'seeked');
 
 		for (const value of ['0.1', '0.3', '0.5', '0.75']) {
 			drag(seek, Number(value) * audio(root).duration);
@@ -168,13 +170,14 @@ describe('audio player (plain)', () => {
 
 		expect(root.querySelector('[data-elapsed]')!.textContent).toBe('0:06');
 		expect(audio(root).currentTime).toBe(0);
-		await expect.poll(() => audio(root).currentTime).toBeCloseTo(audio(root).duration * 0.75, 0);
+		await seeked;
+		expect(audio(root).currentTime).toBeCloseTo(audio(root).duration * 0.75, 0);
 		expect(seeks).toBe(1);
 	});
 	test('the cover bars follow the sound while it plays and return to rest when it pauses', async () => {
 		const root = await mountForm('audio-player', 'plain');
-		await expect.poll(() => root.querySelector('[data-cover] canvas')).not.toBeNull();
-		await expect.poll(() => coverage(root)).toBeGreaterThan(0);
+		await until(() => expect(root.querySelector('[data-cover] canvas')).not.toBeNull());
+		await untilFrame(() => expect(coverage(root)).toBeGreaterThan(0));
 		const rest = coverage(root);
 
 		await userEvent.click(root.querySelector('[data-playback]')!);
@@ -185,14 +188,14 @@ describe('audio player (plain)', () => {
 	});
 	test('plays each clip from a blob so seeking works on servers without range support', async () => {
 		const root = await mountForm('audio-player', 'plain');
-		await expect.poll(() => audio(root).src).toMatch(/^blob:/);
+		await until(() => expect(audio(root).src).toMatch(/^blob:/));
 		const first = audio(root).src;
 
 		await userEvent.click(track(root, 'Neon Rain'));
 
-		await expect.poll(() => audio(root).src).not.toBe(first);
+		await until(() => expect(audio(root).src).not.toBe(first));
 		expect(audio(root).src).toMatch(/^blob:/);
-		await expect.poll(() => root.querySelector<Slider>('[data-seek]')!.disabled).toBe(false);
+		await until(() => expect(root.querySelector<Slider>('[data-seek]')!.disabled).toBe(false));
 		expect(audio(root).seekable.end(0)).toBeCloseTo(audio(root).duration, 0);
 	});
 });
