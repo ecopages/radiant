@@ -739,7 +739,7 @@ export class RadiantElement<Bindings extends object = {}>
 			return this.renderRuntime;
 		}
 
-		this.renderRuntime = new RenderRuntime(this as RenderRuntimeHost);
+		this.renderRuntime = new RenderRuntime(this as RenderRuntimeHost, this.reactiveHost.renderWarnings);
 		return this.renderRuntime;
 	}
 }
