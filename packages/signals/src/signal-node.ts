@@ -26,10 +26,11 @@ export function collectErrors(tasks: Iterable<() => void>): unknown[] {
 }
 
 /**
- * @remarks Marks the aggregates {@link throwCollected} produced, so only those
- * are flattened into a later one.
+ * @remarks Holds the aggregates {@link throwCollected} produced and the library
+ * still owns, so only those are flattened into a later one. {@link runUnwatchedHook}
+ * removes one a hook rethrew, which then counts as that hook's own error.
  */
-class CollectedErrors extends AggregateError {}
+const collectedErrors = new WeakSet<object>();
 
 /**
  * Throws the only error as is, or several as an `AggregateError` whose message
@@ -37,7 +38,8 @@ class CollectedErrors extends AggregateError {}
  *
  * @remarks An `AggregateError` this function threw earlier, such as one from a
  * dependency's release, is flattened into the new one, so a failure is never
- * nested. One a hook threw itself is kept as an error of its own.
+ * nested. One a hook threw itself, such as from a nested `unwatch` it ran, is
+ * kept as an error of its own.
  */
 export function throwCollected(errors: unknown[], message = 'Multiple unwatched hooks failed.'): void {
 	if (errors.length === 1) {
@@ -45,10 +47,24 @@ export function throwCollected(errors: unknown[], message = 'Multiple unwatched 
 	}
 
 	if (errors.length > 1) {
-		throw new CollectedErrors(
-			errors.flatMap((error) => (error instanceof CollectedErrors ? error.errors : [error])),
+		const aggregate = new AggregateError(
+			errors.flatMap((error) =>
+				collectedErrors.has(error as object) ? (error as AggregateError).errors : [error],
+			),
 			message,
 		);
+
+		collectedErrors.add(aggregate);
+		throw aggregate;
+	}
+}
+
+function runUnwatchedHook(hook: () => void): void {
+	try {
+		hook();
+	} catch (error) {
+		collectedErrors.delete(error as object);
+		throw error;
 	}
 }
 
@@ -110,7 +126,10 @@ export abstract class SignalNode<Value> implements Signal<Value>, DependencyNode
 
 			if (this.watcherListeners.size === 0) {
 				throwCollected(
-					collectErrors([() => this.handleLastWatcherRemoved(), () => this.onUnwatched?.call(this)]),
+					collectErrors([
+						() => this.handleLastWatcherRemoved(),
+						() => runUnwatchedHook(() => this.onUnwatched?.call(this)),
+					]),
 				);
 			}
 		};

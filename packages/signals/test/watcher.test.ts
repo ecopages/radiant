@@ -345,6 +345,46 @@ describe('Watcher', () => {
 			}
 		});
 
+		test('keeps an aggregate that a hook let through from a nested unwatch as one error', () => {
+			const x = new Error('x');
+			const y = new Error('y');
+			const other = new Error('other');
+			const inner = new subtle.Watcher(() => undefined);
+			const failing = [x, y].map(
+				(error) =>
+					new State(0, {
+						[subtle.unwatched]() {
+							throw error;
+						},
+					}),
+			);
+			const a = new State(0, {
+				[subtle.unwatched]() {
+					inner.unwatch(...failing);
+				},
+			});
+			const b = new State(0, {
+				[subtle.unwatched]() {
+					throw other;
+				},
+			});
+			const watcher = new subtle.Watcher(() => undefined);
+
+			inner.watch(...failing);
+			watcher.watch(a, b);
+
+			try {
+				watcher.unwatch(a, b);
+				expect.unreachable();
+			} catch (error) {
+				const [nested, second] = (error as AggregateError).errors;
+
+				expect(nested).toBeInstanceOf(AggregateError);
+				expect((nested as AggregateError).errors).toEqual([x, y]);
+				expect(second).toBe(other);
+			}
+		});
+
 		test('a hook that writes a signal listed after it notifies the watcher', () => {
 			const notifications: string[] = [];
 			const watcher = new subtle.Watcher(() => {
