@@ -227,14 +227,19 @@ describe('@bindTo', () => {
 		expect(out.textContent).toBe('seeded');
 	});
 
-	test('renders a function value as nothing for attr and text, and warns once per position', async () => {
+	test('renders a function value as nothing for attr, bool and text, and warns once per position', async () => {
 		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 		const handler = () => 'handled';
 
 		@customElement('bind-to-function-value')
 		class BindToFunctionValue extends RadiantElement {
 			@state
-			@bindTo([{ attr: 'data-bound-fn' }, { ref: 'label', text: true }, { ref: 'label', prop: 'handler' }])
+			@bindTo([
+				{ attr: 'data-bound-fn' },
+				{ bool: 'data-bound-bool' },
+				{ ref: 'label', text: true },
+				{ ref: 'label', prop: 'handler' },
+			])
 			value: unknown = handler;
 		}
 
@@ -246,16 +251,19 @@ describe('@bindTo', () => {
 		await connected(element);
 
 		expect(element.hasAttribute('data-bound-fn')).toBe(false);
+		expect(element.hasAttribute('data-bound-bool')).toBe(false);
 		expect(label.textContent).toBe('');
 		expect((label as unknown as { handler: unknown }).handler).toBe(handler);
 
 		element.value = 'ready';
 		expect(element.getAttribute('data-bound-fn')).toBe('ready');
+		expect(element.hasAttribute('data-bound-bool')).toBe(true);
 		expect(label.textContent).toBe('ready');
 
 		element.value = handler;
 		element.value = () => 'other';
 		expect(element.hasAttribute('data-bound-fn')).toBe(false);
+		expect(element.hasAttribute('data-bound-bool')).toBe(false);
 		expect(label.textContent).toBe('');
 
 		const messages = warn.mock.calls.map((call) => String(call[0]));

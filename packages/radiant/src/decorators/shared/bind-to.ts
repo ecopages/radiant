@@ -141,7 +141,8 @@ function compileResolve(target: BindToTarget): (host: BindToHost) => Element | n
 function compileWrite(target: BindToTarget): (element: Element, value: unknown) => void {
 	if ('bool' in target) {
 		const { bool } = target;
-		return (element, value) => element.toggleAttribute(bool, Boolean(value));
+		return (element, value) =>
+			element.toggleAttribute(bool, !isSkippedFunction(value, `@bindTo bool "${bool}"`) && Boolean(value));
 	}
 
 	if ('attr' in target) {
