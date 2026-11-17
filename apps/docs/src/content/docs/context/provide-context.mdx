@@ -98,6 +98,8 @@ When `hydrate: Object` is active, the parsed payload merges back into `initialVa
 
 When Radiant owns SSR for the host, prefer `renderComponent(...)` so hydration scripts are emitted as raw markup. Those SSR helpers live under `@ecopages/radiant/server/*`. Avoid placing JSON strings directly inside `<script>` children in JSX, because they will be HTML-escaped before the browser parses them.
 
+A hydration script carries `data-hydration-key`, the name of the decorated field. A `RadiantController` registered with `@controller('id')` scopes it as `id:field`, so several controllers on one element (`data-controller="a b"`) and the element host itself each read only their own payload. The same applies to `@signal` payloads. A `RadiantElement` keeps the bare field name, so hand-authored scripts for an element host stay valid; when you author a script for a controller, use the `id:field` key or emit it with `provider.renderHydrationScriptTag()`.
+
 For the full server-plus-client host hydration flow, including the explicit client hydrator requirement, see [Hydration](/docs/ssr/hydration).
 
 ## Access From Descendants
