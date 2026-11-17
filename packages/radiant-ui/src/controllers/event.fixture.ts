@@ -58,3 +58,22 @@ export function createWaiters(): Waiters {
 			}),
 	};
 }
+
+/**
+ * A negative assertion's wait: lets `count` frames pass so that a change the code should not make has had its chance.
+ *
+ * @remarks Nothing signals an absence, so this is the only wait that is not on a signal. `reason` names the change
+ * that would have shown up, which keeps the justification at the call site.
+ */
+export function nothingFollows(_reason: string, count = 5): Promise<void> {
+	return frames(count);
+}
+
+/**
+ * A wait on the wall clock, for what has no signal and no fake clock: a real capture, or a transition's own timing.
+ *
+ * @remarks `reason` states which of the two, so the justification sits at the call site.
+ */
+export function realWait(milliseconds: number, _reason: string): Promise<void> {
+	return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}

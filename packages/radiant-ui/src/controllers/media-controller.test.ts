@@ -5,13 +5,7 @@ import {
 	type MediaControllerConfig,
 	type MediaState,
 } from './media-controller';
-import { createWaiters, fakeTimers, frames, once } from './event.fixture';
-
-/**
- * A real wait, for the negative assertions that something did not happen: the controller emits nothing to wait on,
- * and a timer-driven case uses `fakeTimers` instead.
- */
-const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+import { createWaiters, fakeTimers, frames, nothingFollows, once } from './event.fixture';
 
 const urls = new Set<string>();
 const live = new Set<string>();
@@ -260,7 +254,7 @@ describe('MediaController attach and state', () => {
 		expect(harness.controller.getState().loop).toBe(true);
 
 		await playing(harness);
-		await sleep(900);
+		await once(harness.media, 'seeked');
 
 		expect(harness.controller.getState().status).toBe('playing');
 		expect(harness.statuses()).not.toContain('ended');
@@ -333,8 +327,9 @@ describe('MediaController attach and state', () => {
 		harness.controller.attach();
 		expect(harness.states.length).toBe(base + 1);
 
+		const silenced = once(first, 'volumechange');
 		first.volume = 0.2;
-		await sleep(30);
+		await silenced;
 		expect(harness.states).toHaveLength(base + 1);
 		second.volume = 0.4;
 		await harness.until((state) => state.volume === 0.4);
@@ -714,9 +709,10 @@ describe('MediaController destroy', () => {
 		harness.controller.destroy();
 		const states = harness.states.length;
 
+		const changed = once(harness.media, 'volumechange');
 		harness.media.volume = 0.3;
 		harness.media.dispatchEvent(new Event('timeupdate'));
-		await sleep(30);
+		await changed;
 
 		expect(harness.states).toHaveLength(states);
 		expect(harness.controller.getState().status).toBe('idle');
@@ -751,7 +747,7 @@ describe('MediaController load', () => {
 
 		await harness.controller.load(wav(3), { autoplay: true });
 		await harness.until((state) => state.status === 'playing');
-		await sleep(100);
+		await nothingFollows('a second state change after the swap settled');
 
 		expect(harness.statuses().slice(-3)).toEqual(['playing', 'loading', 'playing']);
 		expect(harness.states.length - firstCount).toBeLessThan(8);
@@ -790,7 +786,8 @@ describe('MediaController load', () => {
 		const harness = setup();
 		harness.controller.attach();
 		await harness.controller.load(wav(2));
-		await sleep(300);
+		await harness.until((state) => state.status === 'ready');
+		await nothingFollows('an autoplay that was not asked for');
 		expect(harness.controller.getState().status).toBe('ready');
 
 		await harness.controller.load(wav(2), { autoplay: true });
@@ -872,7 +869,7 @@ describe('MediaController load', () => {
 		gate.resolve(wav(2));
 		await loaded;
 		await harness.until((state) => state.status === 'ready');
-		await sleep(200);
+		await nothingFollows('the autoplay that pause() cancelled');
 		expect(harness.controller.getState().status).toBe('ready');
 	});
 });
@@ -1523,8 +1520,9 @@ describe('MediaController composition', () => {
 		connected[0]!();
 		expect(states).toHaveLength(1);
 		cleanup[0]!();
+		const changed = once(media, 'volumechange');
 		media.volume = 0.5;
-		await sleep(30);
+		await changed;
 		expect(states).toHaveLength(1);
 	});
 });
@@ -1585,7 +1583,7 @@ describe('MediaController autoplay and toggle', () => {
 		await harness.controller.toggle();
 
 		expect(pause).toHaveBeenCalledTimes(1);
-		await sleep(150);
+		await nothingFollows('the play that toggle() cancelled');
 		expect(harness.media.paused).toBe(true);
 		expect(harness.controller.getState().status).not.toBe('playing');
 	});
@@ -1934,7 +1932,7 @@ describe('MediaController callbacks that call back in', () => {
 		harness.controller.attach();
 		await harness.controller.load(brokenAudio());
 		await reported.promise;
-		await sleep(50);
+		await nothingFollows('a second onError from the retry');
 		expect(errors).toHaveLength(1);
 	});
 });
@@ -1994,7 +1992,7 @@ describe('MediaController destroy deferral and sharing', () => {
 		harness.controller.destroy();
 		harness.controller.attach();
 		await Promise.resolve();
-		await sleep(50);
+		await nothingFollows('the deferred destroy running after the re-attach');
 
 		expect(harness.media.paused).toBe(false);
 		expect(harness.media.src).toBe(src);
@@ -2327,7 +2325,7 @@ describe('MediaController ranges, live window and loop', () => {
 		await playing(harness);
 
 		harness.media.dispatchEvent(new Event('stalled'));
-		await sleep(100);
+		await nothingFollows('a waiting state after stalled');
 
 		expect(harness.controller.getState().waiting).toBe(false);
 		expect(harness.states.at(-1)!.waiting).toBe(false);
@@ -2432,7 +2430,7 @@ describe('MediaController after a rejected resolveSource', () => {
 
 		await harness.controller.play();
 		await harness.controller.toggle();
-		await sleep(200);
+		await nothingFollows('a play of the previous track after the failed load');
 
 		expect(harness.media.paused).toBe(true);
 		expect(harness.controller.getState()).toMatchObject({ status: 'error' });

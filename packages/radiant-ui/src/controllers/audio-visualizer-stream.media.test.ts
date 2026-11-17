@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
-import { createWaiters } from './event.fixture';
+import { createWaiters, nothingFollows } from './event.fixture';
 import { AudioVisualizerController, type AudioFrame, type AudioVisualizerPreset } from './audio-visualizer-controller';
 
 /**
@@ -181,7 +181,7 @@ describe('AudioVisualizerController with a MediaStream', () => {
 		expect(controller.getState()).toBe('idle');
 		expect(preset.calls.at(-1)).toBe('rest');
 		const drawn = preset.calls.filter((call) => call === 'draw').length;
-		await new Promise((resolve) => setTimeout(resolve, 100));
+		await nothingFollows('a draw after the loop stopped');
 		expect(preset.calls.filter((call) => call === 'draw')).toHaveLength(drawn);
 		controller.destroy();
 	});
@@ -227,7 +227,7 @@ describe('AudioVisualizerController with a MediaStream', () => {
 		stopped.getTracks().forEach((track) => track.stop());
 		await preset.reached(() => controller.getState() === 'idle');
 		const drawn = preset.calls.filter((call) => call === 'draw').length;
-		await new Promise((resolve) => setTimeout(resolve, 100));
+		await nothingFollows('a draw after the loop stopped');
 		expect(preset.calls.filter((call) => call === 'draw')).toHaveLength(drawn);
 		controller.refresh();
 		expect(controller.getState()).toBe('idle');
@@ -250,7 +250,7 @@ describe('AudioVisualizerController with a MediaStream', () => {
 		controller.attach();
 		controller.resume();
 		controller.refresh();
-		await new Promise((resolve) => setTimeout(resolve, 50));
+		await nothingFollows('a source built for a stream with no audio track');
 
 		expect(controller.getState()).toBe('idle');
 		expect(create).not.toHaveBeenCalled();

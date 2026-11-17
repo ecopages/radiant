@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import type { ControllerHost } from './controller';
-import { createWaiters, frames } from './event.fixture';
+import { createWaiters, frames, nothingFollows } from './event.fixture';
 import { CaptionsController, createCaptionsController, type CaptionTrackSource } from './captions-controller';
 
 const SIGNALS = ['loadedmetadata', 'seeked', 'timeupdate', 'load', 'error', 'cuechange'];
@@ -627,7 +627,7 @@ describe('CaptionsController lifecycle', () => {
 		const calls = onState.mock.calls.length;
 
 		resolve(new Response(VTT));
-		await new Promise((done) => setTimeout(done, 50));
+		await nothingFollows('a track appended after destroy');
 		expect(media.querySelectorAll('track')).toHaveLength(0);
 		expect(onState).toHaveBeenCalledTimes(calls);
 		expect(onError).not.toHaveBeenCalled();
@@ -649,7 +649,7 @@ describe('CaptionsController lifecycle', () => {
 		});
 		captions.attach();
 		captions.destroy();
-		await new Promise((done) => setTimeout(done, 30));
+		await nothingFollows('an error reported for the aborted fetch');
 		expect(onError).not.toHaveBeenCalled();
 	});
 

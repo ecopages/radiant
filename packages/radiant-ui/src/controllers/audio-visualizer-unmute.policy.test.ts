@@ -1,6 +1,7 @@
 import { afterEach, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { AudioVisualizerController } from './audio-visualizer-controller';
+import { realWait } from './event.fixture';
 
 /**
  * Own file because user activation is sticky for a page: nothing may click before the muted video plays here.
@@ -56,7 +57,10 @@ it('starts the visualizer when the user unmutes an autoplaying muted video with 
 	controller.attach();
 
 	await video.play();
-	await new Promise((resolve) => setTimeout(resolve, 500));
+	await realWait(
+		500,
+		'a negative assertion on the autoplay policy: the visualizer starting while the autoplaying video is muted, with nothing to signal it',
+	);
 	expect(controller.getState()).toBe('idle');
 
 	const unmute = document.createElement('button');

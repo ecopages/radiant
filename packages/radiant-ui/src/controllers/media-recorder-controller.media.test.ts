@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ControllerHost } from './controller';
-import { createWaiters, type Waiters } from './event.fixture';
+import { createWaiters, nothingFollows, realWait, type Waiters } from './event.fixture';
 import {
 	MediaRecorderController,
 	createMediaRecorderController,
@@ -46,10 +46,6 @@ describe('MediaRecorderController', () => {
 			toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'performance'],
 		});
 
-	function sleep(ms: number): Promise<void> {
-		return new Promise((resolve) => setTimeout(resolve, ms));
-	}
-
 	it('records, then stop resolves with a playable result and stops every track', async () => {
 		const onStop = vi.fn();
 		const controller = create({ onStop });
@@ -58,7 +54,7 @@ describe('MediaRecorderController', () => {
 		expect(controller.getState().status).toBe('recording');
 		const stream = controller.getStream()!;
 		expect(stream.getAudioTracks()).toHaveLength(1);
-		await sleep(300);
+		await realWait(300, 'real MediaRecorder capture: the recorder needs audio before it can stop with a result');
 
 		const result = (await controller.stop())!;
 
@@ -86,7 +82,7 @@ describe('MediaRecorderController', () => {
 		await controller.start();
 
 		expect(controller.getState().status).toBe('recording');
-		await sleep(200);
+		await realWait(200, 'real MediaRecorder capture: the recorder needs audio before it can stop with a result');
 		const result = (await controller.stop())!;
 		expect(result.mimeType).toContain('audio/');
 		expect(controller.getState().mimeType).toBe(result.mimeType);
@@ -140,10 +136,17 @@ describe('MediaRecorderController', () => {
 
 	it('delivers timesliced chunks to onData', async () => {
 		const chunks: Blob[] = [];
-		const controller = create({ timeslice: 100, onData: (chunk) => chunks.push(chunk) });
+		const received = createWaiters();
+		const controller = create({
+			timeslice: 100,
+			onData: (chunk) => {
+				chunks.push(chunk);
+				received.notify();
+			},
+		});
 		await controller.start();
 
-		await sleep(450);
+		await received.until(() => chunks.length >= 2);
 		await controller.stop();
 
 		expect(chunks.length).toBeGreaterThanOrEqual(2);
@@ -186,7 +189,7 @@ describe('MediaRecorderController', () => {
 
 		expect(controller.getState()).toMatchObject({ status: 'idle', duration: 0 });
 		expect(stream.getTracks().every((track) => track.readyState === 'ended')).toBe(true);
-		await sleep(100);
+		await nothingFollows('an onStop after discard');
 		expect(onStop).not.toHaveBeenCalled();
 	});
 
@@ -419,7 +422,7 @@ describe('MediaRecorderController', () => {
 			const controller = create();
 
 			await controller.start();
-			await sleep(300);
+			await nothingFollows('a level reading without the analyser option');
 
 			expect(controller.getAnalyser()).toBeNull();
 			expect(controller.getState().level).toBe(0);
@@ -452,7 +455,10 @@ describe('MediaRecorderController', () => {
 			const controller = create({ getAudioContext: () => audio });
 
 			await controller.start();
-			await sleep(300);
+			await realWait(
+				300,
+				'real MediaRecorder capture: the recorder needs audio before it can stop with a result',
+			);
 			await controller.stop();
 
 			expect(connections.length).toBeGreaterThan(0);
@@ -518,7 +524,10 @@ describe('MediaRecorderController', () => {
 			const onStop = vi.fn();
 			const controller = create({ onStop });
 			await controller.start();
-			await sleep(200);
+			await realWait(
+				200,
+				'real MediaRecorder capture: the recorder needs audio before it can stop with a result',
+			);
 			const stream = controller.getStream()!;
 
 			endAll(stream);
@@ -539,7 +548,7 @@ describe('MediaRecorderController', () => {
 			const [first] = controller.getStream()!.getTracks();
 
 			first.dispatchEvent(new Event('ended'));
-			await sleep(200);
+			await nothingFollows('a stop after only one of two tracks ended');
 
 			expect(controller.getState().status).toBe('recording');
 		});
@@ -549,7 +558,10 @@ describe('MediaRecorderController', () => {
 			const onStop = vi.fn();
 			const controller = create({ onStop });
 			await controller.start();
-			await sleep(200);
+			await realWait(
+				200,
+				'real MediaRecorder capture: the recorder needs audio before it can stop with a result',
+			);
 
 			recorder.current().stop();
 
