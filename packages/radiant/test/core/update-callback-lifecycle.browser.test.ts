@@ -472,7 +472,7 @@ describe('a controller @prop on first connect without a write', () => {
 });
 
 describe('a controller @prop written before connect', () => {
-	class WrittenController extends RadiantController {
+	class WrittenController extends RadiantController<{ label: string }> {
 		@prop({ type: String, defaultValue: 'default' }) label!: string;
 		runs: string[][] = [];
 		seen: string[] = [];
