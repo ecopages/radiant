@@ -50,7 +50,7 @@ The field is typed `WritableSignal<number>`, and `initial` must be a `number` an
 | :-- | :-- | :-- |
 | `initial` | `T` | Optional initial value when the field does not provide one directly |
 | `source` | `WritableSignal<T> \| (host) => WritableSignal<T>` | Connects an existing writable signal instead of creating a host-owned one |
-| `hydrate` | `String \| Number \| Boolean \| Object \| Array` | Serializes the current signal value into SSR host output and restores it during hydration; see [the hydration key](/docs/context/provide-context#ssr-hydration) for how a controller scopes it |
+| `hydrate` | `String \| Number \| Boolean \| Object \| Array` | Serializes the current signal value into SSR host output and restores it during hydration; on a controller the script is scoped `id:field` and read under the controller's host element, see [Provide Context](/docs/context/provide-context) |
 
 ## What It Changes
 

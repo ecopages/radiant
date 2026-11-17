@@ -157,8 +157,13 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	 * disconnects the host has already run the cleanup callbacks, so a later
 	 * connection callback would acquire resources nothing releases, and one that
 	 * also reconnects it has already run the whole pass.
+	 *
+	 * @returns Whether observation is still the one this pass started. When it is not, the host
+	 * disconnected under the pass, or a nested connect already ran the rest of the connect work, so
+	 * the caller must not flush. A host that was already observing keeps its observation, so the pass
+	 * is still its own.
 	 */
-	public connectHost(): void {
+	public connectHost(): boolean {
 		const epoch = this.startObservation();
 
 		for (const callback of this.onConnectedCallbacks) {
@@ -168,6 +173,8 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 
 			callback();
 		}
+
+		return epoch === this.observationEpoch;
 	}
 
 	/**
@@ -192,15 +199,18 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	 * a detached or server-only host; update callbacks subscribe and release
 	 * with it.
 	 *
-	 * @returns Stops the observation this call started; a no-op when members were already observed.
+	 * @returns Stops the observation this call started; a no-op when members were already observed, and once
+	 * that observation has ended, so it cannot end a later one.
 	 */
 	public observeMembers(): () => void {
-		if (this.observing) {
-			return () => {};
-		}
+		const wasObserving = this.observing;
+		const epoch = this.startObservation();
 
-		this.startObservation();
-		return () => this.unobserveMembers();
+		return () => {
+			if (!wasObserving && epoch === this.observationEpoch) {
+				this.unobserveMembers();
+			}
+		};
 	}
 
 	/** Returns the epoch of the observation in force; a pass compares it to detect a disconnect underneath it. */
@@ -212,18 +222,18 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 		this.observing = true;
 		const epoch = ++this.observationEpoch;
 
+		for (const [propertyName, callbacks] of this.updateCallbacks) {
+			for (const update of callbacks.keys()) {
+				this.subscribeCallback(propertyName, update);
+			}
+		}
+
 		for (const [propertyName, signal] of this.reactiveMembers) {
 			if (epoch !== this.observationEpoch) {
 				break;
 			}
 
 			this.observeMember(propertyName, signal);
-		}
-
-		for (const [propertyName, callbacks] of this.updateCallbacks) {
-			for (const update of callbacks.keys()) {
-				this.subscribeCallback(propertyName, update);
-			}
 		}
 
 		return epoch;
@@ -305,13 +315,18 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	/**
 	 * Emits an initial update for a member without a value change.
 	 *
-	 * @remarks Runs the synchronous callbacks (`@bindTo`) now and queues the
-	 * member for the next batched cycle. Used for the first-connect emit of
-	 * `@prop` members. Value changes flow through the member `State`'s own
-	 * subscription instead.
+	 * @remarks Runs the synchronous callbacks (`@bindTo`) now, only while members
+	 * are observed, and queues the member for the next batched cycle. Used for the
+	 * first-connect emit of `@prop` members. While unobserved the callbacks are skipped:
+	 * the connect diff runs them when the value differs from its snapshot, and the
+	 * post-sync pass paints `@bindTo`. Value changes flow through the member `State`'s
+	 * own subscription instead.
 	 */
 	public notifyUpdate(changedProperty: string, _oldValue: unknown, _value: unknown): void {
-		this.runUpdateCallbacks(changedProperty);
+		if (this.observing) {
+			this.runUpdateCallbacks(changedProperty);
+		}
+
 		this.onMemberChanged(changedProperty);
 	}
 
@@ -449,9 +464,21 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 		}
 	}
 
+	/**
+	 * @remarks Runs a copy of the registrations, so one that registers another does not run it in this pass. A
+	 * callback unregistered by an earlier one is skipped, and the pass stops once observation changed under it.
+	 */
 	private runUpdateCallbacks(propertyName: string): void {
+		const epoch = this.observationEpoch;
+
 		for (const update of [...(this.updateCallbacks.get(propertyName)?.keys() ?? [])]) {
-			update();
+			if (epoch !== this.observationEpoch) {
+				break;
+			}
+
+			if (this.updateCallbacks.get(propertyName)?.has(update)) {
+				update();
+			}
 		}
 	}
 
@@ -489,7 +516,7 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 		callbacks.set(update, {
 			signal,
 			unsubscribe: signal.subscribe(() => {
-				if (!this.initializingReactiveFields.has(propertyName)) {
+				if (!this.initializingReactiveFields.has(propertyName) && !this.memberSnapshots.has(propertyName)) {
 					update();
 				}
 			}),
@@ -543,8 +570,10 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	 * members are observed (host connected, or SSR preparation). The subscription is
 	 * released on disconnect and re-established on connect; writes made before
 	 * connect or while detached do not run it, but it runs once on connect when the
-	 * member's value differs from its last observed value. Used by `@bindTo`, whose
-	 * DOM writes must land with the value like `$` bindings. Use
+	 * member's value differs from its last observed value. During that diff a write
+	 * to a member already visited runs its callbacks like any write, and a write to
+	 * one not yet visited is covered by that member's own diff. Used by `@bindTo`,
+	 * whose DOM writes must land with the value like `$` bindings. Use
 	 * {@link registerUpdatedCallback} for procedures.
 	 */
 	public registerUpdateCallback(property: string, update: () => void): () => void {
@@ -599,23 +628,26 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	}
 
 	/**
-	 * Defines a controller- or element-local reactive field.
+	 * Returns the member under `propertyName`, creating it when absent.
 	 *
-	 * @remarks A member bootstrapped earlier (legacy decorators register it before
-	 * class fields run) adopts `initialValue` as initialization: while members are
-	 * unobserved, the adoption is not reported to the update cycle or synchronous
-	 * callbacks such as `@bindTo`.
+	 * @remarks A member bootstrapped earlier (legacy decorators register it before class fields run) is adopted
+	 * rather than replaced, so bindings taken from it keep following the field, and `initialValue` becomes its
+	 * initialization: while members are unobserved, the adoption is not reported to the update cycle or synchronous
+	 * callbacks such as `@bindTo`. An `undefined` `initialValue` leaves an adopted member as it is.
 	 */
-	public createReactiveField<T>(propertyName: string, initialValue: T, options: ReactiveFieldOptions = {}): void {
+	public adoptReactiveMember<T>(propertyName: string, initialValue: T): ReactiveState<T> {
 		const existing = this.getWritableMember<T>(propertyName);
-		const signal = existing ?? this.createReactiveMember(propertyName, initialValue);
 
-		if (existing && initialValue !== undefined) {
+		if (!existing) {
+			return this.createReactiveMember(propertyName, initialValue);
+		}
+
+		if (initialValue !== undefined) {
 			const wasInitializing = this.initializingReactiveFields.has(propertyName);
 			this.initializingReactiveFields.add(propertyName);
 
 			try {
-				signal.set(initialValue);
+				existing.set(initialValue);
 			} finally {
 				if (!wasInitializing) {
 					this.initializingReactiveFields.delete(propertyName);
@@ -623,9 +655,19 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 			}
 
 			if (!this.observing) {
-				this.memberSnapshots.set(propertyName, signal.get());
+				this.memberSnapshots.set(propertyName, existing.get());
 			}
 		}
+
+		return existing;
+	}
+
+	/**
+	 * Defines a controller- or element-local reactive field, adopting a member bootstrapped earlier as
+	 * {@link adoptReactiveMember} does.
+	 */
+	public createReactiveField<T>(propertyName: string, initialValue: T, options: ReactiveFieldOptions = {}): void {
+		const signal = this.adoptReactiveMember(propertyName, initialValue);
 
 		this.defineReactiveAccessor(propertyName, { signal });
 

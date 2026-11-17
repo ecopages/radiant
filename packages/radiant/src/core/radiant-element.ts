@@ -361,9 +361,7 @@ export class RadiantElement<Bindings extends object = {}>
 			this.removeAttribute(SERVER_RENDERED_HOST_ATTRIBUTE);
 		}
 
-		this.reactiveHost.connectHost();
-
-		if (isReconnectDuringPendingFirstConnect) {
+		if (!this.reactiveHost.connectHost() || isReconnectDuringPendingFirstConnect) {
 			return;
 		}
 
