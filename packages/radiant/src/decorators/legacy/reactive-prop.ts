@@ -75,7 +75,7 @@ export function reactiveProp<T = unknown>(propOptions: ReactivePropertyOptions<T
 				: undefined;
 			const resolvedDefaultValue = wasAssigned
 				? initializerValue
-				: phase === 'ssr' && hasOwnStagingValue && ownStagingValue !== defaultValue
+				: phase === 'ssr' && ownStagingValue !== undefined && ownStagingValue !== defaultValue
 					? ownStagingValue
 					: defaultValue === undefined
 						? initializerValue
