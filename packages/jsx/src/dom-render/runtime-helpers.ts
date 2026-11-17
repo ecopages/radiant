@@ -294,7 +294,7 @@ export function readReactiveChildSourceValue(source: ReactiveChildSource): unkno
 type RootSubscription = {
 	readonly source: ReactiveChildSource;
 	readonly notify: (value: unknown) => void;
-	/** The value the binding showed when its root paused. */
+	/** The value the binding showed when its root paused, kept until it resumes. */
 	delivered?: unknown;
 	release?: () => void;
 };
@@ -397,8 +397,10 @@ export function resumeSubscriptions(target: HTMLElement): void {
 
 		openSubscription(subscription);
 		const value = readReactiveChildSourceValue(subscription.source);
+		const delivered = subscription.delivered;
+		subscription.delivered = undefined;
 
-		if (!Object.is(value, subscription.delivered)) {
+		if (!Object.is(value, delivered)) {
 			subscription.notify(value);
 		}
 	}
