@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterAll, beforeAll, expect, test } from 'vitest';
 import { getDocsLlmUrlFromPathname } from '../src/lib/docs/docs-llm-url';
+import { expandRecipeCode, generateLlmDocs } from './generate-llm-docs';
 
 const appRoot = path.resolve(import.meta.dirname, '..');
 const sourceContentRoot = join(appRoot, 'src/content/components');
@@ -49,7 +50,6 @@ async function pathExists(filePath: string): Promise<boolean> {
 }
 
 test('recipe exports carry the source files of every pattern', async () => {
-	const { expandRecipeCode } = await import('./generate-llm-docs');
 	const body = [
 		'<RecipeExample recipe="searchable-list" pattern="element" layout="stack" />',
 		'',
@@ -70,7 +70,6 @@ test('generateLlmDocs writes llms.txt and Markdown exports in sidebar order', as
 	const outputRoot = await mkdtemp(join(tmpdir(), 'rui-llm-output-'));
 
 	try {
-		const { generateLlmDocs } = await import('./generate-llm-docs');
 		await generateLlmDocs(outputRoot, { baseUrl: 'https://radiant-ui.ecopages.app/', contentRoot });
 
 		const llmsTxt = await readFile(join(outputRoot, 'llms.txt'), 'utf8');
@@ -107,7 +106,6 @@ test('generateLlmDocs keeps the legacy text exports under their old slugs', asyn
 	const outputRoot = await mkdtemp(join(tmpdir(), 'rui-llm-legacy-'));
 
 	try {
-		const { generateLlmDocs } = await import('./generate-llm-docs');
 		await generateLlmDocs(outputRoot, { contentRoot });
 
 		const markdown = await readFile(join(outputRoot, 'docs-llm/actions/button.md'), 'utf8');
@@ -129,7 +127,6 @@ test('generateLlmDocs replaces stale exports and leaves no staging directory beh
 		await writeFile(join(outputRoot, 'docs-llm/stale/gone.md'), '# Obsolete export\n', 'utf8');
 		await writeFile(join(outputRoot, 'llms-content/stale/gone.txt'), '# Obsolete export\n', 'utf8');
 
-		const { generateLlmDocs } = await import('./generate-llm-docs');
 		await generateLlmDocs(outputRoot, { contentRoot });
 
 		expect(await pathExists(join(outputRoot, 'docs-llm/stale/gone.md'))).toBe(false);
@@ -145,7 +142,6 @@ test('llms.txt links match the page alternates', async () => {
 	const outputRoot = await mkdtemp(join(tmpdir(), 'rui-llm-contract-'));
 
 	try {
-		const { generateLlmDocs } = await import('./generate-llm-docs');
 		await generateLlmDocs(outputRoot, { contentRoot, baseUrl: 'https://docs.example.com/' });
 
 		const llmsTxt = await readFile(join(outputRoot, 'llms.txt'), 'utf8');

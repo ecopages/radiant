@@ -6,6 +6,9 @@ import {
 	type MediaState,
 } from './media-controller';
 
+/** `vi.waitFor` with a 5 s budget: a decoded `wav` takes far longer than the default 1 s on a loaded machine. */
+const waitFor = <T>(callback: () => T, options: { timeout?: number } = {}) =>
+	vi.waitFor(callback, { timeout: 5000, ...options });
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 const frames = (count: number) =>
 	new Promise<void>((resolve) => {
@@ -133,13 +136,13 @@ async function ready(harness: Harness, seconds = 3): Promise<string> {
 	const url = wav(seconds);
 	harness.controller.attach();
 	await harness.controller.load(url);
-	await vi.waitFor(() => expect(harness.controller.getState().status).toBe('ready'));
+	await waitFor(() => expect(harness.controller.getState().status).toBe('ready'));
 	return url;
 }
 
 async function playing(harness: Harness): Promise<void> {
 	await harness.controller.play();
-	await vi.waitFor(() => expect(harness.controller.getState().status).toBe('playing'));
+	await waitFor(() => expect(harness.controller.getState().status).toBe('playing'));
 }
 
 function deferred<T>() {
@@ -202,7 +205,7 @@ describe('MediaController attach and state', () => {
 
 		expect(harness.controller.getState().status).toBe('loading');
 		await loaded;
-		await vi.waitFor(() => expect(harness.controller.getState().status).toBe('ready'));
+		await waitFor(() => expect(harness.controller.getState().status).toBe('ready'));
 		expect(harness.statuses()).toEqual(['idle', 'loading', 'ready']);
 		const state = harness.controller.getState();
 		expect(state.duration).toBeCloseTo(1, 1);
@@ -219,7 +222,7 @@ describe('MediaController attach and state', () => {
 		expect(harness.controller.getState().status).toBe('paused');
 
 		await harness.controller.play();
-		await vi.waitFor(() => expect(harness.statuses().at(-1)).toBe('ended'), { timeout: 3000 });
+		await waitFor(() => expect(harness.statuses().at(-1)).toBe('ended'), { timeout: 3000 });
 		expect(harness.statuses()).toEqual(['idle', 'loading', 'ready', 'playing', 'paused', 'playing', 'ended']);
 		expect(harness.controller.getState().status).toBe('ended');
 		expect(harness.controller.getState().position).toBeCloseTo(0.4, 1);
@@ -253,7 +256,7 @@ describe('MediaController attach and state', () => {
 	it('syncs a media that already has metadata when attached', async () => {
 		const harness = setup();
 		harness.media.src = wav(1);
-		await vi.waitFor(() => expect(harness.media.readyState).toBeGreaterThanOrEqual(3));
+		await waitFor(() => expect(harness.media.readyState).toBeGreaterThanOrEqual(3));
 
 		harness.controller.attach();
 
@@ -308,7 +311,7 @@ describe('MediaController attach and state', () => {
 		await sleep(30);
 		expect(harness.states).toHaveLength(base + 1);
 		second.volume = 0.4;
-		await vi.waitFor(() => expect(harness.states.at(-1)!.volume).toBe(0.4));
+		await waitFor(() => expect(harness.states.at(-1)!.volume).toBe(0.4));
 	});
 
 	it('stays inert when getMedia returns null and works after a later attach', async () => {
@@ -427,7 +430,7 @@ describe('MediaController attach and state', () => {
 	it('computes buffered from the real ranges and from stubbed ones', async () => {
 		const harness = setup();
 		await ready(harness, 2);
-		await vi.waitFor(() => expect(harness.controller.getState().buffered).toBeCloseTo(2, 1));
+		await waitFor(() => expect(harness.controller.getState().buffered).toBeCloseTo(2, 1));
 
 		const buffered = {
 			length: 2,
@@ -496,12 +499,12 @@ describe('MediaController attach and state', () => {
 		expect(states[0]).toMatchObject({ status: 'idle', seekable: false });
 		controller.setVolume(0.5);
 		controller.setMuted(true);
-		await vi.waitFor(() => expect(controller.getState()).toMatchObject({ volume: 0.5, muted: true }));
+		await waitFor(() => expect(controller.getState()).toMatchObject({ volume: 0.5, muted: true }));
 		controller.seek(3);
 		expect(video.currentTime).toBe(0);
 
 		await controller.load(wav(1));
-		await vi.waitFor(() => expect(controller.getState().status).toBe('ready'));
+		await waitFor(() => expect(controller.getState().status).toBe('ready'));
 		expect(media).toBe(video);
 	});
 });
@@ -573,7 +576,7 @@ describe('MediaController progress and the frame loop', () => {
 		const harness = setup();
 		await ready(harness, 0.3);
 		await playing(harness);
-		await vi.waitFor(() => expect(harness.controller.getState().status).toBe('ended'), { timeout: 3000 });
+		await waitFor(() => expect(harness.controller.getState().status).toBe('ended'), { timeout: 3000 });
 		await frames(2);
 		const count = harness.progress.length;
 		await frames(5);
@@ -586,7 +589,7 @@ describe('MediaController progress and the frame loop', () => {
 		await playing(harness);
 		harness.media.removeAttribute('src');
 		harness.media.load();
-		await vi.waitFor(() => expect(harness.controller.getState().status).toBe('idle'));
+		await waitFor(() => expect(harness.controller.getState().status).toBe('idle'));
 		await frames(2);
 		const count = harness.progress.length;
 		await frames(5);
@@ -681,7 +684,7 @@ describe('MediaController destroy', () => {
 
 		expect(harness.media.hasAttribute('src')).toBe(false);
 		expect(released).toEqual([`${url}#resolved`]);
-		await vi.waitFor(() => expect(harness.media.networkState).toBe(0));
+		await waitFor(() => expect(harness.media.networkState).toBe(0));
 	});
 });
 
@@ -693,7 +696,7 @@ describe('MediaController load', () => {
 		const firstCount = harness.states.length;
 
 		await harness.controller.load(wav(3), { autoplay: true });
-		await vi.waitFor(() => expect(harness.controller.getState().status).toBe('playing'));
+		await waitFor(() => expect(harness.controller.getState().status).toBe('playing'));
 		await sleep(100);
 
 		expect(harness.statuses().slice(-3)).toEqual(['playing', 'loading', 'playing']);
@@ -725,7 +728,7 @@ describe('MediaController load', () => {
 		await Promise.all([firstLoad, secondLoad]);
 
 		expect(harness.media.src).toBe(second);
-		await vi.waitFor(() => expect(harness.controller.getState().status).toBe('ready'));
+		await waitFor(() => expect(harness.controller.getState().status).toBe('ready'));
 		expect(harness.controller.getState().duration).toBeCloseTo(2, 1);
 	});
 
@@ -737,7 +740,7 @@ describe('MediaController load', () => {
 		expect(harness.controller.getState().status).toBe('ready');
 
 		await harness.controller.load(wav(2), { autoplay: true });
-		await vi.waitFor(() => expect(harness.controller.getState().status).toBe('playing'));
+		await waitFor(() => expect(harness.controller.getState().status).toBe('playing'));
 	});
 
 	it('discards a pending scrub and applies it to neither the old nor the new source', async () => {
@@ -761,7 +764,7 @@ describe('MediaController load', () => {
 		});
 		harness.controller.attach();
 		await harness.controller.load('first');
-		await vi.waitFor(() => expect(harness.controller.getState().status).toBe('ready'));
+		await waitFor(() => expect(harness.controller.getState().status).toBe('ready'));
 		const writes = spyCurrentTime(harness.media);
 		harness.controller.scrub(2);
 
@@ -787,7 +790,7 @@ describe('MediaController load', () => {
 
 		gate.resolve(wav(1));
 		await loaded;
-		await vi.waitFor(() => expect(harness.controller.getState().status).toBe('ready'));
+		await waitFor(() => expect(harness.controller.getState().status).toBe('ready'));
 	});
 
 	it('plays after resolveSource when play is called while it is pending', async () => {
@@ -800,7 +803,7 @@ describe('MediaController load', () => {
 
 		gate.resolve(wav(2));
 		await loaded;
-		await vi.waitFor(() => expect(harness.controller.getState().status).toBe('playing'));
+		await waitFor(() => expect(harness.controller.getState().status).toBe('playing'));
 	});
 
 	it('pause during a pending autoplay load cancels the autoplay', async () => {
@@ -812,7 +815,7 @@ describe('MediaController load', () => {
 
 		gate.resolve(wav(2));
 		await loaded;
-		await vi.waitFor(() => expect(harness.controller.getState().status).toBe('ready'));
+		await waitFor(() => expect(harness.controller.getState().status).toBe('ready'));
 		await sleep(200);
 		expect(harness.controller.getState().status).toBe('ready');
 	});
@@ -846,7 +849,7 @@ describe('MediaController resolveSource', () => {
 		expect(source.created).toHaveLength(2);
 		expect(harness.media.src).toBe(source.created[1]);
 		expect([...live]).toEqual([source.created[1]]);
-		await vi.waitFor(() => expect(harness.controller.getState().duration).toBeCloseTo(2, 1));
+		await waitFor(() => expect(harness.controller.getState().duration).toBeCloseTo(2, 1));
 	});
 
 	it('ignores a stale resolution after a newer load and releases it', async () => {
@@ -871,7 +874,7 @@ describe('MediaController resolveSource', () => {
 
 		expect(harness.media.src).toBe(freshUrl);
 		expect(released).toEqual([staleUrl]);
-		await vi.waitFor(() => expect(harness.controller.getState().status).toBe('ready'));
+		await waitFor(() => expect(harness.controller.getState().status).toBe('ready'));
 		expect(harness.controller.getState().duration).toBeCloseTo(2, 1);
 	});
 
@@ -931,7 +934,7 @@ describe('MediaController resolveSource', () => {
 		expect(harness.media.hasAttribute('src')).toBe(false);
 
 		await harness.controller.load(wav(1));
-		await vi.waitFor(() => expect(harness.controller.getState().status).toBe('ready'));
+		await waitFor(() => expect(harness.controller.getState().status).toBe('ready'));
 		expect(harness.controller.getState().error).toBeNull();
 		expect(harness.errors).toHaveLength(1);
 	});
@@ -957,7 +960,7 @@ describe('MediaController resolveSource', () => {
 		await firstLoad;
 
 		expect(harness.errors).toEqual([]);
-		await vi.waitFor(() => expect(harness.controller.getState().status).toBe('ready'));
+		await waitFor(() => expect(harness.controller.getState().status).toBe('ready'));
 	});
 });
 
@@ -966,7 +969,7 @@ describe('MediaController errors', () => {
 		const harness = setup();
 		harness.controller.attach();
 		await harness.controller.load(brokenAudio());
-		await vi.waitFor(() => expect(harness.controller.getState().status).toBe('error'));
+		await waitFor(() => expect(harness.controller.getState().status).toBe('error'));
 
 		const { error } = harness.controller.getState();
 		expect(error).toBe(harness.media.error);
@@ -976,7 +979,7 @@ describe('MediaController errors', () => {
 		expect(harness.errors).toHaveLength(1);
 
 		await harness.controller.load(wav(1));
-		await vi.waitFor(() => expect(harness.controller.getState().status).toBe('ready'));
+		await waitFor(() => expect(harness.controller.getState().status).toBe('ready'));
 		expect(harness.controller.getState().error).toBeNull();
 		expect(harness.errors).toHaveLength(1);
 	});
@@ -985,17 +988,17 @@ describe('MediaController errors', () => {
 		const harness = setup();
 		harness.controller.attach();
 		await harness.controller.load(brokenAudio());
-		await vi.waitFor(() => expect(harness.errors).toHaveLength(1));
+		await waitFor(() => expect(harness.errors).toHaveLength(1));
 		await harness.controller.load(wav(1));
-		await vi.waitFor(() => expect(harness.controller.getState().status).toBe('ready'));
+		await waitFor(() => expect(harness.controller.getState().status).toBe('ready'));
 		await harness.controller.load(brokenAudio());
-		await vi.waitFor(() => expect(harness.errors).toHaveLength(2));
+		await waitFor(() => expect(harness.errors).toHaveLength(2));
 	});
 
 	it('reports an error already present when attached', async () => {
 		const harness = setup();
 		harness.media.src = brokenAudio();
-		await vi.waitFor(() => expect(harness.media.error).not.toBeNull());
+		await waitFor(() => expect(harness.media.error).not.toBeNull());
 
 		harness.controller.attach();
 
@@ -1079,9 +1082,7 @@ describe('MediaController play', () => {
 
 		play.mockRestore();
 		await harness.controller.play();
-		await vi.waitFor(() =>
-			expect(harness.controller.getState()).toMatchObject({ status: 'playing', blocked: false }),
-		);
+		await waitFor(() => expect(harness.controller.getState()).toMatchObject({ status: 'playing', blocked: false }));
 
 		vi.spyOn(harness.media, 'play').mockRejectedValue(new DOMException('blocked', 'NotAllowedError'));
 		harness.controller.pause();
@@ -1107,7 +1108,7 @@ describe('MediaController play', () => {
 
 		play.mockRestore();
 		await harness.controller.play();
-		await vi.waitFor(() => expect(harness.controller.getState().status).toBe('playing'));
+		await waitFor(() => expect(harness.controller.getState().status).toBe('playing'));
 		expect(harness.controller.getState().error).toBeNull();
 		expect(harness.errors).toHaveLength(1);
 	});
@@ -1140,11 +1141,11 @@ describe('MediaController play', () => {
 		await ready(harness);
 
 		await harness.controller.toggle();
-		await vi.waitFor(() => expect(harness.controller.getState().status).toBe('playing'));
+		await waitFor(() => expect(harness.controller.getState().status).toBe('playing'));
 		await harness.controller.toggle();
 		expect(harness.controller.getState().status).toBe('paused');
 		await harness.controller.toggle();
-		await vi.waitFor(() => expect(harness.controller.getState().status).toBe('playing'));
+		await waitFor(() => expect(harness.controller.getState().status).toBe('playing'));
 	});
 
 	it('treats a pending autoplay as playing for toggle', async () => {
@@ -1156,7 +1157,7 @@ describe('MediaController play', () => {
 		await harness.controller.toggle();
 		gate.resolve(wav(1));
 		await loaded;
-		await vi.waitFor(() => expect(harness.controller.getState().status).toBe('ready'));
+		await waitFor(() => expect(harness.controller.getState().status).toBe('ready'));
 	});
 });
 
@@ -1301,7 +1302,7 @@ describe('MediaController seek, scrub and skip', () => {
 		harness.progress.length = 0;
 
 		harness.controller.seek(1);
-		await vi.waitFor(() => expect(harness.progress.length).toBeGreaterThan(0));
+		await waitFor(() => expect(harness.progress.length).toBeGreaterThan(0));
 
 		expect(harness.progress.at(-1)!.position).toBeCloseTo(1, 1);
 	});
@@ -1321,12 +1322,12 @@ describe('MediaController volume, mute, rate and loop', () => {
 		harness.controller.setLoop(true);
 		expect(harness.media.loop).toBe(true);
 
-		await vi.waitFor(() => expect(harness.states.at(-1)).toMatchObject({ muted: true, rate: 1.5, loop: true }));
+		await waitFor(() => expect(harness.states.at(-1)).toMatchObject({ muted: true, rate: 1.5, loop: true }));
 		expect(harness.states.at(-1)!.volume).toBeCloseTo(0.3, 5);
 
 		harness.controller.toggleMuted();
 		expect(harness.media.muted).toBe(false);
-		await vi.waitFor(() => expect(harness.states.at(-1)!.muted).toBe(false));
+		await waitFor(() => expect(harness.states.at(-1)!.muted).toBe(false));
 		harness.controller.setLoop(false);
 		expect(harness.states.at(-1)!.loop).toBe(false);
 	});
@@ -1349,7 +1350,7 @@ describe('MediaController volume, mute, rate and loop', () => {
 		harness.media.muted = true;
 		harness.media.playbackRate = 2;
 
-		await vi.waitFor(() => expect(harness.states.at(-1)).toMatchObject({ volume: 0.25, muted: true, rate: 2 }));
+		await waitFor(() => expect(harness.states.at(-1)).toMatchObject({ volume: 0.25, muted: true, rate: 2 }));
 	});
 
 	it('does not call onState again when a volumechange changes nothing', async () => {
@@ -1377,7 +1378,7 @@ describe('MediaController source changes made by the host', () => {
 		harness.media.src = wav(3);
 		expect(harness.controller.getState().status).not.toBe('playing');
 		await harness.media.play();
-		await vi.waitFor(() => expect(harness.controller.getState().status).toBe('playing'));
+		await waitFor(() => expect(harness.controller.getState().status).toBe('playing'));
 
 		expect(order.indexOf('emptied')).toBeGreaterThanOrEqual(0);
 		expect(order.indexOf('abort')).toBeLessThan(order.indexOf('emptied'));
@@ -1396,11 +1397,11 @@ describe('MediaController composition', () => {
 		expect(second.states.at(-1)!.status).toBe('ready');
 
 		await second.controller.play();
-		await vi.waitFor(() => expect(first.controller.getState().status).toBe('playing'));
+		await waitFor(() => expect(first.controller.getState().status).toBe('playing'));
 		expect(second.controller.getState().status).toBe('playing');
 
 		first.controller.setVolume(0.4);
-		await vi.waitFor(() => expect(second.controller.getState().volume).toBeCloseTo(0.4, 5));
+		await waitFor(() => expect(second.controller.getState().volume).toBeCloseTo(0.4, 5));
 
 		first.controller.destroy();
 		const firstCount = first.progress.length;
@@ -1476,7 +1477,7 @@ describe('MediaController autoplay and toggle', () => {
 
 		await harness.controller.load(wav(3), { autoplay: true });
 
-		await vi.waitFor(() => expect(harness.controller.getState().status).toBe('playing'));
+		await waitFor(() => expect(harness.controller.getState().status).toBe('playing'));
 	});
 
 	it('calls play right after the source is set when autoplay is given', async () => {
@@ -1497,7 +1498,7 @@ describe('MediaController autoplay and toggle', () => {
 		const emptied = countEvents(harness.media, 'emptied');
 
 		await harness.controller.load(wav(2), { autoplay: true });
-		await vi.waitFor(() => expect(emptied.count()).toBe(1));
+		await waitFor(() => expect(emptied.count()).toBe(1));
 		await sleep(100);
 
 		expect(harness.controller.getState()).toMatchObject({ blocked: true, status: 'paused' });
@@ -1548,7 +1549,7 @@ describe('MediaController source handling', () => {
 		await harness.controller.load('a');
 
 		expect(released).toEqual([]);
-		await vi.waitFor(() => expect(harness.controller.getState().status).toBe('ready'));
+		await waitFor(() => expect(harness.controller.getState().status).toBe('ready'));
 		expect(harness.controller.getState().error).toBeNull();
 	});
 
@@ -1569,7 +1570,7 @@ describe('MediaController source handling', () => {
 		await stale;
 
 		expect(released).toEqual([]);
-		await vi.waitFor(() => expect(harness.controller.getState().status).toBe('ready'));
+		await waitFor(() => expect(harness.controller.getState().status).toBe('ready'));
 	});
 
 	it('reports No supported source when the last source child fails and recovers on a later load', async () => {
@@ -1585,12 +1586,12 @@ describe('MediaController source handling', () => {
 		harness.controller.attach();
 
 		audio.load();
-		await vi.waitFor(() => expect(harness.controller.getState().status).toBe('error'));
+		await waitFor(() => expect(harness.controller.getState().status).toBe('error'));
 
 		expect(harness.controller.getState().error).toMatchObject({ message: 'No supported source' });
 		expect(harness.errors).toHaveLength(1);
 		await harness.controller.load(wav(1));
-		await vi.waitFor(() => expect(harness.controller.getState().status).toBe('ready'));
+		await waitFor(() => expect(harness.controller.getState().status).toBe('ready'));
 		expect(harness.controller.getState().error).toBeNull();
 	});
 
@@ -1608,7 +1609,7 @@ describe('MediaController source handling', () => {
 
 		audio.load();
 
-		await vi.waitFor(() => expect(harness.controller.getState().status).toBe('ready'));
+		await waitFor(() => expect(harness.controller.getState().status).toBe('ready'));
 		expect(harness.errors).toEqual([]);
 		expect(harness.controller.getState().currentSrc).toBe(good.src);
 	});
@@ -1621,7 +1622,7 @@ describe('MediaController source handling', () => {
 		await harness.controller.load(wav(3), { startAt: 1.5 });
 
 		expect(harness.controller.getState().position).toBeCloseTo(1.5, 1);
-		await vi.waitFor(() => expect(harness.controller.getState().status).toBe('ready'));
+		await waitFor(() => expect(harness.controller.getState().status).toBe('ready'));
 		expect(harness.controller.getState().position).toBeCloseTo(1.5, 1);
 		expect(harness.progress.every((state) => state.position > 1)).toBe(true);
 	});
@@ -1656,7 +1657,7 @@ describe('MediaController source handling', () => {
 		expect(harness.controller.getState().status).toBe('error');
 
 		await harness.controller.retry();
-		await vi.waitFor(() => expect(harness.controller.getState().status).toBe('playing'));
+		await waitFor(() => expect(harness.controller.getState().status).toBe('playing'));
 		expect(attempts).toBe(2);
 		expect(harness.controller.getState().error).toBeNull();
 	});
@@ -1677,7 +1678,7 @@ describe('MediaController source handling', () => {
 		const harness = setup({ resolveSource: (url) => (url === 'first' ? Promise.resolve(wav(3)) : gate.promise) });
 		harness.controller.attach();
 		await harness.controller.load('first');
-		await vi.waitFor(() => expect(harness.controller.getState().status).toBe('ready'));
+		await waitFor(() => expect(harness.controller.getState().status).toBe('ready'));
 		const writes = spyCurrentTime(harness.media);
 
 		const loaded = harness.controller.load('second');
@@ -1715,7 +1716,7 @@ describe('MediaController source handling', () => {
 		harness.media.removeAttribute('src');
 		harness.media.load();
 
-		await vi.waitFor(() => expect(harness.controller.getState()).toMatchObject({ status: 'idle', blocked: false }));
+		await waitFor(() => expect(harness.controller.getState()).toMatchObject({ status: 'idle', blocked: false }));
 	});
 
 	it('clears a failure when the host empties the element', async () => {
@@ -1728,7 +1729,7 @@ describe('MediaController source handling', () => {
 		harness.media.removeAttribute('src');
 		harness.media.load();
 
-		await vi.waitFor(() => expect(harness.controller.getState()).toMatchObject({ status: 'idle', error: null }));
+		await waitFor(() => expect(harness.controller.getState()).toMatchObject({ status: 'idle', error: null }));
 	});
 
 	it('goes back to ready, not paused, when the host replaces the source after a pause', async () => {
@@ -1740,7 +1741,7 @@ describe('MediaController source handling', () => {
 
 		harness.media.src = wav(2);
 
-		await vi.waitFor(() => expect(harness.controller.getState().status).toBe('ready'));
+		await waitFor(() => expect(harness.controller.getState().status).toBe('ready'));
 	});
 
 	it('counts a play started by someone else as started, even before time advances', async () => {
@@ -1750,14 +1751,14 @@ describe('MediaController source handling', () => {
 		const started = harness.media.play();
 		harness.media.pause();
 		await started.catch(() => undefined);
-		await vi.waitFor(() => expect(harness.controller.getState().status).toBe('paused'));
+		await waitFor(() => expect(harness.controller.getState().status).toBe('paused'));
 	});
 
 	it('reports paused for an element that already played when attached', async () => {
 		const harness = setup();
 		harness.media.src = wav(3);
 		await harness.media.play();
-		await vi.waitFor(() => expect(harness.media.currentTime).toBeGreaterThan(0.1));
+		await waitFor(() => expect(harness.media.currentTime).toBeGreaterThan(0.1));
 		harness.media.pause();
 
 		harness.controller.attach();
@@ -1839,7 +1840,7 @@ describe('MediaController callbacks that call back in', () => {
 		});
 		harness.controller.attach();
 		await harness.controller.load(brokenAudio());
-		await vi.waitFor(() => expect(errors).toHaveLength(1));
+		await waitFor(() => expect(errors).toHaveLength(1));
 		await sleep(50);
 		expect(errors).toHaveLength(1);
 	});
@@ -1892,7 +1893,7 @@ describe('MediaController destroy deferral and sharing', () => {
 		const harness = setup({ resolveSource: async (url) => url, releaseSource: (url) => released.push(url) });
 		harness.controller.attach();
 		await harness.controller.load(wav(3), { autoplay: true });
-		await vi.waitFor(() => expect(harness.controller.getState().status).toBe('playing'));
+		await waitFor(() => expect(harness.controller.getState().status).toBe('playing'));
 		const src = harness.media.src;
 
 		harness.controller.destroy();
@@ -1916,7 +1917,7 @@ describe('MediaController destroy deferral and sharing', () => {
 		harness.controller.attach();
 		const url = wav(3);
 		await harness.controller.load(url, { autoplay: true });
-		await vi.waitFor(() => expect(harness.controller.getState().status).toBe('playing'));
+		await waitFor(() => expect(harness.controller.getState().status).toBe('playing'));
 
 		harness.controller.destroy();
 		expect(harness.media.paused).toBe(false);
@@ -1942,7 +1943,7 @@ describe('MediaController destroy deferral and sharing', () => {
 		second.controller.attach();
 		const url = wav(3);
 		await first.controller.load(url, { autoplay: true });
-		await vi.waitFor(() => expect(second.controller.getState().status).toBe('playing'));
+		await waitFor(() => expect(second.controller.getState().status).toBe('playing'));
 
 		first.controller.destroy();
 		await Promise.resolve();
@@ -2065,7 +2066,7 @@ describe('MediaController destroy deferral and sharing', () => {
 		await harness.controller.load(url);
 
 		await harness.controller.play();
-		await vi.waitFor(() => expect(first.paused).toBe(false));
+		await waitFor(() => expect(first.paused).toBe(false));
 		current = other;
 		harness.controller.attach();
 		expect(first.paused).toBe(false);
@@ -2098,7 +2099,7 @@ describe('MediaController destroy deferral and sharing', () => {
 		harness.controller.attach();
 		sharing.controller.attach();
 		await harness.controller.load(wav(3), { autoplay: true });
-		await vi.waitFor(() => expect(first.paused).toBe(false));
+		await waitFor(() => expect(first.paused).toBe(false));
 
 		current = other;
 		harness.controller.attach();
@@ -2256,17 +2257,17 @@ describe('MediaController with a real video', () => {
 		controller.attach();
 
 		await controller.load(await webm());
-		await vi.waitFor(() => expect(controller.getState().status).toBe('ready'));
+		await waitFor(() => expect(controller.getState().status).toBe('ready'));
 		expect(video.videoWidth).toBeGreaterThan(0);
 		expect(controller.getState().duration).toBeGreaterThan(1);
 		expect(controller.getState().seekable).toBe(true);
 
 		controller.seek(1);
-		await vi.waitFor(() => expect(controller.getState().position).toBeCloseTo(1, 0));
+		await waitFor(() => expect(controller.getState().position).toBeCloseTo(1, 0));
 		await controller.play();
-		await vi.waitFor(() => expect(controller.getState().status).toBe('ended'), { timeout: 5000 });
+		await waitFor(() => expect(controller.getState().status).toBe('ended'), { timeout: 5000 });
 		controller.skip(-0.5);
-		await vi.waitFor(() => expect(controller.getState().status).toBe('paused'));
+		await waitFor(() => expect(controller.getState().status).toBe('paused'));
 	});
 });
 
@@ -2319,7 +2320,7 @@ describe('MediaController after a rejected resolveSource', () => {
 		});
 		harness.controller.attach();
 		await harness.controller.load(first);
-		await vi.waitFor(() => expect(harness.controller.getState().status).toBe('ready'));
+		await waitFor(() => expect(harness.controller.getState().status).toBe('ready'));
 		fail = true;
 		await harness.controller.load('next');
 		expect(harness.controller.getState().status).toBe('error');
@@ -2333,7 +2334,7 @@ describe('MediaController after a rejected resolveSource', () => {
 
 		fail = false;
 		await harness.controller.load(wav(2), { autoplay: true });
-		await vi.waitFor(() => expect(harness.controller.getState().status).toBe('playing'));
+		await waitFor(() => expect(harness.controller.getState().status).toBe('playing'));
 		expect(harness.controller.getState().error).toBeNull();
 	});
 
@@ -2353,7 +2354,7 @@ describe('MediaController after a rejected resolveSource', () => {
 		fail = false;
 		await harness.controller.retry();
 		await harness.controller.play();
-		await vi.waitFor(() => expect(harness.controller.getState().status).toBe('playing'));
+		await waitFor(() => expect(harness.controller.getState().status).toBe('playing'));
 	});
 });
 
@@ -2374,7 +2375,7 @@ describe('MediaController onState that recovers from an error', () => {
 		controller = harness.controller;
 		controller.attach();
 		await controller.load(brokenAudio());
-		await vi.waitFor(() => expect(skipped).toBe(true));
+		await waitFor(() => expect(skipped).toBe(true));
 
 		expect(errors).toHaveLength(1);
 	});
@@ -2394,7 +2395,7 @@ describe('MediaController startAt', () => {
 			positions.length = 0;
 			await harness.controller.load(wav(4), { startAt: 1.5 });
 			expect(harness.controller.getState()).toMatchObject({ status: 'loading', position: 1.5 });
-			await vi.waitFor(() => expect(harness.controller.getState().status).toBe('ready'));
+			await waitFor(() => expect(harness.controller.getState().status).toBe('ready'));
 
 			expect(positions.every((position) => Math.abs(position - 1.5) < 0.1)).toBe(true);
 			expect(harness.controller.getState().position).toBeCloseTo(1.5, 1);
@@ -2413,7 +2414,7 @@ describe('MediaController pause on an element that is not playing', () => {
 		expect(pause).not.toHaveBeenCalled();
 
 		await harness.controller.load(wav(3), { autoplay: true });
-		await vi.waitFor(() => expect(harness.controller.getState().status).toBe('playing'));
+		await waitFor(() => expect(harness.controller.getState().status).toBe('playing'));
 		harness.controller.pause();
 		expect(pause).toHaveBeenCalledTimes(1);
 	});
