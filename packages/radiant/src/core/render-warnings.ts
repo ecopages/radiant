@@ -5,7 +5,19 @@ const HOT_RENDER_COUNT = 30;
 const HOT_RENDER_WINDOW_MS = 1000;
 
 const classIds = new WeakMap<object, number>();
+
+/**
+ * The diagnostics of each host, so a tracked render finds them from its owner and the render plumbing needs no
+ * warnings parameter.
+ */
 const warningsByHost = new WeakMap<object, RenderWarnings>();
+
+/**
+ * Class and field keys that have already warned and are no longer attributed.
+ *
+ * @remarks A key is added only when its warning is logged, so a field keeps being counted while development
+ * warnings are switched off and can still warn after they are switched back on.
+ */
 const attributed = new Set<string>();
 let classCount = 0;
 
@@ -138,7 +150,7 @@ export class RenderWarnings {
 		if (times.length === HOT_RENDER_COUNT && now - times[0]! <= HOT_RENDER_WINDOW_MS) {
 			warnOnceInDevelopment(`${prefix}:hot`, () => {
 				attributed.add(prefix);
-				return `[@ecopages/radiant] ${describeHost(this.host)} re-ran render() ${HOT_RENDER_COUNT} times within ${HOT_RENDER_WINDOW_MS}ms because "${name}" changed. If "${name}" fills one node or attribute, bind it with {this.$.${name}} so a change patches only that node. If it shapes the view's structure (a list length, a branch), move the per-frame value out of render(), for example into a this.$ binding on the node that shows it or an imperative write.`;
+				return `[@ecopages/radiant] ${describeHost(this.host)} re-ran render() ${HOT_RENDER_COUNT} times within ${HOT_RENDER_WINDOW_MS}ms because "${name}" changed. If "${name}" fills one node or attribute, bind it with {this.$.${name}} so a change patches only that node. If it shapes the view's structure (a list length, a branch), keep the per-frame value out of render(): derive a coarser field for render() to read, and keep the fast value in this.$ bindings.`;
 			});
 		}
 	}

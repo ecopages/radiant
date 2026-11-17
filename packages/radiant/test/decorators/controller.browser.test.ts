@@ -34,6 +34,14 @@ describe('@controller', () => {
 		expect(hasRegisteredController(identifier)).toBe(false);
 	});
 
+	test('throws instead of registering a controller class that cannot store its identifier', () => {
+		const identifier = createIdentifier('frozen');
+		const FrozenController = Object.freeze(class FrozenController extends RadiantController {});
+
+		expect(() => registerController(identifier, FrozenController)).toThrow(/could not be stored/);
+		expect(hasRegisteredController(identifier)).toBe(false);
+	});
+
 	test('registers decorated controller constructors and records their identifier metadata', () => {
 		const identifier = createIdentifier('metadata');
 
@@ -43,7 +51,7 @@ describe('@controller', () => {
 
 		expect(decorated).toBe(DecoratedController);
 		expect(hasRegisteredController(identifier)).toBe(true);
-		expect(getControllerIdentifier(DecoratedController as unknown as CustomElementConstructor)).toBe(identifier);
+		expect(getControllerIdentifier(DecoratedController)).toBe(identifier);
 	});
 
 	test('connects decorated controllers discovered from existing DOM', async () => {
@@ -97,8 +105,8 @@ describe('@controller', () => {
 
 		expect(initial).toBe(InitialController);
 		expect(duplicate).toBe(InitialController);
-		expect(getControllerIdentifier(InitialController as unknown as CustomElementConstructor)).toBe(identifier);
-		expect(getControllerIdentifier(DuplicateController as unknown as CustomElementConstructor)).toBeUndefined();
+		expect(getControllerIdentifier(InitialController)).toBe(identifier);
+		expect(getControllerIdentifier(DuplicateController)).toBeUndefined();
 	});
 
 	test('returns an existing manually registered controller for duplicate identifiers', () => {
@@ -112,8 +120,8 @@ describe('@controller', () => {
 
 		expect(registered).toBe(RegisteredController);
 		expect(decorated).toBe(RegisteredController);
-		expect(getControllerIdentifier(RegisteredController as unknown as CustomElementConstructor)).toBe(identifier);
-		expect(getControllerIdentifier(DecoratedController as unknown as CustomElementConstructor)).toBeUndefined();
+		expect(getControllerIdentifier(RegisteredController)).toBe(identifier);
+		expect(getControllerIdentifier(DecoratedController)).toBeUndefined();
 	});
 
 	test('replaces decorated controller registrations when replacement mode is enabled', async () => {
@@ -151,7 +159,7 @@ describe('@controller', () => {
 		const replacement = controller(identifier)(ReplacementController);
 
 		expect(replacement).toBe(ReplacementController);
-		expect(getControllerIdentifier(ReplacementController as unknown as CustomElementConstructor)).toBe(identifier);
+		expect(getControllerIdentifier(ReplacementController)).toBe(identifier);
 
 		await waitFor(() => {
 			const host = document.querySelector<HTMLElement>('[data-id="replace"]');

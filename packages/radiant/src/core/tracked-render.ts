@@ -4,7 +4,9 @@ import { renderWarningsOf } from './render-warnings';
 /**
  * Tracks a host render and schedules its next update when a dependency changes.
  *
- * @remarks In development, a render of an `owner` that has {@link renderWarningsOf} diagnostics runs inside them.
+ * @remarks In development, a render runs inside the diagnostics `renderWarningsOf(owner)` returns. `owner` must be
+ * the object the host's `ReactiveHost` was built for (the element or controller itself); another object finds no
+ * diagnostics and silently disables the warnings.
  */
 export class TrackedRender<Value> {
 	private signal?: Computed<Value>;

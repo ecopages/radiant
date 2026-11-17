@@ -103,7 +103,12 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	public readonly bindings: ReactiveBindings<Bindings>;
 	public readonly $: ReactiveBindings<Bindings>;
 	public readonly ssrRegistry = new HostSsrRegistry();
-	/** Development diagnostics for whole-render reads; absent in a production build. */
+	/**
+	 * Development diagnostics for whole-render reads; absent in a production build.
+	 *
+	 * @remarks Each hook that uses it repeats the `process.env.NODE_ENV` guard inside its own `try` on purpose: a
+	 * shared helper is not reliably dropped from a production bundle, and the dist test checks the literal guard.
+	 */
 	private readonly renderWarnings?: RenderWarnings;
 
 	private reactiveMembers = new Map<string, ReadonlyReactiveState<unknown>>();

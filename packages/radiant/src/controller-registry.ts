@@ -237,21 +237,10 @@ export class ControllerRegistryRuntime {
 	}
 }
 
-/**
- * @remarks A hydration payload of a controller is keyed `<identifier>:<field>` (see `resolveHydrationKey`), so a
- * `:` in the identifier would make the key ambiguous to read.
- */
-function assertValidControllerIdentifier(identifier: string): void {
-	if (identifier.includes(':')) {
-		throw new Error(`[@ecopages/radiant] Controller identifier "${identifier}" must not contain ":".`);
-	}
-}
-
 export function registerController<
 	TController extends RadiantController,
 	TConstructor extends ControllerConstructor<TController>,
 >(identifier: string, controller: TConstructor): TConstructor {
-	assertValidControllerIdentifier(identifier);
 	const existingController = controllerRegistry.get(identifier);
 
 	if (existingController) {
@@ -286,7 +275,6 @@ export function replaceController<
 	TController extends RadiantController,
 	TConstructor extends ControllerConstructor<TController>,
 >(identifier: string, controller: TConstructor): TConstructor {
-	assertValidControllerIdentifier(identifier);
 	const existingController = controllerRegistry.get(identifier);
 
 	if (existingController === controller) {

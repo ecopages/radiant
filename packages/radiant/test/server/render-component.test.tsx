@@ -1,6 +1,6 @@
 import '../../src/server/install-ssr-runtime';
 import { renderToString } from '@ecopages/jsx/server';
-import { describe, expect, test, vi } from 'vitest';
+import { describe, expect, onTestFinished, test, vi } from 'vitest';
 import {
 	type ContextProvider,
 	consumeContext,
@@ -622,6 +622,7 @@ describe('render-component server helpers', () => {
 
 	test('renderController() skips a function attribute instead of writing its source, and warns once', async () => {
 		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+		onTestFinished(() => warn.mockRestore());
 		const handler = () => 'secret source';
 
 		const rendered = await renderController(RenderControllerCard, {
@@ -637,7 +638,6 @@ describe('render-component server helpers', () => {
 		expect(
 			warn.mock.calls.filter((call) => String(call[0]).includes('attribute "data-function-attr"')),
 		).toHaveLength(1);
-		warn.mockRestore();
 	});
 
 	test('renderController() infers data-controller metadata from programmatic registration', async () => {

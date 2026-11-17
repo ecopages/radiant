@@ -166,7 +166,7 @@ A direct read in `render()` makes the whole view depend on the field: each chang
 In development, Radiant warns once per class and field when a direct read is clearly wasteful, naming the field and the host and the remedy. The warnings cover `@state` and `@prop` fields; a `@signal` field, an `@attr` field and a `createStore(...)` read or path write do not warn.
 
 - **Redundant path:** the field is bound with `this.$` and also read directly in `render()`, so each change patches the node and then re-renders the view. A binding passed to a child host counts as bound.
-- **Hot field:** the field re-runs one host's `render()` 30 times within a second. If the field fills one node or attribute, bind it with `this.$`; if it shapes the structure (a list length, a branch), move the per-frame value out of `render()`, for example into a `this.$` binding on the node that shows it or an imperative write.
+- **Hot field:** the field re-runs one host's `render()` 30 times within a second. If the field fills one node or attribute, bind it with `this.$`; if it shapes the structure (a list length, a branch), keep the per-frame value out of `render()`: derive a coarser field for `render()` to read and keep the fast value in `this.$` bindings.
 
 A host that reads a field directly without either pattern does not warn. A production build drops the warnings, and `setDevWarningsEnabled(false)` from `@ecopages/jsx/jsx-dev-runtime` silences them.
 

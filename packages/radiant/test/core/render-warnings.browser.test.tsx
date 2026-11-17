@@ -179,6 +179,7 @@ describe.each<HostKind>(['element', 'controller'])('whole-render read warnings o
 		expect(message).toContain('fills one node or attribute');
 		expect(message).toContain('list length');
 		expect(message).toContain('out of render()');
+		expect(message).toContain('coarser field');
 		expect(message).not.toContain('"other"');
 
 		const now = vi.spyOn(Date, 'now');

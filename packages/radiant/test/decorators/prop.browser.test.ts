@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test, vi } from 'vitest';
+import { beforeEach, describe, expect, onTestFinished, test, vi } from 'vitest';
 import { RadiantController } from '../../src/core/radiant-controller';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { customElement } from '../../src/decorators/custom-element';
@@ -206,6 +206,7 @@ describe('@prop', () => {
 	describe('function values', () => {
 		test('a reflected prop drops the attribute instead of writing the function source', async () => {
 			const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+			onTestFinished(() => warn.mockRestore());
 
 			@customElement('my-reactive-function-reflect')
 			class MyReactiveFunctionReflect extends RadiantElement {
@@ -226,7 +227,6 @@ describe('@prop', () => {
 				warn.mock.calls.filter((call) => String(call[0]).includes('reflected attribute "fn-reflect-label"')),
 			).toHaveLength(1);
 			expect(warn.mock.calls.some((call) => String(call[0]).includes('secret source'))).toBe(false);
-			warn.mockRestore();
 		});
 	});
 
