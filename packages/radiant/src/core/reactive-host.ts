@@ -198,14 +198,11 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	 * that observation has ended, so it cannot end a later one.
 	 */
 	public observeMembers(): () => void {
-		if (this.observing) {
-			return () => {};
-		}
-
+		const wasObserving = this.observing;
 		const epoch = this.startObservation();
 
 		return () => {
-			if (epoch === this.observationEpoch) {
+			if (!wasObserving && epoch === this.observationEpoch) {
 				this.unobserveMembers();
 			}
 		};

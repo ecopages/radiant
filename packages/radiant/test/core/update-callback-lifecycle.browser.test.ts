@@ -10,8 +10,23 @@ import { signal } from '../../src/decorators/signal';
 import { state } from '../../src/decorators/state';
 import { REACTIVE_HOST } from '../../src/core/reactive-host';
 
+const created: RadiantController[] = [];
+
+class TrackedController<Bindings extends object = {}> extends RadiantController<Bindings> {
+	constructor(host: Element) {
+		super(host);
+		created.push(this);
+	}
+}
+
 afterEach(() => {
 	document.body.innerHTML = '';
+
+	for (const controller of created.splice(0)) {
+		if (controller.isConnected) {
+			controller.disconnect();
+		}
+	}
 });
 
 /** A shared source that counts the listeners currently attached to it. */
@@ -64,7 +79,7 @@ describe('update callback subscriptions follow host connection', () => {
 		}
 	}
 
-	class BindToController extends RadiantController {
+	class BindToController extends TrackedController {
 		@bindTo({ attr: 'data-n' })
 		@signal({ source: controllerSource.source })
 		n!: WritableSignal<number>;
@@ -246,14 +261,14 @@ describe('update callbacks that disconnect their host during the connect pass', 
 	const aSource = createCountedSource(1);
 	const bSource = createCountedSource(1);
 
-	class DisconnectingController extends RadiantController {
+	class DisconnectingController extends TrackedController {
 		@signal({ source: aSource.source })
 		a!: WritableSignal<number>;
 		@signal({ source: bSource.source })
 		b!: WritableSignal<number>;
 	}
 
-	test('leave no subscription behind and keep unvisited members for the next connect', () => {
+	function disconnectingOnA() {
 		aSource.source.set(1);
 		bSource.source.set(1);
 		const controller = new DisconnectingController(document.createElement('section'));
@@ -262,16 +277,31 @@ describe('update callbacks that disconnect their host during the connect pass', 
 		controller.registerUpdateCallback('b', () => seenB.push(controller.b.get()));
 		controller.connect();
 		controller.disconnect();
-
 		aSource.source.set(2);
 		bSource.source.set(2);
+		return { controller, seenB };
+	}
+
+	test('leave no subscription behind', () => {
+		const { controller } = disconnectingOnA();
 		controller.connect();
 
 		expect(aSource.counter.listeners).toBe(0);
 		expect(bSource.counter.listeners).toBe(0);
-		expect(seenB).toEqual([]);
+	});
 
+	test('skip the members not yet visited', () => {
+		const { controller, seenB } = disconnectingOnA();
 		controller.connect();
+
+		expect(seenB).toEqual([]);
+	});
+
+	test('report the unvisited members on the next connect', () => {
+		const { controller, seenB } = disconnectingOnA();
+		controller.connect();
+		controller.connect();
+
 		expect(seenB).toEqual([2]);
 		controller.disconnect();
 		expect(bSource.counter.listeners).toBe(0);
@@ -282,7 +312,7 @@ describe('update callbacks that disconnect and reconnect their host during the c
 	const aSource = createCountedSource(1);
 	const bSource = createCountedSource(1);
 
-	class ReconnectingController extends RadiantController {
+	class ReconnectingController extends TrackedController {
 		@signal({ source: aSource.source })
 		a!: WritableSignal<number>;
 		@signal({ source: bSource.source })
@@ -329,7 +359,7 @@ describe('update callbacks that disconnect and reconnect their host during the c
 describe('update callbacks follow a member replaced before connect or while detached', () => {
 	const source = createCountedSource(1);
 
-	class ReplacedController extends RadiantController {
+	class ReplacedController extends TrackedController {
 		@signal({ source: source.source })
 		n!: WritableSignal<number>;
 	}
@@ -386,7 +416,7 @@ describe('update callbacks follow a member replaced before connect or while deta
 describe('connection callbacks after one that disconnects the host', () => {
 	const source = createCountedSource(1);
 
-	class ConnectController extends RadiantController {
+	class ConnectController extends TrackedController {
 		@signal({ source: source.source })
 		n!: WritableSignal<number>;
 	}
@@ -407,7 +437,7 @@ describe('a member registered by a callback during the connect pass', () => {
 	const aSource = createCountedSource(1);
 	const cSource = createCountedSource(1);
 
-	class RegisteringController extends RadiantController {
+	class RegisteringController extends TrackedController {
 		@signal({ source: aSource.source })
 		a!: WritableSignal<number>;
 	}
@@ -433,7 +463,7 @@ describe('a member registered by a callback during the connect pass', () => {
 });
 
 describe('a controller @prop on first connect without a write', () => {
-	class LabelController extends RadiantController {
+	class LabelController extends TrackedController {
 		@prop({ type: String }) label!: string;
 		runs: string[][] = [];
 
@@ -443,7 +473,7 @@ describe('a controller @prop on first connect without a write', () => {
 		}
 	}
 
-	class ItemsController extends RadiantController {
+	class ItemsController extends TrackedController {
 		@prop({ type: Array, defaultValue: [] as number[] }) items!: number[];
 		runs: string[][] = [];
 
@@ -479,7 +509,7 @@ describe('a controller @prop on first connect without a write', () => {
 });
 
 describe('a controller @prop written before connect', () => {
-	class WrittenController extends RadiantController<{ label: string }> {
+	class WrittenController extends TrackedController<{ label: string }> {
 		@prop({ type: String, defaultValue: 'default' }) label!: string;
 		runs: string[][] = [];
 		seen: string[] = [];
@@ -540,7 +570,7 @@ describe('a connection callback that disconnects the host ends the connect pass'
 	const controllerSource = createCountedSource(1);
 	const elementSource = createCountedSource(1);
 
-	class PaintingController extends RadiantController {
+	class PaintingController extends TrackedController {
 		@bindTo({ attr: 'data-n' })
 		@signal({ source: controllerSource.source })
 		n!: WritableSignal<number>;
@@ -639,7 +669,7 @@ describe('a connection callback that disconnects the host ends the connect pass'
 });
 
 describe('update callbacks do not run while the host is not observed', () => {
-	class StateController extends RadiantController {
+	class StateController extends TrackedController {
 		@bindTo({ attr: 'data-count' })
 		@state
 		count = 5;
@@ -667,7 +697,7 @@ describe('update callbacks do not run while the host is not observed', () => {
 	});
 
 	test('an initial emit runs update callbacks only while observed, once per connect', () => {
-		const controller = new RadiantController(document.createElement('section'));
+		const controller = new TrackedController(document.createElement('section'));
 		const seen: string[] = [];
 		controller.createReactiveField('n', 1, { suppressInitialNotify: true });
 		controller.registerUpdateCallback('n', () => seen.push('n'));
@@ -692,7 +722,7 @@ describe('update callbacks do not run while the host is not observed', () => {
 	});
 
 	test('createReactiveField after connect runs update callbacks once', () => {
-		const controller = new RadiantController(document.createElement('section'));
+		const controller = new TrackedController(document.createElement('section'));
 		const seen: string[] = [];
 		controller.registerUpdateCallback('late', () => seen.push('late'));
 		controller.connect();
@@ -707,7 +737,7 @@ describe('update callbacks during the connect diff', () => {
 	const aSource = createCountedSource(1);
 	const bSource = createCountedSource(1);
 
-	class DiffController extends RadiantController {
+	class DiffController extends TrackedController {
 		@signal({ source: aSource.source })
 		a!: WritableSignal<number>;
 		@signal({ source: bSource.source })
