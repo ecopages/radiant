@@ -384,3 +384,45 @@ describe('a prop with a copying fromProperty that nothing wrote', () => {
 		instance.disconnect();
 	});
 });
+
+describe('the initializer and defaultValue warning names the declaring class', () => {
+	class Base extends RadiantElement {
+		@prop({ type: String, defaultValue: 'default' }) label = 'initializer';
+	}
+
+	@customElement('prec-warn-derived-a')
+	class DerivedA extends Base {}
+
+	@customElement('prec-warn-derived-b')
+	class DerivedB extends Base {}
+
+	function declareTwin(tag: string) {
+		@customElement(tag)
+		class Twin extends RadiantElement {
+			@prop({ type: String, defaultValue: 'default' }) label = 'initializer';
+		}
+
+		return Twin;
+	}
+
+	test('names the declaring class once for two subclasses', async () => {
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+		document.body.append(new DerivedA());
+		document.body.append(new DerivedB());
+		await Promise.resolve();
+
+		expect(warn).toHaveBeenCalledTimes(1);
+		expect(warn).toHaveBeenCalledWith(expect.stringContaining('"label" on Base has both'));
+	});
+
+	test('warns for each of two unrelated classes that share a name', async () => {
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+		const First = declareTwin('prec-warn-twin-a');
+		const Second = declareTwin('prec-warn-twin-b');
+		document.body.append(new First());
+		document.body.append(new Second());
+		await Promise.resolve();
+
+		expect(warn).toHaveBeenCalledTimes(2);
+	});
+});

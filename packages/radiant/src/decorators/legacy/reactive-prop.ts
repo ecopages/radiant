@@ -73,7 +73,7 @@ export function reactiveProp<T = unknown>(propOptions: ReactivePropertyOptions<T
 				: undefined;
 
 			if (phase === 'constructed' && !wasAssigned) {
-				warnInitializerWithDefaultValue(element, propertyName, ownStagingValue, defaultValue);
+				warnInitializerWithDefaultValue(() => target.constructor, propertyName, ownStagingValue, defaultValue);
 			}
 
 			const resolvedDefaultValue = wasAssigned

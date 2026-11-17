@@ -5,13 +5,31 @@ import { areJsxDevWarningsEnabled, warnOnceInDevelopment } from '../../helpers/d
  *
  * @remarks
  * The `defaultValue` wins and the initializer is ignored, so the two cannot both be intended. Values that
- * serialize to the same JSON are the same value (`defaultValue: []` with `= []`). Fires once per owning class
- * and prop, from both decorator modes. The check wraps the warning instead of returning early, because some
+ * serialize to the same JSON are the same value (`defaultValue: []` with `= []`). Fires once per declaring class
+ * object and prop, from both decorator modes, so subclasses share one warning and two unrelated classes that share
+ * a name each get their own. The check wraps the warning instead of returning early, because some
  * bundlers (Rollup) keep the code after an early `return` inside a `try`; the `try` keeps an unbundled browser
  * load, where `process` does not exist, from throwing.
  */
+const ownerIds = new WeakMap<object, number>();
+let nextOwnerId = 0;
+
+function ownerKey(owner: object): number {
+	let id = ownerIds.get(owner);
+
+	if (id === undefined) {
+		id = ++nextOwnerId;
+		ownerIds.set(owner, id);
+	}
+
+	return id;
+}
+
+/**
+ * @param resolveOwner Returns the class that declares the prop; called only when the warning may fire.
+ */
 export function warnInitializerWithDefaultValue(
-	host: object,
+	resolveOwner: () => Function,
 	propertyName: string,
 	initializerValue: unknown,
 	defaultValue: unknown,
@@ -26,11 +44,11 @@ export function warnInitializerWithDefaultValue(
 				return;
 			}
 
-			const owner = host.constructor.name;
+			const owner = resolveOwner();
 			warnOnceInDevelopment(
-				`${owner}:${propertyName}:initializer-default`,
+				`${ownerKey(owner)}:${propertyName}:initializer-default`,
 				() =>
-					`[@ecopages/radiant] "${propertyName}" on ${owner} has both a field initializer and a different defaultValue: the defaultValue wins and the initializer is ignored. Set an initializer or defaultValue, not both.`,
+					`[@ecopages/radiant] "${propertyName}" on ${owner.name} has both a field initializer and a different defaultValue: the defaultValue wins and the initializer is ignored. Set an initializer or defaultValue, not both.`,
 			);
 		}
 	} catch {}
