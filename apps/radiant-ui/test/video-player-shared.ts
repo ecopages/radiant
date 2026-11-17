@@ -589,9 +589,9 @@ export function describeVideoPlayerForm(name: string, unframed: VideoPlayerForm)
 				await userEvent.click(hook(root, '[data-retry]'));
 
 				await ready(root);
+				await until(() => expect(state(root)).toBe('paused'));
 				expect(fetches.requests).toHaveLength(2);
 				expect(hook(root, '[data-error]').hidden).toBe(true);
-				expect(state(root)).toBe('paused');
 				await playing(root);
 			} finally {
 				fetches.restore();
