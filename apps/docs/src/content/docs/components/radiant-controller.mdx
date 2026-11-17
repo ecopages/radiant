@@ -1,6 +1,6 @@
 ---
-title: "RadiantController"
-description: "RadiantController adds Radiant reactivity to existing HTML with a controller authoring model close to RadiantElement."
+title: 'RadiantController'
+description: 'RadiantController adds Radiant reactivity to existing HTML with a controller authoring model close to RadiantElement.'
 order: 2
 ---
 
@@ -231,11 +231,11 @@ Controllers expose the same binding helpers as element hosts:
 - `createReactiveField(...)`
 - `createReactiveMember(...)`
 - `registerReactiveMember(...)`
-- `getReactiveMember(...)`
+- `getReactiveMember(...)` (typed read-only; write through the field)
 
 Controllers also support `render()`, `requestUpdate()`, and `update()` when you want the controller to own the host element's inner DOM.
 
-**Removed in 0.3.0:** `trackReactiveRead(...)` and `registerReactiveDependencyReader(...)`. Use member `State` via `getReactiveMember(...)` or JSX bindings instead.
+**Removed in 0.3.0:** `trackReactiveRead(...)` and `registerReactiveDependencyReader(...)`. Use member state via `getReactiveMember(...)` or JSX bindings instead.
 
 Those lower-level helpers are useful for plain-JS integrations or abstraction layers. Prefer decorators first when the host shape is stable and readable.
 
