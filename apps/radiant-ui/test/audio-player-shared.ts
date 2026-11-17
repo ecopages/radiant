@@ -844,7 +844,13 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 					const source = audio(root).src;
 					await userEvent.click(next(root));
 					await expect.poll(() => current(root)).not.toBe(before);
-					await expect.poll(() => audio(root).src !== source && audio(root).readyState > 0).toBe(true);
+					await expect
+						.poll(
+							() =>
+								audio(root).src !== source &&
+								audio(root).readyState >= HTMLMediaElement.HAVE_CURRENT_DATA,
+						)
+						.toBe(true);
 				}
 				await userEvent.click(toggle(root));
 				await expect.poll(() => audio(root).paused).toBe(false);
