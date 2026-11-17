@@ -1,4 +1,4 @@
-import type { JsxElementProps } from '@ecopages/jsx';
+import type { JsxElementProps, SignalLike, SubscribableJsxValue } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
 import type { NativeButtonProps } from '@/lib/native-element-props';
 
@@ -14,14 +14,21 @@ type RuiButtonChrome = {
 	square?: boolean;
 };
 
+/** A pressed snapshot, or a binding that patches `aria-pressed` in place. */
+export type RuiButtonPressed = boolean | SignalLike<boolean> | SubscribableJsxValue<boolean>;
+
 export type RuiButtonControlProps = NativeButtonProps &
 	RuiButtonChrome & {
 		/** Native button type. Default: `button`. */
 		type?: 'button' | 'submit' | 'reset';
 		/** Disabled state. */
 		disabled?: boolean;
-		/** Controlled pressed state for toggle buttons (`aria-pressed`). */
-		pressed?: boolean;
+		/**
+		 * Controlled pressed state for toggle buttons (`aria-pressed`).
+		 *
+		 * @remarks A signal or `this.$` binding patches `aria-pressed` without re-rendering the host.
+		 */
+		pressed?: RuiButtonPressed;
 		/** Initial pressed state when `toggle` is used without a controlled `pressed` value. */
 		defaultPressed?: boolean;
 		/** Toggle `aria-pressed` on click when `pressed` is not controlled. */
@@ -41,10 +48,10 @@ export type RuiButtonLinkProps = JsxElementProps<HTMLAnchorElement> &
 export type RuiButtonProps = RuiButtonControlProps | RuiButtonLinkProps;
 
 function resolveAriaPressed(
-	pressed: boolean | undefined,
+	pressed: RuiButtonPressed | undefined,
 	toggle: boolean,
 	defaultPressed: boolean,
-): boolean | undefined {
+): RuiButtonPressed | undefined {
 	if (pressed !== undefined) {
 		return pressed;
 	}

@@ -32,14 +32,6 @@ const HELP =
 	'Space or K plays and pauses, J and L skip 10 seconds, the arrows seek 5 seconds or change the volume, M mutes, C toggles captions, F toggles fullscreen, 0 to 9 jump through the video, Home and End go to its start and end';
 
 /**
- * Passes a binding through `RuiButton`'s `pressed` prop, which is typed as a snapshot.
- *
- * @remarks The helper writes that value onto a native `aria-pressed`, so a binding there patches the attribute
- * without a render.
- */
-const pressedBinding = (value: unknown) => value as boolean;
-
-/**
  * The media snapshot the player paints from. A write to one path patches the nodes bound to it with
  * `this.$.media.*`.
  *
@@ -408,7 +400,7 @@ export class VideoPlayerStoreApp extends RadiantElement<{ media: PlayerMedia }> 
 							square
 							data-playback
 							aria-label="Play"
-							pressed={pressedBinding(media.playing)}
+							pressed={media.playing}
 							on:click={() => void this.playback.toggle()}
 						>
 							<svg
@@ -451,7 +443,7 @@ export class VideoPlayerStoreApp extends RadiantElement<{ media: PlayerMedia }> 
 							square
 							data-mute
 							aria-label="Mute"
-							pressed={pressedBinding(media.muted)}
+							pressed={media.muted}
 							on:click={() => this.playback.toggleMuted()}
 						>
 							<svg
@@ -515,7 +507,7 @@ export class VideoPlayerStoreApp extends RadiantElement<{ media: PlayerMedia }> 
 							square
 							data-captions
 							aria-label="Captions"
-							pressed={pressedBinding(media.captionsOn)}
+							pressed={media.captionsOn}
 							on:click={() => this.toggleCaptions()}
 						>
 							<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
@@ -545,7 +537,7 @@ export class VideoPlayerStoreApp extends RadiantElement<{ media: PlayerMedia }> 
 							data-fullscreen
 							aria-label="Fullscreen"
 							hidden={media.fullscreenAvailable.map((available) => !available)}
-							pressed={pressedBinding(media.fullscreen)}
+							pressed={media.fullscreen}
 							on:click={() => this.toggleFullscreen()}
 						>
 							<svg

@@ -1,4 +1,5 @@
 import { renderToString } from '@ecopages/jsx/server';
+import { state } from '@ecopages/signals';
 import { describe, expect, it } from 'vitest';
 import { RuiButton } from './button';
 
@@ -25,5 +26,12 @@ describe('RuiButton SSR', () => {
 		expect(html).toContain('type="submit"');
 		expect(html).toContain('name="intent"');
 		expect(html).toContain('value="draft"');
+	});
+
+	it('renders a pressed signal as aria-pressed and leaves toggle mode off', () => {
+		const html = renderToString(<RuiButton pressed={state(true)}>Mute</RuiButton>);
+
+		expect(html).toContain('aria-pressed="true"');
+		expect(html).not.toContain('data-toggle');
 	});
 });
