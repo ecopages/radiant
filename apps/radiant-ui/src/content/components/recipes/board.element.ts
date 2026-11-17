@@ -1,10 +1,10 @@
-import { RadiantElement, customElement, query } from '@ecopages/radiant';
+import { RadiantElement, customElement, query, queryAll } from '@ecopages/radiant';
 import { SortableGroup, createSortableController } from '@ecopages/radiant-ui/controllers';
 
 @customElement('board-element')
 export class BoardElement extends RadiantElement {
-	@query({ selector: 'ul', all: true }) private lists!: HTMLElement[];
-	@query({ selector: '[data-status]' }) private status!: HTMLElement;
+	@queryAll('ul') private lists!: HTMLElement[];
+	@query('[data-status]') private status!: HTMLElement;
 
 	private readonly group = new SortableGroup();
 

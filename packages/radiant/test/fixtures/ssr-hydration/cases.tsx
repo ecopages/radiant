@@ -30,6 +30,7 @@ import {
 	staticPageBindlessCardView,
 	staticPageSlotCardView,
 } from './components';
+import { HydratedRefProvider } from './context-ref';
 import { HydratedOrderParent } from './define-order';
 import { LIFECYCLE_PREFIX, defineLifecycleChild, defineLifecycleParent } from './lifecycle-pair';
 import './late-child';
@@ -115,5 +116,6 @@ export const SSR_HYDRATION_CASES: Record<string, () => string> = {
 	'third-party-parent': () => renderRadiantElementHostToString(new HydratedThirdPartyParent(), { mode: 'hydrate' }),
 	'late-child-parent': () => renderRadiantElementHostToString(new HydratedLateChildParent(), { mode: 'hydrate' }),
 	'define-order-parent': () => renderRadiantElementHostToString(new HydratedOrderParent(), { mode: 'hydrate' }),
+	'context-ref-provider': () => renderRadiantElementHostToString(new HydratedRefProvider(), { mode: 'hydrate' }),
 	'lifecycle-parent': () => renderRadiantElementHostToString(new HydratedLifecycleParent(), { mode: 'hydrate' }),
 };

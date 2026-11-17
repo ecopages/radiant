@@ -18,23 +18,27 @@ import { consumeContext } from '../../src/context/decorators/consume-context';
 import { contextSelector } from '../../src/context/decorators/context-selector';
 import { provideContext } from '../../src/context/decorators/provide-context';
 import { event } from '../../src/decorators/event';
-import { query } from '../../src/decorators/query';
-import { createQuery } from '../../src/helpers/create-query';
+import { query, queryAll } from '../../src/decorators/query';
+import { ref, refAll } from '../../src/decorators/ref';
+import { createQuery, createQueryAll } from '../../src/helpers/create-query';
 import type { EventEmitter } from '../../src/tools/event-emitter';
 
 const ctxA = createContext<{ count: number }>('a');
 
 declare const host: Element;
 
-export const item: HTMLLIElement | null = createQuery<HTMLLIElement>(host, { ref: 'r' }).value;
-export const items: HTMLLIElement[] = createQuery<HTMLLIElement>(host, { ref: 'r', all: true }).value;
+export const itemBySelector: HTMLLIElement | null = createQuery<HTMLLIElement>(host, 'li').value;
+export const itemsBySelector: HTMLLIElement[] = createQueryAll<HTMLLIElement>(host, 'li').value;
 
 export class ValidElementInstallers extends RadiantElement {
-	@query({ ref: 'r' }) q1: HTMLElement | null;
-	@query({ ref: 'r' }) q2!: HTMLButtonElement | null;
-	@query({ selector: '.r' }) q3: Element | null;
-	@query({ ref: 'r', all: true }) q4: HTMLLIElement[];
-	@query({ ref: 'r', all: false }) q5: HTMLElement | null;
+	@query('.r') s1: HTMLElement | null;
+	@query<HTMLButtonElement>('button') s2!: HTMLButtonElement | null;
+	@queryAll('.r') s3: HTMLElement[];
+	@queryAll<HTMLLIElement>('li') s4!: HTMLLIElement[];
+	@ref('r') q1: HTMLElement | null;
+	@ref('r') q2!: HTMLButtonElement | null;
+	@query('.r') q3: Element | null;
+	@refAll('r') q4: HTMLLIElement[];
 
 	@event({ name: 'x' }) e1: EventEmitter<{ a: number }>;
 	@event({ name: 'x' }) e2!: EventEmitter;
@@ -60,8 +64,8 @@ export class ValidGenericSelector<T extends number> extends RadiantElement {
 }
 
 export class ValidControllerInstallers extends RadiantController {
-	@query({ ref: 'r' }) q1: HTMLElement | null;
-	@query({ ref: 'r', all: true }) q2: HTMLLIElement[];
+	@ref('r') q1: HTMLElement | null;
+	@refAll('r') q2: HTMLLIElement[];
 
 	@consumeContext(ctxA) c1?: ContextProvider<typeof ctxA>;
 

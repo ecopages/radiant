@@ -14,13 +14,13 @@ import {
  */
 @customElement('modal-element')
 export class ModalElement extends RadiantElement {
-	@query({ selector: '[data-list]' }) private list!: HTMLElement;
-	@query({ selector: '[data-empty]' }) private empty!: HTMLElement;
-	@query({ selector: '[data-reset]' }) private reset!: HTMLElement;
-	@query({ selector: '[data-layer]' }) private layer!: HTMLElement;
-	@query({ selector: '[data-dialog]' }) private dialog!: HTMLElement;
-	@query({ selector: '[data-dialog] h3' }) private heading!: HTMLElement;
-	@query({ selector: '[data-status]' }) private status!: HTMLElement;
+	@query('[data-list]') private list!: HTMLElement;
+	@query('[data-empty]') private empty!: HTMLElement;
+	@query('[data-reset]') private reset!: HTMLElement;
+	@query('[data-layer]') private layer!: HTMLElement;
+	@query('[data-dialog]') private dialog!: HTMLElement;
+	@query('[data-dialog] h3') private heading!: HTMLElement;
+	@query('[data-status]') private status!: HTMLElement;
 
 	private rows: HTMLElement[] = [];
 	private pending: HTMLElement | null = null;

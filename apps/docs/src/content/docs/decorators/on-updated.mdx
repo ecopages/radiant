@@ -17,12 +17,12 @@ To copy a field onto an attribute, boolean attribute, DOM property, or text node
 ## Usage
 
 ```typescript
-import { RadiantElement, customElement, onUpdated, prop, query } from '@ecopages/radiant';
+import { RadiantElement, customElement, onUpdated, prop, ref } from '@ecopages/radiant';
 
 @customElement('search-field')
 export class SearchField extends RadiantElement {
 	@prop({ type: Boolean, defaultValue: false }) open!: boolean;
-	@query({ ref: 'input' }) input!: HTMLInputElement | null;
+	@ref() input!: HTMLInputElement | null;
 
 	@onUpdated('open')
 	focusInput() {

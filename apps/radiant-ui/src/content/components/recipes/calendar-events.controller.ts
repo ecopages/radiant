@@ -5,10 +5,10 @@ import { initialEvents, locale, month, paintDay, steps, weeks } from './calendar
 
 @controller('calendar-events')
 export class CalendarEventsController extends RadiantController {
-	@query({ selector: 'input' }) private filter!: HTMLInputElement;
-	@query({ selector: '[data-title]' }) private heading!: HTMLElement;
-	@query({ selector: '[data-grid]' }) private grid!: HTMLElement;
-	@query({ selector: '[data-status]' }) private status!: HTMLElement;
+	@query('input') private filter!: HTMLInputElement;
+	@query('[data-title]') private heading!: HTMLElement;
+	@query('[data-grid]') private grid!: HTMLElement;
+	@query('[data-status]') private status!: HTMLElement;
 
 	private cells: HTMLElement[] = [];
 

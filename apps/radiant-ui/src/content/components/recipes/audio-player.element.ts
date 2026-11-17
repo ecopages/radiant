@@ -1,4 +1,4 @@
-import { RadiantElement, bindTo, customElement, onEvent, query, state } from '@ecopages/radiant';
+import { RadiantElement, bindTo, customElement, onEvent, query, state, queryAll } from '@ecopages/radiant';
 import {
 	createAudioVisualizerController,
 	createMediaController,
@@ -42,16 +42,16 @@ type Track = { element: HTMLElement; src: string; title: string; artist: string;
  */
 @customElement('audio-player-element')
 export class AudioPlayerElement extends RadiantElement {
-	@query({ selector: '[data-audio]' }) private audio!: HTMLAudioElement;
-	@query({ selector: '[data-cover]' }) private cover!: HTMLElement;
-	@query({ selector: '[data-tracks]' }) private list!: HTMLElement;
-	@query({ selector: '[data-seek]' }) private seek!: RuiSliderElement;
-	@query({ selector: '[data-seek] [role="slider"]' }) private seekThumb!: HTMLElement;
-	@query({ selector: '[data-volume-input] [role="slider"]' }) private volumeThumb!: HTMLElement;
-	@query({ selector: '[data-track]', all: true }) private rows!: HTMLElement[];
-	@query({ selector: '[data-name]', all: true }) private names!: HTMLElement[];
-	@query({ selector: '[data-length]', all: true }) private lengths!: HTMLElement[];
-	@query({ selector: '[data-number]', all: true }) private numbers!: HTMLElement[];
+	@query('[data-audio]') private audio!: HTMLAudioElement;
+	@query('[data-cover]') private cover!: HTMLElement;
+	@query('[data-tracks]') private list!: HTMLElement;
+	@query('[data-seek]') private seek!: RuiSliderElement;
+	@query('[data-seek] [role="slider"]') private seekThumb!: HTMLElement;
+	@query('[data-volume-input] [role="slider"]') private volumeThumb!: HTMLElement;
+	@queryAll('[data-track]') private rows!: HTMLElement[];
+	@queryAll('[data-name]') private names!: HTMLElement[];
+	@queryAll('[data-length]') private lengths!: HTMLElement[];
+	@queryAll('[data-number]') private numbers!: HTMLElement[];
 
 	@state
 	@bindTo({ selector: '[data-title]', text: true })

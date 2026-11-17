@@ -1,4 +1,4 @@
-import { RadiantController, controller, onEvent, query } from '@ecopages/radiant';
+import { RadiantController, controller, onEvent, query, queryAll } from '@ecopages/radiant';
 import { createPopoverController, createRovingController } from '@ecopages/radiant-ui/controllers';
 
 /**
@@ -8,10 +8,10 @@ import { createPopoverController, createRovingController } from '@ecopages/radia
  */
 @controller('popover-menu')
 export class PopoverMenuController extends RadiantController {
-	@query({ selector: 'button' }) private trigger!: HTMLElement;
-	@query({ selector: '[role="menu"]' }) private menu!: HTMLElement;
-	@query({ selector: '[role="menuitem"]', all: true }) private items!: HTMLElement[];
-	@query({ selector: '[data-status]' }) private status!: HTMLElement;
+	@query('button') private trigger!: HTMLElement;
+	@query('[role="menu"]') private menu!: HTMLElement;
+	@queryAll('[role="menuitem"]') private items!: HTMLElement[];
+	@query('[data-status]') private status!: HTMLElement;
 
 	private open = false;
 

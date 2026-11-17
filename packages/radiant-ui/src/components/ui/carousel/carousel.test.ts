@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
+import { RuiSelect } from '../select/select.script';
 import { RuiCarousel } from './carousel.script';
+void RuiSelect;
 
 async function mountCarousel(slidesPerView = 3, autoplay = false, interval = 60000): Promise<RuiCarousel> {
 	const host = new RuiCarousel();
@@ -125,6 +127,30 @@ describe('carousel autoplay pause sources', () => {
 		const held = host.index;
 		vi.advanceTimersByTime(25);
 		expect(host.index).toBe(held);
+	});
+});
+
+describe('carousel autoplay with a nested Radiant host', () => {
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
+	it('pauses while focus is inside a nested host that owns its own root part, and resumes on leaving', async () => {
+		vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+		const host = await mountCarousel(1, true, 20);
+		const select = document.createElement('rui-select');
+		select.innerHTML = '<div data-ref="root"><button type="button" id="nested-focus">Pick</button></div>';
+		host.querySelector('[data-slide="0"]')?.append(select);
+		const inner = select.querySelector('#nested-focus') as HTMLElement;
+
+		inner.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+		const held = host.index;
+		vi.advanceTimersByTime(25);
+		expect(host.index).toBe(held);
+
+		inner.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: null }));
+		vi.advanceTimersByTime(25);
+		expect(host.index).not.toBe(held);
 	});
 });
 

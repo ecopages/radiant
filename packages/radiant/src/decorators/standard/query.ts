@@ -1,7 +1,6 @@
-import type { QueryConfig } from '../query';
 import { installQueryField, type QueryDecoratorHost } from '../shared/query';
 
-export function query(options: QueryConfig) {
+export function query(selector: string, all: boolean) {
 	return function <T extends QueryDecoratorHost, V extends Element | Element[] | null>(
 		target: undefined,
 		context: ClassFieldDecoratorContext<T, V>,
@@ -10,7 +9,7 @@ export function query(options: QueryConfig) {
 		const propertyName = String(context.name);
 
 		context.addInitializer(function (this: T) {
-			installQueryField(this, propertyName, options);
+			installQueryField(this, propertyName, selector, all);
 		});
 	};
 }

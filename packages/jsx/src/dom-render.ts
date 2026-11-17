@@ -86,10 +86,10 @@ export function hydrate(element: JsxRenderable, target: HTMLElement): void {
 
 	const root = adoptHydratedRootRange(target, reconnectedContent);
 
+	flushDeferredProperties(deferredProperties);
+
 	if (isReactiveChildSource(rootValue)) {
 		root.mounted = mountReactiveChildSource(root, rootValue, reconnectedContent, target);
-	} else {
-		flushDeferredProperties(deferredProperties);
 	}
 
 	ROOT_RENDER_STATE.set(target, root);

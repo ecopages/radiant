@@ -1,8 +1,9 @@
 import type { WritableSignal } from '@ecopages/signals';
 import type { REACTIVE_HOST, ReactiveHostLike } from '../../core/reactive-host';
+import { resolvePart } from '../../core/parts';
 import { isSkippedFunction } from '../../helpers/dev-warnings';
-import { createQuery, type QueryHostTarget } from '../../helpers/create-query';
-import { resolveHostElementOrNull } from '../../helpers/resolve-host-element';
+import type { QueryHostTarget } from '../../helpers/create-query';
+import { resolveHostElement, resolveHostElementOrNull } from '../../helpers/resolve-host-element';
 
 /**
  * The value `@bindTo` hands to `map` for a field declared as `T`.
@@ -127,12 +128,12 @@ function compileBindToTarget(target: BindToTarget): CompiledBindToTarget {
 function compileResolve(target: BindToTarget): (host: BindToHost) => Element | null {
 	if ('ref' in target) {
 		const { ref } = target;
-		return (host) => createQuery<Element>(host, { ref, cache: false }).value;
+		return (host) => resolvePart(resolveHostElement(host), ref);
 	}
 
 	if ('selector' in target) {
 		const { selector } = target;
-		return (host) => createQuery<Element>(host, { selector, cache: false }).value;
+		return (host) => resolveHostElement(host).querySelector(selector);
 	}
 
 	return resolveHostElementOrNull;

@@ -1,5 +1,5 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
-import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
+import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop, ref } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { uniqueId } from '@/lib/unique-id';
 import { findAssociatedLabel, syncFieldLabel } from '../shared/field-label';
@@ -104,7 +104,7 @@ export type RuiSelectChangeDetail = { value: string[] };
  * Minimum tree: `[data-ref="root"]` > `[data-select-trigger]` > `[data-select-value]`,
  * sibling `[data-select-listbox]` > `rui-listbox[embedded]` > `[role="option"]`.
  * BEM classes live on the view helpers; the host never queries them.
- * With `portal` the popup leaves the host while it is open, so the host keeps a reference to it and listens on it
+ * With `portal` the popup leaves the host while it is open, so the host reads it from its popover controller, which finds it while it is portaled, and listens on it
  * directly instead of through the host. Tab order follows the popup's place in the document, not the host.
  * Not form-associated: wrap in `rui-field` and read `RuiForm` `onSubmit`.
  * The selected value does not appear in native `FormData`.
@@ -156,7 +156,7 @@ export class RuiSelect extends RadiantElement {
 	});
 	private readonly listboxPopover = createListboxPopoverController(this, {
 		getAnchor: () => this.rootTarget,
-		getFloating: () => this.getListboxPopup(),
+		getFloating: () => this.querySelector<HTMLElement>('[data-select-listbox]'),
 		getOpen: () => this.open,
 		getOptions: () => this.collection.getOptions(),
 		getActiveDescendantHost: () => this.getActiveDescendantHost(),
@@ -165,9 +165,12 @@ export class RuiSelect extends RadiantElement {
 		onDismiss: () => this.setOpen(false),
 	});
 
-	@query({ ref: 'root' }) rootTarget: HTMLElement | null;
-	/** @remarks Cached because a portaled popup is no longer inside the host to be found again. */
-	@query({ selector: '[data-select-listbox]', cache: true }) popupTarget: HTMLElement | null;
+	@ref('root') rootTarget: HTMLElement | null;
+
+	/** @remarks Read from the popover controller, which finds the popup while it is portaled out of the host. */
+	private get popupTarget(): HTMLElement | null {
+		return this.listboxPopover.getFloatingElement();
+	}
 
 	/**
 	 * The popup is a separate listener target, not host delegation, because a portaled popup is outside the host

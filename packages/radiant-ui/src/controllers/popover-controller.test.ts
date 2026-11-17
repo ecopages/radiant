@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { withSlowExit } from './exit-transition.fixture';
 import { PopoverController, createPopoverController } from './popover-controller';
 
 describe('PopoverController attached to a plain element', () => {
@@ -402,5 +403,93 @@ describe('PopoverController default container inside a modal', () => {
 		const { floating, controller } = setup(modal, () => null);
 		expect(floating.parentNode).toBe(modal);
 		controller.destroy();
+	});
+});
+
+describe('PopoverController floating element while portaled', () => {
+	afterEach(() => {
+		document.body.replaceChildren();
+	});
+
+	/** The owner's lookup is scoped to its host, so it cannot see a surface the portal moved out. */
+	function setup(open: { value: boolean }) {
+		const host = document.createElement('section');
+		const anchor = document.createElement('button');
+		let floating = withSlowExit(document.createElement('div'));
+		host.append(anchor, floating);
+		document.body.append(host);
+		const controller = new PopoverController({
+			getAnchor: () => anchor,
+			getFloating: () => host.querySelector<HTMLElement>('[data-slow-exit]'),
+			getOpen: () => open.value,
+			getPlacement: () => 'bottom',
+		});
+		controller.attach();
+		return {
+			host,
+			controller,
+			get floating() {
+				return floating;
+			},
+			replaceFloating() {
+				const next = withSlowExit(document.createElement('div'));
+				floating.replaceWith(next);
+				floating = next;
+			},
+		};
+	}
+
+	it('returns the surface in place, the portal node while it is open, and the same node during its exit', () => {
+		const open = { value: true };
+		const fixture = setup(open);
+		const { floating, controller, host } = fixture;
+		expect(controller.getFloatingElement()).toBe(floating);
+
+		controller.sync();
+		expect(floating.parentNode).toBe(document.body);
+		expect(host.contains(floating)).toBe(false);
+		expect(controller.getFloatingElement()).toBe(floating);
+
+		open.value = false;
+		controller.sync();
+		expect(floating.parentNode).toBe(document.body);
+		expect(floating.hidden).toBe(true);
+		expect(controller.getFloatingElement()).toBe(floating);
+	});
+
+	it('returns the current surface after a close and reopen that swapped the node', async () => {
+		const open = { value: true };
+		const fixture = setup(open);
+		const { controller } = fixture;
+		const first = fixture.floating;
+		controller.sync();
+
+		open.value = false;
+		controller.sync();
+		await vi.waitFor(() => expect(first.parentNode).toBe(fixture.host));
+		expect(controller.getFloatingElement()).toBe(first);
+
+		fixture.replaceFloating();
+		const second = fixture.floating;
+		open.value = true;
+		controller.sync();
+
+		expect(second.parentNode).toBe(document.body);
+		expect(controller.getFloatingElement()).toBe(second);
+		expect(controller.getFloatingElement()).not.toBe(first);
+	});
+
+	it('remembers nothing once the surface is back in place and the owner finds none', async () => {
+		const open = { value: true };
+		const fixture = setup(open);
+		const { controller } = fixture;
+		controller.sync();
+		open.value = false;
+		controller.sync();
+		await vi.waitFor(() => expect(fixture.floating.parentNode).toBe(fixture.host));
+
+		fixture.floating.remove();
+
+		expect(controller.getFloatingElement()).toBeNull();
 	});
 });

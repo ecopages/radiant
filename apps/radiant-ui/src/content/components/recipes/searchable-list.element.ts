@@ -4,9 +4,9 @@ import { textContains } from '@ecopages/radiant-ui/helpers';
 
 @customElement('searchable-list-element')
 export class SearchableListElement extends RadiantElement {
-	@query({ selector: 'input' }) private input!: HTMLInputElement;
-	@query({ selector: 'ul' }) private list!: HTMLElement;
-	@query({ selector: '[data-status]' }) private status!: HTMLElement;
+	@query('input') private input!: HTMLInputElement;
+	@query('ul') private list!: HTMLElement;
+	@query('[data-status]') private status!: HTMLElement;
 
 	private readonly roving = createRovingController(this, {
 		getItems: () => this.visible,

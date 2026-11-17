@@ -2,17 +2,7 @@ import type { JSX_PROPS } from '@ecopages/jsx';
 import { createDismissController } from '../../../controllers/dismiss-controller';
 import { FocusTrapController } from '../../../controllers/focus-trap-controller';
 import { ScrollLockController } from '../../../controllers/scroll-lock-controller';
-import {
-	RadiantElement,
-	bindTo,
-	bound,
-	customElement,
-	event,
-	onEvent,
-	onUpdated,
-	prop,
-	query,
-} from '@ecopages/radiant';
+import { RadiantElement, bindTo, bound, customElement, event, onEvent, onUpdated, prop, ref } from '@ecopages/radiant';
 import { isServer } from '@ecopages/radiant/is-server';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { getFocusableElements } from '../../../controllers/focusable-elements';
@@ -110,7 +100,7 @@ export class RuiDialog extends RadiantElement {
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) alert: boolean;
 	@prop({ type: String, defaultValue: '' }) label: string;
 
-	@query({ ref: 'dialog' }) dialogTarget: HTMLElement | null;
+	@ref('dialog') dialogTarget: HTMLElement | null;
 	private get titleTarget(): HTMLElement | null {
 		return this.ownElement('[data-dialog-title]');
 	}

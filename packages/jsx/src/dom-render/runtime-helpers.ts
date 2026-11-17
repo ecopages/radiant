@@ -28,14 +28,15 @@ type TemplateMount = (
 ) => { rootNodes: readonly Node[] };
 
 /**
- * Flushes property assignments after the DOM structure for the current pass is stable.
+ * Flushes property assignments and `run` entries (`ref` attaches) after the DOM structure for the current pass is stable.
  *
  * Property writes are deferred so custom elements or other property-sensitive
  * nodes see the final DOM shape before receiving their bound values.
  */
 export function flushDeferredProperties(bindings: DeferredPropertyBinding[]): void {
 	for (const binding of bindings) {
-		Reflect.set(binding.element, binding.name, binding.value);
+		if ('run' in binding) binding.run();
+		else Reflect.set(binding.element, binding.name, binding.value);
 	}
 }
 

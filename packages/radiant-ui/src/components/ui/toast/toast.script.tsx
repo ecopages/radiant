@@ -1,6 +1,6 @@
 import type { WithoutChildren } from '../../../lib/without-children';
 import type { JSX_PROPS } from '@ecopages/jsx';
-import { RadiantElement, bindTo, customElement, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
+import { RadiantElement, bindTo, customElement, onEvent, onUpdated, prop, ref } from '@ecopages/radiant';
 import { RuiIconAlertCircle, RuiIconAlertTriangle, RuiIconCheck, RuiIconInfo, RuiIconX } from '@/lib/icons';
 import {
 	DEFAULT_TOAST_POSITION,
@@ -147,7 +147,7 @@ export class RuiToast extends RadiantElement<RuiToastBindings> {
 	position: ToastPosition;
 	@prop({ type: Boolean, defaultValue: false }) markedDelete: boolean;
 
-	@query({ ref: 'toast' }) toastTarget: HTMLElement | null;
+	@ref('toast') toastTarget: HTMLElement | null;
 
 	private mounted = false;
 	private removed = false;
@@ -484,7 +484,6 @@ export class RuiToast extends RadiantElement<RuiToastBindings> {
 
 		return (
 			<div
-				ref="toast"
 				class={`rui-toast rui-toast--${variant}`}
 				role={isError ? 'alert' : 'status'}
 				aria-live={isError ? 'assertive' : 'off'}

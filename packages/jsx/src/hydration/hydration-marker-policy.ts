@@ -21,6 +21,7 @@ import type { BindingKind } from '../factory/template-shape.ts';
  * | `event`        | no                    | Delegated event, client-only binding      |
  * | `native-event` | no                    | Direct event, client-only binding         |
  * | `prop`         | no                    | Property binding, not serializable to DOM |
+ * | `ref`          | no                    | Callback, never serialized                |
  * | `children`     | no                    | Custom-element children taken as a value  |
  */
 
@@ -36,6 +37,7 @@ export function isClientOnlyBinding(kind: BindingKind): boolean {
 		case 'event':
 		case 'native-event':
 		case 'prop':
+		case 'ref':
 		case 'children':
 			return true;
 		case 'attr':

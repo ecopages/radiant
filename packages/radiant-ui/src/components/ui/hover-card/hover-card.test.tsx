@@ -3,6 +3,7 @@ import { createRoot, type JsxRenderable } from '@ecopages/jsx';
 import { resetPreviewTimingForTests, resolvePreviewOpenDelay } from '../shared/preview-timing';
 import { RuiHoverCard, RuiHoverCardContent, RuiHoverCardTrigger } from './hover-card';
 import { RuiHoverCard as RuiHoverCardElement } from './hover-card.script';
+import { expectPopupFoundAcrossPortalCycle } from '../../../controllers/exit-transition.fixture';
 void RuiHoverCardElement;
 
 function mount(element: JsxRenderable): { host: HTMLElement; cleanup: () => void } {
@@ -310,6 +311,36 @@ describe('RuiHoverCard portal container', () => {
 		await settled();
 		return { card: getCard(host), content: getContent(host), frame };
 	}
+
+	it('finds the current content while open, during its exit, and after a reopen with a new node', async () => {
+		const { card, content } = await mountCard();
+
+		await expectPopupFoundAcrossPortalCycle({
+			popup: content,
+			portaled: true,
+			find: () => Reflect.apply(Reflect.get(card, 'getFloatingElement'), card, []),
+			open: async () => {
+				card.setOpen(true);
+				await settled();
+			},
+			close: async () => {
+				card.setOpen(false);
+				await settled();
+			},
+		});
+	});
+
+	it('keeps the accessible name in sync on the content while it is portaled', async () => {
+		const { card, content } = await mountCard();
+		card.setOpen(true);
+		await settled();
+		expect(content.parentElement).toBe(document.body);
+
+		card.contentLabel = 'Profile';
+		await settled();
+
+		expect(content.getAttribute('aria-label')).toBe('Profile');
+	});
 
 	it('mounts the content in the element a selector names, and back in the card on close', async () => {
 		const { card, content, frame } = await mountCard('#frame');

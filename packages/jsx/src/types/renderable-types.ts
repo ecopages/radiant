@@ -60,7 +60,7 @@ export interface JsxNodeLike {
 }
 
 /** Kinds of dynamic bindings that the JSX runtime can encode into templates. */
-export type BindingKind = 'attr' | 'bool' | 'children' | 'event' | 'native-event' | 'prop';
+export type BindingKind = 'attr' | 'bool' | 'children' | 'event' | 'native-event' | 'prop' | 'ref';
 
 /**
  * Describes what one interpolation slot binds to.

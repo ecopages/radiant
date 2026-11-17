@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { withSlowExit } from '../../../controllers/exit-transition.fixture';
 import { ListboxPopoverController, createListboxPopoverController } from './listbox-popover-controller';
 
 function createOption(id: string, label: string, hidden = false): HTMLElement {
@@ -304,6 +305,35 @@ describe('ListboxPopoverController portal', () => {
 		behavior.updateConfig({ portal: false });
 		behavior.syncPopoverPosition();
 		expect(floating.parentNode).toBe(host);
+		behavior.destroy();
+	});
+
+	it('returns the popup while it is portaled out of a host that cannot find it, and during its exit', () => {
+		const host = document.createElement('div');
+		const anchor = document.createElement('div');
+		const popup = withSlowExit(document.createElement('div'));
+		host.append(anchor, popup);
+		document.body.append(host);
+		let open = true;
+		const behavior = new ListboxPopoverController({
+			getAnchor: () => anchor,
+			getFloating: () => host.querySelector<HTMLElement>('[data-slow-exit]'),
+			getOpen: () => open,
+			getOptions: () => [],
+			getActiveDescendantHost: () => null,
+			getOptionIdPrefix: () => 'rui-test-option',
+			portal: true,
+		});
+		behavior.attach();
+
+		behavior.syncPopoverPosition();
+		expect(host.contains(popup)).toBe(false);
+		expect(behavior.getFloatingElement()).toBe(popup);
+
+		open = false;
+		behavior.syncPopoverPosition();
+		expect(popup.parentNode).toBe(document.body);
+		expect(behavior.getFloatingElement()).toBe(popup);
 		behavior.destroy();
 	});
 });

@@ -1,5 +1,5 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
-import { bindTo, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
+import { bindTo, customElement, event, onEvent, onUpdated, prop, ref } from '@ecopages/radiant';
 import { FormAssociatedElement, type FormValue } from '@ecopages/radiant/form-associated-element';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { createPointerDragController } from '../../../controllers/pointer-drag-controller';
@@ -330,14 +330,14 @@ export class RuiSlider extends FormAssociatedElement {
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiSliderChangeDetail>;
 
-	@query({ ref: 'root' }) rootTarget: HTMLElement | null;
-	@query({ ref: 'header' }) headerTarget: HTMLElement | null;
-	@query({ ref: 'label' }) labelTarget: HTMLElement | null;
-	@query({ ref: 'rangeTrack' }) rangeTrack: HTMLElement | null;
-	@query({ ref: 'value' }) valueTarget: HTMLElement | null;
-	@query({ ref: 'singleThumb' }) singleThumb: HTMLButtonElement | null;
-	@query({ ref: 'rangeMinThumb' }) rangeMinThumb: HTMLButtonElement | null;
-	@query({ ref: 'rangeMaxThumb' }) rangeMaxThumb: HTMLButtonElement | null;
+	@ref('root') rootTarget: HTMLElement | null;
+	@ref('header') headerTarget: HTMLElement | null;
+	@ref('label') labelTarget: HTMLElement | null;
+	@ref('rangeTrack') rangeTrack: HTMLElement | null;
+	@ref('value') valueTarget: HTMLElement | null;
+	@ref('singleThumb') singleThumb: HTMLButtonElement | null;
+	@ref('rangeMinThumb') rangeMinThumb: HTMLButtonElement | null;
+	@ref('rangeMaxThumb') rangeMaxThumb: HTMLButtonElement | null;
 
 	private activeThumb: RuiSliderThumb | null = null;
 	private pending: number[] | null = null;

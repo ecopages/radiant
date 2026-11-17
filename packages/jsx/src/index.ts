@@ -42,6 +42,7 @@ export type {
 	JsxNodeType,
 	JsxPrimitive,
 	JsxPropsWithChildren,
+	JsxRefCallback,
 	JsxRenderable,
 	JsxSharedIntrinsicAttributes,
 	SignalLike,

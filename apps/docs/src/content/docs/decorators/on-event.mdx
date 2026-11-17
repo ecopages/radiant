@@ -34,7 +34,7 @@ The decorator accepts a configuration object with exactly one target and an even
 | Parameter | Type | Description |
 | :-------- | :--- | :---------- |
 | `selector` | `string` | CSS selector to match target elements (uses event delegation). |
-| `ref` | `string` | Value of `data-ref` attribute to match (uses event delegation). |
+| `ref` | `string` | Value of `data-ref` attribute to match (uses event delegation). Fires when the event happened inside a part the host owns. A nested host's same-named part is skipped, so a click on it fires the handler only if it sits inside an outer part of that name. |
 | `host` | `true` | Listen on the Element Host itself, so non-bubbling events such as `pointerenter` and `pointerleave` work. |
 | `window` | `true` | Listen on the global `window` object. |
 | `document` | `true` | Listen on the global `document` object. |
@@ -140,5 +140,6 @@ handleFocus() { /* ... */ }
 ## Learn More
 
 - [Best Practices](/docs/getting-started/best-practices) - Learn more about component design and events.
+- [@ref](/docs/decorators/ref) - Read the parts a host owns, which `@onEvent({ ref })` shares its scope with.
 - [@query](/docs/decorators/query) - Query elements to use with events.
 - [@debounce](/docs/decorators/debounce) - Debounce frequent event handlers.

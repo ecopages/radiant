@@ -10,7 +10,7 @@ Radiant decorators fall into a few groups:
 
 - host registration and HTML input: [@customElement](/docs/decorators/custom-element), [@controller](/docs/decorators/controller), [@attr](/docs/decorators/attr), [@prop](/docs/decorators/prop)
 - reactive state and bindings: [@state](/docs/decorators/state), [@signal](/docs/decorators/signal), [@bindTo](/docs/decorators/bind-to), [@onUpdated](/docs/decorators/on-updated)
-- DOM and event wiring: [@onEvent](/docs/decorators/on-event), [@event](/docs/decorators/event), [@query](/docs/decorators/query)
+- DOM and event wiring: [@onEvent](/docs/decorators/on-event), [@event](/docs/decorators/event), [@query](/docs/decorators/query) and `@queryAll`, [@ref](/docs/decorators/ref)
 - method helpers: [@bound](/docs/decorators/bound), [@debounce](/docs/decorators/debounce)
 
 ## Host Support
@@ -75,7 +75,7 @@ Under standard decorators, TypeScript passes each field decorator the declared f
 Prefer an initializer, so TypeScript infers the field type and there is no annotation to keep in sync:
 
 ```ts
-import { RadiantElement, customElement, prop, query, signal } from '@ecopages/radiant';
+import { RadiantElement, customElement, prop, signal, ref } from '@ecopages/radiant';
 import type { WritableSignal } from '@ecopages/signals';
 
 type Size = 'sm' | 'md' | 'lg';
@@ -86,7 +86,7 @@ export class SizePicker extends RadiantElement {
 	@prop({ type: String, defaultValue: 'md' }) size: Size = 'md';
 	@prop({ type: Boolean }) open?: boolean;
 	@signal({ initial: 0 }) clicks!: WritableSignal<number>;
-	@query({ ref: 'input' }) input!: HTMLInputElement | null;
+	@ref() input!: HTMLInputElement | null;
 }
 ```
 
@@ -94,7 +94,7 @@ Write the type yourself for:
 
 - a string literal union, such as `size: Size = 'md'`
 - a field with no initializer: `?` when the value can be absent, which adds `undefined`, and `!` when the decorator or a default supplies it, which only silences the missing-initializer error
-- `@signal`, `@query` and the other fields a decorator installs, which have no initializer to infer from
+- `@signal`, `@query`, `@ref`, `@refAll` and the other fields a decorator installs, which have no initializer to infer from
 
 Declare a decorated field as a plain field. TypeScript rejects `declare` on it under standard decorators (TS1206), and an `accessor` field is not a target of these decorators.
 
@@ -105,7 +105,7 @@ A field that disagrees with an option is rejected on the decorator. TypeScript m
 @prop({ type: Number }) step?: string; // Number parses to a number
 @attr({ source: 'data-total' }) total = 0; // the raw attribute is a string
 @signal({ initial: 'x' }) label!: WritableSignal<number>; // initial is a string
-@query({ ref: 'input' }) input!: HTMLInputElement; // null when nothing matches
+@ref() input!: HTMLInputElement; // null when nothing matches
 ```
 
 ### What Each Decorator Expects
@@ -113,7 +113,8 @@ A field that disagrees with an option is rejected on the decorator. TypeScript m
 - [@state](/docs/decorators/state): any type. It is the type [@bindTo](/docs/decorators/bind-to) passes to `map`.
 - [@signal](/docs/decorators/signal): `WritableSignal<T>`, with `initial` a `T` and `source` a `WritableSignal<T>`, or a function returning one.
 - [@bindTo](/docs/decorators/bind-to): `map` receives the field type, so `@bindTo({ attr: 'data-n', map: (v) => v.toFixed() }) @state n = 0` types `v` as `number`. On a `@signal` field declared `WritableSignal<number>` it also types `v` as `number`, the value the runtime passes.
-- [@query](/docs/decorators/query): `T | null` for a single element, `T[]` with `all: true`. `all` must be a literal `true` or `false`.
+- [@query](/docs/decorators/query): `T | null`, the first match of a selector or `null`. [@queryAll](/docs/decorators/query): `T[]` of elements, never `null`.
+- [@ref](/docs/decorators/ref): `T | null`. [@refAll](/docs/decorators/ref): `T[]`.
 - [@consumeContext](/docs/context/consume-context): `ContextProvider<typeof context>`, which may be optional but not wider.
 - [@provideContext](/docs/context/provide-context): `ContextProvider<typeof context>`. The provider is always installed, so the field cannot be optional or wider.
 - [@event](/docs/decorators/event): `EventEmitter<Detail>`. The emitter is always installed, so the field cannot be optional.

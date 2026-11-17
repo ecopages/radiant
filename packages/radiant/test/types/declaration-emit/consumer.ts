@@ -6,7 +6,8 @@
  * `node_modules` layout like an installed one. Every helper type a decorator's inferred type
  * names has to be reachable from a package `exports` entry, or the emit fails with TS2883.
  */
-import { attr, bindTo, debounce, event, onEvent, onUpdated, prop, query, signal } from '@ecopages/radiant';
+import { attr, bindTo, debounce, event, onEvent, onUpdated, prop, query, queryAll, signal } from '@ecopages/radiant';
+import { ref, refAll } from '@ecopages/radiant/decorators/ref';
 import type { WritableSignal } from '@ecopages/signals';
 import {
 	consumeContext,
@@ -21,8 +22,8 @@ const ctx = createContext<{ n: number }>(Symbol('ctx'));
 export const myProp = prop({ type: Number, defaultValue: 0 });
 export const myAttr = attr({ type: Number, defaultValue: 0 });
 export const mySignal = signal<number>({ initial: 0 });
-export const myQuery = query({ selector: 'div' });
-export const myQueryAll = query({ selector: 'div', all: true });
+export const myQuery = query('div');
+export const myQueryAll = queryAll('div');
 export const myEvent = event({ name: 'x' });
 export const myBind = bindTo<number>({ attr: 'data-n' });
 export const mySignalBind = bindTo<WritableSignal<number>>({ attr: 'data-n', map: (v) => v.toFixed() });
@@ -33,3 +34,6 @@ export const myOnEvent = onEvent({ type: 'click', mediaQuery: '(min-width: 1px)'
 export const myDebounce = debounce(300);
 export const myOnUpdated = onUpdated('count');
 export const myOnContextUpdate = onContextUpdate({ context: ctx });
+export const myRef = ref();
+export const myNamedRef = ref('x', { required: true });
+export const myRefAll = refAll();

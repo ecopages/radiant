@@ -1,5 +1,5 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
-import { RadiantElement, bindTo, customElement, onEvent, onUpdated, prop, query, state } from '@ecopages/radiant';
+import { RadiantElement, bindTo, customElement, onEvent, onUpdated, prop, state, ref } from '@ecopages/radiant';
 import { MutationController } from '../../../controllers/mutation-controller';
 
 export type RuiSidebarTriggerPlacement = 'header' | 'inset';
@@ -89,7 +89,7 @@ export class RuiSidebarTrigger extends RadiantElement {
 	@prop({ type: String, defaultValue: 'ghost' }) variant: NonNullable<RuiSidebarTriggerProps['variant']>;
 	@prop({ type: String, defaultValue: 'md' }) size: NonNullable<RuiSidebarTriggerProps['size']>;
 
-	@query({ ref: 'button' }) buttonTarget: HTMLButtonElement | null;
+	@ref('button') buttonTarget: HTMLButtonElement | null;
 
 	@state
 	@bindTo([

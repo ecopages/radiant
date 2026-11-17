@@ -39,14 +39,14 @@ import { fetchSource, releaseSource } from './video-player.loader';
  */
 @customElement('video-player-element')
 export class VideoPlayerElement extends RadiantElement {
-	@query({ selector: '[data-stage]' }) private stage!: HTMLElement;
-	@query({ selector: '[data-video]' }) private video!: HTMLVideoElement;
-	@query({ selector: '[data-controls]' }) private controls!: HTMLElement;
-	@query({ selector: '[data-seek]' }) private seek!: RuiSliderElement;
-	@query({ selector: '[data-seek] [role="slider"]' }) private seekThumb!: HTMLElement;
-	@query({ selector: '[data-volume-input]' }) private volume!: RuiSliderElement;
-	@query({ selector: '[data-buffered]' }) private buffered!: HTMLElement;
-	@query({ selector: '[data-fullscreen]' }) private fullscreen!: HTMLButtonElement;
+	@query('[data-stage]') private stage!: HTMLElement;
+	@query('[data-video]') private video!: HTMLVideoElement;
+	@query('[data-controls]') private controls!: HTMLElement;
+	@query('[data-seek]') private seek!: RuiSliderElement;
+	@query('[data-seek] [role="slider"]') private seekThumb!: HTMLElement;
+	@query('[data-volume-input]') private volume!: RuiSliderElement;
+	@query('[data-buffered]') private buffered!: HTMLElement;
+	@query('[data-fullscreen]') private fullscreen!: HTMLButtonElement;
 
 	@state
 	@bindTo({ selector: '[data-stage]', attr: 'data-state' })

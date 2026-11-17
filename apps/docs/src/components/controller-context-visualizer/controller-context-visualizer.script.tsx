@@ -10,7 +10,7 @@ import {
 	onContextUpdate,
 	onEvent,
 	provideContext,
-	query,
+	ref,
 } from '@/utils/radiant-browser-runtime';
 import { ensureDocsControllersStarted } from '@/utils/start-docs-controllers';
 
@@ -32,10 +32,10 @@ export class ControllerContextProvider extends RadiantController {
 	})
 	provider!: ContextProvider<typeof controllerVisualizerContext>;
 
-	@query({ ref: 'provider-count' }) providerCount!: HTMLElement | null;
-	@query({ ref: 'provider-events' }) providerEvents!: HTMLElement | null;
-	@query({ ref: 'provider-last' }) providerLast!: HTMLElement | null;
-	@query({ ref: 'status' }) status!: HTMLElement | null;
+	@ref() providerCount!: HTMLElement | null;
+	@ref() providerEvents!: HTMLElement | null;
+	@ref() providerLast!: HTMLElement | null;
+	@ref() status!: HTMLElement | null;
 
 	override connect(): void {
 		super.connect();
@@ -91,9 +91,9 @@ export class ControllerContextProvider extends RadiantController {
 
 @controller('controller-context-consumer')
 export class ControllerContextConsumer extends RadiantController {
-	@query({ ref: 'controller-count' }) controllerCount!: HTMLElement | null;
-	@query({ ref: 'controller-mode' }) controllerMode!: HTMLElement | null;
-	@query({ ref: 'controller-last' }) controllerLast!: HTMLElement | null;
+	@ref() controllerCount!: HTMLElement | null;
+	@ref() controllerMode!: HTMLElement | null;
+	@ref() controllerLast!: HTMLElement | null;
 
 	@onContextUpdate({ context: controllerVisualizerContext, select: (context) => context.count })
 	onCountChange(count: number) {

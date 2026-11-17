@@ -3,7 +3,7 @@ import { RadiantElement } from '@ecopages/radiant/core/radiant-element';
 import { customElement } from '@ecopages/radiant/decorators/custom-element';
 import { onEvent } from '@ecopages/radiant/decorators/on-event';
 import { onUpdated } from '@ecopages/radiant/decorators/on-updated';
-import { query } from '@ecopages/radiant/decorators/query';
+import { ref } from '@ecopages/radiant/decorators/ref';
 import { prop } from '@ecopages/radiant/decorators/prop';
 import { state } from '@ecopages/radiant/decorators/state';
 
@@ -20,8 +20,8 @@ export class RadiantCounter extends RadiantElement<RadiantCounterBindings> {
 	declare readonly [JSX_PROPS]?: RadiantCounterProps;
 	@prop({ type: Number, reflect: true, defaultValue: 0 }) value!: number;
 	@state lastAction = 'Waiting for input';
-	@query({ ref: 'count' }) countText!: HTMLElement | null;
-	@query({ ref: 'status' }) statusText!: HTMLElement | null;
+	@ref('count') countText!: HTMLElement | null;
+	@ref('status') statusText!: HTMLElement | null;
 
 	@onEvent({ ref: 'decrement', type: 'click' })
 	decrement() {

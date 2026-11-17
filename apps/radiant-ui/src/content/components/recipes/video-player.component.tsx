@@ -55,12 +55,12 @@ export class VideoPlayerApp extends RadiantElement<{ status: string; elapsed: st
 	@state elapsed = '0:00';
 	@state total = '0:00';
 
-	@query({ selector: '[data-stage]' }) private stageNode!: HTMLElement;
-	@query({ selector: '[data-video]' }) private video!: HTMLVideoElement;
-	@query({ selector: '[data-controls]' }) private controls!: HTMLElement;
-	@query({ selector: '[data-seek]' }) private seek!: RuiSliderElement;
-	@query({ selector: '[data-fullscreen]' }) private fullscreenButton!: HTMLElement;
-	@query({ selector: '[data-volume-input]' }) private volume!: RuiSliderElement;
+	@query('[data-stage]') private stageNode!: HTMLElement;
+	@query('[data-video]') private video!: HTMLVideoElement;
+	@query('[data-controls]') private controls!: HTMLElement;
+	@query('[data-seek]') private seek!: RuiSliderElement;
+	@query('[data-fullscreen]') private fullscreenButton!: HTMLElement;
+	@query('[data-volume-input]') private volume!: RuiSliderElement;
 
 	private controlsHidden = false;
 	private fullscreen = false;

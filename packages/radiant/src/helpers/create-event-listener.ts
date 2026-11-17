@@ -1,4 +1,4 @@
-import { eventMatchesDelegatedSelector } from '../core/delegated-event';
+import { eventMatchesDelegatedRef, eventMatchesDelegatedSelector } from '../core/delegated-event';
 import { isServer } from '@ecopages/radiant/is-server';
 import { areJsxDevWarningsEnabled } from './dev-warnings';
 import { resolveHostElement } from './resolve-host-element';
@@ -140,13 +140,13 @@ export type EventListenerHost =
 function addDelegatedListener(
 	root: Element,
 	config: Pick<OnEventConfig, 'type' | 'options'>,
-	selector: string,
+	matches: (event: Event) => boolean,
 	listener: EventListener,
 ): () => void {
 	warnNonBubblingDelegatedEvent(config.type, config.options);
 
 	const delegatedListener = (event: Event) => {
-		if (eventMatchesDelegatedSelector(event, root, selector)) listener(event);
+		if (matches(event)) listener(event);
 	};
 
 	root.addEventListener(config.type, delegatedListener, config.options);
@@ -244,11 +244,16 @@ function attachDelegatedListeners(
 	config: OnEventConfig,
 	listener: EventListener,
 ): void {
-	const selector =
-		config.selector ?? (config.ref === undefined ? undefined : `[data-ref='${CSS.escape(config.ref)}']`);
-	if (selector === undefined) return;
+	const { ref, selector } = config;
+	const matches =
+		selector !== undefined
+			? (event: Event) => eventMatchesDelegatedSelector(event, hostElement, selector)
+			: ref !== undefined
+				? (event: Event) => eventMatchesDelegatedRef(event, hostElement, ref)
+				: undefined;
+	if (!matches) return;
 	if (!cleanups.has('delegated'))
-		cleanups.set('delegated', addDelegatedListener(hostElement, config, selector, listener));
+		cleanups.set('delegated', addDelegatedListener(hostElement, config, matches, listener));
 }
 
 type EventListenerScope = 'delegated' | 'document' | 'host' | 'media' | 'window';

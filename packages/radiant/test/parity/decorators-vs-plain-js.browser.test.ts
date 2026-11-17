@@ -5,11 +5,12 @@ import { event } from '../../src/decorators/event';
 import { onEvent } from '../../src/decorators/on-event';
 import { onUpdated } from '../../src/decorators/on-updated';
 import { prop } from '../../src/decorators/prop';
-import { query } from '../../src/decorators/query';
+import { query, queryAll } from '../../src/decorators/query';
+import { ref } from '../../src/decorators/ref';
 import { state } from '../../src/decorators/state';
 import { createEvent } from '../../src/helpers/create-event';
 import { createEventListener } from '../../src/helpers/create-event-listener';
-import { createQuery } from '../../src/helpers/create-query';
+import { createQuery, createQueryAll } from '../../src/helpers/create-query';
 import type { EventEmitter } from '../../src/tools/event-emitter';
 
 type CounterSnapshot = {
@@ -26,6 +27,7 @@ type CounterElementContract = RadiantElement & {
 	actionButton: HTMLButtonElement | null;
 	statusNode: HTMLSpanElement | null;
 	detailNode: HTMLParagraphElement | null;
+	spans: HTMLSpanElement[];
 };
 
 function readCounterSnapshot(element: CounterElementContract): CounterSnapshot {
@@ -49,9 +51,10 @@ function counterTemplate(count: number, draft: string): string {
 class DecoratorCounterParityElement extends RadiantElement {
 	@prop({ type: Number, reflect: true, defaultValue: 1 }) count!: number;
 	@state draft = 'ready';
-	@query({ ref: 'action' }) actionButton!: HTMLButtonElement | null;
-	@query({ ref: 'status' }) statusNode!: HTMLSpanElement | null;
-	@query({ ref: 'detail' }) detailNode!: HTMLParagraphElement | null;
+	@ref('action') actionButton!: HTMLButtonElement | null;
+	@ref('status') statusNode!: HTMLSpanElement | null;
+	@query<HTMLParagraphElement>('p') detailNode!: HTMLParagraphElement | null;
+	@queryAll<HTMLSpanElement>('span') spans!: HTMLSpanElement[];
 
 	override connectedCallback(): void {
 		super.connectedCallback();
@@ -76,10 +79,6 @@ class PlainCounterParityElement extends RadiantElement {
 	declare count: number;
 	declare draft: string;
 
-	private readonly actionQuery = createQuery<HTMLButtonElement>(this, { ref: 'action' });
-	private readonly statusQuery = createQuery<HTMLSpanElement>(this, { ref: 'status' });
-	private readonly detailQuery = createQuery<HTMLParagraphElement>(this, { ref: 'detail' });
-
 	constructor() {
 		super();
 		this.createReactiveProp('count', { type: Number, reflect: true, defaultValue: 1 });
@@ -91,15 +90,22 @@ class PlainCounterParityElement extends RadiantElement {
 	}
 
 	get actionButton(): HTMLButtonElement | null {
-		return this.actionQuery.value;
+		return this.getRef<HTMLButtonElement>('action');
 	}
 
 	get statusNode(): HTMLSpanElement | null {
-		return this.statusQuery.value;
+		return this.getRef<HTMLSpanElement>('status');
 	}
+
+	private readonly detailQuery = createQuery<HTMLParagraphElement>(this, 'p');
+	private readonly spansQuery = createQueryAll<HTMLSpanElement>(this, 'span');
 
 	get detailNode(): HTMLParagraphElement | null {
 		return this.detailQuery.value;
+	}
+
+	get spans(): HTMLSpanElement[] {
+		return this.spansQuery.value;
 	}
 
 	override connectedCallback(): void {
@@ -155,7 +161,7 @@ customElements.define('parity-decorator-event-emitter', DecoratorEventEmitterPar
 
 class DecoratorEventListenerParityElement extends RadiantElement {
 	lastMessage = 'idle';
-	@query({ ref: 'output' }) outputNode!: HTMLDivElement | null;
+	@ref('output') outputNode!: HTMLDivElement | null;
 
 	override connectedCallback(): void {
 		super.connectedCallback();
@@ -196,7 +202,6 @@ customElements.define('parity-plain-event-emitter', PlainEventEmitterParityEleme
 
 class PlainEventListenerParityElement extends RadiantElement {
 	lastMessage = 'idle';
-	private readonly outputQuery = createQuery<HTMLDivElement>(this, { ref: 'output' });
 
 	constructor() {
 		super();
@@ -207,7 +212,7 @@ class PlainEventListenerParityElement extends RadiantElement {
 	}
 
 	get outputNode(): HTMLDivElement | null {
-		return this.outputQuery.value;
+		return this.getRef<HTMLDivElement>('output');
 	}
 
 	override connectedCallback(): void {
@@ -270,6 +275,8 @@ describe('decorators vs plain JS parity', () => {
 				const element = create();
 				document.body.appendChild(element);
 
+				expect(element.spans).toHaveLength(1);
+				expect(element.spans[0]).toBe(element.statusNode);
 				element.actionButton?.click();
 
 				await waitFor(() => {

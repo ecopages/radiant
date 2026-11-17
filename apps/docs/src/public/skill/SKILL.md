@@ -85,7 +85,7 @@ Read only the modules relevant to the task. Each file is one level deep from thi
 | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | [reference/reactive-model.md](reference/reactive-model.md) | Bindings vs plain reads vs `@bindTo`, attribute rules (`bool:`, `false`, `class`), derived `.map`, class/style                            |
 | [reference/hosts.md](reference/hosts.md)                   | Element vs controller, public props vs internal bindings types, children and named regions                                                |
-| [reference/decorators.md](reference/decorators.md)         | `@prop` / `@attr` / `@state` / `@signal`, field types, `@bindTo`, `@query`, `@onEvent`, `@onUpdated`, `@bound`, `@debounce`               |
+| [reference/decorators.md](reference/decorators.md)         | `@prop` / `@attr` / `@state` / `@signal`, field types, `@bindTo`, `@query`, `@ref`, `@onEvent`, `@onUpdated`, `@bound`, `@debounce`       |
 | [reference/context.md](reference/context.md)               | Provide/consume, `@contextSelector` vs `@onContextUpdate`, manual `ContextRequestEvent` and other protocol libraries, context field types |
 | [reference/ssr.md](reference/ssr.md)                       | Server entrypoints, hydrate modes, nested and page-level hydration, render scope                                                          |
 | [reference/authoring.md](reference/authoring.md)           | Authoring rules, development warnings, review checklist, output shape                                                                     |
@@ -98,10 +98,10 @@ Read only the modules relevant to the task. Each file is one level deep from thi
 3. Reassign arrays and objects; in-place mutation does not trigger updates.
 4. Omit the `Bindings` generic unless the host uses `this.$`, `this.bindings`, or `this.bind(...)`.
 5. `@bindTo` copies a reactive field onto existing DOM. Missing nodes and non-reactive fields are skipped. Two write kinds, or both `ref` and `selector`, throw at decoration.
-6. `@query` is a live element handle (focus, observers, third-party APIs) — not a way to copy a field into a node.
+6. `@ref` (a `data-ref` part the host owns) and `@query` (a selector, which reaches into nested hosts) are live element handles (focus, observers, third-party APIs) — not a way to copy a field into a node.
 7. Import context from `@ecopages/radiant/context`, not the root entry.
 8. Radiant SSR is light-DOM only. Prefer explicit `mode: 'plain'` or `mode: 'hydrate'`. In hydrate mode, define a parent host on the client too: a host inside a parent host's view stays inert until the parent hydrates.
-9. Type decorated fields as the decorator checks them ([field types](reference/decorators.md#field-types)): prefer an initializer, never `declare` a decorated field, and treat a `@query` field as `T | null` (`T[]` with `all: true`), guarding each use.
+9. Type decorated fields as the decorator checks them ([field types](reference/decorators.md#field-types)): prefer an initializer, never `declare` a decorated field, and treat a `@query` or `@ref` field as `T | null` (`@queryAll` and `@refAll` fields as `T[]`), guarding each use.
 10. A view hands a render-owning host its children as one value: `{this.slotted}` places them (`{this.slotted ?? fallback}` for a fallback), and a named region is a property (`<x-card header={<h2 />}>`). `<slot>` is an ordinary element. Change children in the parent view, not with DOM APIs, and define custom elements before rendering views that use them ([children](reference/hosts.md#children)).
 11. Declare public props with `declare readonly [JSX_PROPS]?: Props` and render the class directly (`<UserCard name="Ada" />`). `@prop` HTML attributes are kebab-case (`minWidth` is `min-width`); JSX keeps camelCase. Keep internal `@state` `protected` or `private`.
 

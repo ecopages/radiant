@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import { RadiantElement } from '../../src/core/radiant-element';
-import { createQuery } from '../../src/helpers/create-query';
+import { createQuery, createQueryAll } from '../../src/helpers/create-query';
 
 class QueryHelperElement extends RadiantElement {}
 customElements.define('query-helper-element', QueryHelperElement);
@@ -32,64 +32,41 @@ const createHost = () => {
 	return host;
 };
 
-describe('createQuery', () => {
+describe('createQuery and createQueryAll', () => {
 	beforeEach(() => {
 		document.body.innerHTML = '';
 	});
 
-	test('queries single element by ref', () => {
+	test('createQuery with a selector reads the first match live, or null', () => {
 		const host = createHost();
-		const accessor = createQuery<HTMLDivElement>(host, { ref: 'my-ref' });
-		expect(accessor.value?.textContent).toBe('Ref 1');
-	});
-
-	test('queries all elements by ref', () => {
-		const host = createHost();
-		const accessor = createQuery<HTMLDivElement>(host, { ref: 'my-ref', all: true });
-		expect(accessor.value).toHaveLength(2);
-		expect(accessor.value![0].textContent).toBe('Ref 1');
-		expect(accessor.value![1].textContent).toBe('Ref 2');
-	});
-
-	test('queries single element by selector', () => {
-		const host = createHost();
-		const accessor = createQuery<HTMLDivElement>(host, { selector: '.my-class' });
+		const accessor = createQuery(host, '.my-class');
 		expect(accessor.value?.textContent).toBe('Class 1');
+		expect(createQuery(host, '.missing').value).toBeNull();
+		accessor.value?.replaceWith(createElementWithClass('Swapped', 'my-class'));
+		expect(accessor.value?.textContent).toBe('Swapped');
 	});
 
-	test('queries all elements by selector', () => {
+	test('createQuery reaches into a nested host that getRef skips', () => {
 		const host = createHost();
-		const accessor = createQuery<HTMLDivElement>(host, { selector: '.my-class', all: true });
-		expect(accessor.value).toHaveLength(3);
+		const nested = document.createElement('query-helper-element');
+		nested.appendChild(createElementWithRef('Nested', 'nested-ref'));
+		host.prepend(nested);
+		expect(createQuery(host, '[data-ref="nested-ref"]').value?.textContent).toBe('Nested');
+		expect(host.getRef('nested-ref')).toBeNull();
 	});
 
-	test('returns null when no element matches', () => {
+	test('both accept a controller-style { host } target', () => {
 		const host = createHost();
-		const accessor = createQuery<HTMLDivElement>(host, { selector: '.non-existent' });
-		expect(accessor.value).toBeNull();
+		expect(createQuery({ host }, '.my-class').value?.textContent).toBe('Class 1');
+		expect(createQueryAll({ host }, '.my-class').value).toHaveLength(3);
 	});
 
-	test('returns empty array when no elements match with all: true', () => {
+	test('createQueryAll reads every match in order, live', () => {
 		const host = createHost();
-		const accessor = createQuery<HTMLDivElement>(host, { selector: '.non-existent', all: true });
-		expect(accessor.value).toEqual([]);
-	});
-
-	test('caches result when cache is true', () => {
-		const host = createHost();
-		const accessor = createQuery<HTMLDivElement>(host, { ref: 'my-ref', all: true, cache: true });
-		expect(accessor.value).toHaveLength(2);
-
-		host.appendChild(createElementWithRef('Ref 3', 'my-ref'));
-		expect(accessor.value).toHaveLength(2);
-	});
-
-	test('does not cache when cache is not set', () => {
-		const host = createHost();
-		const accessor = createQuery<HTMLDivElement>(host, { ref: 'my-ref', all: true });
-		expect(accessor.value).toHaveLength(2);
-
-		host.appendChild(createElementWithRef('Ref 3', 'my-ref'));
-		expect(accessor.value).toHaveLength(3);
+		const accessor = createQueryAll(host, '.my-class');
+		expect(accessor.value.map((node) => node.textContent)).toEqual(['Class 1', 'Class 2', 'Class 3']);
+		host.appendChild(createElementWithClass('Class 4', 'my-class'));
+		expect(accessor.value).toHaveLength(4);
+		expect(createQueryAll(host, '.missing').value).toEqual([]);
 	});
 });

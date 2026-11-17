@@ -107,6 +107,12 @@ type JsxEventBindings<ElementType extends EventTarget> = {
 type ReactivePropertyValue<Value> =
 	Value | SignalLike<Extract<Value, JsxRenderable>> | SubscribableJsxValue<Extract<Value, JsxBindingSourceValue>>;
 
+/**
+ * Callback for the `ref` prop: called with the element once it is in the page, and once more with `null` when it is
+ * removed or the callback is replaced. A function it returns runs on removal instead of that `null` call.
+ */
+export type JsxRefCallback<ElementType extends Element = Element> = (node: ElementType | null) => void | (() => void);
+
 type JsxPropertyBindings<ElementType extends object> = {
 	[PropertyName in JsxBindablePropertyName<ElementType> as `prop:${PropertyName}`]?: ReactivePropertyValue<
 		ElementType[PropertyName]
@@ -279,8 +285,9 @@ export interface JsxSharedIntrinsicAttributes {
 /**
  * Shared attribute shape for intrinsic elements.
  */
-export type JsxIntrinsicAttributes<ElementType extends Element = Element> = JsxSharedIntrinsicAttributes &
-	JsxAriaAttributes &
+export type JsxIntrinsicAttributes<ElementType extends Element = Element> = JsxSharedIntrinsicAttributes & {
+	ref?: JsxRefCallback<ElementType>;
+} & JsxAriaAttributes &
 	JsxDataAttributes &
 	JsxEventBindings<ElementType> &
 	JsxAttributeBindings &

@@ -81,6 +81,14 @@ export class ListboxPopoverController implements Controller {
 		this.popoverController.attach();
 	}
 
+	/**
+	 * The popup now: the element `getFloating` finds, or, while it is portaled and the host cannot find it, the
+	 * portal's mounted node, including during the exit transition. `null` when the host has no popup.
+	 */
+	getFloatingElement(): HTMLElement | null {
+		return this.popoverController.getFloatingElement();
+	}
+
 	get activeOptionIndex(): number {
 		return this.activeIndex;
 	}

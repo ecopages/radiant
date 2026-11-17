@@ -28,7 +28,7 @@ Catalog terms: `packages/radiant-ui/src/components/ui/README.md`. Docs page mech
 
 ## When this applies
 
-**Always** for a View-owned Shell whose script uses `querySelector` / `querySelectorAll` / `@onEvent({ selector })` / `@query({ ref })`.
+**Always** for a View-owned Shell whose script uses `querySelector` / `querySelectorAll` / `@onEvent({ selector })` / `@ref` / `@query(selector)`.
 
 **Skip the light-DOM contract** for Native presentational helpers with no coordinating script (`RuiButton`, `RuiInput`, `RuiChip`, …). For Derived Tree hosts, document `render()` ownership and generated targets; do not tell authors to stamp the inner list.
 
@@ -55,7 +55,7 @@ Work one component at a time. Do not invent targets, roles, or examples.
 | Source in script                                   | Document as                    |
 | -------------------------------------------------- | ------------------------------ |
 | `querySelector('[data-foo]')` / `querySelectorAll` | Target `[data-foo]`            |
-| `@query({ ref: 'root' })`                          | Target `[data-ref="root"]`     |
+| `@ref('root')`                                     | Target `[data-ref="root"]`     |
 | `@onEvent({ selector: '[data-foo]' })`             | Same target; mention the event |
 | `[role="option"]` (no data attr)                   | Role is the target             |
 | Child tag (`rui-listbox`)                          | Nested host                    |

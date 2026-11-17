@@ -216,16 +216,16 @@ In that example, the `class` expression belongs to the host render pass, while t
 
 Pick one form per field. A field read directly in `render()` re-runs the whole view when it changes; a field bound with `this.$` patches only its node. Doing both for the same field patches the node and then re-renders anyway, and a field that re-runs `render()` many times a second wastes the same work. In development, Radiant warns once per class and field for both cases and points to `this.$`; see [`{this.count}` vs `{this.$.count}`](/docs/components/radiant-element#thiscount-vs-thiscount).
 
-### @query vs paint
+### @ref and @query vs paint
 
-`@query` and `this.slottedElements` are live element handles — slotted/consumer-authored content, a `RadiantController` enhancing existing markup, or a node needed by a third-party imperative API. They are not a substitute for copying a reactive field into a node.
+`@ref`, `@query` and `this.slottedElements` are live element handles — slotted/consumer-authored content, a `RadiantController` enhancing existing markup, or a node needed by a third-party imperative API. They are not a substitute for copying a reactive field into a node.
 
 - Host owns `render()`: bind the value in JSX (`{this.$.count}`).
 - Host keeps authored light DOM: copy the field with `@bindTo`.
 
 ```tsx
 // Avoid
-@query({ ref: 'count' }) countEl!: HTMLElement | null;
+@ref('count') countEl!: HTMLElement | null;
 
 @onUpdated('count')
 syncCount() {

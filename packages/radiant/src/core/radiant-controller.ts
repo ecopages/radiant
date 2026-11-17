@@ -12,6 +12,7 @@ import {
 	type ReactiveBindings,
 	type ReactiveFieldOptions,
 } from './reactive-prop-core';
+import { markControllerRoot, resolvePart, resolveParts, unmarkControllerRoot } from './parts';
 import { UpdateCycle } from './update-cycle';
 
 type StringPropertyKey<Value> = Extract<keyof Value, string>;
@@ -85,6 +86,7 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 	public connect(): void {
 		ensureLegacyHostReady(this, 'connect');
 		this.connected = true;
+		markControllerRoot(this.host, this);
 		this.reactiveHost.connectHost();
 
 		this.updateCycle.flush(() => {
@@ -117,6 +119,7 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 	 */
 	public disconnect(): void {
 		this.connected = false;
+		unmarkControllerRoot(this.host, this);
 		this.disconnectRenderWatcher();
 		this.reactiveHost.disconnectHost();
 	}
@@ -281,21 +284,16 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 	}
 
 	/**
-	 * Finds one or more elements inside the attached host by `data-ref`.
+	 * Finds one or more elements inside the attached host by `data-ref`, among the parts the host owns: a nested
+	 * Element Host's or attached Controller Host's same-named part is skipped. `all` returns document order.
 	 *
-	 * Prefer `@query(...)` for stable, decorator-backed refs and use `getRef(...)`
+	 * Prefer `@ref(...)` for decorator-backed parts and use `getRef(...)`
 	 * for one-off lookups.
 	 */
 	public getRef<T extends Element = Element>(ref: string, all: true): T[];
 	public getRef<T extends Element = Element>(ref: string, all?: false): T | null;
 	public getRef<T extends Element = Element>(ref: string, all = false): T | T[] | null {
-		const selector = `[data-ref="${ref}"]`;
-
-		if (all) {
-			return Array.from(this.host.querySelectorAll(selector)) as T[];
-		}
-
-		return (this.host.querySelector(selector) as T) ?? null;
+		return all ? resolveParts<T>(this.host, ref) : resolvePart<T>(this.host, ref);
 	}
 
 	protected shouldRunRenderLifecycle(): boolean {

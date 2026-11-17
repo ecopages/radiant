@@ -2,7 +2,10 @@ import { createRoot } from '@ecopages/jsx';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { RuiTooltip } from './tooltip';
 import { RuiTooltip as RuiTooltipScript } from './tooltip.script';
+import { RuiMenuButton } from '../menu-button';
+import { RuiMenuButton as RuiMenuButtonScript } from '../menu-button/menu-button.script';
 void RuiTooltipScript;
+void RuiMenuButtonScript;
 
 describe('RuiTooltip', () => {
 	afterEach(() => {
@@ -60,5 +63,26 @@ describe('RuiTooltip', () => {
 
 		document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
 		await vi.waitFor(() => expect(surface.hidden).toBe(true));
+	});
+
+	it('shows on keyboard focus of a wrapped host that owns its own trigger part', async () => {
+		const container = document.createElement('div');
+		document.body.append(container);
+		createRoot(container).render(
+			<RuiTooltip content="More">
+				<RuiMenuButton trigger="Menu" items={[{ value: 'alpha', label: 'Alpha' }]} />
+			</RuiTooltip>,
+		);
+		const surface = (await vi.waitFor(() => {
+			const found = container.querySelector('rui-tooltip > .rui-tooltip > [role="tooltip"]');
+			expect(found).toBeTruthy();
+			return found;
+		})) as HTMLElement;
+
+		(container.querySelector('rui-menu-button [data-ref="trigger"]') as HTMLElement).dispatchEvent(
+			new FocusEvent('focusin', { bubbles: true }),
+		);
+
+		await vi.waitFor(() => expect(surface.hidden).toBe(false));
 	});
 });

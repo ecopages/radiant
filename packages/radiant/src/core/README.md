@@ -101,6 +101,18 @@ When page-level JSX hydrates over a host the server rendered with Authored Child
 
 While connected, `slotted` comes wrapped in two empty text nodes, so place it once per render. `slottedElements` reads the top-level elements between them; it is empty before the first client render and on the server.
 
+## Part Scope
+
+A part is a node named with `data-ref`. It belongs to the nearest enclosing scope root: an upgraded Element Host, or the root element of a Controller Host while its controller is attached. `src/core/parts.ts` holds the rule, and `@ref`, `@refAll`, `getRef` on both hosts, `@onEvent({ ref })` and `@bindTo({ ref })` all resolve through it, so an outer host never gets the same-named part of a nested host.
+
+- A part that is itself a nested host belongs to the host around it: `<rui-slider data-ref="seek">` is the outer host's `seek`.
+- Ownership is read from the current DOM on every read, with no cache. A nested Element Host starts a scope only once it has upgraded; before that its subtree belongs to the outer host. `RadiantController.connect()` starts a Controller Host scope and `disconnect()` ends it.
+- Third-party custom elements and catalog controllers (`createXController`) do not start a scope.
+- `@refAll` and `getRef(name, true)` leave out nested hosts' parts and return document order. `@onEvent({ ref })` matches by containment: it walks up from the event target to the host, skips a same-named part another host owns, and fires for the nearest one the host owns. A click on a nested host's part reaches the outer handler only when it happened inside an outer part of that name, so a container part such as `root` or `trigger` still hears events from nested hosts that reuse the name.
+- `@query(selector)` and `@queryAll(selector)` are not scoped: they are the explicit way into a nested host.
+- The part name is escaped inside a quoted attribute selector (`\` and `"`), and the server DOM shim decodes those escapes, so any name resolves the same in the browser and on the server.
+- `@onEvent({ ref })` does not fire for a `data-ref` on the host element itself: the host is never its own part.
+
 ## SSR Flow
 
 SSR works like this:
