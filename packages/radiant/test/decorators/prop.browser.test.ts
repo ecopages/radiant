@@ -209,21 +209,21 @@ describe('@prop', () => {
 
 			@customElement('my-reactive-function-reflect')
 			class MyReactiveFunctionReflect extends RadiantElement {
-				@prop({ type: String, reflect: true, defaultValue: 'seeded' }) label: unknown;
+				@prop({ type: String, reflect: true, defaultValue: 'seeded' }) fnReflectLabel: unknown;
 			}
 
 			const host = document.createElement('my-reactive-function-reflect') as MyReactiveFunctionReflect;
 			document.body.appendChild(host);
 			await Promise.resolve();
-			expect(host.getAttribute('label')).toBe('seeded');
+			expect(host.getAttribute('fn-reflect-label')).toBe('seeded');
 
 			const handler = () => 'secret source';
-			host.label = handler;
+			host.fnReflectLabel = handler;
 
-			expect(host.hasAttribute('label')).toBe(false);
-			expect(host.label).toBe(handler);
+			expect(host.hasAttribute('fn-reflect-label')).toBe(false);
+			expect(host.fnReflectLabel).toBe(handler);
 			expect(
-				warn.mock.calls.filter((call) => String(call[0]).includes('reflected attribute "label"')),
+				warn.mock.calls.filter((call) => String(call[0]).includes('reflected attribute "fn-reflect-label"')),
 			).toHaveLength(1);
 			expect(warn.mock.calls.some((call) => String(call[0]).includes('secret source'))).toBe(false);
 			warn.mockRestore();
