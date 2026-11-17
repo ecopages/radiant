@@ -419,11 +419,15 @@ describe('MediaRecorderController', () => {
 		});
 
 		it('has no analyser and a zero level without the option', async () => {
-			const controller = create();
+			fakeClock();
+			const ticks = vi.fn();
+			const controller = create({ onState: ticks });
 
 			await controller.start();
-			await nothingFollows('a level reading without the analyser option');
+			ticks.mockClear();
+			vi.advanceTimersByTime(300);
 
+			expect(ticks.mock.calls.length).toBeGreaterThanOrEqual(2);
 			expect(controller.getAnalyser()).toBeNull();
 			expect(controller.getState().level).toBe(0);
 		});
