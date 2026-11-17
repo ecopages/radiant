@@ -1,0 +1,85 @@
+---
+title: "Redux store"
+description: "Two Radiant hosts that each read one slice of a Redux session store they do not own."
+order: 8
+---
+
+import { ReduxSessionStore } from '@/components/redux-session-store';
+
+export const config = {
+	dependencies: {
+		components: [ReduxSessionStore],
+	},
+};
+
+# Redux store
+
+The session lives in Redux (or a store with `getState`, `subscribe`, and `dispatch`). A form or another framework dispatches. Radiant hosts read one slice each: the user name and the theme. Changing the theme does not update the user host.
+
+<ReduxSessionStore />
+
+**Sign in as Bea** dispatches `session/rename`. **Toggle theme** dispatches `session/toggleTheme`. Neither button writes a Radiant field.
+
+## The store
+
+In an app, install Redux Toolkit and pass the store `configureStore()` returns.
+
+```ts
+import { configureStore, createSlice } from '@reduxjs/toolkit';
+
+const sessionSlice = createSlice({
+	name: 'session',
+	initialState: { theme: 'light' as 'light' | 'dark', user: 'Ada' },
+	reducers: {
+		rename(state, action: { payload: string }) {
+			state.user = action.payload;
+		},
+		toggleTheme(state) {
+			state.theme = state.theme === 'light' ? 'dark' : 'light';
+		},
+	},
+});
+
+export const { rename, toggleTheme } = sessionSlice.actions;
+
+export const sessionStore = configureStore({
+	reducer: sessionSlice.reducer,
+});
+```
+
+`@fromStore` reads `sessionStore.getState` and `sessionStore.subscribe`. Writes stay on `sessionStore.dispatch`. The live demo uses a store with that same surface so the docs app does not depend on Redux.
+
+## The hosts
+
+```tsx
+import { RadiantElement, customElement, fromStore } from '@ecopages/radiant';
+import { sessionStore } from './session-store';
+
+@customElement('session-user')
+class SessionUser extends RadiantElement<{ user: string }> {
+	@fromStore(sessionStore, (state) => state.user)
+	user!: string;
+
+	override render() {
+		return <span>{this.$.user}</span>;
+	}
+}
+
+@customElement('session-theme')
+class SessionTheme extends RadiantElement<{ theme: string }> {
+	@fromStore(sessionStore, (state) => state.theme)
+	theme!: string;
+
+	override render() {
+		return <span>{this.$.theme}</span>;
+	}
+}
+```
+
+Each host selects one field. `dispatch({ type: 'session/toggleTheme' })` notifies the store; the user selector returns an `Object.is`-equal string, so that host does not update.
+
+## See Also
+
+- [@fromStore](/docs/decorators/from-store)
+- [Zustand store](/docs/examples/zustand-store)
+- [External stores](/docs/signals/signals-external-store)

@@ -1,0 +1,107 @@
+---
+title: "@fromStore"
+description: "Read a Zustand or Redux store as a host field."
+order: 6
+---
+
+import { ExternalStoreCart } from '@/components/external-store-cart';
+
+export const config = {
+	dependencies: {
+		components: [ExternalStoreCart],
+	},
+};
+
+# @fromStore
+
+`@fromStore(store, select)` is a read-only host field over a Zustand, Redux, or `useSyncExternalStore` store. Use it when the source of truth is **already** that store.
+
+- [@state](/docs/decorators/state) / [@prop](/docs/decorators/prop) when this host owns the value
+- `createStore(...)` when Radiant owns nested data
+- `@fromStore` when other code already writes the store
+
+<ExternalStoreCart />
+
+The count patches in place (`this.$.count`). The list re-renders because its shape changed. **Add mug** and **Add lamp** call `setState`. They never write a Radiant field.
+
+Worked recipes: [Zustand store](/docs/examples/zustand-store) and [Redux store](/docs/examples/redux-store).
+
+## Example
+
+```tsx
+import { RadiantElement, customElement, fromStore } from '@ecopages/radiant';
+
+@customElement('cart-badge')
+export class CartBadge extends RadiantElement<{ count: number }> {
+	@fromStore(cartStore, (state) => state.items.length)
+	count!: number;
+
+	override render() {
+		return <span>{this.$.count}</span>;
+	}
+}
+```
+
+The declared field type is the selected value, and is the type [@bindTo](/docs/decorators/bind-to) passes to `map`: see [Typing Decorated Fields](/docs/decorators#typing-decorated-fields).
+
+Assignment throws. Write through `setState`, `dispatch`, or the store's actions. Declare the field without an initializer (`count!: number`): the store snapshot replaces one, and development builds warn once per class and field.
+
+## Arguments
+
+Same arguments as `fromExternalStore(store, select?, options?)` from `@ecopages/signals`.
+
+| Argument | Type | Description |
+| --- | --- | --- |
+| `store` | `{ subscribe, getSnapshot? \| getState?, getServerSnapshot? }` | Zustand and Redux use `getState`. React's contract uses `getSnapshot`. |
+| `select` | `(snapshot) => Selected` | Optional. Omit it to bind the whole snapshot. |
+| `options.equals` | `(previous, next) => boolean` | Optional. Defaults to `Object.is`. A selected value equal to the last one does not notify. |
+
+The selector runs once per snapshot, so a notification that leaves the state object the same does not run it. Return a slice of the state (a primitive, `state.items`). A selector that builds a new object or array notifies on every store change; pass `equals` to compare it yourself.
+
+## What It Changes
+
+- the field holds the selected slice, like `@state`, but it has no setter
+- `this.$.name` patches that node; a direct read in `render()` re-renders when the slice changes
+- `@onUpdated('name')` and `@bindTo` work on the field
+- the host subscribes while connected, `this.$` bindings included, releases the store on disconnect, and subscribes again on reconnect, when the bindings catch up
+- server rendering reads `getServerSnapshot()` (or the live snapshot when there is none) and never subscribes
+
+## When The Store Arrives Through Context
+
+A field decorator cannot see a store that is not known at class definition. Provide the store object (its identity stays stable). Each descendant registers a slice in `@onContextUpdate`:
+
+```tsx
+@onContextUpdate({ context: cartContext })
+onCart(store: typeof cartStore) {
+	this.registerReactiveMember(
+		'count',
+		fromExternalStore(store, (state) => state.items.length),
+	);
+}
+```
+
+`@contextSelector` is the wrong tool: it reacts when the context **value** is replaced, and a Zustand store is not replaced on `setState`.
+
+## Server Snapshot
+
+Pass `getServerSnapshot` when the live snapshot cannot be read on the server, or holds other data there. Server rendering paints from it and never calls `getSnapshot` or `subscribe`. Before the first connect, the field reads it too. The host subscribes when it connects, before it hydrates or renders, so the client view shows the live `getSnapshot` / `getState`, and the field keeps reading the live snapshot after that, also while the host is detached.
+
+```ts
+@fromStore(
+	{
+		subscribe: store.subscribe,
+		getSnapshot: () => store.getState(),
+		getServerSnapshot: () => serverCart,
+	},
+	(state) => state.items.length,
+)
+count!: number;
+```
+
+## Related
+
+- [Zustand store](/docs/examples/zustand-store)
+- [Redux store](/docs/examples/redux-store)
+- [External stores](/docs/signals/signals-external-store) — `fromExternalStore(...)`, context, hydration
+- [@state](/docs/decorators/state)
+- [@signal](/docs/decorators/signal)

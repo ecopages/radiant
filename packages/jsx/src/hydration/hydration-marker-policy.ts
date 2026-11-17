@@ -1,4 +1,4 @@
-import type { BindingKind } from '../factory/template-shape.ts';
+import type { ValueBindingKind } from '../types/renderable-types.ts';
 
 /**
  * Hydration marker policy for Ecopages JSX.
@@ -23,6 +23,9 @@ import type { BindingKind } from '../factory/template-shape.ts';
  * | `prop`         | no                    | Property binding, not serializable to DOM |
  * | `ref`          | no                    | Callback, never serialized                |
  * | `children`     | no                    | Custom-element children taken as a value  |
+ *
+ * A `bool-or-attr` or `bool-or-prop` part is resolved per value to `bool`, `attr` or `prop` before it reaches
+ * this policy, so its marker and output match a static value of the same type.
  */
 
 /**
@@ -32,7 +35,7 @@ import type { BindingKind } from '../factory/template-shape.ts';
  * @param kind Binding kind to evaluate.
  * @returns `true` when the SSR output should omit the attribute value.
  */
-export function isClientOnlyBinding(kind: BindingKind): boolean {
+export function isClientOnlyBinding(kind: ValueBindingKind): boolean {
 	switch (kind) {
 		case 'event':
 		case 'native-event':

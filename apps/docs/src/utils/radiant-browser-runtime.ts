@@ -5,6 +5,7 @@ export {
 	controller,
 	createResource,
 	bindTo,
+	fromStore,
 	onUpdated,
 	onEvent,
 	query,

@@ -16,6 +16,7 @@ import {
 import { isCustomElementSubtreeRoot } from '../hydration/hydration-subtree-policy.ts';
 import { isClientOnlyBinding } from '../hydration/hydration-marker-policy.ts';
 import { resolveAttributeText } from '../factory/attribute-normalize.ts';
+import { resolveValueBindingKind } from '../factory/binding-defaults.ts';
 import { RAW_TEXT_ELEMENT_NAMES } from '../factory/raw-text-element-names.ts';
 import { stringifyTextContentValue } from '../factory/text-content-value.ts';
 import { escapeAttribute, escapeHtml } from './html-escape.ts';
@@ -304,18 +305,19 @@ function serializeTemplatePart(
 		return serializeRenderable(value as JsxRenderable, options);
 	}
 
+	const kind = resolveValueBindingKind(part.kind, value);
 	const hydrationState = options.hydrationBindingState;
 	const bindingIndex = hydrationState ? takeNextHydrationMarkerIndex(hydrationState) : 0;
 	const hydrationMarker =
 		options.mode === 'hydrate' && hydrationState
-			? ` ${resolveHydrationMarkerAttributeName(bindingIndex)}="${serializeBindingDescriptor(part.kind, part.name)}"`
+			? ` ${resolveHydrationMarkerAttributeName(bindingIndex)}="${serializeBindingDescriptor(kind, part.name)}"`
 			: '';
 
-	if (isClientOnlyBinding(part.kind)) return hydrationMarker;
+	if (isClientOnlyBinding(kind)) return hydrationMarker;
 
-	const text = resolveAttributeText(part.name, value, part.kind === 'bool');
+	const text = resolveAttributeText(part.name, value, kind === 'bool');
 	if (text === undefined) return hydrationMarker;
-	return part.kind === 'bool' && text === ''
+	return kind === 'bool' && text === ''
 		? `${hydrationMarker} ${part.name}`
 		: `${hydrationMarker} ${part.name}="${escapeAttribute(text)}"`;
 }

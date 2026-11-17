@@ -9,6 +9,7 @@ export * from './decorators/controller';
 export * from './decorators/custom-element';
 export * from './decorators/debounce';
 export * from './decorators/event';
+export * from './decorators/from-store';
 export * from './decorators/on-event';
 export * from './decorators/on-updated';
 export * from './decorators/prop';

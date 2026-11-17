@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest';
+import { jsx } from '../src/jsx-runtime.ts';
 import {
 	isIterableRenderable,
 	isJsxNodeLike,
@@ -122,5 +123,36 @@ describe('renderable-guards', () => {
 			}),
 		).toBe('signal');
 		expect(resolveReactiveSnapshot('plain')).toBe('plain');
+	});
+
+	test('creating a tree reads no signal or binding, and leaves the kind on a boolean attribute to each value', () => {
+		let reads = 0;
+		const signal = {
+			get: () => {
+				reads += 1;
+				return true;
+			},
+			subscribe: () => () => undefined,
+		};
+		const binding = {
+			[SUBSCRIBABLE_JSX_VALUE_SYMBOL]: true as const,
+			getValue: () => signal.get(),
+			subscribe: () => () => undefined,
+		};
+
+		const partsOf = (value: unknown) => (isTemplateResultLike(value) ? value.parts : []);
+
+		const native = partsOf(jsx('p', { hidden: signal, inert: binding }));
+		const custom = partsOf(jsx('x-panel', { disabled: signal }));
+
+		expect(reads).toBe(0);
+		expect([...native, ...custom]).toEqual([
+			{ kind: 'bool-or-attr', name: 'hidden', type: 'attribute' },
+			{ kind: 'bool-or-attr', name: 'inert', type: 'attribute' },
+			{ kind: 'bool-or-prop', name: 'disabled', type: 'attribute' },
+		]);
+		expect(partsOf(jsx('x-panel', { disabled: true }))).toEqual([
+			{ kind: 'bool', name: 'disabled', type: 'attribute' },
+		]);
 	});
 });

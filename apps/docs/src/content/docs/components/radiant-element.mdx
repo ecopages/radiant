@@ -163,7 +163,7 @@ Use the raw value in imperative code and render logic. Use bindings in stable JS
 
 A direct read in `render()` makes the whole view depend on the field: each change runs `render()` again. That is the right choice for branching, list shape and `class` or `style` composition. `{this.$.count}` patches one node and leaves `render()` alone, so it suits a value that changes often, such as a media position.
 
-In development, Radiant warns once per class and field when a direct read is clearly wasteful, naming the field and the host and the remedy. The warnings cover `@state` and `@prop` fields; a `@signal` field, an `@attr` field and a `createStore(...)` read or path write do not warn.
+In development, Radiant warns once per class and field when a direct read is clearly wasteful, naming the field and the host and the remedy. The warnings cover `@state`, `@prop` and `@fromStore` fields; a `@signal` field, an `@attr` field and a `createStore(...)` read or path write do not warn.
 
 - **Redundant path:** the field is bound with `this.$` and also read directly in `render()`, so each change patches the node and then re-renders the view. A binding passed to a child host counts as bound.
 - **Hot field:** the field re-runs one host's `render()` 30 times within a second. If the field fills one node or attribute, bind it with `this.$`; if it shapes the structure (a list length, a branch), keep the per-frame value out of `render()`: derive a coarser field for `render()` to read and keep the fast value in `this.$` bindings.
@@ -221,10 +221,10 @@ render() {
 Every reactive host member (`@state`, `@prop`, `@attr`, and `signal()`) is backed by a signals `State` inside the host. Decorator APIs are unchanged, but advanced integrations can work with that member registry directly:
 
 - `createReactiveMember(name, initialValue)` — create and register host-owned member state
-- `registerReactiveMember(name, signal)` — register externally owned state, such as a user `signal()`; a read-only `{ get, subscribe }` object is enough, and it drives `this.$`, `@onUpdated` and `@bindTo` but cannot be redeclared by `@prop`, `@state`, `@attr` or `@signal`, and cannot replace a member that backs a `@prop`, `@state` or `@attr` field
+- `registerReactiveMember(name, signal)` — register externally owned state, such as a user `signal()` or `fromExternalStore(...)`; a read-only `{ get, subscribe }` object is enough, and it drives `this.$`, `@onUpdated` and `@bindTo` but cannot be redeclared by `@prop`, `@state`, `@attr` or `@signal`, and cannot replace a member that backs a `@prop`, `@state` or `@attr` field. Prefer `@fromStore(store, select)` when the store is known on the class.
 - `getReactiveMember(name)` — read the member state registered for a property name; it returns the member typed read-only (`get` and `subscribe`; it is the same object, not a wrapper), so write through the host field instead of the member
 
-Use these when you build host adapters, tests, or custom decorators. Prefer `@state`, `@prop`, `@attr`, and `signal()` in application code.
+Use these when you build host adapters, tests, or custom decorators. Prefer `@state`, `@prop`, `@attr`, `@fromStore`, and `signal()` in application code.
 
 **Removed in 0.3.0:** `trackReactiveRead(...)`, `registerReactiveDependencyReader(...)`, and the exported `ReactiveField` metadata type. Dependency tracking now flows through member `State.get()` and JSX bindings adapted from that state.
 

@@ -1,6 +1,8 @@
 import {
 	CUSTOM_ELEMENT_CHILDREN_SYMBOL,
 	hasHydrationMarkers,
+	pauseSubscriptions,
+	resumeSubscriptions,
 	type JsxRenderable,
 	type SubscribableJsxValueWithAccess,
 } from '@ecopages/jsx';
@@ -361,7 +363,13 @@ export class RadiantElement<Bindings extends object = {}>
 			this.removeAttribute(SERVER_RENDERED_HOST_ATTRIBUTE);
 		}
 
-		if (!this.reactiveHost.connectHost() || isReconnectDuringPendingFirstConnect) {
+		const connected = this.reactiveHost.connectHost();
+
+		if (connected) {
+			resumeSubscriptions(this);
+		}
+
+		if (!connected || isReconnectDuringPendingFirstConnect) {
 			return;
 		}
 
@@ -487,6 +495,7 @@ export class RadiantElement<Bindings extends object = {}>
 	 * output as fresh slotted content.
 	 */
 	disconnectedCallback() {
+		pauseSubscriptions(this);
 		this.renderRuntime?.dispose();
 		this.eventSubscriptionRegistry.removeAll();
 		this.reactiveHost.disconnectHost();

@@ -220,6 +220,10 @@
 			"types": "./dist/decorators/event.d.ts",
 			"import": "./dist/decorators/event.js"
 		},
+		"./decorators/from-store": {
+			"types": "./dist/decorators/from-store.d.ts",
+			"import": "./dist/decorators/from-store.js"
+		},
 		"./decorators/on-event": {
 			"types": "./dist/decorators/on-event.d.ts",
 			"import": "./dist/decorators/on-event.js"

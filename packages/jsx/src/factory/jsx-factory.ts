@@ -2,7 +2,12 @@ import { warnFunctionPosition } from '../warnings/dev-warnings.ts';
 import { shouldDelegateEventBinding } from './event-binding-policy.ts';
 import { forEachNormalizedAttribute } from './attribute-normalize.ts';
 import { shouldUseAttributeBindingByDefaultForElement, shouldUseBooleanAttributeBinding } from './binding-defaults.ts';
-import { isIterableJsxChild, isKeyedJsxValue, resolveReactiveSnapshot } from '../types/renderable-guards.ts';
+import {
+	isIterableJsxChild,
+	isKeyedJsxValue,
+	isSignalLikeValue,
+	isSubscribableJsxValue,
+} from '../types/renderable-guards.ts';
 import { getCustomElementTagName } from '../custom-element-tag-name.ts';
 import {
 	CUSTOM_ELEMENT_CHILDREN_SYMBOL,
@@ -251,14 +256,18 @@ function appendBinding(
 
 type AttributePartDescriptor = Extract<TemplatePartDescriptor, { type: 'attribute' }>;
 
+type BooleanShape = (typeof BOOLEAN_SHAPES)[number];
+
+const BOOLEAN_SHAPES = ['other', 'boolean', 'reactive'] as const;
+
 /**
  * Attribute part descriptors shared by every element that binds the same name the same way.
  *
- * @remarks A descriptor depends only on the authored name, whether the element is a custom element, and whether the
- * value is a boolean (see {@link resolveBindingPart}), so one frozen object serves every render. Sharing them keeps
- * {@link getFactoryShapeKey} on identity lookups. The map stops growing at {@link MAX_BINDING_PARTS}: names that come
+ * @remarks A descriptor depends only on the authored name, whether the element is a custom element, and, for a
+ * standard boolean attribute, whether the value is a boolean or reactive (see {@link resolveBindingPart}), so one
+ * frozen object serves every render. Sharing them keeps {@link getFactoryShapeKey} on identity lookups. The map stops growing at {@link MAX_BINDING_PARTS}: names that come
  * from data, such as the keys of a `data` object, would otherwise grow it for as long as a server runs. Past the cap a
- * descriptor is created per use and the shape key is built as a string. Each name holds its four variants by index,
+ * descriptor is created per use and the shape key is built as a string. Each name holds its six variants by index,
  * so a lookup builds no key string.
  */
 const BINDING_PARTS = new Map<string, (AttributePartDescriptor | undefined)[]>();
@@ -268,13 +277,19 @@ const MAX_BINDING_PARTS = 2048;
 const SHARED_PARTS = new WeakSet<TemplatePartDescriptor>();
 
 /**
- * @remarks Reads the value's snapshot only for a standard boolean attribute, where it decides the binding kind.
- * Reading a signal calls its `get()`, which subscribes any computed that is creating this JSX, so reading it for
- * every attribute re-ran a computed list whenever a row's class or label changed.
+ * @remarks Never reads a reactive value. The factory runs inside a tracking computation such as a Radiant host's
+ * `render()`, and reading a signal there made that computation depend on it, so `hidden={this.$.open}` re-ran the
+ * render on every change and a computed list re-ran whenever a row's attribute changed.
  */
 function getBindingPart(elementName: string, name: string, value: unknown): AttributePartDescriptor {
-	const isBoolean = shouldUseBooleanAttributeBinding(name) && typeof resolveReactiveSnapshot(value) === 'boolean';
-	const variant = (elementName.includes('-') ? 2 : 0) + (isBoolean ? 1 : 0);
+	const booleanShape: BooleanShape = !shouldUseBooleanAttributeBinding(name)
+		? 'other'
+		: typeof value === 'boolean'
+			? 'boolean'
+			: isSubscribableJsxValue(value) || isSignalLikeValue(value)
+				? 'reactive'
+				: 'other';
+	const variant = (elementName.includes('-') ? 3 : 0) + BOOLEAN_SHAPES.indexOf(booleanShape);
 	let variants = BINDING_PARTS.get(name);
 
 	if (!variants && BINDING_PARTS.size < MAX_BINDING_PARTS) {
@@ -285,7 +300,7 @@ function getBindingPart(elementName: string, name: string, value: unknown): Attr
 	let part = variants?.[variant];
 
 	if (!part) {
-		part = Object.freeze(resolveBindingPart(elementName, name, value));
+		part = Object.freeze(resolveBindingPart(elementName, name, booleanShape));
 		if (variants) {
 			variants[variant] = part;
 			SHARED_PARTS.add(part);
@@ -299,17 +314,19 @@ function getBindingPart(elementName: string, name: string, value: unknown): Attr
  * Resolves an authored prop name to the binding kind and attribute name it denotes.
  *
  * The reserved name `ref` is always a `ref` binding. Explicit prefixes (`on-native:`, `on:`, `prop:`, `attr:`, `bool:`) select a kind directly.
- * Unprefixed names fall back to per-element defaults: boolean attributes bind by
- * presence, custom elements bind by property unless the name is a known attribute.
+ * Unprefixed names fall back to per-element defaults: a standard boolean attribute binds by
+ * presence for a boolean, and custom elements bind by property unless the name is a known attribute. A signal or
+ * binding on a standard boolean attribute binds as `bool-or-attr` or `bool-or-prop`, so each of its values binds as a
+ * static value of that type would.
  *
  * @param elementName Lowercase tag name, including custom-element names with `-`.
  * @param name Authored prop name, possibly carrying an explicit prefix.
- * @param value Bound value, resolved through reactive wrappers to pick the shape.
+ * @param booleanShape For a standard boolean attribute, whether the bound value is a boolean or reactive.
  */
 function resolveBindingPart(
 	elementName: string,
 	name: string,
-	value: unknown,
+	booleanShape: BooleanShape,
 ): Extract<TemplatePartDescriptor, { type: 'attribute' }> {
 	if (name === 'ref') {
 		return { kind: 'ref', name, type: 'attribute' };
@@ -340,8 +357,16 @@ function resolveBindingPart(
 		return { kind: 'bool', name: name.slice(5), type: 'attribute' };
 	}
 
-	if (shouldUseBooleanAttributeBinding(name) && typeof resolveReactiveSnapshot(value) === 'boolean') {
+	if (booleanShape === 'boolean') {
 		return { kind: 'bool', name, type: 'attribute' };
+	}
+
+	if (booleanShape === 'reactive') {
+		return {
+			kind: shouldUseAttributeBindingByDefaultForElement(elementName, name) ? 'bool-or-attr' : 'bool-or-prop',
+			name,
+			type: 'attribute',
+		};
 	}
 
 	if (!shouldUseAttributeBindingByDefaultForElement(elementName, name)) {

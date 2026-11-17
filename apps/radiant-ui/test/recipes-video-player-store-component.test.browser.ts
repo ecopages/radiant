@@ -5,7 +5,7 @@ import { VideoPlayerStoreApp } from '../src/content/components/recipes/video-pla
 import { describeVideoPlayerComponent } from './video-player-component';
 
 describeVideoPlayerComponent('store component', 'video-player-store', VideoPlayerStoreApp, {
-	play: 1,
+	play: 0,
 	playFrames: 0,
 	seek: 0,
 	mute: 0,

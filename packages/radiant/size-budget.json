@@ -3,15 +3,15 @@
 		{
 			"label": "root-client-surface",
 			"entrypoint": "./src/index.ts",
-			"maxBytes": 56250,
-			"maxGzipBytes": 16220
+			"maxBytes": 57700,
+			"maxGzipBytes": 16570
 		},
 		{
 			"label": "root-client-surface-with-signals",
 			"entrypoint": "./src/index.ts",
 			"external": ["@ecopages/jsx", "@ecopages/jsx/*"],
-			"maxBytes": 65700,
-			"maxGzipBytes": 19030,
+			"maxBytes": 69090,
+			"maxGzipBytes": 19850,
 			"mustInclude": "../signals/dist/index.js",
 			"mustExceedLabel": "root-client-surface"
 		},

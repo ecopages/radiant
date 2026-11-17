@@ -8,12 +8,13 @@
  * typing live in `field-decorators.standard.ts`, because legacy mode never sees
  * the field type.
  */
-import { state as createState, type WritableSignal } from '@ecopages/signals';
+import { state as createState, type ExternalStoreSource, type WritableSignal } from '@ecopages/signals';
 import { RadiantController } from '../../src/core/radiant-controller';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { attr } from '../../src/decorators/attr';
 import { bindTo } from '../../src/decorators/bind-to';
 import { customElement } from '../../src/decorators/custom-element';
+import { fromStore } from '../../src/decorators/from-store';
 import { prop } from '../../src/decorators/prop';
 import { signal } from '../../src/decorators/signal';
 import { state } from '../../src/decorators/state';
@@ -26,6 +27,29 @@ customElement('valid-custom-element-with-options', {});
 customElement('invalid-custom-element', { extends: 'button' });
 
 const count = createState(0);
+
+const cartStore: ExternalStoreSource<{ n: number; label: string }> = {
+	getState: () => ({ n: 0, label: 'a' }),
+	subscribe: () => () => {},
+};
+
+/** Zustand's `StoreApi<T>`: its listener takes the state and the previous state. */
+type ZustandStoreApi<T> = {
+	getInitialState: () => T;
+	getState: () => T;
+	setState: (partial: Partial<T>) => void;
+	subscribe: (listener: (state: T, previousState: T) => void) => () => void;
+};
+
+declare const zustandStore: ZustandStoreApi<{ n: number }>;
+/** What `create()` from `zustand` returns: the React hook, with the store API on it. */
+declare const zustandHook: ZustandStoreApi<{ n: number }> & (() => { n: number });
+/** The shape of a Redux Toolkit `configureStore()` result that `@fromStore` reads. */
+declare const reduxStore: {
+	dispatch: (action: { type: string }) => unknown;
+	getState: () => { user: string };
+	subscribe: (listener: () => void) => () => void;
+};
 
 export class ValidElementFields extends RadiantElement {
 	@prop({ type: Number, defaultValue: 0 }) p1: number;
@@ -72,6 +96,18 @@ export class ValidElementFields extends RadiantElement {
 	@bindTo<WritableSignal<number>>({ attr: 'data-n', map: (v) => v.toFixed() })
 	@signal<number>({ initial: 0 })
 	b4!: WritableSignal<number>;
+
+	@fromStore(cartStore, (s) => s.n) f1!: number;
+	@fromStore(cartStore) f2!: { n: number; label: string };
+	@bindTo<number>({ attr: 'data-n', map: (v) => v.toFixed() })
+	@fromStore(cartStore, (s) => s.n)
+	f3!: number;
+	@fromStore(zustandStore, (s) => s.n) f4!: number;
+	@fromStore(zustandHook, (s) => s.n) f5!: number;
+	@fromStore(reduxStore, (s) => s.user) f6!: string;
+	@fromStore(cartStore, (s) => s.label, { equals: (a, b) => a.toLowerCase() === b.toLowerCase() }) f7!: string;
+	// @ts-expect-error a store needs getSnapshot or getState
+	@fromStore({ subscribe: () => () => {} }) f8!: unknown;
 }
 
 export class ValidControllerFields extends RadiantController {
@@ -117,4 +153,7 @@ export class ValidControllerFields extends RadiantController {
 	@bindTo<WritableSignal<number>>({ attr: 'data-n', map: (v) => v.toFixed() })
 	@signal<number>({ initial: 0 })
 	b4!: WritableSignal<number>;
+
+	@fromStore(cartStore, (s) => s.n) f1!: number;
+	@fromStore(cartStore) f2!: { n: number; label: string };
 }

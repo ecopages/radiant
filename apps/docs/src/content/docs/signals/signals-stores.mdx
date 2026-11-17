@@ -45,3 +45,5 @@ const plain = snapshot(store);
 ## Limits
 
 Stores are for plain object and array data. If you need richer class instances or framework-owned ownership trees, keep that logic outside the store layer.
+
+When the data already lives in Zustand, Redux, or another `subscribe` + `getState` store, do not copy it into `createStore(...)`. Read a slice with [`@fromStore`](/docs/decorators/from-store) on a host, or [`fromExternalStore(...)`](/docs/signals/signals-external-store) as a signal. Recipes: [Zustand store](/docs/examples/zustand-store), [Redux store](/docs/examples/redux-store).

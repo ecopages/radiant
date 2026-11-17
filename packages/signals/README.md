@@ -18,6 +18,7 @@ This package currently provides:
 - `untrack(...)` and `peek(...)` for non-tracking reads
 - `subtle.Watcher` plus `watched` and `unwatched` hooks for low-level invalidation workflows
 - `createStore(...)` for deep reactive object and array state
+- `fromExternalStore(...)` for a read-only signal over a Zustand, Redux, or `useSyncExternalStore` store
 - `mapItems(...)` for derived lists that map each item once and reuse its result while it stays in the list
 - `isStore(...)` for detecting signal-backed store proxies
 - `snapshot(...)` for materializing plain nested data
@@ -36,6 +37,7 @@ The package is organized around a stable public barrel and smaller implementatio
 - `src/watcher.ts` implements proposal-shaped low-level watchers
 - `src/tracking.ts` contains non-tracking read helpers
 - `src/store.ts` contains deep store proxying and snapshot materialization
+- `src/external-store.ts` adapts an external store (`subscribe` plus `getSnapshot` or `getState`) into a read-only signal
 
 ## Design Position
 
@@ -82,6 +84,7 @@ It is best understood as proposal-aligned in its core semantics, but not yet ful
 - `subtle.Watcher` reports staleness rather than recalculated values. Calling `watch(...)` is both registration and reset.
 - `subtle.Watcher.watch(...)` is atomic when a `watched` hook throws: what the call started watching is released, the original error is rethrown and the signals the call added are removed from the watcher and its pending set, and the notification latch returns to its value before the call unless a signal is still pending. A throwing `unwatched` hook never stops a release: every signal is released and every hook runs, then the error is rethrown (several as one flat `AggregateError`, with a dependency's failures merged in rather than nested). Each signal is released just before its own hook, so a hook that writes a signal listed after it still notifies the watcher, and one that writes a signal listed before it does not. `unwatch(...)` also resets the notification latch whenever it leaves nothing pending, so a later change to a signal that is still watched notifies again.
 - `createStore(...)` wraps nested plain objects and arrays, while `snapshot(...)` detaches the current plain value graph for logging, serialization, or comparison. Assigning a plain object to an existing plain-object branch updates that branch in place and notifies readers after the replacement is complete; unchanged values do not notify. Arrays and non-plain values are replaced.
+- `fromExternalStore(store, select?, options?)` is a read-only `Signal` over someone else's store. `store` is `subscribe` plus `getSnapshot` or `getState` (Zustand and Redux). `getServerSnapshot`, when present, is the value until the signal first subscribes to the store; from then on the client snapshot is read, also after the last subscriber leaves. The store is subscribed on the first subscriber or watcher and released when both fall to zero. `select` runs once per snapshot reference, and a selected value that `options.equals` (default `Object.is`) finds equal does not notify. While subscribed, `get()` also selects a snapshot the store has not notified yet, so two signals over one store never show a computed a mix of two snapshots. An error from `select` is rethrown by `get()` and never reaches the store's listener loop. Writes stay on the store.
 - Reads of missing store keys track changes to the object's shape, so adding a key updates computed values and effects that read it.
 - `mapItems(source, project, options?)` keeps each item's result by item identity, so only new items are projected and the others keep the same result object. `project` runs untracked, so a result that reads its item's signals does not re-map the list. A renderer such as `@ecopages/jsx` skips rows whose value is unchanged; JSX users can use `<MapItems each={list}>` instead.
 

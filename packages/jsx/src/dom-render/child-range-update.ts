@@ -539,13 +539,20 @@ export function mountReactiveChildSource(
 		});
 	};
 
-	mountedSubscription.unsubscribe = subscribeToReactiveChildSource(source, (nextValue) => {
-		if (mountedSubscription.subscriptionSerial !== subscriptionSerial || mountedSubscription.source !== source) {
-			return;
-		}
+	mountedSubscription.unsubscribe = subscribeToReactiveChildSource(
+		source,
+		(nextValue) => {
+			if (
+				mountedSubscription.subscriptionSerial !== subscriptionSerial ||
+				mountedSubscription.source !== source
+			) {
+				return;
+			}
 
-		applyValue(nextValue);
-	});
+			applyValue(nextValue);
+		},
+		rootTarget,
+	);
 
 	applyValue(readReactiveChildSourceValue(source));
 

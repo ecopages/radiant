@@ -52,7 +52,7 @@ export function updateTemplateInstance(
 		part.mounted = updateRangeContent(part, values[part.index], part.mounted, rootTarget, deferredProperties);
 	}
 
-	updateLiveTextContentParts(parts, values);
+	updateLiveTextContentParts(parts, values, rootTarget);
 }
 
 /**

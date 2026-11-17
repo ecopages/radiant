@@ -54,6 +54,14 @@ export interface ReactiveHostInternals {
 	 * `@attr`'s. A read-only member may not replace the member behind a marked name.
 	 */
 	markFieldAccessor(propertyName: string): void;
+	/**
+	 * Defines a getter for a registered read-only member. Assignment throws.
+	 *
+	 * @remarks The getter reads the current member, so `registerReactiveMember` can
+	 * replace it (a store from context). It does not mark a field accessor: a marked
+	 * name cannot be replaced by a read-only member.
+	 */
+	defineReadonlyReactiveAccessor(propertyName: string): void;
 	registerPostSync(callback: () => void): void;
 	registerConnectSync(callback: () => void): void;
 	registerUpdatedCallback(keys: readonly string[], callback: UpdatedCallback): () => void;
@@ -129,6 +137,8 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	private observing = false;
 	/** Bumped each time observation starts or stops, so a pass can tell the host changed state under it. */
 	private observationEpoch = 0;
+	/** Whether the host is connected on the client; server lifecycles observe members without it. */
+	private clientConnected = false;
 	private onConnectedCallbacks: (() => void)[] = [];
 	private onDisconnectedCallback: (() => void)[] = [];
 	private postSyncCallbacks: (() => void)[] = [];
@@ -158,12 +168,16 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	 * connection callback would acquire resources nothing releases, and one that
 	 * also reconnects it has already run the whole pass.
 	 *
+	 * @param client - `false` for a server lifecycle (a Controller Host's server render): members are
+	 * observed, but read-only members are not subscribed ({@link subscribable}).
+	 *
 	 * @returns Whether observation is still the one this pass started. When it is not, the host
 	 * disconnected under the pass, or a nested connect already ran the rest of the connect work, so
 	 * the caller must not flush. A host that was already observing keeps its observation, so the pass
 	 * is still its own.
 	 */
-	public connectHost(): boolean {
+	public connectHost(client = true): boolean {
+		this.clientConnected = client;
 		const epoch = this.startObservation();
 
 		for (const callback of this.onConnectedCallbacks) {
@@ -181,6 +195,8 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	 * Runs all cleanup callbacks registered for host disconnect.
 	 */
 	public disconnectHost(): void {
+		this.clientConnected = false;
+
 		for (const cleanup of this.onDisconnectedCallback) {
 			cleanup();
 		}
@@ -455,7 +471,7 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 		this.changeSubscriptions.get(propertyName)?.();
 		this.changeSubscriptions.set(
 			propertyName,
-			signal.subscribe(() => this.memberChanged(propertyName)),
+			this.subscribable(signal).subscribe(() => this.memberChanged(propertyName)),
 		);
 
 		if (changed) {
@@ -515,7 +531,7 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 		current?.unsubscribe();
 		callbacks.set(update, {
 			signal,
-			unsubscribe: signal.subscribe(() => {
+			unsubscribe: this.subscribable(signal).subscribe(() => {
 				if (!this.initializingReactiveFields.has(propertyName) && !this.memberSnapshots.has(propertyName)) {
 					update();
 				}
@@ -545,7 +561,7 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 			throw new Error(`No reactive binding registered for "${String(property)}".`);
 		}
 
-		const source = signal as ReadonlyReactiveState<ReactiveBindingValue<Bindings, Property>>;
+		const source = this.subscribable(signal) as ReadonlyReactiveState<ReactiveBindingValue<Bindings, Property>>;
 		let observed: Pick<
 			ReadonlyReactiveState<ReactiveBindingValue<Bindings, Property>>,
 			'get' | 'subscribe'
@@ -627,6 +643,35 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 		});
 	}
 
+	public defineReadonlyReactiveAccessor(propertyName: string): void {
+		let get = () => {
+			const member = this.getReactiveMember(propertyName);
+
+			if (!member) {
+				throw new Error(`[@ecopages/radiant] "${propertyName}" is not registered as a reactive member.`);
+			}
+
+			return member.get();
+		};
+
+		try {
+			if (process.env.NODE_ENV !== 'production' && this.renderWarnings) {
+				get = this.renderWarnings.trackReads(propertyName, get);
+			}
+		} catch {}
+
+		this.access.defineProperty(this.host, propertyName, {
+			get,
+			set: () => {
+				throw new TypeError(
+					`[@ecopages/radiant] "${propertyName}" is a read-only member and cannot be assigned.`,
+				);
+			},
+			enumerable: true,
+			configurable: true,
+		});
+	}
+
 	/**
 	 * Returns the member under `propertyName`, creating it when absent.
 	 *
@@ -674,6 +719,26 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 		if (!options.suppressInitialNotify) {
 			this.notifyUpdate(propertyName, undefined, signal.get());
 		}
+	}
+
+	/**
+	 * Returns what the host subscribes to for `member`: the member itself when writable, else a view of it that
+	 * subscribes only while the host is connected on the client.
+	 *
+	 * @remarks A read-only member is owned outside the host, such as `fromExternalStore(...)`, so a server lifecycle
+	 * (SSR preparation, a Controller Host's server render) must not subscribe to it: that would subscribe to the store
+	 * on the server and replace its server snapshot. On the client, disconnect releases what the host subscribed:
+	 * change reports and `@bindTo` with {@link unobserveMembers}, and the view's bindings with `pauseSubscriptions`.
+	 */
+	private subscribable(member: ReadonlyReactiveState<unknown>): ReadonlyReactiveState<unknown> {
+		if (isWritableState(member)) {
+			return member;
+		}
+
+		return {
+			get: () => member.get(),
+			subscribe: (notify) => (this.clientConnected ? member.subscribe(notify) : () => {}),
+		};
 	}
 
 	private createReactiveBindingNamespace(): ReactiveBindings<Bindings> {
