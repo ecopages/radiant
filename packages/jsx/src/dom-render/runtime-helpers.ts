@@ -18,6 +18,7 @@ export {
 	isTemplateResultLike,
 	resolveReactiveSnapshot,
 } from '../types/renderable-guards.ts';
+import { isSkippedFunction } from '../warnings/dev-warnings.ts';
 
 type TemplateMount = (
 	template: TemplateResultLike,
@@ -71,7 +72,11 @@ export function createNodesFromValue(
 	const collectNodes = (nextValue: unknown): void => {
 		const resolvedValue = unwrapKeyedValue(nextValue);
 
-		if (resolvedValue == null || typeof resolvedValue === 'boolean') {
+		if (
+			resolvedValue == null ||
+			typeof resolvedValue === 'boolean' ||
+			isSkippedFunction(resolvedValue, 'a child')
+		) {
 			return;
 		}
 
