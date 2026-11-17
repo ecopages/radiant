@@ -3,6 +3,7 @@ import { afterEach, describe, expect, test } from 'vitest';
 import '@ecopages/radiant-ui/themes/default';
 import '../src/components/primitive-example/primitive-example.css';
 import { mountController, trackListeners } from './mount-recipe';
+import { until } from './until';
 
 const status = (root: HTMLElement) => root.querySelector('[data-status]')!.textContent;
 const texts = (nodes: Iterable<Element>) => [...nodes].map((node) => node.textContent);
@@ -17,7 +18,7 @@ describe('searchable list Radiant controller', () => {
 	test('filters as you type and the arrows walk the matches', async () => {
 		const root = await mountController('searchable-list');
 		const input = root.querySelector('input')!;
-		await expect.poll(() => root.querySelector('li')!.tabIndex).toBe(0);
+		await until(() => expect(root.querySelector('li')!.tabIndex).toBe(0));
 
 		await userEvent.type(input, 'ap');
 		expect(texts(shown(root))).toEqual(['Apple', 'Apricot']);
@@ -52,7 +53,7 @@ describe('searchable list Radiant controller', () => {
 		let root: HTMLElement;
 		try {
 			root = await mountController('searchable-list');
-			await expect.poll(() => root.querySelector('li')!.tabIndex).toBe(0);
+			await until(() => expect(root.querySelector('li')!.tabIndex).toBe(0));
 			expect(tracker.live().length).toBeGreaterThan(0);
 			root.remove();
 			await macrotask();
@@ -64,7 +65,7 @@ describe('searchable list Radiant controller', () => {
 
 		const fresh = root.cloneNode(true) as HTMLElement;
 		document.body.append(fresh);
-		await expect.poll(() => fresh.querySelector('li')!.tabIndex).toBe(0);
+		await until(() => expect(fresh.querySelector('li')!.tabIndex).toBe(0));
 		await userEvent.type(fresh.querySelector('input')!, 'ch');
 		expect(texts(shown(fresh))).toEqual(['Cherry']);
 		expect(status(fresh)).toBe('1 of 5 shown');

@@ -1,4 +1,4 @@
-const MEDIA_EVENTS = [
+const SIGNAL_EVENTS = [
 	'loadstart',
 	'loadedmetadata',
 	'loadeddata',
@@ -16,11 +16,16 @@ const MEDIA_EVENTS = [
 	'ratechange',
 	'emptied',
 	'error',
+	'focusin',
+	'focusout',
+	'transitionend',
+	'animationend',
+	'toggle',
 ];
 
 /**
- * Re-runs `check` until it stops throwing, each time the page signals a change: a DOM mutation, or a media event
- * from any element (they do not bubble, so they are caught in the capture phase).
+ * Re-runs `check` until it stops throwing, each time the page signals a change: a DOM mutation, or a media,
+ * focus, transition or toggle event from any element (some do not bubble, so they are caught in the capture phase).
  *
  * @remarks Nothing here has a time budget; the test's own timeout bounds a wait whose signal never comes. A node
  * that left the document reports to neither the observer nor the capture listeners, so pass it as `detached`.
@@ -35,14 +40,14 @@ export function until(check: () => void, ...detached: Node[]): Promise<void> {
 			}
 			observer.disconnect();
 			[document, ...detached].forEach((target) =>
-				MEDIA_EVENTS.forEach((type) => target.removeEventListener(type, attempt, true)),
+				SIGNAL_EVENTS.forEach((type) => target.removeEventListener(type, attempt, true)),
 			);
 			resolve();
 		};
 		const observer = new MutationObserver(attempt);
 		[document, ...detached].forEach((target) => {
 			observer.observe(target, { attributes: true, childList: true, characterData: true, subtree: true });
-			MEDIA_EVENTS.forEach((type) => target.addEventListener(type, attempt, true));
+			SIGNAL_EVENTS.forEach((type) => target.addEventListener(type, attempt, true));
 		});
 		attempt();
 	});

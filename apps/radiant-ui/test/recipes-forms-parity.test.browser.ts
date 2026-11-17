@@ -6,6 +6,7 @@ import '../src/content/components/recipes/calendar-events.css';
 import '../src/content/components/recipes/swipe-card.css';
 import { initialEvents } from '../src/content/components/recipes/calendar-events.data';
 import { mountComponent, mountController, mountForm } from './mount-recipe';
+import { until } from './until';
 
 const forms = ['plain', 'element', 'component', 'controller'] as const;
 type AnyForm = (typeof forms)[number];
@@ -22,7 +23,7 @@ function mountAny(slug: string, form: AnyForm): Promise<HTMLElement> {
 
 const day = (root: HTMLElement, iso: string) => root.querySelector<HTMLElement>(`[data-iso="${iso}"]`)!;
 const ready = async (root: HTMLElement) => {
-	await expect.poll(() => root.querySelectorAll('[data-event]').length).toBeGreaterThan(0);
+	await until(() => expect(root.querySelectorAll('[data-event]').length).toBeGreaterThan(0));
 	return root;
 };
 const originalTitle = initialEvents[0].title;
@@ -67,7 +68,7 @@ describe.each(forms)('calendar of events, %s form', (form) => {
 
 		await userEvent.fill(root.querySelector('input')!, 'stand');
 
-		await expect.poll(() => label('2026-11-03')).toBe('Tuesday, November 3, 2026, 1 event');
+		await until(() => expect(label('2026-11-03')).toBe('Tuesday, November 3, 2026, 1 event'));
 		expect(label('2026-11-12')).toBe('Thursday, November 12, 2026');
 	});
 });
@@ -75,7 +76,7 @@ describe.each(forms)('calendar of events, %s form', (form) => {
 describe.each(forms)('swipe card, %s form', (form) => {
 	const mount = async () => {
 		const root = await mountAny('swipe-card', form);
-		await expect.poll(() => root.querySelector('[data-swipe-card]')).not.toBeNull();
+		await until(() => expect(root.querySelector('[data-swipe-card]')).not.toBeNull());
 		return {
 			root,
 			card: root.querySelector<HTMLElement>('[data-swipe-card]')!,
@@ -90,8 +91,8 @@ describe.each(forms)('swipe card, %s form', (form) => {
 
 		dismiss.click();
 
-		await expect.poll(() => card.hidden).toBe(true);
-		await expect.poll(() => document.activeElement).toBe(restore);
+		await until(() => expect(card.hidden).toBe(true));
+		await until(() => expect(document.activeElement).toBe(restore));
 	});
 
 	test('its own stylesheet makes the card follow the pointer and fly out with a transition', async () => {
@@ -109,6 +110,6 @@ describe.each(forms)('swipe card, %s form', (form) => {
 		card.dispatchEvent(up);
 
 		expect(card.getAnimations().length).toBeGreaterThan(0);
-		await expect.poll(() => card.hidden).toBe(true);
+		await until(() => expect(card.hidden).toBe(true));
 	});
 });

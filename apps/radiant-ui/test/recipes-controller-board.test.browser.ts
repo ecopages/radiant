@@ -4,6 +4,7 @@ import '@ecopages/radiant-ui/themes/default';
 import '../src/components/primitive-example/primitive-example.css';
 import '../src/content/components/recipes/board.css';
 import { mountController, trackListeners } from './mount-recipe';
+import { until } from './until';
 
 function pointer(target: Element | Document, type: string, x: number, y: number): void {
 	target.dispatchEvent(new PointerEvent(type, { bubbles: true, button: 0, pointerId: 1, clientX: x, clientY: y }));
@@ -20,7 +21,7 @@ test('board controller moves a card between columns by pointer and by keyboard, 
 	const root = await mountController('board');
 	const columns = () => [...root.querySelectorAll('ul')];
 	const cards = (column: number) => texts(columns()[column].children);
-	await expect.poll(() => (columns()[0].children[0] as HTMLElement).tabIndex).toBe(0);
+	await until(() => expect((columns()[0].children[0] as HTMLElement).tabIndex).toBe(0));
 
 	const card = columns()[0].children[0] as HTMLElement;
 	const from = card.getBoundingClientRect();
@@ -51,7 +52,7 @@ test('board controller moves a card between columns by pointer and by keyboard, 
 test('board controller moves a card into another column with a mouse drag', async () => {
 	const root = await mountController('board');
 	const columns = () => [...root.querySelectorAll('ul')];
-	await expect.poll(() => (columns()[0].children[0] as HTMLElement).tabIndex).toBe(0);
+	await until(() => expect((columns()[0].children[0] as HTMLElement).tabIndex).toBe(0));
 
 	await userEvent.dragAndDrop(columns()[0].children[0] as HTMLElement, columns()[2].children[0] as HTMLElement);
 
@@ -64,7 +65,7 @@ test('board controller removes every listener and a lifted card when its element
 	try {
 		const root = await mountController('board');
 		const card = root.querySelector<HTMLElement>('li')!;
-		await expect.poll(() => card.tabIndex).toBe(0);
+		await until(() => expect(card.tabIndex).toBe(0));
 		const from = card.getBoundingClientRect();
 		pointer(card, 'pointerdown', from.x + 5, from.y + 5);
 		pointer(document, 'pointermove', from.x + 40, from.y + 30);

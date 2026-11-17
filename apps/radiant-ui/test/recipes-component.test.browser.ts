@@ -5,6 +5,7 @@ import '../src/components/primitive-example/primitive-example.css';
 import '../src/content/components/recipes/board.css';
 import '../src/content/components/recipes/calendar-events.css';
 import { mountComponent, trackListeners } from './mount-recipe';
+import { until } from './until';
 
 const texts = (nodes: Iterable<Element>) => [...nodes].map((node) => node.textContent?.trim());
 
@@ -16,8 +17,8 @@ describe('board component', () => {
 	const columns = (root: HTMLElement) => [...root.querySelectorAll('ul')];
 	const cards = (root: HTMLElement, column: number) => texts(columns(root)[column].children);
 	const ready = async (root: HTMLElement) => {
-		await expect.poll(() => columns(root)).toHaveLength(3);
-		await expect.poll(() => root.querySelector<HTMLElement>('[data-board-card]')!.isConnected).toBe(true);
+		await until(() => expect(columns(root)).toHaveLength(3));
+		await until(() => expect(root.querySelector<HTMLElement>('[data-board-card]')!.isConnected).toBe(true));
 		return root;
 	};
 
@@ -98,7 +99,7 @@ describe('calendar events component', () => {
 	const day = (root: HTMLElement, iso: string) => root.querySelector<HTMLElement>(`[data-iso="${iso}"]`)!;
 	const titles = (root: HTMLElement, iso: string) => texts(day(root, iso).querySelectorAll('[data-event]'));
 	const ready = async (root: HTMLElement) => {
-		await expect.poll(() => root.querySelectorAll('[role="gridcell"]').length).toBeGreaterThan(0);
+		await until(() => expect(root.querySelectorAll('[role="gridcell"]').length).toBeGreaterThan(0));
 		return root;
 	};
 
@@ -130,7 +131,7 @@ describe('calendar events component', () => {
 		const root = await ready(await mountComponent('calendar-events'));
 		const stops = () =>
 			[...root.querySelectorAll<HTMLElement>('[role="gridcell"]')].filter((cell) => cell.tabIndex === 0);
-		await expect.poll(() => stops()).toHaveLength(1);
+		await until(() => expect(stops()).toHaveLength(1));
 
 		day(root, '2026-11-12').querySelector<HTMLElement>('[data-event]')!.focus();
 

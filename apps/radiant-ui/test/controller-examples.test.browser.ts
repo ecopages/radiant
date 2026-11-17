@@ -1,6 +1,7 @@
 import { userEvent } from 'vitest/browser';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { syncExamples } from '../src/components/primitive-example/mount-example';
+import { until, untilFrame } from './until';
 
 const pages = import.meta.glob('../src/content/components/controllers/*.mdx', {
 	query: '?raw',
@@ -65,17 +66,17 @@ describe('controller page examples', () => {
 
 		root.querySelector('button')!.click();
 
-		await expect.poll(() => status(root).textContent).toBe('2 items');
+		await until(() => expect(status(root).textContent).toBe('2 items'));
 	});
 
 	test('ResizeController reports the new width of the box', async () => {
 		const root = await mountExample('resize');
-		await expect.poll(() => status(root).textContent).toMatch(/^Width \d+px$/);
+		await untilFrame(() => expect(status(root).textContent).toMatch(/^Width \d+px$/));
 		const before = status(root).textContent;
 
 		root.querySelector('button')!.click();
 
-		await expect.poll(() => status(root).textContent).not.toBe(before);
+		await untilFrame(() => expect(status(root).textContent).not.toBe(before));
 	});
 
 	test('AudioVisualizerController writes levels while the tone plays and removes them on pause', async () => {
@@ -84,10 +85,10 @@ describe('controller page examples', () => {
 		const play = root.querySelector<HTMLElement>('[data-play]')!;
 
 		await userEvent.click(play);
-		await expect.poll(() => bar.style.getPropertyValue('--level')).not.toBe('');
+		await until(() => expect(bar.style.getPropertyValue('--level')).not.toBe(''));
 
 		await userEvent.click(play);
-		await expect.poll(() => bar.style.getPropertyValue('--level')).toBe('');
+		await until(() => expect(bar.style.getPropertyValue('--level')).toBe(''));
 	});
 
 	test('AudioVisualizerController swaps to a canvas preset sized to its box', async () => {
@@ -151,7 +152,7 @@ describe('controller page examples', () => {
 		const [first, last] = root.querySelectorAll<HTMLElement>('[data-box] button');
 
 		await userEvent.click(toggle);
-		await expect.poll(() => document.activeElement).toBe(first);
+		await until(() => expect(document.activeElement).toBe(first));
 
 		last.focus();
 		await userEvent.tab();
@@ -277,12 +278,12 @@ describe('controller page examples', () => {
 		const root = await mountExample('media');
 		const play = root.querySelector<HTMLButtonElement>('[data-action="play"]')!;
 		const seek = root.querySelector<HTMLInputElement>('input[type="range"]')!;
-		await expect.poll(() => status(root).textContent).toMatch(/^ready, 0:00 of 0:04/);
+		await until(() => expect(status(root).textContent).toMatch(/^ready, 0:00 of 0:04/));
 		expect(seek.disabled).toBe(false);
 
 		await userEvent.click(play);
-		await expect.poll(() => play.getAttribute('aria-pressed')).toBe('true');
-		await expect.poll(() => status(root).textContent).toMatch(/^playing/);
+		await until(() => expect(play.getAttribute('aria-pressed')).toBe('true'));
+		await until(() => expect(status(root).textContent).toMatch(/^playing/));
 
 		seek.value = '3';
 		seek.dispatchEvent(new Event('input', { bubbles: true }));
@@ -292,7 +293,9 @@ describe('controller page examples', () => {
 		expect(play.getAttribute('aria-pressed')).toBe('false');
 		expect(play.textContent).toBe('Play');
 		await userEvent.click(root.querySelector('[data-action="mute"]')!);
-		await expect.poll(() => root.querySelector('[data-action="mute"]')!.getAttribute('aria-pressed')).toBe('true');
+		await until(() =>
+			expect(root.querySelector('[data-action="mute"]')!.getAttribute('aria-pressed')).toBe('true'),
+		);
 	});
 
 	test('CopyController copies the code, shows the state and announces it', async () => {

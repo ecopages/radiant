@@ -4,6 +4,7 @@ import '@ecopages/radiant-ui/themes/default';
 import '../src/components/primitive-example/primitive-example.css';
 import '../src/content/components/recipes/swipe-card.css';
 import { mountController, trackListeners } from './mount-recipe';
+import { until } from './until';
 
 function pointer(target: Element, type: string, x: number, y: number, timeStamp?: number): void {
 	const event = new PointerEvent(type, { bubbles: true, button: 0, pointerId: 1, clientX: x, clientY: y });
@@ -53,7 +54,7 @@ describe('swipe card Radiant controller form', () => {
 
 		pointer(card, 'pointerdown', 200, 0, 3000);
 		pointer(card, 'pointerup', 20, 0, 3500);
-		await expect.poll(() => card.hidden).toBe(true);
+		await until(() => expect(card.hidden).toBe(true));
 		expect(status()).toBe('Card dismissed, swiped left');
 		expect(restore.hidden).toBe(false);
 
@@ -62,7 +63,7 @@ describe('swipe card Radiant controller form', () => {
 
 		pointer(card, 'pointerdown', 200, 0, 4000);
 		pointer(card, 'pointerup', 170, 0, 4030);
-		await expect.poll(() => card.hidden).toBe(true);
+		await until(() => expect(card.hidden).toBe(true));
 		expect(status()).toBe('Card dismissed, swiped left');
 	});
 
@@ -82,7 +83,7 @@ describe('swipe card Radiant controller form', () => {
 		dismiss.focus();
 		pointer(card, 'pointerdown', 200, 0, 1000);
 		pointer(card, 'pointerup', 20, 0, 1500);
-		await expect.poll(() => card.hidden).toBe(true);
+		await until(() => expect(card.hidden).toBe(true));
 
 		expect(document.activeElement).toBe(restore);
 	});
@@ -91,7 +92,7 @@ describe('swipe card Radiant controller form', () => {
 		const { card, dismiss, restore, status } = await mount();
 		pointer(card, 'pointerdown', 200, 0, 1000);
 		pointer(card, 'pointerup', 20, 0, 1500);
-		await expect.poll(() => card.hidden).toBe(true);
+		await until(() => expect(card.hidden).toBe(true));
 
 		await userEvent.click(restore);
 
@@ -111,7 +112,7 @@ describe('swipe card Radiant controller form', () => {
 
 		await userEvent.dragAndDrop(card.querySelector('span')!, target);
 
-		await expect.poll(() => card.hidden).toBe(true);
+		await until(() => expect(card.hidden).toBe(true));
 		expect(status()).toBe('Card dismissed, swiped right');
 	});
 
@@ -137,7 +138,7 @@ describe('swipe card Radiant controller form', () => {
 		pointer(card, 'pointermove', 170, 0, 1100);
 		expect(card.style.getPropertyValue('--swipe-dx')).toBe('-30px');
 		pointer(card, 'pointerup', 20, 0, 1500);
-		await expect.poll(() => card.hidden).toBe(true);
+		await until(() => expect(card.hidden).toBe(true));
 		expect(fresh.querySelector('[data-status]')!.textContent).toBe('Card dismissed, swiped left');
 	});
 });

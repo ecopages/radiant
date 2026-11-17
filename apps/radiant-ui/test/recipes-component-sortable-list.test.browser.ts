@@ -4,6 +4,7 @@ import '@ecopages/radiant-ui/themes/default';
 import '../src/components/primitive-example/primitive-example.css';
 import '../src/content/components/recipes/sortable-list.css';
 import { mountComponent, trackListeners } from './mount-recipe';
+import { until } from './until';
 
 const texts = (nodes: Iterable<Element>) => [...nodes].map((node) => node.textContent?.trim());
 
@@ -14,8 +15,8 @@ afterEach(() => {
 describe('sortable list component', () => {
 	const items = (root: HTMLElement) => [...root.querySelectorAll<HTMLElement>('li')];
 	const ready = async (root: HTMLElement) => {
-		await expect.poll(() => items(root)).toHaveLength(4);
-		await expect.poll(() => items(root).map((li) => li.tabIndex)).toEqual([0, -1, -1, -1]);
+		await until(() => expect(items(root)).toHaveLength(4));
+		await until(() => expect(items(root).map((li) => li.tabIndex)).toEqual([0, -1, -1, -1]));
 		return root;
 	};
 
