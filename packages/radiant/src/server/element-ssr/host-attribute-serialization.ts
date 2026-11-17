@@ -51,7 +51,7 @@ export function resolveHostAttributes(host: HostAttributeSource, tagName = 'host
 	warnUnserializableProps(host, tagName);
 
 	appendReactivePropertyAttributes(host, attributes, seenAttributes);
-	appendReactivePropDefinitionAttributes(host, attributes, seenAttributes);
+	appendReactivePropDefinitionAttributes(host, attributes, seenAttributes, tagName);
 	appendAuthoredAttributes(host, attributes);
 
 	return attributes;
@@ -113,6 +113,7 @@ function appendReactivePropDefinitionAttributes(
 	host: HostAttributeSource,
 	attributes: Record<string, string>,
 	seenAttributes: Set<string>,
+	tagName: string,
 ): void {
 	for (const definition of host.getReactivePropDefinitions()) {
 		const attributeName = attributeNameForProp(definition.name, definition.options);
@@ -130,7 +131,7 @@ function appendReactivePropDefinitionAttributes(
 		const { transform, type } = definition.options;
 		const serialized = transform?.toAttribute
 			? transform.toAttribute(currentValue as never)
-			: writeAttributeValue(currentValue, type, attributeName);
+			: writeAttributeValue(currentValue, type, attributeName, `<${tagName}>`);
 		if (serialized == null || (transform?.toAttribute && serialized === '')) {
 			continue;
 		}

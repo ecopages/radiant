@@ -161,6 +161,7 @@ export function createPropConverter<T>(
 	type: AttributeTypeConstant,
 	transform?: PropTransform<T>,
 	attributeName?: string,
+	owner?: string,
 ): ReactiveProperty<T>['converter'] {
 	return {
 		fromAttribute: (value) => {
@@ -178,7 +179,7 @@ export function createPropConverter<T>(
 		toAttribute: (value) => {
 			const serialized = transform?.toAttribute
 				? transform.toAttribute(value as T)
-				: writeAttributeValue(value, type, attributeName);
+				: writeAttributeValue(value, type, attributeName, owner);
 			return serialized == null || serialized === '' ? null : String(serialized);
 		},
 	};
@@ -191,6 +192,7 @@ export function createReactivePropertyMapping<T>(
 	initialValue: T | undefined,
 	reflect = false,
 	transform?: PropTransform<T>,
+	owner?: string,
 ): ReactiveProperty<T> {
 	return {
 		type,
@@ -198,6 +200,6 @@ export function createReactivePropertyMapping<T>(
 		initialValue,
 		attribute: attributeKey,
 		reflect,
-		converter: createPropConverter(type, transform, attributeKey ?? propertyName),
+		converter: createPropConverter(type, transform, attributeKey ?? propertyName, owner),
 	};
 }

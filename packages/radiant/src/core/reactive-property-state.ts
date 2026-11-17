@@ -102,6 +102,7 @@ export class ReactivePropertyState {
 			undefined,
 			reflect,
 			transform,
+			`<${this.host.localName}>`,
 		);
 		propertyMapping.defaultValue = defaultValue;
 		const initialValue = this.resolveInitialValue(propertyName, options, attributeKey, propertyMapping.converter);

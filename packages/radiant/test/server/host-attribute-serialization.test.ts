@@ -142,6 +142,7 @@ describe('resolveHostAttributes', () => {
 	])('an %s prop that holds a function emits the skip warning and not the lossy one', (kind, type) => {
 		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 		const name = uniqueAttribute(`fn-${kind.toLowerCase()}`);
+		const tag = uniqueAttribute('tag');
 
 		const attributes = resolveHostAttributes(
 			{
@@ -151,14 +152,40 @@ describe('resolveHostAttributes', () => {
 				getAttributeNames: () => [],
 				getAttribute: () => null,
 			},
-			uniqueAttribute('tag'),
+			tag,
 		);
 
 		const messages = warn.mock.calls.map((call) => String(call[0]));
 		expect(attributes).toEqual({});
 		expect(messages).toHaveLength(1);
-		expect(messages[0]).toContain(`Skipped a function in reflected attribute "${name}"`);
+		expect(messages[0]).toContain(`Skipped a function in reflected attribute "${name}" of <${tag}>`);
 		expect(messages.some((message) => message.includes('JSON cannot represent'))).toBe(false);
+	});
+
+	test('two tags with the same Object prop holding a function each warn once, naming their tag', () => {
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+		const name = uniqueAttribute('shared');
+		const [first, second] = [uniqueAttribute('tag-a'), uniqueAttribute('tag-b')];
+		const resolve = (tag: string) =>
+			resolveHostAttributes(
+				{
+					getReactiveProperties: () => [],
+					getReactivePropDefinitions: () => [{ name, options: { type: Object } }],
+					getPropertyValue: () => () => 'secret source',
+					getAttributeNames: () => [],
+					getAttribute: () => null,
+				},
+				tag,
+			);
+
+		resolve(first);
+		resolve(first);
+		resolve(second);
+
+		const messages = warn.mock.calls.map((call) => String(call[0]));
+		expect(messages).toHaveLength(2);
+		expect(messages[0]).toContain(`reflected attribute "${name}" of <${first}>`);
+		expect(messages[1]).toContain(`reflected attribute "${name}" of <${second}>`);
 	});
 
 	test('an Object prop holding a class instance still gets the lossy warning', () => {

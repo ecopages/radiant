@@ -224,9 +224,44 @@ describe('@prop', () => {
 			expect(host.hasAttribute('fn-reflect-label')).toBe(false);
 			expect(host.fnReflectLabel).toBe(handler);
 			expect(
-				warn.mock.calls.filter((call) => String(call[0]).includes('reflected attribute "fn-reflect-label"')),
+				warn.mock.calls.filter((call) =>
+					String(call[0]).includes(
+						'reflected attribute "fn-reflect-label" of <my-reactive-function-reflect>',
+					),
+				),
 			).toHaveLength(1);
 			expect(warn.mock.calls.some((call) => String(call[0]).includes('secret source'))).toBe(false);
+		});
+
+		test('two hosts that reflect the same prop name each warn once, naming their tag', () => {
+			const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+			onTestFinished(() => warn.mockRestore());
+
+			@customElement('my-reactive-function-twin-a')
+			class TwinA extends RadiantElement {
+				@prop({ type: Object, reflect: true }) twinConfig: unknown;
+			}
+
+			@customElement('my-reactive-function-twin-b')
+			class TwinB extends RadiantElement {
+				@prop({ type: Object, reflect: true }) twinConfig: unknown;
+			}
+
+			const first = document.createElement('my-reactive-function-twin-a') as TwinA;
+			const second = document.createElement('my-reactive-function-twin-b') as TwinB;
+			document.body.append(first, second);
+
+			first.twinConfig = () => 'secret source';
+			first.twinConfig = () => 'other source';
+			second.twinConfig = () => 'secret source';
+
+			const messages = warn.mock.calls.map((call) => String(call[0]));
+			expect(
+				messages.filter((message) => message.includes('"twin-config" of <my-reactive-function-twin-a>')),
+			).toHaveLength(1);
+			expect(
+				messages.filter((message) => message.includes('"twin-config" of <my-reactive-function-twin-b>')),
+			).toHaveLength(1);
 		});
 	});
 

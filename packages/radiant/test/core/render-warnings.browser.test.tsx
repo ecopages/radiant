@@ -252,4 +252,20 @@ describe.each<HostKind>(['element', 'controller'])('whole-render read warnings o
 
 		expect(warn).not.toHaveBeenCalled();
 	});
+
+	test('a field keeps being counted while warnings are off and warns once they are back on', async () => {
+		vi.useFakeTimers({ toFake: ['Date'] });
+		vi.setSystemTime(0);
+		setDevWarningsEnabled(false);
+		const { host } = await defineHost(kind, 'direct')();
+
+		for (let value = 1; value <= 40; value++) await write(host, value);
+		expect(warn).not.toHaveBeenCalled();
+
+		setDevWarningsEnabled(undefined);
+		await write(host, 41);
+
+		expect(warn).toHaveBeenCalledTimes(1);
+		expect(String(warn.mock.calls[0]?.[0])).toContain('times within');
+	});
 });

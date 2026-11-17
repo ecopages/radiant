@@ -187,7 +187,8 @@ export type ReadAttributeValueReturnType = ReturnType<typeof readAttributeValue>
  *
  * @param value - The value to be written.
  * @param type - The type of the attribute.
- * @param attributeName - Names the attribute in the function-value warning, so each attribute warns once.
+ * @param attributeName - Names the attribute in the function-value warning.
+ * @param owner - Names the host, such as `<x-card>`, in the warning, so each host warns once for the same attribute.
  * @returns The written attribute value, or `null` when `value` is a function: it is skipped, never written out as
  * its source.
  * @throws {TypeError} If the provided type is unknown.
@@ -196,11 +197,13 @@ export function writeAttributeValue(
 	value: unknown,
 	type: AttributeTypeConstant,
 	attributeName?: string,
+	owner?: string,
 ): string | null {
 	if (
-		isSkippedFunction(value, () =>
-			attributeName ? `reflected attribute "${attributeName}"` : 'a reflected attribute',
-		)
+		isSkippedFunction(value, () => {
+			const label = attributeName ? `reflected attribute "${attributeName}"` : 'a reflected attribute';
+			return owner ? `${label} of ${owner}` : label;
+		})
 	)
 		return null;
 	const writerType = parseAttributeTypeConstant(type);
