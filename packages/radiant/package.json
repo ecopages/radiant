@@ -236,6 +236,10 @@
 			"types": "./dist/decorators/query.d.ts",
 			"import": "./dist/decorators/query.js"
 		},
+		"./decorators/ref": {
+			"types": "./dist/decorators/ref.d.ts",
+			"import": "./dist/decorators/ref.js"
+		},
 		"./decorators/signal": {
 			"types": "./dist/decorators/signal.d.ts",
 			"import": "./dist/decorators/signal.js"

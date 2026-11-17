@@ -1,0 +1,74 @@
+---
+title: "@ref"
+description: "Read the data-ref parts your host owns, scoped so a nested host's parts are left out."
+order: 8
+---
+
+# @ref and @refAll
+
+`@ref` reads the first part, a node named with `data-ref`, that the host owns, or `null`. `@refAll` reads every owned part in document order, `[]` when there are none. Both read live on every access and have no cache, so a part swapped by a re-render is returned on the next read.
+
+They work on `RadiantElement` and `RadiantController`, and on the server they resolve against the DOM shim like [@query](/docs/decorators/query).
+
+## Usage
+
+```typescript
+import { RadiantElement, customElement, ref, refAll } from '@ecopages/radiant';
+
+@customElement('menu-bar')
+export class MenuBar extends RadiantElement {
+	// data-ref="menubar-root"
+	@ref() menubarRoot!: HTMLElement | null;
+
+	// data-ref="l1234", the name as written
+	@ref('l1234') specialProduct!: HTMLElement | null;
+
+	// warns once in development when missing after first connect
+	@ref({ required: true }) status!: HTMLElement | null;
+	@ref('status-line', { required: true }) statusLine!: HTMLElement | null;
+
+	// data-ref="item", every owned match
+	@refAll() item!: HTMLElement[];
+}
+```
+
+## Names
+
+Without a name the part name is the field name converted the way [@prop](/docs/decorators/prop) converts it to an attribute name: `menubarRoot` finds `data-ref="menubar-root"`, `listboxID` finds `listbox-id`, `XMLPanel` finds `xmlpanel`. A given name is used exactly as written. Pass one for markup you do not control, or when the field name collides with an element member such as `popover` or `title`.
+
+The decorator takes `()`, `(name)`, `(options)` or `(name, options)`.
+
+| Option | Type | Description |
+| :----- | :--- | :---------- |
+| `required` | `boolean` | Warn once per class and field in development when no part is found after the host's first connect. Off by default, because controllers over authored markup have many optional parts. |
+
+## Scope
+
+A part belongs to the nearest enclosing Element Host (once upgraded) or Controller Host (while attached). An outer `@ref` never returns the part of a nested host, and `@refAll` leaves nested hosts out. A part that is itself a nested host belongs to the outer host. Use `@query(selector)` to reach into another host on purpose.
+
+## Before connect and types
+
+Both read `null` or `[]` while no owned part exists, including before connect. Reads are live, so a part already in the markup is found even before connect. Under legacy decorators a `RadiantController` field is set up at `connect()` and reads `undefined` before it, like [@query](/docs/decorators/query); a `RadiantElement` registered with `@customElement` reads `null` or `[]` in both modes. Under standard decorators the field must accept `null` for `@ref` and be an array for `@refAll`; any other type does not compile (see [Typing Decorated Fields](/docs/decorators#typing-decorated-fields)).
+
+```typescript
+@ref() trigger!: HTMLElement; // does not compile: a part can be missing
+@refAll() items!: HTMLElement; // does not compile: an array is required
+```
+
+A `#private` field cannot hold the getter, so standard decorators throw when applied to one. Use a TypeScript `private` field instead.
+
+## Development warnings
+
+Warnings are stripped from production builds and silenced by the shared development-warning switch. An Element Host runs the checks on the client's first connect, not during server rendering, where its view has not rendered its parts yet. A Controller Host runs them on its first connect, including a server render, since its markup is authored.
+
+- `required: true` warns once per class and field when the part is still missing after first connect.
+- More than one part under the same name in one scope warns once per class and field, on first connect. `@refAll` does not check, since several parts under one name are what it reads. A duplicate that a later render adds is not reported.
+
+## `@ref` and JSX `ref`
+
+`@ref` only looks up `data-ref` with the scope rule. JSX `ref` callbacks are separate and write wherever their author chooses.
+
+## Learn More
+
+- [@query](/docs/decorators/query) for unscoped selector queries.
+- [RadiantController](/docs/components/radiant-controller) for `getRef`, which uses the same scope rule.

@@ -13,6 +13,7 @@ export * from './decorators/on-event';
 export * from './decorators/on-updated';
 export * from './decorators/prop';
 export * from './decorators/query';
+export * from './decorators/ref';
 export * from './decorators/signal';
 export * from './decorators/state';
 export {
