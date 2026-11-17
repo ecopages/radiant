@@ -5,7 +5,7 @@ import {
 	type MediaControllerConfig,
 	type MediaState,
 } from './media-controller';
-import { fakeTimers, frames, once } from './event.fixture';
+import { createWaiters, fakeTimers, frames, once } from './event.fixture';
 
 /**
  * A real wait, for the negative assertions that something did not happen: the controller emits nothing to wait on,
@@ -112,8 +112,7 @@ function setup(config: Partial<MediaControllerConfig> = {}, media: HTMLAudioElem
 	const states: MediaState[] = [];
 	const progress: MediaState[] = [];
 	const errors: Array<MediaError | Error> = [];
-	const waiters = new Set<() => void>();
-	const notify = () => [...waiters].forEach((waiter) => waiter());
+	const { notify, until: untilWaiter } = createWaiters();
 	const { onState, onProgress, onError, ...rest } = config;
 	const controller = new MediaController({
 		getMedia: () => media,
@@ -136,19 +135,18 @@ function setup(config: Partial<MediaControllerConfig> = {}, media: HTMLAudioElem
 	});
 	controllers.push(controller);
 	return {
-		until: (predicate) =>
-			new Promise((resolve) => {
-				const check = () => {
-					const state = states.at(-1);
-					if (!state || !predicate(state)) {
-						return;
-					}
-					waiters.delete(check);
-					resolve(state);
-				};
-				waiters.add(check);
-				check();
-			}),
+		until: async (predicate) => {
+			let reached: MediaState | undefined;
+			await untilWaiter(() => {
+				const state = states.at(-1);
+				if (!state || !predicate(state)) {
+					return false;
+				}
+				reached = state;
+				return true;
+			});
+			return reached!;
+		},
 		media,
 		controller,
 		states,

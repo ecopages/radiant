@@ -7,7 +7,7 @@ import {
 	type AudioVisualizerState,
 } from './audio-visualizer-controller';
 import { bars } from './audio-visualizer-bars';
-import { frames, once } from './event.fixture';
+import { createWaiters, frames, once, type Waiters } from './event.fixture';
 import { wave } from './audio-visualizer-wave';
 
 function toneUrl(seconds = 1): string {
@@ -37,8 +37,7 @@ function toneUrl(seconds = 1): string {
 
 /** A preset whose `reached` and `called` resolve from its own `draw` and `rest` calls, without polling the mock. */
 function spyPreset(options: { fftSize?: number; draw?: (frame: AudioFrame) => void } = {}) {
-	const waiters = new Set<() => void>();
-	const fire = () => [...waiters].forEach((waiter) => waiter());
+	const { notify: fire, until: reached } = createWaiters();
 	const preset = {
 		fftSize: options.fftSize,
 		mount: vi.fn<AudioVisualizerPreset['mount']>(),
@@ -48,24 +47,13 @@ function spyPreset(options: { fftSize?: number; draw?: (frame: AudioFrame) => vo
 		}),
 		rest: vi.fn<AudioVisualizerPreset['rest']>(fire),
 		destroy: vi.fn<AudioVisualizerPreset['destroy']>(),
-		reached: (predicate: () => boolean) =>
-			new Promise<void>((resolve) => {
-				const check = () => {
-					if (!predicate()) {
-						return;
-					}
-					waiters.delete(check);
-					resolve();
-				};
-				waiters.add(check);
-				check();
-			}),
+		reached,
 		called: (method: 'draw' | 'rest') => preset.reached(() => preset[method].mock.calls.length > 0),
 	};
 	return preset;
 }
 
-const stateWaiters = new WeakMap<object, Set<() => void>>();
+const stateWaiters = new WeakMap<object, Waiters>();
 
 /** Resolves once `predicate` holds, re-checked on every `onState` call of a controller built by `make`. */
 function untilState(controller: object, predicate: () => boolean): Promise<void> {
@@ -73,17 +61,7 @@ function untilState(controller: object, predicate: () => boolean): Promise<void>
 	if (!waiters) {
 		throw new Error('untilState needs a controller built by make');
 	}
-	return new Promise((resolve) => {
-		const check = () => {
-			if (!predicate()) {
-				return;
-			}
-			waiters.delete(check);
-			resolve();
-		};
-		waiters.add(check);
-		check();
-	});
+	return waiters.until(predicate);
 }
 
 const whenState = (controller: { getState(): AudioVisualizerState }, state: AudioVisualizerState) =>
@@ -227,7 +205,7 @@ describe('AudioVisualizerController', () => {
 		extra: { getEnabled?: () => boolean; onState?: (state: AudioVisualizerState) => void } = {},
 		Controller: typeof AudioVisualizerController = AudioVisualizerController,
 	) {
-		const waiters = new Set<() => void>();
+		const waiters = createWaiters();
 		const controller = new Controller({
 			getMedia: () => audio,
 			getTarget: () => target,
@@ -235,7 +213,7 @@ describe('AudioVisualizerController', () => {
 			...extra,
 			onState: (state) => {
 				extra.onState?.(state);
-				[...waiters].forEach((waiter) => waiter());
+				waiters.notify();
 			},
 		});
 		stateWaiters.set(controller, waiters);

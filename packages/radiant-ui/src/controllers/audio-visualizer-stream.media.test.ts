@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
+import { createWaiters } from './event.fixture';
 import { AudioVisualizerController, type AudioFrame, type AudioVisualizerPreset } from './audio-visualizer-controller';
 
 /**
@@ -21,10 +22,10 @@ type Recorder = AudioVisualizerPreset & {
  */
 function recorder(): Recorder {
 	const calls: string[] = [];
-	const waiters = new Set<() => void>();
+	const { notify, until: reached } = createWaiters();
 	const record = (call: string) => {
 		calls.push(call);
-		[...waiters].forEach((waiter) => waiter());
+		notify();
 	};
 	const preset: Recorder = {
 		calls,
@@ -36,18 +37,7 @@ function recorder(): Recorder {
 		},
 		rest: () => record('rest'),
 		destroy: () => record('destroy'),
-		reached: (predicate) =>
-			new Promise<void>((resolve) => {
-				const check = () => {
-					if (!predicate()) {
-						return;
-					}
-					waiters.delete(check);
-					resolve();
-				};
-				waiters.add(check);
-				check();
-			}),
+		reached,
 	};
 	return preset;
 }

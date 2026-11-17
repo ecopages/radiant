@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ControllerHost } from './controller';
+import { createWaiters, type Waiters } from './event.fixture';
 import {
 	MediaRecorderController,
 	createMediaRecorderController,
@@ -18,38 +19,26 @@ describe('MediaRecorderController', () => {
 		vi.unstubAllGlobals();
 	});
 
-	const waiters = new WeakMap<MediaRecorderController, Set<() => void>>();
+	const waiters = new WeakMap<MediaRecorderController, Waiters>();
 
 	function create(config: MediaRecorderControllerConfig = {}): MediaRecorderController {
-		const listeners = new Set<() => void>();
+		const own = createWaiters();
 		const controller = new MediaRecorderController({
 			...config,
 			onState: (snapshot) => {
 				config.onState?.(snapshot);
-				[...listeners].forEach((listener) => listener());
+				own.notify();
 			},
 		});
-		waiters.set(controller, listeners);
+		waiters.set(controller, own);
 		controllers.push(controller);
 		controller.attach();
 		return controller;
 	}
 
 	/** Resolves once `predicate` holds on the state, re-checked on every `onState` call. */
-	function untilState(controller: MediaRecorderController, predicate: () => boolean): Promise<void> {
-		const listeners = waiters.get(controller)!;
-		return new Promise((resolve) => {
-			const check = () => {
-				if (!predicate()) {
-					return;
-				}
-				listeners.delete(check);
-				resolve();
-			};
-			listeners.add(check);
-			check();
-		});
-	}
+	const untilState = (controller: MediaRecorderController, predicate: () => boolean) =>
+		waiters.get(controller)!.until(predicate);
 
 	/** Fakes the clocks the controller counts with; a real `MediaRecorder` and stream keep running on real time. */
 	const fakeClock = () =>

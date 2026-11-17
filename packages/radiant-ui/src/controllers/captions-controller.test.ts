@@ -1,40 +1,30 @@
 import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import type { ControllerHost } from './controller';
-import { frames } from './event.fixture';
+import { createWaiters, frames } from './event.fixture';
 import { CaptionsController, createCaptionsController, type CaptionTrackSource } from './captions-controller';
 
 const SIGNALS = ['loadedmetadata', 'seeked', 'timeupdate', 'load', 'error', 'cuechange'];
-const waiters = new Set<() => void>();
+const waiters = createWaiters();
 
 /**
  * Resolves once `check` holds, re-checked on a controller callback, a DOM mutation or a media or track event.
  *
  * @remarks A track's `cuechange` does not bubble, so every `<track>` element's text track is listened to directly.
  */
-const settle = (check: () => boolean): Promise<void> =>
-	new Promise((resolve) => {
-		const tracks = [...document.querySelectorAll('track')].map((element) => element.track);
-		const observer = new MutationObserver(() => attempt());
-		const stop = () => {
-			observer.disconnect();
-			waiters.delete(attempt);
-			SIGNALS.forEach((type) => document.removeEventListener(type, attempt, true));
-			tracks.forEach((track) => track.removeEventListener('cuechange', attempt));
-		};
-		function attempt() {
-			if (!check()) {
-				return;
-			}
-			stop();
-			resolve();
-		}
-		observer.observe(document, { attributes: true, childList: true, characterData: true, subtree: true });
-		waiters.add(attempt);
-		SIGNALS.forEach((type) => document.addEventListener(type, attempt, true));
-		tracks.forEach((track) => track.addEventListener('cuechange', attempt));
-		onTestFinished(stop);
-		attempt();
-	});
+const settle = (check: () => boolean): Promise<void> => {
+	const tracks = [...document.querySelectorAll('track')].map((element) => element.track);
+	const observer = new MutationObserver(waiters.notify);
+	observer.observe(document, { attributes: true, childList: true, characterData: true, subtree: true });
+	SIGNALS.forEach((type) => document.addEventListener(type, waiters.notify, true));
+	tracks.forEach((track) => track.addEventListener('cuechange', waiters.notify));
+	const stop = () => {
+		observer.disconnect();
+		SIGNALS.forEach((type) => document.removeEventListener(type, waiters.notify, true));
+		tracks.forEach((track) => track.removeEventListener('cuechange', waiters.notify));
+	};
+	onTestFinished(stop);
+	return waiters.until(check).finally(stop);
+};
 
 function silentWav(seconds: number): string {
 	const rate = 8000;
@@ -77,16 +67,15 @@ function video(): HTMLVideoElement {
 }
 
 function make(config: ConstructorParameters<typeof CaptionsController>[0]): CaptionsController {
-	const notify = () => [...waiters].forEach((waiter) => waiter());
 	const controller = new CaptionsController({
 		...config,
 		onState: (state) => {
 			config.onState?.(state);
-			notify();
+			waiters.notify();
 		},
 		onError: (error, track) => {
 			config.onError?.(error, track);
-			notify();
+			waiters.notify();
 		},
 	});
 	controllers.push(controller);
