@@ -4,6 +4,7 @@ import type {} from '@vitest/browser-playwright';
 import { createRoot, type JsxRenderable } from '@ecopages/jsx';
 import '../../../styles/radiant-ui.css';
 import './sidebar.css';
+import { animationsFinished } from '../../../controllers/exit-transition.fixture';
 import { RuiSidebar, RuiSidebarInset, RuiSidebarProvider } from './sidebar';
 
 type SidebarEl = HTMLElement & {
@@ -20,11 +21,6 @@ afterEach(async () => {
 
 function frame(): Promise<void> {
 	return new Promise((resolve) => requestAnimationFrame(() => resolve()));
-}
-
-/** Resolves once every transition running on `element` or below it has finished. */
-async function transitionsFinished(element: Element): Promise<void> {
-	await Promise.all(element.getAnimations({ subtree: true }).map((animation) => animation.finished));
 }
 
 /** Pauses the transitions on `element` at `ms`, so a mid-transition value is read without racing the clock. */
@@ -277,7 +273,7 @@ describe('mobile drawer motion', () => {
 		expect(getComputedStyle(drawer.scrim).visibility).toBe('visible');
 		drawer.sidebar.setOpen(false);
 		await frame();
-		await transitionsFinished(drawer.scrim);
+		await animationsFinished(drawer.scrim, { subtree: true });
 		expect(getComputedStyle(drawer.scrim).visibility).toBe('hidden');
 		drawer.scrim.focus();
 		expect(document.activeElement).not.toBe(drawer.scrim);

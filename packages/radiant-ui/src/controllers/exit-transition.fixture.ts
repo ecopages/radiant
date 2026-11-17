@@ -24,13 +24,14 @@ export function withSlowExit<T extends HTMLElement>(element: T): T {
 }
 
 /**
- * Resolves once the exit transitions running on `element` have finished.
+ * Resolves once every animation running on `element` (and below it with `subtree`) has finished or been cancelled.
  *
- * @remarks Call it right after closing. The popover controller waits on the same animations before it moves the
- * node home and its continuation was registered first, so the node is back in place when this resolves.
+ * @remarks Call it right after the action that starts the animation. The popover controller waits on the same
+ * animations before it moves the node home and its continuation was registered first, so the node is back in place
+ * when this resolves. A cancelled animation settles the wait rather than failing the test.
  */
-export async function exitFinished(element: HTMLElement): Promise<void> {
-	await Promise.allSettled(element.getAnimations().map((animation) => animation.finished));
+export async function animationsFinished(element: Element, options?: GetAnimationsOptions): Promise<void> {
+	await Promise.allSettled(element.getAnimations(options).map((animation) => animation.finished));
 }
 
 /** What `expectPopupFoundAcrossPortalCycle` drives and reads. */
@@ -66,7 +67,7 @@ export async function expectPopupFoundAcrossPortalCycle(cycle: PortalCycle): Pro
 	expect(cycle.popup.parentElement).toBe(portaled ? document.body : home);
 	expect(find()).toBe(cycle.popup);
 
-	await exitFinished(cycle.popup);
+	await animationsFinished(cycle.popup);
 	expect(cycle.popup.parentElement).toBe(home);
 	const next = withSlowExit(cycle.popup.cloneNode(true) as HTMLElement);
 	cycle.popup.replaceWith(next);
