@@ -102,6 +102,8 @@ export interface IRadiantElement<Bindings extends object = {}> {
 	/**
 	 * Registers a callback to be invoked when a reactive property or field changes.
 	 *
+	 * @remarks Listens only while the host is connected (or prepared for SSR) and runs on connect if the value changed while detached.
+	 *
 	 * @returns A cleanup function that unregisters the callback.
 	 */
 	registerUpdateCallback(property: string, update: () => void): () => void;

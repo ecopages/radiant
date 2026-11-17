@@ -110,7 +110,10 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	/** Names with a field accessor, which closes over the member it was defined with. */
 	private accessorNames = new Set<string>();
 	private jsxBindings = new Map<string, SubscribableJsxValueWithAccess<JsxBindingSourceValue>>();
-	/** Synchronous per-member callbacks keyed by property; values track the subscribed signal so replacements can resubscribe. */
+	/**
+	 * Synchronous per-member callbacks keyed by property; values track the subscribed signal so replacements can
+	 * resubscribe. A value is set only while members are observed.
+	 */
 	private updateCallbacks = new Map<string, Map<() => void, UpdateSubscription | undefined>>();
 	private updatedCallbacks: UpdatedRegistration[] = [];
 	/** Change reports to the update cycle; held only while members are observed. */
@@ -119,6 +122,8 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	private memberSnapshots = new Map<string, unknown>();
 	private initializingReactiveFields = new Set<string>();
 	private observing = false;
+	/** Bumped each time observation starts or stops, so a pass can tell the host changed state under it. */
+	private observationEpoch = 0;
 	private onConnectedCallbacks: (() => void)[] = [];
 	private onDisconnectedCallback: (() => void)[] = [];
 	private postSyncCallbacks: (() => void)[] = [];
@@ -142,11 +147,20 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 
 	/**
 	 * Runs all connection callbacks registered by decorators or host adapters.
+	 *
+	 * @remarks Stops as soon as observation changed under the pass: a callback that
+	 * disconnects the host has already run the cleanup callbacks, so a later
+	 * connection callback would acquire resources nothing releases, and one that
+	 * also reconnects it has already run the whole pass.
 	 */
 	public connectHost(): void {
-		this.observeMembers();
+		const epoch = this.startObservation();
 
 		for (const callback of this.onConnectedCallbacks) {
+			if (epoch !== this.observationEpoch) {
+				break;
+			}
+
 			callback();
 		}
 	}
@@ -167,9 +181,11 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	 *
 	 * @remarks
 	 * Members that changed while unobserved are reported first, so writes made
-	 * before connect or while detached still reach `@onUpdated`. Observation is
-	 * scoped to connection (and SSR preparation) so a shared `@signal` source
-	 * never holds a detached or server-only host.
+	 * before connect or while detached still reach `@onUpdated` and the
+	 * synchronous update callbacks (`@bindTo`). Observation is scoped to
+	 * connection (and SSR preparation) so a shared `@signal` source never holds
+	 * a detached or server-only host; update callbacks subscribe and release
+	 * with it.
 	 *
 	 * @returns Stops the observation this call started; a no-op when members were already observed.
 	 */
@@ -178,22 +194,44 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 			return () => {};
 		}
 
-		this.observing = true;
-
-		for (const [propertyName, signal] of this.reactiveMembers) {
-			this.observeMember(propertyName, signal);
-		}
-
+		this.startObservation();
 		return () => this.unobserveMembers();
 	}
 
-	/** Stops reporting member changes and snapshots each value for the next {@link observeMembers}. */
+	/** Returns the epoch of the observation in force; a pass compares it to detect a disconnect underneath it. */
+	private startObservation(): number {
+		if (this.observing) {
+			return this.observationEpoch;
+		}
+
+		this.observing = true;
+		const epoch = ++this.observationEpoch;
+
+		for (const [propertyName, signal] of this.reactiveMembers) {
+			if (epoch !== this.observationEpoch) {
+				break;
+			}
+
+			this.observeMember(propertyName, signal);
+		}
+
+		for (const [propertyName, callbacks] of this.updateCallbacks) {
+			for (const update of callbacks.keys()) {
+				this.subscribeCallback(propertyName, update);
+			}
+		}
+
+		return epoch;
+	}
+
+	/** Stops reporting member changes, releases the update-callback subscriptions and snapshots each value for the next {@link observeMembers}. */
 	public unobserveMembers(): void {
 		if (!this.observing) {
 			return;
 		}
 
 		this.observing = false;
+		this.observationEpoch++;
 
 		for (const [propertyName, unsubscribe] of this.changeSubscriptions) {
 			unsubscribe();
@@ -201,6 +239,13 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 		}
 
 		this.changeSubscriptions.clear();
+
+		for (const callbacks of this.updateCallbacks.values()) {
+			for (const [update, subscription] of callbacks) {
+				subscription?.unsubscribe();
+				callbacks.set(update, undefined);
+			}
+		}
 	}
 
 	/**
@@ -261,14 +306,7 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	 * subscription instead.
 	 */
 	public notifyUpdate(changedProperty: string, _oldValue: unknown, _value: unknown): void {
-		const callbacks = this.updateCallbacks.get(changedProperty);
-
-		if (callbacks) {
-			for (const update of [...callbacks.keys()]) {
-				update();
-			}
-		}
-
+		this.runUpdateCallbacks(changedProperty);
 		this.onMemberChanged(changedProperty);
 	}
 
@@ -357,16 +395,20 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	 * Stores the member state, reports its changes to the host update cycle, and
 	 * subscribes synchronous callbacks registered before the member existed
 	 * (decorator initializer ordering).
+	 *
+	 * @remarks
+	 * Once the host has been observed, a member replaced while detached keeps the snapshot taken at disconnect, so the
+	 * next connect reports it when the value differs. Before the first connect the replacement is the member's initial
+	 * value: legacy decorators bootstrap members at construction and register them again at first connect, which is not
+	 * a change.
 	 */
 	private registerMember(propertyName: string, signal: ReadonlyReactiveState<unknown>): void {
 		this.reactiveMembers.set(propertyName, signal);
 		this.jsxBindings.delete(propertyName);
-		this.changeSubscriptions.get(propertyName)?.();
-		this.changeSubscriptions.delete(propertyName);
 
 		if (this.observing) {
 			this.observeMember(propertyName, signal);
-		} else {
+		} else if (this.observationEpoch === 0 || !this.memberSnapshots.has(propertyName)) {
 			this.memberSnapshots.set(propertyName, signal.get());
 		}
 
@@ -379,19 +421,33 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 		}
 	}
 
+	/**
+	 * @remarks Subscribes before reporting a diff so a callback that disconnects
+	 * the host finds this member in the observation it releases, and snapshots it
+	 * for the next connect. Releases a subscription already held for the member,
+	 * which a callback registering it mid-pass would otherwise orphan.
+	 */
 	private observeMember(propertyName: string, signal: ReadonlyReactiveState<unknown>): void {
-		if (
-			this.memberSnapshots.has(propertyName) &&
-			!Object.is(this.memberSnapshots.get(propertyName), signal.get())
-		) {
-			this.memberChanged(propertyName);
-		}
+		const changed =
+			this.memberSnapshots.has(propertyName) && !Object.is(this.memberSnapshots.get(propertyName), signal.get());
 
 		this.memberSnapshots.delete(propertyName);
+		this.changeSubscriptions.get(propertyName)?.();
 		this.changeSubscriptions.set(
 			propertyName,
 			signal.subscribe(() => this.memberChanged(propertyName)),
 		);
+
+		if (changed) {
+			this.memberChanged(propertyName);
+			this.runUpdateCallbacks(propertyName);
+		}
+	}
+
+	private runUpdateCallbacks(propertyName: string): void {
+		for (const update of [...(this.updateCallbacks.get(propertyName)?.keys() ?? [])]) {
+			update();
+		}
 	}
 
 	private memberChanged(propertyName: string): void {
@@ -401,7 +457,7 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 
 	/**
 	 * Subscribes a synchronous callback to the member state if the member is
-	 * already registered.
+	 * already registered and members are observed.
 	 *
 	 * Re-subscribes only when the member signal identity changes (for example
 	 * `registerReactiveMember` replacing a previous state). Same-signal calls
@@ -411,7 +467,7 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 		const callbacks = this.updateCallbacks.get(propertyName);
 		const signal = this.reactiveMembers.get(propertyName);
 
-		if (!callbacks || !signal) {
+		if (!callbacks || !signal || !this.observing) {
 			return;
 		}
 
@@ -464,9 +520,13 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	/**
 	 * Registers a synchronous callback for a named reactive member.
 	 *
-	 * @remarks Runs on every write of the member, before the batched cycle. Used
-	 * by `@bindTo`, whose DOM writes must land with the value like `$` bindings.
-	 * Use {@link registerUpdatedCallback} for procedures.
+	 * @remarks Runs on every write of the member, before the batched cycle, while
+	 * members are observed (host connected, or SSR preparation). The subscription is
+	 * released on disconnect and re-established on connect; writes made before
+	 * connect or while detached do not run it, but it runs once on connect when the
+	 * member's value differs from its last observed value. Used by `@bindTo`, whose
+	 * DOM writes must land with the value like `$` bindings. Use
+	 * {@link registerUpdatedCallback} for procedures.
 	 */
 	public registerUpdateCallback(property: string, update: () => void): () => void {
 		let callbacks = this.updateCallbacks.get(property);
