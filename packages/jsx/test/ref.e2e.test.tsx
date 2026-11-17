@@ -432,17 +432,17 @@ describe('JSX ref', () => {
 
 	describe('errors', () => {
 		let errors: unknown[];
+		const reported = () => new Promise<void>((resolve) => setTimeout(resolve));
 
 		beforeEach(() => {
 			errors = [];
-			vi.spyOn(globalThis, 'queueMicrotask').mockImplementation((callback) => {
-				try {
-					callback();
-				} catch (error) {
-					errors.push(error);
-				}
-			});
-			return () => vi.restoreAllMocks();
+			const onError = (event: ErrorEvent) => {
+				event.preventDefault();
+				event.stopImmediatePropagation();
+				errors.push(event.error);
+			};
+			window.addEventListener('error', onError, true);
+			return () => window.removeEventListener('error', onError, true);
 		});
 
 		test('a throwing callback is reported and later refs in the flush still run', async () => {
@@ -465,6 +465,8 @@ describe('JSX ref', () => {
 			);
 
 			expect(later).toHaveBeenCalledTimes(1);
+			expect(errors).toEqual([]);
+			await reported();
 			expect(errors).toEqual([boom]);
 		});
 
@@ -489,6 +491,7 @@ describe('JSX ref', () => {
 			);
 
 			expect(log).toEqual(['section', 'root']);
+			await reported();
 			expect(errors).toEqual([boom]);
 		});
 
@@ -542,6 +545,7 @@ describe('JSX ref', () => {
 			);
 			root.unmount();
 
+			await reported();
 			expect(errors).toEqual([attach, detach]);
 		});
 
@@ -568,6 +572,7 @@ describe('JSX ref', () => {
 
 			expect(second).toHaveBeenCalledTimes(2);
 			expect(second).toHaveBeenLastCalledWith(null);
+			await reported();
 			expect(errors).toEqual([boom]);
 		});
 
@@ -587,6 +592,7 @@ describe('JSX ref', () => {
 
 			expect(failing.mock.calls).toEqual([[node], [null]]);
 			expect(next.mock.calls).toEqual([[node]]);
+			await reported();
 			expect(errors).toHaveLength(1);
 		});
 	});
