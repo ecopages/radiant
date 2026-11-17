@@ -88,10 +88,6 @@ export function serializeRenderable(value: JsxRenderable | undefined, options: S
 		return String(value);
 	}
 
-	if (value === true) {
-		return '';
-	}
-
 	if (isTemplateResultLike(value)) {
 		return serializeTemplateResult(value, options);
 	}
