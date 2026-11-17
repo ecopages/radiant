@@ -1,5 +1,14 @@
 # @ecopages/radiant
 
+## 0.11.1
+
+### Patch Changes
+
+- [#768](https://github.com/ecopages/radiant/pull/768) [`80c6d6a`](https://github.com/ecopages/radiant/commit/80c6d6acc9aca821568c36e4705af0cca1932d8e) Thanks [@andeeplus](https://github.com/andeeplus)! - @ecopages/radiant now declares @ecopages/signals as a peer dependency. It always imported it, but the published package did not list it, so a strict, isolated install failed to resolve it. Apps that use @ecopages/jsx already install @ecopages/signals.
+- Updated dependencies []:
+    - @ecopages/jsx@0.11.1
+    - @ecopages/signals@0.11.1
+
 ## 0.11.0
 
 ### Minor Changes
