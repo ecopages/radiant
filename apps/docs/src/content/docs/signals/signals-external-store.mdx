@@ -40,7 +40,7 @@ import { fromExternalStore } from '@ecopages/signals';
 const count = fromExternalStore(store, (state) => state.items.length);
 ```
 
-`store` is anything with `subscribe` and either `getSnapshot` (the React contract) or `getState` (Zustand and Redux). An optional `getServerSnapshot` is the value used until something subscribes.
+`store` is anything with `subscribe` and either `getSnapshot` (the React contract) or `getState` (Zustand and Redux). An optional `getServerSnapshot` is the value until the signal first subscribes to the store, and never after. The third argument takes `equals`, as `state(...)` does.
 
 On a host, [@fromStore](/docs/decorators/from-store) is the field:
 
@@ -56,9 +56,9 @@ class CartBadge extends RadiantElement<{ count: number }> {
 }
 ```
 
-The host observes members only while connected, so the store subscription starts on connect, stops on disconnect, and starts again on reconnect. Server rendering reads one snapshot and does not keep a listener.
+The host subscribes to the store only while it is connected, for change reports, `@bindTo` and the `this.$` bindings in its view alike: it subscribes on connect, releases the store on disconnect, and subscribes again on reconnect, when a binding catches up with a write made while the host was detached. Server rendering reads `getServerSnapshot()` (or the live snapshot when there is none) and never subscribes, on an element or a controller.
 
-A selector should return a value that is `Object.is` stable when the slice did not change. Returning a new object on every store notification will update every time.
+`select` runs once per snapshot: a notification that leaves the snapshot the same object does not run it. A selected value that is `Object.is` equal to the previous one does not notify, so return a slice of the state (`state.items`, a count). A selector that builds a new object or array notifies on every store change; pass `{ equals }` to compare it yourself. While subscribed, `get()` reads a snapshot the store has not notified yet, so a computed over two signals of one store never mixes two snapshots. An error thrown by `select` is rethrown by `get()`, not into the store's listeners.
 
 ## Through context
 
@@ -98,7 +98,7 @@ A sibling that selects `state.user` does not update when the cart items change.
 
 ## Server snapshot and hydration
 
-Pass `getServerSnapshot` when the server and the first client paint must match, then let the live `getSnapshot` / `getState` take over once the host connects (or an effect / computed subscriber starts). The HTML is painted from that server snapshot. The client subscription is the takeover.
+Pass `getServerSnapshot` when the live snapshot cannot be read on the server (it reads `localStorage` or `matchMedia`) or holds other data there. Server rendering paints from it and never calls `getSnapshot` or `subscribe`. On the client, `get()` returns it until the signal first subscribes: a host subscribes when it connects, before it hydrates or renders, so the client view shows the live snapshot, and so does every read after that, also once the host disconnects.
 
 ```ts
 fromExternalStore({

@@ -22,16 +22,16 @@ The cart lives in Zustand (or a store with the same `getState` / `setState` / `s
 
 ## The store
 
-In an app, install Zustand and pass the object `create()` returns. That object is already `getState`, `setState`, and `subscribe`.
+In an app, install Zustand and pass the store `createStore()` from `zustand/vanilla` returns. That object is already `getState`, `setState`, and `subscribe`, and the vanilla entry does not import React.
 
 ```ts
-import { create } from 'zustand';
+import { createStore } from 'zustand/vanilla';
 
 type CartState = {
 	items: string[];
 };
 
-export const cartStore = create<CartState>(() => ({
+export const cartStore = createStore<CartState>(() => ({
 	items: ['Mug'],
 }));
 
@@ -40,7 +40,7 @@ export function addCartItem(name: string): void {
 }
 ```
 
-Pass `cartStore` to `@fromStore`, not `cartStore()`. The object `create()` returns is the store. Calling it is the React hook.
+When a React island already owns the store through `create()` from `zustand`, pass that hook object to `@fromStore` as it is, not `useCartStore()`: it carries the same `getState` and `subscribe`.
 
 The live demo uses a store with that same surface so the docs app does not depend on Zustand.
 
@@ -77,7 +77,7 @@ class CartList extends RadiantElement<{ items: string[] }> {
 }
 ```
 
-A selector that returns `state.items.length` stays quiet when something else in the store changes. Returning a new array from `filter` on every notification will update every time.
+A selector that returns `state.items.length` stays quiet when something else in the store changes. A selector that returns a new array from `filter` updates on every store change.
 
 Do not write `this.count = 2`. Assignment throws. Call `cartStore.setState` or an action on the store.
 

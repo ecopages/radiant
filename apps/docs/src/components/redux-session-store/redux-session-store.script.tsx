@@ -12,7 +12,7 @@ export class RadiantReduxUser extends RadiantElement<{ user: string }> {
 	override render() {
 		return (
 			<p class="m-0 text-sm text-on-background/80">
-				Signed in as <strong data-ref="user">{this.$.user}</strong>
+				Signed in as <strong>{this.$.user}</strong>
 			</p>
 		);
 	}
@@ -28,7 +28,7 @@ export class RadiantReduxTheme extends RadiantElement<{ theme: string }> {
 	override render() {
 		return (
 			<p class="m-0 text-sm text-on-background/80">
-				Theme: <strong data-ref="theme">{this.$.theme}</strong>
+				Theme: <strong>{this.$.theme}</strong>
 			</p>
 		);
 	}

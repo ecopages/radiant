@@ -56,15 +56,15 @@ Same arguments as `fromExternalStore(store, select?, options?)` from `@ecopages/
 | `select` | `(snapshot) => Selected` | Optional. Omit it to bind the whole snapshot. |
 | `options.equals` | `(previous, next) => boolean` | Optional. Defaults to `Object.is`. A selected value equal to the last one does not notify. |
 
-The selector runs on every store notification. Return a stable slice (a primitive, `state.items`). Do not return a new object or array on every call.
+The selector runs once per snapshot, so a notification that leaves the state object the same does not run it. Return a slice of the state (a primitive, `state.items`). A selector that builds a new object or array notifies on every store change; pass `equals` to compare it yourself.
 
 ## What It Changes
 
 - the field holds the selected slice, like `@state`, but it has no setter
 - `this.$.name` patches that node; a direct read in `render()` re-renders when the slice changes
 - `@onUpdated('name')` and `@bindTo` work on the field
-- the host subscribes while connected, releases the store on disconnect, and subscribes again on reconnect
-- server rendering reads one snapshot and does not keep a listener
+- the host subscribes while connected, `this.$` bindings included, releases the store on disconnect, and subscribes again on reconnect, when the bindings catch up
+- server rendering reads `getServerSnapshot()` (or the live snapshot when there is none) and never subscribes
 
 ## When The Store Arrives Through Context
 
@@ -84,7 +84,7 @@ onCart(store: typeof cartStore) {
 
 ## Server Snapshot
 
-Pass `getServerSnapshot` when the server HTML and the first client paint must match. Until something subscribes, `get()` returns that snapshot. After connect, the client `getSnapshot` / `getState` takes over.
+Pass `getServerSnapshot` when the live snapshot cannot be read on the server, or holds other data there. Server rendering paints from it and never calls `getSnapshot` or `subscribe`. Before the first connect, the field reads it too. The host subscribes when it connects, before it hydrates or renders, so the client view shows the live `getSnapshot` / `getState`, and the field keeps reading the live snapshot after that, also while the host is detached.
 
 ```ts
 @fromStore(

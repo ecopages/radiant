@@ -12,7 +12,7 @@ export class RadiantCartBadge extends RadiantElement<{ count: number }> {
 	override render() {
 		return (
 			<p class="m-0 text-sm text-on-background/80">
-				In the bag: <strong data-ref="count">{this.$.count}</strong>
+				In the bag: <strong>{this.$.count}</strong>
 			</p>
 		);
 	}
@@ -27,7 +27,7 @@ export class RadiantCartList extends RadiantElement<{ items: string[] }> {
 
 	override render() {
 		return (
-			<ul class="m-0 grid list-none gap-2 p-0" data-ref="items">
+			<ul class="m-0 grid list-none gap-2 p-0">
 				{this.items.map((item) => (
 					<li class="rounded-sm border border-border bg-background px-3 py-2 text-sm text-on-background">
 						{item}
