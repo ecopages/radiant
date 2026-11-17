@@ -92,7 +92,7 @@ Use the smallest lifecycle surface that matches the job:
 - Use `@onUpdated('property')` when a procedure must follow property changes (focus, joined ARIA, derived state).
 - Render your own UI with JSX bindings when the host owns `render()`.
 - Use `onConnected()` when setup needs the final initial property values or the initial rendered view, and repeat that setup after reconnect.
-- Use `@query(...)` only when that setup needs a live element handle—for example, to focus an element, observe it, or pass it to an imperative browser API.
+- Use `@ref(...)` or `@query(...)` only when that setup needs a live element handle—for example, to focus an element, observe it, or pass it to an imperative browser API.
 - Put connection-scoped teardown in `disconnectedCallback()` and always call `super.disconnectedCallback()`.
 
 ## Related documentation

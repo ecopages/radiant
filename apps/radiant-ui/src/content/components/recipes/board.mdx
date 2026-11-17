@@ -49,7 +49,7 @@ The same behavior as a `RadiantElement`. The markup is authored inside the eleme
 
 <RecipeCode recipe="board" pattern="element" />
 
-Each column gets its own `createSortableController(this, ...)`, all sharing a `SortableGroup` kept in a field. The controllers are created in the element, one for each of the three columns, and look their column up by index when they attach, so `@query({ selector: 'ul', all: true })` is read lazily and the markup stays plain. They attach when the element connects and are destroyed when it disconnects.
+Each column gets its own `createSortableController(this, ...)`, all sharing a `SortableGroup` kept in a field. The controllers are created in the element, one for each of the three columns, and look their column up by index when they attach, so `@queryAll('ul')` is read lazily and the markup stays plain. They attach when the element connects and are destroyed when it disconnects.
 
 What the Radiant form removes: the `mount` function and its registration, the cleanup that destroys each controller, and the re-run after a client-side navigation.
 

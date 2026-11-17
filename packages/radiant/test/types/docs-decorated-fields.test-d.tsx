@@ -32,7 +32,8 @@ import { onContextUpdate } from '../../src/context/decorators/on-context-update'
 import { onEvent } from '../../src/decorators/on-event';
 import { onUpdated } from '../../src/decorators/on-updated';
 import { prop } from '../../src/decorators/prop';
-import { query } from '../../src/decorators/query';
+import { query, queryAll } from '../../src/decorators/query';
+import { ref, refAll } from '../../src/decorators/ref';
 import { signal } from '../../src/decorators/signal';
 import { state } from '../../src/decorators/state';
 import type { EventEmitter } from '../../src/tools/event-emitter';
@@ -111,7 +112,7 @@ export class SizePicker extends RadiantElement {
 	@prop({ type: String, defaultValue: 'md' }) size: Size = 'md';
 	@prop({ type: Boolean }) open?: boolean;
 	@signal({ initial: 0 }) clicks!: WritableSignal<number>;
-	@query({ ref: 'input' }) input!: HTMLInputElement | null;
+	@ref() input!: HTMLInputElement | null;
 }
 
 export class RejectedFields extends RadiantElement {
@@ -124,7 +125,7 @@ export class RejectedFields extends RadiantElement {
 	// @ts-expect-error initial is a string and the signal holds a number
 	@signal({ initial: 'x' }) label!: WritableSignal<number>;
 	// @ts-expect-error a query returns null when nothing matches
-	@query({ ref: 'input' }) input!: HTMLInputElement;
+	@ref() input!: HTMLInputElement;
 }
 
 const csv = {
@@ -179,12 +180,12 @@ export class DefaultFields extends RadiantElement {
 const ctx = createContext<{ count: number }>('count');
 
 export class InstallerFields extends RadiantElement {
-	@query({ ref: 'item' }) first!: HTMLLIElement | null;
-	@query({ ref: 'item', all: true }) items!: HTMLLIElement[];
+	@ref('item') first!: HTMLLIElement | null;
+	@refAll('item') items!: HTMLLIElement[];
 	// @ts-expect-error a single-element query can be null
-	@query({ ref: 'item' }) bad1!: HTMLLIElement;
+	@ref('item') bad1!: HTMLLIElement;
 	// @ts-expect-error an array needs all: true
-	@query({ ref: 'item' }) bad2!: HTMLLIElement[];
+	@ref('item') bad2!: HTMLLIElement[];
 
 	@consumeContext(ctx) consumed?: ContextProvider<typeof ctx>;
 	@provideContext({ context: ctx, initialValue: { count: 0 } }) provided!: ContextProvider<typeof ctx>;
@@ -302,27 +303,22 @@ export class ControllerFields extends RadiantController {
 	@attr({ source: 'data-enabled', type: Boolean }) enabled = false;
 	@attr({ source: 'title' }) title?: string;
 	@attr({ source: 'data-success-message' }) successMessage = 'Thanks for subscribing.';
-	@query({ ref: 'form' }) form!: HTMLFormElement | null;
+	@ref() form!: HTMLFormElement | null;
 }
 
 /** decorators/query.mdx */
 
 export class UserProfile extends RadiantElement {
-	@query({ ref: 'avatar' }) avatar!: HTMLImageElement | null;
-	@query({ selector: 'button.action' }) submitButton!: HTMLButtonElement | null;
-	@query({ ref: 'item', all: true }) items!: HTMLElement[];
-	@query({ ref: 'stable-el', cache: true }) stableEl!: HTMLElement | null;
+	@query('[data-avatar]') avatar!: HTMLImageElement | null;
+	@query<HTMLButtonElement>('button.action') submitButton!: HTMLButtonElement | null;
 
 	focusAvatar() {
 		this.avatar?.focus();
 	}
 }
 
-declare const allMatches: boolean;
-
-export class QueryAllMustBeLiteral extends RadiantElement {
-	// @ts-expect-error all picks the overload, so it cannot be a boolean variable
-	@query({ ref: 'item', all: allMatches }) items!: HTMLElement[];
+export class ItemList extends RadiantElement {
+	@queryAll<HTMLLIElement>('li.item') items!: HTMLLIElement[];
 }
 
 /** decorators/event.mdx */
@@ -382,7 +378,7 @@ type CartItem = { price: number; quantity: number };
 
 export class SearchField extends RadiantElement {
 	@prop({ type: Boolean, defaultValue: false }) open!: boolean;
-	@query({ ref: 'input' }) input!: HTMLInputElement | null;
+	@ref() input!: HTMLInputElement | null;
 	@prop({ type: Array, defaultValue: [] }) items!: CartItem[];
 	@state total = 0;
 
@@ -607,10 +603,10 @@ export class DisclosureController extends RadiantController {
 export class NewsletterFormController extends RadiantController {
 	@attr({ source: 'data-success-message' }) successMessage = 'Thanks for subscribing.';
 	@state pending = false;
-	@query({ ref: 'form' }) form!: HTMLFormElement | null;
-	@query({ ref: 'email' }) emailInput!: HTMLInputElement | null;
-	@query({ ref: 'status' }) statusNode!: HTMLParagraphElement | null;
-	@query({ ref: 'submit' }) submitButton!: HTMLButtonElement | null;
+	@ref() form!: HTMLFormElement | null;
+	@ref('email') emailInput!: HTMLInputElement | null;
+	@ref('status') statusNode!: HTMLParagraphElement | null;
+	@ref('submit') submitButton!: HTMLButtonElement | null;
 
 	@onEvent({ ref: 'form', type: 'submit' })
 	async submit(event: Event) {

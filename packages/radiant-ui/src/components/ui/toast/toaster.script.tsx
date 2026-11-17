@@ -1,16 +1,6 @@
 import type { WithoutChildren } from '../../../lib/without-children';
 import type { JSX_PROPS } from '@ecopages/jsx';
-import {
-	RadiantElement,
-	bindTo,
-	bound,
-	customElement,
-	onEvent,
-	onUpdated,
-	prop,
-	query,
-	state,
-} from '@ecopages/radiant';
+import { RadiantElement, bindTo, bound, customElement, onEvent, onUpdated, prop, state, ref } from '@ecopages/radiant';
 import {
 	DEFAULT_TOAST_POSITION,
 	RUI_TOAST_DISMISS_EVENT,
@@ -155,7 +145,7 @@ export class RuiToaster extends RadiantElement {
 	@prop({ type: Number, defaultValue: TOAST_VIEWPORT_OFFSET }) offset: number;
 	@prop({ type: String, reflect: true, defaultValue: '' }) container: string;
 
-	@query({ ref: 'list' }) listTarget: HTMLOListElement | null;
+	@ref('list') listTarget: HTMLOListElement | null;
 
 	@state toasts: ToastRecord[] = [];
 

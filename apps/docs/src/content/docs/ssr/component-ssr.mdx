@@ -81,7 +81,7 @@ See [Hydration](/docs/ssr/hydration) and [JSX SSR](/docs/ssr/jsx-ssr).
 
 ## Minimal DOM queries during SSR
 
-Node SSR installs a lightweight DOM shim, not a full browser. Component code that runs while a host serializes — for example `this.querySelector('[data-ref]')`, `this.closest('rui-disclosure-group')`, or `@query` / `getRef(...)` — relies on that shim.
+Node SSR installs a lightweight DOM shim, not a full browser. Component code that runs while a host serializes — for example `this.querySelector('[data-ref]')`, `this.closest('rui-disclosure-group')`, or `@query` / `@ref` / `getRef(...)` — relies on that shim.
 
 **Supported:** tag, `#id`, `.class`, `[attr]`, `[attr="value"]`, descendant and child combinators, comma-separated lists.
 

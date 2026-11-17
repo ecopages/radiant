@@ -1,15 +1,5 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
-import {
-	RadiantElement,
-	bindTo,
-	bound,
-	customElement,
-	event,
-	onEvent,
-	onUpdated,
-	prop,
-	query,
-} from '@ecopages/radiant';
+import { RadiantElement, bindTo, bound, customElement, event, onEvent, onUpdated, prop, ref } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { createPopoverController } from '../../../controllers/popover-controller';
 import { createMenuTreeController } from '../../../controllers/menu-tree-controller';
@@ -89,8 +79,8 @@ export class RuiMenuButton extends RadiantElement {
 
 	@prop({ type: String, defaultValue: 'bottom-start' }) placement: RuiPlacement;
 
-	@query({ ref: 'trigger' }) triggerTarget: HTMLButtonElement | null;
-	@query({ ref: 'menu' }) menuTarget: HTMLElement | null;
+	@ref('trigger') triggerTarget: HTMLButtonElement | null;
+	@ref('menu') menuTarget: HTMLElement | null;
 
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiMenuButtonSelectDetail>;

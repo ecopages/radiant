@@ -5,7 +5,7 @@ import { RadiantElement } from '@ecopages/radiant/core/radiant-element';
 import { bound } from '@ecopages/radiant/decorators/bound';
 import { customElement } from '@ecopages/radiant/decorators/custom-element';
 import { onEvent } from '@ecopages/radiant/decorators/on-event';
-import { query } from '@ecopages/radiant/decorators/query';
+import { ref } from '@ecopages/radiant/decorators/ref';
 import { prop } from '@ecopages/radiant/decorators/prop';
 
 export type RadiantDropdownPlacement =
@@ -36,9 +36,9 @@ export type RadiantDropdownProps = {
 @customElement('radiant-dropdown')
 export class RadiantDropdown extends RadiantElement {
 	declare readonly [JSX_PROPS]?: RadiantDropdownProps;
-	@query({ ref: 'trigger' }) triggerTarget!: HTMLButtonElement | null;
-	@query({ ref: 'content' }) contentTarget!: HTMLElement | null;
-	@query({ ref: 'arrow' }) arrowTarget!: HTMLElement | null;
+	@ref('trigger') triggerTarget!: HTMLButtonElement | null;
+	@ref('content') contentTarget!: HTMLElement | null;
+	@ref('arrow') arrowTarget!: HTMLElement | null;
 
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) defaultOpen!: boolean;
 	@prop({ type: String, defaultValue: 'bottom-start', reflect: true }) placement!: RadiantDropdownPlacement;

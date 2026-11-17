@@ -4,10 +4,10 @@ import { resolveSwipeDirection } from '@ecopages/radiant-ui/helpers';
 
 @customElement('swipe-card-element')
 export class SwipeCardElement extends RadiantElement {
-	@query({ selector: '[data-swipe-card]' }) private card!: HTMLElement;
-	@query({ selector: '[data-dismiss]' }) private dismissButton!: HTMLElement;
-	@query({ selector: '[data-restore]' }) private restoreButton!: HTMLElement;
-	@query({ selector: '[data-status]' }) private status!: HTMLElement;
+	@query('[data-swipe-card]') private card!: HTMLElement;
+	@query('[data-dismiss]') private dismissButton!: HTMLElement;
+	@query('[data-restore]') private restoreButton!: HTMLElement;
+	@query('[data-status]') private status!: HTMLElement;
 
 	constructor() {
 		super();

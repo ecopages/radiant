@@ -3,7 +3,8 @@ import { state } from '@ecopages/radiant';
 import { RadiantElement } from '@ecopages/radiant/core/radiant-element';
 import { customElement } from '@ecopages/radiant/decorators/custom-element';
 import { onEvent } from '@ecopages/radiant/decorators/on-event';
-import { query } from '@ecopages/radiant/decorators/query';
+import { queryAll } from '@ecopages/radiant/decorators/query';
+import { refAll } from '@ecopages/radiant/decorators/ref';
 import { prop } from '@ecopages/radiant/decorators/prop';
 
 export type RadiantAccordionProps = {
@@ -23,9 +24,9 @@ export class RadiantAccordion extends RadiantElement {
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) multiple!: boolean;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) shouldAnimate!: boolean;
 	@state currentIndex!: number;
-	@query({ selector: 'details', all: true }) detailsTargets!: HTMLDetailsElement[];
-	@query({ selector: 'summary', all: true }) toggleTargets!: HTMLElement[];
-	@query({ ref: 'panel', all: true }) panelTargets!: HTMLElement[];
+	@queryAll('details') detailsTargets!: HTMLDetailsElement[];
+	@queryAll('summary') toggleTargets!: HTMLElement[];
+	@refAll('panel') panelTargets!: HTMLElement[];
 
 	private animations: DetailsAnimation[] = [];
 

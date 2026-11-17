@@ -166,11 +166,13 @@ Omit the `Bindings` generic unless the script actually uses `this.$`, `this.bind
 
 ## Query fields
 
-A `@query` field is `T | null`: a single-element query returns `null` until the view stamps the node, and under standard decorators a field typed without `| null` does not compile. An `all: true` field is `T[]`. Declare the field with the element type, bind it to a local and return early when it is missing; do not assert non-null at the use site. The package compiles with `strictPropertyInitialization` off (`tsconfig.app.json`), so the field needs no `!`. A query is uncached unless `cache: true`.
+A `@ref` or `@query` field is `T | null`: it returns `null` until the view stamps the node, and under standard decorators a field typed without `| null` does not compile. A `@refAll` or `@queryAll` field is `T[]`. Declare the field with the element type, bind it to a local and return early when it is missing; do not assert non-null at the use site. The package compiles with `strictPropertyInitialization` off (`tsconfig.app.json`), so the field needs no `!`. Every read looks the node up again, with no cache.
+
+`@ref('name')` reads a `data-ref` part the host owns: the nearest Element Host or attached Controller Host owns a part, so a nested host's same-named part is skipped. `@query(selector)` and `@queryAll(selector)` are unscoped and reach into nested hosts, which is what a host wants for a role or `data-*` target it composes from a child.
 
 ```ts
-@query({ ref: 'panel' }) panelTarget: HTMLElement | null;
-@query({ selector: 'input[type="radio"]', all: true }) radioTargets: HTMLInputElement[];
+@ref('panel') panelTarget: HTMLElement | null;
+@queryAll('input[type="radio"]') radioTargets: HTMLInputElement[];
 
 private setOpen(next: boolean): void {
 	const panel = this.panelTarget;

@@ -11,7 +11,7 @@ import { MeterContext, createRecorderConfig, paint, showResult, viewOf } from '.
  */
 @customElement('voice-memo-element')
 export class VoiceMemoElement extends RadiantElement {
-	@query({ selector: '[data-player]' }) private player!: HTMLAudioElement;
+	@query('[data-player]') private player!: HTMLAudioElement;
 
 	private readonly meter = new MeterContext();
 

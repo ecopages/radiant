@@ -50,6 +50,14 @@ _Avoid_: public export, generic helper bag, lifecycle utility
 A Reactive Host whose behavior attaches to existing authored DOM instead of defining a custom element.
 _Avoid_: custom element, tag contract, component class
 
+**Part**:
+A `data-ref` element owned by the nearest Element Host, once upgraded, or attached Controller Host root around it. A part that is itself a nested host belongs to the host around it.
+_Avoid_: ref (the decorator reads a part), slot, shadow part, target
+
+**Part scope**:
+The rule that an outer host reads only the Parts it owns, never the same-named Part of a nested host. `@ref`, `@refAll`, `getRef`, `@onEvent({ ref })` and `@bindTo({ ref })` follow it; `@query(selector)` and `@queryAll(selector)` do not, and are the explicit way into a nested host.
+_Avoid_: query scope, shadow boundary, ref cache
+
 **Attribute**:
 The markup-facing string channel on an element, used for serialized element state and HTML authoring.
 _Avoid_: property, reactive field, object input
@@ -137,6 +145,7 @@ _Avoid_: provider, selector field, local state copy
 - **Element Host** and **Controller Host** are the two host styles of a **Reactive Host**
 - A **Render-owning Element Host** is an **Element Host** that owns rendered output and the related lifecycle
 - A **Render-owning Element Host** participates in the **Render Lifecycle**
+- An **Element Host** or **Controller Host** owns its **Parts** under **Part scope**
 - A **Render-owning Element Host** can delegate its **Render Lifecycle** to a **Render Runtime**
 - **SSR** is an optional server capability layered onto some hosts, not part of the core **Render Lifecycle**
 - **Hydration** is core client behavior for a render-owning host when compatible existing DOM is present

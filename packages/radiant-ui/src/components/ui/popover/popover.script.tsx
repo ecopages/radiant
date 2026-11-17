@@ -1,5 +1,5 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
-import { RadiantElement, bound, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
+import { RadiantElement, bound, customElement, event, onEvent, onUpdated, prop, ref } from '@ecopages/radiant';
 import { isServer } from '@ecopages/radiant/is-server';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { uniqueId } from '@/lib/unique-id';
@@ -97,8 +97,8 @@ export class RuiPopover extends RadiantElement {
 	@prop({ type: String, defaultValue: '' }) anchor: string;
 	@prop({ type: String, defaultValue: 'default' }) variant: 'default' | 'listbox';
 
-	@query({ ref: 'surface' }) surfaceTarget: HTMLElement | null;
-	@query({ ref: 'host' }) hostTarget: HTMLElement | null;
+	@ref('surface') surfaceTarget: HTMLElement | null;
+	@ref('host') hostTarget: HTMLElement | null;
 
 	@event({ name: 'rui-open-change', bubbles: true, composed: true })
 	openChangeEvent: EventEmitter<RuiPopoverOpenChangeDetail>;
@@ -270,7 +270,7 @@ export class RuiPopoverTrigger extends RadiantElement {
 
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) open: boolean;
 
-	@query({ ref: 'root' }) rootTarget: HTMLElement | null;
+	@ref('root') rootTarget: HTMLElement | null;
 
 	private getPopover(): RuiPopover | null {
 		return this.querySelector('rui-popover');

@@ -66,7 +66,7 @@ When you override `render()`, Radiant renders into the attached host element ins
 
 In that mode, prefer ordinary JSX event bindings such as `on:click`.
 
-Reach for `@query(...)`, `@onEvent(...)`, `getRef(...)`, and `data-ref` when the controller is enhancing authored DOM, delegating across markup it does not own, or wiring listeners outside the rendered subtree.
+Reach for `@ref(...)`, `@query(...)`, `@onEvent(...)`, `getRef(...)`, and `data-ref` when the controller is enhancing authored DOM, delegating across markup it does not own, or wiring listeners outside the rendered subtree.
 
 Use this split:
 
@@ -112,19 +112,19 @@ export class DisclosureController extends RadiantController {
 
 ## Authored Form Example
 
-When the host markup already exists, let the controller read stable refs with `@query(...)` and bind behavior with `@onEvent(...)`.
+When the host markup already exists, let the controller read stable refs with `@ref(...)` and bind behavior with `@onEvent(...)`.
 
 ```ts
-import { RadiantController, attr, controller, onEvent, query, state } from '@ecopages/radiant';
+import { RadiantController, attr, controller, onEvent, state, ref } from '@ecopages/radiant';
 
 @controller('newsletter-form')
 export class NewsletterFormController extends RadiantController {
 	@attr({ source: 'data-success-message' }) successMessage = 'Thanks for subscribing.';
 	@state pending = false;
-	@query({ ref: 'form' }) form!: HTMLFormElement | null;
-	@query({ ref: 'email' }) emailInput!: HTMLInputElement | null;
-	@query({ ref: 'status' }) statusNode!: HTMLParagraphElement | null;
-	@query({ ref: 'submit' }) submitButton!: HTMLButtonElement | null;
+	@ref() form!: HTMLFormElement | null;
+	@ref('email') emailInput!: HTMLInputElement | null;
+	@ref('status') statusNode!: HTMLParagraphElement | null;
+	@ref('submit') submitButton!: HTMLButtonElement | null;
 
 	@onEvent({ ref: 'form', type: 'submit' })
 	async submit(event: Event) {
@@ -217,11 +217,11 @@ Prefer the focused registry subpath for `startControllers(...)` in setup modules
 
 `RadiantController` exposes `getRef(...)` for `data-ref` lookups when the controller is enhancing HTML it does not render itself.
 
-- `@query(...)` creates reusable decorator-backed accessors for authored DOM inside the host
+- `@ref(...)` and `@query(...)` create reusable decorator-backed accessors for authored DOM inside the host
 - `getRef('panel')` returns the first matching element or `null`
 - `getRef('item', true)` returns all matching elements, in document order
 
-`getRef`, `@query({ ref })`, `@onEvent({ ref })` and `@bindTo({ ref })` only see parts the controller's host owns. A part belongs to the nearest enclosing upgraded Element Host or attached Controller Host, so the parts of a nested Element Host or of a nested Controller Host (while attached) are not returned. The host element is never its own part. A part that is itself a nested host is returned. Use `@query({ selector })` to reach into a nested host on purpose.
+`getRef`, `@ref`, `@refAll`, `@onEvent({ ref })` and `@bindTo({ ref })` only see parts the controller's host owns. A part belongs to the nearest enclosing upgraded Element Host or attached Controller Host, so the parts of a nested Element Host or of a nested Controller Host (while attached) are not returned. The host element is never its own part. A part that is itself a nested host is returned. Use `@query(selector)` to reach into a nested host on purpose.
 
 ## Reactive Surface
 
@@ -280,7 +280,8 @@ These decorators are part of the `RadiantController` authoring model today:
 - `@controller(...)`
 - `@attr(...)`
 - `@prop(...)`
-- `@query(...)`
+- `@query(...)` and `@queryAll(...)`
+- `@ref(...)` and `@refAll(...)`
 - `@state`
 - `@signal`
 - `@bindTo(...)`
@@ -301,7 +302,7 @@ This remains tied to `RadiantElement` because it depends on custom-element APIs.
 
 For render-owned controller markup, prefer normal JSX bindings and direct event handlers.
 
-For authored DOM inside controllers, copy 1:1 field values with `@bindTo(...)`. Use `@query(...)` when you need a live element handle, and `getRef(...)` for one-off lookups.
+For authored DOM inside controllers, copy 1:1 field values with `@bindTo(...)`. Use `@ref(...)` or `@query(...)` when you need a live element handle, and `getRef(...)` for one-off lookups.
 
 ## Tooling And HMR
 
@@ -318,6 +319,7 @@ For the Vite and Ecopages opt-in and what a save does to live controllers, see [
 - [@controller](/docs/decorators/controller)
 - [Controller Tooling & HMR](/docs/tools/controller-tooling-hmr)
 - [@attr](/docs/decorators/attr)
+- [@ref](/docs/decorators/ref)
 - [@query](/docs/decorators/query)
 - [@bindTo](/docs/decorators/bind-to)
 - [Context](/docs/context/context)

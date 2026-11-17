@@ -36,9 +36,7 @@ Bare `@signal` (no parentheses) creates a host-owned signal with defaults.
 Under standard decorators the declared field type is the source of truth. Options that carry a value (`defaultValue`, `initial`, `transform`, `converter`, `type`, and `source` on `@signal`) must agree with it, and a mismatch is a compile error on the decorator. Prefer an initializer so TypeScript infers the type (`@prop({ type: Number }) count = 0`). Write the type for a string literal union, for a field with no initializer (`?`, or `!` when a decorator or a default supplies the value) and for fields a decorator installs.
 
 - A decorated field cannot be `declare` (TS1206) or `accessor`.
-- `@queryAll(selector)`: `T[]` of elements. `@query(selector)` follows the single-element rule below.
-- `@ref`: `T | null`; `@refAll`: `T[]`. A wrong field type does not compile.
-- `@query`: `T | null`, or `T[]` with `all: true` (`all` must be a literal). A single-element query is `null` when nothing matches, so guard it with `?.` or an early return; use `!` only where the host's own markup always renders the node.
+- `@query` and `@ref`: `T | null`. `@queryAll` and `@refAll`: `T[]`. A wrong field type does not compile. A single-element field is `null` when nothing matches, so guard it with `?.` or an early return; use `!` only where the host's own markup always renders the node.
 - `@prop` and `@attr`: the `type` constant must fit the field (`String` a `string`, `Number` a `number`, `Boolean` a `boolean`, `Array` an array, `Object` a non-array object; `null` and `undefined` always fit; a union of parsed types fits none). A parser owns the value type instead, so `type` is not checked against the field: `transform.fromAttribute` on `@prop`, `converter.fromAttribute` on `@attr`. Pass the parser inline or with `satisfies`.
 - `@attr` without `type` or a parser holds the raw string, so the field is `string | null | undefined` (a string literal union fits). A number or boolean field needs `type` or a parser.
 - `defaultValue: null` and a `defaultValue` next to a parser do not throw. Without a parser, a `defaultValue` that does not match `type` throws at class definition on `@prop` and when a host is constructed on `@attr`.
@@ -49,13 +47,13 @@ Under standard decorators the declared field type is the source of truth. Option
 - A library that exports a shared decorator (`export const count = prop({ type: Number })`) can emit declarations: `ValueFieldDecorator`, `BoundedFieldDecorator` and the host types they name are exported from `@ecopages/radiant`, and `ContextHostLike` from `@ecopages/radiant/context`.
 
 ```ts
-import { RadiantElement, customElement, prop, query } from '@ecopages/radiant';
+import { RadiantElement, customElement, prop, query, queryAll, ref, refAll } from '@ecopages/radiant';
 
 @customElement('search-box')
 export class SearchBox extends RadiantElement {
 	@prop({ type: Number }) limit = 10;
-	@query({ ref: 'input' }) input!: HTMLInputElement | null;
-	@query({ ref: 'hint', all: true }) hints!: HTMLElement[];
+	@ref() input!: HTMLInputElement | null;
+	@refAll('hint') hints!: HTMLElement[];
 
 	focusInput(): void {
 		this.input?.focus();
@@ -76,13 +74,12 @@ Avoid updating the same watched property inside its own `@onUpdated(...)` unless
 
 ## DOM queries
 
-- `@query(...)` — rendered descendants by `data-ref` or selector, on a `RadiantElement` or a `RadiantController`
-- `@query(selector)` and `@queryAll(selector)` — first match or `null`, and an array of every match; live and unscoped (they reach into nested hosts)
+- `@query(selector)` and `@queryAll(selector)` — first match or `null`, and an array of every match, on a `RadiantElement` or a `RadiantController`; read live with no cache, and unscoped (they reach into nested hosts)
 - `@ref(...)` / `@refAll(...)` — the `data-ref` parts this host owns, scoped so a nested host's same-named part is left out
 
-`@query` options: `ref` or `selector`; `all` for `T[]`; `cache` (default `false`: each read queries the DOM). Prefer `ref` over broad selectors. A `ref` lookup only sees parts the host owns (a nested Element Host's or attached Controller Host's same-named part is skipped); `selector` is unscoped. Field types and null-safe use: see [Field types](#field-types).
+Prefer `@ref` over a broad selector for the host's own markup. A part belongs to the nearest enclosing Element Host (once upgraded) or attached Controller Host, so a nested host's same-named part is skipped; a selector is unscoped. `@query(options)`, `cache` and `all: true` no longer exist. Field types and null-safe use: see [Field types](#field-types).
 
-`@ref()` reads `data-ref` named after the field (`menubarRoot` finds `menubar-root`, `listboxID` finds `listbox-id`); `@ref('l1234')` uses the name as written; `@ref({ required: true })` and `@ref('name', { required: true })` warn once in development when the part is missing after first connect. `@refAll` returns every owned part in document order. Both read live, are `null` / `[]` before connect, and cannot decorate a `#private` field under standard decorators. Prefer them over `@query({ ref })` for parts of the host's own markup; `@query(selector)` stays the way to reach into another host.
+`@ref()` reads `data-ref` named after the field (`menubarRoot` finds `menubar-root`, `listboxID` finds `listbox-id`); `@ref('l1234')` uses the name as written; `@ref({ required: true })` and `@ref('name', { required: true })` warn once in development when the part is missing after first connect. `@refAll` returns every owned part in document order. Both read live, are `null` / `[]` before connect, and cannot decorate a `#private` field under standard decorators. Prefer them over a broad selector for parts of the host's own markup; `@query(selector)` stays the way to reach into another host.
 
 Use `@query` for a live element handle (focus, observers, third-party APIs). If a `@query` exists only so you can copy a field into `.textContent` / `.setAttribute` / `toggleAttribute`, use `@bindTo` instead. If the host owns `render()` and the node is a leaf in that view, use `this.$`.
 

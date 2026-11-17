@@ -1,5 +1,5 @@
 import '@ecopages/radiant-ui/radio-group';
-import { attr, bindTo, controller, onEvent, query, RadiantController, state } from '@/utils/radiant-browser-runtime';
+import { attr, bindTo, controller, onEvent, RadiantController, state, queryAll } from '@/utils/radiant-browser-runtime';
 import { ensureDocsControllersStarted } from '@/utils/start-docs-controllers';
 
 @controller('controller-dom-flow-visualizer')
@@ -38,7 +38,7 @@ export class ControllerDomFlowVisualizer extends RadiantController {
 	@state
 	flowDescriptionText = '';
 
-	@query({ selector: '[data-ref]', all: true }) refs!: HTMLElement[];
+	@queryAll('[data-ref]') refs!: HTMLElement[];
 
 	override connect(): void {
 		super.connect();

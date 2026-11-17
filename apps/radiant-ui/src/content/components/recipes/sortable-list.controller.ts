@@ -10,8 +10,8 @@ import { reorder } from '@ecopages/radiant-ui/helpers';
  */
 @controller('sortable-list')
 export class SortableListController extends RadiantController {
-	@query({ selector: 'ul' }) private list!: HTMLElement;
-	@query({ selector: '[data-status]' }) private status!: HTMLElement;
+	@query('ul') private list!: HTMLElement;
+	@query('[data-status]') private status!: HTMLElement;
 
 	private items: HTMLElement[] = [];
 

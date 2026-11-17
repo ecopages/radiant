@@ -14,7 +14,7 @@ import { MeterContext, createRecorderConfig, showResult, viewOf, type VoiceMemoV
 export class VoiceMemoApp extends RadiantElement {
 	@state view: VoiceMemoView = viewOf({ status: 'idle', duration: 0, mimeType: null, level: 0, error: null });
 
-	@query({ selector: '[data-meter]' }) private meterNode!: HTMLElement;
+	@query('[data-meter]') private meterNode!: HTMLElement;
 
 	private readonly meter = new MeterContext();
 
