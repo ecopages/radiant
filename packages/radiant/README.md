@@ -12,15 +12,15 @@ For the full docs site, see [radiant.ecopages.app](https://radiant.ecopages.app/
 
 `@ecopages/radiant` is the core package. `@ecopages/jsx` provides TSX rendering, and `@ecopages/signals` provides the renderer-agnostic reactive layer underneath Radiant.
 
-`@ecopages/radiant` depends on `@ecopages/signals` directly and declares `@ecopages/jsx` as a peer dependency. Installing radiant brings signals transitively, which also satisfies jsx's peer dependency on signals.
+`@ecopages/radiant` declares `@ecopages/jsx` and `@ecopages/signals` as peer dependencies. Radiant and JSX must share one Signals instance so bindings update across both packages.
 
-For the standard Radiant setup, install radiant and jsx:
+For the standard Radiant setup, install all three packages:
 
 ```sh
-bun add @ecopages/radiant @ecopages/jsx
+bun add @ecopages/radiant @ecopages/jsx @ecopages/signals
 ```
 
-Application code does not need to import JSX helpers or Signals primitives directly for every feature, but the current published Radiant surface expects `@ecopages/jsx` to be installed alongside it. Install `@ecopages/signals` explicitly only when you want the standalone reactive layer outside Radiant, or when using `@ecopages/jsx` without radiant.
+Application code does not need to import JSX helpers or Signals primitives directly for every feature, but both peer dependencies must be installed alongside Radiant.
 
 ## RadiantElement Mental Model
 

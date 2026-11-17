@@ -33,9 +33,9 @@ function highlightedCodeFigure(html: string): string {
 }
 
 const INSTALL_TABS = [
-	{ id: 'npm', label: 'npm', code: 'npm install @ecopages/radiant @ecopages/jsx' },
-	{ id: 'pnpm', label: 'pnpm', code: 'pnpm add @ecopages/radiant @ecopages/jsx' },
-	{ id: 'bun', label: 'bun', code: 'bun add @ecopages/radiant @ecopages/jsx' },
+	{ id: 'npm', label: 'npm', code: 'npm install @ecopages/radiant @ecopages/jsx @ecopages/signals' },
+	{ id: 'pnpm', label: 'pnpm', code: 'pnpm add @ecopages/radiant @ecopages/jsx @ecopages/signals' },
+	{ id: 'bun', label: 'bun', code: 'bun add @ecopages/radiant @ecopages/jsx @ecopages/signals' },
 ];
 
 const COUNTER_EXAMPLE_TABS = [
@@ -66,7 +66,7 @@ const EXPLORE_ARTICLES: HomeFeedArticleData[] = [
 		label: 'Get Started',
 		title: 'Learn the model',
 		description:
-			'See how RadiantElement and RadiantController share one reactive host surface. Signals comes with Radiant; JSX is the TSX layer.',
+			'See how RadiantElement and RadiantController share one reactive host surface, with Signals for reactivity and JSX for TSX rendering.',
 	},
 	{
 		href: '/docs/components/radiant-element',
@@ -87,12 +87,12 @@ const EXPLORE_ARTICLES: HomeFeedArticleData[] = [
 		label: 'Packages',
 		title: 'Understand the package layers',
 		description:
-			'Signals ships with radiant; jsx installs alongside radiant for TSX. Both sit on the shared reactive host model.',
+			'Install Radiant with its JSX and Signals peers. Radiant and JSX share one Signals instance for reactivity.',
 	},
 ];
 
 const PATH_STEPS = [
-	'Read the overview, then install `@ecopages/radiant` and `@ecopages/jsx` for the standard setup.',
+	'Read the overview, then install `@ecopages/radiant`, `@ecopages/jsx`, and `@ecopages/signals` for the standard setup.',
 	'Start with RadiantElement when you own the custom-element contract, then learn when RadiantController is a better fit for authored DOM.',
 	'Learn how signals, JSX bindings, and host decorators fit together.',
 	'Use the examples to see element-owned and controller-owned flows assembled end to end.',
@@ -108,7 +108,7 @@ const PATH_CARDS: HomePathCardData[] = [
 	{
 		href: '/docs/getting-started/installation',
 		title: 'Install the ecosystem',
-		description: 'Install radiant and jsx for the standard setup. Signals comes with radiant automatically.',
+		description: 'Install Radiant with its JSX and Signals peer dependencies for the standard setup.',
 	},
 	{
 		href: '/docs/context/context',
@@ -356,8 +356,7 @@ const HomeHero = () => (
 					<RuiHeadingDescription>
 						Radiant gives you one reactive host model for both custom elements and DOM-attached controllers.
 						Use RadiantElement when the host owns its contract, or RadiantController when the HTML should
-						stay authored outside the class. Signals ships with Radiant. JSX stays the optional companion
-						for TSX.
+						stay authored outside the class. Install Radiant with its JSX and Signals peer dependencies.
 					</RuiHeadingDescription>
 				</RuiHeading>
 				<CodeTabs

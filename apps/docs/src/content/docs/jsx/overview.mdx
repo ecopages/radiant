@@ -56,16 +56,16 @@ Choose the narrowest import path for the environment you are writing in. Prefer 
 <CodeTabs
   label="Package managers"
   tabs={[
-	{ id: 'npm', label: 'npm', code: 'npm install @ecopages/radiant @ecopages/jsx' },
-	{ id: 'pnpm', label: 'pnpm', code: 'pnpm add @ecopages/radiant @ecopages/jsx' },
-	{ id: 'bun', label: 'bun', code: 'bun add @ecopages/radiant @ecopages/jsx' },
+	{ id: 'npm', label: 'npm', code: 'npm install @ecopages/radiant @ecopages/jsx @ecopages/signals' },
+	{ id: 'pnpm', label: 'pnpm', code: 'pnpm add @ecopages/radiant @ecopages/jsx @ecopages/signals' },
+	{ id: 'bun', label: 'bun', code: 'bun add @ecopages/radiant @ecopages/jsx @ecopages/signals' },
   ]}
   copyLabel="Copy install command"
   defaultSelectedKey="npm"
 	
 />
 
-`@ecopages/radiant` depends on `@ecopages/signals` directly, so installing it brings signals automatically. `@ecopages/jsx` declares `@ecopages/signals` as a peer dependency; install signals explicitly when using `@ecopages/jsx` standalone with signals, such as `state` and `computed` bound in JSX (see [Signals](/docs/jsx/rendering#signals)) or `mapSubscribable(...)`.
+`@ecopages/radiant` and `@ecopages/jsx` both declare `@ecopages/signals` as a peer dependency. Install Signals alongside them and ensure both packages resolve the same instance for shared reactivity. When using JSX without Radiant, install JSX and Signals together.
 
 ```json
 {
