@@ -215,7 +215,7 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 		const rawInitial = initialHostValue ?? resolveReactiveDefault(options);
 		const initialValue = (transform?.fromProperty ? transform.fromProperty(rawInitial) : rawInitial) as T;
 
-		const signal = this.reactiveHost.createReactiveMember(propertyName, initialValue);
+		const signal = this.reactiveHost.adoptReactiveMember(propertyName, initialValue);
 
 		this.reactiveHost.defineReactiveAccessor(propertyName, { signal, fromProperty: transform?.fromProperty });
 

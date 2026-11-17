@@ -6,6 +6,7 @@ import {
 } from '../../core/reactive-prop-core';
 import type { ReactiveHostLike } from '../../core/reactive-host';
 import { attributeNameForProp, registerReactivePropDefinition } from '../../core/reactive-prop-metadata';
+import { isControllerHost } from '../../helpers/resolve-host-element';
 import { registerLegacyInstanceInitializer, registerLegacyPostConstructionInitializer } from './instance-initializers';
 import { bootstrapReactiveMember } from './member-bootstrap';
 import type { ReactivePropHost } from '../standard/reactive-prop';
@@ -56,6 +57,14 @@ export function reactiveProp<T = unknown>(propOptions: ReactivePropertyOptions<T
 			bootstrapReactiveMember(element as unknown as ReactiveHostLike, propertyName, bootstrapValue);
 		});
 
+		/**
+		 * @remarks
+		 * A Controller Host has no construction-end hook, so this runs at its first connect and cannot tell a
+		 * write made after `new` from a field initializer: both are an own data property. A defined own value that
+		 * differs from the decorator default is replayed through the accessor once it exists, matching the standard
+		 * decorators, where it is an ordinary write. As a consequence a legacy controller field initializer that
+		 * differs from an explicit `defaultValue` wins over it, unlike on an Element Host.
+		 */
 		registerLegacyPostConstructionInitializer(target, (element, phase) => {
 			const host = element as ReactivePropHost<T> & Record<PropertyKey, unknown>;
 			const initializerValue = element[propertyName as keyof typeof element] as T | undefined;
@@ -81,6 +90,16 @@ export function reactiveProp<T = unknown>(propOptions: ReactivePropertyOptions<T
 					defaultValue: resolvedDefaultValue,
 				}),
 			});
+
+			if (
+				phase === 'connect' &&
+				!wasAssigned &&
+				isControllerHost(element) &&
+				ownStagingValue !== undefined &&
+				ownStagingValue !== resolvedDefaultValue
+			) {
+				Reflect.set(element, propertyName, ownStagingValue);
+			}
 		});
 	};
 }

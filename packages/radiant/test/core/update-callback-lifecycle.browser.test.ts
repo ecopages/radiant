@@ -468,3 +468,61 @@ describe('a controller @prop on first connect without a write', () => {
 		controller.disconnect();
 	});
 });
+
+describe('a controller @prop written before connect', () => {
+	class WrittenController extends RadiantController {
+		@prop({ type: String, defaultValue: 'default' }) label!: string;
+		runs: string[][] = [];
+		seen: string[] = [];
+
+		@onUpdated('label')
+		onLabel(changed: ReadonlySet<string>): void {
+			this.runs.push([...changed]);
+		}
+	}
+
+	test('keeps the written value on connect and reports it once', async () => {
+		const controller = new WrittenController(document.createElement('div'));
+		controller.registerUpdateCallback('label', () => controller.seen.push(controller.label));
+		controller.label = 'written';
+		controller.connect();
+		await new Promise((resolve) => setTimeout(resolve));
+
+		expect(controller.label).toBe('written');
+		expect(controller.seen).toEqual(['written']);
+		expect(controller.runs).toEqual([['label']]);
+		controller.disconnect();
+	});
+
+	test('leaves a binding taken before connect following the field', () => {
+		const controller = new WrittenController(document.createElement('div'));
+		const binding = controller.$.label;
+		controller.connect();
+		controller.label = 'after';
+
+		expect(binding.getValue()).toBe('after');
+		controller.disconnect();
+	});
+
+	test('wins over a value the host held before the controller was constructed', () => {
+		const host = document.createElement('div') as HTMLElement & { label?: string };
+		host.label = 'from host';
+		const controller = new WrittenController(host);
+		controller.label = 'written';
+		controller.connect();
+
+		expect(controller.label).toBe('written');
+		expect(host.label).toBe('written');
+		controller.disconnect();
+	});
+
+	test('leaves a host-provided value in place when nothing was written', () => {
+		const host = document.createElement('div') as HTMLElement & { label?: string };
+		host.label = 'from host';
+		const controller = new WrittenController(host);
+		controller.connect();
+
+		expect(controller.label).toBe('from host');
+		controller.disconnect();
+	});
+});

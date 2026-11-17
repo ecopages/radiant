@@ -574,23 +574,26 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	}
 
 	/**
-	 * Defines a controller- or element-local reactive field.
+	 * Returns the member under `propertyName`, creating it when absent.
 	 *
-	 * @remarks A member bootstrapped earlier (legacy decorators register it before
-	 * class fields run) adopts `initialValue` as initialization: while members are
-	 * unobserved, the adoption is not reported to the update cycle or synchronous
-	 * callbacks such as `@bindTo`.
+	 * @remarks A member bootstrapped earlier (legacy decorators register it before class fields run) is adopted
+	 * rather than replaced, so bindings taken from it keep following the field, and `initialValue` becomes its
+	 * initialization: while members are unobserved, the adoption is not reported to the update cycle or synchronous
+	 * callbacks such as `@bindTo`. An `undefined` `initialValue` leaves an adopted member as it is.
 	 */
-	public createReactiveField<T>(propertyName: string, initialValue: T, options: ReactiveFieldOptions = {}): void {
+	public adoptReactiveMember<T>(propertyName: string, initialValue: T): ReactiveState<T> {
 		const existing = this.getWritableMember<T>(propertyName);
-		const signal = existing ?? this.createReactiveMember(propertyName, initialValue);
 
-		if (existing && initialValue !== undefined) {
+		if (!existing) {
+			return this.createReactiveMember(propertyName, initialValue);
+		}
+
+		if (initialValue !== undefined) {
 			const wasInitializing = this.initializingReactiveFields.has(propertyName);
 			this.initializingReactiveFields.add(propertyName);
 
 			try {
-				signal.set(initialValue);
+				existing.set(initialValue);
 			} finally {
 				if (!wasInitializing) {
 					this.initializingReactiveFields.delete(propertyName);
@@ -598,9 +601,19 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 			}
 
 			if (!this.observing) {
-				this.memberSnapshots.set(propertyName, signal.get());
+				this.memberSnapshots.set(propertyName, existing.get());
 			}
 		}
+
+		return existing;
+	}
+
+	/**
+	 * Defines a controller- or element-local reactive field, adopting a member bootstrapped earlier as
+	 * {@link adoptReactiveMember} does.
+	 */
+	public createReactiveField<T>(propertyName: string, initialValue: T, options: ReactiveFieldOptions = {}): void {
+		const signal = this.adoptReactiveMember(propertyName, initialValue);
 
 		this.defineReactiveAccessor(propertyName, { signal });
 
