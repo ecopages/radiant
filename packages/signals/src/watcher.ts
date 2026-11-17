@@ -36,8 +36,9 @@ export class Watcher {
 	/**
 	 * Stops watching the provided signals.
 	 *
-	 * Removing the last watched signal also clears the pending set and resets the
-	 * notification latch.
+	 * Removing the last watched signal also clears the pending set. The
+	 * notification latch resets whenever nothing is left pending, so a later
+	 * change to a signal that is still watched notifies again.
 	 *
 	 * @remarks
 	 * Release is not interrupted by a throwing `unwatched` hook: every signal is
@@ -63,6 +64,9 @@ export class Watcher {
 
 		if (this.signals.size === 0) {
 			this.pendingSignals.clear();
+		}
+
+		if (this.pendingSignals.size === 0) {
 			this.notified = false;
 		}
 

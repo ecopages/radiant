@@ -366,6 +366,31 @@ describe('Watcher', () => {
 			expect(second.getWatcherCount()).toBe(0);
 		});
 
+		test('re-arms the watcher when the signals a hook invalidated are released and nothing is pending', () => {
+			const notifications: string[] = [];
+			const watcher = new subtle.Watcher(() => {
+				notifications.push('notified');
+			});
+			const first: State<number> = new State(0, {
+				[subtle.unwatched]() {
+					second.set(1);
+				},
+			});
+			const second = new State(0);
+			const kept = new State(0);
+
+			watcher.watch(first, second, kept);
+			watcher.unwatch(first, second);
+
+			expect(notifications).toEqual(['notified']);
+			expect(watcher.getPending()).toEqual([]);
+
+			kept.set(1);
+
+			expect(notifications).toEqual(['notified', 'notified']);
+			expect(watcher.getPending()).toEqual([kept]);
+		});
+
 		test('a hook that writes a signal listed before it does not notify the watcher', () => {
 			const notifications: string[] = [];
 			const watcher = new subtle.Watcher(() => {
