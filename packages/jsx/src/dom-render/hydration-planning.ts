@@ -12,6 +12,7 @@ import {
 import { CHILD_BINDING_END_PREFIX, CHILD_BINDING_START_PREFIX } from './constants.ts';
 import { materializeIterableChildren } from '../hydration/iterable-snapshot.ts';
 import type { ChildTemplatePart } from './types.ts';
+import { isSkippedFunction } from '../warnings/dev-warnings.ts';
 
 /** Mapping between a compiled child binding and the concrete node slice found in hydrated DOM. */
 export type HydratedChildRange = {
@@ -282,7 +283,7 @@ function isEmptyRenderableValue(value: unknown): boolean {
 export function countHydratedRangeNodes(value: unknown): number {
 	const resolvedValue = resolveReactiveSnapshot(unwrapKeyedValue(value));
 
-	if (resolvedValue == null || typeof resolvedValue === 'boolean') {
+	if (resolvedValue == null || typeof resolvedValue === 'boolean' || isSkippedFunction(resolvedValue, 'a child')) {
 		return 0;
 	}
 
@@ -333,5 +334,6 @@ function getHydratedNodeContribution(node: Node | undefined): number {
 }
 
 function resolveHydratedRangeValue(value: unknown): unknown {
-	return unwrapKeyedValue(resolveReactiveSnapshot(unwrapKeyedValue(value)));
+	const resolved = unwrapKeyedValue(resolveReactiveSnapshot(unwrapKeyedValue(value)));
+	return isSkippedFunction(resolved, 'a child') ? undefined : resolved;
 }

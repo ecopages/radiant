@@ -136,12 +136,11 @@ describe('ReactiveHost member state', () => {
 			updateCount++;
 		});
 
-		const previous = element.getReactiveMember('count');
-		expect(previous).toBeDefined();
+		const previous = element.createReactiveMember('count', 5);
 
 		const next = element.createReactiveMember('count', 10);
 		updateCount = 0;
-		previous!.set(99);
+		previous.set(99);
 		expect(updateCount).toBe(0);
 
 		next.set(11);

@@ -22,7 +22,7 @@ import { RenderRuntime, type RenderRuntimeHost } from './render-runtime';
 import type { ForeignSlottedProjector } from './slotted-content';
 import { UpdateCycle } from './update-cycle';
 import { REACTIVE_HOST, ReactiveHost, type ReactiveHostInternals } from './reactive-host';
-import type { ReactiveState } from './reactivity-contract';
+import type { ReactiveState, ReadonlyReactiveState } from './reactivity-contract';
 import { applyHostAttributes } from './host-attributes';
 import { runSsrPreparationCallbacks } from './ssr-preparation';
 import { isRadiantHydratorInstalled } from './radiant-hydrator-state';
@@ -145,12 +145,12 @@ export interface IRadiantElement<Bindings extends object = {}> {
 	/**
 	 * Registers an externally-owned reactive member state (used by `signal()`).
 	 */
-	registerReactiveMember<T>(propertyName: string, signal: ReactiveState<T>): void;
+	registerReactiveMember<T>(propertyName: string, signal: ReadonlyReactiveState<T>): void;
 
 	/**
 	 * Returns the member state registered under `propertyName`, if any.
 	 */
-	getReactiveMember<T = unknown>(propertyName: string): ReactiveState<T> | undefined;
+	getReactiveMember<T = unknown>(propertyName: string): ReadonlyReactiveState<T> | undefined;
 
 	/**
 	 * Renders a trusted HTML template string into the specified target element.
@@ -636,11 +636,11 @@ export class RadiantElement<Bindings extends object = {}>
 		return this.reactiveHost.createReactiveMember(propertyName, initialValue);
 	}
 
-	public registerReactiveMember<T>(propertyName: string, signal: ReactiveState<T>): void {
+	public registerReactiveMember<T>(propertyName: string, signal: ReadonlyReactiveState<T>): void {
 		this.reactiveHost.registerReactiveMember(propertyName, signal);
 	}
 
-	public getReactiveMember<T = unknown>(propertyName: string): ReactiveState<T> | undefined {
+	public getReactiveMember<T = unknown>(propertyName: string): ReadonlyReactiveState<T> | undefined {
 		return this.reactiveHost.getReactiveMember(propertyName);
 	}
 
@@ -737,7 +737,7 @@ export class RadiantElement<Bindings extends object = {}>
 			return this.renderRuntime;
 		}
 
-		this.renderRuntime = new RenderRuntime(this as RenderRuntimeHost);
+		this.renderRuntime = new RenderRuntime(this as RenderRuntimeHost, this.reactiveHost.renderWarnings);
 		return this.renderRuntime;
 	}
 }

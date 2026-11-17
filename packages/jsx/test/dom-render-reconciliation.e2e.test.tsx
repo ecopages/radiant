@@ -473,6 +473,201 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(container.querySelector('demo-card')?.className).toBe('card');
 	});
 
+	test('a function in a native child or attribute is skipped with a warning; events and custom-element properties keep it', async () => {
+		const [{ jsxDEV, resetRuntimeWarningsForTests, setDevWarningsEnabled }, { createRoot }] = await Promise.all([
+			loadJsxDevRuntime(),
+			loadJsxModule(),
+		]);
+		const container = document.createElement('div');
+		const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+		const fn = () => 'secret source';
+		const onClick = vi.fn();
+
+		resetRuntimeWarningsForTests();
+		setDevWarningsEnabled(true);
+
+		try {
+			createRoot(container).render(
+				jsxDEV('div', {
+					children: [
+						jsxDEV('p', {
+							title: fn,
+							'attr:data-a': fn,
+							'bool:hidden': fn,
+							style: fn,
+							children: [fn, 'kept'],
+						}),
+						jsxDEV('button', { 'on:click': onClick, children: 'go' }),
+						jsxDEV('b', { style: { color: fn, marginTop: '4px' } }),
+						jsxDEV(booleanPropertyTagName, { enabled: fn }),
+					],
+				}),
+			);
+
+			const paragraph = container.querySelector('p');
+			expect(paragraph?.textContent).toBe('kept');
+			expect(paragraph?.getAttributeNames()).toEqual([]);
+			expect(paragraph?.hasAttribute('hidden')).toBe(false);
+			expect(container.querySelector('b')?.getAttribute('style')).toBe('margin-top: 4px');
+			expect(container.innerHTML).not.toContain('secret');
+			expect((container.querySelector(booleanPropertyTagName) as BooleanPropertyElement).enabled).toBe(fn);
+
+			container.querySelector('button')?.click();
+			expect(onClick).toHaveBeenCalledTimes(1);
+
+			expect(warnSpy.mock.calls.map((call) => String(call[0]))).toEqual([
+				expect.stringContaining('Skipped a function in <p title>'),
+				expect.stringContaining('Skipped a function in <p attr:data-a>'),
+				expect.stringContaining('Skipped a function in <p bool:hidden>'),
+				expect.stringContaining('Skipped a function in <p style>'),
+				expect.stringContaining('Skipped a function in child of <p>'),
+				expect.stringContaining('Skipped a function in style value color'),
+			]);
+		} finally {
+			resetRuntimeWarningsForTests();
+			setDevWarningsEnabled(undefined);
+			warnSpy.mockRestore();
+		}
+	});
+
+	test('a function that a subscribable resolves to renders as nothing and the next value takes over', async () => {
+		const [{ createSubscribableJsxValue, jsxs }, { createRoot }] = await Promise.all([
+			loadJsxRuntime(),
+			loadJsxModule(),
+		]);
+		const container = document.createElement('div');
+		const fn = () => 'secret source';
+		let value: unknown = 'one';
+		let styleValue: unknown = { top: '1px' };
+		const subscribers = new Map<(value: unknown) => void, () => unknown>();
+		const bound = (read: () => unknown) =>
+			createSubscribableJsxValue({
+				getValue: () => read() as never,
+				subscribe: (notify) => {
+					subscribers.set(notify as (value: unknown) => void, read);
+					return () => subscribers.delete(notify as (value: unknown) => void);
+				},
+			});
+		const set = async (next: unknown, nextStyle: unknown) => {
+			value = next;
+			styleValue = nextStyle;
+			for (const [notify, read] of subscribers) notify(read());
+			await Promise.resolve();
+		};
+		const readValue = () => value;
+
+		createRoot(container).render(
+			jsxs('p', {
+				title: bound(readValue),
+				style: bound(() => styleValue),
+				children: ['Before', bound(readValue), 'After'],
+			}),
+		);
+		const paragraph = container.querySelector('p');
+		expect(paragraph?.textContent).toBe('BeforeoneAfter');
+		expect(paragraph?.getAttribute('title')).toBe('one');
+		expect(paragraph?.getAttribute('style')).toBe('top: 1px');
+
+		await set(fn, { color: fn, top: '2px' });
+		expect(container.innerHTML).not.toContain('secret');
+		expect(paragraph?.textContent).toBe('BeforeAfter');
+		expect(paragraph?.hasAttribute('title')).toBe(false);
+		expect(paragraph?.getAttribute('style')).toBe('top: 2px');
+
+		await set('two', { top: '3px' });
+		expect(paragraph?.textContent).toBe('BeforetwoAfter');
+		expect(paragraph?.getAttribute('title')).toBe('two');
+		expect(paragraph?.getAttribute('style')).toBe('top: 3px');
+	});
+
+	test('a textarea whose subscribable child resolves to a function shows no source', async () => {
+		const [{ createSubscribableJsxValue, jsx }, { createRoot }] = await Promise.all([
+			loadJsxRuntime(),
+			loadJsxModule(),
+		]);
+		const container = document.createElement('div');
+		const fn = () => 'secret source';
+		let value: unknown = 'one';
+		const subscribers = new Set<(value: unknown) => void>();
+		const bound = createSubscribableJsxValue({
+			getValue: () => value as never,
+			subscribe: (notify) => {
+				subscribers.add(notify as (value: unknown) => void);
+				return () => subscribers.delete(notify as (value: unknown) => void);
+			},
+		});
+
+		createRoot(container).render(jsx('textarea', { children: bound }));
+		const textarea = container.querySelector('textarea') as HTMLTextAreaElement;
+		expect(textarea.value).toBe('one');
+
+		value = fn;
+		for (const subscriber of subscribers) subscriber(value);
+		await Promise.resolve();
+
+		expect(textarea.value).toBe('');
+		expect(textarea.textContent).toBe('');
+	});
+
+	test('server light DOM renders a function that a subscribable resolves to as no node', async () => {
+		const [{ createSubscribableJsxValue }, { renderServerLightDom }] = await Promise.all([
+			loadJsxRuntime(),
+			loadModule<typeof import('../src/server.ts')>('../src/server.ts'),
+		]);
+		const fn = () => 'secret source';
+		const bound = createSubscribableJsxValue({ getValue: () => fn as never, subscribe: () => () => undefined });
+
+		expect(renderServerLightDom(['a', bound, 'b'] as never, document).map((node) => node.textContent)).toEqual([
+			'a',
+			'b',
+		]);
+	});
+
+	test('hydration adopts the server elements around a function child that rendered no node', async () => {
+		const [{ createSubscribableJsxValue, jsx, jsxs }, { createRoot }] = await Promise.all([
+			loadJsxRuntime(),
+			loadJsxModule(),
+		]);
+		const container = document.createElement('div');
+		const fn = () => 'secret source';
+		const bound = () =>
+			createSubscribableJsxValue({ getValue: () => fn as never, subscribe: () => () => undefined });
+
+		container.innerHTML = '<div data-radiant-jsx-bind-0="attr:title" title="t"><b>y</b><i>z</i></div>';
+		const bold = container.querySelector('b');
+		const italic = container.querySelector('i');
+		createRoot(container).hydrate(
+			jsxs('div', {
+				title: 't',
+				children: [bound(), jsx('b', { children: 'y' }), bound(), jsx('i', { children: 'z' })],
+			}),
+		);
+
+		expect(container.querySelector('b')).toBe(bold);
+		expect(container.querySelector('i')).toBe(italic);
+		expect(container.querySelector('div')?.textContent).toBe('yz');
+	});
+
+	test('hydrates server HTML that left a function child and attribute out', async () => {
+		const [{ createSubscribableJsxValue, jsxs }, { createRoot }] = await Promise.all([
+			loadJsxRuntime(),
+			loadJsxModule(),
+		]);
+		const container = document.createElement('div');
+		const fn = () => 'secret source';
+		const bound = () =>
+			createSubscribableJsxValue({ getValue: () => fn as never, subscribe: () => () => undefined });
+
+		container.innerHTML = '<p data-radiant-jsx-bind-0="attr:title">BeforeAfter</p>';
+		const paragraph = container.querySelector('p');
+		createRoot(container).hydrate(jsxs('p', { title: bound(), children: ['Before', bound(), 'After'] }));
+
+		expect(container.querySelector('p')).toBe(paragraph);
+		expect(container.innerHTML).not.toContain('secret');
+		expect(paragraph?.textContent).toBe('BeforeAfter');
+		expect(paragraph?.hasAttribute('title')).toBe(false);
+	});
+
 	test('hydrates a fragment with a conditional hole and keeps its sibling when the hole fills', async () => {
 		const [{ Fragment, jsx, jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');
