@@ -173,15 +173,6 @@ async function playing(harness: Harness): Promise<void> {
 	await harness.until((state) => state.status === 'playing');
 }
 
-/**
- * Waits until an emptied element reports `idle`.
- *
- * @remarks `removeAttribute('src')` then `load()` fires `emptied` while `networkState` is still `NETWORK_NO_SOURCE`
- * and the element moves to `NETWORK_EMPTY` afterwards with no event, so nothing signals the settled state.
- */
-const emptiedSettled = (harness: Harness) =>
-	vi.waitFor(() => expect(harness.controller.getState().status).toBe('idle'));
-
 function deferred<T>() {
 	let resolve!: (value: T) => void;
 	let reject!: (reason: unknown) => void;
@@ -390,7 +381,10 @@ describe('MediaController attach and state', () => {
 		stub(media, 'networkState', 2);
 		expect(status()).toBe('loading');
 		stub(media, 'networkState', 3);
+		expect(status()).toBe('idle');
+		media.setAttribute('src', 'blob:pending');
 		expect(status()).toBe('loading');
+		media.removeAttribute('src');
 
 		stub(media, 'networkState', 2);
 		stub(media, 'readyState', 1);
@@ -416,7 +410,16 @@ describe('MediaController attach and state', () => {
 		stub(media, 'ended', true);
 		stub(media, 'readyState', 4);
 		expect(status()).toBe('ended');
-		expect(harness.statuses()).toEqual(['idle', 'loading', 'ready', 'playing', 'loading', 'ended']);
+		expect(harness.statuses()).toEqual([
+			'idle',
+			'loading',
+			'idle',
+			'loading',
+			'ready',
+			'playing',
+			'loading',
+			'ended',
+		]);
 	});
 
 	it('reports metadata-only media as seekable with an unknown duration clamped at zero', async () => {
@@ -631,9 +634,10 @@ describe('MediaController progress and the frame loop', () => {
 		const harness = setup();
 		await ready(harness);
 		await playing(harness);
+		const emptied = once(harness.media, 'emptied');
 		harness.media.removeAttribute('src');
 		harness.media.load();
-		await emptiedSettled(harness);
+		await emptied;
 		await frames(2);
 		const count = harness.progress.length;
 		await frames(5);
@@ -730,7 +734,6 @@ describe('MediaController destroy', () => {
 
 		expect(harness.media.hasAttribute('src')).toBe(false);
 		expect(released).toEqual([`${url}#resolved`]);
-		await vi.waitFor(() => expect(harness.media.networkState).toBe(HTMLMediaElement.NETWORK_EMPTY));
 	});
 });
 
@@ -1768,6 +1771,18 @@ describe('MediaController source handling', () => {
 		expect(writes).toEqual([]);
 	});
 
+	it('reports idle on the emptied event itself when the host removes the source, not loading', async () => {
+		const harness = setup();
+		await ready(harness);
+		const emptied = once(harness.media, 'emptied');
+
+		harness.media.removeAttribute('src');
+		harness.media.load();
+		await emptied;
+
+		expect(harness.states.at(-1)!.status).toBe('idle');
+	});
+
 	it('clears blocked, failure and started when the host empties the element', async () => {
 		const harness = setup();
 		await ready(harness);
@@ -1775,10 +1790,10 @@ describe('MediaController source handling', () => {
 		await harness.controller.play();
 		expect(harness.controller.getState().blocked).toBe(true);
 
+		const emptied = once(harness.media, 'emptied');
 		harness.media.removeAttribute('src');
 		harness.media.load();
-
-		await emptiedSettled(harness);
+		await emptied;
 		expect(harness.controller.getState().blocked).toBe(false);
 	});
 
@@ -1789,10 +1804,10 @@ describe('MediaController source handling', () => {
 		await harness.controller.play();
 		expect(harness.controller.getState().status).toBe('error');
 
+		const emptied = once(harness.media, 'emptied');
 		harness.media.removeAttribute('src');
 		harness.media.load();
-
-		await emptiedSettled(harness);
+		await emptied;
 		expect(harness.controller.getState().error).toBeNull();
 	});
 
