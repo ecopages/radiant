@@ -2407,7 +2407,7 @@ describe('MediaController play on an element with nothing to play', () => {
 });
 
 describe('MediaController play after the host emptied the element', () => {
-	it('does not call the element play() and does not mark the controller started', async () => {
+	it('does not call the element play() and stays idle', async () => {
 		const harness = setup();
 		await ready(harness);
 		const play = vi.spyOn(harness.media, 'play');
@@ -2420,6 +2420,17 @@ describe('MediaController play after the host emptied the element', () => {
 
 		expect(play).not.toHaveBeenCalled();
 		expect(harness.controller.getState().status).toBe('idle');
+	});
+
+	it('does not mark the controller started when it has no source yet, so a later source reads ready', async () => {
+		const harness = setup();
+		harness.controller.attach();
+		await harness.controller.play();
+
+		harness.media.src = wav(1);
+		await harness.until((state) => state.status === 'ready' || state.status === 'paused');
+
+		expect(harness.controller.getState().status).toBe('ready');
 	});
 });
 
