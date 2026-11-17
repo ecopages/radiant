@@ -320,6 +320,58 @@ describe('Watcher', () => {
 			expect(shared.getWatcherCount()).toBe(1);
 		});
 
+		test('keeps an AggregateError a hook threw itself as one error', () => {
+			const own = new AggregateError([new Error('x')], 'hook');
+			const other = new Error('other');
+			const a = new State(0, {
+				[subtle.unwatched]() {
+					throw own;
+				},
+			});
+			const b = new State(0, {
+				[subtle.unwatched]() {
+					throw other;
+				},
+			});
+			const watcher = new subtle.Watcher(() => undefined);
+
+			watcher.watch(a, b);
+
+			try {
+				watcher.unwatch(a, b);
+				expect.unreachable();
+			} catch (error) {
+				expect((error as AggregateError).errors).toEqual([own, other]);
+			}
+		});
+
+		test('a hook that writes a signal listed after it notifies the watcher, one listed before it does not', () => {
+			const notifications: string[] = [];
+			const watcher = new subtle.Watcher(() => {
+				notifications.push('notified');
+			});
+			const first: State<number> = new State(0, {
+				[subtle.unwatched]() {
+					notifications.push('first:unwatched');
+					second.set(1);
+				},
+			});
+			const second: State<number> = new State(0, {
+				[subtle.unwatched]() {
+					notifications.push('second:unwatched');
+					first.set(1);
+				},
+			});
+
+			watcher.watch(first, second);
+			watcher.unwatch(first, second);
+
+			expect(notifications).toEqual(['first:unwatched', 'notified', 'second:unwatched']);
+			expect(watcher.getPending()).toEqual([]);
+			expect(first.getWatcherCount()).toBe(0);
+			expect(second.getWatcherCount()).toBe(0);
+		});
+
 		test('reports several failures as an AggregateError', () => {
 			const first = new Error('first');
 			const second = new Error('second');
@@ -538,11 +590,7 @@ describe('Watcher', () => {
 				expect.unreachable();
 			} catch (error) {
 				expect(error).toBeInstanceOf(AggregateError);
-				const [inner, own] = (error as AggregateError).errors;
-
-				expect(inner).toBeInstanceOf(AggregateError);
-				expect((inner as AggregateError).errors).toEqual([e1, e2]);
-				expect(own).toBe(e3);
+				expect((error as AggregateError).errors).toEqual([e1, e2, e3]);
 			}
 
 			expect(events).toContain('own:unwatched');

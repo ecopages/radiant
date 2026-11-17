@@ -41,8 +41,9 @@ export class Watcher {
 	 *
 	 * @remarks
 	 * Release is not interrupted by a throwing `unwatched` hook: every signal is
-	 * removed from the watcher and every hook runs first, then the error is
-	 * rethrown (several become an `AggregateError`). The signals are no longer
+	 * released and every hook runs first, then the error is rethrown (several
+	 * become one flat `AggregateError`). A signal is released just before its own
+	 * hook, so a hook that writes a signal listed after it still notifies the watcher. The signals are no longer
 	 * watched afterwards, so a retry reports them as not watched.
 	 */
 	public unwatch(...signals: Signal<unknown>[]): void {
@@ -117,16 +118,20 @@ export class Watcher {
 		this.notified = false;
 	}
 
+	/**
+	 * @remarks Each signal leaves the watcher immediately before its own release runs, so an `unwatched` hook sees the
+	 * signals released before it as unwatched and the ones after it as still watched. A write to one of those later
+	 * signals notifies the watcher, then the signal is released and no longer pending.
+	 */
 	private release(nodes: WatchableSignal[]): unknown[] {
 		return collectErrors(
-			nodes.map((node) => {
+			nodes.map((node) => () => {
 				const unsubscribe = this.unsubscribers.get(node);
 
 				this.pendingSignals.delete(node);
 				this.signals.delete(node);
 				this.unsubscribers.delete(node);
-
-				return () => unsubscribe?.();
+				unsubscribe?.();
 			}),
 		);
 	}
