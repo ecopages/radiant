@@ -1,4 +1,4 @@
-export type LegacyPostConstructionPhase = 'connect' | 'ssr';
+export type LegacyPostConstructionPhase = 'constructed' | 'connect' | 'ssr';
 
 type LegacyInstanceInitializer<T extends object = object> = (instance: T) => void;
 type LegacyPostConstructionInitializer<T extends object = object> = (
@@ -74,6 +74,26 @@ export function runLegacyPostConstructionInitializers<T extends object>(
 			LegacyPostConstructionInitializer<T>
 		>,
 	);
+}
+
+/** Whether a legacy decorator registered post-construction work anywhere on the class's prototype chain. */
+export function hasLegacyPostConstructionInitializers(constructor: { prototype: object }): boolean {
+	let prototype: object | null = constructor.prototype;
+
+	while (prototype && prototype !== Object.prototype) {
+		if (getOwnInitializerList(prototype, LEGACY_POST_CONSTRUCTION_INITIALIZERS)) {
+			return true;
+		}
+
+		prototype = Object.getPrototypeOf(prototype);
+	}
+
+	return false;
+}
+
+/** Whether post-construction initializers already ran for `instance`, in any phase. */
+export function hasRunLegacyPostConstructionInitializers(instance: object): boolean {
+	return Object.prototype.hasOwnProperty.call(instance, LEGACY_EXECUTED_POST_CONSTRUCTION_INITIALIZERS);
 }
 
 function registerInitializer<T extends object>(

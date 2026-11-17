@@ -1,13 +1,19 @@
 import { runLegacyInstanceInitializers, runLegacyPostConstructionInitializers } from './instance-initializers';
 
-export type LegacyHostReadinessPhase = 'construct' | 'connect' | 'ssr';
+/**
+ * - `construct`: instance initializers, inside the base constructor.
+ * - `constructed`: post-construction work at the end of the most derived wrapped constructor, so an own value
+ *   found then is a field initializer.
+ * - `connect`, `ssr`: post-construction work for a class that was not wrapped.
+ */
+export type LegacyHostReadinessPhase = 'construct' | 'constructed' | 'connect' | 'ssr';
 
 /**
- * Custom element constructor passed to `@customElement`.
+ * Constructor passed to `@customElement` or `@controller`.
  *
- * @remarks `any[]` matches `CustomElementConstructor`; controllers do not use this wrapper.
+ * @remarks `any[]` matches `CustomElementConstructor` and lets the wrapper forward any controller constructor arguments.
  */
-type Constructable = new (...args: any[]) => HTMLElement;
+type Constructable = new (...args: any[]) => object;
 
 /**
  * Runs legacy decorator initialization for the requested lifecycle phase.
@@ -25,7 +31,8 @@ export function ensureLegacyHostReady<T extends object>(host: T, phase: LegacyHo
 }
 
 /**
- * Subclasses a decorated class so legacy post-construction setup runs when its constructor has finished.
+ * Subclasses a decorated element or controller class so legacy post-construction setup runs when its constructor
+ * has finished.
  *
  * @remarks
  * Legacy property decorators see only the prototype, and `useDefineForClassFields` defines each field as an own
@@ -33,8 +40,8 @@ export function ensureLegacyHostReady<T extends object>(host: T, phase: LegacyHo
  * initializer until the reactive accessors replace those data properties. Installing them here, at the end of the
  * most derived constructor and before any caller code runs, matches the standard decorators, which set each member
  * up as its field initializes: a later write goes through the accessor and is recorded as explicit, so it wins over
- * an authored attribute at the first connect. Classes registered without this wrapper keep the connect-time
- * setup.
+ * an authored attribute or a host-held value at the first connect. Classes registered without this wrapper keep the
+ * connect-time setup.
  *
  * Setup runs only when this class is the one constructed (`new.target`). A subclass, decorated or not, defines
  * its own fields after this constructor returns and would overwrite the accessors, so for it the setup waits for the
@@ -45,7 +52,7 @@ export function withLegacyConstructionEnd<T extends Constructable>(decorated: T)
 		constructor(...args: any[]) {
 			super(...args);
 			if (new.target === Constructed) {
-				ensureLegacyHostReady(this, 'connect');
+				ensureLegacyHostReady(this, 'constructed');
 			}
 		}
 	};

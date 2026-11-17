@@ -6,9 +6,9 @@ import {
 } from '../../core/reactive-prop-core';
 import type { ReactiveHostLike } from '../../core/reactive-host';
 import { attributeNameForProp, registerReactivePropDefinition } from '../../core/reactive-prop-metadata';
-import { isControllerHost } from '../../helpers/resolve-host-element';
 import { registerLegacyInstanceInitializer, registerLegacyPostConstructionInitializer } from './instance-initializers';
 import { bootstrapReactiveMember } from './member-bootstrap';
+import { warnInitializerWithDefaultValue } from '../shared/initializer-default-warning';
 import type { ReactivePropHost } from '../standard/reactive-prop';
 
 /**
@@ -18,13 +18,12 @@ import type { ReactivePropHost } from '../standard/reactive-prop';
  * lets both `RadiantElement` and `RadiantController` share the same public
  * decorator while keeping their runtime channels different.
  *
- * @remarks A Controller Host has no construction-end hook, so its initializer runs at first connect and cannot
- * tell a write made after `new` from a field initializer: both are an own data property. A defined own value
- * that differs from the decorator default is replayed through the accessor once it exists, matching the standard
- * decorators, where it is an ordinary write. As a consequence a legacy controller field initializer that differs
- * from an explicit `defaultValue` wins over it, unlike on an Element Host and the standard decorators. A written
- * value equal to the default, or any value when the prop has no `defaultValue`, is not replayed, so a value the
- * host element already held wins over it.
+ * @remarks Setup runs when the most derived class's constructor ends, which `@customElement` and `@controller`
+ * arrange, so an own value found then is a field initializer and behaves as under the standard decorators: a
+ * differing `defaultValue` wins over it (and development builds warn), and a value the host held wins over both.
+ * A later write goes through the accessor and wins over all of them. A class registered without those decorators
+ * is set up at first connect, where an initializer and a write are indistinguishable; on a Controller Host
+ * `RadiantController` treats any own value found then as the author's.
  */
 export function reactiveProp<T = unknown>(propOptions: ReactivePropertyOptions<T>) {
 	const { type, reflect, defaultValue, transform } = propOptions;
@@ -72,9 +71,14 @@ export function reactiveProp<T = unknown>(propOptions: ReactivePropertyOptions<T
 			const ownStagingValue = Object.prototype.hasOwnProperty.call(element, propertyName)
 				? ((element as Record<PropertyKey, unknown>)[propertyName] as T)
 				: undefined;
+
+			if (phase === 'constructed' && !wasAssigned) {
+				warnInitializerWithDefaultValue(element, propertyName, ownStagingValue, defaultValue);
+			}
+
 			const resolvedDefaultValue = wasAssigned
 				? initializerValue
-				: phase === 'ssr' && ownStagingValue !== undefined && ownStagingValue !== defaultValue
+				: phase === 'ssr' && ownStagingValue !== undefined
 					? ownStagingValue
 					: defaultValue === undefined
 						? initializerValue
@@ -89,16 +93,6 @@ export function reactiveProp<T = unknown>(propOptions: ReactivePropertyOptions<T
 					defaultValue: resolvedDefaultValue,
 				}),
 			});
-
-			if (
-				phase === 'connect' &&
-				!wasAssigned &&
-				isControllerHost(element) &&
-				ownStagingValue !== undefined &&
-				ownStagingValue !== resolvedDefaultValue
-			) {
-				Reflect.set(element, propertyName, ownStagingValue);
-			}
 		});
 	};
 }

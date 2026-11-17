@@ -1,6 +1,7 @@
 import { render as renderJsx, type JsxRenderable, type SubscribableJsxValueWithAccess } from '@ecopages/jsx';
 import { TrackedRender } from './tracked-render';
 import type { UnknownContext } from '../context/types';
+import { ensureLegacyControllerReady } from '../decorators/legacy/controller-readiness';
 import { ensureLegacyHostReady } from '../decorators/legacy/host-readiness';
 import { REACTIVE_HOST, ReactiveHost, type ReactiveHostInternals, type ReactiveHostLike } from './reactive-host';
 import type { ReactiveState, ReadonlyReactiveState } from './reactivity-contract';
@@ -86,7 +87,7 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 	 * disconnected and reconnected it, in which case the nested connect ran the cycle.
 	 */
 	public connect(): void {
-		ensureLegacyHostReady(this, 'connect');
+		ensureLegacyControllerReady(this);
 		this.connected = true;
 		markControllerRoot(this.host, this);
 

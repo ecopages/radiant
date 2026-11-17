@@ -8,7 +8,7 @@ order: 6
 
 `@controller(identifier)` registers a `RadiantController` class for `data-controller` discovery.
 
-It is equivalent to calling `registerController(identifier, ControllerClass)` directly.
+It is equivalent to calling `registerController(identifier, ControllerClass)` directly, except that under the legacy decorators it also wraps a class that has member decorators so its `@prop` setup runs when the constructor ends, which lets a field initializer be told apart from a later write (see [Where the initial value comes from](/docs/decorators/prop#where-the-initial-value-comes-from)).
 
 If controller runtimes are already running, newly registered identifiers are reconciled against the live DOM immediately.
 
