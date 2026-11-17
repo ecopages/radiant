@@ -204,48 +204,22 @@ export function isIterableJsxChild(value: JsxRenderable): value is Iterable<JsxR
 	return typeof value !== 'string' && typeof value !== 'function' && Symbol.iterator in Object(value);
 }
 
-type UntrackedRead = <Value>(read: () => Value) => Value;
-
-/**
- * @remarks Kept on `globalThis` under a registry symbol, as the development-warning switch is, because each
- * `@ecopages/jsx` entry bundles its own copy of this module.
- */
-const UNTRACKED_READ = Symbol.for('@ecopages/jsx.untracked-read');
-
-/**
- * Sets how JSX reads the current value of a signal or binding outside its subscription.
- *
- * @remarks JSX reads such a value while a component builds its tree, to choose how to bind a standard boolean
- * attribute such as `hidden`. A host that tracks the signals its render reads must not depend on that read: the
- * binding subscribes on its own and patches one node. `@ecopages/jsx` does not depend on a signals library, so the
- * host runtime passes that library's `untrack`; `@ecopages/radiant` passes the one from `@ecopages/signals`.
- */
-export function setUntrackedRead(run: UntrackedRead): void {
-	(globalThis as Record<symbol, unknown>)[UNTRACKED_READ] = run;
-}
-
-function readUntracked<Value>(read: () => Value): Value {
-	const run = (globalThis as Record<symbol, unknown>)[UNTRACKED_READ] as UntrackedRead | undefined;
-	return run ? run(read) : read();
-}
-
 /**
  * Resolves subscribable and signal wrappers to a concrete snapshot value.
  *
  * Used both to read a reactive binding's current value and to decide attribute
  * vs property binding shape during JSX compilation, which need the same unwrap.
- * The read is untracked once a host runtime has called {@link setUntrackedRead}.
  *
  * @param value Renderable or reactive wrapper to unwrap.
  * @returns The innermost non-reactive value.
  */
 export function resolveReactiveSnapshot(value: unknown): unknown {
 	if (isSubscribableJsxValue(value)) {
-		return resolveReactiveSnapshot(readUntracked(() => value.getValue()));
+		return resolveReactiveSnapshot(value.getValue());
 	}
 
 	if (isSignalLikeValue(value)) {
-		return resolveReactiveSnapshot(readUntracked(() => value.get()));
+		return resolveReactiveSnapshot(value.get());
 	}
 
 	return value;

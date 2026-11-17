@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test } from 'vitest';
+import { describe, expect, test } from 'vitest';
 import { jsx } from '../src/jsx-runtime.ts';
 import {
 	isIterableRenderable,
@@ -8,7 +8,6 @@ import {
 	isTrustedMarkupNode,
 	mayEmitOrParseRawOuterHtml,
 	resolveReactiveSnapshot,
-	setUntrackedRead,
 } from '../src/types/renderable-guards.ts';
 import {
 	RADIANT_MARKUP_NODE_SYMBOL,
@@ -126,41 +125,34 @@ describe('renderable-guards', () => {
 		expect(resolveReactiveSnapshot('plain')).toBe('plain');
 	});
 
-	describe('setUntrackedRead', () => {
-		afterEach(() => {
-			delete (globalThis as Record<symbol, unknown>)[Symbol.for('@ecopages/jsx.untracked-read')];
-		});
+	test('creating a tree reads no signal or binding, and binds one on a boolean attribute as an attribute', () => {
+		let reads = 0;
+		const signal = {
+			get: () => {
+				reads += 1;
+				return true;
+			},
+			subscribe: () => () => undefined,
+		};
+		const binding = {
+			[SUBSCRIBABLE_JSX_VALUE_SYMBOL]: true as const,
+			getValue: () => signal.get(),
+			subscribe: () => () => undefined,
+		};
 
-		test('reads a signal or binding through the installed reader', () => {
-			const reads: string[] = [];
-			let untracked = false;
-			setUntrackedRead((read) => {
-				untracked = true;
-				try {
-					return read();
-				} finally {
-					untracked = false;
-				}
-			});
-			const signal = {
-				get: () => {
-					reads.push(untracked ? 'untracked' : 'tracked');
-					return true;
-				},
-				subscribe: () => () => undefined,
-			};
-			const binding = {
-				[SUBSCRIBABLE_JSX_VALUE_SYMBOL]: true as const,
-				getValue: () => signal.get(),
-				subscribe: () => () => undefined,
-			};
+		const partsOf = (value: unknown) => (isTemplateResultLike(value) ? value.parts : []);
 
-			expect(resolveReactiveSnapshot(signal)).toBe(true);
-			expect(resolveReactiveSnapshot(binding)).toBe(true);
-			jsx('p', { hidden: signal, inert: binding });
+		const native = partsOf(jsx('p', { hidden: signal, inert: binding }));
+		const custom = partsOf(jsx('x-panel', { disabled: signal }));
 
-			expect(reads.length).toBeGreaterThanOrEqual(4);
-			expect(reads).not.toContain('tracked');
-		});
+		expect(reads).toBe(0);
+		expect([...native, ...custom]).toEqual([
+			{ kind: 'attr', name: 'hidden', type: 'attribute' },
+			{ kind: 'attr', name: 'inert', type: 'attribute' },
+			{ kind: 'attr', name: 'disabled', type: 'attribute' },
+		]);
+		expect(partsOf(jsx('x-panel', { disabled: true }))).toEqual([
+			{ kind: 'bool', name: 'disabled', type: 'attribute' },
+		]);
 	});
 });

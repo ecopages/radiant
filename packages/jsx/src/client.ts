@@ -25,7 +25,6 @@ export {
 	type JsxRenderable,
 	isKeyedJsxValue,
 	isSubscribableJsxValue,
-	setUntrackedRead,
 	type SubscribableJsxValue,
 	type SubscribableJsxValueWithAccess,
 	type TemplateResultLike,

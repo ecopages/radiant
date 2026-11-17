@@ -22,7 +22,6 @@ export {
 	isSubscribableJsxValue,
 	isTemplateResultLike,
 	resolveReactiveSnapshot,
-	setUntrackedRead,
 	toTemplateResultLike,
 } from './types/renderable-guards.ts';
 export { renderJsxRenderableToString } from './ssr/serialize-plain.ts';

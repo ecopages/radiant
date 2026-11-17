@@ -390,7 +390,7 @@ for (const subscriber of subscribers) {
 
 That contract is intentionally small. The package does not impose a single state container, computed graph, or scheduler. It just gives the renderer a stable subscription surface for either signal-like values or explicit subscribable wrappers.
 
-The renderer also reads a bound value once while the tree is built, to choose a presence binding for a standard boolean attribute such as `hidden`. When the tree is built inside a computation that tracks signal reads, as a Radiant host's `render()` is, that read would make the computation depend on the value and re-run it on every change. `setUntrackedRead(untrack)` tells the renderer to make such reads through the signal library's `untrack`; `@ecopages/radiant` installs the one from `@ecopages/signals`. The setting is global, so every `@ecopages/jsx` entry sees it.
+Creating the tree never reads a signal or binding, so a computation that tracks signal reads while it builds the tree, as a Radiant host's `render()` does, does not depend on a bound value. A signal or binding on a standard boolean attribute such as `hidden` binds as an attribute on any element: `true` writes it empty, `false`, `null` and `undefined` remove it, and any other value is written as text.
 
 A binding stays subscribed to its source for as long as it is mounted, also while its target is out of the document. `pauseSubscriptions(target)` releases the source subscription of every binding mounted into `target` and keeps the bindings, so a long-lived signal or store no longer holds the detached tree or patches it. `resumeSubscriptions(target)` subscribes them again and applies the current value of each source that changed meanwhile; a value that replaces part of the tree releases the bindings it removes and subscribes the ones it mounts. Radiant hosts pause their view on disconnect and resume it on reconnect.
 
@@ -961,7 +961,6 @@ Main exports:
 - `createSubscribableJsxValue`
 - `isKeyedJsxValue`
 - `isSubscribableJsxValue`
-- `setUntrackedRead`
 - `CUSTOM_ELEMENT_CHILDREN_SYMBOL`
 - `CUSTOM_ELEMENT_TAG_NAME`
 - `getCustomElementTagName`
