@@ -19,14 +19,13 @@ function ownerKey(owner: object): number {
  *
  * @remarks
  * The `defaultValue` wins and the initializer is ignored, so the two cannot both be intended. Values that
- * serialize to the same JSON are the same value (`defaultValue: []` with `= []`). Fires once per declaring class
- * object and prop, from both decorator modes, so subclasses share one warning and two unrelated classes that share
- * a name each get their own. The check wraps the warning instead of returning early, because some
- * bundlers (Rollup) keep the code after an early `return` inside a `try`; the `try` keeps an unbundled browser
- * load, where `process` does not exist, from throwing.
+ * serialize to the same JSON are the same value (`defaultValue: []` with `= []`). Fires once per class
+ * object and prop, from both decorator modes, so two unrelated classes that share a name each get their own.
+ * The `try` keeps an unbundled browser load, where `process` does not exist, from throwing.
  *
- * @param declaringHint The declaring class itself (legacy decorators), or the decorator metadata object of the
- * declaring class (standard decorators), from which the class is found on `host`'s chain.
+ * @param declaringHint The class whose initializer was ignored (legacy decorators: the constructed class, since a
+ * subclass can override the field), or the decorator metadata object of the declaring class (standard decorators,
+ * where the initializer always sits with the decorator), from which the class is found on `host`'s chain.
  */
 export function warnInitializerWithDefaultValue(
 	host: object,

@@ -405,7 +405,7 @@ describe('the initializer and defaultValue warning names the declaring class', (
 		return Twin;
 	}
 
-	test('names the declaring class once for two subclasses', async () => {
+	test.skipIf(__LEGACY_ENVIRONMENT__)('names the declaring class once for two subclasses', async () => {
 		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 		document.body.append(new DerivedA());
 		document.body.append(new DerivedB());
@@ -414,6 +414,52 @@ describe('the initializer and defaultValue warning names the declaring class', (
 		expect(warn).toHaveBeenCalledTimes(1);
 		expect(warn).toHaveBeenCalledWith(expect.stringContaining('"label" on Base has both'));
 	});
+
+	test.skipIf(!__LEGACY_ENVIRONMENT__)(
+		'names the constructed class once per class when the initializer sits in the base',
+		async () => {
+			const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+			document.body.append(new DerivedA());
+			document.body.append(new DerivedA());
+			document.body.append(new DerivedB());
+			await Promise.resolve();
+
+			expect(warn).toHaveBeenCalledTimes(2);
+			expect(warn).toHaveBeenCalledWith(expect.stringContaining('"label" on DerivedA has both'));
+			expect(warn).toHaveBeenCalledWith(expect.stringContaining('"label" on DerivedB has both'));
+		},
+	);
+
+	test.skipIf(!__LEGACY_ENVIRONMENT__)(
+		'names the subclass whose initializer was ignored, not the base that declares the prop',
+		async () => {
+			const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+			@customElement('prec-warn-override-base')
+			class OverrideBase extends RadiantElement {
+				@prop({ type: String, defaultValue: 'default' }) label!: string;
+			}
+
+			@customElement('prec-warn-override-a')
+			class OverrideA extends OverrideBase {
+				override label = 'x';
+			}
+
+			@customElement('prec-warn-override-b')
+			class OverrideB extends OverrideBase {
+				override label = 'y';
+			}
+
+			document.body.append(new OverrideBase());
+			document.body.append(new OverrideA());
+			document.body.append(new OverrideB());
+			await Promise.resolve();
+
+			expect(warn).toHaveBeenCalledTimes(2);
+			expect(warn).toHaveBeenCalledWith(expect.stringContaining('"label" on OverrideA has both'));
+			expect(warn).toHaveBeenCalledWith(expect.stringContaining('"label" on OverrideB has both'));
+		},
+	);
 
 	test('warns for each of two unrelated classes that share a name', async () => {
 		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});

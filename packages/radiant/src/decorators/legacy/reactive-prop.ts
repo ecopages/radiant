@@ -78,7 +78,7 @@ export function reactiveProp<T = unknown>(propOptions: ReactivePropertyOptions<T
 					propertyName,
 					ownStagingValue,
 					defaultValue,
-					target.constructor,
+					element.constructor,
 				);
 			}
 
