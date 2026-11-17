@@ -93,11 +93,33 @@ export function disposeLiveAttributePart(part: LiveAttributePart): void {
 	part.previousValue = undefined;
 }
 
-/** Runs the cleanup of an attached `ref` part, if it has one. */
+/**
+ * Runs the cleanup of an attached `ref` part, if it has one.
+ *
+ * @remarks A cleanup that throws is reported through {@link reportRefError} and does not stop the disposal around it.
+ */
 export function detachRef(part: LiveAttributePart): void {
 	const cleanup = part.refCleanup;
 	part.refCleanup = undefined;
-	cleanup?.();
+	try {
+		cleanup?.();
+	} catch (error) {
+		reportRefError(error);
+	}
+}
+
+/**
+ * Reports an error thrown by a `ref` callback or its cleanup, without interrupting the render, flush or disposal
+ * that called it.
+ *
+ * @remarks The error is rethrown from a microtask, so it surfaces as an uncaught error (`window` `error` event in a
+ * browser), the way React 19 reports an error no boundary handles. Throwing synchronously would abort the rest of the
+ * pass and leave mounted state half recorded.
+ */
+export function reportRefError(error: unknown): void {
+	queueMicrotask(() => {
+		throw error;
+	});
 }
 
 /** Ends the current reactive ownership epoch for a live attribute or text-content part. */

@@ -1,7 +1,7 @@
 import { resolveAttributeText } from '../factory/attribute-normalize.ts';
 import { attachEventBindingListener, detachEventBindingListener, isEventListenerObject } from './event-delegation.ts';
 import { getElementAttributeValue, removeElementAttribute, setElementAttributeValue } from './namespaces.ts';
-import { detachRef } from './mounted-disposal.ts';
+import { detachRef, reportRefError } from './mounted-disposal.ts';
 import { resolveReactiveSnapshot } from './runtime-helpers.ts';
 import { CUSTOM_ELEMENT_CHILDREN_SYMBOL, type JsxRefCallback } from '../types/index.ts';
 import type { BindingDescriptor, DeferredPropertyBinding, LiveAttributePart } from './types.ts';
@@ -169,6 +169,10 @@ function applyDeferredPropertyBinding(
  * @remarks The callback attaches with the deferred property writes, so it sees its node in the page. The queued
  * attach checks that the part still holds the callback, so a part replaced or disposed before the queue runs does not
  * attach a stale one. A value that is not a function detaches the current ref and binds nothing.
+ *
+ * A callback that throws is reported through {@link reportRefError} and does not stop the flush. It still counts as
+ * attached: the same callback is not called again on a later render, and detaching calls it with `null`, as for a
+ * callback that returned nothing. Only a different callback, or dropping the ref, ends it.
  */
 function applyRefBinding(
 	element: Element,
@@ -185,10 +189,16 @@ function applyRefBinding(
 	if (!callback) return;
 
 	deferredProperties.push({
+		element,
 		run: () => {
 			if (livePart.previousValue !== callback) return;
-			const cleanup = callback(element);
-			livePart.refCleanup = typeof cleanup === 'function' ? cleanup : () => callback(null);
+			livePart.refCleanup = () => callback(null);
+			try {
+				const cleanup = callback(element);
+				if (typeof cleanup === 'function') livePart.refCleanup = cleanup;
+			} catch (error) {
+				reportRefError(error);
+			}
 		},
 	});
 }

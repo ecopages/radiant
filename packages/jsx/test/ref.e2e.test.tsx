@@ -335,4 +335,169 @@ describe('JSX ref', () => {
 		expect(container.querySelector('input')).toBe(serverInput);
 		expect(ref.mock.calls).toEqual([[serverInput]]);
 	});
+
+	describe('order', () => {
+		test('attaches child refs before the parent ref, siblings in document order', async () => {
+			const [{ jsx, jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+			const container = document.createElement('div');
+			const log: string[] = [];
+			const ref = (name: string) => (node: Element | null) => {
+				log.push(`${name}:${node ? 'attach' : 'detach'}`);
+			};
+
+			createRoot(container).render(
+				jsx('div', {
+					ref: ref('root'),
+					children: jsxs('section', {
+						ref: ref('section'),
+						children: [
+							jsx('p', { ref: ref('a'), children: jsx('b', { ref: ref('a-child') }) }),
+							jsx('p', { ref: ref('b') }),
+						],
+					}),
+				}),
+			);
+
+			expect(log).toEqual(['a-child:attach', 'a:attach', 'b:attach', 'section:attach', 'root:attach']);
+		});
+
+		test('a parent ref sees its descendants already attached, on a custom element too', async () => {
+			const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+			const container = document.createElement('div');
+			const attached = new Set<Element>();
+			let seenByHost: boolean | undefined;
+
+			createRoot(container).render(
+				jsx('radiant-jsx-ref-host', {
+					ref: () => {
+						seenByHost = attached.has(container.querySelector('span')!);
+					},
+					children: jsx('span', { ref: (node: Element | null) => node && attached.add(node) }),
+				}),
+			);
+
+			expect(seenByHost).toBe(true);
+		});
+
+		test('detaches the parent ref before the child ref', async () => {
+			const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+			const container = document.createElement('div');
+			const root = createRoot(container);
+			const log: string[] = [];
+			const ref = (name: string) => (node: Element | null) => {
+				if (!node) log.push(name);
+			};
+
+			root.render(jsx('div', { ref: ref('parent'), children: jsx('p', { ref: ref('child') }) }));
+			root.unmount();
+
+			expect(log).toEqual(['parent', 'child']);
+		});
+
+		test('hydrate mode attaches child refs before the parent ref', async () => {
+			const [{ jsx }, { createRoot }, { renderToString }] = await Promise.all([
+				loadJsxRuntime(),
+				loadJsxModule(),
+				loadServerRender(),
+			]);
+			const container = document.createElement('div');
+			const log: string[] = [];
+			const view = () =>
+				jsx('div', {
+					ref: () => log.push('parent'),
+					children: jsx('p', { ref: () => log.push('child') }),
+				});
+
+			container.innerHTML = renderToString(view(), { mode: 'hydrate' });
+			createRoot(container).hydrate(view());
+
+			expect(log).toEqual(['child', 'parent']);
+		});
+	});
+
+	describe('errors', () => {
+		let errors: unknown[];
+
+		beforeEach(() => {
+			errors = [];
+			vi.spyOn(globalThis, 'queueMicrotask').mockImplementation((callback) => {
+				try {
+					callback();
+				} catch (error) {
+					errors.push(error);
+				}
+			});
+			return () => vi.restoreAllMocks();
+		});
+
+		test('a throwing callback is reported and later refs and properties in the flush still run', async () => {
+			const [{ jsx, jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+			const container = document.createElement('div');
+			const boom = new Error('boom');
+			const later = vi.fn();
+
+			createRoot(container).render(
+				jsxs('div', {
+					children: [
+						jsx('p', {
+							ref: () => {
+								throw boom;
+							},
+						}),
+						jsx('span', { ref: later }),
+						jsx('radiant-jsx-ref-host', { 'prop:ref': 'written' }),
+					],
+				}),
+			);
+
+			expect(later).toHaveBeenCalledTimes(1);
+			expect((container.querySelector('radiant-jsx-ref-host') as RefHostElement).ref).toBe('written');
+			expect(errors).toEqual([boom]);
+		});
+
+		test('a throwing cleanup is reported and the rest of the disposal still runs', async () => {
+			const [{ jsx, jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+			const container = document.createElement('div');
+			const root = createRoot(container);
+			const boom = new Error('cleanup');
+			const second = vi.fn();
+
+			root.render(
+				jsxs('div', {
+					children: [
+						jsx('p', {
+							ref: () => () => {
+								throw boom;
+							},
+						}),
+						jsx('span', { ref: second }),
+					],
+				}),
+			);
+			root.unmount();
+
+			expect(second).toHaveBeenCalledTimes(2);
+			expect(second).toHaveBeenLastCalledWith(null);
+			expect(errors).toEqual([boom]);
+		});
+
+		test('a callback that threw is not called again, is called with null on detach, and a new callback attaches', async () => {
+			const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+			const container = document.createElement('div');
+			const root = createRoot(container);
+			const failing = vi.fn((node: Element | null) => {
+				if (node) throw new Error('attach');
+			});
+			const next = vi.fn();
+
+			root.render(jsx('p', { ref: failing }));
+			root.render(jsx('p', { ref: failing }));
+			const node = container.querySelector('p');
+			root.render(jsx('p', { ref: next }));
+
+			expect(failing.mock.calls).toEqual([[node], [null]]);
+			expect(next.mock.calls).toEqual([[node]]);
+			expect(errors).toHaveLength(1);
+		});
+	});
 });

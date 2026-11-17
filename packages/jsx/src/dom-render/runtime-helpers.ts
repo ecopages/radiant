@@ -32,12 +32,39 @@ type TemplateMount = (
  *
  * Property writes are deferred so custom elements or other property-sensitive
  * nodes see the final DOM shape before receiving their bound values.
+ *
+ * @remarks
+ * Every property write comes first, in queue order, so a `ref` sees its node with all bound properties set.
+ * `ref` attaches then run child before parent, siblings in document order, as in React 19: when a parent's callback
+ * runs, every ref in its subtree is attached. The queue is in document order, so a stack of open ancestors turns it
+ * into that post-order.
  */
 export function flushDeferredProperties(bindings: DeferredPropertyBinding[]): void {
+	const attaches: Extract<DeferredPropertyBinding, { run: () => void }>[] = [];
+
 	for (const binding of bindings) {
-		if ('run' in binding) binding.run();
+		if ('run' in binding) attaches.push(binding);
 		else Reflect.set(binding.element, binding.name, binding.value);
 	}
+
+	const open: typeof attaches = [];
+
+	for (const attach of attaches) {
+		while (open.length > 0 && !open[open.length - 1]!.element.contains(attach.element)) open.pop()!.run();
+		open.push(attach);
+	}
+
+	while (open.length > 0) open.pop()!.run();
+}
+
+/**
+ * Returns `true` when a child value renders as nothing: `null`, `undefined`, a boolean, or a function, which is
+ * skipped with a dev warning.
+ *
+ * @remarks Mount and hydration share this one test, so a function child counts as no nodes in both.
+ */
+export function isEmptyChild(value: unknown): boolean {
+	return value == null || typeof value === 'boolean' || isSkippedFunction(value, 'a child');
 }
 
 /** Removes keyed-child wrapper metadata so downstream logic can work with the raw child value. */
@@ -73,11 +100,7 @@ export function createNodesFromValue(
 	const collectNodes = (nextValue: unknown): void => {
 		const resolvedValue = unwrapKeyedValue(nextValue);
 
-		if (
-			resolvedValue == null ||
-			typeof resolvedValue === 'boolean' ||
-			isSkippedFunction(resolvedValue, 'a child')
-		) {
+		if (isEmptyChild(resolvedValue)) {
 			return;
 		}
 

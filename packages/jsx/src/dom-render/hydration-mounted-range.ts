@@ -15,6 +15,7 @@ import {
 	flushDeferredProperties,
 	getIterableChildren,
 	getKeyedChildren,
+	isEmptyChild,
 	isIterableRenderable,
 	isReactiveChildSource,
 	isTemplateResultLike,
@@ -277,7 +278,7 @@ export function canAdoptMarkerlessTemplate(
 	function materializeExpectedValue(value: unknown): Node[] | undefined {
 		const nextValue = unwrapKeyedValue(value);
 
-		if (nextValue == null || typeof nextValue === 'boolean') {
+		if (isEmptyChild(nextValue)) {
 			return [];
 		}
 

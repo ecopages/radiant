@@ -3,6 +3,7 @@ import { getNodeAtPath, getPathKey } from './path-utils.ts';
 import { getCompiledTemplate } from './template-compiler.ts';
 import {
 	canRenderAsTextNode,
+	isEmptyChild,
 	isIterableRenderable,
 	isJsxNodeLike,
 	isTemplateResultLike,
@@ -283,7 +284,7 @@ function isEmptyRenderableValue(value: unknown): boolean {
 export function countHydratedRangeNodes(value: unknown): number {
 	const resolvedValue = resolveReactiveSnapshot(unwrapKeyedValue(value));
 
-	if (resolvedValue == null || typeof resolvedValue === 'boolean' || isSkippedFunction(resolvedValue, 'a child')) {
+	if (isEmptyChild(resolvedValue)) {
 		return 0;
 	}
 

@@ -32,7 +32,9 @@ export type DeferredPropertyBinding =
 			value: unknown;
 	  }
 	| {
-			/** Runs with the property writes, once the nodes are in place. A `ref` part attaches its callback here. */
+			/** Element whose `ref` this entry attaches, used to run descendants before ancestors. */
+			element: Element;
+			/** Runs after the property writes, once the nodes are in place. A `ref` part attaches its callback here. */
 			run: () => void;
 	  };
 
