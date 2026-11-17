@@ -1,6 +1,7 @@
 import { hasHydrationMarkers, hydrate as hydrateJsx, render as renderJsx, type JsxRenderable } from '@ecopages/jsx';
 import { isMinimalDomElement } from './minimal-dom-identity';
 import { areJsxDevWarningsEnabled } from '../helpers/dev-warnings';
+import type { RenderWarnings } from './render-warnings';
 import { TrackedRender } from './tracked-render';
 import {
 	captureSlottedNodes,
@@ -33,9 +34,9 @@ export class RenderRuntime {
 	readonly #trackedRender: TrackedRender<JsxRenderable>;
 	#hasMounted = false;
 
-	constructor(host: RenderRuntimeHost) {
+	constructor(host: RenderRuntimeHost, warnings?: RenderWarnings) {
 		this.#host = host;
-		this.#trackedRender = new TrackedRender(() => this.#host.requestUpdate());
+		this.#trackedRender = new TrackedRender(() => this.#host.requestUpdate(), warnings);
 	}
 
 	/**

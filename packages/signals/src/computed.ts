@@ -7,7 +7,7 @@ import {
 	setActiveComputedSignal,
 	setActiveDependencyRecorder,
 } from './runtime';
-import { SignalNode } from './signal-node';
+import { collectErrors, SignalNode, throwCollected } from './signal-node';
 import type { ComputedCallback, DependencyNode, SignalEquals, SignalOptions, SignalSubscriber } from './types';
 
 const COMPUTED_NO_ERROR = Symbol.for('@ecopages/signals.computed-no-error');
@@ -102,12 +102,15 @@ export class Computed<Value> extends SignalNode<Value> {
 		this.dependencyUnsubscribers.clear();
 	}
 
-	private clearDependencyWatcherSubscriptions(): void {
-		for (const unsubscribe of this.dependencyWatcherUnsubscribers.values()) {
-			unsubscribe();
+	private clearDependencyWatcherSubscriptions(rollback: boolean): void {
+		const unsubscribers = [...this.dependencyWatcherUnsubscribers.values()];
+
+		if (rollback) {
+			unsubscribers.reverse();
 		}
 
 		this.dependencyWatcherUnsubscribers.clear();
+		throwCollected(collectErrors(unsubscribers));
 	}
 
 	private handleDependencyChange = () => {
@@ -203,7 +206,12 @@ export class Computed<Value> extends SignalNode<Value> {
 		}
 
 		if (this.getWatcherCount() > 0) {
-			this.syncDependencyWatcherSubscriptions();
+			try {
+				this.syncDependencyWatcherSubscriptions();
+			} catch (error) {
+				this.stale = true;
+				throw error;
+			}
 		}
 	}
 
@@ -232,26 +240,53 @@ export class Computed<Value> extends SignalNode<Value> {
 		}
 	}
 
+	/**
+	 * Brings the dependency watchers in line with the current dependencies.
+	 *
+	 * @remarks
+	 * If a dependency's `watched` hook throws, the dependencies added by this
+	 * call are released in reverse order and the error is rethrown, so a failed
+	 * first watch leaves nothing subscribed. Dependencies dropped by this call
+	 * are released first and stay released; an error from their `unwatched` hooks
+	 * is rethrown once the new dependencies are watched, and dropped if a `watched`
+	 * hook throws, in favor of that error. A recompute that fails here leaves the
+	 * computed stale, so the next read recomputes and retries the sync.
+	 */
 	private syncDependencyWatcherSubscriptions(): void {
+		const dropped: (() => void)[] = [];
+
 		for (const [dependency, unsubscribe] of this.dependencyWatcherUnsubscribers) {
 			if (this.dependencies.has(dependency)) {
 				continue;
 			}
 
-			unsubscribe();
+			dropped.push(unsubscribe);
 			this.dependencyWatcherUnsubscribers.delete(dependency);
 		}
 
-		for (const dependency of this.dependencies.keys()) {
-			if (this.dependencyWatcherUnsubscribers.has(dependency)) {
-				continue;
-			}
+		const droppedErrors = collectErrors(dropped);
+		const added: (() => void)[] = [];
 
-			this.dependencyWatcherUnsubscribers.set(
-				dependency,
-				dependency.addWatcher(this.handleDependencyWatcherChange),
-			);
+		try {
+			for (const dependency of this.dependencies.keys()) {
+				if (this.dependencyWatcherUnsubscribers.has(dependency)) {
+					continue;
+				}
+
+				const unsubscribe = dependency.addWatcher(this.handleDependencyWatcherChange);
+
+				this.dependencyWatcherUnsubscribers.set(dependency, unsubscribe);
+				added.push(() => {
+					this.dependencyWatcherUnsubscribers.delete(dependency);
+					unsubscribe();
+				});
+			}
+		} catch (error) {
+			collectErrors(added.reverse());
+			throw error;
 		}
+
+		throwCollected(droppedErrors);
 	}
 
 	private trackDependency(dependency: DependencyNode): void {
@@ -263,8 +298,8 @@ export class Computed<Value> extends SignalNode<Value> {
 		this.syncDependencyWatcherSubscriptions();
 	}
 
-	protected override handleLastWatcherRemoved(): void {
-		this.clearDependencyWatcherSubscriptions();
+	protected override handleLastWatcherRemoved(rollback: boolean): void {
+		this.clearDependencyWatcherSubscriptions(rollback);
 	}
 }
 

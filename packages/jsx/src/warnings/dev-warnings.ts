@@ -7,6 +7,7 @@ export const HYDRATION_MISSING_BINDING_WARNING = 3;
 export const DOM_RANGE_ANCHOR_DRIFT_WARNING = 4;
 export const DETACHED_INSERTION_POINT_WARNING = 5;
 export const CLASS_NAME_ATTRIBUTE_WARNING = 6;
+export const FUNCTION_POSITION_WARNING = 7;
 
 const issuedRuntimeWarnings = new Set<string>();
 
@@ -16,7 +17,8 @@ type DevWarningKind =
 	| typeof HYDRATION_MISSING_BINDING_WARNING
 	| typeof DOM_RANGE_ANCHOR_DRIFT_WARNING
 	| typeof DETACHED_INSERTION_POINT_WARNING
-	| typeof CLASS_NAME_ATTRIBUTE_WARNING;
+	| typeof CLASS_NAME_ATTRIBUTE_WARNING
+	| typeof FUNCTION_POSITION_WARNING;
 
 type DevWarningFormatter = (kind: DevWarningKind, detail?: string) => string;
 
@@ -77,4 +79,21 @@ export function warnRuntime(kind: DevWarningKind, detail: string | undefined, op
 
 export function resetRuntimeWarningsForTests(): void {
 	issuedRuntimeWarnings.clear();
+}
+
+/** Warns once per `position` that a function there is skipped rather than written out as text. */
+export function warnFunctionPosition(position: string): void {
+	warnRuntime(FUNCTION_POSITION_WARNING, position, { code: `function-position:${position}` });
+}
+
+/**
+ * Returns `true`, after warning, when `value` is a function that a text or attribute sink must render as nothing.
+ *
+ * @remarks Literal functions are skipped when the element is created. This covers one that a signal or subscribable
+ * resolves to, which only the renderer sees.
+ */
+export function isSkippedFunction(value: unknown, position: string): boolean {
+	if (typeof value !== 'function') return false;
+	warnFunctionPosition(position);
+	return true;
 }
