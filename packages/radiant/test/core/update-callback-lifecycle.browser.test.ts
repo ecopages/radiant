@@ -7,6 +7,8 @@ import { customElement } from '../../src/decorators/custom-element';
 import { onUpdated } from '../../src/decorators/on-updated';
 import { prop } from '../../src/decorators/prop';
 import { signal } from '../../src/decorators/signal';
+import { state } from '../../src/decorators/state';
+import { REACTIVE_HOST } from '../../src/core/reactive-host';
 
 afterEach(() => {
 	document.body.innerHTML = '';
@@ -603,5 +605,46 @@ describe('a connection callback that disconnects the host ends the connect pass'
 		expect(element.connects).toBe(0);
 		expect(element.updates).toBe(0);
 		expect(elementSource.counter.listeners).toBe(0);
+	});
+});
+
+describe('update callbacks do not run while the host is not observed', () => {
+	class StateController extends RadiantController {
+		@bindTo({ attr: 'data-count' })
+		@state
+		count = 5;
+	}
+
+	test('a @bindTo target is painted once on first connect and not before', () => {
+		const host = document.createElement('section');
+		const controller = new StateController(host);
+		controller.connect();
+
+		expect(host.getAttribute('data-count')).toBe('5');
+		controller.disconnect();
+
+		const unconnected = document.createElement('section');
+		new StateController(unconnected);
+		expect(unconnected.hasAttribute('data-count')).toBe(false);
+	});
+
+	test('an initial emit runs update callbacks only while observed, once per connect', () => {
+		const controller = new RadiantController(document.createElement('section'));
+		const seen: string[] = [];
+		controller.createReactiveField('n', 1, { suppressInitialNotify: true });
+		controller.registerUpdateCallback('n', () => seen.push('n'));
+		controller.createReactiveField('n', 2);
+		expect(seen).toEqual([]);
+
+		controller[REACTIVE_HOST].notifyUpdate('n', undefined, 1);
+		expect(seen).toEqual([]);
+
+		controller.connect();
+		controller[REACTIVE_HOST].notifyUpdate('n', undefined, 1);
+		expect(seen).toEqual(['n']);
+
+		controller.disconnect();
+		controller[REACTIVE_HOST].notifyUpdate('n', undefined, 1);
+		expect(seen).toEqual(['n']);
 	});
 });

@@ -306,13 +306,17 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	/**
 	 * Emits an initial update for a member without a value change.
 	 *
-	 * @remarks Runs the synchronous callbacks (`@bindTo`) now and queues the
-	 * member for the next batched cycle. Used for the first-connect emit of
-	 * `@prop` members. Value changes flow through the member `State`'s own
-	 * subscription instead.
+	 * @remarks Runs the synchronous callbacks (`@bindTo`) now, only while members
+	 * are observed, and queues the member for the next batched cycle. Used for the
+	 * first-connect emit of `@prop` members. While unobserved the callbacks wait for
+	 * the connect diff, like the subscriptions they replace. Value changes flow
+	 * through the member `State`'s own subscription instead.
 	 */
 	public notifyUpdate(changedProperty: string, _oldValue: unknown, _value: unknown): void {
-		this.runUpdateCallbacks(changedProperty);
+		if (this.observing) {
+			this.runUpdateCallbacks(changedProperty);
+		}
+
 		this.onMemberChanged(changedProperty);
 	}
 
