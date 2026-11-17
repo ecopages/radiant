@@ -15,15 +15,19 @@ const remove: VoiceMemoForm['remove'] = async (root) => {
 };
 
 describe('voice memo forms', () => {
-	test('the four forms pass through the same states with the same buttons and the same text', async () => {
-		const plain = await flowOf({ mount: () => mountRecipe('voice-memo'), remove });
-		const element = await flowOf({ mount: () => mountForm('voice-memo', 'radiant'), remove });
-		const component = await flowOf({ mount: () => mountComponent('voice-memo'), remove });
-		const controller = await flowOf({ mount: () => mountController('voice-memo'), remove });
+	let plain: string[];
+
+	test('the plain form passes through five states', async () => {
+		plain = await flowOf({ mount: () => mountRecipe('voice-memo'), remove });
 
 		expect(plain).toHaveLength(5);
-		expect(element).toEqual(plain);
-		expect(component).toEqual(plain);
-		expect(controller).toEqual(plain);
+	});
+
+	test.each([
+		['element', () => mountForm('voice-memo', 'radiant')],
+		['component', () => mountComponent('voice-memo')],
+		['controller', () => mountController('voice-memo')],
+	])('the %s form passes through the same states with the same buttons and the same text', async (_, mount) => {
+		expect(await flowOf({ mount, remove })).toEqual(plain);
 	});
 });

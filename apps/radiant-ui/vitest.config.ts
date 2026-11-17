@@ -10,6 +10,7 @@ export default defineConfig({
 		},
 	},
 	test: {
+		expect: { poll: { timeout: 5000 } },
 		projects: [
 			{
 				extends: true,

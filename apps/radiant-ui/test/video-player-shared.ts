@@ -122,7 +122,7 @@ export function describeVideoPlayerForm(name: string, unframed: VideoPlayerForm)
 			expect(video(root).poster).toMatch(/radiant-reel\.jpg$/);
 			expect(video(root).src).toMatch(/^blob:/);
 			expect(video(root).paused).toBe(true);
-			expect(state(root)).toBe('paused');
+			await expect.poll(() => state(root)).toBe('paused');
 			expect(text(root, '[data-duration]')).toBe('0:12');
 			expect(text(root, '[data-elapsed]')).toBe('0:00');
 			expect(seek(root).max).toBeCloseTo(video(root).duration, 1);
