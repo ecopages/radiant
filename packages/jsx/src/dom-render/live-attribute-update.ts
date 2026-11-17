@@ -41,14 +41,18 @@ export function updateLiveAttributePart(
 	const subscriptionSerial = part.subscriptionSerial + 1;
 	part.subscriptionSerial = subscriptionSerial;
 	part.source = value;
-	part.unsubscribe = subscribeToReactiveChildSource(value, (nextValue) => {
-		if (part.subscriptionSerial !== subscriptionSerial || part.source !== value) {
-			return;
-		}
+	part.unsubscribe = subscribeToReactiveChildSource(
+		value,
+		(nextValue) => {
+			if (part.subscriptionSerial !== subscriptionSerial || part.source !== value) {
+				return;
+			}
 
-		const nextDeferredProperties: DeferredPropertyBinding[] = [];
-		applyToPart(part, nextValue, nextDeferredProperties);
-		flushDeferredProperties(nextDeferredProperties);
-	}, part.rootTarget);
+			const nextDeferredProperties: DeferredPropertyBinding[] = [];
+			applyToPart(part, nextValue, nextDeferredProperties);
+			flushDeferredProperties(nextDeferredProperties);
+		},
+		part.rootTarget,
+	);
 	applyToPart(part, readReactiveChildSourceValue(value), deferredProperties);
 }

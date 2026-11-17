@@ -49,14 +49,18 @@ function bindTextContentPart(
 	const subscriptionSerial = part.subscriptionSerial + 1;
 	part.subscriptionSerial = subscriptionSerial;
 	part.source = value;
-	part.unsubscribe = subscribeToReactiveChildSource(value, (nextValue) => {
-		if (part.subscriptionSerial !== subscriptionSerial || part.source !== value) {
-			return;
-		}
+	part.unsubscribe = subscribeToReactiveChildSource(
+		value,
+		(nextValue) => {
+			if (part.subscriptionSerial !== subscriptionSerial || part.source !== value) {
+				return;
+			}
 
-		part.committedText = stringifyTextContentValue(nextValue);
-		writeGroupedTextContent(siblings, part.element);
-	}, rootTarget);
+			part.committedText = stringifyTextContentValue(nextValue);
+			writeGroupedTextContent(siblings, part.element);
+		},
+		rootTarget,
+	);
 	part.committedText = stringifyTextContentValue(readReactiveChildSourceValue(value));
 }
 
