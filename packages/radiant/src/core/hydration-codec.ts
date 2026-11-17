@@ -1,5 +1,4 @@
 import { escapeScriptJson } from '../tools/escape-script-json';
-import { isControllerHost } from '../helpers/resolve-host-element';
 import { escapeHtmlAttribute } from '../utils/escape-html-attribute';
 import { getControllerIdentifier } from './controller-metadata';
 
@@ -22,16 +21,14 @@ type HydrationScriptHost = {
  *
  * @remarks
  * Several controllers can share one element (`data-controller="a b"`) and the Element Host can be one of them, so a
- * bare field name would let two owners read each other's payload. A controller with an identifier is scoped as
- * `<identifier>:<field>`. An Element Host, and a controller registered without an identifier, keep the bare field
- * name. The server writers and the client readers both call this, so markup and lookup agree.
+ * bare field name would let two owners read each other's payload. A controller registered with an identifier is
+ * scoped as `<identifier>:<field>`. An Element Host, and a controller registered without an identifier, keep the bare
+ * field name. `installContextProvider` and `installHostSignal` call this once at install; the provider and the
+ * signal store the key and use it both to write the script and to find it again. A subclass of a controller
+ * inherits the identifier, so it shares the key.
  */
-export function resolveHydrationKey(owner: unknown, fieldName: string): string {
-	if (!isControllerHost(owner)) {
-		return fieldName;
-	}
-
-	const identifier = getControllerIdentifier((owner as object).constructor as CustomElementConstructor);
+export function resolveHydrationKey(owner: object, fieldName: string): string {
+	const identifier = getControllerIdentifier(owner.constructor as CustomElementConstructor);
 
 	return identifier ? `${identifier}:${fieldName}` : fieldName;
 }

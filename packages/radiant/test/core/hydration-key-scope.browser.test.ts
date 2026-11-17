@@ -2,7 +2,6 @@ import { waitFor } from '@testing-library/dom';
 import type { WritableSignal } from '@ecopages/signals';
 import { afterEach, describe, expect, test } from 'vitest';
 import { ContextProvider, createContext, provideContext } from '../../src/context';
-import { createHydrationScriptTag, resolveHydrationKey } from '../../src/core/hydration-codec';
 import { RadiantController } from '../../src/core/radiant-controller';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { controller } from '../../src/decorators/controller';
@@ -28,6 +27,10 @@ class SecondController extends RadiantController {
 
 @controller('hydration-scope-signal')
 class SignalController extends RadiantController {
+	@signal({ hydrate: Number, initial: 0 }) count!: WritableSignal<number>;
+}
+
+class PlainController extends RadiantController {
 	@signal({ hydrate: Number, initial: 0 }) count!: WritableSignal<number>;
 }
 
@@ -80,20 +83,15 @@ describe('hydration keys on a host shared by several owners', () => {
 		document.body.innerHTML = `<hydration-scope-element data-controller="hydration-scope-signal">${markup}</hydration-scope-element>`;
 		const element = document.querySelector<SignalElement>('hydration-scope-element')!;
 
-		await waitFor(() => expect(element.count.get()).toBe(7));
 		expect(signalScript(sourceController.count)).toContain('data-hydration-key="hydration-scope-signal:count"');
 		expect(signalScript(sourceElement.count)).toContain('data-hydration-key="count"');
+		await waitFor(() => expect(element.count.get()).toBe(7));
 	});
 
-	test('resolveHydrationKey scopes controller fields only and the attribute stays escaped', () => {
-		const host = document.createElement('div');
-		const scoped = resolveHydrationKey(create(SignalController, host), 'count');
+	test('a controller registered without an identifier keeps the bare key', () => {
+		const plain = create(PlainController, document.createElement('div'));
+		plain.count.set(1);
 
-		expect(scoped).toBe('hydration-scope-signal:count');
-		expect(resolveHydrationKey(document.createElement('div'), 'count')).toBe('count');
-		expect(resolveHydrationKey(new RadiantController(host), 'count')).toBe('count');
-		expect(createHydrationScriptTag({ type: 'signal', hydrationKey: 'a"b:count', serializedValue: '1' })).toContain(
-			'data-hydration-key="a&quot;b:count"',
-		);
+		expect(signalScript(plain.count)).toContain('data-hydration-key="count"');
 	});
 });

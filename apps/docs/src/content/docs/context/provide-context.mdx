@@ -1,6 +1,6 @@
 ---
-title: "Provide Context"
-description: "Provide a typed context value from a RadiantElement or RadiantController host."
+title: 'Provide Context'
+description: 'Provide a typed context value from a RadiantElement or RadiantController host.'
 order: 2
 ---
 
@@ -36,12 +36,12 @@ See [Typing Decorated Fields](/docs/decorators#typing-decorated-fields) for the 
 
 ## Options
 
-| Option | Type | Description |
-| :-- | :-- | :-- |
-| `context` | `Context` | The typed context token to provide |
-| `initialValue` | `T` | Initial provider value. Each provider shallow-copies a plain object or array; nested values are shared |
-| `hydrate` | `String \| Number \| Boolean \| Object \| Array` | Serializes and restores provider state during SSR hydration |
-| `serialize` | `(value: T) => unknown` | Projects the live context into an SSR-safe hydration payload |
+| Option         | Type                                             | Description                                                                                            |
+| :------------- | :----------------------------------------------- | :----------------------------------------------------------------------------------------------------- |
+| `context`      | `Context`                                        | The typed context token to provide                                                                     |
+| `initialValue` | `T`                                              | Initial provider value. Each provider shallow-copies a plain object or array; nested values are shared |
+| `hydrate`      | `String \| Number \| Boolean \| Object \| Array` | Serializes and restores provider state during SSR hydration                                            |
+| `serialize`    | `(value: T) => unknown`                          | Projects the live context into an SSR-safe hydration payload                                           |
 
 ## Updating Context
 
@@ -98,7 +98,9 @@ When `hydrate: Object` is active, the parsed payload merges back into `initialVa
 
 When Radiant owns SSR for the host, prefer `renderComponent(...)` so hydration scripts are emitted as raw markup. Those SSR helpers live under `@ecopages/radiant/server/*`. Avoid placing JSON strings directly inside `<script>` children in JSX, because they will be HTML-escaped before the browser parses them.
 
-A hydration script carries `data-hydration-key`, the name of the decorated field. A `RadiantController` registered with `@controller('id')` scopes it as `id:field`, so several controllers on one element (`data-controller="a b"`) and the element host itself each read only their own payload. The same applies to `@signal` payloads. A `RadiantElement` keeps the bare field name, so hand-authored scripts for an element host stay valid; when you author a script for a controller, use the `id:field` key or emit it with `provider.renderHydrationScriptTag()`.
+A hydration script carries `data-hydration-key`, the name of the decorated field. A `RadiantElement` uses the bare field name, so `data-hydration-key="provider"` for a field called `provider`. A `RadiantController` registered with `@controller('id')` scopes it as `id:field`, for example `data-hydration-key="theme-controller:theme"`, so several controllers on one element (`data-controller="a b"`) and the element host each read only their own payload. A controller registered without an identifier keeps the bare field name.
+
+When you write the script by hand for a controller, use the scoped key and place it inside the controller's host element, or emit it with `provider.renderHydrationScriptTag()`. On the client only `@provideContext` hydrates on a controller; a controller `@signal` emits its `id:field` script on the server but is not restored from it.
 
 For the full server-plus-client host hydration flow, including the explicit client hydrator requirement, see [Hydration](/docs/ssr/hydration).
 
