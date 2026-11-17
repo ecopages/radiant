@@ -1,4 +1,4 @@
-import type { BindingKind, TemplatePartDescriptor } from '../types/renderable-types.ts';
+import type { BindingKind, TemplatePartDescriptor, ValueBindingKind } from '../types/renderable-types.ts';
 
 export type { BindingKind, TemplatePartDescriptor };
 
@@ -25,7 +25,7 @@ export type LegacyTemplateShape = {
  * @param prefix One of `''`, `'?'`, `'!'`, `'@'`, or `'.'`.
  * @returns The binding kind used by serializers, hydration, and DOM compilation.
  */
-export function getBindingKind(prefix: string): BindingKind {
+export function getBindingKind(prefix: string): ValueBindingKind {
 	switch (prefix) {
 		case '!':
 			return 'event';

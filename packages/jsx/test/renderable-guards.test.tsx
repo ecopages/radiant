@@ -125,7 +125,7 @@ describe('renderable-guards', () => {
 		expect(resolveReactiveSnapshot('plain')).toBe('plain');
 	});
 
-	test('creating a tree reads no signal or binding, and binds one on a boolean attribute as an attribute', () => {
+	test('creating a tree reads no signal or binding, and leaves the kind on a boolean attribute to each value', () => {
 		let reads = 0;
 		const signal = {
 			get: () => {
@@ -147,9 +147,9 @@ describe('renderable-guards', () => {
 
 		expect(reads).toBe(0);
 		expect([...native, ...custom]).toEqual([
-			{ kind: 'attr', name: 'hidden', type: 'attribute' },
-			{ kind: 'attr', name: 'inert', type: 'attribute' },
-			{ kind: 'attr', name: 'disabled', type: 'attribute' },
+			{ kind: 'bool-or-attr', name: 'hidden', type: 'attribute' },
+			{ kind: 'bool-or-attr', name: 'inert', type: 'attribute' },
+			{ kind: 'bool-or-prop', name: 'disabled', type: 'attribute' },
 		]);
 		expect(partsOf(jsx('x-panel', { disabled: true }))).toEqual([
 			{ kind: 'bool', name: 'disabled', type: 'attribute' },

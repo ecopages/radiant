@@ -59,8 +59,18 @@ export interface JsxNodeLike {
 	readonly [RADIANT_MARKUP_NODE_SYMBOL]?: true;
 }
 
-/** Kinds of dynamic bindings that the JSX runtime can encode into templates. */
-export type BindingKind = 'attr' | 'bool' | 'children' | 'event' | 'native-event' | 'prop' | 'ref';
+/**
+ * Kinds of dynamic bindings that the JSX runtime can encode into templates.
+ *
+ * @remarks `bool-or-attr` and `bool-or-prop` bind a signal or binding on a standard boolean attribute, whose kind
+ * the factory cannot know without reading it: each value binds as `bool` when it is a boolean, and as `attr` or
+ * `prop` otherwise, as a static value of that type would ({@link ValueBindingKind}).
+ */
+export type BindingKind =
+	'attr' | 'bool' | 'bool-or-attr' | 'bool-or-prop' | 'children' | 'event' | 'native-event' | 'prop' | 'ref';
+
+/** A binding kind that applies a value directly, with no per-value choice left. */
+export type ValueBindingKind = Exclude<BindingKind, 'bool-or-attr' | 'bool-or-prop'>;
 
 /**
  * Describes what one interpolation slot binds to.

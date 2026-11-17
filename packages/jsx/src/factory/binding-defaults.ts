@@ -1,3 +1,5 @@
+import type { BindingKind, ValueBindingKind } from '../types/renderable-types.ts';
+
 /**
  * HTML attribute names that should keep boolean-attribute binding semantics
  * when authored without a prefix.
@@ -52,6 +54,15 @@ const customElementAttributeDefaults = new Set([
 	'tabindex',
 	'title',
 ]);
+
+/** Returns the kind `value` binds as under `kind`: a `bool-or-*` kind is `bool` for a boolean and its fallback otherwise. */
+export function resolveValueBindingKind(kind: BindingKind, value: unknown): ValueBindingKind {
+	if (kind === 'bool-or-attr' || kind === 'bool-or-prop') {
+		return typeof value === 'boolean' ? 'bool' : kind === 'bool-or-attr' ? 'attr' : 'prop';
+	}
+
+	return kind;
+}
 
 /** Returns whether `name` should use boolean-attribute binding semantics.
  *

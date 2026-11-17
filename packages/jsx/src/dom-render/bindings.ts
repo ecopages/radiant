@@ -1,4 +1,5 @@
 import { resolveAttributeText } from '../factory/attribute-normalize.ts';
+import { resolveValueBindingKind } from '../factory/binding-defaults.ts';
 import { attachEventBindingListener, detachEventBindingListener, isEventListenerObject } from './event-delegation.ts';
 import { getElementAttributeValue, removeElementAttribute, setElementAttributeValue } from './namespaces.ts';
 import { detachRef, reportRefError, runRefCleanup } from './mounted-disposal.ts';
@@ -48,7 +49,12 @@ export function applyBindingToElement(
 
 	const resolvedValue = resolveReactiveSnapshot(value);
 
-	switch (binding.kind) {
+	if (binding.kind === 'bool-or-prop' && typeof resolvedValue !== 'boolean') {
+		applyPropertyFallback(element, binding.name, resolvedValue, options.deferredProperties, livePart);
+		return;
+	}
+
+	switch (resolveValueBindingKind(binding.kind, resolvedValue)) {
 		case 'attr':
 			applyAttributeBinding(element, binding.name, resolvedValue, livePart);
 			return;
@@ -152,6 +158,35 @@ function applyNativeEventBinding(
 		: undefined;
 	if (livePart.nativeListener) element.addEventListener(name, livePart.nativeListener);
 	updatePreviousValue(livePart, value);
+}
+
+/**
+ * Binds a non-boolean value of a `bool-or-prop` part as a property, as a static value of that type would.
+ *
+ * @remarks A static value binds on a fresh element, and a live part cannot give one back, so this comes as close as
+ * the element allows: a property value replacing a boolean removes the attribute the boolean set, and `undefined`,
+ * which a static value omits, writes the property only to clear a property value this part wrote. A boolean that
+ * replaces a property value sets the attribute and leaves the property as it is.
+ */
+function applyPropertyFallback(
+	element: Element,
+	name: string,
+	value: unknown,
+	deferredProperties: DeferredPropertyBinding[],
+	livePart: LiveAttributePart | undefined,
+): void {
+	const previous = livePart?.previousValue;
+
+	if (typeof previous === 'boolean') {
+		removeElementAttribute(element, name);
+	}
+
+	if (value === undefined && (previous === undefined || typeof previous === 'boolean')) {
+		updatePreviousValue(livePart, value);
+		return;
+	}
+
+	applyDeferredPropertyBinding(element, name, value, deferredProperties, livePart);
 }
 
 function applyDeferredPropertyBinding(

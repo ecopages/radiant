@@ -315,8 +315,9 @@ function getBindingPart(elementName: string, name: string, value: unknown): Attr
  *
  * The reserved name `ref` is always a `ref` binding. Explicit prefixes (`on-native:`, `on:`, `prop:`, `attr:`, `bool:`) select a kind directly.
  * Unprefixed names fall back to per-element defaults: a standard boolean attribute binds by
- * presence for a boolean and as an attribute for a reactive value, whose apply step sets presence for a boolean and
- * the text for anything else; custom elements bind by property unless the name is a known attribute.
+ * presence for a boolean, and custom elements bind by property unless the name is a known attribute. A signal or
+ * binding on a standard boolean attribute binds as `bool-or-attr` or `bool-or-prop`, so each of its values binds as a
+ * static value of that type would.
  *
  * @param elementName Lowercase tag name, including custom-element names with `-`.
  * @param name Authored prop name, possibly carrying an explicit prefix.
@@ -361,7 +362,11 @@ function resolveBindingPart(
 	}
 
 	if (booleanShape === 'reactive') {
-		return { kind: 'attr', name, type: 'attribute' };
+		return {
+			kind: shouldUseAttributeBindingByDefaultForElement(elementName, name) ? 'bool-or-attr' : 'bool-or-prop',
+			name,
+			type: 'attribute',
+		};
 	}
 
 	if (!shouldUseAttributeBindingByDefaultForElement(elementName, name)) {

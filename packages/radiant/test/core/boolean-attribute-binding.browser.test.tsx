@@ -213,4 +213,50 @@ describe('a binding on a standard boolean attribute', () => {
 		expect(warn).toHaveBeenCalledTimes(1);
 		expect(String(warn.mock.calls[0]?.[0])).toContain('"closed"');
 	});
+
+	test('a this.$ binding leaves the same attribute and property as a static value, for each kind of value', async () => {
+		const values = [true, false, undefined, null, 'until-found'];
+		const read = (element: Element & Record<string, unknown>, name: string) => ({
+			attribute: element.getAttribute(name),
+			property: Object.hasOwn(element, name) ? element[name] : 'none',
+		});
+
+		for (const value of values) {
+			const staticTag = nextTag('static-value');
+			const boundTag = nextTag('bound-value');
+
+			@customElement(staticTag)
+			class StaticHost extends RadiantElement {
+				override render() {
+					return (
+						<div>
+							<p hidden={value as boolean} />
+							<x-field disabled={value} />
+						</div>
+					);
+				}
+			}
+
+			@customElement(boundTag)
+			class BoundHost extends RadiantElement<{ value: unknown }> {
+				@state value: unknown = value;
+
+				override render() {
+					return (
+						<div>
+							<p hidden={this.$.value as never} />
+							<x-field disabled={this.$.value} />
+						</div>
+					);
+				}
+			}
+
+			const forms = [await mount<StaticHost>(staticTag), await mount<BoundHost>(boundTag)].map((host) => [
+				read(host.querySelector('p')! as never, 'hidden'),
+				read(host.querySelector('x-field')! as never, 'disabled'),
+			]);
+
+			expect(forms[1], String(value)).toEqual(forms[0]);
+		}
+	});
 });

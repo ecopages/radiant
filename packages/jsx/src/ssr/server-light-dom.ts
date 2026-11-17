@@ -1,4 +1,5 @@
 import { resolveAttributeText } from '../factory/attribute-normalize.ts';
+import { resolveValueBindingKind } from '../factory/binding-defaults.ts';
 import {
 	endsWithTextContentOpenTag,
 	stringifyTextContentValue,
@@ -321,10 +322,13 @@ function instantiateElement(
  * `bool` sets presence, and `style` objects serialize to a declaration string.
  */
 function applyAttributePart(element: Element, part: TemplatePartDescriptor | undefined, rawValue: unknown): void {
-	if (part?.type !== 'attribute' || isClientOnlyBinding(part.kind)) return;
+	if (part?.type !== 'attribute') return;
 
 	const value = resolveReactiveSnapshot(rawValue);
+	const kind = resolveValueBindingKind(part.kind, value);
 
-	const text = resolveAttributeText(part.name, value, part.kind === 'bool');
+	if (isClientOnlyBinding(kind)) return;
+
+	const text = resolveAttributeText(part.name, value, kind === 'bool');
 	if (text !== undefined) element.setAttribute(part.name, text);
 }
