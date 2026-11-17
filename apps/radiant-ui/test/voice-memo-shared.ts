@@ -165,8 +165,10 @@ export function describeVoiceMemoForm(name: string, form: VoiceMemoForm): void {
 			await click(root, '[data-stop]');
 			await until(() => expect(stateOf(root)).toBe('stopped'));
 
-			await until(() => expect(part<HTMLAudioElement>(root, '[data-player]').src).not.toBe(first));
-			await until(() => expect(part<HTMLAudioElement>(root, '[data-player]').error?.message ?? null).toBeNull());
+			const player = part<HTMLAudioElement>(root, '[data-player]');
+			await until(() => expect(player.src).not.toBe(first));
+			await until(() => expect(player.readyState > 0 || player.error !== null).toBe(true));
+			expect(player.error).toBeNull();
 			await form.remove(root);
 		});
 
