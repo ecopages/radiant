@@ -2375,12 +2375,8 @@ describe('MediaController play on an element with nothing to play', () => {
 		harness.controller.attach();
 		harness.controller.pause();
 
-		const outcome = await Promise.race([
-			harness.controller.play().then(() => 'settled'),
-			sleep(500).then(() => 'pending'),
-		]);
+		await harness.controller.play();
 
-		expect(outcome).toBe('settled');
 		expect(harness.controller.getState().status).toBe('idle');
 		expect(harness.media.networkState).toBe(HTMLMediaElement.NETWORK_EMPTY);
 	});
@@ -2394,13 +2390,26 @@ describe('MediaController play on an element with nothing to play', () => {
 		harness.controller.attach();
 		await harness.controller.load('next');
 
-		const outcome = await Promise.race([
-			harness.controller.play().then(() => 'settled'),
-			sleep(500).then(() => 'pending'),
-		]);
+		await harness.controller.play();
 
-		expect(outcome).toBe('settled');
 		expect(harness.controller.getState()).toMatchObject({ status: 'error', currentSrc: '' });
+	});
+});
+
+describe('MediaController play after the host emptied the element', () => {
+	it('does not call the element play() and does not mark the controller started', async () => {
+		const harness = setup();
+		await ready(harness);
+		const play = vi.spyOn(harness.media, 'play');
+		const emptied = once(harness.media, 'emptied');
+		harness.media.removeAttribute('src');
+		harness.media.load();
+		await emptied;
+
+		await harness.controller.play();
+
+		expect(play).not.toHaveBeenCalled();
+		expect(harness.controller.getState().status).toBe('idle');
 	});
 });
 
