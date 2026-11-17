@@ -167,6 +167,19 @@ Use bindings when:
 
 A direct reactive read in `render()` rebuilds the JSX tree when that value changes.
 
+### External stores
+
+When the source of truth is a Zustand, Redux, or `useSyncExternalStore` store that other code already writes, do not copy snapshots into `@state`. `fromExternalStore(...)` from `@ecopages/signals` is a read-only signal over that store. Register it as a host member; the host subscribes while connected and paints one snapshot on the server.
+
+```tsx
+this.registerReactiveMember(
+	'count',
+	fromExternalStore(cartStore, (state) => state.items.length),
+);
+```
+
+`{this.$.count}` patches that node. A list whose shape changes should read the selected value in `render()`. Writes stay on the store. Provide the store through context and let each descendant select its own slice; `@contextSelector` will not see `setState` because the store object is not replaced. See [External stores](https://radiant.ecopages.app/docs/signals/signals-external-store).
+
 ## SSR And Hydration
 
 Prefer the server pipeline for host HTML:

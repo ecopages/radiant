@@ -1,0 +1,109 @@
+---
+title: "External stores"
+description: "Read a Zustand or Redux store as a signal, per host or through context."
+order: 6
+---
+
+import { ExternalStoreCart } from '@/components/external-store-cart';
+
+export const config = {
+	dependencies: {
+		components: [ExternalStoreCart],
+	},
+};
+
+# External stores
+
+Use `fromExternalStore(...)` when the source of truth is **already** a Zustand, Redux, or `useSyncExternalStore` store, and a Radiant host should read a slice of it. `createStore(...)` is the right choice when Radiant owns the data.
+
+You need this when several things write the same cart, session, or feature flag: a checkout form, analytics, maybe a React island, and a Radiant badge on the header. Copying `store.getState()` into `@state` on every dispatch re-renders the whole host. The store stays in charge of writes. The host binds one slice.
+
+<ExternalStoreCart />
+
+The count patches in place (`this.$.count`). The list re-renders because its shape changed. **Add mug** and **Add lamp** call `cartStore.setState`. They never write a Radiant field.
+
+## Why not @state, and why not createStore?
+
+| You have | Use |
+| --- | --- |
+| State that belongs to this host | `@state` / `@prop` |
+| Nested data Radiant owns | `createStore(...)` as a host member |
+| A store other code already writes | `fromExternalStore(...)` |
+
+`fromExternalStore` is read-only. There is no `.set()`. Dispatch, `setState`, or the store's actions stay on the store.
+
+## API
+
+```ts
+import { fromExternalStore } from '@ecopages/signals';
+
+const count = fromExternalStore(store, (state) => state.items.length);
+```
+
+`store` is anything with `subscribe` and either `getSnapshot` (the React contract) or `getState` (Zustand and Redux). An optional `getServerSnapshot` is the value used until something subscribes.
+
+On a host:
+
+```tsx
+@customElement('cart-badge')
+class CartBadge extends RadiantElement<{ count: number }> {
+	constructor() {
+		super();
+		this.registerReactiveMember(
+			'count',
+			fromExternalStore(cartStore, (state) => state.items.length),
+		);
+	}
+
+	override render() {
+		return <span>{this.$.count}</span>;
+	}
+}
+```
+
+The host observes members only while connected, so the store subscription starts on connect, stops on disconnect, and starts again on reconnect. Server rendering reads one snapshot and does not keep a listener.
+
+A selector should return a value that is `Object.is` stable when the slice did not change. Returning a new object on every store notification will update every time.
+
+## Through context
+
+Provide the store object (its identity stays stable). Each descendant selects the slice it uses. `@contextSelector` is the wrong tool here: it reacts when the **context value** is replaced, and a Zustand store is not replaced on `setState`.
+
+```tsx
+const cartContext = createContext<typeof cartStore>(Symbol('cart'));
+
+@customElement('shop-root')
+class ShopRoot extends RadiantElement {
+	@provideContext({ context: cartContext, initialValue: cartStore })
+	cart!: ContextProvider<typeof cartContext>;
+}
+
+@customElement('cart-badge')
+class CartBadge extends RadiantElement<{ count: number }> {
+	@onContextUpdate({ context: cartContext })
+	onCart(store: typeof cartStore) {
+		this.registerReactiveMember(
+			'count',
+			fromExternalStore(store, (state) => state.items.length),
+		);
+	}
+
+	override render() {
+		return <span>{this.$.count}</span>;
+	}
+}
+```
+
+A sibling that selects `state.user` does not update when the cart items change.
+
+## Server snapshot and hydration
+
+Pass `getServerSnapshot` when the server and the first client paint must match, then let the live `getSnapshot` / `getState` take over once the host connects (or an effect / computed subscriber starts). The HTML is painted from that server snapshot. The client subscription is the takeover.
+
+```ts
+fromExternalStore({
+	subscribe: store.subscribe,
+	getSnapshot: () => store.getState(),
+	getServerSnapshot: () => serverCart,
+}, (state) => state.items.length);
+```

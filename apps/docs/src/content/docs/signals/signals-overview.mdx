@@ -22,6 +22,7 @@ This package provides:
 - `untrack(...)` and `peek(...)` for non-tracking reads
 - `subtle.Watcher` plus `watched` and `unwatched` hooks for low-level invalidation workflows
 - `createStore(...)` and `snapshot(...)` for deep reactive object and array state
+- `fromExternalStore(...)` for a read-only signal over a Zustand, Redux, or `useSyncExternalStore` store
 
 ## Design Position
 
@@ -62,4 +63,5 @@ That split is intentional:
 - See [Signals State & Computed](/docs/signals/signals-state-computed)
 - See [Signals Effects](/docs/signals/signals-effects)
 - See [Signals Stores](/docs/signals/signals-stores)
+- See [External stores](/docs/signals/signals-external-store)
 - See [Resources](/docs/signals/signals-resources)

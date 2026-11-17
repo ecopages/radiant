@@ -9,6 +9,7 @@ export {
 export { Computed, computed, currentComputed } from './src/computed';
 export { trackDependency } from './src/dependency';
 export { effect } from './src/effect';
+export { fromExternalStore, type ExternalStoreSource, type ExternalStoreSubscribe } from './src/external-store';
 export { mapItems, type MapItemsSource } from './src/map-items';
 export { State, state } from './src/state';
 export { createStore, isStore, snapshot } from './src/store';
