@@ -5,7 +5,7 @@ import '../src/components/primitive-example/primitive-example.css';
 import '../src/content/components/recipes/audio-player.css';
 import { barsFollow, barsRest, coverage, describeAudioPlayerForm, playToEnd } from './audio-player-shared';
 import { mountComponent, trackListeners } from './mount-recipe';
-import { fakeTimers, until, untilFrame } from './until';
+import { fakeTimers, sampleFrames, until, untilFrame, afterDeferredDestroy } from './until';
 
 type Slider = HTMLElement & { value: number[]; disabled: boolean };
 
@@ -211,24 +211,13 @@ describe('audio player (component)', () => {
 
 		await userEvent.click(root.querySelector('[data-playback]')!);
 		await until(() => expect(audio(root).paused).toBe(false));
-		const seen = new Set<string | null>();
-		const start = performance.now();
-		await new Promise<void>((resolve) => {
-			const sample = () => {
-				seen.add(position());
-				if (performance.now() - start > 1000) resolve();
-				else requestAnimationFrame(sample);
-			};
-			sample();
-		});
-
-		expect(seen.size).toBeGreaterThanOrEqual(15);
+		const followed = await sampleFrames(15, position);
+		expect(new Set(followed).size).toBeGreaterThanOrEqual(8);
 
 		await userEvent.click(root.querySelector('[data-playback]')!);
 		await until(() => expect(audio(root).paused).toBe(true));
-		const settled = position();
-		await new Promise((resolve) => setTimeout(resolve, 300));
-		expect(position()).toBe(settled);
+		const held = await sampleFrames(20, position);
+		expect(new Set(held).size).toBe(1);
 	});
 });
 
@@ -242,10 +231,10 @@ describeAudioPlayerForm('component', {
 		const holder = document.createElement('div');
 		document.body.append(holder);
 		holder.append(root);
-		await new Promise((resolve) => setTimeout(resolve));
+		await afterDeferredDestroy();
 	},
 	remove: async (root) => {
 		root.remove();
-		await new Promise((resolve) => setTimeout(resolve));
+		await afterDeferredDestroy();
 	},
 });

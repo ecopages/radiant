@@ -5,7 +5,7 @@ import '../src/components/primitive-example/primitive-example.css';
 import '../src/content/components/recipes/video-player.css';
 import { mountComponent, trackListeners } from './mount-recipe';
 import { describeVideoPlayerForm } from './video-player-shared';
-import { until } from './until';
+import { until, afterDeferredDestroy, nothingFollows } from './until';
 
 type Slider = HTMLElement & { value: number[]; disabled: boolean };
 
@@ -45,7 +45,7 @@ describe('video player (component)', () => {
 		const nodes = buttons.map((selector) => part(root, selector));
 		await userEvent.click(part(root, '[data-playback]'));
 		await until(() => expect(part(root, '[data-stage]').getAttribute('data-state')).toBe('playing'));
-		await new Promise((resolve) => setTimeout(resolve, 50));
+		await nothingFollows('a redraw of the controls after the first frame', 3);
 		const records: MutationRecord[] = [];
 		const observer = new MutationObserver((batch) => records.push(...batch));
 		for (const node of nodes) observer.observe(node, { attributes: true, childList: true, subtree: true });
@@ -103,7 +103,7 @@ describe('video player (component)', () => {
 			const holder = document.createElement('div');
 			document.body.append(holder);
 			holder.append(root);
-			await new Promise((resolve) => setTimeout(resolve));
+			await afterDeferredDestroy();
 		}
 
 		await ready(root);
@@ -129,7 +129,7 @@ describe('video player (component)', () => {
 			const player = video(root);
 
 			root.remove();
-			await new Promise((resolve) => setTimeout(resolve, 100));
+			await afterDeferredDestroy();
 
 			expect(player.paused).toBe(true);
 			expect(player.hasAttribute('src')).toBe(false);
@@ -154,10 +154,10 @@ describeVideoPlayerForm('component', {
 		const holder = document.createElement('div');
 		document.body.append(holder);
 		holder.append(root);
-		await new Promise((resolve) => setTimeout(resolve));
+		await afterDeferredDestroy();
 	},
 	remove: async (root) => {
 		root.remove();
-		await new Promise((resolve) => setTimeout(resolve));
+		await afterDeferredDestroy();
 	},
 });

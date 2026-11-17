@@ -6,7 +6,7 @@ import '../src/content/components/recipes/audio-player.css';
 import { syncExamples } from '../src/components/primitive-example/mount-example';
 import { barsFollow, barsRest, coverage, describeAudioPlayerForm, playToEnd } from './audio-player-shared';
 import { mountForm, trackListeners } from './mount-recipe';
-import { fakeTimers, until, untilFrame } from './until';
+import { fakeTimers, sampleFrames, until, untilFrame, afterDeferredDestroy } from './until';
 
 type Slider = HTMLElement & { value: number[]; disabled: boolean };
 
@@ -221,27 +221,17 @@ describe('audio player (element)', () => {
 		const root = await mountForm('audio-player', 'radiant');
 		const seek = root.querySelector<Slider>('[data-seek]')!;
 		await until(() => expect(seek.disabled).toBe(false));
-		const positions = new Set<number>();
-		const sample = async (milliseconds: number) => {
-			const end = performance.now() + milliseconds;
-			while (performance.now() < end) {
-				positions.add(seek.value[0]);
-				await new Promise((resolve) => requestAnimationFrame(resolve));
-			}
-		};
 
 		await userEvent.click(root.querySelector('[data-playback]')!);
 		await until(() => expect(audio(root).paused).toBe(false));
-		await sample(1000);
-
-		expect(positions.size).toBeGreaterThanOrEqual(15);
+		const followed = await sampleFrames(15, () => seek.value[0]);
+		expect(new Set(followed).size).toBeGreaterThanOrEqual(8);
 
 		await userEvent.click(root.querySelector('[data-playback]')!);
 		await until(() => expect(audio(root).paused).toBe(true));
-		positions.clear();
-		await sample(300);
+		const held = await sampleFrames(20, () => seek.value[0]);
 
-		expect(positions.size).toBeLessThanOrEqual(1);
+		expect(new Set(held).size).toBeLessThanOrEqual(1);
 	});
 });
 
@@ -249,13 +239,13 @@ const relocate = async (root: HTMLElement) => {
 	const holder = document.createElement('div');
 	document.body.append(holder);
 	holder.append(root);
-	await new Promise((resolve) => setTimeout(resolve));
+	await afterDeferredDestroy();
 };
 describeAudioPlayerForm('element', {
 	mount: () => mountForm('audio-player', 'radiant'),
 	relocate,
 	remove: async (root) => {
 		root.remove();
-		await new Promise((resolve) => setTimeout(resolve));
+		await afterDeferredDestroy();
 	},
 });

@@ -6,14 +6,13 @@ import '../src/content/components/recipes/video-player.css';
 import { syncExamples } from '../src/components/primitive-example/mount-example';
 import { mountController, trackListeners } from './mount-recipe';
 import { describeVideoPlayerForm } from './video-player-shared';
-import { until } from './until';
+import { until, afterDeferredDestroy } from './until';
 
 type Slider = HTMLElement & { disabled: boolean };
 
 const video = (root: HTMLElement) => root.querySelector<HTMLVideoElement>('[data-video]')!;
 const ready = (root: HTMLElement) =>
 	until(() => expect(root.querySelector<Slider>('[data-seek]')!.disabled).toBe(false));
-const macrotask = (milliseconds = 0) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 afterEach(() => {
 	vi.useRealTimers();
@@ -33,7 +32,7 @@ describe('video player (controller)', () => {
 			const stage = root.querySelector('[data-stage]')!;
 
 			root.remove();
-			await macrotask(50);
+			await afterDeferredDestroy();
 
 			expect(player.paused).toBe(true);
 			expect(player.hasAttribute('src')).toBe(false);
@@ -68,7 +67,7 @@ describe('video player (controller)', () => {
 		document.body.append(holder);
 
 		holder.append(root);
-		await macrotask(50);
+		await afterDeferredDestroy();
 		await ready(root);
 		await until(() => expect(video(root).src).toMatch(/^blob:/));
 		const toggles: boolean[] = [];
@@ -88,10 +87,10 @@ describeVideoPlayerForm('controller', {
 		const holder = document.createElement('div');
 		document.body.append(holder);
 		holder.append(root);
-		await macrotask(50);
+		await afterDeferredDestroy();
 	},
 	remove: async (root) => {
 		root.remove();
-		await macrotask();
+		await afterDeferredDestroy();
 	},
 });

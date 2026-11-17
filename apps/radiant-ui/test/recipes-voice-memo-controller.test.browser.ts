@@ -2,6 +2,7 @@ import { afterEach, vi } from 'vitest';
 import { syncExamples } from '../src/components/primitive-example/mount-example';
 import { describeVoiceMemoForm } from './voice-memo-shared';
 import { mountController } from './mount-recipe';
+import { afterDeferredDestroy } from './until';
 
 afterEach(() => {
 	vi.restoreAllMocks();
@@ -15,6 +16,6 @@ describeVoiceMemoForm('controller', {
 	remove: async (root) => {
 		root.remove();
 		syncExamples();
-		await new Promise((resolve) => setTimeout(resolve, 50));
+		await afterDeferredDestroy();
 	},
 });

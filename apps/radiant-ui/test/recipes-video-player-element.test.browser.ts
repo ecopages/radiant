@@ -6,13 +6,12 @@ import '../src/content/components/recipes/video-player.css';
 import { syncExamples } from '../src/components/primitive-example/mount-example';
 import { mountForm, trackListeners } from './mount-recipe';
 import { describeVideoPlayerForm } from './video-player-shared';
-import { until } from './until';
+import { until, afterDeferredDestroy } from './until';
 
 type Slider = HTMLElement & { disabled: boolean };
 
 const video = (root: HTMLElement) => root.querySelector<HTMLVideoElement>('[data-video]')!;
 const seek = (root: HTMLElement) => root.querySelector<Slider>('[data-seek]')!;
-const wait = (milliseconds: number) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 afterEach(() => {
 	vi.useRealTimers();
@@ -31,7 +30,7 @@ describe('video player (element)', () => {
 			const player = video(root);
 
 			root.remove();
-			await wait(50);
+			await afterDeferredDestroy();
 
 			expect(player.paused).toBe(true);
 			expect(player.hasAttribute('src')).toBe(false);
@@ -68,7 +67,7 @@ describe('video player (element)', () => {
 		const holder = document.createElement('div');
 		document.body.append(holder);
 		holder.append(root);
-		await wait(100);
+		await afterDeferredDestroy();
 
 		await until(() => expect(seek(root).disabled).toBe(false));
 		expect(video(root)).toBe(player);
@@ -81,13 +80,13 @@ const relocate = async (root: HTMLElement) => {
 	const holder = document.createElement('div');
 	document.body.append(holder);
 	holder.append(root);
-	await wait(0);
+	await afterDeferredDestroy();
 };
 describeVideoPlayerForm('element', {
 	mount: () => mountForm('video-player', 'radiant'),
 	relocate,
 	remove: async (root) => {
 		root.remove();
-		await wait(0);
+		await afterDeferredDestroy();
 	},
 });

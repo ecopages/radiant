@@ -1,6 +1,6 @@
 import { userEvent } from 'vitest/browser';
 import { afterEach, describe, expect, test, vi } from 'vitest';
-import { until } from './until';
+import { until, realWait } from './until';
 import '@ecopages/radiant-ui/themes/default';
 import '@ecopages/radiant-ui/button/styles.css';
 import '../src/components/primitive-example/primitive-example.css';
@@ -19,11 +19,6 @@ export const stateOf = (root: HTMLElement) => part(root, '[data-status]').datase
 export const statusOf = (root: HTMLElement) => part(root, '[data-status]').textContent;
 export const elapsedOf = (root: HTMLElement) => part(root, '[data-elapsed]').textContent;
 const click = (root: HTMLElement, selector: string) => userEvent.click(part(root, selector));
-/**
- * A real wait: a recording runs on the capture clock of the fake microphone, and nothing signals that a second of
- * audio has been captured.
- */
-const sleep = (milliseconds: number) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 export const buttons = (root: HTMLElement) =>
 	['record', 'pause', 'stop', 'discard'].map(
@@ -49,7 +44,7 @@ export async function record(root: HTMLElement): Promise<void> {
 
 export async function recordAndStop(root: HTMLElement): Promise<void> {
 	await record(root);
-	await sleep(1200);
+	await realWait(1200, 'real MediaRecorder capture: nothing signals that audio has been captured');
 	await click(root, '[data-stop]');
 	await until(() => expect(stateOf(root)).toBe('stopped'));
 	await until(() => expect(part<HTMLAudioElement>(root, '[data-player]').src).toMatch(/^blob:/));
@@ -103,7 +98,7 @@ export function describeVoiceMemoForm(name: string, form: VoiceMemoForm): void {
 			await record(root);
 			expect(statusOf(root)).toContain('Recording');
 			expect(buttons(root)).toEqual(['record:off', 'pause:on', 'stop:on', 'discard:on']);
-			await sleep(1200);
+			await realWait(1200, 'real MediaRecorder capture: nothing signals that audio has been captured');
 			expect(elapsedOf(root)).not.toBe('0:00');
 			await click(root, '[data-stop]');
 			await until(() => expect(stateOf(root)).toBe('stopped'));
@@ -166,7 +161,7 @@ export function describeVoiceMemoForm(name: string, form: VoiceMemoForm): void {
 			await click(root, '[data-record]');
 			expect(part(root, '[data-player]').hasAttribute('src')).toBe(false);
 			await until(() => expect(stateOf(root)).toBe('recording'));
-			await sleep(800);
+			await realWait(800, 'real MediaRecorder capture: nothing signals that audio has been captured');
 			await click(root, '[data-stop]');
 			await until(() => expect(stateOf(root)).toBe('stopped'));
 

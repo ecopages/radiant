@@ -31,8 +31,9 @@ describe('copy button styles', () => {
 		const { button, copy, check } = mount();
 
 		button.dataset.copyState = 'copied';
+		void getComputedStyle(check).opacity;
 
-		await new Promise((resolve) => setTimeout(resolve, 600));
+		await Promise.allSettled(button.getAnimations({ subtree: true }).map((animation) => animation.finished));
 		expect(getComputedStyle(check).opacity).toBe('1');
 		expect(getComputedStyle(copy).opacity).toBe('0');
 		expect(getComputedStyle(check.querySelector('path')!).strokeDashoffset).toBe('0px');

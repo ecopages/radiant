@@ -1,6 +1,6 @@
 import { userEvent } from 'vitest/browser';
 import { afterEach, describe, expect, test, vi } from 'vitest';
-import { until, untilFrame, fakeTimers, once, settle } from './until';
+import { until, untilFrame, fakeTimers, nothingFollows, once } from './until';
 import '@ecopages/radiant-ui/button/styles.css';
 import '@ecopages/radiant-ui/slider/styles.css';
 import '@ecopages/radiant-ui/toolbar/styles.css';
@@ -237,7 +237,7 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 			window.addEventListener('error', onError);
 			try {
 				root.querySelector('[data-tracks]')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-				await settle(100);
+				await nothingFollows('an error thrown by the click on the list');
 			} finally {
 				window.removeEventListener('error', onError);
 			}
@@ -258,7 +258,7 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 			const seeked = once(audio(root), 'seeked');
 			await userEvent.keyboard('{ArrowRight}{ArrowRight}');
 			await until(() => expect(text(thumb(root))).toBe('0:02 of 0:08'));
-			await settle(150);
+			vi.advanceTimersByTime(150);
 			await seeked;
 			expect(text(thumb(root))).toBe('0:02 of 0:08');
 
@@ -266,7 +266,7 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 			const volumechange = once(audio(root), 'volumechange');
 			await userEvent.keyboard('{ArrowLeft}');
 			await until(() => expect(text(volumeThumb(root))).toMatch(/^[0-9]+%$/));
-			await settle(150);
+			vi.advanceTimersByTime(150);
 			await volumechange;
 			expect(text(volumeThumb(root))).toBe(`${Math.round(audio(root).volume * 100)}%`);
 			expect(audio(root).volume).toBeLessThan(0.8);
@@ -327,7 +327,7 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 			await until(() => expect(audio(root).paused).toBe(true));
 			await barsRest(root, rest);
 
-			await settle(200);
+			await nothingFollows('the bars drifting off rest after the pause');
 			expect(Math.abs(coverage(root) - rest)).toBeLessThan(0.002);
 		});
 
@@ -381,7 +381,7 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 			thumb(root).dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
 			next(root).click();
 			await until(() => expect(current(root)).toBe('Low Tide'));
-			await settle(400);
+			vi.advanceTimersByTime(400);
 
 			expect(audio(root).currentTime).toBeLessThan(1);
 			expect(seeks.every((position) => position < 1)).toBe(true);
@@ -445,7 +445,7 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 
 				await until(() => expect(audio(root).src).toMatch(/^blob:/));
 				await until(() => expect(audio(root).paused).toBe(false));
-				await settle(200);
+				await nothingFollows('a second play for the repeated track choice');
 				expect(plays).toHaveLength(1);
 				expect(current(root)).toBe('Neon Rain');
 			} finally {
@@ -464,7 +464,7 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 				const source = audio(root).src;
 
 				held.open();
-				await settle(300);
+				await nothingFollows('the earlier fetch replacing the source', 10);
 
 				expect(current(root)).toBe('Low Tide');
 				expect(audio(root).src).toBe(source);
@@ -484,7 +484,7 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 
 				await form.remove(root);
 				held.open();
-				await settle(300);
+				await nothingFollows('a source set after the player was removed', 10);
 
 				expect(player.hasAttribute('src')).toBe(false);
 				expect(urls.alive()).toEqual([]);
@@ -661,7 +661,7 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 			thumb(root).focus();
 			const seeked = once(audio(root), 'seeked');
 			await userEvent.keyboard('{End}');
-			await settle(500);
+			vi.advanceTimersByTime(500);
 			await seeked;
 
 			expect(audio(root).currentTime).toBeGreaterThan(audio(root).duration - 0.5);

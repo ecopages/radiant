@@ -2,6 +2,7 @@ import { afterEach, describe, expect, test } from 'vitest';
 import { syncExamples } from '../src/components/primitive-example/mount-example';
 import { flowOf, type VoiceMemoForm } from './voice-memo-shared';
 import { mountComponent, mountController, mountForm, mountRecipe } from './mount-recipe';
+import { afterDeferredDestroy } from './until';
 
 afterEach(() => {
 	document.body.innerHTML = '';
@@ -11,7 +12,7 @@ afterEach(() => {
 const remove: VoiceMemoForm['remove'] = async (root) => {
 	root.remove();
 	syncExamples();
-	await new Promise((resolve) => setTimeout(resolve, 50));
+	await afterDeferredDestroy();
 };
 
 describe('voice memo forms', () => {

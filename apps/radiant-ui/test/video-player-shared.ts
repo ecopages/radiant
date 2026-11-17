@@ -1,6 +1,6 @@
 import { userEvent } from 'vitest/browser';
 import { afterEach, describe, expect, test, vi } from 'vitest';
-import { until, untilFrame, once, fakeTimers, settle } from './until';
+import { until, untilFrame, once, fakeTimers, nothingFollows } from './until';
 
 type Slider = HTMLElement & { value: number[]; disabled: boolean };
 
@@ -178,10 +178,10 @@ export function describeVideoPlayerForm(name: string, unframed: VideoPlayerForm)
 			observer.observe(document.body, { subtree: true, childList: true, characterData: true });
 			try {
 				const root = await ready(await form.mount());
-				await settle(300);
+				await nothingFollows('a live-region announcement while the clip loads', 10);
 				await form.relocate(root);
 				await ready(root);
-				await settle(300);
+				await nothingFollows('a live-region announcement after the move', 10);
 			} finally {
 				observer.disconnect();
 			}
@@ -272,7 +272,7 @@ export function describeVideoPlayerForm(name: string, unframed: VideoPlayerForm)
 			playback(root).focus();
 			await userEvent.keyboard(' ');
 			await until(() => expect(video(root).paused).toBe(false));
-			await settle(250);
+			await nothingFollows('Space on the button also pausing the clip');
 			expect(video(root).paused).toBe(false);
 		});
 
@@ -313,7 +313,7 @@ export function describeVideoPlayerForm(name: string, unframed: VideoPlayerForm)
 			expect(video(root).volume).toBeCloseTo(0.9, 2);
 
 			await userEvent.keyboard('{Control>}k{/Control}{Alt>}m{/Alt}{Meta>}c{/Meta}');
-			await settle(150);
+			await nothingFollows('a modifier key pausing, muting or captioning');
 			expect(video(root).paused).toBe(true);
 			expect(video(root).muted).toBe(false);
 			expect(hook(root, '[data-captions]').getAttribute('aria-pressed')).toBe('false');
@@ -325,29 +325,29 @@ export function describeVideoPlayerForm(name: string, unframed: VideoPlayerForm)
 
 			thumb(root).focus();
 			await userEvent.keyboard('{ArrowRight}');
-			await settle(200);
+			vi.advanceTimersByTime(200);
 			await until(() => expect(video(root).currentTime).toBeCloseTo(5, 1));
-			await settle(200);
+			vi.advanceTimersByTime(200);
 			expect(video(root).currentTime).toBeCloseTo(5, 1);
 			expect(text(root, '[data-elapsed]')).toBe('0:05');
 			expect(seek(root).value[0]).toBeCloseTo(5, 1);
 			expect(thumb(root).getAttribute('aria-valuetext')).toBe('0:05 of 0:12');
 
 			await userEvent.keyboard('{PageUp}');
-			await settle(200);
+			vi.advanceTimersByTime(200);
 			await until(() => expect(video(root).currentTime).toBeCloseTo(video(root).duration, 0));
 			await userEvent.keyboard('{PageDown}');
-			await settle(200);
+			vi.advanceTimersByTime(200);
 			await until(() => expect(video(root).currentTime).toBeCloseTo(video(root).duration - 10, 0));
 			await userEvent.keyboard('{ArrowLeft}{ArrowLeft}');
-			await settle(200);
+			vi.advanceTimersByTime(200);
 			await until(() => expect(video(root).currentTime).toBeCloseTo(0, 0));
 			await until(() => expect(seek(root).value[0]).toBeCloseTo(0, 0));
 			await userEvent.keyboard('{End}');
-			await settle(200);
+			vi.advanceTimersByTime(200);
 			await until(() => expect(video(root).currentTime).toBeCloseTo(video(root).duration, 0));
 			await userEvent.keyboard('{Home}');
-			await settle(200);
+			vi.advanceTimersByTime(200);
 			await until(() => expect(video(root).currentTime).toBeCloseTo(0, 0));
 		});
 
@@ -357,13 +357,13 @@ export function describeVideoPlayerForm(name: string, unframed: VideoPlayerForm)
 			stage(root).focus();
 			await userEvent.keyboard('5');
 			await until(() => expect(video(root).currentTime).toBeCloseTo(video(root).duration / 2, 0));
-			await settle(200);
+			vi.advanceTimersByTime(200);
 			const position = video(root).currentTime;
 			const value = seek(root).value[0];
 
 			thumb(root).focus();
 			await userEvent.keyboard('{Control>}{ArrowRight}{/Control}{Alt>}{ArrowLeft}{/Alt}{Meta>}{PageUp}{/Meta}');
-			await settle(200);
+			vi.advanceTimersByTime(200);
 
 			expect(video(root).currentTime).toBeCloseTo(position, 3);
 			expect(seek(root).value[0]).toBeCloseTo(value, 3);
@@ -381,7 +381,7 @@ export function describeVideoPlayerForm(name: string, unframed: VideoPlayerForm)
 			expect(text(root, '[data-elapsed]')).toBe('0:09');
 			expect(thumb(root).getAttribute('aria-valuetext')).toBe('0:09 of 0:12');
 			expect(video(root).currentTime).toBe(0);
-			await settle(200);
+			vi.advanceTimersByTime(200);
 			await seeked;
 			expect(video(root).currentTime).toBeCloseTo(video(root).duration * 0.75, 0);
 			expect(seeks).toBe(1);
@@ -622,7 +622,7 @@ export function describeVideoPlayerForm(name: string, unframed: VideoPlayerForm)
 				await playing(root);
 
 				await form.remove(root);
-				await settle(100);
+				await nothingFollows('the removed clip playing on');
 
 				expect(player.paused).toBe(true);
 				expect(player.hasAttribute('src')).toBe(false);
@@ -644,7 +644,7 @@ export function describeVideoPlayerForm(name: string, unframed: VideoPlayerForm)
 
 				await form.remove(root);
 				open();
-				await settle(300);
+				await nothingFollows('a source set after the removal', 10);
 
 				expect(player.hasAttribute('src')).toBe(false);
 				expect(urls.alive()).toEqual([]);

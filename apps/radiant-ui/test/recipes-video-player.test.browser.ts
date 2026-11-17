@@ -6,7 +6,7 @@ import '../src/content/components/recipes/video-player.css';
 import { syncExamples } from '../src/components/primitive-example/mount-example';
 import { mountForm, trackListeners } from './mount-recipe';
 import { describeVideoPlayerForm } from './video-player-shared';
-import { until } from './until';
+import { until, afterDeferredDestroy } from './until';
 
 const video = (root: HTMLElement) => root.querySelector<HTMLVideoElement>('[data-video]')!;
 
@@ -30,7 +30,7 @@ describe('video player (plain)', () => {
 
 			root.remove();
 			syncExamples();
-			await new Promise((resolve) => setTimeout(resolve, 50));
+			await afterDeferredDestroy();
 
 			expect(player.paused).toBe(true);
 			expect(player.hasAttribute('src')).toBe(false);

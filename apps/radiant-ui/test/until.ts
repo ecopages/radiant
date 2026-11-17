@@ -116,14 +116,50 @@ export function once<E extends Event = Event>(target: EventTarget, type: string)
 export const fakeTimers = () => vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
 
 /**
- * Lets `milliseconds` pass: on the fake clock when the test installed one, else for real.
+ * A negative assertion's wait: lets `count` animation frames pass so that a change the code should not make has had
+ * its chance.
  *
- * @remarks The real wait is for negative assertions that nothing changed, which have no signal to wait on.
+ * @remarks Nothing signals an absence, so this is the only wait that is not on a signal. `reason` names the change
+ * that would have shown up, which keeps the justification at the call site.
  */
-export async function settle(milliseconds: number): Promise<void> {
-	if (vi.isFakeTimers()) {
-		vi.advanceTimersByTime(milliseconds);
-		return;
+export function nothingFollows(_reason: string, count = 5): Promise<void> {
+	return new Promise((resolve) => {
+		const step = (left: number) => requestAnimationFrame(() => (left <= 1 ? resolve() : step(left - 1)));
+		step(count);
+	});
+}
+
+/**
+ * A wait on the wall clock, for what has no signal and no fake clock: a real capture, or a transition's own timing.
+ *
+ * @remarks `reason` states which of the two, so the justification sits at the call site.
+ */
+export function realWait(milliseconds: number, _reason: string): Promise<void> {
+	return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+/**
+ * Reads `read()` on each of the next `count` animation frames and returns the values.
+ *
+ * @remarks For asserting what a frame loop did frame by frame, such as a slider that follows playback or one that
+ * stays still; the count is in frames, so it does not depend on how fast the machine is.
+ */
+export async function sampleFrames<T>(count: number, read: () => T): Promise<T[]> {
+	const values: T[] = [];
+	for (let frame = 0; frame < count; frame++) {
+		values.push(read());
+		await nothingFollows('sampling', 1);
 	}
-	await new Promise((resolve) => setTimeout(resolve, milliseconds));
+	return values;
+}
+
+/**
+ * Resolves after one task, which lets the microtask that a controller defers its `destroy` to run after the host
+ * element was removed or moved.
+ *
+ * @remarks The controllers defer `destroy` so that a move within the document does not tear them down, and removal
+ * has no event of its own to wait on.
+ */
+export function afterDeferredDestroy(): Promise<void> {
+	return new Promise((resolve) => setTimeout(resolve));
 }
