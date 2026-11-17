@@ -1,5 +1,5 @@
 ---
-'@ecopages/radiant': patch
+'@ecopages/radiant': minor
 ---
 
 Fix controller and host lifecycle gaps.
