@@ -67,7 +67,7 @@ describe('fromExternalStore on a host', () => {
 
 		expect(renders).toBe(1);
 		expect(host.querySelector('[data-ref="count"]')?.textContent).toBe('1');
-		expect(store.listenerCount()).toBeGreaterThan(0);
+		expect(store.listenerCount()).toBe(1);
 
 		store.setState({ items: ['mug', 'lamp'] });
 		await host.updateComplete;
@@ -100,7 +100,7 @@ describe('fromExternalStore on a host', () => {
 		const host = document.createElement(tagName) as Badge;
 		document.body.appendChild(host);
 		await host.updateComplete;
-		expect(store.listenerCount()).toBeGreaterThan(0);
+		expect(store.listenerCount()).toBe(1);
 		calls.length = 0;
 		store.setState({ items: ['mug', 'lamp'] });
 		await host.updateComplete;

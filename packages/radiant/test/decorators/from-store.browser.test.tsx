@@ -116,7 +116,7 @@ describe('@fromStore', () => {
 		const host = document.createElement(tagName) as Badge;
 		document.body.appendChild(host);
 		await host.updateComplete;
-		expect(store.listenerCount()).toBeGreaterThan(0);
+		expect(store.listenerCount()).toBe(1);
 		calls.length = 0;
 		store.setState({ items: ['mug', 'lamp'] });
 		await host.updateComplete;

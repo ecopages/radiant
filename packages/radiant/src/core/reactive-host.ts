@@ -139,9 +139,6 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	private observationEpoch = 0;
 	/** Whether the host is connected on the client; server lifecycles observe members without it. */
 	private clientConnected = false;
-	/** Subscriptions to read-only members that have listeners, open while {@link clientConnected}. */
-	private readonly liveSources = new Set<ClientConnectedSource<unknown>>();
-	private readonly connectedSources = new WeakMap<ReadonlyReactiveState<unknown>, ClientConnectedSource<unknown>>();
 	private onConnectedCallbacks: (() => void)[] = [];
 	private onDisconnectedCallback: (() => void)[] = [];
 	private postSyncCallbacks: (() => void)[] = [];
@@ -172,7 +169,7 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	 * also reconnects it has already run the whole pass.
 	 *
 	 * @param client - `false` for a server lifecycle (a Controller Host's server render): members are
-	 * observed, but the subscriptions to read-only members stay closed ({@link ClientConnectedSource}).
+	 * observed, but read-only members are not subscribed ({@link subscribable}).
 	 *
 	 * @returns Whether observation is still the one this pass started. When it is not, the host
 	 * disconnected under the pass, or a nested connect already ran the rest of the connect work, so
@@ -181,15 +178,6 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	 */
 	public connectHost(client = true): boolean {
 		this.clientConnected = client;
-
-		for (const source of [...this.liveSources]) {
-			if (!this.clientConnected) {
-				break;
-			}
-
-			source.open();
-		}
-
 		const epoch = this.startObservation();
 
 		for (const callback of this.onConnectedCallbacks) {
@@ -214,10 +202,6 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 		}
 
 		this.unobserveMembers();
-
-		for (const source of this.liveSources) {
-			source.close();
-		}
 	}
 
 	/**
@@ -737,20 +721,24 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 		}
 	}
 
-	/** Returns what the host subscribes to for `member`: the member itself when writable, else its {@link ClientConnectedSource}. */
+	/**
+	 * Returns what the host subscribes to for `member`: the member itself when writable, else a view of it that
+	 * subscribes only while the host is connected on the client.
+	 *
+	 * @remarks A read-only member is owned outside the host, such as `fromExternalStore(...)`, so a server lifecycle
+	 * (SSR preparation, a Controller Host's server render) must not subscribe to it: that would subscribe to the store
+	 * on the server and replace its server snapshot. On the client, disconnect releases what the host subscribed:
+	 * change reports and `@bindTo` with {@link unobserveMembers}, and the view's bindings with `pauseSubscriptions`.
+	 */
 	private subscribable(member: ReadonlyReactiveState<unknown>): ReadonlyReactiveState<unknown> {
 		if (isWritableState(member)) {
 			return member;
 		}
 
-		let source = this.connectedSources.get(member);
-
-		if (!source) {
-			source = new ClientConnectedSource(member, this.liveSources, () => this.clientConnected);
-			this.connectedSources.set(member, source);
-		}
-
-		return source;
+		return {
+			get: () => member.get(),
+			subscribe: (notify) => (this.clientConnected ? member.subscribe(notify) : () => {}),
+		};
 	}
 
 	private createReactiveBindingNamespace(): ReactiveBindings<Bindings> {
@@ -769,85 +757,3 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 type ReactiveHostAccess = {
 	defineProperty(target: object, property: string, descriptor: PropertyDescriptor): void;
 };
-
-/**
- * The host's subscriptions to one read-only member, forwarded to the member only while the host is connected on the
- * client.
- *
- * @remarks A read-only member is owned outside the host, such as `fromExternalStore(...)`, so change reports,
- * `@bindTo` and rendered `this.$` bindings must not subscribe to it on the server or hold it while the host is
- * detached. Listeners stay registered across a disconnect, and {@link open} hands them the member's value when it
- * changed while closed.
- */
-class ClientConnectedSource<T> implements ReadonlyReactiveState<T> {
-	private readonly listeners = new Set<(value: T) => void>();
-	private delivered: T | undefined;
-	private release: (() => void) | undefined;
-
-	constructor(
-		private readonly member: ReadonlyReactiveState<T>,
-		private readonly live: Set<ClientConnectedSource<unknown>>,
-		private readonly isConnected: () => boolean,
-	) {}
-
-	public get(): T {
-		return this.member.get();
-	}
-
-	public subscribe(notify: (value: T) => void): () => void {
-		this.listeners.add(notify);
-
-		if (this.listeners.size === 1) {
-			this.delivered = this.member.get();
-			this.live.add(this as ClientConnectedSource<unknown>);
-
-			if (this.isConnected()) {
-				this.open();
-			}
-		}
-
-		return () => {
-			if (this.listeners.delete(notify) && this.listeners.size === 0) {
-				this.live.delete(this as ClientConnectedSource<unknown>);
-				this.close();
-			}
-		};
-	}
-
-	/**
-	 * @remarks A listener the member calls while subscribing can disconnect the host, or disconnect and reconnect
-	 * it; the subscription is then released, or kept only once.
-	 */
-	public open(): void {
-		if (!this.release) {
-			const release = this.member.subscribe((value) => this.deliver(value));
-
-			if (this.release || !this.isConnected() || this.listeners.size === 0) {
-				release();
-				return;
-			}
-
-			this.release = release;
-		}
-
-		const value = this.member.get();
-
-		if (!Object.is(value, this.delivered)) {
-			this.deliver(value);
-		}
-	}
-
-	public close(): void {
-		const release = this.release;
-		this.release = undefined;
-		release?.();
-	}
-
-	private deliver(value: T): void {
-		this.delivered = value;
-
-		for (const listener of [...this.listeners]) {
-			listener(value);
-		}
-	}
-}
