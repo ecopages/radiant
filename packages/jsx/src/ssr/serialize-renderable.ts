@@ -20,7 +20,7 @@ import { RAW_TEXT_ELEMENT_NAMES } from '../factory/raw-text-element-names.ts';
 import { stringifyTextContentValue } from '../factory/text-content-value.ts';
 import { escapeAttribute, escapeHtml } from './html-escape.ts';
 import type { JsxNodeLike, JsxRenderable, TemplateResultLike } from '../types/index.ts';
-import { isSkippedFunction } from '../warnings/dev-warnings.ts';
+import { isEmptyChild } from '../warnings/dev-warnings.ts';
 
 export type SerializeRenderableMode = 'plain' | 'hydrate';
 
@@ -64,7 +64,7 @@ export type SerializeRenderableOptions = {
  * @param options Controls hydration markers and custom-element template handling.
  */
 export function serializeRenderable(value: JsxRenderable | undefined, options: SerializeRenderableOptions): string {
-	if (value == null || value === false || isSkippedFunction(value, 'a child')) {
+	if (isEmptyChild(value)) {
 		return '';
 	}
 
@@ -86,10 +86,6 @@ export function serializeRenderable(value: JsxRenderable | undefined, options: S
 
 	if (typeof value === 'number' || typeof value === 'bigint') {
 		return String(value);
-	}
-
-	if (value === true) {
-		return '';
 	}
 
 	if (isTemplateResultLike(value)) {

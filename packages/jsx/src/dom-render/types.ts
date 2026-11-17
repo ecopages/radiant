@@ -31,10 +31,15 @@ export type DeferredPropertyBinding =
 			name: PropertyKey;
 			value: unknown;
 	  }
-	| {
-			/** Runs with the property writes, once the nodes are in place. A `ref` part attaches its callback here. */
-			run: () => void;
-	  };
+	| DeferredRunBinding;
+
+/** The `run` variant of {@link DeferredPropertyBinding}. */
+export type DeferredRunBinding = {
+	/** Element whose `ref` this entry attaches, used to run descendants before ancestors. */
+	element: Element;
+	/** Runs after the property writes, once the nodes are in place. A `ref` part attaches its callback here. */
+	run: () => void;
+};
 
 /**
  * Static metadata for a dynamic attribute binding inside a compiled template blueprint.
@@ -112,6 +117,8 @@ export type LiveAttributePart = {
 	previousValue?: unknown;
 	/** Runs when a `ref` part detaches: the cleanup its callback returned, or a call of the callback with `null`. */
 	refCleanup?: () => void;
+	/** Counts the detaches of a `ref` part, so an attach can tell that its part was detached while its callback ran. */
+	refEpoch?: number;
 	rootTarget: HTMLElement;
 	/**
 	 * Currently bound reactive source for this attribute part, when the binding value is subscribable.
