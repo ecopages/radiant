@@ -71,8 +71,9 @@ function annotateFailure(note: string): void {
 /**
  * A negative assertion's wait: lets `count` frames pass so that a change the code should not make has had its chance.
  *
- * @remarks Nothing signals an absence, so this is the only wait that is not on a signal. `reason` names the change
- * that would have shown up, and is appended to the error of a test that fails while or after waiting.
+ * @remarks Nothing signals an absence, so this is a stated exception to waiting on a signal, with a budget of `count`
+ * frames (as is `realWait`, on the wall clock). `reason` names the change that would have shown up, and is appended to
+ * the error of a test that fails while or after waiting.
  */
 export function nothingFollows(reason: string, count = 5): Promise<void> {
 	annotateFailure(`expecting nothing to follow for ${count} frames: ${reason}`);
@@ -82,7 +83,8 @@ export function nothingFollows(reason: string, count = 5): Promise<void> {
 /**
  * A wait on the wall clock, for what has no signal and no fake clock: a real capture, or a transition's own timing.
  *
- * @remarks `reason` states which of the two, and is appended to the error of a test that fails or times out.
+ * @remarks A stated exception to waiting on a signal, with a budget of `milliseconds`. `reason` states which of the
+ * two, and is appended to the error of a test that fails or times out.
  */
 export function realWait(milliseconds: number, reason: string): Promise<void> {
 	annotateFailure(`waiting ${milliseconds} ms on the wall clock: ${reason}`);
