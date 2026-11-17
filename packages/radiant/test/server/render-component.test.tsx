@@ -619,7 +619,7 @@ describe('render-component server helpers', () => {
 			});
 
 			expect(rendered.markup).toContain(
-				'<script type="application/json" data-hydration data-hydration-type="context" data-hydration-key="provider">{"count":5}</script>',
+				'<script type="application/json" data-hydration data-hydration-type="context" data-hydration-key="render-controller-hydrated-provider:provider">{"count":5}</script>',
 			);
 			expect(rendered.markup).not.toContain('&quot;');
 			expect(rendered.markup).not.toContain('logger');

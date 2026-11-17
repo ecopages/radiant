@@ -9,12 +9,12 @@ import {
 } from './reactive-prop-core';
 import { REACTIVE_HOST, type ReactiveHostInternals } from './reactive-host';
 import { attributeNameForProp } from './reactive-prop-metadata';
-import type { ReactiveState } from './reactivity-contract';
+import type { ReactiveState, ReadonlyReactiveState } from './reactivity-contract';
 
 export type ReactivePropertyStateHost = HTMLElement & {
 	readonly [REACTIVE_HOST]: ReactiveHostInternals;
 	createReactiveMember<T>(propertyName: string, initialValue: T): ReactiveState<T>;
-	getReactiveMember<T = unknown>(propertyName: string): ReactiveState<T> | undefined;
+	getReactiveMember<T = unknown>(propertyName: string): ReadonlyReactiveState<T> | undefined;
 };
 
 function reflectedAttributeValue(property: ReactiveProperty<unknown>, value: unknown): string | null {
@@ -89,6 +89,7 @@ export class ReactivePropertyState {
 		createReactiveMember: <U>(propertyName: string, initialValue: U) => ReactiveState<U>,
 	): void {
 		const { type, reflect, defaultValue, transform } = options;
+		const existingMember = this.host[REACTIVE_HOST].getWritableMember<T>(propertyName);
 		const attributeKey = attributeNameForProp(propertyName, options);
 		const hasPreUpgradeValue = this.preUpgradePropertyValues.has(propertyName);
 
@@ -112,7 +113,6 @@ export class ReactivePropertyState {
 
 		this.register(propertyMapping as ReactiveProperty<unknown>);
 
-		const existingMember = this.host.getReactiveMember<T>(propertyName);
 		const signal = existingMember ?? createReactiveMember(propertyName, initialValue as T);
 
 		if (existingMember && initialValue !== undefined) {

@@ -369,9 +369,8 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 			const seeks: number[] = [];
 			audio(root).addEventListener('seeking', () => seeks.push(audio(root).currentTime));
 
-			thumb(root).focus();
-			await userEvent.keyboard('{End}');
-			await userEvent.click(root.querySelector('[data-next]')!);
+			thumb(root).dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
+			next(root).click();
 			await expect.poll(() => current(root)).toBe('Low Tide');
 			await settle(400);
 
@@ -842,10 +841,17 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 				await userEvent.click(shuffle(root));
 				for (let press = 0; press < 3; press++) {
 					const before = current(root);
+					const source = audio(root).src;
 					await userEvent.click(next(root));
 					await expect.poll(() => current(root)).not.toBe(before);
+					await expect
+						.poll(
+							() =>
+								audio(root).src !== source &&
+								audio(root).readyState >= HTMLMediaElement.HAVE_CURRENT_DATA,
+						)
+						.toBe(true);
 				}
-				await expect.poll(() => audio(root).readyState).toBeGreaterThan(0);
 				await userEvent.click(toggle(root));
 				await expect.poll(() => audio(root).paused).toBe(false);
 

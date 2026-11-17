@@ -1,5 +1,6 @@
 import { escapeScriptJson } from '../tools/escape-script-json';
 import { escapeHtmlAttribute } from '../utils/escape-html-attribute';
+import { getControllerIdentifier } from './controller-metadata';
 
 /** Attribute marker used to identify hydration payloads inside a host. */
 export const HYDRATION_ATTRIBUTE = 'data-hydration';
@@ -14,6 +15,23 @@ type HydrationScriptHost = {
 	children?: ArrayLike<Element> | undefined;
 	childNodes?: ArrayLike<{ nodeType: number }> | undefined;
 };
+
+/**
+ * Returns the `data-hydration-key` for a decorated field of `owner`.
+ *
+ * @remarks
+ * Several controllers can share one element (`data-controller="a b"`) and the Element Host can be one of them, so a
+ * bare field name would let two owners read each other's payload. A controller registered with an identifier is
+ * scoped as `<identifier>:<field>`. An Element Host, and a controller registered without an identifier, keep the bare
+ * field name. `installContextProvider` and `installHostSignal` call this once at install; the provider and the
+ * signal store the key and use it both to write the script and to find it again. A subclass of a controller
+ * inherits the identifier, so it shares the key.
+ */
+export function resolveHydrationKey(owner: object, fieldName: string): string {
+	const identifier = getControllerIdentifier(owner.constructor as CustomElementConstructor);
+
+	return identifier ? `${identifier}:${fieldName}` : fieldName;
+}
 
 /** Creates a `<script type="application/json">` tag for a hydration payload. */
 export function createHydrationScriptTag(options: {

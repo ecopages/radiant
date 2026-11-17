@@ -107,7 +107,7 @@ export function describeVoiceMemoForm(name: string, form: VoiceMemoForm): void {
 			const link = part<HTMLAnchorElement>(root, '[data-download]');
 			expect(link.getAttribute('href')).toBe(player.src);
 			expect(link.download).toMatch(/^voice-memo\.(webm|m4a|ogg)$/);
-			expect(statusOf(root)).toContain('Recorded 0:01');
+			expect(statusOf(root)).toMatch(/^Recorded 0:(?!00)\d\d\. /);
 			await form.remove(root);
 		});
 

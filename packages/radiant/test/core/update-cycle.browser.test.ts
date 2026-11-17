@@ -53,6 +53,17 @@ class SharedSourceHost extends RadiantElement {
 	}
 }
 
+@customElement('update-cycle-replaced-member-host')
+class ReplacedMemberHost extends RadiantElement {
+	@signal({ source: createState(0) }) count!: WritableSignal<number>;
+	runs: string[][] = [];
+
+	@onUpdated(['count'])
+	onChange(changed: ReadonlySet<string>): void {
+		this.runs.push([...changed].sort());
+	}
+}
+
 @customElement('update-cycle-throwing-host')
 class ThrowingHost extends RadiantElement {
 	@state value = 0;
@@ -180,6 +191,30 @@ describe('UpdateCycle', () => {
 			await host.updateComplete;
 
 			expect(host.runs).toEqual([['count', 'label']]);
+		});
+
+		test('reconnect reports a member replaced while detached when its value differs from the disconnect snapshot', async () => {
+			const host = await mount<ReplacedMemberHost>('update-cycle-replaced-member-host');
+			host.runs = [];
+			host.remove();
+
+			host.registerReactiveMember('count', createState(7));
+			document.body.append(host);
+			await host.updateComplete;
+
+			expect(host.runs).toEqual([['count']]);
+		});
+
+		test('reconnect skips a member replaced while detached by an equal value', async () => {
+			const host = await mount<ReplacedMemberHost>('update-cycle-replaced-member-host');
+			host.runs = [];
+			host.remove();
+
+			host.registerReactiveMember('count', createState(0));
+			document.body.append(host);
+			await host.updateComplete;
+
+			expect(host.runs).toEqual([]);
 		});
 
 		test('a @state initializer is initialization, not a change, in every decorator mode', async () => {
