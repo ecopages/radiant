@@ -171,7 +171,6 @@ function writeString(value: unknown) {
  * Reads the attribute value based on the provided type.
  * @param value - The attribute value to be read.
  * @param type - The type of the attribute.
- * @param attributeName - Names the attribute in the function-value warning, so each attribute warns once.
  * @returns The parsed attribute value.
  * @throws {TypeError} If the provided type is unknown.
  */
@@ -188,6 +187,7 @@ export type ReadAttributeValueReturnType = ReturnType<typeof readAttributeValue>
  *
  * @param value - The value to be written.
  * @param type - The type of the attribute.
+ * @param attributeName - Names the attribute in the function-value warning, so each attribute warns once.
  * @returns The written attribute value, or `null` when `value` is a function: it is skipped, never written out as
  * its source.
  * @throws {TypeError} If the provided type is unknown.
