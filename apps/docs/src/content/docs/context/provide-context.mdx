@@ -100,7 +100,7 @@ When Radiant owns SSR for the host, prefer `renderComponent(...)` so hydration s
 
 A hydration script carries `data-hydration-key`, the name of the decorated field. A `RadiantElement` uses the bare field name, so `data-hydration-key="provider"` for a field called `provider`. A `RadiantController` registered with `@controller('id')` scopes it as `id:field`, for example `data-hydration-key="theme-controller:theme"`, so several controllers on one element (`data-controller="a b"`) and the element host each read only their own payload. A controller registered without an identifier keeps the bare field name.
 
-When you write the script by hand for a controller, use the scoped key and place it inside the controller's host element, or emit it with `provider.renderHydrationScriptTag()`. On the client a controller `@provideContext` and a controller `@signal` both hydrate from the script under the controller's host element, read by that scoped key.
+When you write the script by hand for a controller, use the scoped key and place it inside the controller's host element, or emit it with the field's own `renderHydrationScriptTag()` (`provider.renderHydrationScriptTag()` for `@provideContext`). On the client a controller `@provideContext` and a controller `@signal` with the `hydrate` option both hydrate from the script under the controller's host element, read by that scoped key.
 
 For the full server-plus-client host hydration flow, including the explicit client hydrator requirement, see [Hydration](/docs/ssr/hydration).
 
