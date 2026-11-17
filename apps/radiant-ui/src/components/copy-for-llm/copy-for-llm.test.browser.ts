@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { RadiantCopyForLlm } from './copy-for-llm.script';
+import { until } from '../../../test/until';
 
 function resetDom(): void {
 	document.body.innerHTML = '';
@@ -15,7 +16,7 @@ async function createCopyForLlm(options: { llmUrl?: string; label?: string } = {
 
 	document.body.appendChild(element);
 
-	await vi.waitFor(() => {
+	await until(() => {
 		const button = element.querySelector<HTMLButtonElement>('[data-testid="copy-for-llm"]');
 		if (!button) {
 			throw new Error('Expected copy button after render');
@@ -53,7 +54,7 @@ describe('RadiantCopyForLlm', () => {
 		const { button } = await createCopyForLlm();
 		button.click();
 
-		await vi.waitFor(() => {
+		await until(() => {
 			expect(button.dataset.copied).toBe('true');
 		});
 		expect(button.dataset.copyError).toBe('false');
@@ -69,7 +70,7 @@ describe('RadiantCopyForLlm', () => {
 		const { button } = await createCopyForLlm();
 		button.click();
 
-		await vi.waitFor(() => {
+		await until(() => {
 			expect(button.dataset.copyError).toBe('true');
 		});
 		expect(button.dataset.copied).toBe('false');
@@ -80,13 +81,13 @@ describe('RadiantCopyForLlm', () => {
 		const { button } = await createCopyForLlm();
 		button.click();
 
-		await vi.waitFor(() => {
+		await until(() => {
 			expect(button.dataset.copied).toBe('true');
 		});
 
 		document.dispatchEvent(new CustomEvent('eco:after-swap'));
 
-		await vi.waitFor(() => {
+		await until(() => {
 			expect(button.dataset.copied).toBe('false');
 		});
 		expect(button.dataset.copyError).toBe('false');

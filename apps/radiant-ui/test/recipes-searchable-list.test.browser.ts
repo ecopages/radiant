@@ -1,6 +1,7 @@
 import { userEvent } from 'vitest/browser';
 import { afterEach, describe, expect, test } from 'vitest';
 import { mountForm, trackListeners, type Form } from './mount-recipe';
+import { until } from './until';
 
 const status = (root: HTMLElement) => root.querySelector('[data-status]')!.textContent;
 const texts = (nodes: Iterable<Element>) => [...nodes].map((node) => node.textContent);
@@ -16,7 +17,7 @@ describe('recipes', () => {
 			const root = await mountForm('searchable-list', form);
 			const input = root.querySelector('input')!;
 			const shown = () => [...root.querySelectorAll('li')].filter((li) => !li.hidden);
-			await expect.poll(() => root.querySelector('li')!.tabIndex).toBe(0);
+			await until(() => expect(root.querySelector('li')!.tabIndex).toBe(0));
 
 			await userEvent.type(input, 'ap');
 			expect(texts(shown())).toEqual(['Apple', 'Apricot']);
@@ -52,7 +53,7 @@ describe('recipes', () => {
 		let root: HTMLElement;
 		try {
 			root = await mountForm('searchable-list', 'radiant');
-			await expect.poll(() => root.querySelector('li')!.tabIndex).toBe(0);
+			await until(() => expect(root.querySelector('li')!.tabIndex).toBe(0));
 			expect(tracker.live().length).toBeGreaterThan(0);
 			root.remove();
 			expect(tracker.live()).toEqual([]);
@@ -62,7 +63,7 @@ describe('recipes', () => {
 
 		const fresh = root.cloneNode(true) as HTMLElement;
 		document.body.append(fresh);
-		await expect.poll(() => fresh.querySelector('li')!.tabIndex).toBe(0);
+		await until(() => expect(fresh.querySelector('li')!.tabIndex).toBe(0));
 		await userEvent.type(fresh.querySelector('input')!, 'ch');
 		expect(texts([...fresh.querySelectorAll('li')].filter((li) => !li.hidden))).toEqual(['Cherry']);
 		expect(status(fresh)).toBe('1 of 5 shown');

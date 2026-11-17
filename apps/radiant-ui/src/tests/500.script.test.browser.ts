@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import '../pages/500.script';
+import { until } from '../../test/until';
 
 describe('radiant-ui 500 page copy action', () => {
 	let writeText: ReturnType<typeof vi.fn>;
@@ -46,7 +47,7 @@ describe('radiant-ui 500 page copy action', () => {
 	it('copies the visible stack and reports success on the button', async () => {
 		label.click();
 
-		await vi.waitFor(() => expect(label.textContent).toBe('Copied'));
+		await until(() => expect(label.textContent).toBe('Copied'));
 		expect(writeText).toHaveBeenCalledWith('TypeError: failed to render');
 		expect(button.getAttribute('aria-label')).toBe('Error copied');
 	});
@@ -55,7 +56,7 @@ describe('radiant-ui 500 page copy action', () => {
 		writeText.mockRejectedValueOnce(new Error('Clipboard unavailable'));
 		button.click();
 
-		await vi.waitFor(() => expect(label.textContent).toBe('Copy failed'));
+		await until(() => expect(label.textContent).toBe('Copy failed'));
 		expect(button.getAttribute('aria-label')).toBe('Could not copy the error');
 	});
 });

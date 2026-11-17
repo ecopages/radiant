@@ -3,6 +3,7 @@ import { afterEach, describe, expect, test } from 'vitest';
 import '../src/components/primitive-example/primitive-example.css';
 import '../src/content/components/recipes/modal.css';
 import { mountController, trackListeners } from './mount-recipe';
+import { until } from './until';
 
 afterEach(() => {
 	document.body.innerHTML = '';
@@ -31,7 +32,7 @@ describe('modal, controller form', () => {
 		expect(dialog.querySelector('h3')!.textContent).toBe('Delete Report?');
 		expect(status(root)).toBe('Delete Report?');
 		expect(document.documentElement.style.overflow).toBe('hidden');
-		await expect.poll(() => document.activeElement).toBe(cancel);
+		await until(() => expect(document.activeElement).toBe(cancel));
 
 		await userEvent.tab();
 		expect(document.activeElement).toBe(confirm);

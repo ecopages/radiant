@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ControllerHost } from './controller';
+import { createWaiters, nothingFollows, realWait, type Waiters } from './event.fixture';
 import {
 	MediaRecorderController,
 	createMediaRecorderController,
@@ -13,20 +14,37 @@ describe('MediaRecorderController', () => {
 
 	afterEach(() => {
 		controllers.splice(0).forEach((controller) => controller.destroy());
+		vi.useRealTimers();
 		vi.restoreAllMocks();
 		vi.unstubAllGlobals();
 	});
 
+	const waiters = new WeakMap<MediaRecorderController, Waiters>();
+
 	function create(config: MediaRecorderControllerConfig = {}): MediaRecorderController {
-		const controller = new MediaRecorderController(config);
+		const own = createWaiters();
+		const controller = new MediaRecorderController({
+			...config,
+			onState: (snapshot) => {
+				config.onState?.(snapshot);
+				own.notify();
+			},
+		});
+		waiters.set(controller, own);
 		controllers.push(controller);
 		controller.attach();
 		return controller;
 	}
 
-	function sleep(ms: number): Promise<void> {
-		return new Promise((resolve) => setTimeout(resolve, ms));
-	}
+	/** Resolves once `predicate` holds on the state, re-checked on every `onState` call. */
+	const untilState = (controller: MediaRecorderController, predicate: () => boolean) =>
+		waiters.get(controller)!.until(predicate);
+
+	/** Fakes the clocks the controller counts with; a real `MediaRecorder` and stream keep running on real time. */
+	const fakeClock = () =>
+		vi.useFakeTimers({
+			toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'performance'],
+		});
 
 	it('records, then stop resolves with a playable result and stops every track', async () => {
 		const onStop = vi.fn();
@@ -36,7 +54,7 @@ describe('MediaRecorderController', () => {
 		expect(controller.getState().status).toBe('recording');
 		const stream = controller.getStream()!;
 		expect(stream.getAudioTracks()).toHaveLength(1);
-		await sleep(300);
+		await realWait(300, 'real MediaRecorder capture: the recorder needs audio before it can stop with a result');
 
 		const result = (await controller.stop())!;
 
@@ -64,7 +82,7 @@ describe('MediaRecorderController', () => {
 		await controller.start();
 
 		expect(controller.getState().status).toBe('recording');
-		await sleep(200);
+		await realWait(200, 'real MediaRecorder capture: the recorder needs audio before it can stop with a result');
 		const result = (await controller.stop())!;
 		expect(result.mimeType).toContain('audio/');
 		expect(controller.getState().mimeType).toBe(result.mimeType);
@@ -83,19 +101,20 @@ describe('MediaRecorderController', () => {
 
 	it('pauses and resumes, without counting paused time in the duration', async () => {
 		const states: string[] = [];
+		fakeClock();
 		const controller = create({ onState: (snapshot) => states.push(snapshot.status) });
 		await controller.start();
-		await sleep(200);
+		vi.advanceTimersByTime(200);
 
 		controller.pause();
 		expect(controller.getState().status).toBe('paused');
 		const frozen = controller.getState().duration;
-		await sleep(300);
+		vi.advanceTimersByTime(300);
 		expect(controller.getState().duration).toBe(frozen);
 
 		controller.resume();
 		expect(controller.getState().status).toBe('recording');
-		await sleep(200);
+		vi.advanceTimersByTime(200);
 		expect(controller.getState().duration).toBeGreaterThan(frozen);
 
 		const result = (await controller.stop())!;
@@ -105,10 +124,11 @@ describe('MediaRecorderController', () => {
 
 	it('advances the duration through onState while recording', async () => {
 		const durations: number[] = [];
+		fakeClock();
 		const controller = create({ onState: (snapshot) => durations.push(snapshot.duration) });
 		await controller.start();
 
-		await sleep(450);
+		vi.advanceTimersByTime(450);
 
 		expect(durations.length).toBeGreaterThanOrEqual(4);
 		expect(durations.at(-1)!).toBeGreaterThan(durations[1]);
@@ -116,10 +136,17 @@ describe('MediaRecorderController', () => {
 
 	it('delivers timesliced chunks to onData', async () => {
 		const chunks: Blob[] = [];
-		const controller = create({ timeslice: 100, onData: (chunk) => chunks.push(chunk) });
+		const received = createWaiters();
+		const controller = create({
+			timeslice: 100,
+			onData: (chunk) => {
+				chunks.push(chunk);
+				received.notify();
+			},
+		});
 		await controller.start();
 
-		await sleep(450);
+		await received.until(() => chunks.length >= 2);
 		await controller.stop();
 
 		expect(chunks.length).toBeGreaterThanOrEqual(2);
@@ -162,7 +189,7 @@ describe('MediaRecorderController', () => {
 
 		expect(controller.getState()).toMatchObject({ status: 'idle', duration: 0 });
 		expect(stream.getTracks().every((track) => track.readyState === 'ended')).toBe(true);
-		await sleep(100);
+		await nothingFollows('an onStop after discard');
 		expect(onStop).not.toHaveBeenCalled();
 	});
 
@@ -270,10 +297,12 @@ describe('MediaRecorderController', () => {
 
 	it('stops by itself after maxDuration', async () => {
 		const onStop = vi.fn();
+		fakeClock();
 		const controller = create({ maxDuration: 0.3, onStop });
 		await controller.start();
 
-		await vi.waitFor(() => expect(controller.getState().status).toBe('stopped'), { timeout: 2000 });
+		vi.advanceTimersByTime(300);
+		await untilState(controller, () => controller.getState().status === 'stopped');
 
 		expect(onStop).toHaveBeenCalledTimes(1);
 		expect(onStop.mock.calls[0][0].duration).toBeGreaterThanOrEqual(0.29);
@@ -281,18 +310,20 @@ describe('MediaRecorderController', () => {
 	});
 
 	it('does not count paused time toward maxDuration', async () => {
+		fakeClock();
 		const controller = create({ maxDuration: 0.5 });
 		await controller.start();
-		await sleep(150);
+		vi.advanceTimersByTime(150);
 		controller.pause();
-		await sleep(600);
+		vi.advanceTimersByTime(600);
 		expect(controller.getState().status).toBe('paused');
 
 		controller.resume();
-		await sleep(150);
+		vi.advanceTimersByTime(150);
 		expect(controller.getState().status).toBe('recording');
 
-		await vi.waitFor(() => expect(controller.getState().status).toBe('stopped'), { timeout: 2000 });
+		vi.advanceTimersByTime(400);
+		await untilState(controller, () => controller.getState().status === 'stopped');
 	});
 
 	it('keeps the state of two controllers apart', async () => {
@@ -388,11 +419,15 @@ describe('MediaRecorderController', () => {
 		});
 
 		it('has no analyser and a zero level without the option', async () => {
-			const controller = create();
+			fakeClock();
+			const ticks = vi.fn();
+			const controller = create({ onState: ticks });
 
 			await controller.start();
-			await sleep(300);
+			ticks.mockClear();
+			vi.advanceTimersByTime(300);
 
+			expect(ticks.mock.calls.length).toBeGreaterThanOrEqual(2);
 			expect(controller.getAnalyser()).toBeNull();
 			expect(controller.getState().level).toBe(0);
 		});
@@ -405,7 +440,7 @@ describe('MediaRecorderController', () => {
 			await controller.start();
 			expect(controller.getAnalyser()).toBeInstanceOf(AnalyserNode);
 
-			await vi.waitFor(() => expect(controller.getState().level).toBeGreaterThan(0), { timeout: 3000 });
+			await untilState(controller, () => controller.getState().level > 0);
 			expect(controller.getState().level).toBeLessThanOrEqual(1);
 
 			await controller.stop();
@@ -424,7 +459,10 @@ describe('MediaRecorderController', () => {
 			const controller = create({ getAudioContext: () => audio });
 
 			await controller.start();
-			await sleep(300);
+			await realWait(
+				300,
+				'real MediaRecorder capture: the recorder needs audio before it can stop with a result',
+			);
 			await controller.stop();
 
 			expect(connections.length).toBeGreaterThan(0);
@@ -468,7 +506,7 @@ describe('MediaRecorderController', () => {
 			const audio = await context();
 			const controller = create({ getAudioContext: () => audio });
 			await controller.start();
-			await vi.waitFor(() => expect(controller.getState().level).toBeGreaterThan(0), { timeout: 3000 });
+			await untilState(controller, () => controller.getState().level > 0);
 
 			controller.pause();
 
@@ -490,12 +528,15 @@ describe('MediaRecorderController', () => {
 			const onStop = vi.fn();
 			const controller = create({ onStop });
 			await controller.start();
-			await sleep(200);
+			await realWait(
+				200,
+				'real MediaRecorder capture: the recorder needs audio before it can stop with a result',
+			);
 			const stream = controller.getStream()!;
 
 			endAll(stream);
 
-			await vi.waitFor(() => expect(controller.getState().status).toBe('stopped'));
+			await untilState(controller, () => controller.getState().status === 'stopped');
 			expect(onStop).toHaveBeenCalledTimes(1);
 			expect(onStop.mock.calls[0][0].blob.size).toBeGreaterThan(0);
 			expect(controller.getStream()).toBeNull();
@@ -511,7 +552,7 @@ describe('MediaRecorderController', () => {
 			const [first] = controller.getStream()!.getTracks();
 
 			first.dispatchEvent(new Event('ended'));
-			await sleep(200);
+			await nothingFollows('a stop after only one of two tracks ended');
 
 			expect(controller.getState().status).toBe('recording');
 		});
@@ -521,11 +562,14 @@ describe('MediaRecorderController', () => {
 			const onStop = vi.fn();
 			const controller = create({ onStop });
 			await controller.start();
-			await sleep(200);
+			await realWait(
+				200,
+				'real MediaRecorder capture: the recorder needs audio before it can stop with a result',
+			);
 
 			recorder.current().stop();
 
-			await vi.waitFor(() => expect(controller.getState().status).toBe('stopped'));
+			await untilState(controller, () => controller.getState().status === 'stopped');
 			expect(onStop).toHaveBeenCalledTimes(1);
 			expect(controller.getStream()).toBeNull();
 		});
@@ -539,7 +583,7 @@ describe('MediaRecorderController', () => {
 			expect(() => controller.pause()).not.toThrow();
 			expect(() => controller.resume()).not.toThrow();
 
-			await vi.waitFor(() => expect(controller.getState().status).toBe('stopped'));
+			await untilState(controller, () => controller.getState().status === 'stopped');
 		});
 
 		it('does not hang or keep a rejected promise when recorder.stop() throws', async () => {

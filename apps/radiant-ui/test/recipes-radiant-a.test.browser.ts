@@ -6,6 +6,7 @@ import '../src/content/components/recipes/board.css';
 import '../src/content/components/recipes/calendar-events.css';
 import '../src/content/components/recipes/sortable-list.css';
 import { mountForm, trackListeners, type Form } from './mount-recipe';
+import { until } from './until';
 
 function pointer(target: Element | Document, type: string, x: number, y: number): void {
 	target.dispatchEvent(new PointerEvent(type, { bubbles: true, button: 0, pointerId: 1, clientX: x, clientY: y }));
@@ -45,7 +46,7 @@ describe.each<Form>(['plain', 'radiant'])('sortable list, %s form', (form) => {
 	test('reorders by keyboard and by pointer, with one tab stop', async () => {
 		const root = await mountForm('sortable-list', form);
 		const items = () => [...root.querySelectorAll('li')];
-		await expect.poll(() => items().map((li) => li.tabIndex)).toEqual([0, -1, -1, -1]);
+		await until(() => expect(items().map((li) => li.tabIndex)).toEqual([0, -1, -1, -1]));
 
 		items()[0].focus();
 		await userEvent.keyboard(' {ArrowDown}{ArrowDown} ');
@@ -71,7 +72,7 @@ describe.each<Form>(['plain', 'radiant'])('sortable list with a real mouse, %s f
 	test('a mouse drag moves an item below the one it is released over', async () => {
 		const root = await mountForm('sortable-list', form);
 		const items = () => [...root.querySelectorAll('li')];
-		await expect.poll(() => items()).toHaveLength(4);
+		await until(() => expect(items()).toHaveLength(4));
 
 		await userEvent.dragAndDrop(items()[0], items()[3]);
 
@@ -84,7 +85,7 @@ describe.each<Form>(['plain', 'radiant'])('board with a real mouse, %s form', (f
 	test('a mouse drag moves a card into another column', async () => {
 		const root = await mountForm('board', form);
 		const columns = () => [...root.querySelectorAll('ul')];
-		await expect.poll(() => columns()).toHaveLength(3);
+		await until(() => expect(columns()).toHaveLength(3));
 
 		await userEvent.dragAndDrop(columns()[0].children[0] as HTMLElement, columns()[2].children[0] as HTMLElement);
 
@@ -103,7 +104,7 @@ describe.each<Form>(['plain', 'radiant'])('a lifted item outside the example fra
 			document.documentElement.setAttribute('data-theme', theme);
 			const root = await mountForm(slug, form);
 			const first = root.querySelector<HTMLElement>(item)!;
-			await expect.poll(() => first.tabIndex).toBe(0);
+			await until(() => expect(first.tabIndex).toBe(0));
 			const from = first.getBoundingClientRect();
 			pointer(first, 'pointerdown', from.x + 5, from.y + 5);
 			pointer(document, 'pointermove', from.x + 40, from.y + 30);
@@ -126,7 +127,7 @@ describe.each<Form>(['plain', 'radiant'])('board, %s form', (form) => {
 		const root = await mountForm('board', form);
 		const columns = () => [...root.querySelectorAll('ul')];
 		const cards = (column: number) => texts(columns()[column].children);
-		await expect.poll(() => columns()).toHaveLength(3);
+		await until(() => expect(columns()).toHaveLength(3));
 
 		const card = columns()[0].children[0] as HTMLElement;
 		const from = card.getBoundingClientRect();
@@ -166,7 +167,7 @@ describe.each<Form>(['plain', 'radiant'])('calendar of events, %s form', (form) 
 	const day = (root: HTMLElement, iso: string) => root.querySelector<HTMLElement>(`[data-iso="${iso}"]`)!;
 	const titles = (root: HTMLElement, iso: string) => texts(day(root, iso).querySelectorAll('[data-event]'));
 	const ready = async (root: HTMLElement) => {
-		await expect.poll(() => root.querySelectorAll('[role="gridcell"]').length).toBeGreaterThan(0);
+		await until(() => expect(root.querySelectorAll('[role="gridcell"]').length).toBeGreaterThan(0));
 		return root;
 	};
 
@@ -208,7 +209,7 @@ describe('Radiant form teardown', () => {
 	const cases = [
 		{
 			slug: 'sortable-list',
-			ready: (root: HTMLElement) => expect.poll(() => root.querySelector('li')!.tabIndex).toBe(0),
+			ready: (root: HTMLElement) => until(() => expect(root.querySelector('li')!.tabIndex).toBe(0)),
 			act: async (root: HTMLElement) => {
 				root.querySelector('li')!.focus();
 				await userEvent.keyboard(' {ArrowDown} ');
@@ -217,7 +218,7 @@ describe('Radiant form teardown', () => {
 		},
 		{
 			slug: 'board',
-			ready: (root: HTMLElement) => expect.poll(() => root.querySelectorAll('ul').length).toBe(3),
+			ready: (root: HTMLElement) => until(() => expect(root.querySelectorAll('ul').length).toBe(3)),
 			act: async (root: HTMLElement) => {
 				root.querySelector<HTMLElement>('li')!.focus();
 				await userEvent.keyboard(' {PageDown} ');
@@ -227,7 +228,7 @@ describe('Radiant form teardown', () => {
 		{
 			slug: 'calendar-events',
 			ready: (root: HTMLElement) =>
-				expect.poll(() => root.querySelectorAll('[role="gridcell"]').length).toBeGreaterThan(0),
+				until(() => expect(root.querySelectorAll('[role="gridcell"]').length).toBeGreaterThan(0)),
 			act: async (root: HTMLElement) => {
 				await userEvent.fill(root.querySelector('input')!, 'stand');
 				expect(root.querySelectorAll('[data-event]')).toHaveLength(1);

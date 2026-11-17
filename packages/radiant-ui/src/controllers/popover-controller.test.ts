@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { withSlowExit } from './exit-transition.fixture';
+import { animationsFinished, withSlowExit } from './exit-transition.fixture';
 import { PopoverController, createPopoverController } from './popover-controller';
 
 describe('PopoverController attached to a plain element', () => {
@@ -466,7 +466,8 @@ describe('PopoverController floating element while portaled', () => {
 
 		open.value = false;
 		controller.sync();
-		await vi.waitFor(() => expect(first.parentNode).toBe(fixture.host));
+		await animationsFinished(first);
+		expect(first.parentNode).toBe(fixture.host);
 		expect(controller.getFloatingElement()).toBe(first);
 
 		fixture.replaceFloating();
@@ -486,7 +487,8 @@ describe('PopoverController floating element while portaled', () => {
 		controller.sync();
 		open.value = false;
 		controller.sync();
-		await vi.waitFor(() => expect(fixture.floating.parentNode).toBe(fixture.host));
+		await animationsFinished(fixture.floating);
+		expect(fixture.floating.parentNode).toBe(fixture.host);
 
 		fixture.floating.remove();
 

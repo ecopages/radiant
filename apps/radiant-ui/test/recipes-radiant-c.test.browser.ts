@@ -3,6 +3,7 @@ import { afterEach, describe, expect, test } from 'vitest';
 import '../src/components/primitive-example/primitive-example.css';
 import '../src/content/components/recipes/modal.css';
 import { mountForm, trackListeners, type Form } from './mount-recipe';
+import { until } from './until';
 
 const status = (root: HTMLElement) => root.querySelector('[data-status]')!.textContent;
 
@@ -31,7 +32,7 @@ describe.each<Form>(['plain', 'radiant'])('modal, %s form', (form) => {
 		expect(dialog.querySelector('h3')!.textContent).toBe('Delete Report?');
 		expect(status(root)).toBe('Delete Report?');
 		expect(document.documentElement.style.overflow).toBe('hidden');
-		await expect.poll(() => document.activeElement).toBe(cancel);
+		await until(() => expect(document.activeElement).toBe(cancel));
 
 		await userEvent.tab();
 		expect(document.activeElement).toBe(confirm);
@@ -159,7 +160,7 @@ test('modal Radiant form releases the scroll lock and the document listeners whe
 
 	const fresh = root.cloneNode(true) as HTMLElement;
 	document.body.append(fresh);
-	await expect.poll(() => fresh.querySelector<HTMLElement>('[data-layer]')!.hidden).toBe(true);
+	await until(() => expect(fresh.querySelector<HTMLElement>('[data-layer]')!.hidden).toBe(true));
 	await userEvent.click(fresh.querySelector<HTMLElement>('[data-delete]')!);
 	expect(fresh.querySelector<HTMLElement>('[data-layer]')!.hidden).toBe(false);
 	await userEvent.keyboard('{Escape}');

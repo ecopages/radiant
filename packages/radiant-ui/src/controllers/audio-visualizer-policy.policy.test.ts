@@ -1,6 +1,7 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { AudioVisualizerController } from './audio-visualizer-controller';
+import { realWait } from './event.fixture';
 
 /**
  * Runs in a Chromium started with `--autoplay-policy=document-user-activation-required` (the `autoplay-policy`
@@ -48,15 +49,21 @@ it('leaves a muted autoplaying video on its native output while the context is b
 	const target = document.createElement('div');
 	document.body.append(target);
 	const draw = vi.fn();
+	let running!: () => void;
+	const isRunning = new Promise<void>((resolve) => (running = resolve));
 	const controller = new AudioVisualizerController({
 		getMedia: () => video,
 		getTarget: () => target,
 		preset: { mount() {}, draw, rest() {}, destroy() {} },
+		onState: (state) => state === 'running' && running(),
 	});
 	controller.attach();
 
 	await video.play();
-	await new Promise((resolve) => setTimeout(resolve, 600));
+	await realWait(
+		600,
+		'a negative assertion on the autoplay policy: the visualizer starting before a user gesture under the autoplay policy, with nothing to signal it',
+	);
 	expect(video.paused).toBe(false);
 	expect(controller.getState()).toBe('idle');
 	expect(create).not.toHaveBeenCalled();
@@ -70,7 +77,7 @@ it('leaves a muted autoplaying video on its native output while the context is b
 	});
 	document.body.append(toggle);
 	await userEvent.click(toggle);
-	await vi.waitFor(() => expect(controller.getState()).toBe('running'), { timeout: 5000 });
+	await isRunning;
 	expect(create).toHaveBeenCalledOnce();
 	expect(video.paused).toBe(false);
 	controller.destroy();

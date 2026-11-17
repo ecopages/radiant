@@ -1,9 +1,10 @@
 import { createRoot } from '@ecopages/jsx';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { RuiPopover } from './popover';
 import { RuiPopover as RuiPopoverElement } from './popover.script';
 import { RuiSelect } from '../select/select';
 import { RuiSelect as RuiSelectElement } from '../select/select.script';
+import { frames } from '../../../controllers/event.fixture';
 void RuiPopoverElement;
 void RuiSelectElement;
 
@@ -35,10 +36,11 @@ describe('rui-popover around a portaled rui-select', () => {
 			</RuiPopover>,
 		);
 		const host = container.querySelector('rui-popover') as RuiPopoverElement;
-		await vi.waitFor(() => expect(host.querySelector('[data-popover-trigger] button')).toBeTruthy());
+		await host.updateComplete;
 		host.setOpen(true);
 		const surface = document.querySelector('[data-ref="surface"]') as HTMLElement;
-		await vi.waitFor(() => expect(surface.parentElement).toBe(document.body));
+		await host.updateComplete;
+		expect(surface.parentElement).toBe(document.body);
 		const select = surface.querySelector('rui-select') as RuiSelectElement;
 		const trigger = select.querySelector('[data-select-trigger]') as HTMLElement;
 		return { host, surface, select, trigger, outside };
@@ -49,16 +51,17 @@ describe('rui-popover around a portaled rui-select', () => {
 
 		const popup = select.querySelector('[data-select-listbox]') as HTMLElement;
 		press(trigger);
-		await vi.waitFor(() => {
-			expect(popup.hidden).toBe(false);
-			expect(popup.parentElement).toBe(document.body);
-		});
+		await select.updateComplete;
+		expect(popup.hidden).toBe(false);
+		expect(popup.parentElement).toBe(document.body);
 		expect(surface.contains(popup)).toBe(false);
 
 		press(popup.querySelector('[role="option"][data-value="dog"]') as HTMLElement);
 
-		await vi.waitFor(() => expect(select.value).toEqual(['dog']));
-		await new Promise((resolve) => setTimeout(resolve, 50));
+		await select.updateComplete;
+		expect(select.value).toEqual(['dog']);
+		await host.updateComplete;
+		await frames();
 		expect(host.open).toBe(true);
 	});
 
@@ -68,6 +71,7 @@ describe('rui-popover around a portaled rui-select', () => {
 
 		press(outside);
 
-		await vi.waitFor(() => expect(host.open).toBe(false));
+		await host.updateComplete;
+		expect(host.open).toBe(false);
 	});
 });

@@ -123,11 +123,24 @@ const EVENTS = [
 
 const NETWORK_EMPTY = 0;
 const NETWORK_IDLE = 1;
+const NETWORK_NO_SOURCE = 3;
 const HAVE_METADATA = 1;
 const HAVE_CURRENT_DATA = 2;
 const HAVE_FUTURE_DATA = 3;
 const MIN_RATE = 0.0625;
 const MAX_RATE = 16;
+
+/**
+ * Whether the element has anything to load: a `src`, a `srcObject` or a `<source>` child.
+ *
+ * @remarks `currentSrc` cannot tell: it still holds the old URL when `emptied` fires after the host removed `src`.
+ */
+const hasSource = (media: HTMLMediaElement) =>
+	media.hasAttribute('src') || media.srcObject !== null || media.querySelector('source') !== null;
+
+/** Whether the element has never loaded anything or the host emptied it: `deriveStatus` reports `idle` for it. */
+const isEmpty = (media: HTMLMediaElement) =>
+	media.networkState === NETWORK_EMPTY || (media.networkState === NETWORK_NO_SOURCE && !hasSource(media));
 
 const IDLE_STATE: MediaState = {
 	status: 'idle',
@@ -410,7 +423,7 @@ export class MediaController implements Controller {
 			this.autoplayPending = true;
 			return;
 		}
-		if (media.networkState === NETWORK_EMPTY) {
+		if (isEmpty(media)) {
 			return;
 		}
 		const token = this.loadToken;
@@ -730,7 +743,7 @@ export class MediaController implements Controller {
 		if (this.resolving) {
 			return 'loading';
 		}
-		if (media.networkState === NETWORK_EMPTY) {
+		if (isEmpty(media)) {
 			return 'idle';
 		}
 		if (media.ended) {

@@ -4,6 +4,7 @@ import '@ecopages/radiant-ui/themes/default';
 import '../src/components/primitive-example/primitive-example.css';
 import '../src/content/components/recipes/sortable-list.css';
 import { mountController, trackListeners } from './mount-recipe';
+import { until } from './until';
 
 const texts = (nodes: Iterable<Element>) => [...nodes].map((node) => node.textContent?.trim());
 const status = (root: HTMLElement) => root.querySelector('[data-status]')!.textContent;
@@ -18,7 +19,7 @@ describe('sortable list, Radiant controller form', () => {
 
 	test('reorders by keyboard with one tab stop, announces it and focus follows', async () => {
 		const root = await mountController('sortable-list');
-		await expect.poll(() => items(root).map((li) => li.tabIndex)).toEqual([0, -1, -1, -1]);
+		await until(() => expect(items(root).map((li) => li.tabIndex)).toEqual([0, -1, -1, -1]));
 
 		items(root)[0].focus();
 		await userEvent.keyboard(' {ArrowDown}{ArrowDown} ');
@@ -34,7 +35,7 @@ describe('sortable list, Radiant controller form', () => {
 
 	test('a pointer drag moves an item, with the lifted item above the page', async () => {
 		const root = await mountController('sortable-list');
-		await expect.poll(() => items(root).map((li) => li.tabIndex)).toEqual([0, -1, -1, -1]);
+		await until(() => expect(items(root).map((li) => li.tabIndex)).toEqual([0, -1, -1, -1]));
 		const ship = items(root)[3];
 		const first = items(root)[0].getBoundingClientRect();
 		const start = ship.getBoundingClientRect();
@@ -54,7 +55,7 @@ describe('sortable list, Radiant controller form', () => {
 
 	test('a mouse drag moves an item below the one it is released over', async () => {
 		const root = await mountController('sortable-list');
-		await expect.poll(() => items(root)).toHaveLength(4);
+		await until(() => expect(items(root)).toHaveLength(4));
 
 		await userEvent.dragAndDrop(items(root)[0], items(root)[3]);
 
@@ -66,7 +67,7 @@ describe('sortable list, Radiant controller form', () => {
 		const tracker = trackListeners();
 		try {
 			const root = await mountController('sortable-list');
-			await expect.poll(() => items(root).map((li) => li.tabIndex)).toEqual([0, -1, -1, -1]);
+			await until(() => expect(items(root).map((li) => li.tabIndex)).toEqual([0, -1, -1, -1]));
 			const from = items(root)[0].getBoundingClientRect();
 			items(root)[0].dispatchEvent(
 				new PointerEvent('pointerdown', {

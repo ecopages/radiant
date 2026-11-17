@@ -4,6 +4,7 @@ import '@ecopages/radiant-ui/themes/default';
 import '../src/components/primitive-example/primitive-example.css';
 import '../src/content/components/recipes/modal.css';
 import { mountComponent, trackListeners } from './mount-recipe';
+import { until } from './until';
 
 afterEach(() => {
 	document.body.innerHTML = '';
@@ -18,7 +19,7 @@ describe('modal component', () => {
 		root.querySelectorAll<HTMLElement>('[data-list] [data-delete]')[index]!;
 	const layer = (root: HTMLElement) => root.querySelector<HTMLElement>('[data-layer]')!;
 	const ready = async (root: HTMLElement) => {
-		await expect.poll(() => root.querySelectorAll('[data-list] li')).toHaveLength(3);
+		await until(() => expect(root.querySelectorAll('[data-list] li')).toHaveLength(3));
 		return root;
 	};
 
@@ -38,12 +39,12 @@ describe('modal component', () => {
 		const report = deleteOf(root, 1);
 
 		await userEvent.click(report);
-		await expect.poll(() => layer(root).hidden).toBe(false);
+		await until(() => expect(layer(root).hidden).toBe(false));
 		expect(layer(root).parentElement).toBe(root);
 		expect(dialog.querySelector('h3')!.textContent).toBe('Delete Report?');
 		expect(status(root)).toBe('Delete Report?');
 		expect(document.documentElement.style.overflow).toBe('hidden');
-		await expect.poll(() => document.activeElement).toBe(cancel);
+		await until(() => expect(document.activeElement).toBe(cancel));
 
 		await userEvent.tab();
 		expect(document.activeElement).toBe(confirm);
@@ -51,22 +52,22 @@ describe('modal component', () => {
 		expect(document.activeElement).toBe(cancel);
 
 		await userEvent.keyboard('{Escape}');
-		await expect.poll(() => layer(root).hidden).toBe(true);
+		await until(() => expect(layer(root).hidden).toBe(true));
 		expect(layer(root).parentElement).not.toBe(root);
 		expect(document.documentElement.style.overflow).toBe('');
-		await expect.poll(() => document.activeElement).toBe(deleteOf(root, 1));
+		await until(() => expect(document.activeElement).toBe(deleteOf(root, 1)));
 		expect(status(root)).toBe('Kept Report');
 
 		await userEvent.click(deleteOf(root, 1));
 		await userEvent.click(cancel);
-		await expect.poll(() => layer(root).hidden).toBe(true);
-		await expect.poll(() => document.activeElement).toBe(deleteOf(root, 1));
+		await until(() => expect(layer(root).hidden).toBe(true));
+		await until(() => expect(document.activeElement).toBe(deleteOf(root, 1)));
 		expect(names(root)).toEqual(['Brief', 'Report', 'Notes']);
 
 		await userEvent.click(deleteOf(root, 1));
 		layer(root).dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, pointerId: 1 }));
-		await expect.poll(() => layer(root).hidden).toBe(true);
-		await expect.poll(() => document.activeElement).toBe(deleteOf(root, 1));
+		await until(() => expect(layer(root).hidden).toBe(true));
+		await until(() => expect(document.activeElement).toBe(deleteOf(root, 1)));
 		expect(status(root)).toBe('Kept Report');
 	});
 
@@ -78,26 +79,26 @@ describe('modal component', () => {
 
 		await userEvent.click(deleteOf(root, 1));
 		await userEvent.click(confirm);
-		await expect.poll(() => names(root)).toEqual(['Brief', 'Notes']);
-		await expect.poll(() => document.activeElement).toBe(deleteOf(root, 1));
+		await until(() => expect(names(root)).toEqual(['Brief', 'Notes']));
+		await until(() => expect(document.activeElement).toBe(deleteOf(root, 1)));
 		expect(status(root)).toBe('Deleted Report, 2 left');
 
 		await userEvent.click(deleteOf(root, 1));
 		await userEvent.click(confirm);
-		await expect.poll(() => names(root)).toEqual(['Brief']);
-		await expect.poll(() => document.activeElement).toBe(deleteOf(root, 0));
+		await until(() => expect(names(root)).toEqual(['Brief']));
+		await until(() => expect(document.activeElement).toBe(deleteOf(root, 0)));
 
 		await userEvent.click(deleteOf(root, 0));
 		await userEvent.click(confirm);
-		await expect.poll(() => names(root)).toEqual([]);
+		await until(() => expect(names(root)).toEqual([]));
 		expect(empty.hidden).toBe(false);
-		await expect.poll(() => document.activeElement).toBe(reset);
+		await until(() => expect(document.activeElement).toBe(reset));
 		expect(status(root)).toBe('Deleted Brief, 0 left');
 
 		await userEvent.click(reset);
-		await expect.poll(() => names(root)).toEqual(['Brief', 'Report', 'Notes']);
+		await until(() => expect(names(root)).toEqual(['Brief', 'Report', 'Notes']));
 		expect(empty.hidden).toBe(true);
-		await expect.poll(() => document.activeElement).toBe(deleteOf(root, 0));
+		await until(() => expect(document.activeElement).toBe(deleteOf(root, 0)));
 		expect(status(root)).toBe('List restored');
 	});
 
@@ -107,7 +108,7 @@ describe('modal component', () => {
 			const root = await ready(await mountComponent('modal'));
 			const before = tracker.live(document);
 			await userEvent.click(deleteOf(root, 0));
-			await expect.poll(() => document.documentElement.style.overflow).toBe('hidden');
+			await until(() => expect(document.documentElement.style.overflow).toBe('hidden'));
 			expect(tracker.live(document).length).toBeGreaterThan(before.length);
 
 			root.remove();
@@ -121,8 +122,8 @@ describe('modal component', () => {
 		document.body.append(fresh);
 		await ready(fresh);
 		await userEvent.click(deleteOf(fresh, 0));
-		await expect.poll(() => layer(fresh).hidden).toBe(false);
+		await until(() => expect(layer(fresh).hidden).toBe(false));
 		await userEvent.keyboard('{Escape}');
-		await expect.poll(() => status(fresh)).toBe('Kept Brief');
+		await until(() => expect(status(fresh)).toBe('Kept Brief'));
 	});
 });

@@ -4,6 +4,7 @@ import '@ecopages/radiant-ui/themes/default';
 import '../src/components/primitive-example/primitive-example.css';
 import '../src/content/components/recipes/swipe-card.css';
 import { mountComponent, trackListeners } from './mount-recipe';
+import { until } from './until';
 
 function pointer(target: Element, type: string, x: number, y: number, timeStamp?: number): void {
 	const event = new PointerEvent(type, { bubbles: true, button: 0, pointerId: 1, clientX: x, clientY: y });
@@ -19,7 +20,7 @@ afterEach(() => {
 
 describe('swipe card component', () => {
 	const ready = async (root: HTMLElement) => {
-		await expect.poll(() => root.querySelector('[data-swipe-card]')).not.toBeNull();
+		await until(() => expect(root.querySelector('[data-swipe-card]')).not.toBeNull());
 		return {
 			root,
 			card: root.querySelector<HTMLElement>('[data-swipe-card]')!,
@@ -60,16 +61,16 @@ describe('swipe card component', () => {
 
 		pointer(card, 'pointerdown', 200, 0, 3000);
 		pointer(card, 'pointerup', 20, 0, 3500);
-		await expect.poll(() => card.hidden).toBe(true);
+		await until(() => expect(card.hidden).toBe(true));
 		expect(status()).toBe('Card dismissed, swiped left');
-		await expect.poll(() => restore.hidden).toBe(false);
+		await until(() => expect(restore.hidden).toBe(false));
 
 		restore.click();
-		await expect.poll(() => card.hidden).toBe(false);
+		await until(() => expect(card.hidden).toBe(false));
 
 		pointer(card, 'pointerdown', 200, 0, 4000);
 		pointer(card, 'pointerup', 170, 0, 4030);
-		await expect.poll(() => card.hidden).toBe(true);
+		await until(() => expect(card.hidden).toBe(true));
 		expect(status()).toBe('Card dismissed, swiped left');
 	});
 
@@ -78,9 +79,9 @@ describe('swipe card component', () => {
 
 		await userEvent.click(dismiss);
 
-		await expect.poll(() => card.hidden).toBe(true);
+		await until(() => expect(card.hidden).toBe(true));
 		expect(status()).toBe('Card dismissed');
-		await expect.poll(() => document.activeElement).toBe(restore);
+		await until(() => expect(document.activeElement).toBe(restore));
 	});
 
 	test('a swipe while the Dismiss button has focus moves focus to the restore button', async () => {
@@ -89,26 +90,26 @@ describe('swipe card component', () => {
 		dismiss.focus();
 		pointer(card, 'pointerdown', 200, 0, 1000);
 		pointer(card, 'pointerup', 20, 0, 1500);
-		await expect.poll(() => card.hidden).toBe(true);
+		await until(() => expect(card.hidden).toBe(true));
 
-		await expect.poll(() => document.activeElement).toBe(restore);
+		await until(() => expect(document.activeElement).toBe(restore));
 	});
 
 	test('restoring brings the card back at rest and returns focus to the dismiss button', async () => {
 		const { card, dismiss, restore, status } = await ready(await mountComponent('swipe-card'));
 		pointer(card, 'pointerdown', 200, 0, 1000);
 		pointer(card, 'pointerup', 20, 0, 1500);
-		await expect.poll(() => card.hidden).toBe(true);
-		await expect.poll(() => restore.hidden).toBe(false);
+		await until(() => expect(card.hidden).toBe(true));
+		await until(() => expect(restore.hidden).toBe(false));
 
 		await userEvent.click(restore);
 
-		await expect.poll(() => card.hidden).toBe(false);
+		await until(() => expect(card.hidden).toBe(false));
 		expect(restore.hidden).toBe(true);
 		expect(card.style.getPropertyValue('--swipe-dx')).toBe('0px');
 		expect(card.style.getPropertyValue('--swipe-opacity')).toBe('1');
 		expect(status()).toBe('The card is shown');
-		await expect.poll(() => document.activeElement).toBe(dismiss);
+		await until(() => expect(document.activeElement).toBe(dismiss));
 	});
 
 	test('a mouse drag across the card dismisses it', async () => {
@@ -119,7 +120,7 @@ describe('swipe card component', () => {
 
 		await userEvent.dragAndDrop(card.querySelector('span')!, target);
 
-		await expect.poll(() => card.hidden).toBe(true);
+		await until(() => expect(card.hidden).toBe(true));
 		expect(root.querySelector('[data-status]')!.textContent).toBe('Card dismissed, swiped right');
 	});
 
@@ -142,7 +143,7 @@ describe('swipe card component', () => {
 		pointer(card, 'pointermove', 170, 0, 1100);
 		expect(card.style.getPropertyValue('--swipe-dx')).toBe('-30px');
 		pointer(card, 'pointerup', 20, 0, 1500);
-		await expect.poll(() => card.hidden).toBe(true);
+		await until(() => expect(card.hidden).toBe(true));
 		expect(status()).toBe('Card dismissed, swiped left');
 	});
 });

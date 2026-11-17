@@ -10,6 +10,7 @@ import {
 } from '../popover/popover.script';
 import { RuiHoverCard, RuiHoverCardContent, RuiHoverCardTrigger } from '../hover-card/hover-card';
 import { RuiHoverCard as RuiHoverCardScript } from '../hover-card/hover-card.script';
+import { animationsFinished } from '../../../controllers/exit-transition.fixture';
 import { describeHit, isReachable, mountOpenDialog, settled, type Page } from './dialog-composition.harness';
 void [RuiSelectScript, RuiPopoverScript, RuiPopoverTriggerScript, RuiHoverCardScript];
 
@@ -39,9 +40,7 @@ function popoverContent() {
 	);
 }
 
-async function entered(popup: Element): Promise<void> {
-	await Promise.all(popup.getAnimations().map((animation) => animation.finished));
-}
+const entered = (popup: Element) => animationsFinished(popup);
 
 function backdropOf(target: Page): HTMLElement {
 	return target.dialog.querySelector('[data-ref="backdrop"]') as HTMLElement;
@@ -71,7 +70,7 @@ describe('popup position inside a rui-dialog that is still animating in', () => 
 		expect(page.surface.getAnimations().length, 'the dialog is still animating').toBeGreaterThan(0);
 		expect(Math.abs(gapUnder(trigger, surface) - 8)).toBeLessThanOrEqual(1);
 
-		await Promise.all(page.surface.getAnimations().map((animation) => animation.finished));
+		await animationsFinished(page.surface);
 		await settled();
 		expect(Math.abs(gapUnder(trigger, surface) - 8)).toBeLessThanOrEqual(1);
 	});
@@ -88,7 +87,7 @@ describe('popup position inside a rui-dialog that is still animating in', () => 
 		expect(page.surface.getAnimations().length, 'the dialog is still animating').toBeGreaterThan(0);
 		const gapDuring = gapUnder(trigger, list);
 
-		await Promise.all(page.surface.getAnimations().map((animation) => animation.finished));
+		await animationsFinished(page.surface);
 		await settled();
 		const gapAfter = gapUnder(trigger, list);
 		expect(gapAfter).toBeGreaterThanOrEqual(0);

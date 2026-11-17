@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test } from 'vitest';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import '@ecopages/radiant-ui/themes/default';
 import '../src/components/primitive-example/primitive-example.css';
@@ -6,10 +6,12 @@ import '../src/content/components/recipes/video-player.css';
 import { syncExamples } from '../src/components/primitive-example/mount-example';
 import { mountForm, trackListeners } from './mount-recipe';
 import { describeVideoPlayerForm } from './video-player-shared';
+import { until, afterDeferredDestroy } from './until';
 
 const video = (root: HTMLElement) => root.querySelector<HTMLVideoElement>('[data-video]')!;
 
 afterEach(() => {
+	vi.useRealTimers();
 	document.body.innerHTML = '';
 	syncExamples();
 });
@@ -19,16 +21,16 @@ describe('video player (plain)', () => {
 		const tracker = trackListeners();
 		try {
 			const root = await mountForm('video-player', 'plain');
-			await expect
-				.poll(() => root.querySelector<HTMLElement & { disabled: boolean }>('[data-seek]')!.disabled)
-				.toBe(false);
+			await until(() =>
+				expect(root.querySelector<HTMLElement & { disabled: boolean }>('[data-seek]')!.disabled).toBe(false),
+			);
 			await userEvent.click(root.querySelector('[data-playback]')!);
-			await expect.poll(() => video(root).paused).toBe(false);
+			await until(() => expect(video(root).paused).toBe(false));
 			const player = video(root);
 
 			root.remove();
 			syncExamples();
-			await new Promise((resolve) => setTimeout(resolve, 50));
+			await afterDeferredDestroy();
 
 			expect(player.paused).toBe(true);
 			expect(player.hasAttribute('src')).toBe(false);
@@ -37,27 +39,28 @@ describe('video player (plain)', () => {
 			tracker.stop();
 		}
 		const again = await mountForm('video-player', 'plain');
-		await expect
-			.poll(() => again.querySelector<HTMLElement & { disabled: boolean }>('[data-seek]')!.disabled)
-			.toBe(false);
+		await until(() =>
+			expect(again.querySelector<HTMLElement & { disabled: boolean }>('[data-seek]')!.disabled).toBe(false),
+		);
 	});
 
 	test('stops the auto-hide timer when the element leaves while the controls are about to hide', async () => {
+		vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
 		const root = await mountForm('video-player', 'plain');
-		await expect
-			.poll(() => root.querySelector<HTMLElement & { disabled: boolean }>('[data-seek]')!.disabled)
-			.toBe(false);
+		await until(() =>
+			expect(root.querySelector<HTMLElement & { disabled: boolean }>('[data-seek]')!.disabled).toBe(false),
+		);
 		await userEvent.click(root.querySelector('[data-playback]')!);
-		await expect.poll(() => video(root).paused).toBe(false);
+		await until(() => expect(video(root).paused).toBe(false));
 		const stage = root.querySelector('[data-stage]')!;
 		await userEvent.hover(video(root), { position: { x: 8, y: 8 } });
 
 		root.remove();
 		syncExamples();
-		await new Promise((resolve) => setTimeout(resolve, 2800));
+		vi.advanceTimersByTime(2800);
 
 		expect(stage.hasAttribute('data-controls-hidden')).toBe(false);
-	}, 10000);
+	});
 });
 
 describeVideoPlayerForm('plain', {

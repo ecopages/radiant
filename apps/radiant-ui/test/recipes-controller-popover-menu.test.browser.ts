@@ -4,6 +4,7 @@ import '@ecopages/radiant-ui/themes/default';
 import '../src/components/primitive-example/primitive-example.css';
 import '../src/content/components/recipes/popover-menu.css';
 import { mountController, trackListeners } from './mount-recipe';
+import { until, untilFrame } from './until';
 
 afterEach(() => {
 	document.body.innerHTML = '';
@@ -13,7 +14,7 @@ const macrotask = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
 
 describe('popover menu controller', () => {
 	const ready = async (root: HTMLElement) => {
-		await expect.poll(() => root.querySelector<HTMLElement>('[role="menuitem"]')!.tabIndex).toBe(0);
+		await until(() => expect(root.querySelector<HTMLElement>('[role="menuitem"]')!.tabIndex).toBe(0));
 		return root;
 	};
 	const status = (root: HTMLElement) => root.querySelector('[data-status]')!.textContent;
@@ -74,9 +75,11 @@ describe('popover menu controller', () => {
 
 		await userEvent.click(parts(root).trigger);
 
-		await expect
-			.poll(() => parts(root).menu.getBoundingClientRect().bottom)
-			.toBeLessThanOrEqual(frame.getBoundingClientRect().bottom);
+		await untilFrame(() =>
+			expect(parts(root).menu.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+				frame.getBoundingClientRect().bottom,
+			),
+		);
 	});
 
 	test('removes every listener when the element leaves, and a fresh copy works', async () => {

@@ -1,7 +1,22 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { bars } from './audio-visualizer-bars';
 import type { AudioFrame } from './audio-visualizer-controller';
 import { wave } from './audio-visualizer-wave';
+import { createWaiters, nothingFollows } from './event.fixture';
+
+/**
+ * Resolves once `check` holds, re-checked whenever an attribute of `canvas` changes.
+ *
+ * @remarks A preset refits its bitmap from a `ResizeObserver` callback, which sets `width` or `height`: that
+ * attribute change is the signal that the resize was handled.
+ */
+function untilResized(canvas: HTMLCanvasElement, check: () => boolean): Promise<void> {
+	const waiters = createWaiters();
+	const observer = new MutationObserver(waiters.notify);
+	observer.observe(canvas, { attributes: true });
+	onTestFinished(() => observer.disconnect());
+	return waiters.until(check).finally(() => observer.disconnect());
+}
 
 function frame(level: number, fftSize = 1024): AudioFrame {
 	return {
@@ -11,9 +26,6 @@ function frame(level: number, fftSize = 1024): AudioFrame {
 		fftSize,
 	};
 }
-
-const settle = () =>
-	new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
 
 function makeTarget(width = 120, height = 40): HTMLElement {
 	const target = document.createElement('div');
@@ -271,14 +283,14 @@ describe.each([
 		expect(canvas.width).toBe(Math.round(100 * ratio));
 
 		target.style.width = '60px';
-		await vi.waitFor(() => expect(canvas.width).toBe(Math.round(60 * ratio)));
+		await untilResized(canvas, () => canvas.width === Math.round(60 * ratio));
 
 		target.style.height = '0px';
-		await vi.waitFor(() => expect(canvas.height).toBe(0));
+		await untilResized(canvas, () => canvas.height === 0);
 		expect(() => preset.draw(frame(255, preset.fftSize ?? 1024))).not.toThrow();
 
 		target.style.height = '30px';
-		await vi.waitFor(() => expect(canvas.height).toBe(Math.round(30 * ratio)));
+		await untilResized(canvas, () => canvas.height === Math.round(30 * ratio));
 		preset.destroy();
 	});
 
@@ -303,7 +315,8 @@ describe.each([
 		expect(canvas.height).toBe(Math.round(box.height * window.devicePixelRatio));
 
 		target.style.padding = '0px';
-		await vi.waitFor(() => expect(canvas.width).toBe(Math.round(100 * window.devicePixelRatio)));
+		await nothingFollows('a resize of the bitmap: the canvas box keeps its 100 px');
+		expect(canvas.width).toBe(Math.round(100 * window.devicePixelRatio));
 		preset.destroy();
 	});
 
@@ -371,7 +384,6 @@ describe.each([
 		expect(read()).toBe('red');
 
 		document.documentElement.style.setProperty('--test-color', 'rgb(0, 0, 255)');
-		await settle();
 		preset.draw(input);
 		expect(read()).toBe('blue');
 		preset.destroy();
@@ -576,11 +588,9 @@ describe('bars canvas look', () => {
 		const preset = bars({ mode: 'canvas', count: 1, floor: 0.5, idle: 'floor', color: 'rgb(0, 128, 0)' });
 		preset.mount(target);
 		preset.rest();
+		const canvas = target.querySelector('canvas')!;
 		target.style.width = '60px';
-		await vi.waitFor(() =>
-			expect(target.querySelector('canvas')!.width).toBe(Math.round(60 * window.devicePixelRatio)),
-		);
-		await settle();
+		await untilResized(canvas, () => canvas.width === Math.round(60 * window.devicePixelRatio));
 		expect(coverage(target.querySelector('canvas')!, 30).filter(Boolean).length).toBeGreaterThan(0);
 		preset.destroy();
 	});

@@ -11,7 +11,8 @@ async function mount(): Promise<HTMLElement> {
 	document.body.append(container);
 	createRoot(container).render(<RuiNumberField name="width" value={256} />);
 	await customElements.whenDefined('rui-number-field');
-	await new Promise((resolve) => setTimeout(resolve, 50));
+	await (container.querySelector('rui-number-field') as HTMLElement & { updateComplete: Promise<void> })
+		.updateComplete;
 	return container;
 }
 

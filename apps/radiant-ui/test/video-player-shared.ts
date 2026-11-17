@@ -1,5 +1,6 @@
 import { userEvent } from 'vitest/browser';
-import { describe, expect, test, vi } from 'vitest';
+import { afterEach, describe, expect, test, vi } from 'vitest';
+import { until, untilFrame, once, fakeTimers, nothingFollows } from './until';
 
 type Slider = HTMLElement & { value: number[]; disabled: boolean };
 
@@ -31,14 +32,13 @@ const status = (root: HTMLElement) => hook(root, '[data-status]').textContent;
 const state = (root: HTMLElement) => stage(root).getAttribute('data-state');
 const text = (root: HTMLElement, selector: string) => hook(root, selector).textContent;
 const segments = (root: HTMLElement) => [...root.querySelectorAll<HTMLElement>('[data-buffered] i')];
-const settle = (milliseconds: number) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 const ready = async (root: HTMLElement) => {
-	await expect.poll(() => seek(root).disabled).toBe(false);
+	await until(() => expect(seek(root).disabled).toBe(false));
 	return root;
 };
 const playing = async (root: HTMLElement) => {
 	await userEvent.click(playback(root));
-	await expect.poll(() => video(root).paused).toBe(false);
+	await until(() => expect(video(root).paused).toBe(false));
 };
 
 /** Moves a slider the way a pointer does: it takes the new position and reports it with `rui-change`. */
@@ -116,17 +116,21 @@ function frame(root: HTMLElement): HTMLElement {
 export function describeVideoPlayerForm(name: string, unframed: VideoPlayerForm): void {
 	const form: VideoPlayerForm = { ...unframed, mount: async () => frame(await unframed.mount()) };
 	describe(`video player (${name})`, () => {
+		afterEach(() => {
+			vi.useRealTimers();
+		});
+
 		test('loads the clip into a seekable player, paused, with the duration, the poster and the buffered bar', async () => {
 			const root = await ready(await form.mount());
 
 			expect(video(root).poster).toMatch(/radiant-reel\.jpg$/);
 			expect(video(root).src).toMatch(/^blob:/);
 			expect(video(root).paused).toBe(true);
-			await expect.poll(() => state(root)).toBe('paused');
+			await until(() => expect(state(root)).toBe('paused'));
 			expect(text(root, '[data-duration]')).toBe('0:12');
 			expect(text(root, '[data-elapsed]')).toBe('0:00');
 			expect(seek(root).max).toBeCloseTo(video(root).duration, 1);
-			await expect.poll(() => segments(root).length).toBeGreaterThan(0);
+			await until(() => expect(segments(root).length).toBeGreaterThan(0));
 			const covered = segments(root).reduce((sum, bar) => sum + Number(bar.style.getPropertyValue('--size')), 0);
 			expect(covered).toBeGreaterThan(95);
 		});
@@ -148,7 +152,7 @@ export function describeVideoPlayerForm(name: string, unframed: VideoPlayerForm)
 
 			for (const hookName of ['playback', 'mute', 'captions']) {
 				const button = hook(root, `[data-${hookName}]`);
-				await expect.poll(() => button.getAttribute('aria-pressed')).toBe('true');
+				await until(() => expect(button.getAttribute('aria-pressed')).toBe('true'));
 				expect(button.getAttribute('aria-label')).toBe(names[hookName as keyof typeof names]);
 			}
 		});
@@ -174,10 +178,10 @@ export function describeVideoPlayerForm(name: string, unframed: VideoPlayerForm)
 			observer.observe(document.body, { subtree: true, childList: true, characterData: true });
 			try {
 				const root = await ready(await form.mount());
-				await settle(300);
+				await nothingFollows('a live-region announcement while the clip loads', 10);
 				await form.relocate(root);
 				await ready(root);
-				await settle(300);
+				await nothingFollows('a live-region announcement after the move', 10);
 			} finally {
 				observer.disconnect();
 			}
@@ -216,12 +220,12 @@ export function describeVideoPlayerForm(name: string, unframed: VideoPlayerForm)
 				document.body.style.width = '360px';
 				const narrow = await ready(await form.mount());
 				await userEvent.click(hook(narrow, '[data-captions]'));
-				await expect.poll(() => cueLine(narrow)).toBeCloseTo(aboveControls(narrow), 0);
+				await untilFrame(() => expect(cueLine(narrow)).toBeCloseTo(aboveControls(narrow), 0));
 				expect(cueLine(narrow)).toBeLessThan(60);
 				expect(video(narrow).textTracks[0].cues![0].lineAlign).toBe('end');
 
 				document.body.style.width = '900px';
-				await expect.poll(() => cueLine(narrow)).toBeCloseTo(aboveControls(narrow), 0);
+				await untilFrame(() => expect(cueLine(narrow)).toBeCloseTo(aboveControls(narrow), 0));
 				expect(cueLine(narrow)).toBeGreaterThan(75);
 			} finally {
 				document.body.style.width = '';
@@ -232,28 +236,28 @@ export function describeVideoPlayerForm(name: string, unframed: VideoPlayerForm)
 			const root = await ready(await form.mount());
 
 			await userEvent.click(playback(root));
-			await expect.poll(() => video(root).paused).toBe(false);
-			await expect.poll(() => state(root)).toBe('playing');
+			await until(() => expect(video(root).paused).toBe(false));
+			await until(() => expect(state(root)).toBe('playing'));
 			expect(status(root)).toBe('Playing');
 			expect(playback(root).getAttribute('aria-pressed')).toBe('true');
 
 			await userEvent.click(video(root), { position: { x: 12, y: 12 } });
-			await expect.poll(() => video(root).paused).toBe(true);
-			await expect.poll(() => status(root)).toBe('Paused');
+			await until(() => expect(video(root).paused).toBe(true));
+			await until(() => expect(status(root)).toBe('Paused'));
 			expect(playback(root).getAttribute('aria-pressed')).toBe('false');
 
 			await userEvent.click(hook(root, '[data-big-play]'));
-			await expect.poll(() => video(root).paused).toBe(false);
+			await until(() => expect(video(root).paused).toBe(false));
 		});
 
 		test('the big play button shows while paused and the controls are drawn from the stage state', async () => {
 			const root = await ready(await form.mount());
 			const big = hook(root, '[data-big-play]');
 
-			await expect.poll(() => getComputedStyle(big).opacity).toBe('1');
+			await untilFrame(() => expect(getComputedStyle(big).opacity).toBe('1'));
 			expect(getComputedStyle(hook(root, '[data-controls]')).opacity).toBe('1');
 			await playing(root);
-			await expect.poll(() => getComputedStyle(big).opacity).toBe('0');
+			await untilFrame(() => expect(getComputedStyle(big).opacity).toBe('0'));
 		});
 
 		test('Space and K on the focused player play and pause, and a button keeps Space for itself', async () => {
@@ -261,14 +265,14 @@ export function describeVideoPlayerForm(name: string, unframed: VideoPlayerForm)
 
 			stage(root).focus();
 			await userEvent.keyboard(' ');
-			await expect.poll(() => video(root).paused).toBe(false);
+			await until(() => expect(video(root).paused).toBe(false));
 			await userEvent.keyboard('k');
-			await expect.poll(() => video(root).paused).toBe(true);
+			await until(() => expect(video(root).paused).toBe(true));
 
 			playback(root).focus();
 			await userEvent.keyboard(' ');
-			await expect.poll(() => video(root).paused).toBe(false);
-			await settle(250);
+			await until(() => expect(video(root).paused).toBe(false));
+			await nothingFollows('Space on the button also pausing the clip');
 			expect(video(root).paused).toBe(false);
 		});
 
@@ -277,19 +281,19 @@ export function describeVideoPlayerForm(name: string, unframed: VideoPlayerForm)
 			stage(root).focus();
 
 			await userEvent.keyboard('l');
-			await expect.poll(() => video(root).currentTime).toBeCloseTo(10, 0);
+			await until(() => expect(video(root).currentTime).toBeCloseTo(10, 0));
 			await userEvent.keyboard('{ArrowLeft}');
-			await expect.poll(() => video(root).currentTime).toBeCloseTo(5, 0);
+			await until(() => expect(video(root).currentTime).toBeCloseTo(5, 0));
 			await userEvent.keyboard('{ArrowRight}');
-			await expect.poll(() => video(root).currentTime).toBeCloseTo(10, 0);
+			await until(() => expect(video(root).currentTime).toBeCloseTo(10, 0));
 			await userEvent.keyboard('j');
-			await expect.poll(() => video(root).currentTime).toBeCloseTo(0, 0);
+			await until(() => expect(video(root).currentTime).toBeCloseTo(0, 0));
 			await userEvent.keyboard('5');
-			await expect.poll(() => video(root).currentTime).toBeCloseTo(video(root).duration / 2, 0);
+			await until(() => expect(video(root).currentTime).toBeCloseTo(video(root).duration / 2, 0));
 			await userEvent.keyboard('{Home}');
-			await expect.poll(() => video(root).currentTime).toBeCloseTo(0, 0);
+			await until(() => expect(video(root).currentTime).toBeCloseTo(0, 0));
 			await userEvent.keyboard('{End}');
-			await expect.poll(() => video(root).currentTime).toBeCloseTo(video(root).duration, 0);
+			await until(() => expect(video(root).currentTime).toBeCloseTo(video(root).duration, 0));
 		});
 
 		test('the arrows change the volume, M mutes, and keys with a modifier are left to the browser', async () => {
@@ -297,19 +301,19 @@ export function describeVideoPlayerForm(name: string, unframed: VideoPlayerForm)
 			stage(root).focus();
 
 			await userEvent.keyboard('{ArrowDown}{ArrowDown}');
-			await expect.poll(() => video(root).volume).toBeCloseTo(0.8, 2);
+			await until(() => expect(video(root).volume).toBeCloseTo(0.8, 2));
 			expect(status(root)).toBe('Volume 80%');
 			expect(volume(root).value[0]).toBeCloseTo(0.8, 2);
 			await userEvent.keyboard('m');
-			await expect.poll(() => video(root).muted).toBe(true);
+			await until(() => expect(video(root).muted).toBe(true));
 			expect(hook(root, '[data-mute]').getAttribute('aria-pressed')).toBe('true');
 			expect(volume(root).value[0]).toBe(0);
 			await userEvent.keyboard('{ArrowUp}');
-			await expect.poll(() => video(root).muted).toBe(false);
+			await until(() => expect(video(root).muted).toBe(false));
 			expect(video(root).volume).toBeCloseTo(0.9, 2);
 
 			await userEvent.keyboard('{Control>}k{/Control}{Alt>}m{/Alt}{Meta>}c{/Meta}');
-			await settle(150);
+			await nothingFollows('a modifier key pausing, muting or captioning');
 			expect(video(root).paused).toBe(true);
 			expect(video(root).muted).toBe(false);
 			expect(hook(root, '[data-captions]').getAttribute('aria-pressed')).toBe('false');
@@ -317,41 +321,49 @@ export function describeVideoPlayerForm(name: string, unframed: VideoPlayerForm)
 
 		test('the arrows and the page keys on the seek thumb move the playback by whole seconds, once', async () => {
 			const root = await ready(await form.mount());
+			fakeTimers();
 
 			thumb(root).focus();
 			await userEvent.keyboard('{ArrowRight}');
-			await expect.poll(() => video(root).currentTime).toBeCloseTo(5, 1);
-			await settle(200);
+			vi.advanceTimersByTime(200);
+			await until(() => expect(video(root).currentTime).toBeCloseTo(5, 1));
+			vi.advanceTimersByTime(200);
 			expect(video(root).currentTime).toBeCloseTo(5, 1);
 			expect(text(root, '[data-elapsed]')).toBe('0:05');
 			expect(seek(root).value[0]).toBeCloseTo(5, 1);
 			expect(thumb(root).getAttribute('aria-valuetext')).toBe('0:05 of 0:12');
 
 			await userEvent.keyboard('{PageUp}');
-			await expect.poll(() => video(root).currentTime).toBeCloseTo(video(root).duration, 0);
+			vi.advanceTimersByTime(200);
+			await until(() => expect(video(root).currentTime).toBeCloseTo(video(root).duration, 0));
 			await userEvent.keyboard('{PageDown}');
-			await expect.poll(() => video(root).currentTime).toBeCloseTo(video(root).duration - 10, 0);
+			vi.advanceTimersByTime(200);
+			await until(() => expect(video(root).currentTime).toBeCloseTo(video(root).duration - 10, 0));
 			await userEvent.keyboard('{ArrowLeft}{ArrowLeft}');
-			await expect.poll(() => video(root).currentTime).toBeCloseTo(0, 0);
-			await expect.poll(() => seek(root).value[0]).toBeCloseTo(0, 0);
+			vi.advanceTimersByTime(200);
+			await until(() => expect(video(root).currentTime).toBeCloseTo(0, 0));
+			await until(() => expect(seek(root).value[0]).toBeCloseTo(0, 0));
 			await userEvent.keyboard('{End}');
-			await expect.poll(() => video(root).currentTime).toBeCloseTo(video(root).duration, 0);
+			vi.advanceTimersByTime(200);
+			await until(() => expect(video(root).currentTime).toBeCloseTo(video(root).duration, 0));
 			await userEvent.keyboard('{Home}');
-			await expect.poll(() => video(root).currentTime).toBeCloseTo(0, 0);
+			vi.advanceTimersByTime(200);
+			await until(() => expect(video(root).currentTime).toBeCloseTo(0, 0));
 		});
 
 		test('a key with a modifier on the seek thumb is left to the browser: no skip and no slider step', async () => {
 			const root = await ready(await form.mount());
+			fakeTimers();
 			stage(root).focus();
 			await userEvent.keyboard('5');
-			await expect.poll(() => video(root).currentTime).toBeCloseTo(video(root).duration / 2, 0);
-			await settle(200);
+			await until(() => expect(video(root).currentTime).toBeCloseTo(video(root).duration / 2, 0));
+			vi.advanceTimersByTime(200);
 			const position = video(root).currentTime;
 			const value = seek(root).value[0];
 
 			thumb(root).focus();
 			await userEvent.keyboard('{Control>}{ArrowRight}{/Control}{Alt>}{ArrowLeft}{/Alt}{Meta>}{PageUp}{/Meta}');
-			await settle(200);
+			vi.advanceTimersByTime(200);
 
 			expect(video(root).currentTime).toBeCloseTo(position, 3);
 			expect(seek(root).value[0]).toBeCloseTo(value, 3);
@@ -359,15 +371,19 @@ export function describeVideoPlayerForm(name: string, unframed: VideoPlayerForm)
 
 		test('a burst of scrub input applies one seek to the last value while the clock follows at once', async () => {
 			const root = await ready(await form.mount());
+			fakeTimers();
 			let seeks = 0;
 			video(root).addEventListener('seeking', () => (seeks += 1));
+			const seeked = once(video(root), 'seeked');
 
 			for (const fraction of [0.1, 0.3, 0.5, 0.75]) drag(seek(root), fraction * video(root).duration);
 
 			expect(text(root, '[data-elapsed]')).toBe('0:09');
 			expect(thumb(root).getAttribute('aria-valuetext')).toBe('0:09 of 0:12');
 			expect(video(root).currentTime).toBe(0);
-			await expect.poll(() => video(root).currentTime).toBeCloseTo(video(root).duration * 0.75, 0);
+			vi.advanceTimersByTime(200);
+			await seeked;
+			expect(video(root).currentTime).toBeCloseTo(video(root).duration * 0.75, 0);
 			expect(seeks).toBe(1);
 		});
 
@@ -377,13 +393,13 @@ export function describeVideoPlayerForm(name: string, unframed: VideoPlayerForm)
 			drag(volume(root), 0.3);
 			expect(video(root).volume).toBeCloseTo(0.3);
 			await userEvent.click(hook(root, '[data-mute]'));
-			await expect.poll(() => video(root).muted).toBe(true);
+			await until(() => expect(video(root).muted).toBe(true));
 			expect(volume(root).value[0]).toBe(0);
 
 			drag(volume(root), 0.6);
-			await expect.poll(() => video(root).muted).toBe(false);
+			await until(() => expect(video(root).muted).toBe(false));
 			expect(video(root).volume).toBeCloseTo(0.6);
-			await expect.poll(() => hook(root, '[data-mute]').getAttribute('aria-pressed')).toBe('false');
+			await until(() => expect(hook(root, '[data-mute]').getAttribute('aria-pressed')).toBe('false'));
 		});
 
 		test('the speed button cycles 1x, 1.25x, 1.5x, 2x and 0.5x and sets the playback rate', async () => {
@@ -393,7 +409,7 @@ export function describeVideoPlayerForm(name: string, unframed: VideoPlayerForm)
 
 			for (const expected of ['1.25', '1.5', '2', '0.5', '1']) {
 				await userEvent.click(rate);
-				await expect.poll(() => video(root).playbackRate).toBe(Number(expected));
+				await until(() => expect(video(root).playbackRate).toBe(Number(expected)));
 				expect(rate.textContent).toBe(`${expected}x`);
 				expect(rate.getAttribute('aria-label')).toBe(`Speed ${expected}x`);
 				expect(rate.getAttribute('aria-label')).toContain(rate.textContent!);
@@ -434,10 +450,10 @@ export function describeVideoPlayerForm(name: string, unframed: VideoPlayerForm)
 			await ready(root);
 
 			expect(liveTrack(root).mode).toBe('disabled');
-			await expect.poll(() => button.getAttribute('aria-pressed')).toBe('false');
+			await until(() => expect(button.getAttribute('aria-pressed')).toBe('false'));
 			await userEvent.click(button);
 			expect(liveTrack(root).mode).toBe('showing');
-			await expect.poll(() => button.getAttribute('aria-pressed')).toBe('true');
+			await until(() => expect(button.getAttribute('aria-pressed')).toBe('true'));
 		});
 
 		test('fullscreen goes through the stage, the button follows fullscreenchange, F and a double click toggle it', async () => {
@@ -484,32 +500,43 @@ export function describeVideoPlayerForm(name: string, unframed: VideoPlayerForm)
 		});
 
 		test('the controls hide after 2.5 seconds without activity while playing, and come back on movement', async () => {
-			const root = await ready(await form.mount());
-			await playing(root);
-			await userEvent.hover(video(root), { position: { x: 8, y: 8 } });
+			fakeTimers();
+			try {
+				const root = await ready(await form.mount());
+				await playing(root);
+				await userEvent.hover(video(root), { position: { x: 8, y: 8 } });
 
-			expect(stage(root).hasAttribute('data-controls-hidden')).toBe(false);
-			await expect.poll(() => stage(root).hasAttribute('data-controls-hidden'), { timeout: 4500 }).toBe(true);
-			await expect.poll(() => getComputedStyle(hook(root, '[data-controls]')).opacity).toBe('0');
+				expect(stage(root).hasAttribute('data-controls-hidden')).toBe(false);
+				vi.advanceTimersByTime(2500);
+				expect(stage(root).hasAttribute('data-controls-hidden')).toBe(true);
+				await untilFrame(() => expect(getComputedStyle(hook(root, '[data-controls]')).opacity).toBe('0'));
 
-			stage(root).dispatchEvent(new PointerEvent('pointermove', { bubbles: true }));
-			expect(stage(root).hasAttribute('data-controls-hidden')).toBe(false);
-			await expect.poll(() => getComputedStyle(hook(root, '[data-controls]')).opacity).toBe('1');
-		}, 15000);
+				stage(root).dispatchEvent(new PointerEvent('pointermove', { bubbles: true }));
+				expect(stage(root).hasAttribute('data-controls-hidden')).toBe(false);
+				await untilFrame(() => expect(getComputedStyle(hook(root, '[data-controls]')).opacity).toBe('1'));
+			} finally {
+				vi.useRealTimers();
+			}
+		});
 
 		test('the controls stay visible while paused and while a control has keyboard focus', async () => {
-			const root = await ready(await form.mount());
-			await playing(root);
-			await userEvent.tab();
-			expect(stage(root).contains(document.activeElement)).toBe(true);
+			fakeTimers();
+			try {
+				const root = await ready(await form.mount());
+				await playing(root);
+				await userEvent.tab();
+				expect(stage(root).contains(document.activeElement)).toBe(true);
 
-			await settle(3200);
-			expect(stage(root).hasAttribute('data-controls-hidden')).toBe(false);
+				vi.advanceTimersByTime(3200);
+				expect(stage(root).hasAttribute('data-controls-hidden')).toBe(false);
 
-			video(root).pause();
-			await expect.poll(() => state(root)).toBe('paused');
-			expect(stage(root).hasAttribute('data-controls-hidden')).toBe(false);
-		}, 15000);
+				video(root).pause();
+				await until(() => expect(state(root)).toBe('paused'));
+				expect(stage(root).hasAttribute('data-controls-hidden')).toBe(false);
+			} finally {
+				vi.useRealTimers();
+			}
+		});
 
 		test('a touch tap on the playing video shows or hides the controls and does not pause it', async () => {
 			const root = await ready(await form.mount());
@@ -533,17 +560,17 @@ export function describeVideoPlayerForm(name: string, unframed: VideoPlayerForm)
 
 			Object.defineProperty(video(root), 'readyState', { configurable: true, get: () => 1 });
 			video(root).dispatchEvent(new Event('waiting'));
-			await expect.poll(() => state(root)).toBe('buffering');
+			await until(() => expect(state(root)).toBe('buffering'));
 			expect(status(root)).toBe('Buffering');
-			await expect.poll(() => getComputedStyle(hook(root, '[data-spinner]')).opacity).toBe('1');
+			await untilFrame(() => expect(getComputedStyle(hook(root, '[data-spinner]')).opacity).toBe('1'));
 			expect(hook(root, '[data-spinner]').getAttribute('aria-hidden')).toBe('true');
 			expect(playback(root).getAttribute('aria-pressed')).toBe('true');
 
 			Reflect.deleteProperty(video(root), 'readyState');
 			video(root).dispatchEvent(new Event('playing'));
-			await expect.poll(() => state(root)).toBe('playing');
+			await until(() => expect(state(root)).toBe('playing'));
 			expect(status(root)).toBe('Playing');
-			await expect.poll(() => getComputedStyle(hook(root, '[data-spinner]')).opacity).toBe('0');
+			await untilFrame(() => expect(getComputedStyle(hook(root, '[data-spinner]')).opacity).toBe('0'));
 		});
 
 		test('a clip that cannot be fetched shows the error with Retry, and Retry loads it', async () => {
@@ -553,7 +580,7 @@ export function describeVideoPlayerForm(name: string, unframed: VideoPlayerForm)
 			try {
 				const root = await form.mount();
 
-				await expect.poll(() => state(root)).toBe('error');
+				await until(() => expect(state(root)).toBe('error'));
 				expect(hook(root, '[data-error]').hidden).toBe(false);
 				expect(hook(root, '[data-error]').textContent).toContain('Could not load the video');
 				expect(status(root)).toBe('Could not load the video');
@@ -577,13 +604,13 @@ export function describeVideoPlayerForm(name: string, unframed: VideoPlayerForm)
 
 			await userEvent.click(playback(root));
 
-			await expect.poll(() => status(root)).toBe('Playback was blocked, press Play to start');
+			await until(() => expect(status(root)).toBe('Playback was blocked, press Play to start'));
 			expect(video(root).paused).toBe(true);
 			expect(playback(root).getAttribute('aria-pressed')).toBe('false');
 			Reflect.deleteProperty(video(root), 'play');
 			await userEvent.click(playback(root));
-			await expect.poll(() => video(root).paused).toBe(false);
-			await expect.poll(() => status(root)).toBe('Playing');
+			await until(() => expect(video(root).paused).toBe(false));
+			await until(() => expect(status(root)).toBe('Playing'));
 		});
 
 		test('the clip plays from a blob URL that is released when the player is removed', async () => {
@@ -595,7 +622,7 @@ export function describeVideoPlayerForm(name: string, unframed: VideoPlayerForm)
 				await playing(root);
 
 				await form.remove(root);
-				await settle(100);
+				await nothingFollows('the removed clip playing on');
 
 				expect(player.paused).toBe(true);
 				expect(player.hasAttribute('src')).toBe(false);
@@ -612,12 +639,12 @@ export function describeVideoPlayerForm(name: string, unframed: VideoPlayerForm)
 			const urls = trackObjectUrls();
 			try {
 				const root = await form.mount();
-				await expect.poll(() => fetches.requests).toHaveLength(1);
+				await until(() => expect(fetches.requests).toHaveLength(1));
 				const player = video(root);
 
 				await form.remove(root);
 				open();
-				await settle(300);
+				await nothingFollows('a source set after the removal', 10);
 
 				expect(player.hasAttribute('src')).toBe(false);
 				expect(urls.alive()).toEqual([]);
@@ -635,7 +662,7 @@ export function describeVideoPlayerForm(name: string, unframed: VideoPlayerForm)
 			await ready(root);
 			expect(video(root).src).toMatch(/^blob:/);
 			await playing(root);
-			await expect.poll(() => status(root)).toBe('Playing');
+			await until(() => expect(status(root)).toBe('Playing'));
 		});
 	});
 }

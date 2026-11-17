@@ -4,6 +4,7 @@ import { DocsCanvasElement } from '../src/components/component-docs/canvas.scrip
 import { DocsDemoElement } from '../src/components/component-docs/demo.script';
 import { meta as toastMeta } from '../src/content/stories/toast';
 import { clearDocsStories, docsStory, type DocsMeta, type DocsStory } from '../src/lib/docs-stories';
+import { until } from './until';
 
 type CanvasArgs = { label: string };
 
@@ -69,9 +70,7 @@ describe('DocsCanvasElement', () => {
 		demo.append(canvas);
 		document.body.append(demo);
 
-		await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-
-		expect(canvas.querySelector('.playground-toast-stage__actions button')).not.toBeNull();
+		await until(() => expect(canvas.querySelector('.playground-toast-stage__actions button')).not.toBeNull());
 		expect(canvas.querySelector('rui-toaster')).not.toBeNull();
 	});
 
@@ -87,17 +86,15 @@ describe('DocsCanvasElement', () => {
 		demo.append(canvas);
 		document.body.append(demo);
 
-		await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-
 		demo.story.setContext({
 			storyId,
 			args: { label: 'Context-driven render' },
 			renderRevision: 1,
 		});
 
-		await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-
-		expect(canvas.querySelector('[data-canvas-story]')?.textContent).toBe('Context-driven render');
+		await until(() =>
+			expect(canvas.querySelector('[data-canvas-story]')?.textContent).toBe('Context-driven render'),
+		);
 	});
 
 	test('remounts preview after the story removes itself from the canvas', () => {

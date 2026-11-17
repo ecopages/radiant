@@ -4,6 +4,7 @@ import type {} from '@vitest/browser-playwright';
 import { createRoot, type JsxRenderable } from '@ecopages/jsx';
 import '../../../styles/radiant-ui.css';
 import './sidebar.css';
+import { animationsFinished } from '../../../controllers/exit-transition.fixture';
 import { RuiSidebar, RuiSidebarInset, RuiSidebarProvider } from './sidebar';
 
 type SidebarEl = HTMLElement & {
@@ -22,8 +23,12 @@ function frame(): Promise<void> {
 	return new Promise((resolve) => requestAnimationFrame(() => resolve()));
 }
 
-function wait(ms: number): Promise<void> {
-	return new Promise((resolve) => setTimeout(resolve, ms));
+/** Pauses the transitions on `element` at `ms`, so a mid-transition value is read without racing the clock. */
+function pauseTransitionsAt(element: Element, ms: number): void {
+	for (const animation of element.getAnimations()) {
+		animation.pause();
+		animation.currentTime = ms;
+	}
 }
 
 function mount(element: JsxRenderable): HTMLElement {
@@ -180,7 +185,8 @@ describe('mobile drawer motion', () => {
 		expect(translateX(drawer.pane)).toBeCloseTo(paneWidth, 0);
 
 		drawer.sidebar.setOpen(true);
-		await wait(80);
+		await frame();
+		pauseTransitionsAt(drawer.pane, 80);
 		const x = translateX(drawer.pane);
 		expect(x).toBeGreaterThan(1);
 		expect(x).toBeLessThan(paneWidth);
@@ -189,14 +195,15 @@ describe('mobile drawer motion', () => {
 	it('reverses from the current position when toggled mid-transition', async () => {
 		const drawer = await mountDrawer({ open: false });
 		drawer.sidebar.setOpen(true);
-		await wait(100);
+		await frame();
+		pauseTransitionsAt(drawer.pane, 100);
 		const before = translateX(drawer.pane);
 		drawer.sidebar.setOpen(false);
 		await frame();
 		const after = translateX(drawer.pane);
 		expect(before).toBeLessThan(0);
 		expect(Math.abs(after - before)).toBeLessThan(40);
-		await wait(40);
+		pauseTransitionsAt(drawer.pane, 100);
 		expect(translateX(drawer.pane)).toBeLessThan(after);
 	});
 
@@ -265,7 +272,8 @@ describe('mobile drawer motion', () => {
 		const drawer = await mountDrawer({ open: true });
 		expect(getComputedStyle(drawer.scrim).visibility).toBe('visible');
 		drawer.sidebar.setOpen(false);
-		await wait(350);
+		await frame();
+		await animationsFinished(drawer.scrim, { subtree: true });
 		expect(getComputedStyle(drawer.scrim).visibility).toBe('hidden');
 		drawer.scrim.focus();
 		expect(document.activeElement).not.toBe(drawer.scrim);

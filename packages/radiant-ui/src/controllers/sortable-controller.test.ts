@@ -224,7 +224,7 @@ describe('SortableController on a plain list', () => {
 			items()[0].click();
 			expect(seen).not.toHaveBeenCalled();
 
-			await new Promise((resolve) => setTimeout(resolve, 5));
+			await new Promise((resolve) => setTimeout(resolve, 0));
 			items()[0].click();
 			expect(seen).toHaveBeenCalledTimes(1);
 		});

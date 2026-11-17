@@ -7,6 +7,7 @@ import {
 	type AudioVisualizerState,
 } from './audio-visualizer-controller';
 import { bars } from './audio-visualizer-bars';
+import { createWaiters, frames, once, type Waiters } from './event.fixture';
 import { wave } from './audio-visualizer-wave';
 
 function toneUrl(seconds = 1): string {
@@ -34,21 +35,37 @@ function toneUrl(seconds = 1): string {
 	return URL.createObjectURL(new Blob([buffer], { type: 'audio/wav' }));
 }
 
+/** A preset whose `reached` and `called` resolve from its own `draw` and `rest` calls, without polling the mock. */
 function spyPreset(options: { fftSize?: number; draw?: (frame: AudioFrame) => void } = {}) {
-	return {
+	const { notify: fire, until: reached } = createWaiters();
+	const preset = {
 		fftSize: options.fftSize,
 		mount: vi.fn<AudioVisualizerPreset['mount']>(),
-		draw: vi.fn<AudioVisualizerPreset['draw']>(options.draw),
-		rest: vi.fn<AudioVisualizerPreset['rest']>(),
+		draw: vi.fn<AudioVisualizerPreset['draw']>((frame) => {
+			options.draw?.(frame);
+			fire();
+		}),
+		rest: vi.fn<AudioVisualizerPreset['rest']>(fire),
 		destroy: vi.fn<AudioVisualizerPreset['destroy']>(),
+		reached,
+		called: (method: 'draw' | 'rest') => preset.reached(() => preset[method].mock.calls.length > 0),
 	};
+	return preset;
 }
 
-const frames = (count: number) =>
-	new Promise<void>((resolve) => {
-		const step = (left: number) => requestAnimationFrame(() => (left <= 1 ? resolve() : step(left - 1)));
-		step(count);
-	});
+const stateWaiters = new WeakMap<object, Waiters>();
+
+/** Resolves once `predicate` holds, re-checked on every `onState` call of a controller built by `make`. */
+function untilState(controller: object, predicate: () => boolean): Promise<void> {
+	const waiters = stateWaiters.get(controller);
+	if (!waiters) {
+		throw new Error('untilState needs a controller built by make');
+	}
+	return waiters.until(predicate);
+}
+
+const whenState = (controller: { getState(): AudioVisualizerState }, state: AudioVisualizerState) =>
+	untilState(controller, () => controller.getState() === state);
 
 /** A media query whose `matches` is counted, so a listener that outlives its controller shows. */
 class FakeMotionQuery extends EventTarget {
@@ -188,12 +205,18 @@ describe('AudioVisualizerController', () => {
 		extra: { getEnabled?: () => boolean; onState?: (state: AudioVisualizerState) => void } = {},
 		Controller: typeof AudioVisualizerController = AudioVisualizerController,
 	) {
+		const waiters = createWaiters();
 		const controller = new Controller({
 			getMedia: () => audio,
 			getTarget: () => target,
 			preset,
 			...extra,
+			onState: (state) => {
+				extra.onState?.(state);
+				waiters.notify();
+			},
 		});
+		stateWaiters.set(controller, waiters);
 		controllers.push(controller);
 		return controller;
 	}
@@ -215,7 +238,7 @@ describe('AudioVisualizerController', () => {
 		expect(controller.getState()).toBe('idle');
 		expect(preset.mount).toHaveBeenCalledOnce();
 		await audio.play();
-		await vi.waitFor(() => expect(preset.draw).toHaveBeenCalled());
+		await preset.called('draw');
 
 		const frame = preset.draw.mock.calls[0][0];
 		expect(frame.fftSize).toBe(1024);
@@ -235,7 +258,7 @@ describe('AudioVisualizerController', () => {
 		});
 		make(audio, makeTarget(), preset).attach();
 		await audio.play();
-		await vi.waitFor(() => expect(loudest).toBeGreaterThan(0), { timeout: 5000 });
+		await preset.reached(() => loudest > 0);
 	});
 
 	it('rests and stops the loop on pause and on ended, and runs again on play', async () => {
@@ -244,15 +267,15 @@ describe('AudioVisualizerController', () => {
 		const controller = make(audio, makeTarget(), preset);
 		controller.attach();
 		await audio.play();
-		await vi.waitFor(() => expect(preset.draw).toHaveBeenCalled());
+		await preset.called('draw');
 
 		audio.pause();
-		await vi.waitFor(() => expect(preset.rest).toHaveBeenCalledTimes(1));
+		await preset.reached(() => preset.rest.mock.calls.length === 1);
 		expect(controller.getState()).toBe('idle');
 		expect(await settled(preset)).toBe(0);
 
 		await audio.play();
-		await vi.waitFor(() => expect(controller.getState()).toBe('running'));
+		await whenState(controller, 'running');
 		audio.dispatchEvent(new Event('ended'));
 		expect(preset.rest).toHaveBeenCalledTimes(2);
 		expect(await settled(preset)).toBe(0);
@@ -266,8 +289,8 @@ describe('AudioVisualizerController', () => {
 		const controller = make(audio, makeTarget(), preset);
 
 		controller.attach();
-		await vi.waitFor(() => expect(controller.getState()).toBe('running'));
-		await vi.waitFor(() => expect(preset.draw).toHaveBeenCalled());
+		await whenState(controller, 'running');
+		await preset.called('draw');
 		expect(create).toHaveBeenCalledOnce();
 	});
 
@@ -277,7 +300,7 @@ describe('AudioVisualizerController', () => {
 		const controller = make(audio, makeTarget(), preset);
 		controller.attach();
 		await audio.play();
-		await vi.waitFor(() => expect(preset.draw).toHaveBeenCalled());
+		await preset.called('draw');
 
 		controller.destroy();
 		expect(preset.rest).toHaveBeenCalled();
@@ -307,7 +330,7 @@ describe('AudioVisualizerController', () => {
 		expect(preset.mount).toHaveBeenCalledTimes(2);
 
 		await audio.play();
-		await vi.waitFor(() => expect(preset.draw).toHaveBeenCalled());
+		await preset.called('draw');
 	});
 
 	it('attaches nothing while getMedia is null and attaches when called again', async () => {
@@ -328,7 +351,7 @@ describe('AudioVisualizerController', () => {
 		controller.attach();
 		expect(preset.mount).toHaveBeenCalledOnce();
 		await audio.play();
-		await vi.waitFor(() => expect(preset.draw).toHaveBeenCalled());
+		await preset.called('draw');
 	});
 
 	it('mounts into a target that was null at attach on the next play, and rests while it is still null', async () => {
@@ -341,14 +364,14 @@ describe('AudioVisualizerController', () => {
 		expect(preset.mount).not.toHaveBeenCalled();
 
 		await audio.play();
-		await vi.waitFor(() => expect(preset.rest).toHaveBeenCalled());
+		await preset.called('rest');
 		expect(preset.draw).not.toHaveBeenCalled();
 		expect(controller.getState()).toBe('idle');
 
 		target = makeTarget();
 		audio.pause();
 		await audio.play();
-		await vi.waitFor(() => expect(preset.draw).toHaveBeenCalled());
+		await preset.called('draw');
 		expect(preset.mount).toHaveBeenCalledWith(target);
 	});
 
@@ -382,10 +405,10 @@ describe('AudioVisualizerController', () => {
 			enabled = true;
 			audio.pause();
 			await audio.play();
-			await vi.waitFor(() => expect(preset.draw).toHaveBeenCalled());
+			await preset.called('draw');
 
 			enabled = false;
-			await vi.waitFor(() => expect(controller.getState()).toBe('idle'));
+			await whenState(controller, 'idle');
 		});
 
 		it('starts on attach() or refresh() when getEnabled turns true while the media plays', async () => {
@@ -395,13 +418,13 @@ describe('AudioVisualizerController', () => {
 			const controller = make(audio, makeTarget(), preset, { getEnabled: () => enabled });
 			controller.attach();
 			await audio.play();
-			await vi.waitFor(() => expect(controller.getState()).toBe('running'));
+			await whenState(controller, 'running');
 			enabled = false;
-			await vi.waitFor(() => expect(controller.getState()).toBe('idle'));
+			await whenState(controller, 'idle');
 
 			enabled = true;
 			controller.attach();
-			await vi.waitFor(() => expect(controller.getState()).toBe('running'));
+			await whenState(controller, 'running');
 
 			enabled = false;
 			controller.refresh();
@@ -412,7 +435,7 @@ describe('AudioVisualizerController', () => {
 
 			enabled = true;
 			controller.refresh();
-			await vi.waitFor(() => expect(controller.getState()).toBe('running'));
+			await whenState(controller, 'running');
 		});
 
 		it('picks up a media element and a target the host rendered late', async () => {
@@ -435,7 +458,8 @@ describe('AudioVisualizerController', () => {
 			await audio.play();
 			controller.refresh();
 			expect(preset.mount).toHaveBeenCalledWith(renderedTarget);
-			await vi.waitFor(() => expect(controller.getState()).toBe('running'));
+			await preset.called('draw');
+			expect(controller.getState()).toBe('running');
 		});
 	});
 
@@ -449,7 +473,7 @@ describe('AudioVisualizerController', () => {
 			expect(seen).toEqual([]);
 
 			await audio.play();
-			await vi.waitFor(() => expect(seen).toEqual(['running']));
+			await untilState(controller, () => JSON.stringify(seen) === JSON.stringify(['running']));
 			const drawn = await settled(preset);
 			expect(drawn).toBeGreaterThan(1);
 			expect(seen).toEqual(['running']);
@@ -458,9 +482,12 @@ describe('AudioVisualizerController', () => {
 			expect(seen).toEqual(['running', 'idle']);
 
 			audio.dispatchEvent(new Event('play'));
-			await vi.waitFor(() => expect(seen).toEqual(['running', 'idle', 'running']));
+			await untilState(controller, () => JSON.stringify(seen) === JSON.stringify(['running', 'idle', 'running']));
 			audio.pause();
-			await vi.waitFor(() => expect(seen).toEqual(['running', 'idle', 'running', 'idle']));
+			await untilState(
+				controller,
+				() => JSON.stringify(seen) === JSON.stringify(['running', 'idle', 'running', 'idle']),
+			);
 		});
 
 		it('is called when a suspended context is resumed from a gesture', async () => {
@@ -480,7 +507,7 @@ describe('AudioVisualizerController', () => {
 			expect(seen).toEqual([]);
 
 			FakeContext.instances[0].setState('running');
-			await vi.waitFor(() => expect(seen).toEqual(['running']));
+			await untilState(controller, () => JSON.stringify(seen) === JSON.stringify(['running']));
 		});
 
 		it('is called with reduced when the preference turns on', async () => {
@@ -525,7 +552,7 @@ describe('AudioVisualizerController', () => {
 			controller.destroy();
 			controller.attach();
 			await audio.play();
-			await vi.waitFor(() => expect(controller.getState()).toBe('running'));
+			await whenState(controller, 'running');
 		});
 	});
 
@@ -537,18 +564,18 @@ describe('AudioVisualizerController', () => {
 			const controller = make(audio, makeTarget(), preset, { onState: (state) => seen.push(state) });
 			controller.attach();
 			await audio.play();
-			await vi.waitFor(() => expect(controller.getState()).toBe('running'));
+			await whenState(controller, 'running');
 
 			seen.length = 0;
 			audio.pause();
 			audio.src = 'http://127.0.0.1:1/next.wav';
 			audio.play().catch(() => undefined);
-			await vi.waitFor(() => expect(seen).toContain('opaque'));
+			await untilState(controller, () => seen.includes('opaque'));
 
 			audio.pause();
 			audio.src = toneUrl();
 			audio.play().catch(() => undefined);
-			await vi.waitFor(() => expect(controller.getState()).toBe('running'));
+			await whenState(controller, 'running');
 		});
 
 		it('reports opaque for a silent cross-origin element even when there is no target to draw into', async () => {
@@ -559,7 +586,7 @@ describe('AudioVisualizerController', () => {
 			controller.attach();
 			opaque.play().catch(() => undefined);
 
-			await vi.waitFor(() => expect(controller.getState()).toBe('opaque'));
+			await whenState(controller, 'opaque');
 		});
 
 		it('connects the source straight to the speakers and keeps it there when the last controller is destroyed', async () => {
@@ -571,7 +598,7 @@ describe('AudioVisualizerController', () => {
 			const controller = make(audio, makeTarget(), preset);
 			controller.attach();
 			await audio.play();
-			await vi.waitFor(() => expect(controller.getState()).toBe('running'));
+			await whenState(controller, 'running');
 
 			const context = create.mock.contexts[0] as AudioContext;
 			expect(connect.mock.calls.some(([node]) => (node as unknown) === context.destination)).toBe(true);
@@ -596,8 +623,8 @@ describe('AudioVisualizerController', () => {
 			a.attach();
 			b.attach();
 			await audio.play();
-			await vi.waitFor(() => expect(first.draw).toHaveBeenCalled());
-			await vi.waitFor(() => expect(second.draw).toHaveBeenCalled());
+			await first.called('draw');
+			await second.called('draw');
 			expect(create).toHaveBeenCalledOnce();
 			expect(analysers).toHaveBeenCalledTimes(2);
 			const context = create.mock.contexts[0] as AudioContext;
@@ -613,7 +640,7 @@ describe('AudioVisualizerController', () => {
 
 			const c = make(audio, makeTarget(), spyPreset());
 			c.attach();
-			await vi.waitFor(() => expect(c.getState()).toBe('running'));
+			await whenState(c, 'running');
 			expect(create).toHaveBeenCalledOnce();
 		});
 
@@ -624,7 +651,7 @@ describe('AudioVisualizerController', () => {
 			const controller = make(audio, makeTarget(), preset);
 			controller.attach();
 			await audio.play();
-			await vi.waitFor(() => expect(preset.draw).toHaveBeenCalled());
+			await preset.called('draw');
 
 			const elsewhere = document.createElement('section');
 			document.body.append(elsewhere);
@@ -633,10 +660,10 @@ describe('AudioVisualizerController', () => {
 			expect(controller.getState()).toBe('running');
 
 			audio.remove();
-			await vi.waitFor(() => expect(controller.getState()).toBe('idle'));
+			await whenState(controller, 'idle');
 			elsewhere.append(audio);
 			await audio.play();
-			await vi.waitFor(() => expect(controller.getState()).toBe('running'));
+			await whenState(controller, 'running');
 			expect(create).toHaveBeenCalledOnce();
 		});
 
@@ -674,8 +701,10 @@ describe('AudioVisualizerController', () => {
 			media.push(cors);
 			const corsController = make(cors, makeTarget(), spyPreset());
 			corsController.attach();
+			const played = once(cors, 'play');
 			cors.play().catch(() => undefined);
-			await vi.waitFor(() => expect(create).toHaveBeenCalledOnce());
+			await played;
+			expect(create).toHaveBeenCalledOnce();
 		});
 
 		it('treats a data URL as same-origin', async () => {
@@ -684,8 +713,10 @@ describe('AudioVisualizerController', () => {
 			audio.src = 'data:audio/wav;base64,AAAA';
 			media.push(audio);
 			make(audio, makeTarget(), spyPreset()).attach();
+			const played = once(audio, 'play');
 			audio.play().catch(() => undefined);
-			await vi.waitFor(() => expect(create).toHaveBeenCalledOnce());
+			await played;
+			expect(create).toHaveBeenCalledOnce();
 		});
 	});
 
@@ -710,7 +741,7 @@ describe('AudioVisualizerController', () => {
 			expect(audio.paused).toBe(false);
 
 			context().setState('running');
-			await vi.waitFor(() => expect(controller.getState()).toBe('running'));
+			await whenState(controller, 'running');
 			expect(context().sources).toHaveLength(1);
 			expect(context().sources[0].connect).toHaveBeenCalledWith(context().destination);
 		});
@@ -739,7 +770,7 @@ describe('AudioVisualizerController', () => {
 			FakeContext.resumeMode = 'run';
 			audio.pause();
 			await audio.play();
-			await vi.waitFor(() => expect(controller.getState()).toBe('running'));
+			await whenState(controller, 'running');
 		});
 
 		it('asks the context to resume on volumechange even while an earlier resume never settled, as Chrome leaves one before a gesture', async () => {
@@ -756,7 +787,7 @@ describe('AudioVisualizerController', () => {
 			context().state = 'running';
 			context().pending.forEach((resolve) => resolve());
 			audio.dispatchEvent(new Event('volumechange'));
-			await vi.waitFor(() => expect(controller.getState()).toBe('running'));
+			await whenState(controller, 'running');
 		});
 
 		it('starts the loop when resume() is called from a gesture, and builds nothing before', async () => {
@@ -769,7 +800,7 @@ describe('AudioVisualizerController', () => {
 			expect(context().resumes).toBe(2);
 			context().state = 'running';
 			context().pending.forEach((resolve) => resolve());
-			await vi.waitFor(() => expect(controller.getState()).toBe('running'));
+			await whenState(controller, 'running');
 			expect(context().sources).toHaveLength(1);
 		});
 
@@ -778,7 +809,7 @@ describe('AudioVisualizerController', () => {
 			controller.resume();
 			expect(context().resumes).toBe(1);
 			await audio.play();
-			await vi.waitFor(() => expect(controller.getState()).toBe('running'));
+			await whenState(controller, 'running');
 			expect(context().resumes).toBe(1);
 		});
 
@@ -802,13 +833,13 @@ describe('AudioVisualizerController', () => {
 			expect(controller.getState()).toBe('idle');
 
 			context().setState('running');
-			await vi.waitFor(() => expect(controller.getState()).toBe('running'));
+			await whenState(controller, 'running');
 		});
 
 		it('stops the loop when the context is suspended or interrupted and restarts when it runs again', async () => {
 			const { audio, preset, controller, context } = await withFake('running');
 			await audio.play();
-			await vi.waitFor(() => expect(controller.getState()).toBe('running'));
+			await whenState(controller, 'running');
 
 			context().setState('suspended');
 			expect(controller.getState()).toBe('idle');
@@ -816,7 +847,7 @@ describe('AudioVisualizerController', () => {
 			expect(await settled(preset)).toBe(0);
 
 			context().setState('running');
-			await vi.waitFor(() => expect(controller.getState()).toBe('running'));
+			await whenState(controller, 'running');
 			expect(context().sources).toHaveLength(1);
 
 			context().setState('interrupted');
@@ -826,9 +857,9 @@ describe('AudioVisualizerController', () => {
 		it('does not restart on a state change while the media is paused', async () => {
 			const { audio, controller, context } = await withFake('running');
 			await audio.play();
-			await vi.waitFor(() => expect(controller.getState()).toBe('running'));
+			await whenState(controller, 'running');
 			audio.pause();
-			await vi.waitFor(() => expect(controller.getState()).toBe('idle'));
+			await whenState(controller, 'idle');
 
 			context().setState('suspended');
 			context().setState('running');
@@ -852,7 +883,7 @@ describe('AudioVisualizerController', () => {
 		it('stops listening to the context state after destroy', async () => {
 			const { audio, controller, context } = await withFake('running');
 			await audio.play();
-			await vi.waitFor(() => expect(controller.getState()).toBe('running'));
+			await whenState(controller, 'running');
 			controller.destroy();
 			context().setState('suspended');
 			context().setState('running');
@@ -874,7 +905,7 @@ describe('AudioVisualizerController', () => {
 			FakeContext.failToCreate = false;
 			audio.pause();
 			await audio.play();
-			await vi.waitFor(() => expect(controller.getState()).toBe('running'));
+			await whenState(controller, 'running');
 		});
 	});
 
@@ -884,17 +915,17 @@ describe('AudioVisualizerController', () => {
 		const controller = make(audio, makeTarget(), preset);
 		controller.attach();
 		await audio.play();
-		await vi.waitFor(() => expect(preset.draw).toHaveBeenCalled());
+		await preset.called('draw');
 
 		audio.removeAttribute('src');
 		audio.load();
-		await vi.waitFor(() => expect(controller.getState()).toBe('idle'));
+		await whenState(controller, 'idle');
 		expect(preset.rest).toHaveBeenCalled();
 		expect(await settled(preset)).toBe(0);
 
 		audio.src = toneUrl();
 		await audio.play();
-		await vi.waitFor(() => expect(controller.getState()).toBe('running'));
+		await whenState(controller, 'running');
 	});
 
 	it('keeps one loop for the event order play, abort, emptied, play', async () => {
@@ -902,12 +933,12 @@ describe('AudioVisualizerController', () => {
 		const preset = spyPreset();
 		make(audio, makeTarget(), preset).attach();
 		await audio.play();
-		await vi.waitFor(() => expect(preset.draw).toHaveBeenCalled());
+		await preset.called('draw');
 
 		for (const type of ['play', 'abort', 'emptied', 'play']) {
 			audio.dispatchEvent(new Event(type));
 		}
-		await vi.waitFor(() => expect(preset.rest).toHaveBeenCalled());
+		await preset.called('rest');
 		const drawn = await settled(preset);
 		expect(drawn).toBeGreaterThan(0);
 		expect(drawn).toBeLessThanOrEqual(4);
@@ -922,7 +953,7 @@ describe('AudioVisualizerController', () => {
 		const preset = spyPreset();
 		make(video, makeTarget(), preset).attach();
 		await video.play();
-		await vi.waitFor(() => expect(preset.draw).toHaveBeenCalled());
+		await preset.called('draw');
 
 		const canvas = document.createElement('canvas');
 		canvas.width = 16;
@@ -936,7 +967,7 @@ describe('AudioVisualizerController', () => {
 		const silentPreset = spyPreset();
 		make(silent, makeTarget(), silentPreset).attach();
 		await silent.play();
-		await vi.waitFor(() => expect(silentPreset.draw).toHaveBeenCalled());
+		await silentPreset.called('draw');
 		const frame = silentPreset.draw.mock.calls[0][0];
 		expect(frame.frequency.every((value) => value === 0)).toBe(true);
 	});
@@ -950,12 +981,12 @@ describe('AudioVisualizerController', () => {
 			const controller = make(audio, target, first);
 			controller.attach();
 			await audio.play();
-			await vi.waitFor(() => expect(first.draw).toHaveBeenCalled());
+			await first.called('draw');
 
 			controller.setPreset(second);
 			expect(first.destroy).toHaveBeenCalledOnce();
 			expect(second.mount).toHaveBeenCalledWith(target);
-			await vi.waitFor(() => expect(second.draw).toHaveBeenCalled());
+			await second.called('draw');
 			const frame = second.draw.mock.calls.at(-1)![0];
 			expect(frame.fftSize).toBe(2048);
 			expect(frame.frequency).toHaveLength(1024);
@@ -992,7 +1023,7 @@ describe('AudioVisualizerController', () => {
 			const controller = make(audio, target, wave());
 			controller.attach();
 			await audio.play();
-			await vi.waitFor(() => expect(controller.getState()).toBe('running'));
+			await whenState(controller, 'running');
 
 			for (let round = 0; round < 6; round++) {
 				controller.setPreset(round % 2 ? wave({ fill: true }) : bars({ mode: 'canvas' }));
@@ -1014,7 +1045,7 @@ describe('AudioVisualizerController', () => {
 			make(audio, makeTarget(), plain).attach();
 			await audio.play();
 			for (const preset of [small, large, plain]) {
-				await vi.waitFor(() => expect(preset.draw).toHaveBeenCalled());
+				await preset.called('draw');
 			}
 			await frames(3);
 
@@ -1033,7 +1064,7 @@ describe('AudioVisualizerController', () => {
 			const controller = make(audio, makeTarget(), bars({ mode: 'dom', fftSize: 256, smoothing: 0.2 }));
 			controller.attach();
 			await audio.play();
-			await vi.waitFor(() => expect(controller.getState()).toBe('running'));
+			await whenState(controller, 'running');
 			const analyser = analysers.mock.results[0].value as AnalyserNode;
 			expect(analyser.fftSize).toBe(256);
 			expect(analyser.smoothingTimeConstant).toBeCloseTo(0.2);
@@ -1070,14 +1101,14 @@ describe('AudioVisualizerController', () => {
 			const controller = make(audio, makeTarget(), preset);
 			controller.attach();
 			await audio.play();
-			await vi.waitFor(() => expect(controller.getState()).toBe('running'));
+			await whenState(controller, 'running');
 
 			query.set(true);
 			expect(controller.getState()).toBe('reduced');
 			expect(await settled(preset)).toBe(0);
 
 			query.set(false);
-			await vi.waitFor(() => expect(controller.getState()).toBe('running'));
+			await whenState(controller, 'running');
 		});
 
 		it('shows reduced over opaque for a silent cross-origin element', async () => {
@@ -1100,7 +1131,7 @@ describe('AudioVisualizerController', () => {
 			const controller = make(audio, makeTarget(), preset);
 			controller.attach();
 			await audio.play();
-			await vi.waitFor(() => expect(controller.getState()).toBe('running'));
+			await whenState(controller, 'running');
 			controller.destroy();
 
 			const reads = query.reads;
@@ -1155,7 +1186,7 @@ describe('AudioVisualizerController', () => {
 			);
 			connected.forEach((callback) => callback());
 			await audio.play();
-			await vi.waitFor(() => expect(preset.draw).toHaveBeenCalled());
+			await preset.called('draw');
 			cleanup.forEach((callback) => callback());
 			expect(preset.destroy).toHaveBeenCalledOnce();
 		});
@@ -1167,7 +1198,7 @@ describe('AudioVisualizerController', () => {
 		const controller = make(audio, target, wave());
 		controller.attach();
 		await audio.play();
-		await vi.waitFor(() => expect(controller.getState()).toBe('running'));
+		await whenState(controller, 'running');
 		target.remove();
 		await frames(3);
 		expect(controller.getState()).toBe('running');

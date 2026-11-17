@@ -5,13 +5,14 @@ import '@ecopages/radiant-ui/themes/default';
 import '../src/components/primitive-example/primitive-example.css';
 import '../src/content/components/recipes/calendar-events.css';
 import { mountController, trackListeners } from './mount-recipe';
+import { until } from './until';
 
 const texts = (nodes: Iterable<Element>) => [...nodes].map((node) => node.textContent);
 const status = (root: HTMLElement) => root.querySelector('[data-status]')!.textContent;
 const day = (root: HTMLElement, iso: string) => root.querySelector<HTMLElement>(`[data-iso="${iso}"]`)!;
 const titles = (root: HTMLElement, iso: string) => texts(day(root, iso).querySelectorAll('[data-event]'));
 const ready = async (root: HTMLElement) => {
-	await expect.poll(() => root.querySelectorAll('[role="gridcell"]').length).toBeGreaterThan(0);
+	await until(() => expect(root.querySelectorAll('[role="gridcell"]').length).toBeGreaterThan(0));
 	return root;
 };
 

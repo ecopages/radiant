@@ -1,9 +1,10 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createRoot, type JsxRenderable } from '@ecopages/jsx';
 import { resetPreviewTimingForTests, resolvePreviewOpenDelay } from '../shared/preview-timing';
 import { RuiHoverCard, RuiHoverCardContent, RuiHoverCardTrigger } from './hover-card';
 import { RuiHoverCard as RuiHoverCardElement } from './hover-card.script';
 import { expectPopupFoundAcrossPortalCycle } from '../../../controllers/exit-transition.fixture';
+import { fakeTimers } from '../../../controllers/event.fixture';
 void RuiHoverCardElement;
 
 function mount(element: JsxRenderable): { host: HTMLElement; cleanup: () => void } {
@@ -25,7 +26,11 @@ function mount(element: JsxRenderable): { host: HTMLElement; cleanup: () => void
 
 async function settled(): Promise<void> {
 	await Promise.resolve();
-	await new Promise((resolve) => setTimeout(resolve, 0));
+	await new Promise((resolve) => {
+		const channel = new MessageChannel();
+		channel.port1.onmessage = () => resolve(undefined);
+		channel.port2.postMessage(null);
+	});
 	await customElements.whenDefined('rui-hover-card');
 	await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve(undefined))));
 }
@@ -56,6 +61,7 @@ function getTriggerButton(host: ParentNode): HTMLButtonElement {
 
 describe('RuiHoverCard', () => {
 	afterEach(() => {
+		vi.useRealTimers();
 		document.body.innerHTML = '';
 		resetPreviewTimingForTests();
 	});
@@ -124,6 +130,7 @@ describe('RuiHoverCard', () => {
 	});
 
 	it('stays closed after Escape on a pointer-opened card, even with a warmed-up delay', async () => {
+		fakeTimers(['setTimeout', 'clearTimeout', 'Date']);
 		const { host, cleanup } = mount(
 			<RuiHoverCard delay={600} closeDelay={0}>
 				<RuiHoverCardTrigger>
@@ -145,7 +152,6 @@ describe('RuiHoverCard', () => {
 		expect(document.activeElement).not.toBe(trigger);
 
 		document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-		await new Promise((resolve) => setTimeout(resolve, 30));
 		await settled();
 
 		expect(document.activeElement).toBe(trigger);
@@ -153,13 +159,51 @@ describe('RuiHoverCard', () => {
 		expect(events).toEqual([true, false]);
 
 		trigger.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
-		await new Promise((resolve) => setTimeout(resolve, 30));
+		await settled();
+		expect(content.hidden).toBe(true);
+		expect(events).toEqual([true, false]);
+
+		vi.advanceTimersByTime(700);
 		await settled();
 		expect(content.hidden).toBe(true);
 		expect(events).toEqual([true, false]);
 
 		trigger.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
 		trigger.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+		vi.advanceTimersByTime(700);
+		await settled();
+		expect(content.hidden).toBe(false);
+
+		cleanup();
+	});
+
+	it('reopens at once on focus within the cooldown after a close, and waits the delay after it', async () => {
+		fakeTimers(['setTimeout', 'clearTimeout', 'Date']);
+		const { host, cleanup } = mount(
+			<RuiHoverCard delay={600} closeDelay={0}>
+				<RuiHoverCardTrigger>
+					<button type="button">Trigger</button>
+				</RuiHoverCardTrigger>
+				<RuiHoverCardContent>Preview</RuiHoverCardContent>
+			</RuiHoverCard>,
+		);
+		await settled();
+		const card = getCard(host);
+		const content = getContent(host);
+		const trigger = getTriggerButton(host);
+
+		card.setOpen(true);
+		card.setOpen(false);
+		trigger.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+		await settled();
+		expect(content.hidden).toBe(false);
+
+		card.setOpen(false);
+		vi.advanceTimersByTime(700);
+		trigger.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+		await settled();
+		expect(content.hidden).toBe(true);
+		vi.advanceTimersByTime(700);
 		await settled();
 		expect(content.hidden).toBe(false);
 
@@ -167,6 +211,7 @@ describe('RuiHoverCard', () => {
 	});
 
 	it('keeps the card open when the pointer moves from the trigger onto the card', async () => {
+		fakeTimers(['setTimeout', 'clearTimeout', 'Date']);
 		const { host, cleanup } = mount(
 			<RuiHoverCard delay={0} closeDelay={60}>
 				<RuiHoverCardTrigger>
@@ -188,7 +233,7 @@ describe('RuiHoverCard', () => {
 
 		card.dispatchEvent(new PointerEvent('pointerleave', { bubbles: true, pointerType: 'mouse' }));
 		content.dispatchEvent(new PointerEvent('pointerenter', { bubbles: false, pointerType: 'mouse' }));
-		await new Promise((resolve) => setTimeout(resolve, 120));
+		vi.advanceTimersByTime(120);
 		await settled();
 
 		expect(content.hidden).toBe(false);
@@ -198,6 +243,7 @@ describe('RuiHoverCard', () => {
 	});
 
 	it('respects open delay before showing', async () => {
+		fakeTimers(['setTimeout', 'clearTimeout', 'Date']);
 		const { host, cleanup } = mount(
 			<RuiHoverCard delay={50} closeDelay={0}>
 				<RuiHoverCardTrigger>
@@ -214,7 +260,7 @@ describe('RuiHoverCard', () => {
 		card.dispatchEvent(new PointerEvent('pointerenter', { bubbles: true, pointerType: 'mouse' }));
 		expect(content.hidden).toBe(true);
 
-		await new Promise((resolve) => setTimeout(resolve, 80));
+		vi.advanceTimersByTime(80);
 		await settled();
 		expect(content.hidden).toBe(false);
 

@@ -3,6 +3,7 @@ import { afterEach, describe, expect, test } from 'vitest';
 import '@ecopages/radiant-ui/themes/default';
 import '../src/components/primitive-example/primitive-example.css';
 import { mountComponent, trackListeners } from './mount-recipe';
+import { until } from './until';
 
 const texts = (nodes: Iterable<Element>) => [...nodes].map((node) => node.textContent);
 const status = (root: HTMLElement) => root.querySelector('[data-status]')!.textContent;
@@ -13,7 +14,7 @@ afterEach(() => {
 
 describe('searchable list component', () => {
 	const ready = async (root: HTMLElement) => {
-		await expect.poll(() => root.querySelector<HTMLElement>('li')?.tabIndex).toBe(0);
+		await until(() => expect(root.querySelector<HTMLElement>('li')?.tabIndex).toBe(0));
 		return root;
 	};
 	const rows = (root: HTMLElement) => texts(root.querySelectorAll('li'));

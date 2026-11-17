@@ -1,13 +1,29 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import type { ControllerHost } from './controller';
+import { createWaiters, frames, nothingFollows } from './event.fixture';
 import { CaptionsController, createCaptionsController, type CaptionTrackSource } from './captions-controller';
 
-const frames = () =>
-	new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
-const settle = async (check: () => boolean, tries = 100) => {
-	for (let index = 0; index < tries && !check(); index++) {
-		await new Promise((resolve) => setTimeout(resolve, 20));
-	}
+const SIGNALS = ['loadedmetadata', 'seeked', 'timeupdate', 'load', 'error', 'cuechange'];
+const waiters = createWaiters();
+
+/**
+ * Resolves once `check` holds, re-checked on a controller callback, a DOM mutation or a media or track event.
+ *
+ * @remarks A track's `cuechange` does not bubble, so every `<track>` element's text track is listened to directly.
+ */
+const settle = (check: () => boolean): Promise<void> => {
+	const tracks = [...document.querySelectorAll('track')].map((element) => element.track);
+	const observer = new MutationObserver(waiters.notify);
+	observer.observe(document, { attributes: true, childList: true, characterData: true, subtree: true });
+	SIGNALS.forEach((type) => document.addEventListener(type, waiters.notify, true));
+	tracks.forEach((track) => track.addEventListener('cuechange', waiters.notify));
+	const stop = () => {
+		observer.disconnect();
+		SIGNALS.forEach((type) => document.removeEventListener(type, waiters.notify, true));
+		tracks.forEach((track) => track.removeEventListener('cuechange', waiters.notify));
+	};
+	onTestFinished(stop);
+	return waiters.until(check).finally(stop);
 };
 
 function silentWav(seconds: number): string {
@@ -51,7 +67,17 @@ function video(): HTMLVideoElement {
 }
 
 function make(config: ConstructorParameters<typeof CaptionsController>[0]): CaptionsController {
-	const controller = new CaptionsController(config);
+	const controller = new CaptionsController({
+		...config,
+		onState: (state) => {
+			config.onState?.(state);
+			waiters.notify();
+		},
+		onError: (error, track) => {
+			config.onError?.(error, track);
+			waiters.notify();
+		},
+	});
 	controllers.push(controller);
 	return controller;
 }
@@ -601,7 +627,7 @@ describe('CaptionsController lifecycle', () => {
 		const calls = onState.mock.calls.length;
 
 		resolve(new Response(VTT));
-		await new Promise((done) => setTimeout(done, 50));
+		await nothingFollows('a track appended after destroy');
 		expect(media.querySelectorAll('track')).toHaveLength(0);
 		expect(onState).toHaveBeenCalledTimes(calls);
 		expect(onError).not.toHaveBeenCalled();
@@ -623,7 +649,7 @@ describe('CaptionsController lifecycle', () => {
 		});
 		captions.attach();
 		captions.destroy();
-		await new Promise((done) => setTimeout(done, 30));
+		await nothingFollows('an error reported for the aborted fetch');
 		expect(onError).not.toHaveBeenCalled();
 	});
 

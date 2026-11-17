@@ -172,7 +172,7 @@ export function mount(root: HTMLElement): () => void {
 | `blocked`                         | The last `play()` was refused by the autoplay policy. The status is `paused` and `error` stays `null`; the next user-initiated `play()` can succeed.         |
 | `error`                           | A `MediaError` from the element, or the `Error` of a failed `resolveSource`, `play()` or last `source` child (`No supported source`).                        |
 
-How the status is read: an `error` wins (a pending `resolveSource` hides the old error), then a pending `resolveSource` is `loading`, an element with `networkState` empty is `idle`, `ended` is `ended`, an unpaused element is `playing` (`loading` while `readyState` is still 0), a paused element that is still fetching and has no current data is `loading`, and otherwise it is `paused` once playback was started and `ready` before.
+How the status is read: an `error` wins (a pending `resolveSource` hides the old error), then a pending `resolveSource` is `loading`, an element with `networkState` empty is `idle`, as is one with no source (`networkState` no source and no `src`, `srcObject` or `source` child, which is what a host leaves after removing `src` and calling `load()`), `ended` is `ended`, an unpaused element is `playing` (`loading` while `readyState` is still 0), a paused element that is still fetching and has no current data is `loading`, and otherwise it is `paused` once playback was started and `ready` before.
 
 A `source` child that fails is only seen when its `error` event fires after `attach()`. Markup that already failed before the controller attached reads as `loading`; call `load(url)` to recover.
 

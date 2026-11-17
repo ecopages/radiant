@@ -1,5 +1,6 @@
 import { userEvent } from 'vitest/browser';
-import { describe, expect, test, vi } from 'vitest';
+import { afterEach, describe, expect, test, vi } from 'vitest';
+import { until, untilFrame, fakeTimers, nothingFollows, once } from './until';
 import '@ecopages/radiant-ui/button/styles.css';
 import '@ecopages/radiant-ui/slider/styles.css';
 import '@ecopages/radiant-ui/toolbar/styles.css';
@@ -50,14 +51,12 @@ export const coverage = (root: HTMLElement): number => {
 };
 /** Waits for the bars to be drawn above their resting coverage, which is what a playing track makes of them. */
 export const barsFollow = async (root: HTMLElement, rest: number) =>
-	expect.poll(() => coverage(root)).toBeGreaterThan(rest * 1.3);
-/** Waits for the bars to be back at their resting coverage. */
+	untilFrame(() => expect(coverage(root)).toBeGreaterThan(rest * 1.3));
 export const barsRest = async (root: HTMLElement, rest: number) =>
-	expect.poll(() => Math.abs(coverage(root) - rest)).toBeLessThan(0.002);
-const settle = (milliseconds: number) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+	untilFrame(() => expect(Math.abs(coverage(root) - rest)).toBeLessThan(0.002));
 const volumeThumb = (root: HTMLElement) => root.querySelector<HTMLElement>('[data-volume-input] [role="slider"]')!;
 const seekable = async (root: HTMLElement) => {
-	await expect.poll(() => seek(root).disabled).toBe(false);
+	await until(() => expect(seek(root).disabled).toBe(false));
 	return root;
 };
 
@@ -74,9 +73,9 @@ const clickLoopTo = async (root: HTMLElement, name: string) => {
 	const clicks = (LOOP_CYCLE.indexOf(name) - from + LOOP_CYCLE.length) % LOOP_CYCLE.length;
 	for (let click = 1; click <= clicks; click++) {
 		await userEvent.click(loop(root));
-		await expect
-			.poll(() => loop(root).getAttribute('aria-label'))
-			.toBe(LOOP_CYCLE[(from + click) % LOOP_CYCLE.length]);
+		await until(() =>
+			expect(loop(root).getAttribute('aria-label')).toBe(LOOP_CYCLE[(from + click) % LOOP_CYCLE.length]),
+		);
 	}
 	expect(loop(root).getAttribute('aria-label')).toBe(name);
 };
@@ -91,7 +90,7 @@ function fixedRandom(...values: number[]) {
 const seekTo = async (root: HTMLElement, seconds: number) => {
 	await seekable(root);
 	audio(root).currentTime = seconds;
-	await expect.poll(() => root.querySelector('[data-elapsed]')!.textContent).toBe(`0:0${seconds}`);
+	await until(() => expect(root.querySelector('[data-elapsed]')!.textContent).toBe(`0:0${seconds}`));
 };
 
 /** The `primitive-example` frame the docs page gives, on what the stylesheet scopes to. */
@@ -129,7 +128,7 @@ function contrastOf(node: HTMLElement): number {
 
 /** Moves a playing track to a moment before its end, so the browser ends it the way it ends one that was played. */
 export async function playToEnd(player: HTMLAudioElement): Promise<void> {
-	await expect.poll(() => player.duration).toBeGreaterThan(0);
+	await until(() => expect(player.duration).toBeGreaterThan(0));
 	player.currentTime = player.duration - 0.3;
 }
 
@@ -186,6 +185,10 @@ function trackObjectUrls() {
  */
 export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): void {
 	describe(`audio player lifecycle and input (${name})`, () => {
+		afterEach(() => {
+			vi.useRealTimers();
+		});
+
 		test('keeps the authored status hint when it connects', async () => {
 			const root = await form.mount();
 
@@ -197,10 +200,10 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 
 			expect(toggle(root).getAttribute('aria-label')).toBe('Play');
 			await userEvent.click(toggle(root));
-			await expect.poll(() => toggle(root).getAttribute('aria-pressed')).toBe('true');
+			await until(() => expect(toggle(root).getAttribute('aria-pressed')).toBe('true'));
 			expect(toggle(root).getAttribute('aria-label')).toBe('Play');
 			await userEvent.click(toggle(root));
-			await expect.poll(() => toggle(root).getAttribute('aria-pressed')).toBe('false');
+			await until(() => expect(toggle(root).getAttribute('aria-pressed')).toBe('false'));
 			expect(toggle(root).getAttribute('aria-label')).toBe('Play');
 		});
 
@@ -234,7 +237,7 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 			window.addEventListener('error', onError);
 			try {
 				root.querySelector('[data-tracks]')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-				await settle(100);
+				await nothingFollows('an error thrown by the click on the list');
 			} finally {
 				window.removeEventListener('error', onError);
 			}
@@ -245,26 +248,31 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 		});
 
 		test('the seek thumb announces the clock and the volume thumb a percentage, and both keep it', async () => {
+			fakeTimers();
 			const root = await seekable(await form.mount());
 			const text = (node: HTMLElement) => node.getAttribute('aria-valuetext');
-			await expect.poll(() => text(thumb(root))).toBe('0:00 of 0:08');
+			await until(() => expect(text(thumb(root))).toBe('0:00 of 0:08'));
 			expect(text(volumeThumb(root))).toBe('80%');
 
 			thumb(root).focus();
+			const seeked = once(audio(root), 'seeked');
 			await userEvent.keyboard('{ArrowRight}{ArrowRight}');
-			await expect.poll(() => text(thumb(root))).toBe('0:02 of 0:08');
-			await settle(150);
+			await until(() => expect(text(thumb(root))).toBe('0:02 of 0:08'));
+			vi.advanceTimersByTime(150);
+			await seeked;
 			expect(text(thumb(root))).toBe('0:02 of 0:08');
 
 			volumeThumb(root).focus();
+			const volumechange = once(audio(root), 'volumechange');
 			await userEvent.keyboard('{ArrowLeft}');
-			await expect.poll(() => text(volumeThumb(root))).toMatch(/^[0-9]+%$/);
-			await settle(150);
+			await until(() => expect(text(volumeThumb(root))).toMatch(/^[0-9]+%$/));
+			vi.advanceTimersByTime(150);
+			await volumechange;
 			expect(text(volumeThumb(root))).toBe(`${Math.round(audio(root).volume * 100)}%`);
 			expect(audio(root).volume).toBeLessThan(0.8);
 
 			await userEvent.click(toggle(root));
-			await expect.poll(() => audio(root).currentTime).toBeGreaterThan(2.3);
+			await until(() => expect(audio(root).currentTime).toBeGreaterThan(2.3));
 			const elapsed = root.querySelector('[data-elapsed]')!.textContent;
 			expect(text(thumb(root))).toBe(`${elapsed} of 0:08`);
 		});
@@ -273,12 +281,12 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 			const root = await seekable(await form.mount());
 
 			await userEvent.click(root.querySelector('[data-next]')!);
-			await expect.poll(() => current(root)).toBe('Low Tide');
+			await until(() => expect(current(root)).toBe('Low Tide'));
 			await seekable(root);
-			await expect.poll(() => thumb(root).getAttribute('aria-valuetext')).toBe('0:00 of 0:08');
+			await until(() => expect(thumb(root).getAttribute('aria-valuetext')).toBe('0:00 of 0:08'));
 			await userEvent.click(root.querySelector('[data-next]')!);
-			await expect.poll(() => current(root)).toBe('Neon Rain');
-			await expect.poll(() => thumb(root).getAttribute('aria-valuetext')).toBe('0:00 of 0:09');
+			await until(() => expect(current(root)).toBe('Neon Rain'));
+			await until(() => expect(thumb(root).getAttribute('aria-valuetext')).toBe('0:00 of 0:09'));
 		});
 
 		test('the text of the player keeps a contrast of 4.5 or more, and no row is dimmed with opacity', async () => {
@@ -312,14 +320,14 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 			await barsFollow(root, rest);
 
 			await userEvent.click(root.querySelector('[data-next]')!);
-			await expect.poll(() => current(root)).toBe('Low Tide');
-			await expect.poll(() => audio(root).paused).toBe(false);
-			await expect.poll(() => audio(root).readyState).toBeGreaterThan(0);
+			await until(() => expect(current(root)).toBe('Low Tide'));
+			await until(() => expect(audio(root).paused).toBe(false));
+			await until(() => expect(audio(root).readyState).toBeGreaterThan(0));
 			await userEvent.click(toggle(root));
-			await expect.poll(() => audio(root).paused).toBe(true);
+			await until(() => expect(audio(root).paused).toBe(true));
 			await barsRest(root, rest);
 
-			await settle(200);
+			await nothingFollows('the bars drifting off rest after the pause');
 			expect(Math.abs(coverage(root) - rest)).toBeLessThan(0.002);
 		});
 
@@ -331,16 +339,16 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 			thumb(root).focus();
 			await userEvent.keyboard('{ArrowRight}{ArrowRight}{ArrowRight}');
 
-			await expect.poll(() => audio(root).currentTime).toBeCloseTo(3, 1);
-			await expect.poll(() => root.querySelector('[data-elapsed]')!.textContent).toBe('0:03');
+			await until(() => expect(audio(root).currentTime).toBeCloseTo(3, 1));
+			await until(() => expect(root.querySelector('[data-elapsed]')!.textContent).toBe('0:03'));
 			expect(seek(root).value[0]).toBeCloseTo(3, 1);
 
 			await userEvent.keyboard('{ArrowLeft}');
-			await expect.poll(() => audio(root).currentTime).toBeCloseTo(2, 1);
+			await until(() => expect(audio(root).currentTime).toBeCloseTo(2, 1));
 			await userEvent.keyboard('{PageUp}');
-			await expect.poll(() => audio(root).currentTime).toBeCloseTo(Math.min(12, audio(root).duration), 1);
+			await until(() => expect(audio(root).currentTime).toBeCloseTo(Math.min(12, audio(root).duration), 1));
 			await userEvent.keyboard('{Home}');
-			await expect.poll(() => audio(root).currentTime).toBeCloseTo(0, 1);
+			await until(() => expect(audio(root).currentTime).toBeCloseTo(0, 1));
 			expect(current(root)).toBe('Morning Light');
 			expect(audio(root).paused).toBe(true);
 			expect(seeks.length).toBeGreaterThan(0);
@@ -349,21 +357,22 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 		test('the arrow keys keep adding up while the track plays', async () => {
 			const root = await seekable(await form.mount());
 			await userEvent.click(toggle(root));
-			await expect.poll(() => audio(root).paused).toBe(false);
+			await until(() => expect(audio(root).paused).toBe(false));
 
 			thumb(root).focus();
 			await userEvent.keyboard('{ArrowRight}{ArrowRight}');
 
-			await expect.poll(() => audio(root).currentTime).toBeGreaterThan(2);
+			await until(() => expect(audio(root).currentTime).toBeGreaterThan(2));
 		});
 
 		test('Next while a seek is pending does not apply it to the next track', async () => {
+			fakeTimers();
 			const root = await seekable(await form.mount());
 			await userEvent.click(track(root, 'Low Tide'));
-			await expect.poll(() => audio(root).paused).toBe(false);
+			await until(() => expect(audio(root).paused).toBe(false));
 			await userEvent.click(track(root, 'Morning Light'));
-			await expect.poll(() => current(root)).toBe('Morning Light');
-			await expect.poll(() => audio(root).paused).toBe(false);
+			await until(() => expect(current(root)).toBe('Morning Light'));
+			await until(() => expect(audio(root).paused).toBe(false));
 			audio(root).pause();
 			await seekable(root);
 			const seeks: number[] = [];
@@ -371,8 +380,8 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 
 			thumb(root).dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
 			next(root).click();
-			await expect.poll(() => current(root)).toBe('Low Tide');
-			await settle(400);
+			await until(() => expect(current(root)).toBe('Low Tide'));
+			vi.advanceTimersByTime(400);
 
 			expect(audio(root).currentTime).toBeLessThan(1);
 			expect(seeks.every((position) => position < 1)).toBe(true);
@@ -382,20 +391,20 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 			const root = await seekable(await form.mount());
 			const rest = coverage(root);
 			await userEvent.click(track(root, 'Neon Rain'));
-			await expect.poll(() => current(root)).toBe('Neon Rain');
-			await expect.poll(() => audio(root).paused).toBe(false);
+			await until(() => expect(current(root)).toBe('Neon Rain'));
+			await until(() => expect(audio(root).paused).toBe(false));
 			audio(root).pause();
-			await expect.poll(() => toggle(root).getAttribute('aria-pressed')).toBe('false');
+			await until(() => expect(toggle(root).getAttribute('aria-pressed')).toBe('false'));
 
 			await form.relocate(root);
 
-			await expect.poll(() => current(root)).toBe('Morning Light');
+			await until(() => expect(current(root)).toBe('Morning Light'));
 			await seekable(root);
 			expect(audio(root).src).toMatch(/^blob:/);
 			expect(toggle(root).getAttribute('aria-pressed')).toBe('false');
 			expect(status(root)).toBe('Pick a track, or drag one to reorder the playlist');
 			await userEvent.click(toggle(root));
-			await expect.poll(() => audio(root).paused).toBe(false);
+			await until(() => expect(audio(root).paused).toBe(false));
 			await barsFollow(root, rest);
 		});
 
@@ -403,20 +412,20 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 			const root = await seekable(await form.mount());
 			const rest = coverage(root);
 			await userEvent.click(toggle(root));
-			await expect.poll(() => audio(root).paused).toBe(false);
+			await until(() => expect(audio(root).paused).toBe(false));
 			const source = audio(root).src;
 
 			await form.relocate(root);
 
-			await expect.poll(() => audio(root).paused).toBe(true);
+			await until(() => expect(audio(root).paused).toBe(true));
 			await seekable(root);
 			expect(audio(root).src).toMatch(/^blob:/);
 			expect(audio(root).src).not.toBe(source);
 			expect(toggle(root).getAttribute('aria-pressed')).toBe('false');
-			await expect.poll(() => coverage(root)).toBeLessThan(rest * 1.2);
+			await untilFrame(() => expect(coverage(root)).toBeLessThan(rest * 1.2));
 			const back = coverage(root);
 			await userEvent.click(toggle(root));
-			await expect.poll(() => audio(root).paused).toBe(false);
+			await until(() => expect(audio(root).paused).toBe(false));
 			await barsFollow(root, back);
 			expect(audio(root).currentTime).toBeLessThan(2);
 		});
@@ -434,9 +443,9 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 
 				held.open();
 
-				await expect.poll(() => audio(root).src).toMatch(/^blob:/);
-				await expect.poll(() => audio(root).paused).toBe(false);
-				await settle(200);
+				await until(() => expect(audio(root).src).toMatch(/^blob:/));
+				await until(() => expect(audio(root).paused).toBe(false));
+				await nothingFollows('a second play for the repeated track choice');
 				expect(plays).toHaveLength(1);
 				expect(current(root)).toBe('Neon Rain');
 			} finally {
@@ -451,11 +460,11 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 				const root = await seekable(await form.mount());
 				await userEvent.click(track(root, 'Neon Rain'));
 				await userEvent.click(track(root, 'Low Tide'));
-				await expect.poll(() => audio(root).paused).toBe(false);
+				await until(() => expect(audio(root).paused).toBe(false));
 				const source = audio(root).src;
 
 				held.open();
-				await settle(300);
+				await nothingFollows('the earlier fetch replacing the source', 10);
 
 				expect(current(root)).toBe('Low Tide');
 				expect(audio(root).src).toBe(source);
@@ -470,12 +479,12 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 			const urls = trackObjectUrls();
 			try {
 				const root = await form.mount();
-				await expect.poll(() => fetches.requests).toHaveLength(1);
+				await until(() => expect(fetches.requests).toHaveLength(1));
 				const player = audio(root);
 
 				await form.remove(root);
 				held.open();
-				await settle(300);
+				await nothingFollows('a source set after the player was removed', 10);
 
 				expect(player.hasAttribute('src')).toBe(false);
 				expect(urls.alive()).toEqual([]);
@@ -496,19 +505,19 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 
 				await userEvent.click(track(root, 'Low Tide'));
 
-				await expect.poll(() => status(root)).toBe('Could not load Low Tide');
+				await until(() => expect(status(root)).toBe('Could not load Low Tide'));
 				expect(current(root)).toBe('Low Tide');
 				expect(seek(root).disabled).toBe(true);
 
 				await userEvent.click(track(root, 'Neon Rain'));
-				await expect.poll(() => audio(root).paused).toBe(false);
+				await until(() => expect(audio(root).paused).toBe(false));
 				await seekable(root);
 			} finally {
 				fetches.restore();
 			}
 
 			await userEvent.click(track(root, 'Low Tide'));
-			await expect.poll(() => current(root)).toBe('Low Tide');
+			await until(() => expect(current(root)).toBe('Low Tide'));
 			await seekable(root);
 			expect(audio(root).paused).toBe(false);
 			expect(status(root)).toBe('Playing Low Tide');
@@ -522,12 +531,12 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 			try {
 				const root = await seekable(await form.mount());
 				await userEvent.click(track(root, 'Low Tide'));
-				await expect.poll(() => status(root)).toBe('Could not load Low Tide');
+				await until(() => expect(status(root)).toBe('Could not load Low Tide'));
 				failing = false;
 
 				await userEvent.click(track(root, 'Low Tide'));
 
-				await expect.poll(() => status(root)).toBe('Playing Low Tide');
+				await until(() => expect(status(root)).toBe('Playing Low Tide'));
 				await seekable(root);
 				expect(audio(root).paused).toBe(false);
 			} finally {
@@ -537,6 +546,10 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 	});
 
 	describe(`audio player order (${name})`, () => {
+		afterEach(() => {
+			vi.useRealTimers();
+		});
+
 		test('the loop button has an icon, no text, a name that follows the mode and no pressed state', async () => {
 			const root = await seekable(await form.mount());
 			const names: (string | null)[] = [];
@@ -547,7 +560,7 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 				expect(loop(root).hasAttribute('aria-pressed')).toBe(false);
 				expect(loop(root).querySelector('svg')).not.toBeNull();
 				await userEvent.click(loop(root));
-				await expect.poll(() => loop(root).getAttribute('aria-label')).not.toBe(names.at(-1));
+				await until(() => expect(loop(root).getAttribute('aria-label')).not.toBe(names.at(-1)));
 				expect(status(root)).toBe(loop(root).getAttribute('aria-label'));
 			}
 
@@ -561,11 +574,11 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 			expect(shuffle(root).getAttribute('aria-label')).toBe('Shuffle');
 			expect(shuffle(root).getAttribute('aria-pressed')).toBe('false');
 			await userEvent.click(shuffle(root));
-			await expect.poll(() => shuffle(root).getAttribute('aria-pressed')).toBe('true');
+			await until(() => expect(shuffle(root).getAttribute('aria-pressed')).toBe('true'));
 			expect(shuffle(root).getAttribute('aria-label')).toBe('Shuffle');
 			expect(status(root)).toBe('Shuffle on');
 			await userEvent.click(shuffle(root));
-			await expect.poll(() => shuffle(root).getAttribute('aria-pressed')).toBe('false');
+			await until(() => expect(shuffle(root).getAttribute('aria-pressed')).toBe('false'));
 			expect(status(root)).toBe('Shuffle off');
 		});
 
@@ -583,71 +596,75 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 		test('with the loop off the last track ends the playlist, and Next still wraps to the first', async () => {
 			const root = await seekable(await form.mount());
 			await userEvent.click(track(root, 'Paper Planes'));
-			await expect.poll(() => audio(root).paused).toBe(false);
+			await until(() => expect(audio(root).paused).toBe(false));
 
 			await playToEnd(audio(root));
 
-			await expect.poll(() => status(root)).toBe('End of the playlist');
+			await until(() => expect(status(root)).toBe('End of the playlist'));
 			expect(current(root)).toBe('Paper Planes');
 			await userEvent.click(next(root));
-			await expect.poll(() => current(root)).toBe('Morning Light');
+			await until(() => expect(current(root)).toBe('Morning Light'));
 		});
 
 		test('loop all wraps the last track to the first when it ends', async () => {
 			const root = await seekable(await form.mount());
 			await clickLoopTo(root, 'Loop: all');
 			await userEvent.click(track(root, 'Paper Planes'));
-			await expect.poll(() => audio(root).paused).toBe(false);
+			await until(() => expect(audio(root).paused).toBe(false));
 
 			await playToEnd(audio(root));
 
-			await expect.poll(() => current(root)).toBe('Morning Light');
-			await expect.poll(() => audio(root).paused).toBe(false);
+			await until(() => expect(current(root)).toBe('Morning Light'));
+			await until(() => expect(audio(root).paused).toBe(false));
 			expect(status(root)).not.toBe('End of the playlist');
 		});
 
 		test('loop one starts the same track again when it ends, and Next still moves on', async () => {
 			const root = await seekable(await form.mount());
 			await userEvent.click(track(root, 'Low Tide'));
-			await expect.poll(() => audio(root).paused).toBe(false);
+			await until(() => expect(audio(root).paused).toBe(false));
 			await clickLoopTo(root, 'Loop: one');
 			let ends = 0;
 			audio(root).addEventListener('ended', () => (ends += 1));
 
 			await playToEnd(audio(root));
 
-			await expect.poll(() => ends).toBe(1);
-			await expect.poll(() => audio(root).currentTime).toBeLessThan(audio(root).duration - 1);
+			await until(() => expect(ends).toBe(1));
+			await until(() => expect(audio(root).currentTime).toBeLessThan(audio(root).duration - 1));
 			expect(audio(root).paused).toBe(false);
 			expect(current(root)).toBe('Low Tide');
 
 			await userEvent.click(next(root));
-			await expect.poll(() => current(root)).toBe('Neon Rain');
-			await expect.poll(() => audio(root).paused).toBe(false);
+			await until(() => expect(current(root)).toBe('Neon Rain'));
+			await until(() => expect(audio(root).paused).toBe(false));
 		});
 
 		test('loop one on the last track repeats it instead of ending the playlist', async () => {
 			const root = await seekable(await form.mount());
 			await userEvent.click(track(root, 'Paper Planes'));
-			await expect.poll(() => audio(root).paused).toBe(false);
+			await until(() => expect(audio(root).paused).toBe(false));
 			await clickLoopTo(root, 'Loop: one');
 
 			await playToEnd(audio(root));
 
-			await expect.poll(() => audio(root).currentTime).toBeLessThan(audio(root).duration - 1);
+			await until(() => expect(audio(root).currentTime).toBeLessThan(audio(root).duration - 1));
 			expect(status(root)).not.toBe('End of the playlist');
 			expect(current(root)).toBe('Paper Planes');
 		});
 
 		test('a paused track sought to its end does not move on, in any loop mode', async () => {
+			fakeTimers();
 			const root = await seekable(await form.mount());
 			await clickLoopTo(root, 'Loop: all');
 			await seekable(root);
 
 			thumb(root).focus();
+			const seeked = once(audio(root), 'seeked');
 			await userEvent.keyboard('{End}');
-			await settle(500);
+			vi.advanceTimersByTime(500);
+			await seeked;
 
+			expect(audio(root).currentTime).toBeGreaterThan(audio(root).duration - 0.5);
 			expect(current(root)).toBe('Morning Light');
 			expect(audio(root).paused).toBe(true);
 		});
@@ -656,26 +673,28 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 			const root = await seekable(await form.mount());
 			track(root, 'Low Tide').focus();
 			await userEvent.keyboard(' {ArrowUp} ');
-			await expect.poll(() => rowNames(root)).toEqual(['Low Tide', 'Morning Light', 'Neon Rain', 'Paper Planes']);
+			await until(() =>
+				expect(rowNames(root)).toEqual(['Low Tide', 'Morning Light', 'Neon Rain', 'Paper Planes']),
+			);
 
 			await userEvent.click(next(root));
 
-			await expect.poll(() => current(root)).toBe('Neon Rain');
+			await until(() => expect(current(root)).toBe('Neon Rain'));
 		});
 
 		test('Previous restarts a track that has played for more than 3 seconds, and moves back before that', async () => {
 			const root = await seekable(await form.mount());
 			await userEvent.click(track(root, 'Low Tide'));
-			await expect.poll(() => audio(root).paused).toBe(false);
+			await until(() => expect(audio(root).paused).toBe(false));
 			audio(root).pause();
 			await seekTo(root, 4);
 
 			await userEvent.click(previous(root));
 
 			expect(current(root)).toBe('Low Tide');
-			await expect.poll(() => audio(root).currentTime).toBeLessThan(1);
+			await until(() => expect(audio(root).currentTime).toBeLessThan(1));
 			await userEvent.click(previous(root));
-			await expect.poll(() => current(root)).toBe('Morning Light');
+			await until(() => expect(current(root)).toBe('Morning Light'));
 		});
 
 		test('shuffle plays every track once before any repeats, and never the same track twice in a row', async () => {
@@ -688,7 +707,7 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 				for (let press = 0; press < 11; press++) {
 					const before = current(root);
 					await userEvent.click(next(root));
-					await expect.poll(() => current(root)).not.toBe(before);
+					await until(() => expect(current(root)).not.toBe(before));
 					played.push(current(root));
 				}
 
@@ -714,7 +733,7 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 					for (let press = 0; press < 3; press++) {
 						const before = current(root);
 						await userEvent.click(next(root));
-						await expect.poll(() => current(root)).not.toBe(before);
+						await until(() => expect(current(root)).not.toBe(before));
 						played.push(current(root));
 					}
 					orders.push(played);
@@ -735,14 +754,14 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 				for (let press = 0; press < 2; press++) {
 					const before = current(root);
 					await userEvent.click(next(root));
-					await expect.poll(() => current(root)).not.toBe(before);
+					await until(() => expect(current(root)).not.toBe(before));
 					played.push(current(root));
 				}
 
 				await userEvent.click(previous(root));
-				await expect.poll(() => current(root)).toBe(played[1]);
+				await until(() => expect(current(root)).toBe(played[1]));
 				await userEvent.click(previous(root));
-				await expect.poll(() => current(root)).toBe(played[0]);
+				await until(() => expect(current(root)).toBe(played[0]));
 			} finally {
 				random.mockRestore();
 			}
@@ -757,14 +776,14 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 				for (let press = 0; press < 2; press++) {
 					const before = current(root);
 					await userEvent.click(next(root));
-					await expect.poll(() => current(root)).not.toBe(before);
+					await until(() => expect(current(root)).not.toBe(before));
 					played.push(current(root));
 				}
 
 				await userEvent.click(previous(root));
-				await expect.poll(() => current(root)).toBe(played[1]);
+				await until(() => expect(current(root)).toBe(played[1]));
 				await userEvent.click(next(root));
-				await expect.poll(() => current(root)).toBe(played[2]);
+				await until(() => expect(current(root)).toBe(played[2]));
 			} finally {
 				random.mockRestore();
 			}
@@ -776,18 +795,18 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 				const root = await seekable(await form.mount());
 				await userEvent.click(shuffle(root));
 				await userEvent.click(next(root));
-				await expect.poll(() => current(root)).not.toBe('Morning Light');
+				await until(() => expect(current(root)).not.toBe('Morning Light'));
 				const now = current(root);
 				await seekable(root);
 				await userEvent.click(toggle(root));
-				await expect.poll(() => audio(root).paused).toBe(false);
+				await until(() => expect(audio(root).paused).toBe(false));
 				audio(root).pause();
 				await seekTo(root, 4);
 
 				await userEvent.click(previous(root));
 
 				expect(current(root)).toBe(now);
-				await expect.poll(() => audio(root).currentTime).toBeLessThan(1);
+				await until(() => expect(audio(root).currentTime).toBeLessThan(1));
 			} finally {
 				random.mockRestore();
 			}
@@ -799,13 +818,13 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 				const root = await seekable(await form.mount());
 				await userEvent.click(shuffle(root));
 				await userEvent.click(next(root));
-				await expect.poll(() => current(root)).not.toBe('Morning Light');
+				await until(() => expect(current(root)).not.toBe('Morning Light'));
 				const now = rowNames(root).indexOf(current(root)!);
 
 				await userEvent.click(shuffle(root));
 				await userEvent.click(next(root));
 
-				await expect.poll(() => current(root)).toBe(rowNames(root)[(now + 1) % 4]);
+				await until(() => expect(current(root)).toBe(rowNames(root)[(now + 1) % 4]));
 			} finally {
 				random.mockRestore();
 			}
@@ -818,13 +837,13 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 				await userEvent.click(shuffle(root));
 				track(root, 'Low Tide').focus();
 				await userEvent.keyboard(' {ArrowUp} ');
-				await expect.poll(() => rowNames(root)[0]).toBe('Low Tide');
+				await until(() => expect(rowNames(root)[0]).toBe('Low Tide'));
 
 				const played = [current(root)];
 				for (let press = 0; press < 3; press++) {
 					const before = current(root);
 					await userEvent.click(next(root));
-					await expect.poll(() => current(root)).not.toBe(before);
+					await until(() => expect(current(root)).not.toBe(before));
 					played.push(current(root));
 				}
 
@@ -843,21 +862,19 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 					const before = current(root);
 					const source = audio(root).src;
 					await userEvent.click(next(root));
-					await expect.poll(() => current(root)).not.toBe(before);
-					await expect
-						.poll(
-							() =>
-								audio(root).src !== source &&
-								audio(root).readyState >= HTMLMediaElement.HAVE_CURRENT_DATA,
-						)
-						.toBe(true);
+					await until(() => expect(current(root)).not.toBe(before));
+					await until(() =>
+						expect(
+							audio(root).src !== source && audio(root).readyState >= HTMLMediaElement.HAVE_CURRENT_DATA,
+						).toBe(true),
+					);
 				}
 				await userEvent.click(toggle(root));
-				await expect.poll(() => audio(root).paused).toBe(false);
+				await until(() => expect(audio(root).paused).toBe(false));
 
 				await playToEnd(audio(root));
 
-				await expect.poll(() => status(root)).toBe('End of the playlist');
+				await until(() => expect(status(root)).toBe('End of the playlist'));
 			} finally {
 				random.mockRestore();
 			}
@@ -901,7 +918,7 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 
 			await userEvent.click(visualizer(root, 'wave'));
 
-			await expect.poll(() => canvas(root)).not.toBe(bars);
+			await untilFrame(() => expect(canvas(root)).not.toBe(bars));
 			expect(root.querySelectorAll('[data-cover] canvas')).toHaveLength(1);
 			expect(canvas(root)!.getAttribute('aria-hidden')).toBe('true');
 			expect(coverage(root)).toBe(0);
@@ -909,7 +926,7 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 
 			await userEvent.click(visualizer(root, 'led'));
 
-			await expect.poll(() => coverage(root)).toBeGreaterThan(0);
+			await untilFrame(() => expect(coverage(root)).toBeGreaterThan(0));
 			expect(root.querySelectorAll('[data-cover] canvas')).toHaveLength(1);
 			expect(pressed(root)).toEqual(['true', 'false', 'false']);
 		});
@@ -931,7 +948,7 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 
 			await userEvent.click(visualizer(root, 'solid'));
 
-			await expect.poll(() => canvas(root)).not.toBe(led);
+			await untilFrame(() => expect(canvas(root)).not.toBe(led));
 			expect(led.isConnected).toBe(false);
 			expect(root.querySelectorAll('[data-cover] canvas')).toHaveLength(1);
 			expect(pressed(root)).toEqual(['false', 'true', 'false']);
@@ -944,7 +961,7 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 			expect(audio(root).paused).toBe(false);
 
 			await userEvent.click(visualizer(root, 'wave'));
-			await expect.poll(() => pressed(root)).toEqual(['false', 'false', 'true']);
+			await until(() => expect(pressed(root)).toEqual(['false', 'false', 'true']));
 			expect(root.querySelectorAll('[data-cover] canvas')).toHaveLength(1);
 		});
 
@@ -956,7 +973,7 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 
 			await userEvent.click(visualizer(root, 'wave'));
 
-			await expect.poll(() => drawn(canvas(root)!)).toBe(true);
+			await untilFrame(() => expect(drawn(canvas(root)!)).toBe(true));
 			expect(audio(root).paused).toBe(false);
 
 			await userEvent.click(visualizer(root, 'led'));
@@ -968,7 +985,7 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 		test('the wave runs edge to edge of the cover, and the bars keep a margin', async () => {
 			const root = frame(await seekable(await form.mount()));
 			await userEvent.click(toggle(root));
-			await expect.poll(() => audio(root).paused).toBe(false);
+			await until(() => expect(audio(root).paused).toBe(false));
 			const extent = (element: HTMLCanvasElement) => {
 				const { data } = element.getContext('2d')!.getImageData(0, 0, element.width, element.height);
 				const lit = Array.from({ length: element.width }, (_, x) =>
@@ -980,14 +997,14 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 			};
 			const margin = 12 * window.devicePixelRatio;
 
-			await expect.poll(() => extent(canvas(root)!).first).toBeGreaterThanOrEqual(margin - 1);
+			await untilFrame(() => expect(extent(canvas(root)!).first).toBeGreaterThanOrEqual(margin - 1));
 			expect(extent(canvas(root)!).last).toBeLessThanOrEqual(extent(canvas(root)!).width - margin);
 			expect(canvas(root)!.getBoundingClientRect().width).toBe(
 				root.querySelector('[data-cover]')!.getBoundingClientRect().width,
 			);
 
 			await userEvent.click(visualizer(root, 'wave'));
-			await expect.poll(() => extent(canvas(root)!).first).toBe(0);
+			await untilFrame(() => expect(extent(canvas(root)!).first).toBe(0));
 			expect(extent(canvas(root)!).last).toBe(extent(canvas(root)!).width - 1);
 		});
 
@@ -1007,7 +1024,7 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 			const root = await seekable(await form.mount());
 			await userEvent.click(visualizer(root, 'wave'));
 			await userEvent.click(root.querySelector('[data-next]')!);
-			await expect.poll(() => current(root)).toBe('Low Tide');
+			await until(() => expect(current(root)).toBe('Low Tide'));
 			expect(canvas(root)).not.toBeNull();
 			expect(pressed(root)).toEqual(['false', 'false', 'true']);
 

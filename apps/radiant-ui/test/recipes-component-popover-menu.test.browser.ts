@@ -4,6 +4,7 @@ import '@ecopages/radiant-ui/themes/default';
 import '../src/components/primitive-example/primitive-example.css';
 import '../src/content/components/recipes/popover-menu.css';
 import { mountComponent, trackListeners } from './mount-recipe';
+import { until, untilFrame } from './until';
 
 afterEach(() => {
 	document.body.innerHTML = '';
@@ -11,8 +12,8 @@ afterEach(() => {
 
 describe('popover menu component', () => {
 	const ready = async (root: HTMLElement) => {
-		await expect.poll(() => root.querySelectorAll('[role="menuitem"]')).toHaveLength(3);
-		await expect.poll(() => root.querySelector<HTMLElement>('[role="menuitem"]')!.tabIndex).toBe(0);
+		await until(() => expect(root.querySelectorAll('[role="menuitem"]')).toHaveLength(3));
+		await until(() => expect(root.querySelector<HTMLElement>('[role="menuitem"]')!.tabIndex).toBe(0));
 		return root;
 	};
 	const status = (root: HTMLElement) => root.querySelector('[data-status]')!.textContent;
@@ -38,7 +39,7 @@ describe('popover menu component', () => {
 
 		await userEvent.click(trigger);
 		expect(menu.hidden).toBe(false);
-		await expect.poll(() => trigger.getAttribute('aria-expanded')).toBe('true');
+		await until(() => expect(trigger.getAttribute('aria-expanded')).toBe('true'));
 		expect(document.activeElement).toBe(items[0]);
 		expect(status(root)).toBe('Menu open');
 
@@ -48,7 +49,7 @@ describe('popover menu component', () => {
 		await userEvent.keyboard('{Escape}');
 		expect(menu.hidden).toBe(true);
 		expect(document.activeElement).toBe(trigger);
-		await expect.poll(() => trigger.getAttribute('aria-expanded')).toBe('false');
+		await until(() => expect(trigger.getAttribute('aria-expanded')).toBe('false'));
 
 		await userEvent.click(trigger);
 		await userEvent.click(document.body);
@@ -57,7 +58,7 @@ describe('popover menu component', () => {
 		await userEvent.click(trigger);
 		await userEvent.keyboard('{End}{Enter}');
 		expect(menu.hidden).toBe(true);
-		await expect.poll(() => status(root)).toBe('Chose Delete');
+		await until(() => expect(status(root)).toBe('Chose Delete'));
 		expect(document.activeElement).toBe(trigger);
 	});
 
@@ -72,9 +73,11 @@ describe('popover menu component', () => {
 
 		await userEvent.click(parts(root).trigger);
 
-		await expect
-			.poll(() => parts(root).menu.getBoundingClientRect().bottom)
-			.toBeLessThanOrEqual(frame.getBoundingClientRect().bottom);
+		await untilFrame(() =>
+			expect(parts(root).menu.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+				frame.getBoundingClientRect().bottom,
+			),
+		);
 	});
 
 	test('removes every listener when the element leaves, and a fresh copy works', async () => {
@@ -96,6 +99,6 @@ describe('popover menu component', () => {
 		await userEvent.click(parts(fresh).trigger);
 		expect(parts(fresh).menu.hidden).toBe(false);
 		await userEvent.keyboard('{Enter}');
-		await expect.poll(() => status(fresh)).toBe('Chose Rename');
+		await until(() => expect(status(fresh)).toBe('Chose Rename'));
 	});
 });

@@ -1,5 +1,6 @@
 import { userEvent } from 'vitest/browser';
-import { describe, expect, test, vi } from 'vitest';
+import { afterEach, describe, expect, test, vi } from 'vitest';
+import { until, realWait } from './until';
 import '@ecopages/radiant-ui/themes/default';
 import '@ecopages/radiant-ui/button/styles.css';
 import '../src/components/primitive-example/primitive-example.css';
@@ -18,7 +19,6 @@ export const stateOf = (root: HTMLElement) => part(root, '[data-status]').datase
 export const statusOf = (root: HTMLElement) => part(root, '[data-status]').textContent;
 export const elapsedOf = (root: HTMLElement) => part(root, '[data-elapsed]').textContent;
 const click = (root: HTMLElement, selector: string) => userEvent.click(part(root, selector));
-const sleep = (milliseconds: number) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 export const buttons = (root: HTMLElement) =>
 	['record', 'pause', 'stop', 'discard'].map(
@@ -39,15 +39,15 @@ function captureStreams(): MediaStream[] {
 
 export async function record(root: HTMLElement): Promise<void> {
 	await click(root, '[data-record]');
-	await expect.poll(() => stateOf(root), { timeout: 5000 }).toBe('recording');
+	await until(() => expect(stateOf(root)).toBe('recording'));
 }
 
 export async function recordAndStop(root: HTMLElement): Promise<void> {
 	await record(root);
-	await sleep(1200);
+	await realWait(1200, 'real MediaRecorder capture: nothing signals that audio has been captured');
 	await click(root, '[data-stop]');
-	await expect.poll(() => stateOf(root), { timeout: 5000 }).toBe('stopped');
-	await expect.poll(() => part<HTMLAudioElement>(root, '[data-player]').src, { timeout: 5000 }).toMatch(/^blob:/);
+	await until(() => expect(stateOf(root)).toBe('stopped'));
+	await until(() => expect(part<HTMLAudioElement>(root, '[data-player]').src).toMatch(/^blob:/));
 }
 
 /** The states a scripted take passes through, with the buttons enabled in each, for comparing forms. */
@@ -58,15 +58,15 @@ export async function flowOf(form: VoiceMemoForm): Promise<string[]> {
 	await record(root);
 	note();
 	await click(root, '[data-pause]');
-	await expect.poll(() => stateOf(root), { timeout: 5000 }).toBe('paused');
+	await until(() => expect(stateOf(root)).toBe('paused'));
 	note();
 	await click(root, '[data-pause]');
-	await expect.poll(() => stateOf(root), { timeout: 5000 }).toBe('recording');
+	await until(() => expect(stateOf(root)).toBe('recording'));
 	await click(root, '[data-stop]');
-	await expect.poll(() => stateOf(root), { timeout: 5000 }).toBe('stopped');
+	await until(() => expect(stateOf(root)).toBe('stopped'));
 	seen.push(`${stateOf(root)} ${buttons(root)} ${part(root, '[data-result]').hidden}`);
 	await click(root, '[data-discard]');
-	await expect.poll(() => stateOf(root), { timeout: 5000 }).toBe('idle');
+	await until(() => expect(stateOf(root)).toBe('idle'));
 	note();
 	await form.remove(root);
 	return seen;
@@ -75,6 +75,10 @@ export async function flowOf(form: VoiceMemoForm): Promise<string[]> {
 /** The behaviour every form of the voice memo recipe shares, run against one form. */
 export function describeVoiceMemoForm(name: string, form: VoiceMemoForm): void {
 	describe(`voice memo (${name})`, () => {
+		afterEach(() => {
+			vi.useRealTimers();
+		});
+
 		test('starts idle with only Record enabled and the instructions in the status line', async () => {
 			const root = await form.mount();
 
@@ -94,14 +98,14 @@ export function describeVoiceMemoForm(name: string, form: VoiceMemoForm): void {
 			await record(root);
 			expect(statusOf(root)).toContain('Recording');
 			expect(buttons(root)).toEqual(['record:off', 'pause:on', 'stop:on', 'discard:on']);
-			await sleep(1200);
+			await realWait(1200, 'real MediaRecorder capture: nothing signals that audio has been captured');
 			expect(elapsedOf(root)).not.toBe('0:00');
 			await click(root, '[data-stop]');
-			await expect.poll(() => stateOf(root), { timeout: 5000 }).toBe('stopped');
+			await until(() => expect(stateOf(root)).toBe('stopped'));
 
 			const player = part<HTMLAudioElement>(root, '[data-player]');
-			await expect.poll(() => player.src, { timeout: 5000 }).toMatch(/^blob:/);
-			await expect.poll(() => player.readyState, { timeout: 5000 }).toBeGreaterThan(0);
+			await until(() => expect(player.src).toMatch(/^blob:/));
+			await until(() => expect(player.readyState).toBeGreaterThan(0));
 			expect(player.error).toBeNull();
 			expect(part(root, '[data-result]').hidden).toBe(false);
 			const link = part<HTMLAnchorElement>(root, '[data-download]');
@@ -113,20 +117,25 @@ export function describeVoiceMemoForm(name: string, form: VoiceMemoForm): void {
 
 		test('Pause holds the clock and Resume goes on', async () => {
 			const root = await form.mount();
+			vi.useFakeTimers({
+				toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'performance'],
+			});
 			await record(root);
-			await sleep(700);
+			vi.advanceTimersByTime(700);
 
 			await click(root, '[data-pause]');
-			await expect.poll(() => stateOf(root), { timeout: 5000 }).toBe('paused');
+			await until(() => expect(stateOf(root)).toBe('paused'));
 			expect(part(root, '[data-pause]').getAttribute('aria-label')).toBe('Resume');
 			const held = elapsedOf(root);
-			await sleep(1200);
+			vi.advanceTimersByTime(1200);
 			expect(elapsedOf(root)).toBe(held);
 
 			await click(root, '[data-pause]');
-			await expect.poll(() => stateOf(root), { timeout: 5000 }).toBe('recording');
+			await until(() => expect(stateOf(root)).toBe('recording'));
 			expect(part(root, '[data-pause]').getAttribute('aria-label')).toBe('Pause');
-			await expect.poll(() => elapsedOf(root)).not.toBe(held);
+			vi.advanceTimersByTime(1200);
+			await until(() => expect(elapsedOf(root)).not.toBe(held));
+			vi.useRealTimers();
 			await form.remove(root);
 		});
 
@@ -136,7 +145,7 @@ export function describeVoiceMemoForm(name: string, form: VoiceMemoForm): void {
 
 			await click(root, '[data-discard]');
 
-			await expect.poll(() => stateOf(root), { timeout: 5000 }).toBe('idle');
+			await until(() => expect(stateOf(root)).toBe('idle'));
 			expect(part(root, '[data-player]').hasAttribute('src')).toBe(false);
 			expect(part(root, '[data-download]').hasAttribute('href')).toBe(false);
 			expect(part(root, '[data-result]').hidden).toBe(true);
@@ -151,15 +160,15 @@ export function describeVoiceMemoForm(name: string, form: VoiceMemoForm): void {
 
 			await click(root, '[data-record]');
 			expect(part(root, '[data-player]').hasAttribute('src')).toBe(false);
-			await expect.poll(() => stateOf(root), { timeout: 5000 }).toBe('recording');
-			await sleep(800);
+			await until(() => expect(stateOf(root)).toBe('recording'));
+			await realWait(800, 'real MediaRecorder capture: nothing signals that audio has been captured');
 			await click(root, '[data-stop]');
-			await expect.poll(() => stateOf(root), { timeout: 5000 }).toBe('stopped');
+			await until(() => expect(stateOf(root)).toBe('stopped'));
 
-			await expect
-				.poll(() => part<HTMLAudioElement>(root, '[data-player]').src, { timeout: 5000 })
-				.not.toBe(first);
-			await expect.poll(() => part<HTMLAudioElement>(root, '[data-player]').error?.message ?? null).toBeNull();
+			const player = part<HTMLAudioElement>(root, '[data-player]');
+			await until(() => expect(player.src).not.toBe(first));
+			await until(() => expect(player.readyState > 0 || player.error !== null).toBe(true));
+			expect(player.error).toBeNull();
 			await form.remove(root);
 		});
 
@@ -171,7 +180,7 @@ export function describeVoiceMemoForm(name: string, form: VoiceMemoForm): void {
 
 			await click(root, '[data-record]');
 
-			await expect.poll(() => stateOf(root), { timeout: 5000 }).toBe('denied');
+			await until(() => expect(stateOf(root)).toBe('denied'));
 			expect(statusOf(root)).toContain('try again');
 			expect(statusOf(root)).toContain('Allow the microphone');
 			expect(buttons(root)).toEqual(['record:on', 'pause:off', 'stop:off', 'discard:off']);
@@ -188,7 +197,7 @@ export function describeVoiceMemoForm(name: string, form: VoiceMemoForm): void {
 
 			await click(root, '[data-record]');
 
-			await expect.poll(() => stateOf(root), { timeout: 5000 }).toBe('error');
+			await until(() => expect(stateOf(root)).toBe('error'));
 			expect(statusOf(root)).toContain('Recording failed');
 			expect(buttons(root)[0]).toBe('record:on');
 			await form.remove(root);
@@ -200,7 +209,7 @@ export function describeVoiceMemoForm(name: string, form: VoiceMemoForm): void {
 
 			await click(root, '[data-record]');
 
-			await expect.poll(() => stateOf(root), { timeout: 5000 }).toBe('unsupported');
+			await until(() => expect(stateOf(root)).toBe('unsupported'));
 			expect(statusOf(root)).toBe('This browser cannot record audio.');
 			expect(buttons(root)).toEqual(['record:off', 'pause:off', 'stop:off', 'discard:off']);
 			await form.remove(root);
@@ -215,7 +224,7 @@ export function describeVoiceMemoForm(name: string, form: VoiceMemoForm): void {
 
 			await form.remove(root);
 
-			await expect.poll(() => streams[0].getTracks().every((track) => track.readyState === 'ended')).toBe(true);
+			expect(streams[0].getTracks().every((track) => track.readyState === 'ended')).toBe(true);
 		});
 
 		test('Stop and Discard end the take and stop the microphone', async () => {
@@ -224,7 +233,7 @@ export function describeVoiceMemoForm(name: string, form: VoiceMemoForm): void {
 			await record(root);
 			await click(root, '[data-discard]');
 
-			await expect.poll(() => stateOf(root), { timeout: 5000 }).toBe('idle');
+			await until(() => expect(stateOf(root)).toBe('idle'));
 			expect(streams[0].getTracks().every((track) => track.readyState === 'ended')).toBe(true);
 			await form.remove(root);
 		});

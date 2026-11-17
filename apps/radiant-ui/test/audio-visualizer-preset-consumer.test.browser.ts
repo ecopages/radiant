@@ -13,6 +13,7 @@ import {
 	type CanvasSurface,
 	type Peak,
 } from '@ecopages/radiant-ui/controllers';
+import { untilFrame } from './until';
 
 /**
  * A preset written the way a package that depends on `@ecopages/radiant-ui` would write it: it imports only from the
@@ -100,15 +101,15 @@ describe('a preset that imports only from @ecopages/radiant-ui/controllers', () 
 		expect(log).toEqual(['first:mount']);
 		controller.resume();
 		await audio.play();
-		await expect.poll(() => log.filter((entry) => entry === 'first:draw').length).toBeGreaterThan(2);
+		await untilFrame(() => expect(log.filter((entry) => entry === 'first:draw').length).toBeGreaterThan(2));
 		expect(log.slice(0, 2)).toEqual(['first:mount', 'first:draw']);
 		expect(target.querySelectorAll('canvas')).toHaveLength(1);
 
 		audio.pause();
-		await expect.poll(() => log.at(-1)).toBe('first:rest');
+		await untilFrame(() => expect(log.at(-1)).toBe('first:rest'));
 
 		await audio.play();
-		await expect.poll(() => controller.getState()).toBe('running');
+		await untilFrame(() => expect(controller.getState()).toBe('running'));
 		controller.setPreset(ledMeter(log, 'second'));
 		const swapped = log.slice(log.lastIndexOf('first:rest'));
 		expect(swapped.filter((entry) => !entry.endsWith(':draw'))).toEqual([
@@ -116,7 +117,7 @@ describe('a preset that imports only from @ecopages/radiant-ui/controllers', () 
 			'first:destroy',
 			'second:mount',
 		]);
-		await expect.poll(() => log.includes('second:draw')).toBe(true);
+		await untilFrame(() => expect(log.includes('second:draw')).toBe(true));
 		expect(log.lastIndexOf('first:draw')).toBeLessThan(log.indexOf('second:mount'));
 		expect(target.querySelectorAll('canvas')).toHaveLength(1);
 
