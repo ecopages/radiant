@@ -307,9 +307,116 @@ describe('update callbacks that disconnect and reconnect their host during the c
 		controller.connect();
 
 		expect(connectRuns).toBe(1);
-		expect(aSource.counter.listeners).toBe(bSource.counter.listeners + 1);
+		expect(aSource.counter.listeners).toBe(3);
+		expect(bSource.counter.listeners).toBe(2);
 		controller.disconnect();
 		expect(aSource.counter.listeners).toBe(0);
 		expect(bSource.counter.listeners).toBe(0);
+	});
+});
+
+describe('update callbacks follow a member replaced before connect or while detached', () => {
+	const source = createCountedSource(1);
+
+	class ReplacedController extends RadiantController {
+		@signal({ source: source.source })
+		n!: WritableSignal<number>;
+	}
+
+	function setup() {
+		source.source.set(1);
+		const controller = new ReplacedController(document.createElement('section'));
+		const seen: number[] = [];
+		controller.registerUpdateCallback('n', () => seen.push(controller.getReactiveMember<number>('n')!.get()));
+		return { controller, seen };
+	}
+
+	test('run on reconnect for a different value, then follow the replacement', () => {
+		const { controller, seen } = setup();
+		controller.connect();
+		controller.disconnect();
+
+		const replacement = createSignalState(7);
+		controller.registerReactiveMember('n', replacement);
+		controller.connect();
+		expect(seen).toEqual([7]);
+
+		replacement.set(8);
+		expect(seen).toEqual([7, 8]);
+		controller.disconnect();
+	});
+
+	test('stay silent on reconnect for an equal value', () => {
+		const { controller, seen } = setup();
+		controller.connect();
+		controller.disconnect();
+
+		controller.registerReactiveMember('n', createSignalState(1));
+		controller.connect();
+		expect(seen).toEqual([]);
+		controller.disconnect();
+	});
+
+	test('compare a member replaced before the first connect with its first registration', () => {
+		const different = setup();
+		different.controller.registerReactiveMember('n', createSignalState(7));
+		different.controller.connect();
+		expect(different.seen).toEqual([7]);
+		different.controller.disconnect();
+
+		const equal = setup();
+		equal.controller.registerReactiveMember('n', createSignalState(1));
+		equal.controller.connect();
+		expect(equal.seen).toEqual([]);
+		equal.controller.disconnect();
+	});
+});
+
+describe('connection callbacks after one that disconnects the host', () => {
+	const source = createCountedSource(1);
+
+	class ConnectController extends RadiantController {
+		@signal({ source: source.source })
+		n!: WritableSignal<number>;
+	}
+
+	test('do not run, and leave nothing subscribed', () => {
+		const controller = new ConnectController(document.createElement('section'));
+		let laterRuns = 0;
+		controller.registerConnectedCallback(() => controller.disconnect());
+		controller.registerConnectedCallback(() => laterRuns++);
+		controller.connect();
+
+		expect(laterRuns).toBe(0);
+		expect(source.counter.listeners).toBe(0);
+	});
+});
+
+describe('a member registered by a callback during the connect pass', () => {
+	const aSource = createCountedSource(1);
+	const cSource = createCountedSource(1);
+
+	class RegisteringController extends RadiantController {
+		@signal({ source: aSource.source })
+		a!: WritableSignal<number>;
+	}
+
+	test('is subscribed once and released on disconnect', () => {
+		aSource.source.set(1);
+		const controller = new RegisteringController(document.createElement('section'));
+		controller.connect();
+		controller.disconnect();
+
+		aSource.source.set(2);
+		controller.registerUpdateCallback('a', () => {
+			if (!controller.getReactiveMember('c')) {
+				controller.registerReactiveMember('c', cSource.source);
+			}
+		});
+		controller.connect();
+		expect(cSource.counter.listeners).toBe(1);
+
+		controller.disconnect();
+		expect(cSource.counter.listeners).toBe(0);
 	});
 });
