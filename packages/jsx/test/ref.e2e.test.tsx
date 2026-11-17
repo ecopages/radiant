@@ -107,7 +107,7 @@ describe('JSX ref', () => {
 
 		root.render(jsx('p', { ref }));
 		const node = container.querySelector('p');
-		root.render(jsx('p', {}));
+		root.render(jsx('p', { ref: null as never }));
 
 		expect(container.querySelector('p')).toBe(node);
 		expect(ref.mock.calls).toEqual([[node], [null]]);
@@ -648,6 +648,35 @@ describe('JSX ref', () => {
 			);
 
 			expect(calls).toEqual(['attach', 'detach']);
+		});
+
+		test('a callback that drops and re-adds itself while attaching keeps the cleanup of the new attach', async () => {
+			const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+			const container = document.createElement('div');
+			const root = createRoot(container);
+			const cleanups = [vi.fn(), vi.fn()];
+			let attaches = 0;
+			const ref = vi.fn((node: Element | null) => {
+				if (!node) return;
+				const cleanup = cleanups[attaches++]!;
+
+				if (attaches === 1) {
+					root.render(jsx('p', { ref: null as never }));
+					root.render(jsx('p', { ref }));
+				}
+
+				return cleanup;
+			});
+
+			root.render(jsx('p', { ref }));
+
+			expect(cleanups[0]).toHaveBeenCalledTimes(1);
+			expect(cleanups[1]).not.toHaveBeenCalled();
+
+			root.unmount();
+
+			expect(cleanups[0]).toHaveBeenCalledTimes(1);
+			expect(cleanups[1]).toHaveBeenCalledTimes(1);
 		});
 
 		test('a callback that throws on detach is reported, including after it threw on attach', async () => {

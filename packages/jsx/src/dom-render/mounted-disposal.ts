@@ -101,6 +101,7 @@ export function disposeLiveAttributePart(part: LiveAttributePart): void {
 export function detachRef(part: LiveAttributePart): void {
 	const cleanup = part.refCleanup;
 	part.refCleanup = undefined;
+	part.refEpoch = (part.refEpoch ?? 0) + 1;
 	if (cleanup) runRefCleanup(cleanup);
 }
 

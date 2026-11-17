@@ -168,15 +168,16 @@ function applyDeferredPropertyBinding(
 /**
  * @remarks The callback attaches from the deferred queue, after every property write of the pass and before its
  * ancestors' callbacks, so it sees its node in the page. The queued
- * attach checks that the part still holds the callback, so a part replaced or disposed before the queue runs does not
- * attach a stale one. A value that is not a function detaches the current ref and binds nothing.
+ * attach checks that the part was not detached since it was queued, so a part replaced or disposed before the queue runs
+ * does not attach a stale one. A value that is not a function detaches the current ref and binds nothing.
  *
  * A callback that throws is reported through {@link reportRefError} and does not stop the flush. It still counts as
  * attached: the same callback is not called again on a later render, and detaching calls it with `null`, as for a
  * callback that returned nothing. Only a different callback, or dropping the ref, ends it.
  *
  * A callback that detaches its own part while it runs is not called with `null` mid-attach: its cleanup is recorded
- * once it returns, and runs at once when the part is already detached.
+ * once it returns, and runs at once when the part was detached meanwhile, even if the same callback was bound again
+ * and attached in the meantime, whose own cleanup is the one kept.
  */
 function applyRefBinding(
 	element: Element,
@@ -192,10 +193,12 @@ function applyRefBinding(
 	livePart.previousValue = callback;
 	if (!callback) return;
 
+	const epoch = livePart.refEpoch;
+
 	deferredProperties.push({
 		element,
 		run: () => {
-			if (livePart.previousValue !== callback) return;
+			if (livePart.refEpoch !== epoch) return;
 			let cleanup = () => callback(null);
 			try {
 				const returned = callback(element);
@@ -203,7 +206,7 @@ function applyRefBinding(
 			} catch (error) {
 				reportRefError(error);
 			}
-			if (livePart.previousValue === callback) livePart.refCleanup = cleanup;
+			if (livePart.refEpoch === epoch) livePart.refCleanup = cleanup;
 			else runRefCleanup(cleanup);
 		},
 	});
