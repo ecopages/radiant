@@ -88,6 +88,38 @@ describe('hydration keys on a host shared by several owners', () => {
 		await waitFor(() => expect(element.count.get()).toBe(7));
 	});
 
+	test('a controller signal hydrates from its own payload under the controller host', () => {
+		const source = document.createElement('div');
+		const sourceController = create(SignalController, source);
+		sourceController.count.set(3);
+		const markup = signalScript(sourceController.count);
+
+		const target = document.createElement('div');
+		target.innerHTML = markup ?? '';
+		const hydrated = new SignalController(target);
+		hydrated.connect();
+
+		expect(hydrated.count.get()).toBe(3);
+		hydrated.disconnect();
+	});
+
+	test('a controller and an element host on one element each hydrate their own signal payload', async () => {
+		const sourceController = create(SignalController, document.createElement('div'));
+		sourceController.count.set(3);
+		const sourceElement = document.createElement('hydration-scope-element') as SignalElement;
+		sourceElement.count.set(7);
+		const markup = `${signalScript(sourceController.count)}${signalScript(sourceElement.count)}`;
+
+		document.body.innerHTML = `<hydration-scope-element data-controller="hydration-scope-signal">${markup}</hydration-scope-element>`;
+		const element = document.querySelector<SignalElement>('hydration-scope-element')!;
+		const hydrated = new SignalController(element);
+		hydrated.connect();
+
+		expect(hydrated.count.get()).toBe(3);
+		await waitFor(() => expect(element.count.get()).toBe(7));
+		hydrated.disconnect();
+	});
+
 	test('a controller registered without an identifier keeps the bare key', () => {
 		const plain = create(PlainController, document.createElement('div'));
 		plain.count.set(1);
