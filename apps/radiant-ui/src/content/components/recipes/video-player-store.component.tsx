@@ -25,8 +25,8 @@ import {
 	stageState,
 	type Shortcut,
 	type StageState,
-} from './video-player-store.data';
-import { fetchSource, releaseSource } from './video-player-store.loader';
+} from './video-player.data';
+import { fetchSource, releaseSource } from './video-player.loader';
 
 const HELP =
 	'Space or K plays and pauses, J and L skip 10 seconds, the arrows seek 5 seconds or change the volume, M mutes, C toggles captions, F toggles fullscreen, 0 to 9 jump through the video, Home and End go to its start and end';
@@ -34,27 +34,23 @@ const HELP =
 /**
  * Passes a binding through `RuiButton`'s `pressed` prop, which is typed as a snapshot.
  *
- * @remarks The helper writes that value onto a native `aria-pressed`. A binding there patches
- * the attribute without a parent render. Accessors would not remove this: the view still types
- * the prop as `boolean`.
+ * @remarks The helper writes that value onto a native `aria-pressed`, so a binding there patches the attribute
+ * without a render.
  */
 const pressedBinding = (value: unknown) => value as boolean;
 
 /**
- * The media snapshot the player paints from. Path writes through `this.$.media.*` patch nodes without
- * re-running `render()`.
+ * The media snapshot the player paints from. A write to one path patches the nodes bound to it with
+ * `this.$.media.*`.
  *
  * @remarks
- * `stage` is written from the controller's status, waiting and error in the same callback as the rest of
- * the snapshot: a binding follows one path, and `data-state` is that path. Accessor positions would not
- * remove it. `muted ? 0 : volume` and the thumb's time text are computed in that callback and written to
- * the slider by hand; they are not JSX positions on this host.
+ * Only what a node shows is here. The volume slider's level (`0` while muted) and the seek thumb's time text are
+ * written to the sliders by hand, because `RuiSlider` takes them as a snapshot.
  */
 export type PlayerMedia = {
 	stage: StageState;
 	playing: boolean;
 	muted: boolean;
-	seekable: boolean;
 	captionsOn: boolean;
 	fullscreenAvailable: boolean;
 	fullscreen: boolean;
@@ -62,7 +58,6 @@ export type PlayerMedia = {
 	status: string;
 	position: number;
 	duration: number;
-	volume: number;
 	controlsHidden: boolean;
 };
 
@@ -70,7 +65,6 @@ const INITIAL_MEDIA: PlayerMedia = {
 	stage: 'idle',
 	playing: false,
 	muted: false,
-	seekable: false,
 	captionsOn: false,
 	fullscreenAvailable: false,
 	fullscreen: false,
@@ -78,17 +72,17 @@ const INITIAL_MEDIA: PlayerMedia = {
 	status: '',
 	position: 0,
 	duration: Number.NaN,
-	volume: 1,
 	controlsHidden: false,
 };
 
 /**
  * @remarks
- * One `createStore` holds the snapshot. Hot paths (`position`, `muted`, `playing`, `rate`, the clock) are
- * `this.$.media.*` bindings, so a playing clip patches nodes without redrawing the stage. `RuiSlider` snapshots
- * `max` and `disabled` in its view helper: those are private fields `render()` reads, and `requestUpdate()` runs
- * once when they change. Writing the host properties is not enough. Per-frame `value` still goes to the host by
- * hand, as do the buffered layer and the thumb's `aria-valuetext`.
+ * One `createStore` holds the snapshot, and `render()` reads it only through `this.$.media`, so a path write
+ * patches its nodes without a render. The sliders are the exception: `RuiSlider` stamps `max`, `disabled` and
+ * `value` on its parts from the props of the render that drew it, and a later render would put a stale value back.
+ * So `render()` reads them from private fields, which are not reactive, and `requestUpdate()` runs only when the
+ * clip becomes seekable. Each callback writes the current value to the slider as well, and the buffered layer and
+ * the thumb's `aria-valuetext` by hand.
  */
 @customElement('video-player-store-app')
 export class VideoPlayerStoreApp extends RadiantElement<{ media: PlayerMedia }> {
@@ -102,7 +96,9 @@ export class VideoPlayerStoreApp extends RadiantElement<{ media: PlayerMedia }> 
 
 	private hideTimer: ReturnType<typeof setTimeout> | undefined;
 	private pointer = 'mouse';
+	private position = 0;
 	private seekMax = 1;
+	private level = 1;
 	private seekable = false;
 	private bufferedKey = '';
 	private readonly announcer = new Announcer();
@@ -213,8 +209,6 @@ export class VideoPlayerStoreApp extends RadiantElement<{ media: PlayerMedia }> 
 		media.playing = state.status === 'playing';
 		media.muted = state.muted;
 		media.rate = state.rate;
-		media.seekable = state.seekable;
-		media.volume = state.volume;
 		if (message !== '') media.status = message;
 		if (Number.isFinite(state.duration)) this.seekMax = state.duration;
 		if (state.seekable !== this.seekable) {
@@ -222,8 +216,8 @@ export class VideoPlayerStoreApp extends RadiantElement<{ media: PlayerMedia }> 
 			this.requestUpdate();
 		}
 		this.seek.max = this.seekMax;
-		this.seek.disabled = !this.seekable;
-		this.volume.value = [state.muted ? 0 : state.volume];
+		this.level = state.muted ? 0 : state.volume;
+		this.volume.value = [this.level];
 		this.writeProgress(state);
 		this.wake();
 	}
@@ -233,7 +227,7 @@ export class VideoPlayerStoreApp extends RadiantElement<{ media: PlayerMedia }> 
 		const media = this.media;
 		media.position = state.position;
 		media.duration = state.duration;
-		media.volume = state.volume;
+		this.position = state.position;
 		this.seek.value = [state.position];
 		this.keepValueText();
 		const segments = bufferedSegments(state.bufferedRanges, state.duration);
@@ -446,7 +440,7 @@ export class VideoPlayerStoreApp extends RadiantElement<{ media: PlayerMedia }> 
 								min={0}
 								max={this.seekMax}
 								step={0.01}
-								value={0}
+								value={this.position}
 								disabled={!this.seekable}
 								on:rui-change={(event: Event) => this.onSeek(event)}
 							/>
@@ -504,7 +498,7 @@ export class VideoPlayerStoreApp extends RadiantElement<{ media: PlayerMedia }> 
 								min={0}
 								max={1}
 								step={0.05}
-								value={1}
+								value={this.level}
 								on:rui-change={(event: Event) => this.onVolume(event)}
 							/>
 						</div>
