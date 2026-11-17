@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test } from 'vitest';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { RadiantController } from '../../src/core/radiant-controller';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { customElement } from '../../src/decorators/custom-element';
@@ -200,6 +200,33 @@ describe('@prop', () => {
 			expect(host.names).toEqual(['John', 'Jane']);
 			host.names = ['Zoe'];
 			expect(host.getAttribute('names')).toBe('["Zoe"]');
+		});
+	});
+
+	describe('function values', () => {
+		test('a reflected prop drops the attribute instead of writing the function source', async () => {
+			const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+			@customElement('my-reactive-function-reflect')
+			class MyReactiveFunctionReflect extends RadiantElement {
+				@prop({ type: String, reflect: true, defaultValue: 'seeded' }) label: unknown;
+			}
+
+			const host = document.createElement('my-reactive-function-reflect') as MyReactiveFunctionReflect;
+			document.body.appendChild(host);
+			await Promise.resolve();
+			expect(host.getAttribute('label')).toBe('seeded');
+
+			const handler = () => 'secret source';
+			host.label = handler;
+
+			expect(host.hasAttribute('label')).toBe(false);
+			expect(host.label).toBe(handler);
+			expect(
+				warn.mock.calls.filter((call) => String(call[0]).includes('reflected attribute "label"')),
+			).toHaveLength(1);
+			expect(warn.mock.calls.some((call) => String(call[0]).includes('secret source'))).toBe(false);
+			warn.mockRestore();
 		});
 	});
 
