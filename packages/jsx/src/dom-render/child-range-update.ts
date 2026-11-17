@@ -16,6 +16,7 @@ import {
 	isReactiveChildSource,
 	isTemplateResultLike,
 	runRangePass,
+	runRootPass,
 	readReactiveChildSourceValue,
 	subscribeToReactiveChildSource,
 	unwrapKeyedValue,
@@ -498,8 +499,8 @@ function removeRangeRecord(record: MountedRangeRecord): void {
  * Mounts a signal-like child source and keeps the range in sync with it.
  *
  * @remarks The mount joins the queue of the render or hydrate pass that is running, so a `ref` or property inside
- * the source is applied with the rest of that pass, once the DOM is in place. A later change of the source has no
- * pass running and flushes by itself. Joining the pass queue instead of flushing it keeps a list whose rows each hold
+ * the source is applied with the rest of that pass, once the DOM is in place. A later change of the source is independent
+ * of whatever pass happens to be running: it flushes by itself, so it is applied when `set()` returns. Joining the pass queue instead of flushing it keeps a list whose rows each hold
  * a signal child linear.
  */
 export function mountReactiveChildSource(
@@ -517,8 +518,10 @@ export function mountReactiveChildSource(
 		unsubscribe: () => undefined,
 	};
 
+	let mounting = true;
+
 	const applyValue = (nextValue: unknown) => {
-		runRangePass((deferredProperties) => {
+		(mounting ? runRangePass : runRootPass)((deferredProperties) => {
 			mountedSubscription.mounted = updateRangeContent(
 				range,
 				nextValue,
@@ -538,6 +541,7 @@ export function mountReactiveChildSource(
 	});
 
 	applyValue(readReactiveChildSourceValue(source));
+	mounting = false;
 
 	return mountedSubscription;
 }

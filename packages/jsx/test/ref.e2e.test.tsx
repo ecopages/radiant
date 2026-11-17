@@ -512,6 +512,65 @@ describe('JSX ref', () => {
 			expect(attachedWhenRenderReturned).toBe(true);
 		});
 
+		test('a signal child changed from connectedCallback applies its ref and properties before set returns', async () => {
+			const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+			const other = document.createElement('div');
+			const host = document.createElement('div');
+			document.body.append(other, host);
+			const flag = state(false);
+			const sink = state<unknown>(null);
+			const seen: string[] = [];
+			let attached: Element | null = null;
+
+			flag.subscribe((value) =>
+				sink.set(
+					value
+						? jsx('radiant-jsx-ref-host', {
+								'prop:ref': 'D',
+								ref: (node: Element | null) => (attached = node),
+							})
+						: null,
+				),
+			);
+			createRoot(other).render(jsx('section', { children: sink as never }));
+
+			customElements.define(
+				'radiant-jsx-ref-trigger',
+				class extends HTMLElement {
+					connectedCallback() {
+						flag.set(true);
+						const node = other.querySelector('radiant-jsx-ref-host') as RefHostElement | null;
+						seen.push(`${node?.ref} ${attached === node}`);
+					}
+				},
+			);
+
+			createRoot(host).render(jsx('radiant-jsx-ref-trigger', {}));
+
+			expect(seen).toEqual(['D true']);
+		});
+
+		test('a signal set from a ref callback applies its child ref before set returns', async () => {
+			const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+			const container = document.createElement('div');
+			document.body.append(container);
+			const child = state<unknown>(null);
+			let attachedAfterSet: boolean | undefined;
+			let inner: Element | null = null;
+
+			createRoot(container).render(
+				jsx('div', {
+					ref: () => {
+						child.set(jsx('span', { ref: (node: Element | null) => (inner = node) }));
+						attachedAfterSet = inner !== null;
+					},
+					children: child as never,
+				}),
+			);
+
+			expect(attachedAfterSet).toBe(true);
+		});
+
 		test('a later change of a signal child attaches its new ref on its own', async () => {
 			const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 			const container = document.createElement('div');
