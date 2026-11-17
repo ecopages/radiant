@@ -3,7 +3,7 @@ import { TrackedRender } from './tracked-render';
 import type { UnknownContext } from '../context/types';
 import { ensureLegacyHostReady } from '../decorators/legacy/host-readiness';
 import { REACTIVE_HOST, ReactiveHost, type ReactiveHostInternals, type ReactiveHostLike } from './reactive-host';
-import type { ReactiveState } from './reactivity-contract';
+import type { ReactiveState, ReadonlyReactiveState } from './reactivity-contract';
 import {
 	resolveReactiveDefault,
 	validateReactivePropertyDefault,
@@ -41,7 +41,7 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 	private connected = false;
 	private readonly updateCycle: UpdateCycle;
 	private isSsrLifecycle = false;
-	private readonly trackedRender = new TrackedRender<JsxRenderable>(() => this.requestUpdate());
+	private readonly trackedRender: TrackedRender<JsxRenderable>;
 
 	constructor(host: Element) {
 		this.host = host;
@@ -66,6 +66,10 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 				defineProperty: (target, property, descriptor) => Object.defineProperty(target, property, descriptor),
 			},
 			(propertyName) => this.updateCycle.markChanged(propertyName),
+		);
+		this.trackedRender = new TrackedRender<JsxRenderable>(
+			() => this.requestUpdate(),
+			this.reactiveHost.renderWarnings,
 		);
 		this.bindings = this.reactiveHost.bindings;
 		this.$ = this.reactiveHost.$;
@@ -203,6 +207,7 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 	public createReactiveProp<T = unknown>(propertyName: string, options: ReactivePropertyOptions<T>): void {
 		const { type, defaultValue, transform } = options;
 
+		this.reactiveHost.getWritableMember(propertyName);
 		validateReactivePropertyDefault(type, defaultValue, !!transform?.fromAttribute);
 
 		const hostPropertyBridge = new ControllerHostPropertyBridge<T>(this.host, this, propertyName);
@@ -251,11 +256,11 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 		return this.reactiveHost.createReactiveMember(propertyName, initialValue);
 	}
 
-	public registerReactiveMember<T>(propertyName: string, signal: ReactiveState<T>): void {
+	public registerReactiveMember<T>(propertyName: string, signal: ReadonlyReactiveState<T>): void {
 		this.reactiveHost.registerReactiveMember(propertyName, signal);
 	}
 
-	public getReactiveMember<T = unknown>(propertyName: string): ReactiveState<T> | undefined {
+	public getReactiveMember<T = unknown>(propertyName: string): ReadonlyReactiveState<T> | undefined {
 		return this.reactiveHost.getReactiveMember(propertyName);
 	}
 

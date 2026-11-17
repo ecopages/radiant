@@ -89,7 +89,7 @@ The runtime normalizes the most common authoring patterns before anything reache
 
 ### `style`
 
-An object stylesheet is serialized to a kebab-case CSS declaration string. Null and empty declarations are dropped. Reactive style values are passed through untouched so the renderer can keep tracking them.
+An object stylesheet is serialized to a kebab-case CSS declaration string. Null and empty declarations are dropped, and so is a function value, which `jsxDEV` warns about. Reactive style values are passed through untouched so the renderer can keep tracking them.
 
 ```tsx
 <section style={{ backgroundColor: 'white', fontSize: '14px' }} />

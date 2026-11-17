@@ -33,6 +33,7 @@ The package surface is intentionally split by use case:
 - explicit native escape-hatch bindings with `on-native:*`
 - explicit property bindings with `prop:*`
 - boolean, `data`, `aria`, `class`, `classes`, and `style` normalization (`className` is a type error and is skipped on native elements; use `class`)
+- a function in a child (of a native element or a Fragment), `attr`, `bool`, `class`, `classes` or `style` position, a `style` object value, or one that a signal or subscribable resolves to, is skipped, never written out as its source; `prop:`, event handlers and a custom element's properties keep a function as a value
 - direct DOM mounting with `createRoot(...)`
 - HTML string rendering with `renderToString(...)`
 - hydration markers and DOM hydration helpers
@@ -455,7 +456,7 @@ To drive a textarea from application state, pass a new child string when that st
 
 ## Dev Warnings
 
-The runtime warnings are intentionally defensive around hydration markers and renderer-owned DOM anchors because those failures are otherwise silent and hard to debug. `jsxDEV` from `@ecopages/jsx/jsx-dev-runtime` also warns once per tag when a native element gets `className`, which JSX skips; use `class`.
+The runtime warnings are intentionally defensive around hydration markers and renderer-owned DOM anchors because those failures are otherwise silent and hard to debug. `jsxDEV` from `@ecopages/jsx/jsx-dev-runtime` also warns once per tag when a native element gets `className`, which JSX skips; use `class`. Once the development runtime is imported, the renderer warns once per position when a function lands in a child, `attr`, `bool` or `style` position (`<p title>`, `child of <p>`), in a `style` object value (`style value color`), or in a `class` or `classes` list (`class value`). A function that a signal or subscribable resolves to is skipped the same way, in a child or an attribute (`a child`, `an attribute`). Without the development runtime no warning formatter is installed, so the skip is silent: the child renders nothing and the attribute is absent, on the client and in `renderToString`, plain and hydrate mode.
 
 They are already off in production by default. In development, you can force them on or off globally:
 
@@ -955,7 +956,7 @@ Key types:
 - `SubscribableJsxValueWithAccess`
 - `TemplateResultLike`
 
-The automatic development runtime also exports `jsxDEV` from `@ecopages/jsx/jsx-dev-runtime`. It passes static children (the ones the production transform hands to `jsxs`) to `jsxs`, so development and production builds give the same template shape, and it warns about `className` on a native element. The `jsxDEV` from `@ecopages/jsx/jsx-runtime` and the package root does not warn.
+The automatic development runtime also exports `jsxDEV` from `@ecopages/jsx/jsx-dev-runtime`. It passes static children (the ones the production transform hands to `jsxs`) to `jsxs`, so development and production builds give the same template shape, and it warns about `className` on a native element and installs the formatter that makes the renderer warn about a function in a child or attribute position. The `jsxDEV` from `@ecopages/jsx/jsx-runtime` and the package root does not warn.
 
 Server-only exports from `@ecopages/jsx/server` include:
 

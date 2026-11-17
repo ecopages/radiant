@@ -167,7 +167,7 @@ export class UserCard extends RadiantElement<UserCardBindings> {
         <h2>{this.$.name}</h2>
         {this.avatarUrl && <img src={this.avatarUrl} alt="" />}
         <button type="button" on:click={this.toggleExpanded}>
-          {this.$.isExpanded ? 'Hide details' : 'Show details'}
+          {this.isExpanded ? 'Hide details' : 'Show details'}
         </button>
       </article>
     );
@@ -181,14 +181,14 @@ In this pattern:
 
 - `UserCardProps` is the external API used by JSX consumers.
 - `UserCardBindings` includes both public props and internal reactive state.
-- `isExpanded` is available inside the component through `this.$.isExpanded`, but
+- `isExpanded` is available inside the component as a reactive field, but
   consumers cannot pass `<user-card isExpanded />` unless you intentionally add
   that field to the public props type.
 
 Notice the split inside `render()`:
 
-- `this.isExpanded` is used for the `class` expression because render logic needs the raw boolean.
-- `this.$.name` and `this.$.isExpanded` are used for stable text positions where fine-grained patching is desirable.
+- `this.isExpanded` is read directly for the `class` expression and the button label because render logic needs the raw boolean, so toggling it runs `render()` again.
+- `this.$.name` is used for a stable text position where fine-grained patching is desirable.
 
 If the public props and internal reactive members are intentionally the same
 surface, reusing one shared type is fine. Split them only when the external API
@@ -207,15 +207,14 @@ Practical rule of thumb:
 - Prefer bindings for leaf text, whole `data-*` or `aria-*` values, boolean attributes, and `prop:*` bindings.
 
 ```tsx
-<article
-  class={this.isExpanded ? 'user-card user-card--expanded' : 'user-card'}
-  data={{ state: this.$.isExpanded }}
->
+<article class={this.isExpanded ? 'user-card user-card--expanded' : 'user-card'}>
   <h2>{this.$.name}</h2>
 </article>
 ```
 
-In that example, the `class` expression still belongs to the host render pass, while the bound `data-state` and heading text can patch in place.
+In that example, the `class` expression belongs to the host render pass, while the heading text patches in place when `name` changes.
+
+Pick one form per field. A field read directly in `render()` re-runs the whole view when it changes; a field bound with `this.$` patches only its node. Doing both for the same field patches the node and then re-renders anyway, and a field that re-runs `render()` many times a second wastes the same work. In development, Radiant warns once per class and field for both cases and points to `this.$`; see [`{this.count}` vs `{this.$.count}`](/docs/components/radiant-element#thiscount-vs-thiscount).
 
 ### @query vs paint
 

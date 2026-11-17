@@ -3,7 +3,8 @@ import type { JsxBindingSourceValue, SubscribableJsxValueWithAccess } from '@eco
 import { HostSsrRegistry } from './host-ssr-registry';
 import { adaptReactiveStateToJsxBinding } from './reactive-binding-adapter';
 import { state } from '@ecopages/signals';
-import type { ReactiveState } from './reactivity-contract';
+import { RenderWarnings } from './render-warnings';
+import type { ReactiveState, ReadonlyReactiveState } from './reactivity-contract';
 import type {
 	ReactiveAccessorDefinition,
 	ReactiveBindingValue,
@@ -14,7 +15,7 @@ import type {
 type StringPropertyKey<Value> = Extract<keyof Value, string>;
 
 type UpdateSubscription = {
-	signal: ReactiveState<unknown>;
+	signal: ReadonlyReactiveState<unknown>;
 	unsubscribe: () => void;
 };
 
@@ -39,6 +40,20 @@ export const REACTIVE_HOST: unique symbol = Symbol.for('@ecopages/radiant.reacti
 export interface ReactiveHostInternals {
 	readonly ssrRegistry: HostSsrRegistry;
 	notifyUpdate(changedProperty: string, oldValue: unknown, value: unknown): void;
+	/**
+	 * Returns the writable member registered under `propertyName`, if any.
+	 *
+	 * @throws When the name is held by a read-only member, so a writable decorator
+	 * fails loudly instead of calling a missing `set`.
+	 */
+	getWritableMember<T = unknown>(propertyName: string): ReactiveState<T> | undefined;
+	/**
+	 * Records that the host defines its own accessor for `propertyName`.
+	 *
+	 * @remarks For accessors defined outside {@link ReactiveHost.defineReactiveAccessor}, such as
+	 * `@attr`'s. A read-only member may not replace the member behind a marked name.
+	 */
+	markFieldAccessor(propertyName: string): void;
 	registerPostSync(callback: () => void): void;
 	registerConnectSync(callback: () => void): void;
 	registerUpdatedCallback(keys: readonly string[], callback: UpdatedCallback): () => void;
@@ -60,10 +75,10 @@ export interface ReactiveHostLike<Bindings extends object = {}> {
 	bind<Property extends StringPropertyKey<Bindings>>(
 		property: Property,
 	): SubscribableJsxValueWithAccess<ReactiveBindingValue<Bindings, Property>>;
-	getReactiveMember<T = unknown>(propertyName: string): ReactiveState<T> | undefined;
+	getReactiveMember<T = unknown>(propertyName: string): ReadonlyReactiveState<T> | undefined;
 	createReactiveField<T>(propertyName: string, initialValue: T, options?: ReactiveFieldOptions): void;
 	createReactiveMember<T>(propertyName: string, initialValue: T): ReactiveState<T>;
-	registerReactiveMember<T>(propertyName: string, signal: ReactiveState<T>): void;
+	registerReactiveMember<T>(propertyName: string, signal: ReadonlyReactiveState<T>): void;
 	/** Whether a value was assigned to the host under `propertyName` before it was upgraded; only elements can tell. */
 	[HAS_PRE_UPGRADE_VALUE]?(propertyName: string): boolean;
 	registerCleanupCallback(callback: () => void): void;
@@ -88,8 +103,12 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	public readonly bindings: ReactiveBindings<Bindings>;
 	public readonly $: ReactiveBindings<Bindings>;
 	public readonly ssrRegistry = new HostSsrRegistry();
+	/** Development diagnostics for whole-render reads; absent in a production build. */
+	public readonly renderWarnings?: RenderWarnings;
 
-	private reactiveMembers = new Map<string, ReactiveState<unknown>>();
+	private reactiveMembers = new Map<string, ReadonlyReactiveState<unknown>>();
+	/** Names with a field accessor, which closes over the member it was defined with. */
+	private accessorNames = new Set<string>();
 	private jsxBindings = new Map<string, SubscribableJsxValueWithAccess<JsxBindingSourceValue>>();
 	/** Synchronous per-member callbacks keyed by property; values track the subscribed signal so replacements can resubscribe. */
 	private updateCallbacks = new Map<string, Map<() => void, UpdateSubscription | undefined>>();
@@ -113,6 +132,12 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 		const bindingNamespace = this.createReactiveBindingNamespace();
 		this.bindings = bindingNamespace;
 		this.$ = bindingNamespace;
+
+		try {
+			if (process.env.NODE_ENV !== 'production') {
+				this.renderWarnings = new RenderWarnings(host);
+			}
+		} catch {}
 	}
 
 	/**
@@ -273,10 +298,30 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	}
 
 	/**
-	 * Returns the member state registered under `propertyName`, if any.
+	 * Returns the member registered under `propertyName`, typed read-only, if any.
+	 *
+	 * @remarks The read-only type is the whole contract: this is the registered object itself, not
+	 * a wrapper, so member identity stays stable for bindings and callbacks. Write through the
+	 * host field, not the member.
 	 */
-	public getReactiveMember<T = unknown>(propertyName: string): ReactiveState<T> | undefined {
-		return this.reactiveMembers.get(propertyName) as ReactiveState<T> | undefined;
+	public getReactiveMember<T = unknown>(propertyName: string): ReadonlyReactiveState<T> | undefined {
+		return this.reactiveMembers.get(propertyName) as ReadonlyReactiveState<T> | undefined;
+	}
+
+	public markFieldAccessor(propertyName: string): void {
+		this.accessorNames.add(propertyName);
+	}
+
+	public getWritableMember<T = unknown>(propertyName: string): ReactiveState<T> | undefined {
+		const member = this.reactiveMembers.get(propertyName);
+
+		if (member && typeof (member as Partial<ReactiveState<unknown>>).set !== 'function') {
+			throw new Error(
+				`[@ecopages/radiant] "${propertyName}" is already registered as a read-only member and cannot be redeclared as a writable field.`,
+			);
+		}
+
+		return member as ReactiveState<T> | undefined;
 	}
 
 	/**
@@ -284,16 +329,28 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	 */
 	public createReactiveMember<T>(propertyName: string, initialValue: T): ReactiveState<T> {
 		const signal = state(initialValue);
-		this.registerMember(propertyName, signal as ReactiveState<unknown>);
+		this.registerMember(propertyName, signal as ReadonlyReactiveState<unknown>);
 		return signal;
 	}
 
 	/**
 	 * Registers an externally-owned reactive member state (used by the
 	 * `signal()` decorator, whose state is a user-provided signals `Signal`).
+	 * A read-only `{ get, subscribe }` object is enough.
+	 *
+	 * @throws When a read-only member would replace the member behind a field accessor: the
+	 * accessor and `@bindTo` would keep the old state while `this.$` followed the new one.
+	 *
+	 * @remarks Replacing a writable member with another writable one is unchanged and not guarded.
 	 */
-	public registerReactiveMember<T>(propertyName: string, signal: ReactiveState<T>): void {
-		this.registerMember(propertyName, signal as ReactiveState<unknown>);
+	public registerReactiveMember<T>(propertyName: string, signal: ReadonlyReactiveState<T>): void {
+		if (this.accessorNames.has(propertyName) && typeof (signal as Partial<ReactiveState<T>>).set !== 'function') {
+			throw new Error(
+				`[@ecopages/radiant] "${propertyName}" is a writable field and cannot be replaced by a read-only member; register a writable state or use another name.`,
+			);
+		}
+
+		this.registerMember(propertyName, signal as ReadonlyReactiveState<unknown>);
 	}
 
 	/**
@@ -301,7 +358,7 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	 * subscribes synchronous callbacks registered before the member existed
 	 * (decorator initializer ordering).
 	 */
-	private registerMember(propertyName: string, signal: ReactiveState<unknown>): void {
+	private registerMember(propertyName: string, signal: ReadonlyReactiveState<unknown>): void {
 		this.reactiveMembers.set(propertyName, signal);
 		this.jsxBindings.delete(propertyName);
 		this.changeSubscriptions.get(propertyName)?.();
@@ -322,19 +379,24 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 		}
 	}
 
-	private observeMember(propertyName: string, signal: ReactiveState<unknown>): void {
+	private observeMember(propertyName: string, signal: ReadonlyReactiveState<unknown>): void {
 		if (
 			this.memberSnapshots.has(propertyName) &&
 			!Object.is(this.memberSnapshots.get(propertyName), signal.get())
 		) {
-			this.onMemberChanged(propertyName);
+			this.memberChanged(propertyName);
 		}
 
 		this.memberSnapshots.delete(propertyName);
 		this.changeSubscriptions.set(
 			propertyName,
-			signal.subscribe(() => this.onMemberChanged(propertyName)),
+			signal.subscribe(() => this.memberChanged(propertyName)),
 		);
+	}
+
+	private memberChanged(propertyName: string): void {
+		this.renderWarnings?.noteChange(propertyName);
+		this.onMemberChanged(propertyName);
 	}
 
 	/**
@@ -392,9 +454,8 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 			throw new Error(`No reactive binding registered for "${String(property)}".`);
 		}
 
-		const binding = adaptReactiveStateToJsxBinding(
-			signal as ReactiveState<ReactiveBindingValue<Bindings, Property>>,
-		);
+		const source = signal as ReadonlyReactiveState<ReactiveBindingValue<Bindings, Property>>;
+		const binding = adaptReactiveStateToJsxBinding(this.renderWarnings?.observeBinding(key, source) ?? source);
 
 		this.jsxBindings.set(key, binding);
 		return binding;
@@ -437,8 +498,11 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	 * `State`.
 	 */
 	public defineReactiveAccessor<T>(propertyName: string, options: ReactiveAccessorDefinition<T>): void {
+		this.markFieldAccessor(propertyName);
+		const read = () => options.signal.get();
+
 		this.access.defineProperty(this.host, propertyName, {
-			get: () => options.signal.get(),
+			get: this.renderWarnings ? this.renderWarnings.trackReads(propertyName, read) : read,
 			set: (newValue: T) => {
 				const next = options.fromProperty ? options.fromProperty(newValue) : newValue;
 				options.signal.set(next);
@@ -458,7 +522,7 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	 * callbacks such as `@bindTo`.
 	 */
 	public createReactiveField<T>(propertyName: string, initialValue: T, options: ReactiveFieldOptions = {}): void {
-		const existing = this.reactiveMembers.get(propertyName) as ReactiveState<T> | undefined;
+		const existing = this.getWritableMember<T>(propertyName);
 		const signal = existing ?? this.createReactiveMember(propertyName, initialValue);
 
 		if (existing && initialValue !== undefined) {
