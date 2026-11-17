@@ -19,7 +19,7 @@ import {
 import { childForeignContent, type SerializeRenderableOptions } from './serialize-renderable.ts';
 import { renderIntrinsicCustomElementTemplate } from './server-render.ts';
 import type { JsxNodeLike, JsxRenderable, TemplatePartDescriptor, TemplateResultLike } from '../types/index.ts';
-import { isSkippedFunction } from '../warnings/dev-warnings.ts';
+import { isEmptyChild } from '../warnings/dev-warnings.ts';
 
 type ForeignContent = SerializeRenderableOptions['foreignContent'];
 
@@ -87,8 +87,7 @@ function appendRenderable(
 	ownerDocument: Document,
 	foreignContent: ForeignContent,
 ): void {
-	if (value === undefined || value === null || typeof value === 'boolean' || isSkippedFunction(value, 'a child'))
-		return;
+	if (isEmptyChild(value)) return;
 	if (isKeyedJsxValue(value)) return appendRenderable(nodes, value.value, ownerDocument, foreignContent);
 	if (isSubscribableJsxValue(value)) return appendRenderable(nodes, value.getValue(), ownerDocument, foreignContent);
 	if (isSignalLikeValue(value)) return appendRenderable(nodes, value.get(), ownerDocument, foreignContent);

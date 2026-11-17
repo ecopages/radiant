@@ -1,4 +1,5 @@
 import { countHydrationMarkers } from '../hydration/hydration-bindings.ts';
+import { isEmptyChild } from '../warnings/dev-warnings.ts';
 import { isCustomElementSubtreeRoot } from '../hydration/hydration-subtree-policy.ts';
 import { isKeyedJsxValue } from '../types/renderable-guards.ts';
 import { hydrateTemplateInstance } from './hydration.ts';
@@ -15,7 +16,6 @@ import {
 	flushDeferredProperties,
 	getIterableChildren,
 	getKeyedChildren,
-	isEmptyChild,
 	isIterableRenderable,
 	isReactiveChildSource,
 	isTemplateResultLike,

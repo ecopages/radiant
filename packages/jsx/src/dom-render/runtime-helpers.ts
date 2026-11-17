@@ -23,7 +23,7 @@ export {
 	isTemplateResultLike,
 	resolveReactiveSnapshot,
 } from '../types/renderable-guards.ts';
-import { isSkippedFunction } from '../warnings/dev-warnings.ts';
+import { isEmptyChild } from '../warnings/dev-warnings.ts';
 
 type TemplateMount = (
 	template: TemplateResultLike,
@@ -73,17 +73,6 @@ export function flushDeferredProperties(bindings: DeferredPropertyBinding[]): vo
 	}
 
 	closeAncestors();
-}
-
-/**
- * Returns `true` when a child value renders as nothing: `null`, `undefined`, a boolean, or a function, which is
- * skipped with a dev warning.
- *
- * @remarks Mount and hydration share this one test, so a function child counts as no nodes in both. Testing a
- * function child also warns once in development, so the check is not free of side effects.
- */
-export function isEmptyChild(value: unknown): boolean {
-	return value == null || typeof value === 'boolean' || isSkippedFunction(value, 'a child');
 }
 
 /** Removes keyed-child wrapper metadata so downstream logic can work with the raw child value. */

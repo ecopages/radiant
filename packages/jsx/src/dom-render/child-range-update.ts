@@ -1,4 +1,5 @@
 import type { JsxKey, KeyedJsxValue } from '../types/index.ts';
+import { isEmptyChild } from '../warnings/dev-warnings.ts';
 import { isKeyedJsxValue } from '../types/renderable-guards.ts';
 import { clearRange, getRangeFirstNode, getRangeParent, insertIntoRange } from './child-range.ts';
 import { moveRangeBefore } from './dom-operations.ts';
@@ -12,7 +13,6 @@ import {
 	flushDeferredProperties,
 	getIterableChildren,
 	getKeyedChildren,
-	isEmptyChild,
 	isIterableRenderable,
 	isReactiveChildSource,
 	isTemplateResultLike,

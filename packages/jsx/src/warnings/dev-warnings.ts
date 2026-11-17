@@ -97,3 +97,14 @@ export function isSkippedFunction(value: unknown, position: string): boolean {
 	warnFunctionPosition(position);
 	return true;
 }
+
+/**
+ * Returns `true` when a child value renders as nothing: `null`, `undefined`, a boolean, or a function, which is
+ * skipped with a dev warning.
+ *
+ * @remarks Mount, hydration and server rendering share this one test, so a function child counts as no nodes in all of them. Testing a
+ * function child also warns once in development, so the check is not free of side effects.
+ */
+export function isEmptyChild(value: unknown): boolean {
+	return value == null || typeof value === 'boolean' || isSkippedFunction(value, 'a child');
+}
