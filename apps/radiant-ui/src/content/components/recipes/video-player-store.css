@@ -1,7 +1,4 @@
-.primitive-example:is(
-	[data-example='video-player-store'],
-	:has(> video-player-store-app)
-) {
+.primitive-example:is([data-example='video-player-store'], :has(> video-player-store-app)) {
 	display: block;
 	width: min(100%, 44rem);
 

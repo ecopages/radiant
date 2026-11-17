@@ -65,7 +65,9 @@ export function describePlayerRenderMetrics(
 		const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 		try {
 			const root = await form.mount();
-			await until(() => expect(part<HTMLElement & { disabled: boolean }>(root, '[data-seek]').disabled).toBe(false));
+			await until(() =>
+				expect(part<HTMLElement & { disabled: boolean }>(root, '[data-seek]').disabled).toBe(false),
+			);
 			const before = render.mock.calls.length;
 			await userEvent.click(playback(root));
 			await until(() => expect(video(root).paused).toBe(false));
@@ -83,7 +85,9 @@ export function describePlayerRenderMetrics(
 		const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 		try {
 			const root = await form.mount();
-			await until(() => expect(part<HTMLElement & { disabled: boolean }>(root, '[data-seek]').disabled).toBe(false));
+			await until(() =>
+				expect(part<HTMLElement & { disabled: boolean }>(root, '[data-seek]').disabled).toBe(false),
+			);
 			await userEvent.click(playback(root));
 			await until(() => expect(video(root).paused).toBe(false));
 			await settled(root);
@@ -103,7 +107,9 @@ export function describePlayerRenderMetrics(
 		const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 		try {
 			const root = await form.mount();
-			await until(() => expect(part<HTMLElement & { disabled: boolean }>(root, '[data-seek]').disabled).toBe(false));
+			await until(() =>
+				expect(part<HTMLElement & { disabled: boolean }>(root, '[data-seek]').disabled).toBe(false),
+			);
 			const before = render.mock.calls.length;
 			part(root, '[data-stage]').focus();
 			await userEvent.keyboard('5');
@@ -122,7 +128,9 @@ export function describePlayerRenderMetrics(
 		const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 		try {
 			const root = await form.mount();
-			await until(() => expect(part<HTMLElement & { disabled: boolean }>(root, '[data-seek]').disabled).toBe(false));
+			await until(() =>
+				expect(part<HTMLElement & { disabled: boolean }>(root, '[data-seek]').disabled).toBe(false),
+			);
 			const before = render.mock.calls.length;
 			await userEvent.click(part(root, '[data-mute]'));
 			await until(() => expect(part(root, '[data-mute]').getAttribute('aria-pressed')).toBe('true'));
@@ -140,7 +148,9 @@ export function describePlayerRenderMetrics(
 		const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 		try {
 			const root = await form.mount();
-			await until(() => expect(part<HTMLElement & { disabled: boolean }>(root, '[data-seek]').disabled).toBe(false));
+			await until(() =>
+				expect(part<HTMLElement & { disabled: boolean }>(root, '[data-seek]').disabled).toBe(false),
+			);
 			const before = render.mock.calls.length;
 			await userEvent.click(part(root, '[data-rate]'));
 			await until(() => expect(part(root, '[data-rate]').textContent).toBe('1.25x'));
