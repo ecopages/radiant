@@ -33,6 +33,10 @@ function classIdOf(host: object): number {
 	return id;
 }
 
+/**
+ * @remarks The label falls back to the class name, which a minified development build mangles; a custom element
+ * is named by its tag instead.
+ */
 function describeHost(host: object): string {
 	const { localName, element } = host as { localName?: string; element?: { localName?: string } };
 

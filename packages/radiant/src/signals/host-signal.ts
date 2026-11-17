@@ -22,10 +22,7 @@ export function isWritableSignalLike<Value>(value: unknown): value is WritableSi
 	return (
 		typeof value === 'object' &&
 		value !== null &&
-		typeof (value as WritableSignal<Value>).get === 'function' &&
-		typeof (value as WritableSignal<Value>).set === 'function' &&
-		typeof (value as WritableSignal<Value>).subscribe === 'function' &&
-		typeof (value as WritableSignal<Value>).update === 'function'
+		['get', 'set', 'subscribe', 'update'].every((method) => typeof Reflect.get(value, method) === 'function')
 	);
 }
 

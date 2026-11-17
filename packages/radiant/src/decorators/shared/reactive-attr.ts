@@ -85,6 +85,10 @@ function readReactiveAttributeValue<T>(
 	return resolveAttributeValue(resolveAttributeTarget(host).getAttribute(attributeName), options);
 }
 
+/**
+ * @remarks The function-value warning labels the host by its class name, which a minified development build
+ * mangles.
+ */
 function writeReactiveAttributeValue<T>(
 	host: object,
 	target: Element,
