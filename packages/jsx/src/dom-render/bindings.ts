@@ -1,7 +1,7 @@
 import { resolveAttributeText } from '../factory/attribute-normalize.ts';
 import { attachEventBindingListener, detachEventBindingListener, isEventListenerObject } from './event-delegation.ts';
 import { getElementAttributeValue, removeElementAttribute, setElementAttributeValue } from './namespaces.ts';
-import { detachRef, reportRefError } from './mounted-disposal.ts';
+import { detachRef, reportRefError, runRefCleanup } from './mounted-disposal.ts';
 import { resolveReactiveSnapshot } from './runtime-helpers.ts';
 import { CUSTOM_ELEMENT_CHILDREN_SYMBOL, type JsxRefCallback } from '../types/index.ts';
 import type { BindingDescriptor, DeferredPropertyBinding, LiveAttributePart } from './types.ts';
@@ -174,6 +174,9 @@ function applyDeferredPropertyBinding(
  * A callback that throws is reported through {@link reportRefError} and does not stop the flush. It still counts as
  * attached: the same callback is not called again on a later render, and detaching calls it with `null`, as for a
  * callback that returned nothing. Only a different callback, or dropping the ref, ends it.
+ *
+ * A callback that detaches its own part while it runs is not called with `null` mid-attach: its cleanup is recorded
+ * once it returns, and runs at once when the part is already detached.
  */
 function applyRefBinding(
 	element: Element,
@@ -193,13 +196,15 @@ function applyRefBinding(
 		element,
 		run: () => {
 			if (livePart.previousValue !== callback) return;
-			livePart.refCleanup = () => callback(null);
+			let cleanup = () => callback(null);
 			try {
-				const cleanup = callback(element);
-				if (typeof cleanup === 'function') livePart.refCleanup = cleanup;
+				const returned = callback(element);
+				if (typeof returned === 'function') cleanup = returned;
 			} catch (error) {
 				reportRefError(error);
 			}
+			if (livePart.previousValue === callback) livePart.refCleanup = cleanup;
+			else runRefCleanup(cleanup);
 		},
 	});
 }

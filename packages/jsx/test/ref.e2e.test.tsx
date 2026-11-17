@@ -492,6 +492,40 @@ describe('JSX ref', () => {
 			expect(errors).toEqual([boom]);
 		});
 
+		test('a callback that unmounts its own root while attaching is not called with null, and its cleanup still runs', async () => {
+			const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+			const container = document.createElement('div');
+			const root = createRoot(container);
+			const cleanup = vi.fn();
+			const ref = vi.fn(() => {
+				root.unmount();
+				return cleanup;
+			});
+
+			root.render(jsx('p', { ref }));
+
+			expect(ref).toHaveBeenCalledTimes(1);
+			expect(cleanup).toHaveBeenCalledTimes(1);
+		});
+
+		test('a callback that unmounts its own root while attaching and returns nothing is called with null once', async () => {
+			const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+			const container = document.createElement('div');
+			const root = createRoot(container);
+			const calls: string[] = [];
+
+			root.render(
+				jsx('p', {
+					ref: (node: Element | null) => {
+						calls.push(node ? 'attach' : 'detach');
+						if (node) root.unmount();
+					},
+				}),
+			);
+
+			expect(calls).toEqual(['attach', 'detach']);
+		});
+
 		test('a callback that throws on detach is reported, including after it threw on attach', async () => {
 			const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 			const container = document.createElement('div');

@@ -101,8 +101,13 @@ export function disposeLiveAttributePart(part: LiveAttributePart): void {
 export function detachRef(part: LiveAttributePart): void {
 	const cleanup = part.refCleanup;
 	part.refCleanup = undefined;
+	if (cleanup) runRefCleanup(cleanup);
+}
+
+/** Runs a `ref` cleanup, reporting an error it throws through {@link reportRefError}. */
+export function runRefCleanup(cleanup: () => void): void {
 	try {
-		cleanup?.();
+		cleanup();
 	} catch (error) {
 		reportRefError(error);
 	}
