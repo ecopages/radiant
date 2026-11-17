@@ -1,5 +1,25 @@
 # @ecopages/radiant-ui
 
+## 0.4.3
+
+### Patch Changes
+
+- [#765](https://github.com/ecopages/radiant/pull/765) [`cfa48c8`](https://github.com/ecopages/radiant/commit/cfa48c86b25798f7903ef4c8d29800cc9186b5ba) Thanks [@andeeplus](https://github.com/andeeplus)! - Fix `MediaController` reporting `loading` after a host removes the element's `src` and calls `load()`. The status is now `idle` as soon as `emptied` fires, instead of staying `loading` until the next media event, and `play()` does nothing while the element is emptied, as it already did for an element that never had a source.
+
+- [#757](https://github.com/ecopages/radiant/pull/757) [`c83ae91`](https://github.com/ecopages/radiant/commit/c83ae91fdcce6561cf60a32e65a97f19e961a519) Thanks [@andeeplus](https://github.com/andeeplus)! - Read catalog parts with `@ref`, `@refAll`, `@query(selector)` and `@queryAll(selector)` instead of the `@query` options object. Public types are unchanged; the one behavior change is that a host no longer reads a nested catalog host's same-named `data-ref` part.
+
+- [#753](https://github.com/ecopages/radiant/pull/753) [`cb88ca7`](https://github.com/ecopages/radiant/commit/cb88ca794a793c9823157c9a00d359a38f6f1c73) Thanks [@andeeplus](https://github.com/andeeplus)! - Add `PortalController.mountedNode`, the node it holds out right now. `PopoverController.getFloatingElement()` now returns the element `getFloating` finds or, while the popup is portaled and the owner cannot find it, the portal's mounted node, including during the exit transition. It no longer remembers the last element it saw, so a popup the owner replaced is never returned stale.
+
+    `select`, `combobox`, `date-field` and `date-range-picker` find their popup while it is portaled and during its exit transition, `rui-popover` reads its surface the same way, and `rui-hover-card` keeps `aria-label` on its content in sync with `content-label` while the content is portaled.
+
+- [`ca16ce5`](https://github.com/ecopages/radiant/commit/ca16ce5faabc45aa6b6cf8214fac80a3aa81b61c) Thanks [@andeeplus](https://github.com/andeeplus)! - `RuiButton` accepts a signal or `this.$` binding for `pressed`, so a toggle button's `aria-pressed` updates without re-rendering the host.
+
+- [#756](https://github.com/ecopages/radiant/pull/756) [`8de8063`](https://github.com/ecopages/radiant/commit/8de806399291a8d4a85e3ce24157530fc703ccd4) Thanks [@andeeplus](https://github.com/andeeplus)! - Stop `rui-toast` writing a stray `ref="toast"` attribute; its `data-ref="toast"` part is unchanged. `ref` is now a reserved JSX callback prop.
+- Updated dependencies [[`2d092aa`](https://github.com/ecopages/radiant/commit/2d092aac6f1989b620f06eab190b23e9a4a6c879), [`9080482`](https://github.com/ecopages/radiant/commit/9080482028469c43f82fe63819c0ca338e65d35b), [`64b9315`](https://github.com/ecopages/radiant/commit/64b9315dc4096c30fe850969abc3fbf8b0391678), [`a7f7fb6`](https://github.com/ecopages/radiant/commit/a7f7fb628f59c25a89b122468a5d86027022ef41), [`2d9d28a`](https://github.com/ecopages/radiant/commit/2d9d28a5296c4f86b7ff213f491687bba495c8e1), [`60da1ef`](https://github.com/ecopages/radiant/commit/60da1effde883d93033af1bcee38290cef983cd3), [`59f2b21`](https://github.com/ecopages/radiant/commit/59f2b21fe77e9404652635741559a0f10b3e8dad), [`c13d35b`](https://github.com/ecopages/radiant/commit/c13d35bd0e0d58060b680d59b59101e8052d29c4), [`655ad1a`](https://github.com/ecopages/radiant/commit/655ad1aebda2fe164bc84684b108eb96125e0051), [`8de8063`](https://github.com/ecopages/radiant/commit/8de806399291a8d4a85e3ce24157530fc703ccd4), [`0af1fcc`](https://github.com/ecopages/radiant/commit/0af1fccd55ea9773a05e73b50dea11d1305395da), [`12dccc4`](https://github.com/ecopages/radiant/commit/12dccc43210a4dee3ec1ae20001217f63c2bdcfb), [`01c1ecb`](https://github.com/ecopages/radiant/commit/01c1ecb3c1ea528991bb0158129034e43ef89e9a), [`7666b07`](https://github.com/ecopages/radiant/commit/7666b073437358215cd78ee962e79e5ffb982452), [`6e7265e`](https://github.com/ecopages/radiant/commit/6e7265edd7b260060cef5e948bd6dfd47778ee0b), [`9bce50d`](https://github.com/ecopages/radiant/commit/9bce50d1567b72b3846b147a2323e10843f5ec53), [`b198656`](https://github.com/ecopages/radiant/commit/b1986564e87f860ccf7509074ab0033779d3f8b8), [`53aac76`](https://github.com/ecopages/radiant/commit/53aac76223862a7845c24e2a11394154888318f3), [`c7add52`](https://github.com/ecopages/radiant/commit/c7add526084e4533b4dd34f14bf63ef9119e8eaf)]:
+    - @ecopages/radiant@0.11.0
+    - @ecopages/signals@0.11.0
+    - @ecopages/jsx@0.11.0
+
 ## 0.4.2
 
 ### Patch Changes
