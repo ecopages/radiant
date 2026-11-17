@@ -2,6 +2,7 @@ import {
 	CLASS_NAME_ATTRIBUTE_WARNING,
 	DEV_WARNINGS_ENABLED_SYMBOL,
 	DOM_RANGE_ANCHOR_DRIFT_WARNING,
+	FUNCTION_POSITION_WARNING,
 	DETACHED_INSERTION_POINT_WARNING,
 	HYDRATION_INVALID_BINDING_INDEX_WARNING,
 	HYDRATION_MALFORMED_BINDING_DESCRIPTOR_WARNING,
@@ -55,6 +56,9 @@ export function installDefaultDevWarningFormatter(): void {
 
 			case CLASS_NAME_ATTRIBUTE_WARNING:
 				return `Skipped className on <${detail ?? 'element'}>: it is not an HTML attribute. Use class.`;
+
+			case FUNCTION_POSITION_WARNING:
+				return `Skipped a function in ${detail ?? 'a position'}: a function is not written out as text. Pass a value or a signal.`;
 
 			default:
 				return '';

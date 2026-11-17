@@ -1,12 +1,12 @@
 import { createMarkupNodeLike, type JsxRenderable } from '@ecopages/jsx';
 import { state, type WritableSignal } from '@ecopages/signals';
-import type { ReactiveState } from '../core/reactivity-contract';
+import type { ReadonlyReactiveState } from '../core/reactivity-contract';
 import type { SsrSerializableHydrationBinding } from '../core/ssr-hydration-binding';
 import type { AttributeTypeConstant } from '../utils/attribute-utils';
 import { createHydrationScriptTag, findHydrationScript, parseHydrationPayload } from '../core/hydration-codec';
 
 type HostSignalOwner = {
-	registerReactiveMember<Value>(property: string, signal: ReactiveState<Value>): void;
+	registerReactiveMember<Value>(property: string, signal: ReadonlyReactiveState<Value>): void;
 };
 
 type HostSignalOptions<Value> = {

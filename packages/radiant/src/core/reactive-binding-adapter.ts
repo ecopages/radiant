@@ -4,17 +4,17 @@ import {
 	type SubscribableJsxValueWithAccess,
 } from '@ecopages/jsx';
 import { Computed, State, untrack } from '@ecopages/signals';
-import type { ReactiveState } from './reactivity-contract';
+import type { ReadonlyReactiveState } from './reactivity-contract';
 
 /**
- * Adapts a host member {@link ReactiveState} into the jsx binding shape.
+ * Adapts a host member {@link ReadonlyReactiveState} into the jsx binding shape.
  *
  * @remarks JSX member access delegates to `map`; replacing that method keeps both
  * member access and explicit projections tracked through the same computed value.
  * The separate module keeps JSX imports out of `reactive-host.ts`.
  */
 export function adaptReactiveStateToJsxBinding<Value extends JsxBindingSourceValue>(
-	state: Pick<ReactiveState<Value>, 'get' | 'subscribe'>,
+	state: ReadonlyReactiveState<Value>,
 ): SubscribableJsxValueWithAccess<Value> {
 	const binding = createSubscribableJsxValue({
 		getValue: () => state.get(),
@@ -32,9 +32,9 @@ export function adaptReactiveStateToJsxBinding<Value extends JsxBindingSourceVal
  * the source directly, so a read never writes to a signal.
  */
 function projectReactiveState<Value extends JsxBindingSourceValue, Out extends JsxBindingSourceValue>(
-	state: Pick<ReactiveState<Value>, 'get' | 'subscribe'>,
+	state: ReadonlyReactiveState<Value>,
 	project: (value: Value) => Out,
-): Pick<ReactiveState<Out>, 'get' | 'subscribe'> {
+): ReadonlyReactiveState<Out> {
 	const snapshot = new State(untrack(() => state.get()));
 	const computed = new Computed(() => project(snapshot.get()));
 	let subscribers = 0;
