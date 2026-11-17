@@ -305,7 +305,7 @@ describe('controller page examples', () => {
 
 		button.click();
 
-		await vi.waitFor(() => expect(button.getAttribute('data-copy-state')).toBe('copied'));
+		await until(() => expect(button.getAttribute('data-copy-state')).toBe('copied'));
 		expect(writeText).toHaveBeenCalledWith('pnpm add @ecopages/radiant-ui');
 		expect(status(root).textContent).toBe('Copied');
 	});
@@ -333,7 +333,7 @@ describe('controller page examples', () => {
 
 		record.click();
 
-		await vi.waitFor(() => expect(status(root).textContent).toContain('Microphone access was denied'));
+		await until(() => expect(status(root).textContent).toContain('Microphone access was denied'));
 		expect(record.disabled).toBe(false);
 	});
 });

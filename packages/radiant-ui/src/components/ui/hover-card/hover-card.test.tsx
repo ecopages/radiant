@@ -153,7 +153,7 @@ describe('RuiHoverCard', () => {
 		expect(document.activeElement).not.toBe(trigger);
 
 		document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-		vi.advanceTimersByTime(30);
+		vi.advanceTimersByTime(700);
 		await settled();
 
 		expect(document.activeElement).toBe(trigger);
@@ -161,13 +161,14 @@ describe('RuiHoverCard', () => {
 		expect(events).toEqual([true, false]);
 
 		trigger.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
-		vi.advanceTimersByTime(30);
+		vi.advanceTimersByTime(700);
 		await settled();
 		expect(content.hidden).toBe(true);
 		expect(events).toEqual([true, false]);
 
 		trigger.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
 		trigger.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+		vi.advanceTimersByTime(700);
 		await settled();
 		expect(content.hidden).toBe(false);
 
