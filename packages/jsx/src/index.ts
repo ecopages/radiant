@@ -16,6 +16,7 @@ export {
 	type JsxFragment,
 	isKeyedJsxValue,
 	isSubscribableJsxValue,
+	setUntrackedRead,
 } from './jsx-runtime.ts';
 
 export type { DelegatedEventName } from './factory/event-binding-policy.ts';

@@ -1,10 +1,13 @@
 import {
 	createSubscribableJsxValue,
+	setUntrackedRead,
 	type JsxBindingSourceValue,
 	type SubscribableJsxValueWithAccess,
 } from '@ecopages/jsx';
 import { Computed, State, untrack } from '@ecopages/signals';
 import type { ReadonlyReactiveState } from './reactivity-contract';
+
+setUntrackedRead(untrack);
 
 /**
  * Adapts a host member {@link ReadonlyReactiveState} into the jsx binding shape.

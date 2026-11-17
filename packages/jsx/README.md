@@ -390,6 +390,8 @@ for (const subscriber of subscribers) {
 
 That contract is intentionally small. The package does not impose a single state container, computed graph, or scheduler. It just gives the renderer a stable subscription surface for either signal-like values or explicit subscribable wrappers.
 
+The renderer also reads a bound value once while the tree is built, to choose a presence binding for a standard boolean attribute such as `hidden`. When the tree is built inside a computation that tracks signal reads, as a Radiant host's `render()` is, that read would make the computation depend on the value and re-run it on every change. `setUntrackedRead(untrack)` tells the renderer to make such reads through the signal library's `untrack`; `@ecopages/radiant` installs the one from `@ecopages/signals`. The setting is global, so every `@ecopages/jsx` entry sees it.
+
 Object-valued bindings expose typed nested members such as `binding.profile.name`. A member binding projects its source and updates when the source notifies. Mutating a nested plain object alone does not notify it.
 
 Arrays and other iterables render as a list of children. A generator, or any other one-shot iterator, is consumed once for that iterator object; the runtime reuses that snapshot while the object remains reachable, including across later renders. JSX `children` normalization consumes the iterator when the element is created, so pass a new iterator to each `jsx()` call if those children should be yielded again.
@@ -956,6 +958,7 @@ Main exports:
 - `createSubscribableJsxValue`
 - `isKeyedJsxValue`
 - `isSubscribableJsxValue`
+- `setUntrackedRead`
 - `CUSTOM_ELEMENT_CHILDREN_SYMBOL`
 - `CUSTOM_ELEMENT_TAG_NAME`
 - `getCustomElementTagName`

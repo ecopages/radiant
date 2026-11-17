@@ -1,4 +1,5 @@
-import { describe, expect, test } from 'vitest';
+import { afterEach, describe, expect, test } from 'vitest';
+import { jsx } from '../src/jsx-runtime.ts';
 import {
 	isIterableRenderable,
 	isJsxNodeLike,
@@ -7,6 +8,7 @@ import {
 	isTrustedMarkupNode,
 	mayEmitOrParseRawOuterHtml,
 	resolveReactiveSnapshot,
+	setUntrackedRead,
 } from '../src/types/renderable-guards.ts';
 import {
 	RADIANT_MARKUP_NODE_SYMBOL,
@@ -122,5 +124,43 @@ describe('renderable-guards', () => {
 			}),
 		).toBe('signal');
 		expect(resolveReactiveSnapshot('plain')).toBe('plain');
+	});
+
+	describe('setUntrackedRead', () => {
+		afterEach(() => {
+			delete (globalThis as Record<symbol, unknown>)[Symbol.for('@ecopages/jsx.untracked-read')];
+		});
+
+		test('reads a signal or binding through the installed reader', () => {
+			const reads: string[] = [];
+			let untracked = false;
+			setUntrackedRead((read) => {
+				untracked = true;
+				try {
+					return read();
+				} finally {
+					untracked = false;
+				}
+			});
+			const signal = {
+				get: () => {
+					reads.push(untracked ? 'untracked' : 'tracked');
+					return true;
+				},
+				subscribe: () => () => undefined,
+			};
+			const binding = {
+				[SUBSCRIBABLE_JSX_VALUE_SYMBOL]: true as const,
+				getValue: () => signal.get(),
+				subscribe: () => () => undefined,
+			};
+
+			expect(resolveReactiveSnapshot(signal)).toBe(true);
+			expect(resolveReactiveSnapshot(binding)).toBe(true);
+			jsx('p', { hidden: signal, inert: binding });
+
+			expect(reads.length).toBeGreaterThanOrEqual(4);
+			expect(reads).not.toContain('tracked');
+		});
 	});
 });
