@@ -3,6 +3,7 @@ import { RadiantController } from '../../src/core/radiant-controller';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { controller } from '../../src/decorators/controller';
 import { customElement } from '../../src/decorators/custom-element';
+import { onUpdated } from '../../src/decorators/on-updated';
 import { prop } from '../../src/decorators/prop';
 
 declare const __LEGACY_ENVIRONMENT__: boolean;
@@ -331,5 +332,55 @@ describe('the initializer and defaultValue warning', () => {
 		await Promise.resolve();
 
 		expect(warn).not.toHaveBeenCalled();
+	});
+});
+
+describe('a prop with a copying fromProperty that nothing wrote', () => {
+	const copy = { fromProperty: (value: unknown) => (Array.isArray(value) ? value.map(String) : []) };
+
+	@controller('prec-copying-controller')
+	class CopyingController extends RadiantController {
+		@prop({ type: Array, defaultValue: ['a'], transform: copy }) items!: string[];
+		changes: string[][] = [];
+		reported: string[][] = [];
+
+		@onUpdated('items')
+		onItems(changed: ReadonlySet<string>): void {
+			this.reported.push([...changed]);
+		}
+
+		override updated(changed: ReadonlySet<string>): void {
+			this.changes.push([...changed]);
+		}
+	}
+
+	class PlainCopyingController extends RadiantController {
+		@prop({ type: Array, defaultValue: ['a'], transform: copy }) items!: string[];
+		reported: string[][] = [];
+
+		@onUpdated('items')
+		onItems(changed: ReadonlySet<string>): void {
+			this.reported.push([...changed]);
+		}
+	}
+
+	test('keeps its value and reports nothing on first connect', () => {
+		const instance = new CopyingController(hostHolding());
+		const before = instance.items;
+		instance.connect();
+
+		expect(instance.items).toBe(before);
+		expect(instance.reported).toEqual([]);
+		expect(instance.changes.flat()).not.toContain('items');
+		instance.disconnect();
+	});
+
+	test('keeps its value and reports nothing on first connect without @controller', () => {
+		const instance = new PlainCopyingController(hostHolding());
+		instance.connect();
+
+		expect(instance.items).toEqual(['a']);
+		expect(instance.reported).toEqual([]);
+		instance.disconnect();
 	});
 });
