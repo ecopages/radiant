@@ -671,6 +671,20 @@ describe('MediaController progress and the frame loop', () => {
 });
 
 describe('MediaController destroy', () => {
+	it('does not apply a pending scrub to an element the controller attaches to again in the same task', async () => {
+		const harness = setup({ seekDebounce: 100 });
+		await ready(harness);
+		const writes = spyCurrentTime(harness.media);
+		fakeTimers();
+		harness.controller.scrub(2);
+
+		harness.controller.destroy();
+		harness.controller.attach();
+		vi.advanceTimersByTime(250);
+
+		expect(writes).toEqual([]);
+	});
+
 	it('stops the loop, cancels a pending scrub and pauses by default', async () => {
 		const harness = setup({ seekDebounce: 100 });
 		await ready(harness);
