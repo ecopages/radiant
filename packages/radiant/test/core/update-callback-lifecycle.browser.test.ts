@@ -8,7 +8,7 @@ import { onUpdated } from '../../src/decorators/on-updated';
 import { prop } from '../../src/decorators/prop';
 import { signal } from '../../src/decorators/signal';
 import { state } from '../../src/decorators/state';
-import { REACTIVE_HOST } from '../../src/core/reactive-host';
+import { REACTIVE_HOST, ReactiveHost } from '../../src/core/reactive-host';
 
 afterEach(() => {
 	document.body.innerHTML = '';
@@ -646,5 +646,99 @@ describe('update callbacks do not run while the host is not observed', () => {
 		controller.disconnect();
 		controller[REACTIVE_HOST].notifyUpdate('n', undefined, 1);
 		expect(seen).toEqual(['n']);
+	});
+});
+
+describe('update callbacks during the connect diff', () => {
+	const aSource = createCountedSource(1);
+	const bSource = createCountedSource(1);
+
+	class DiffController extends RadiantController {
+		@signal({ source: aSource.source })
+		a!: WritableSignal<number>;
+		@signal({ source: bSource.source })
+		b!: WritableSignal<number>;
+	}
+
+	function detached() {
+		aSource.source.set(1);
+		bSource.source.set(1);
+		const controller = new DiffController(document.createElement('section'));
+		controller.connect();
+		controller.disconnect();
+		aSource.source.set(2);
+		bSource.source.set(2);
+		return controller;
+	}
+
+	test('reach a member already visited when a later callback writes it', () => {
+		const controller = detached();
+		const seenA: number[] = [];
+		controller.registerUpdateCallback('a', () => seenA.push(aSource.source.get()));
+		controller.registerUpdateCallback('b', () => aSource.source.set(99));
+		controller.connect();
+
+		expect(seenA).toEqual([2, 99]);
+		controller.disconnect();
+	});
+
+	test('run once for a member written before its own diff', () => {
+		const controller = detached();
+		const seenB: number[] = [];
+		controller.registerUpdateCallback('a', () => bSource.source.set(50));
+		controller.registerUpdateCallback('b', () => seenB.push(bSource.source.get()));
+		controller.connect();
+
+		expect(seenB).toEqual([50]);
+		controller.disconnect();
+	});
+
+	test('stop for a member once a callback disconnected the host', () => {
+		const controller = detached();
+		const seen: string[] = [];
+		controller.registerUpdateCallback('a', () => {
+			seen.push('first');
+			controller.disconnect();
+		});
+		controller.registerUpdateCallback('a', () => seen.push('second'));
+		controller.connect();
+
+		expect(seen).toEqual(['first']);
+		expect(aSource.counter.listeners).toBe(0);
+	});
+
+	test('skip a callback that an earlier one unregistered', () => {
+		const controller = detached();
+		const seen: string[] = [];
+		let stopSecond = () => {};
+		controller.registerUpdateCallback('a', () => {
+			seen.push('first');
+			stopSecond();
+		});
+		stopSecond = controller.registerUpdateCallback('a', () => seen.push('second'));
+		controller.connect();
+
+		expect(seen).toEqual(['first']);
+		controller.disconnect();
+	});
+});
+
+describe('the stop function of observeMembers', () => {
+	test('does not end an observation that started after it was released', () => {
+		const host = new ReactiveHost({}, { defineProperty: Object.defineProperty }, () => {});
+		const member = host.createReactiveMember('n', 0);
+		const seen: number[] = [];
+		host.registerUpdateCallback('n', () => seen.push(member.get()));
+
+		const stale = host.observeMembers();
+		host.unobserveMembers();
+		const current = host.observeMembers();
+		stale();
+		member.set(1);
+
+		expect(seen).toEqual([1]);
+		current();
+		member.set(2);
+		expect(seen).toEqual([1]);
 	});
 });

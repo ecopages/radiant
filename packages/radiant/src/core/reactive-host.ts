@@ -193,15 +193,20 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	 * a detached or server-only host; update callbacks subscribe and release
 	 * with it.
 	 *
-	 * @returns Stops the observation this call started; a no-op when members were already observed.
+	 * @returns Stops the observation this call started; a no-op when members were already observed, and once
+	 * that observation has ended, so it cannot end a later one.
 	 */
 	public observeMembers(): () => void {
 		if (this.observing) {
 			return () => {};
 		}
 
-		this.startObservation();
-		return () => this.unobserveMembers();
+		const epoch = this.startObservation();
+		return () => {
+			if (epoch === this.observationEpoch) {
+				this.unobserveMembers();
+			}
+		};
 	}
 
 	/** Returns the epoch of the observation in force; a pass compares it to detect a disconnect underneath it. */
@@ -213,18 +218,18 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 		this.observing = true;
 		const epoch = ++this.observationEpoch;
 
+		for (const [propertyName, callbacks] of this.updateCallbacks) {
+			for (const update of callbacks.keys()) {
+				this.subscribeCallback(propertyName, update);
+			}
+		}
+
 		for (const [propertyName, signal] of this.reactiveMembers) {
 			if (epoch !== this.observationEpoch) {
 				break;
 			}
 
 			this.observeMember(propertyName, signal);
-		}
-
-		for (const [propertyName, callbacks] of this.updateCallbacks) {
-			for (const update of callbacks.keys()) {
-				this.subscribeCallback(propertyName, update);
-			}
 		}
 
 		return epoch;
@@ -454,9 +459,21 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 		}
 	}
 
+	/**
+	 * @remarks Runs a copy of the registrations, so one that registers another does not run it in this pass. A
+	 * callback unregistered by an earlier one is skipped, and the pass stops once observation changed under it.
+	 */
 	private runUpdateCallbacks(propertyName: string): void {
+		const epoch = this.observationEpoch;
+
 		for (const update of [...(this.updateCallbacks.get(propertyName)?.keys() ?? [])]) {
-			update();
+			if (epoch !== this.observationEpoch) {
+				break;
+			}
+
+			if (this.updateCallbacks.get(propertyName)?.has(update)) {
+				update();
+			}
 		}
 	}
 
@@ -491,7 +508,7 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 		callbacks.set(update, {
 			signal,
 			unsubscribe: signal.subscribe(() => {
-				if (!this.initializingReactiveFields.has(propertyName)) {
+				if (!this.initializingReactiveFields.has(propertyName) && !this.memberSnapshots.has(propertyName)) {
 					update();
 				}
 			}),
@@ -534,7 +551,10 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	 * members are observed (host connected, or SSR preparation). The subscription is
 	 * released on disconnect and re-established on connect; writes made before
 	 * connect or while detached do not run it, but it runs once on connect when the
-	 * member's value differs from its last observed value. Used by `@bindTo`, whose
+	 * member's value differs from its last observed value. The connect diff visits
+	 * members in registration order with every subscription already in place: a write
+	 * during it to a member already visited runs its callbacks like any write, and a
+	 * write to one not yet visited waits for that member's own diff, which covers it. Used by `@bindTo`, whose
 	 * DOM writes must land with the value like `$` bindings. Use
 	 * {@link registerUpdatedCallback} for procedures.
 	 */
