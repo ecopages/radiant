@@ -395,6 +395,12 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	 * Stores the member state, reports its changes to the host update cycle, and
 	 * subscribes synchronous callbacks registered before the member existed
 	 * (decorator initializer ordering).
+	 *
+	 * @remarks
+	 * Once the host has been observed, a member replaced while detached keeps the snapshot taken at disconnect, so the
+	 * next connect reports it when the value differs. Before the first connect the replacement is the member's initial
+	 * value: legacy decorators bootstrap members at construction and register them again at first connect, which is not
+	 * a change.
 	 */
 	private registerMember(propertyName: string, signal: ReadonlyReactiveState<unknown>): void {
 		this.reactiveMembers.set(propertyName, signal);
@@ -402,7 +408,7 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 
 		if (this.observing) {
 			this.observeMember(propertyName, signal);
-		} else if (!this.memberSnapshots.has(propertyName)) {
+		} else if (this.observationEpoch === 0 || !this.memberSnapshots.has(propertyName)) {
 			this.memberSnapshots.set(propertyName, signal.get());
 		}
 

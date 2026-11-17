@@ -4,6 +4,8 @@ import { RadiantController } from '../../src/core/radiant-controller';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { bindTo } from '../../src/decorators/bind-to';
 import { customElement } from '../../src/decorators/custom-element';
+import { onUpdated } from '../../src/decorators/on-updated';
+import { prop } from '../../src/decorators/prop';
 import { signal } from '../../src/decorators/signal';
 
 afterEach(() => {
@@ -357,11 +359,11 @@ describe('update callbacks follow a member replaced before connect or while deta
 		controller.disconnect();
 	});
 
-	test('compare a member replaced before the first connect with its first registration', () => {
+	test('take a member replaced before the first connect as its initial value', () => {
 		const different = setup();
 		different.controller.registerReactiveMember('n', createSignalState(7));
 		different.controller.connect();
-		expect(different.seen).toHaveLength(1);
+		expect(different.seen).toEqual([]);
 		different.controller.disconnect();
 
 		const equal = setup();
@@ -418,5 +420,51 @@ describe('a member registered by a callback during the connect pass', () => {
 
 		controller.disconnect();
 		expect(cSource.counter.listeners).toBe(0);
+	});
+});
+
+describe('a controller @prop on first connect without a write', () => {
+	class LabelController extends RadiantController {
+		@prop({ type: String }) label!: string;
+		runs: string[][] = [];
+
+		@onUpdated('label')
+		onLabel(changed: ReadonlySet<string>): void {
+			this.runs.push([...changed]);
+		}
+	}
+
+	class ItemsController extends RadiantController {
+		@prop({ type: Array, defaultValue: [] as number[] }) items!: number[];
+		runs: string[][] = [];
+
+		@onUpdated('items')
+		onItems(changed: ReadonlySet<string>): void {
+			this.runs.push([...changed]);
+		}
+	}
+
+	test('reports nothing for a type default', async () => {
+		const controller = new LabelController(document.createElement('div'));
+		const seen: unknown[] = [];
+		controller.registerUpdateCallback('label', () => seen.push(controller.label));
+		controller.connect();
+		await new Promise((resolve) => setTimeout(resolve));
+
+		expect(controller.runs).toEqual([]);
+		expect(seen).toEqual([]);
+		controller.disconnect();
+	});
+
+	test('reports nothing for a value the host held before connect', async () => {
+		const host = document.createElement('div') as HTMLElement & { items?: number[] };
+		host.items = [1, 2];
+		const controller = new ItemsController(host);
+		controller.connect();
+		await new Promise((resolve) => setTimeout(resolve));
+
+		expect(controller.items).toEqual([1, 2]);
+		expect(controller.runs).toEqual([]);
+		controller.disconnect();
 	});
 });
