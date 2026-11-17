@@ -177,7 +177,8 @@ function applyDeferredPropertyBinding(
  *
  * A callback that detaches its own part while it runs is not called with `null` mid-attach: its cleanup is recorded
  * once it returns, and runs at once when the part was detached meanwhile, even if the same callback was bound again
- * and attached in the meantime, whose own cleanup is the one kept.
+ * and attached in the meantime, whose own cleanup is the one kept. With no cleanup returned, the `null` call for that
+ * detach is skipped when the part is bound to the same callback again, which would otherwise end up holding `null`.
  */
 function applyRefBinding(
 	element: Element,
@@ -199,15 +200,16 @@ function applyRefBinding(
 		element,
 		run: () => {
 			if (livePart.refEpoch !== epoch) return;
-			let cleanup = () => callback(null);
+			let returned: (() => void) | undefined;
 			try {
-				const returned = callback(element);
-				if (typeof returned === 'function') cleanup = returned;
+				const result = callback(element);
+				if (typeof result === 'function') returned = result;
 			} catch (error) {
 				reportRefError(error);
 			}
-			if (livePart.refEpoch === epoch) livePart.refCleanup = cleanup;
-			else runRefCleanup(cleanup);
+			if (livePart.refEpoch === epoch) livePart.refCleanup = returned ?? (() => callback(null));
+			else if (returned) runRefCleanup(returned);
+			else if (livePart.previousValue !== callback) runRefCleanup(() => callback(null));
 		},
 	});
 }

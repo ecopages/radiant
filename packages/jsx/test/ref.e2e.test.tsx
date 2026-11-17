@@ -571,6 +571,27 @@ describe('JSX ref', () => {
 			expect(attachedAfterSet).toBe(true);
 		});
 
+		test('a callback that drops and re-adds itself while attaching and returns nothing is not left holding null', async () => {
+			const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+			const container = document.createElement('div');
+			document.body.append(container);
+			const root = createRoot(container);
+			let current: Element | null = null;
+			let attaches = 0;
+			const ref = (node: Element | null) => {
+				current = node;
+
+				if (node && ++attaches === 1) {
+					root.render(jsx('p', { ref: null as never }));
+					root.render(jsx('p', { ref }));
+				}
+			};
+
+			root.render(jsx('p', { ref }));
+
+			expect(current).toBe(container.querySelector('p'));
+		});
+
 		test('a later change of a signal child attaches its new ref on its own', async () => {
 			const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 			const container = document.createElement('div');
