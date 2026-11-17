@@ -1,3 +1,4 @@
+import { getCustomElementTagName } from '@ecopages/jsx';
 import {
 	createReactivePropertyMapping,
 	reflectsBooleanAsValue,
@@ -40,6 +41,16 @@ export class ReactivePropertyState {
 		for (const propertyName of Object.getOwnPropertyNames(host)) {
 			this.preUpgradePropertyValues.set(propertyName, Reflect.get(host, propertyName));
 		}
+	}
+
+	/**
+	 * @remarks The class's tag, not `localName`: on the server a prop set from JSX reflects before the host's tag
+	 * is aligned, while its `localName` is still `div`.
+	 */
+	private describeHost(): string {
+		const tagName = getCustomElementTagName(this.host.constructor as CustomElementConstructor);
+
+		return `<${tagName ?? this.host.localName}>`;
 	}
 
 	/** Whether the host carried an own property named `propertyName` when it was constructed (assigned before upgrade). */
@@ -102,7 +113,7 @@ export class ReactivePropertyState {
 			undefined,
 			reflect,
 			transform,
-			`<${this.host.localName}>`,
+			() => this.describeHost(),
 		);
 		propertyMapping.defaultValue = defaultValue;
 		const initialValue = this.resolveInitialValue(propertyName, options, attributeKey, propertyMapping.converter);

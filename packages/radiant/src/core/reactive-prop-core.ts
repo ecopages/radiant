@@ -161,7 +161,7 @@ export function createPropConverter<T>(
 	type: AttributeTypeConstant,
 	transform?: PropTransform<T>,
 	attributeName?: string,
-	owner?: string,
+	owner?: string | (() => string),
 ): ReactiveProperty<T>['converter'] {
 	return {
 		fromAttribute: (value) => {
@@ -192,7 +192,7 @@ export function createReactivePropertyMapping<T>(
 	initialValue: T | undefined,
 	reflect = false,
 	transform?: PropTransform<T>,
-	owner?: string,
+	owner?: string | (() => string),
 ): ReactiveProperty<T> {
 	return {
 		type,
