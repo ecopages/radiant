@@ -86,6 +86,7 @@ See [Component SSR](/docs/ssr/component-ssr) for Radiant adapter helpers (`rende
 ## Server Rendering Rules
 
 - `on:*` and `on-native:*` bindings are skipped in raw HTML output
+- `ref` callbacks never run on the server and are never written out
 - `prop:*` bindings are applied as properties on server-renderable custom element instances
 - plain text content is escaped
 - iterables are serialized by walking their children in order

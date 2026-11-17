@@ -42,7 +42,12 @@ export function createServerRenderedCustomElement<Props extends object>(
 		return undefined;
 	}
 
-	const { children, key: _key, ...rawAttributes } = props as JsxPropsWithChildren & Record<string, unknown>;
+	const {
+		children,
+		key: _key,
+		ref: _ref,
+		...rawAttributes
+	} = props as JsxPropsWithChildren & Record<string, unknown>;
 
 	return {
 		[RADIANT_MARKUP_NODE_SYMBOL]: true,

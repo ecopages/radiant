@@ -1,8 +1,9 @@
 import { resolveAttributeText } from '../factory/attribute-normalize.ts';
 import { attachEventBindingListener, detachEventBindingListener, isEventListenerObject } from './event-delegation.ts';
 import { getElementAttributeValue, removeElementAttribute, setElementAttributeValue } from './namespaces.ts';
+import { detachRef } from './mounted-disposal.ts';
 import { resolveReactiveSnapshot } from './runtime-helpers.ts';
-import { CUSTOM_ELEMENT_CHILDREN_SYMBOL } from '../types/index.ts';
+import { CUSTOM_ELEMENT_CHILDREN_SYMBOL, type JsxRefCallback } from '../types/index.ts';
 import type { BindingDescriptor, DeferredPropertyBinding, LiveAttributePart } from './types.ts';
 
 type ApplyBindingOptions = {
@@ -65,6 +66,10 @@ export function applyBindingToElement(
 			applyNativeEventBinding(element, binding.name, resolvedValue, livePart);
 			return;
 		}
+
+		case 'ref':
+			applyRefBinding(element, resolvedValue, options.deferredProperties, livePart);
+			return;
 
 		case 'prop':
 			applyDeferredPropertyBinding(element, binding.name, resolvedValue, options.deferredProperties, livePart);
@@ -158,6 +163,34 @@ function applyDeferredPropertyBinding(
 ): void {
 	deferredProperties.push({ element, name, value });
 	updatePreviousValue(livePart, value);
+}
+
+/**
+ * @remarks The callback attaches with the deferred property writes, so it sees its node in the page. The queued
+ * attach checks that the part still holds the callback, so a part replaced or disposed before the queue runs does not
+ * attach a stale one. A value that is not a function detaches the current ref and binds nothing.
+ */
+function applyRefBinding(
+	element: Element,
+	value: unknown,
+	deferredProperties: DeferredPropertyBinding[],
+	livePart: LiveAttributePart | undefined,
+): void {
+	if (!livePart) return;
+	const callback = typeof value === 'function' ? (value as JsxRefCallback) : undefined;
+	if (livePart.previousValue === callback) return;
+
+	detachRef(livePart);
+	livePart.previousValue = callback;
+	if (!callback) return;
+
+	deferredProperties.push({
+		run: () => {
+			if (livePart.previousValue !== callback) return;
+			const cleanup = callback(element);
+			livePart.refCleanup = typeof cleanup === 'function' ? cleanup : () => callback(null);
+		},
+	});
 }
 
 function updatePreviousValue(livePart: LiveAttributePart | undefined, value: unknown): void {

@@ -32,6 +32,7 @@ The package surface is intentionally split by use case:
 - primary DOM event bindings with `on:*`
 - explicit native escape-hatch bindings with `on-native:*`
 - explicit property bindings with `prop:*`
+- `ref` callbacks that hand a view the nodes it created
 - boolean, `data`, `aria`, `class`, `classes`, and `style` normalization (`className` is a type error and is skipped on native elements; use `class`)
 - a function in a child (of a native element or a Fragment), `attr`, `bool`, `class`, `classes` or `style` position, a `style` object value, or one that a signal or subscribable resolves to, is skipped, never written out as its source; `prop:`, event handlers and a custom element's properties keep a function as a value
 - direct DOM mounting with `createRoot(...)`
@@ -635,7 +636,7 @@ For that fragment, attribute markers are allocated like this:
 
 Iterable hydration assigns each child `bindingBaseIndex` by counting prior siblings with `countHydrationMarkers(...)`, so sibling templates reuse the same numbering that `renderToString(..., { mode: 'hydrate' })` wrote into the HTML.
 
-Attribute markers cover dynamic attributes and listeners. Subscribable child text such as `{boundCount}` does not use `data-radiant-jsx-bind-*`; template compilation places comment markers around the child range, and iterable hydration reconnects those ranges during `hydrateTemplateInstance(...)`. Children of `textarea`, `title`, `style`, and `script` cannot use comment anchors — Chromium treats those comments as literal text — so compilation uses a locator attribute that is stripped from the blueprint, and hydration reconnects those slots as text-content parts.
+Attribute markers cover dynamic attributes, listeners and `ref` callbacks (`ref:ref`, with no value). Subscribable child text such as `{boundCount}` does not use `data-radiant-jsx-bind-*`; template compilation places comment markers around the child range, and iterable hydration reconnects those ranges during `hydrateTemplateInstance(...)`. Children of `textarea`, `title`, `style`, and `script` cannot use comment anchors — Chromium treats those comments as literal text — so compilation uses a locator attribute that is stripped from the blueprint, and hydration reconnects those slots as text-content parts.
 
 A hyphenated tag is a custom-element subtree root, registered or not. The serializer and the client marker counter share that rule, so a nested custom element's own parts never take indexes from the parent namespace. An unregistered hyphenated tag serializes without parent markers. Nested registered hosts fork a fresh binding namespace during SSR so each host hydrates independently; see `withServerHydrationBindingState(...)` and framework bridges such as Radiant's element SSR hook. JSX children applied to a nested custom element as light DOM are serialized as plain markup without markers; when the server host matches the authored template, parent hydration reconnects that light DOM in place. A hook that hands an element its children as a value (see [Children as a value](#children-as-a-value)) lets the element serialize and hydrate them in its own namespace instead.
 
@@ -822,6 +823,23 @@ const Card = ({ title, children }: CardProps) => (
 
 Use `prop:*` when the target must receive a real property value instead of a serialized attribute, or when you want to be explicit even though custom elements already default most unprefixed names to properties.
 
+### Refs
+
+```tsx
+<input ref={(node) => { this.input = node; }} />
+<canvas ref={(node) => { if (node) return observe(node); }} />
+```
+
+`ref` is reserved on every intrinsic element, custom elements included. Its value is a callback typed per element as `JsxRefCallback<HTMLInputElement>`:
+
+- It is called with the node once the node is in the page: on a client render, and on hydration with the server node the hydrator adopted, not a clone.
+- If it returns a function, that function runs when the element is removed or the callback is replaced. Otherwise the callback is called once more with `null` at that point, so its parameter is `Element | null`. A callback must return nothing or a function: the types reject an arrow that assigns a field and so returns the node, and at runtime any other return value is ignored. A `ref` value that is not a function binds nothing.
+- Passing the same callback on a re-render does nothing; passing another detaches the old one and attaches the new one. A keyed move keeps the node and does not call it again. Dropping `ref` detaches it, and `ref={undefined}` binds nothing.
+- It never runs on the server and is never written out: no `ref` attribute or function source reaches the DOM or the HTML, in plain or hydrate mode. A hydrate-mode element carries a `data-radiant-jsx-bind-N="ref:ref"` marker, like any client-only binding, and the hydrator removes it. The marker exists only while `ref` is not `undefined`, so pass it on the server and the client alike: when only one side has it, the later markers of that view are numbered differently, the hydrator does not remove them, and they stay in the page.
+- It is an ordinary prop on a function component: the component receives it, and passes it on to an element or ignores it.
+
+A ref is not a signal, and a re-render does not run it again. Use it to own nodes a view wrote into another host's children, or to hand a callback to descendants through props or context.
+
 ### Structured `data`, `aria`, `class`, and `style`
 
 ```tsx
@@ -952,6 +970,7 @@ Key types:
 - `JsxRoot`
 - `JSX_PROPS` (type-only; import with `import type`)
 - `JsxPublicProps`
+- `JsxRefCallback`
 - `SubscribableJsxValue`
 - `SubscribableJsxValueWithAccess`
 - `TemplateResultLike`

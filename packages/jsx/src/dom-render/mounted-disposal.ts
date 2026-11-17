@@ -62,6 +62,12 @@ export function disposeLiveTemplateParts(parts: readonly LiveTemplatePart[]): vo
 export function disposeLiveAttributePart(part: LiveAttributePart): void {
 	releaseLiveAttributeSubscription(part);
 
+	if (part.binding.kind === 'ref') {
+		detachRef(part);
+		part.previousValue = undefined;
+		return;
+	}
+
 	if (
 		!part.previousValue ||
 		(!isEventListenerObject(part.previousValue) && typeof part.previousValue !== 'function')
@@ -85,6 +91,13 @@ export function disposeLiveAttributePart(part: LiveAttributePart): void {
 	}
 
 	part.previousValue = undefined;
+}
+
+/** Runs the cleanup of an attached `ref` part, if it has one. */
+export function detachRef(part: LiveAttributePart): void {
+	const cleanup = part.refCleanup;
+	part.refCleanup = undefined;
+	cleanup?.();
 }
 
 /** Ends the current reactive ownership epoch for a live attribute or text-content part. */

@@ -79,6 +79,8 @@ if (container instanceof HTMLElement) {
 
 If the target does not contain hydration markers, counting those inside nested custom elements, the runtime falls back to a normal client render.
 
+On hydration, a `ref` callback receives the server node that was adopted, never a clone. See [Refs](/docs/jsx/authoring#refs).
+
 For render-owning `RadiantElement` custom-element hosts, there is one extra gate: the explicit Radiant hydrator must also be installed. See [Hydration](/docs/ssr/hydration).
 
 ## Checking SSR Output
