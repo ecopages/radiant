@@ -1,5 +1,6 @@
 import type { WritableSignal } from '@ecopages/signals';
 import type { REACTIVE_HOST, ReactiveHostLike } from '../../core/reactive-host';
+import { isSkippedFunction } from '../../helpers/dev-warnings';
 import { createQuery, type QueryHostTarget } from '../../helpers/create-query';
 import { resolveHostElementOrNull } from '../../helpers/resolve-host-element';
 
@@ -146,7 +147,7 @@ function compileWrite(target: BindToTarget): (element: Element, value: unknown) 
 	if ('attr' in target) {
 		const { attr } = target;
 		return (element, value) => {
-			if (value == null) {
+			if (value == null || isSkippedFunction(value, `@bindTo attr "${attr}"`)) {
 				element.removeAttribute(attr);
 				return;
 			}
@@ -163,6 +164,6 @@ function compileWrite(target: BindToTarget): (element: Element, value: unknown) 
 	}
 
 	return (element, value) => {
-		element.textContent = value == null ? '' : String(value);
+		element.textContent = value == null || isSkippedFunction(value, '@bindTo text') ? '' : String(value);
 	};
 }

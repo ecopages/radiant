@@ -29,3 +29,24 @@ export function warnOnceInDevelopment(key: string, message: () => string | undef
 		}
 	} catch {}
 }
+
+/**
+ * Returns `true` when `value` is a function that a text or attribute sink must render as nothing, and warns once
+ * per `position` in development.
+ *
+ * @remarks
+ * Stringified, a function writes its source code into the DOM or the server HTML. Sinks that hold a function as a
+ * value (property bindings, event handlers) do not call this. The warning sits inside the same
+ * `"production"`-stripped block as {@link warnOnceInDevelopment}, so the text does not ship.
+ */
+export function isSkippedFunction(value: unknown, position: string): boolean {
+	if (typeof value !== 'function') return false;
+	try {
+		if (process.env.NODE_ENV !== 'production') {
+			warnOnceInDevelopment(`function:${position}`, () => {
+				return `[@ecopages/radiant] Skipped a function in ${position}: a function is not written out as text. Pass a value instead.`;
+			});
+		}
+	} catch {}
+	return true;
+}

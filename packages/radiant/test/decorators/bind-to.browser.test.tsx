@@ -1,5 +1,5 @@
 import { waitFor } from '@testing-library/dom';
-import { afterEach, describe, expect, expectTypeOf, test } from 'vitest';
+import { afterEach, describe, expect, expectTypeOf, test, vi } from 'vitest';
 import { RadiantController } from '../../src/core/radiant-controller';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { bindTo } from '../../src/decorators/bind-to';
@@ -225,6 +225,44 @@ describe('@bindTo', () => {
 		await connected(element);
 
 		expect(out.textContent).toBe('seeded');
+	});
+
+	test('renders a function value as nothing for attr and text, and warns once per position', async () => {
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+		const handler = () => 'handled';
+
+		@customElement('bind-to-function-value')
+		class BindToFunctionValue extends RadiantElement {
+			@state
+			@bindTo([{ attr: 'data-bound-fn' }, { ref: 'label', text: true }, { ref: 'label', prop: 'handler' }])
+			value: unknown = handler;
+		}
+
+		const element = document.createElement('bind-to-function-value') as BindToFunctionValue;
+		const label = document.createElement('span');
+		label.setAttribute('data-ref', 'label');
+		label.textContent = 'seeded';
+		element.append(label);
+		await connected(element);
+
+		expect(element.hasAttribute('data-bound-fn')).toBe(false);
+		expect(label.textContent).toBe('');
+		expect((label as unknown as { handler: unknown }).handler).toBe(handler);
+
+		element.value = 'ready';
+		expect(element.getAttribute('data-bound-fn')).toBe('ready');
+		expect(label.textContent).toBe('ready');
+
+		element.value = handler;
+		element.value = () => 'other';
+		expect(element.hasAttribute('data-bound-fn')).toBe(false);
+		expect(label.textContent).toBe('');
+
+		const messages = warn.mock.calls.map((call) => String(call[0]));
+		expect(messages.filter((message) => message.includes('@bindTo attr "data-bound-fn"'))).toHaveLength(1);
+		expect(messages.filter((message) => message.includes('@bindTo text'))).toHaveLength(1);
+		expect(messages.some((message) => message.includes('handled'))).toBe(false);
+		warn.mockRestore();
 	});
 
 	test('throws when a target lists more than one write kind', () => {

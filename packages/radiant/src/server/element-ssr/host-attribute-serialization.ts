@@ -131,7 +131,7 @@ function appendReactivePropDefinitionAttributes(
 		const serialized = transform?.toAttribute
 			? transform.toAttribute(currentValue as never)
 			: writeAttributeValue(currentValue, type);
-		if (transform?.toAttribute && (serialized == null || serialized === '')) {
+		if (serialized == null || (transform?.toAttribute && serialized === '')) {
 			continue;
 		}
 

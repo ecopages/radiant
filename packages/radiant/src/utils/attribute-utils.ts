@@ -1,4 +1,5 @@
 import type { RadiantElement } from '../core/radiant-element';
+import { isSkippedFunction } from '../helpers/dev-warnings';
 
 export type AttributeTypeConstant = typeof Array | typeof Boolean | typeof Number | typeof Object | typeof String;
 
@@ -186,10 +187,12 @@ export type ReadAttributeValueReturnType = ReturnType<typeof readAttributeValue>
  *
  * @param value - The value to be written.
  * @param type - The type of the attribute.
- * @returns The written attribute value.
+ * @returns The written attribute value, or `null` when `value` is a function: it is skipped, never written out as
+ * its source.
  * @throws {TypeError} If the provided type is unknown.
  */
-export function writeAttributeValue(value: unknown, type: AttributeTypeConstant) {
+export function writeAttributeValue(value: unknown, type: AttributeTypeConstant): string | null {
+	if (isSkippedFunction(value, 'a reflected attribute')) return null;
 	const writerType = parseAttributeTypeConstant(type);
 	if (!writerType) throw new TypeError(`[radiant-element] Unknown type "${type}"`);
 	const writer: Writer = writers[writerType] ?? writers.default ?? writeString;

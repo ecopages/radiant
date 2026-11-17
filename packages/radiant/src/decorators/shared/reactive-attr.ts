@@ -1,5 +1,6 @@
 import type { ReactiveHostLike } from '../../core/reactive-host';
 import { validateReactivePropertyDefault } from '../../core/reactive-prop-core';
+import { isSkippedFunction } from '../../helpers/dev-warnings';
 import { resolveHostElement } from '../../helpers/resolve-host-element';
 import {
 	defaultValueForType,
@@ -92,11 +93,13 @@ function writeReactiveAttributeValue<T>(
 ): void {
 	const attributeValue = options.converter?.toAttribute
 		? options.converter.toAttribute(value)
-		: options.type
-			? writeAttributeValue(value, options.type)
-			: value == null
-				? null
-				: String(value);
+		: isSkippedFunction(value, `@attr "${attributeName}"`)
+			? null
+			: options.type
+				? writeAttributeValue(value, options.type)
+				: value == null
+					? null
+					: String(value);
 
 	if (attributeValue === null) {
 		target.removeAttribute(attributeName);
