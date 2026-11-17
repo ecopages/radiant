@@ -231,7 +231,7 @@ function normalizeRenderedControllerHostAttributes<TController extends RadiantCo
 	appendRenderedControllerStructuredAttributes(normalizedAttributes, 'aria', host?.aria);
 	appendRenderedControllerFlatAttributes(normalizedAttributes, options.attributes);
 
-	const controllerIdentifier = getControllerIdentifier(Controller as unknown as CustomElementConstructor);
+	const controllerIdentifier = getControllerIdentifier(Controller);
 
 	if (controllerIdentifier && normalizedAttributes[CONTROLLER_ATTRIBUTE] == null) {
 		normalizedAttributes[CONTROLLER_ATTRIBUTE] = controllerIdentifier;

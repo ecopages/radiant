@@ -1,5 +1,5 @@
 import { waitFor } from '@testing-library/dom';
-import { describe, expect, test, vi } from 'vitest';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 import { RadiantController } from '../../src/core/radiant-controller';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { attr } from '../../src/decorators/attr';
@@ -125,7 +125,18 @@ class AttrFunctionValue extends RadiantElement {
 	@attr({ source: 'data-fn' }) value?: string;
 }
 
+@customElement('attr-function-value-other-test')
+class AttrFunctionValueOther extends RadiantElement {
+	@attr({ source: 'data-fn' }) value?: string;
+}
+
+class AttrFunctionController extends RadiantController {
+	@attr({ source: 'data-fn' }) value?: string;
+}
+
 describe('@attr function values', () => {
+	afterEach(() => vi.restoreAllMocks());
+
 	test('removes the attribute instead of writing the function source, and warns once', async () => {
 		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 		const element = document.createElement('attr-function-value-test') as AttrFunctionValue;
@@ -137,9 +148,37 @@ describe('@attr function values', () => {
 
 		await waitFor(() => expect(element.hasAttribute('data-fn')).toBe(false));
 		const messages = warn.mock.calls.map((call) => String(call[0]));
-		expect(messages.filter((message) => message.includes('@attr "data-fn"'))).toHaveLength(1);
+		expect(messages.filter((message) => message.includes('@attr "data-fn" of AttrFunctionValue:'))).toHaveLength(1);
 		expect(messages.some((message) => message.includes('secret source'))).toBe(false);
-		warn.mockRestore();
+	});
+
+	test('names the host, so a class with the same attribute as another warns on its own', () => {
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+		const first = document.createElement('attr-function-value-test') as AttrFunctionValue;
+		const other = document.createElement('attr-function-value-other-test') as AttrFunctionValueOther;
+		document.body.append(first, other);
+
+		first.value = (() => 'secret source') as unknown as string;
+		other.value = (() => 'secret source') as unknown as string;
+		other.value = (() => 'other source') as unknown as string;
+
+		const messages = warn.mock.calls.map((call) => String(call[0]));
+		expect(
+			messages.filter((message) => message.includes('@attr "data-fn" of AttrFunctionValueOther:')),
+		).toHaveLength(1);
+	});
+
+	test('names a controller host class', () => {
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+		const controller = new AttrFunctionController(document.createElement('div'));
+		controller.connect();
+
+		controller.value = (() => 'secret source') as unknown as string;
+
+		const messages = warn.mock.calls.map((call) => String(call[0]));
+		expect(
+			messages.filter((message) => message.includes('@attr "data-fn" of AttrFunctionController:')),
+		).toHaveLength(1);
 	});
 });
 

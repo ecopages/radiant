@@ -85,7 +85,12 @@ function readReactiveAttributeValue<T>(
 	return resolveAttributeValue(resolveAttributeTarget(host).getAttribute(attributeName), options);
 }
 
+/**
+ * @remarks The function-value warning labels the host by its class name, which a minified development build
+ * mangles.
+ */
 function writeReactiveAttributeValue<T>(
+	host: object,
 	target: Element,
 	attributeName: string,
 	value: T,
@@ -93,7 +98,7 @@ function writeReactiveAttributeValue<T>(
 ): void {
 	const attributeValue = options.converter?.toAttribute
 		? options.converter.toAttribute(value)
-		: isSkippedFunction(value, `@attr "${attributeName}"`)
+		: isSkippedFunction(value, () => `@attr "${attributeName}" of ${host.constructor.name}`)
 			? null
 			: options.type
 				? writeAttributeValue(value, options.type)
@@ -140,7 +145,7 @@ export function installReactiveAttribute<TBindings extends object, TValue>(
 		},
 		set(newValue: TValue) {
 			const target = resolveAttributeTarget(this as ReactiveAttributeHostLike);
-			writeReactiveAttributeValue(target, attributeName, newValue, options);
+			writeReactiveAttributeValue(this, target, attributeName, newValue, options);
 			signal.set(readReactiveAttributeValue(this as ReactiveAttributeHostLike, attributeName, options));
 		},
 		enumerable: true,

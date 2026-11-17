@@ -4,7 +4,7 @@ import { HostSsrRegistry } from './host-ssr-registry';
 import { adaptReactiveStateToJsxBinding } from './reactive-binding-adapter';
 import { state } from '@ecopages/signals';
 import { RenderWarnings } from './render-warnings';
-import type { ReactiveState, ReadonlyReactiveState } from './reactivity-contract';
+import { isWritableState, type ReactiveState, type ReadonlyReactiveState } from './reactivity-contract';
 import type {
 	ReactiveAccessorDefinition,
 	ReactiveBindingValue,
@@ -103,8 +103,13 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	public readonly bindings: ReactiveBindings<Bindings>;
 	public readonly $: ReactiveBindings<Bindings>;
 	public readonly ssrRegistry = new HostSsrRegistry();
-	/** Development diagnostics for whole-render reads; absent in a production build. */
-	public readonly renderWarnings?: RenderWarnings;
+	/**
+	 * Development diagnostics for whole-render reads; absent in a production build.
+	 *
+	 * @remarks Each hook that uses it repeats the `process.env.NODE_ENV` guard inside its own `try` on purpose: a
+	 * shared helper is not reliably dropped from a production bundle, and the dist test checks the literal guard.
+	 */
+	private readonly renderWarnings?: RenderWarnings;
 
 	private reactiveMembers = new Map<string, ReadonlyReactiveState<unknown>>();
 	/** Names with a field accessor, which closes over the member it was defined with. */
@@ -353,7 +358,7 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	public getWritableMember<T = unknown>(propertyName: string): ReactiveState<T> | undefined {
 		const member = this.reactiveMembers.get(propertyName);
 
-		if (member && typeof (member as Partial<ReactiveState<unknown>>).set !== 'function') {
+		if (member && !isWritableState(member)) {
 			throw new Error(
 				`[@ecopages/radiant] "${propertyName}" is already registered as a read-only member and cannot be redeclared as a writable field.`,
 			);
@@ -382,7 +387,7 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	 * @remarks Replacing a writable member with another writable one is unchanged and not guarded.
 	 */
 	public registerReactiveMember<T>(propertyName: string, signal: ReadonlyReactiveState<T>): void {
-		if (this.accessorNames.has(propertyName) && typeof (signal as Partial<ReactiveState<T>>).set !== 'function') {
+		if (this.accessorNames.has(propertyName) && !isWritableState(signal)) {
 			throw new Error(
 				`[@ecopages/radiant] "${propertyName}" is a writable field and cannot be replaced by a read-only member; register a writable state or use another name.`,
 			);
@@ -451,7 +456,10 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	}
 
 	private memberChanged(propertyName: string): void {
-		this.renderWarnings?.noteChange(propertyName);
+		try {
+			if (process.env.NODE_ENV !== 'production') this.renderWarnings?.noteChange(propertyName);
+		} catch {}
+
 		this.onMemberChanged(propertyName);
 	}
 
@@ -511,7 +519,18 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 		}
 
 		const source = signal as ReadonlyReactiveState<ReactiveBindingValue<Bindings, Property>>;
-		const binding = adaptReactiveStateToJsxBinding(this.renderWarnings?.observeBinding(key, source) ?? source);
+		let observed: Pick<
+			ReadonlyReactiveState<ReactiveBindingValue<Bindings, Property>>,
+			'get' | 'subscribe'
+		> = source;
+
+		try {
+			if (process.env.NODE_ENV !== 'production' && this.renderWarnings) {
+				observed = this.renderWarnings.observeBinding(key, source);
+			}
+		} catch {}
+
+		const binding = adaptReactiveStateToJsxBinding(observed);
 
 		this.jsxBindings.set(key, binding);
 		return binding;
@@ -559,10 +578,16 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	 */
 	public defineReactiveAccessor<T>(propertyName: string, options: ReactiveAccessorDefinition<T>): void {
 		this.markFieldAccessor(propertyName);
-		const read = () => options.signal.get();
+		let get = () => options.signal.get();
+
+		try {
+			if (process.env.NODE_ENV !== 'production' && this.renderWarnings) {
+				get = this.renderWarnings.trackReads(propertyName, get);
+			}
+		} catch {}
 
 		this.access.defineProperty(this.host, propertyName, {
-			get: this.renderWarnings ? this.renderWarnings.trackReads(propertyName, read) : read,
+			get,
 			set: (newValue: T) => {
 				const next = options.fromProperty ? options.fromProperty(newValue) : newValue;
 				options.signal.set(next);

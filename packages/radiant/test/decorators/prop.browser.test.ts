@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test, vi } from 'vitest';
+import { beforeEach, describe, expect, onTestFinished, test, vi } from 'vitest';
 import { RadiantController } from '../../src/core/radiant-controller';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { customElement } from '../../src/decorators/custom-element';
@@ -206,27 +206,62 @@ describe('@prop', () => {
 	describe('function values', () => {
 		test('a reflected prop drops the attribute instead of writing the function source', async () => {
 			const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+			onTestFinished(() => warn.mockRestore());
 
 			@customElement('my-reactive-function-reflect')
 			class MyReactiveFunctionReflect extends RadiantElement {
-				@prop({ type: String, reflect: true, defaultValue: 'seeded' }) label: unknown;
+				@prop({ type: String, reflect: true, defaultValue: 'seeded' }) fnReflectLabel: unknown;
 			}
 
 			const host = document.createElement('my-reactive-function-reflect') as MyReactiveFunctionReflect;
 			document.body.appendChild(host);
 			await Promise.resolve();
-			expect(host.getAttribute('label')).toBe('seeded');
+			expect(host.getAttribute('fn-reflect-label')).toBe('seeded');
 
 			const handler = () => 'secret source';
-			host.label = handler;
+			host.fnReflectLabel = handler;
 
-			expect(host.hasAttribute('label')).toBe(false);
-			expect(host.label).toBe(handler);
+			expect(host.hasAttribute('fn-reflect-label')).toBe(false);
+			expect(host.fnReflectLabel).toBe(handler);
 			expect(
-				warn.mock.calls.filter((call) => String(call[0]).includes('reflected attribute "label"')),
+				warn.mock.calls.filter((call) =>
+					String(call[0]).includes(
+						'reflected attribute "fn-reflect-label" of <my-reactive-function-reflect>',
+					),
+				),
 			).toHaveLength(1);
 			expect(warn.mock.calls.some((call) => String(call[0]).includes('secret source'))).toBe(false);
-			warn.mockRestore();
+		});
+
+		test('two hosts that reflect the same prop name each warn once, naming their tag', () => {
+			const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+			onTestFinished(() => warn.mockRestore());
+
+			@customElement('my-reactive-function-twin-a')
+			class TwinA extends RadiantElement {
+				@prop({ type: Object, reflect: true }) twinConfig: unknown;
+			}
+
+			@customElement('my-reactive-function-twin-b')
+			class TwinB extends RadiantElement {
+				@prop({ type: Object, reflect: true }) twinConfig: unknown;
+			}
+
+			const first = document.createElement('my-reactive-function-twin-a') as TwinA;
+			const second = document.createElement('my-reactive-function-twin-b') as TwinB;
+			document.body.append(first, second);
+
+			first.twinConfig = () => 'secret source';
+			first.twinConfig = () => 'other source';
+			second.twinConfig = () => 'secret source';
+
+			const messages = warn.mock.calls.map((call) => String(call[0]));
+			expect(
+				messages.filter((message) => message.includes('"twin-config" of <my-reactive-function-twin-a>')),
+			).toHaveLength(1);
+			expect(
+				messages.filter((message) => message.includes('"twin-config" of <my-reactive-function-twin-b>')),
+			).toHaveLength(1);
 		});
 	});
 

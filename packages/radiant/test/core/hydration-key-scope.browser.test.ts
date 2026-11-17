@@ -25,6 +25,14 @@ class SecondController extends RadiantController {
 	value!: ContextProvider<typeof secondContext>;
 }
 
+const elementContext = createContext<{ n: number }>(Symbol('hydration-scope-element-context'));
+
+@customElement('hydration-scope-provider-element')
+class ProviderElement extends RadiantElement {
+	@provideContext<typeof elementContext>({ context: elementContext, initialValue: { n: 0 }, hydrate: Object })
+	value!: ContextProvider<typeof elementContext>;
+}
+
 @controller('hydration-scope-signal')
 class SignalController extends RadiantController {
 	@signal({ hydrate: Number, initial: 0 }) count!: WritableSignal<number>;
@@ -70,6 +78,23 @@ describe('hydration keys on a host shared by several owners', () => {
 		expect(create(SecondController, target).value.getContext()).toEqual({ n: 2 });
 		expect(markup).toContain('data-hydration-key="hydration-scope-first:value"');
 		expect(markup).toContain('data-hydration-key="hydration-scope-second:value"');
+	});
+
+	test('an element host and a controller provide the same field name on one element without reading each other', async () => {
+		const sourceElement = document.createElement('hydration-scope-provider-element') as ProviderElement;
+		sourceElement.value.setContext({ n: 9 });
+		const sourceController = create(FirstController, document.createElement('div'));
+		sourceController.value.setContext({ n: 1 });
+		const elementScript = sourceElement.value.renderHydrationScriptTag();
+		const controllerScript = sourceController.value.renderHydrationScriptTag();
+
+		document.body.innerHTML = `<hydration-scope-provider-element data-controller="hydration-scope-first">${controllerScript}${elementScript}</hydration-scope-provider-element>`;
+		const element = document.querySelector<ProviderElement>('hydration-scope-provider-element')!;
+
+		expect(elementScript).toContain('data-hydration-key="value"');
+		expect(controllerScript).toContain('data-hydration-key="hydration-scope-first:value"');
+		await waitFor(() => expect(element.value.getContext()).toEqual({ n: 9 }));
+		expect(create(FirstController, element).value.getContext()).toEqual({ n: 1 });
 	});
 
 	test('an element host does not read the signal payload of a controller on the same element', async () => {

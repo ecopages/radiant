@@ -65,7 +65,7 @@ During server-side rendering there is no DOM tree to bubble events through. Inst
 2. Consumer decorators resolve the token by walking the stack innermost-to-outermost — mirroring the nearest-ancestor semantics of DOM bubbling.
 3. After rendering, the stack frame is popped in a `finally` block.
 
-Providers that set the `hydrate` option emit a `<script type="application/json">` tag into the rendered markup. On the client, the provider parses that tag and merges the payload into `initialValue`, restoring server state before the first render.
+Providers that set the `hydrate` option emit a `<script type="application/json">` tag into the rendered markup. On the client, the provider parses that tag and merges the payload into `initialValue`, restoring server state before the first render. The script is keyed by field, and by controller identifier on a `RadiantController`: see [the hydration key](/docs/context/provide-context#ssr-hydration).
 
 ## Typical Shape
 

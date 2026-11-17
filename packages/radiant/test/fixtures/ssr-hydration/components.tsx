@@ -259,6 +259,10 @@ export class HydratedNestedCounter extends RadiantElement<{ count: number }> {
 	}
 }
 
+/**
+ * @remarks Reads `label` directly and binds it with `this.$` on purpose, which logs the redundant-path development
+ * warning when `label` changes; a test that changes it expects that warning.
+ */
 @customElement('hydrated-nested-host-parent-test')
 export class HydratedNestedHostParent extends RadiantElement<{ label: string }> {
 	@state label = 'one';

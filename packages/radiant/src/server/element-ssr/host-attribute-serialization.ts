@@ -51,7 +51,7 @@ export function resolveHostAttributes(host: HostAttributeSource, tagName = 'host
 	warnUnserializableProps(host, tagName);
 
 	appendReactivePropertyAttributes(host, attributes, seenAttributes);
-	appendReactivePropDefinitionAttributes(host, attributes, seenAttributes);
+	appendReactivePropDefinitionAttributes(host, attributes, seenAttributes, tagName);
 	appendAuthoredAttributes(host, attributes);
 
 	return attributes;
@@ -113,6 +113,7 @@ function appendReactivePropDefinitionAttributes(
 	host: HostAttributeSource,
 	attributes: Record<string, string>,
 	seenAttributes: Set<string>,
+	tagName: string,
 ): void {
 	for (const definition of host.getReactivePropDefinitions()) {
 		const attributeName = attributeNameForProp(definition.name, definition.options);
@@ -130,7 +131,7 @@ function appendReactivePropDefinitionAttributes(
 		const { transform, type } = definition.options;
 		const serialized = transform?.toAttribute
 			? transform.toAttribute(currentValue as never)
-			: writeAttributeValue(currentValue, type, attributeName);
+			: writeAttributeValue(currentValue, type, attributeName, `<${tagName}>`);
 		if (serialized == null || (transform?.toAttribute && serialized === '')) {
 			continue;
 		}
@@ -196,7 +197,8 @@ function isJsonRepresentable(value: unknown, ancestors: object[] = []): boolean 
  * @remarks
  * Only the default `Object` and `Array` JSON writers are checked; a `transform.toAttribute` owns its own output.
  * The value is still serialized as before, so a class instance loses its methods on the client and a cycle makes
- * `JSON.stringify` throw. The warning fires once per tag and prop.
+ * `JSON.stringify` throw. The warning fires once per tag and prop. A prop that holds a function itself is left to
+ * the skip warning of `writeAttributeValue`, since nothing is written for it.
  */
 function warnUnserializableProps(host: HostAttributeSource, tagName: string): void {
 	for (const definition of host.getReactivePropDefinitions()) {
@@ -206,7 +208,7 @@ function warnUnserializableProps(host: HostAttributeSource, tagName: string): vo
 
 		warnOnceInDevelopment(`ssr:${tagName}:${definition.name}`, () => {
 			const value = host.getPropertyValue(definition.name);
-			return value != null && !isJsonRepresentable(value)
+			return value != null && typeof value !== 'function' && !isJsonRepresentable(value)
 				? `[@ecopages/radiant] "${definition.name}" on <${tagName}> holds a value JSON cannot represent (a class instance, function or cycle), so server rendering would write a lossy attribute or throw. Declare the prop with \`attribute: false\` to keep it property-only.`
 				: undefined;
 		});
