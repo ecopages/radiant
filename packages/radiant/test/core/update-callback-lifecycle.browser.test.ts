@@ -273,3 +273,43 @@ describe('update callbacks that disconnect their host during the connect pass', 
 		expect(bSource.counter.listeners).toBe(0);
 	});
 });
+
+describe('update callbacks that disconnect and reconnect their host during the connect pass', () => {
+	const aSource = createCountedSource(1);
+	const bSource = createCountedSource(1);
+
+	class ReconnectingController extends RadiantController {
+		@signal({ source: aSource.source })
+		a!: WritableSignal<number>;
+		@signal({ source: bSource.source })
+		b!: WritableSignal<number>;
+	}
+
+	test('leave one subscription per member, released on the final disconnect', () => {
+		aSource.source.set(1);
+		bSource.source.set(1);
+		const controller = new ReconnectingController(document.createElement('section'));
+		controller.connect();
+		controller.disconnect();
+
+		aSource.source.set(2);
+		bSource.source.set(2);
+		let reconnected = false;
+		let connectRuns = 0;
+		controller.registerConnectedCallback(() => connectRuns++);
+		controller.registerUpdateCallback('a', () => {
+			if (!reconnected) {
+				reconnected = true;
+				controller.disconnect();
+				controller.connect();
+			}
+		});
+		controller.connect();
+
+		expect(connectRuns).toBe(1);
+		expect(aSource.counter.listeners).toBe(bSource.counter.listeners + 1);
+		controller.disconnect();
+		expect(aSource.counter.listeners).toBe(0);
+		expect(bSource.counter.listeners).toBe(0);
+	});
+});

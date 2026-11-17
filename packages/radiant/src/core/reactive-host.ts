@@ -122,6 +122,8 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	private memberSnapshots = new Map<string, unknown>();
 	private initializingReactiveFields = new Set<string>();
 	private observing = false;
+	/** Bumped each time observation starts or stops, so a pass can tell the host changed state under it. */
+	private observationEpoch = 0;
 	private onConnectedCallbacks: (() => void)[] = [];
 	private onDisconnectedCallback: (() => void)[] = [];
 	private postSyncCallbacks: (() => void)[] = [];
@@ -146,15 +148,16 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	/**
 	 * Runs all connection callbacks registered by decorators or host adapters.
 	 *
-	 * @remarks Stops as soon as the host is no longer observing: a callback that
+	 * @remarks Stops as soon as observation changed under the pass: a callback that
 	 * disconnects the host has already run the cleanup callbacks, so a later
-	 * connection callback would acquire resources nothing releases.
+	 * connection callback would acquire resources nothing releases, and one that
+	 * also reconnects it has already run the whole pass.
 	 */
 	public connectHost(): void {
-		this.observeMembers();
+		const epoch = this.startObservation();
 
 		for (const callback of this.onConnectedCallbacks) {
-			if (!this.observing) {
+			if (epoch !== this.observationEpoch) {
 				break;
 			}
 
@@ -191,10 +194,21 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 			return () => {};
 		}
 
+		this.startObservation();
+		return () => this.unobserveMembers();
+	}
+
+	/** Starts observing unless already observing; returns the epoch of the observation in force. */
+	private startObservation(): number {
+		if (this.observing) {
+			return this.observationEpoch;
+		}
+
 		this.observing = true;
+		const epoch = ++this.observationEpoch;
 
 		for (const [propertyName, signal] of this.reactiveMembers) {
-			if (!this.observing) {
+			if (epoch !== this.observationEpoch) {
 				break;
 			}
 
@@ -207,7 +221,7 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 			}
 		}
 
-		return () => this.unobserveMembers();
+		return epoch;
 	}
 
 	/** Stops reporting member changes and snapshots each value for the next {@link observeMembers}. */
@@ -217,6 +231,7 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 		}
 
 		this.observing = false;
+		this.observationEpoch++;
 
 		for (const [propertyName, unsubscribe] of this.changeSubscriptions) {
 			unsubscribe();
