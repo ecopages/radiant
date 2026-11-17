@@ -550,6 +550,27 @@ describe('JSX ref', () => {
 			expect(seen).toEqual(['D true']);
 		});
 
+		test('a signal child set again during the pass that mounted it keeps the newest property', async () => {
+			const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+			const host = document.createElement('div');
+			document.body.append(host);
+			const sink = (data: string) => jsx('radiant-jsx-ref-host', { 'prop:ref': data });
+			const sig = state<unknown>(sink('x'));
+
+			customElements.define(
+				'radiant-jsx-ref-resetter',
+				class extends HTMLElement {
+					connectedCallback() {
+						sig.set(sink('y'));
+					}
+				},
+			);
+
+			createRoot(host).render(jsx('section', { children: [sig as never, jsx('radiant-jsx-ref-resetter', {})] }));
+
+			expect((host.querySelector('radiant-jsx-ref-host') as RefHostElement).ref).toBe('y');
+		});
+
 		test('a signal set from a ref callback applies its child ref before set returns', async () => {
 			const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 			const container = document.createElement('div');

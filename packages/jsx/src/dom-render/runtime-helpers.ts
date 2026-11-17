@@ -75,6 +75,19 @@ export function runRangePass<T>(mount: (deferredProperties: DeferredPropertyBind
 }
 
 /**
+ * Runs `mount` with `queue` when that queue is the one of the pass that is running, and in a pass of its own otherwise.
+ *
+ * @remarks A later update of a range may join only the pass that mounted it, whose queue still holds its earlier
+ * writes in order. Any other running pass is unrelated and flushes at its own time, so the update flushes by itself.
+ */
+export function runPassOf<T>(
+	queue: DeferredPropertyBinding[],
+	mount: (deferredProperties: DeferredPropertyBinding[]) => T,
+): T {
+	return activePass === queue ? mount(queue) : runRootPass(mount);
+}
+
+/**
  * Flushes property assignments and `run` entries (`ref` attaches) after the DOM structure for the current pass is stable.
  *
  * Property writes are deferred so custom elements or other property-sensitive

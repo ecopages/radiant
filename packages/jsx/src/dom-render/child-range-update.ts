@@ -15,8 +15,8 @@ import {
 	isIterableRenderable,
 	isReactiveChildSource,
 	isTemplateResultLike,
+	runPassOf,
 	runRangePass,
-	runRootPass,
 	readReactiveChildSourceValue,
 	subscribeToReactiveChildSource,
 	unwrapKeyedValue,
@@ -499,9 +499,10 @@ function removeRangeRecord(record: MountedRangeRecord): void {
  * Mounts a signal-like child source and keeps the range in sync with it.
  *
  * @remarks The mount joins the queue of the render or hydrate pass that is running, so a `ref` or property inside
- * the source is applied with the rest of that pass, once the DOM is in place. A later change of the source is independent
- * of whatever pass happens to be running: it flushes by itself, so it is applied when `set()` returns. Joining the pass queue instead of flushing it keeps a list whose rows each hold
- * a signal child linear.
+ * the source is applied with the rest of that pass, once the DOM is in place. Joining the pass queue instead of
+ * flushing it keeps a list whose rows each hold a signal child linear. A change of the source during that same pass
+ * appends to the same queue, after the first mount's writes. Any other change is independent of whatever pass happens
+ * to be running: it flushes by itself, so it is applied when `set()` returns.
  */
 export function mountReactiveChildSource(
 	range: ChildRange,
@@ -518,10 +519,16 @@ export function mountReactiveChildSource(
 		unsubscribe: () => undefined,
 	};
 
-	let mounting = true;
+	let mountQueue: DeferredPropertyBinding[] | undefined;
 
 	const applyValue = (nextValue: unknown) => {
-		(mounting ? runRangePass : runRootPass)((deferredProperties) => {
+		const queue = mountQueue;
+		const run = queue
+			? (mount: (deferredProperties: DeferredPropertyBinding[]) => void) => runPassOf(queue, mount)
+			: runRangePass;
+
+		run((deferredProperties) => {
+			mountQueue ??= deferredProperties;
 			mountedSubscription.mounted = updateRangeContent(
 				range,
 				nextValue,
@@ -541,7 +548,6 @@ export function mountReactiveChildSource(
 	});
 
 	applyValue(readReactiveChildSourceValue(source));
-	mounting = false;
 
 	return mountedSubscription;
 }
