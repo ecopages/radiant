@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
-import type { JsxRenderable } from '../src/index.ts';
+import type { JsxRenderable, TemplateResultLike } from '../src/index.ts';
 import {
 	HYDRATE_ADJACENT_FIELDS_HTML,
 	HYDRATE_BUTTON_ALPHA_HTML,
@@ -666,6 +666,32 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(container.innerHTML).not.toContain('secret');
 		expect(paragraph?.textContent).toBe('BeforeAfter');
 		expect(paragraph?.hasAttribute('title')).toBe(false);
+	});
+
+	test('a markerless page adopts the server markup around an owning element and a plain function child', async () => {
+		const [{ jsx, jsxs }, { canAdoptMarkerlessTemplate }] = await Promise.all([
+			loadJsxRuntime(),
+			loadModule<typeof import('../src/dom-render/hydration-mounted-range.ts')>(
+				'../src/dom-render/hydration-mounted-range.ts',
+			),
+		]);
+		const target = document.createElement('div');
+		target.innerHTML = `<main><${markerlessResetElementTagName}></${markerlessResetElementTagName}></main>`;
+		const authored = jsxs('main', {
+			children: [jsx(markerlessResetElementTagName, {}), null],
+		}) as TemplateResultLike;
+		const template = {
+			...authored,
+			values: authored.values.map((value) => (value === null ? () => 'secret source' : value)),
+		};
+
+		expect(
+			canAdoptMarkerlessTemplate(
+				template,
+				target,
+				(element) => element.localName === markerlessResetElementTagName,
+			),
+		).toBe(true);
 	});
 
 	test('hydrates a fragment with a conditional hole and keeps its sibling when the hole fills', async () => {
