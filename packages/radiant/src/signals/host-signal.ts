@@ -3,6 +3,7 @@ import { state, type WritableSignal } from '@ecopages/signals';
 import type { ReadonlyReactiveState } from '../core/reactivity-contract';
 import type { SsrSerializableHydrationBinding } from '../core/ssr-hydration-binding';
 import type { AttributeTypeConstant } from '../utils/attribute-utils';
+import { resolveHostElementOrNull } from '../helpers/resolve-host-element';
 import { createHydrationScriptTag, findHydrationScript, parseHydrationPayload } from '../core/hydration-codec';
 
 type HostSignalOwner = {
@@ -22,10 +23,7 @@ export function isWritableSignalLike<Value>(value: unknown): value is WritableSi
 	return (
 		typeof value === 'object' &&
 		value !== null &&
-		typeof (value as WritableSignal<Value>).get === 'function' &&
-		typeof (value as WritableSignal<Value>).set === 'function' &&
-		typeof (value as WritableSignal<Value>).subscribe === 'function' &&
-		typeof (value as WritableSignal<Value>).update === 'function'
+		['get', 'set', 'subscribe', 'update'].every((method) => typeof Reflect.get(value, method) === 'function')
 	);
 }
 
@@ -131,11 +129,9 @@ export class HostSignal<Value> implements WritableSignal<Value>, SsrSerializable
 	}
 
 	private findHydrationScriptElement(): Element | null {
-		if (!(this.host instanceof Element)) {
-			return null;
-		}
+		const element = resolveHostElementOrNull(this.host);
 
-		return findHydrationScript(this.host, 'signal', this.hydrationKey);
+		return element ? findHydrationScript(element, 'signal', this.hydrationKey) : null;
 	}
 
 	private isObject(value: unknown): value is Record<string, unknown> {

@@ -176,10 +176,16 @@ describe.each<HostKind>(['element', 'controller'])('whole-render read warnings o
 		expect(message).toContain('"count"');
 		expect(message).toContain('times within');
 		expect(message).toContain('this.$.count');
+		expect(message).toContain('fills one node or attribute');
+		expect(message).toContain('list length');
+		expect(message).toContain('out of render()');
+		expect(message).toContain('coarser field');
 		expect(message).not.toContain('"other"');
 
+		const now = vi.spyOn(Date, 'now');
 		for (let value = 31; value <= 60; value++) await write(host, value);
 		expect(warn).toHaveBeenCalledTimes(1);
+		expect(now).not.toHaveBeenCalled();
 	});
 
 	test('each field that re-runs render() 30 times within a second warns once, by name', async () => {
@@ -245,5 +251,21 @@ describe.each<HostKind>(['element', 'controller'])('whole-render read warnings o
 		for (let value = 1; value <= 40; value++) await write(hot.host, value);
 
 		expect(warn).not.toHaveBeenCalled();
+	});
+
+	test('a field keeps being counted while warnings are off and warns once they are back on', async () => {
+		vi.useFakeTimers({ toFake: ['Date'] });
+		vi.setSystemTime(0);
+		setDevWarningsEnabled(false);
+		const { host } = await defineHost(kind, 'direct')();
+
+		for (let value = 1; value <= 40; value++) await write(host, value);
+		expect(warn).not.toHaveBeenCalled();
+
+		setDevWarningsEnabled(undefined);
+		await write(host, 41);
+
+		expect(warn).toHaveBeenCalledTimes(1);
+		expect(String(warn.mock.calls[0]?.[0])).toContain('times within');
 	});
 });

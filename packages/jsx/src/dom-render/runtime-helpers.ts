@@ -9,7 +9,12 @@ import {
 import type { KeyedJsxValue, TemplateResultLike } from '../types/index.ts';
 import { createNodesFromJsxNodeLike } from './dom-operations.ts';
 import { materializeIterableChildren } from '../hydration/iterable-snapshot.ts';
-import type { DeferredPropertyBinding, ReactiveAttributeSource, ReactiveChildSource } from './types.ts';
+import type {
+	DeferredPropertyBinding,
+	DeferredRunBinding,
+	ReactiveAttributeSource,
+	ReactiveChildSource,
+} from './types.ts';
 
 export {
 	isIterableRenderable,
@@ -18,7 +23,7 @@ export {
 	isTemplateResultLike,
 	resolveReactiveSnapshot,
 } from '../types/renderable-guards.ts';
-import { isSkippedFunction } from '../warnings/dev-warnings.ts';
+import { isEmptyChild } from '../warnings/dev-warnings.ts';
 
 type TemplateMount = (
 	template: TemplateResultLike,
@@ -27,17 +32,102 @@ type TemplateMount = (
 	contextParent?: Node | null,
 ) => { rootNodes: readonly Node[] };
 
+let activePass: DeferredPropertyBinding[] | undefined;
+
+/**
+ * Runs `mount` with the deferred queue of one render or hydrate pass and flushes it once `mount` returns.
+ *
+ * @param shouldFlush Called with the result; returns `false` to drop the queue, as when hydration fell back to a
+ * client render and its nodes were discarded.
+ *
+ * @remarks Ranges mounted inside `mount` that need a queue of their own join this one through {@link runRangePass},
+ * so the whole pass flushes once, after its nodes are in the page. A root pass always starts its own queue, even when
+ * it runs inside another pass (a custom element rendering from `connectedCallback`), because its caller expects its
+ * refs and properties to be applied when it returns.
+ */
+export function runRootPass<T>(
+	mount: (deferredProperties: DeferredPropertyBinding[]) => T,
+	shouldFlush: (result: T) => boolean = () => true,
+): T {
+	const deferredProperties: DeferredPropertyBinding[] = [];
+	const outerPass = activePass;
+	let result: T;
+
+	activePass = deferredProperties;
+
+	try {
+		result = mount(deferredProperties);
+	} finally {
+		activePass = outerPass;
+	}
+
+	if (shouldFlush(result)) flushDeferredProperties(deferredProperties);
+	return result;
+}
+
+/**
+ * Runs `mount` for a range with the queue of the pass that is already running, or a pass of its own when none is.
+ *
+ * @remarks A signal child updating on its own, later, has no pass running and flushes by itself.
+ */
+export function runRangePass<T>(mount: (deferredProperties: DeferredPropertyBinding[]) => T): T {
+	return activePass ? mount(activePass) : runRootPass(mount);
+}
+
+/**
+ * Runs `mount` with `queue` when that queue is the one of the pass that is running, and in a pass of its own otherwise.
+ *
+ * @remarks A later update of a range may join only the pass that mounted it, whose queue still holds its earlier
+ * writes in order. Any other running pass is unrelated and flushes at its own time, so the update flushes by itself.
+ */
+export function runPassOf<T>(
+	queue: DeferredPropertyBinding[],
+	mount: (deferredProperties: DeferredPropertyBinding[]) => T,
+): T {
+	return activePass === queue ? mount(queue) : runRootPass(mount);
+}
+
 /**
  * Flushes property assignments and `run` entries (`ref` attaches) after the DOM structure for the current pass is stable.
  *
  * Property writes are deferred so custom elements or other property-sensitive
  * nodes see the final DOM shape before receiving their bound values.
+ *
+ * @remarks
+ * Every property write comes first, in queue order, so a `ref` sees its node with all bound properties set.
+ * `ref` attaches then run child before parent, siblings in document order, as in React 19: when a parent's callback
+ * runs, every ref in its subtree is attached. The queue is not always in document order, since keyed and mixed
+ * lists update last to first, so the attaches are sorted by document position and a stack of open ancestors turns
+ * that order into the post-order. `contains` does not cross a shadow root, so a `ref` inside a shadow tree attaches after its
+ * host; a shadow tree is rendered by its own root, with its own flush.
  */
 export function flushDeferredProperties(bindings: DeferredPropertyBinding[]): void {
+	let attaches: DeferredRunBinding[] | undefined;
+
 	for (const binding of bindings) {
-		if ('run' in binding) binding.run();
+		if ('run' in binding) (attaches ??= []).push(binding);
 		else Reflect.set(binding.element, binding.name, binding.value);
 	}
+
+	if (!attaches) return;
+
+	attaches.sort((a, b) => (a.element.compareDocumentPosition(b.element) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
+
+	const open: DeferredRunBinding[] = [];
+
+	const closeAncestors = (element?: Element): void => {
+		for (let top = open.at(-1); top && !top.element.contains(element ?? null); top = open.at(-1)) {
+			open.pop();
+			top.run();
+		}
+	};
+
+	for (const attach of attaches) {
+		closeAncestors(attach.element);
+		open.push(attach);
+	}
+
+	closeAncestors();
 }
 
 /** Removes keyed-child wrapper metadata so downstream logic can work with the raw child value. */
@@ -73,11 +163,7 @@ export function createNodesFromValue(
 	const collectNodes = (nextValue: unknown): void => {
 		const resolvedValue = unwrapKeyedValue(nextValue);
 
-		if (
-			resolvedValue == null ||
-			typeof resolvedValue === 'boolean' ||
-			isSkippedFunction(resolvedValue, 'a child')
-		) {
+		if (isEmptyChild(resolvedValue)) {
 			return;
 		}
 

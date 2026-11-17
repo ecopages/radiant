@@ -8,6 +8,7 @@ import type { ReactiveHostLike } from '../../core/reactive-host';
 import { attributeNameForProp, registerReactivePropDefinition } from '../../core/reactive-prop-metadata';
 import { registerLegacyInstanceInitializer, registerLegacyPostConstructionInitializer } from './instance-initializers';
 import { bootstrapReactiveMember } from './member-bootstrap';
+import { warnInitializerWithDefaultValue } from '../shared/initializer-default-warning';
 import type { ReactivePropHost } from '../standard/reactive-prop';
 
 /**
@@ -16,6 +17,13 @@ import type { ReactivePropHost } from '../standard/reactive-prop';
  * The decorated host is expected to expose `createReactiveProp(...)`, which
  * lets both `RadiantElement` and `RadiantController` share the same public
  * decorator while keeping their runtime channels different.
+ *
+ * @remarks Setup runs when the most derived class's constructor ends, which `@customElement` and `@controller`
+ * arrange, so an own value found then is a field initializer and behaves as under the standard decorators: a
+ * differing `defaultValue` wins over it (and development builds warn), and a value the host held wins over both.
+ * A later write goes through the accessor and wins over all of them. A class registered without those decorators
+ * is set up at first connect, where an initializer and a write are indistinguishable; on a Controller Host
+ * `RadiantController` treats any own value found then as the author's.
  */
 export function reactiveProp<T = unknown>(propOptions: ReactivePropertyOptions<T>) {
 	const { type, reflect, defaultValue, transform } = propOptions;
@@ -60,13 +68,23 @@ export function reactiveProp<T = unknown>(propOptions: ReactivePropertyOptions<T
 			const host = element as ReactivePropHost<T> & Record<PropertyKey, unknown>;
 			const initializerValue = element[propertyName as keyof typeof element] as T | undefined;
 			const wasAssigned = host[ssrAssignedKey] === true;
-			const hasOwnStagingValue = Object.prototype.hasOwnProperty.call(element, propertyName);
-			const ownStagingValue = hasOwnStagingValue
+			const ownStagingValue = Object.prototype.hasOwnProperty.call(element, propertyName)
 				? ((element as Record<PropertyKey, unknown>)[propertyName] as T)
 				: undefined;
+
+			if (phase === 'constructed' && !wasAssigned) {
+				warnInitializerWithDefaultValue(
+					element,
+					propertyName,
+					ownStagingValue,
+					defaultValue,
+					element.constructor,
+				);
+			}
+
 			const resolvedDefaultValue = wasAssigned
 				? initializerValue
-				: phase === 'ssr' && hasOwnStagingValue && ownStagingValue !== defaultValue
+				: phase === 'ssr' && ownStagingValue !== undefined
 					? ownStagingValue
 					: defaultValue === undefined
 						? initializerValue

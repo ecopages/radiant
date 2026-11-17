@@ -52,7 +52,7 @@ startControllers(document);
 <section data-controller="search"></section>
 ```
 
-Important: controller identifiers are global. By default, later registrations for an existing identifier are ignored and the first registered controller stays active.
+Important: controller identifiers are global and cannot contain `:`. By default, later registrations for an existing identifier are ignored and the first registered controller stays active.
 
 If a tooling or HMR environment needs live replacement semantics, use the explicit registry runtime APIs instead of changing default registration behavior. See [Controller Tooling & HMR](/docs/tools/controller-tooling-hmr).
 

@@ -13,6 +13,12 @@ const DEVELOPMENT_WARNING_TEXTS = [
 	'was defined after a JSX view rendered it',
 	'and also reads it in render()',
 	're-ran render()',
+	'has both a field initializer and a different defaultValue',
+	'Skipped a function in',
+	'fills one node or attribute',
+	'noteChange',
+	'observeBinding',
+	'trackReads',
 ];
 const NODE_ENV_READ = /process\.env\.NODE_ENV/g;
 /** Matches the check as the first expression in a `try` block, whether esbuild kept the `if` or minified it to `&&`. */

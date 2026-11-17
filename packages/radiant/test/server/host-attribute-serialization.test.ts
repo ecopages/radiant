@@ -1,11 +1,20 @@
-import { describe, expect, test } from 'vitest';
-import type { ReactiveProperty } from '../../src/core/reactive-prop-core';
+import { afterEach, describe, expect, test, vi } from 'vitest';
+import { createPropConverter, type ReactiveProperty } from '../../src/core/reactive-prop-core';
 import {
 	resolveHostAttributes,
 	stringifyHostAttributes,
 } from '../../src/server/element-ssr/host-attribute-serialization';
 
+let uniqueCounter = 0;
+
+/** A name no other test uses, because warnings dedupe on a module-level key that outlives each test. */
+function uniqueAttribute(prefix: string): string {
+	return `${prefix}-${++uniqueCounter}`;
+}
+
 describe('resolveHostAttributes', () => {
+	afterEach(() => vi.restoreAllMocks());
+
 	test('omits attributes when a custom toAttribute returns null', () => {
 		const property: ReactiveProperty<string[]> = {
 			type: Array,
@@ -78,5 +87,122 @@ describe('resolveHostAttributes', () => {
 
 		expect(attributes).toEqual({ 'min-width': '300', 'data-Open': 'true' });
 		expect(stringifyHostAttributes(attributes)).toBe(' min-width="300" data-Open="true"');
+	});
+
+	test('omits a function-valued reactive property and warns once without writing its source', () => {
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+		const handler = () => 'secret source';
+		const attribute = uniqueAttribute('via-property');
+		const property: ReactiveProperty<unknown> = {
+			type: String,
+			name: 'viaProperty',
+			attribute,
+			reflect: true,
+			converter: createPropConverter(String, undefined, attribute),
+		};
+
+		const attributes = resolveHostAttributes({
+			getReactiveProperties: () => [property],
+			getReactivePropDefinitions: () => [],
+			getPropertyValue: () => handler,
+			getAttributeNames: () => [],
+			getAttribute: () => null,
+		});
+
+		expect(attributes).toEqual({});
+		expect(
+			warn.mock.calls.filter((call) => String(call[0]).includes(`reflected attribute "${attribute}"`)),
+		).toHaveLength(1);
+		expect(warn.mock.calls.some((call) => String(call[0]).includes('secret source'))).toBe(false);
+	});
+
+	test('omits a function-valued prop definition and warns once without writing its source', () => {
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+		const handler = () => 'secret source';
+		const name = uniqueAttribute('viadefinition');
+
+		const attributes = resolveHostAttributes({
+			getReactiveProperties: () => [],
+			getReactivePropDefinitions: () => [{ name, options: { type: String } }],
+			getPropertyValue: () => handler,
+			getAttributeNames: () => [],
+			getAttribute: () => null,
+		});
+
+		expect(attributes).toEqual({});
+		expect(
+			warn.mock.calls.filter((call) => String(call[0]).includes(`reflected attribute "${name}"`)),
+		).toHaveLength(1);
+		expect(warn.mock.calls.some((call) => String(call[0]).includes('secret source'))).toBe(false);
+	});
+
+	test.each([
+		['Object', Object],
+		['Array', Array],
+	])('an %s prop that holds a function emits the skip warning and not the lossy one', (kind, type) => {
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+		const name = uniqueAttribute(`fn-${kind.toLowerCase()}`);
+		const tag = uniqueAttribute('tag');
+
+		const attributes = resolveHostAttributes(
+			{
+				getReactiveProperties: () => [],
+				getReactivePropDefinitions: () => [{ name, options: { type } }],
+				getPropertyValue: () => () => 'secret source',
+				getAttributeNames: () => [],
+				getAttribute: () => null,
+			},
+			tag,
+		);
+
+		const messages = warn.mock.calls.map((call) => String(call[0]));
+		expect(attributes).toEqual({});
+		expect(messages).toHaveLength(1);
+		expect(messages[0]).toContain(`Skipped a function in reflected attribute "${name}" of <${tag}>`);
+		expect(messages.some((message) => message.includes('JSON cannot represent'))).toBe(false);
+	});
+
+	test('two tags with the same Object prop holding a function each warn once, naming their tag', () => {
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+		const name = uniqueAttribute('shared');
+		const [first, second] = [uniqueAttribute('tag-a'), uniqueAttribute('tag-b')];
+		const resolve = (tag: string) =>
+			resolveHostAttributes(
+				{
+					getReactiveProperties: () => [],
+					getReactivePropDefinitions: () => [{ name, options: { type: Object } }],
+					getPropertyValue: () => () => 'secret source',
+					getAttributeNames: () => [],
+					getAttribute: () => null,
+				},
+				tag,
+			);
+
+		resolve(first);
+		resolve(first);
+		resolve(second);
+
+		const messages = warn.mock.calls.map((call) => String(call[0]));
+		expect(messages).toHaveLength(2);
+		expect(messages[0]).toContain(`reflected attribute "${name}" of <${first}>`);
+		expect(messages[1]).toContain(`reflected attribute "${name}" of <${second}>`);
+	});
+
+	test('an Object prop holding a class instance still gets the lossy warning', () => {
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+		const name = uniqueAttribute('instance');
+
+		resolveHostAttributes(
+			{
+				getReactiveProperties: () => [],
+				getReactivePropDefinitions: () => [{ name, options: { type: Object } }],
+				getPropertyValue: () => new (class Box {})(),
+				getAttributeNames: () => [],
+				getAttribute: () => null,
+			},
+			uniqueAttribute('tag'),
+		);
+
+		expect(warn.mock.calls.filter((call) => String(call[0]).includes('JSON cannot represent'))).toHaveLength(1);
 	});
 });

@@ -1,7 +1,7 @@
 import { resolveAttributeText } from '../factory/attribute-normalize.ts';
 import { attachEventBindingListener, detachEventBindingListener, isEventListenerObject } from './event-delegation.ts';
 import { getElementAttributeValue, removeElementAttribute, setElementAttributeValue } from './namespaces.ts';
-import { detachRef } from './mounted-disposal.ts';
+import { detachRef, reportRefError, runRefCleanup } from './mounted-disposal.ts';
 import { resolveReactiveSnapshot } from './runtime-helpers.ts';
 import { CUSTOM_ELEMENT_CHILDREN_SYMBOL, type JsxRefCallback } from '../types/index.ts';
 import type { BindingDescriptor, DeferredPropertyBinding, LiveAttributePart } from './types.ts';
@@ -166,9 +166,19 @@ function applyDeferredPropertyBinding(
 }
 
 /**
- * @remarks The callback attaches with the deferred property writes, so it sees its node in the page. The queued
- * attach checks that the part still holds the callback, so a part replaced or disposed before the queue runs does not
- * attach a stale one. A value that is not a function detaches the current ref and binds nothing.
+ * @remarks The callback attaches from the deferred queue, after every property write of the pass and before its
+ * ancestors' callbacks, so it sees its node in the page. The queued
+ * attach checks that the part was not detached since it was queued, so a part replaced or disposed before the queue runs
+ * does not attach a stale one. A value that is not a function detaches the current ref and binds nothing.
+ *
+ * A callback that throws is reported through {@link reportRefError} and does not stop the flush. It still counts as
+ * attached: the same callback is not called again on a later render, and detaching calls it with `null`, as for a
+ * callback that returned nothing. Only a different callback, or dropping the ref, ends it.
+ *
+ * A callback that detaches its own part while it runs is not called with `null` mid-attach: its cleanup is recorded
+ * once it returns, and runs at once when the part was detached meanwhile, even if the same callback was bound again
+ * and attached in the meantime, whose own cleanup is the one kept. With no cleanup returned, the `null` call for that
+ * detach is skipped when the part is bound to the same callback again, which would otherwise end up holding `null`.
  */
 function applyRefBinding(
 	element: Element,
@@ -184,11 +194,22 @@ function applyRefBinding(
 	livePart.previousValue = callback;
 	if (!callback) return;
 
+	const epoch = livePart.refEpoch;
+
 	deferredProperties.push({
+		element,
 		run: () => {
-			if (livePart.previousValue !== callback) return;
-			const cleanup = callback(element);
-			livePart.refCleanup = typeof cleanup === 'function' ? cleanup : () => callback(null);
+			if (livePart.refEpoch !== epoch) return;
+			let returned: (() => void) | undefined;
+			try {
+				const result = callback(element);
+				if (typeof result === 'function') returned = result;
+			} catch (error) {
+				reportRefError(error);
+			}
+			if (livePart.refEpoch === epoch) livePart.refCleanup = returned ?? (() => callback(null));
+			else if (returned) runRefCleanup(returned);
+			else if (livePart.previousValue !== callback) runRefCleanup(() => callback(null));
 		},
 	});
 }

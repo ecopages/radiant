@@ -26,8 +26,20 @@ export function collectErrors(tasks: Iterable<() => void>): unknown[] {
 }
 
 /**
+ * @remarks Holds the aggregates {@link throwCollected} produced and the library
+ * still owns, so only those are flattened into a later one. {@link runUnwatchedHook}
+ * removes one a hook rethrew, which then counts as that hook's own error.
+ */
+const collectedErrors = new WeakSet<object>();
+
+/**
  * Throws the only error as is, or several as an `AggregateError` whose message
  * defaults to the unwatched-hook one.
+ *
+ * @remarks An `AggregateError` this function threw earlier, such as one from a
+ * dependency's release, is flattened into the new one, so a failure is never
+ * nested. One a hook threw itself, such as from a nested `unwatch` it ran, is
+ * kept as an error of its own.
  */
 export function throwCollected(errors: unknown[], message = 'Multiple unwatched hooks failed.'): void {
 	if (errors.length === 1) {
@@ -35,7 +47,24 @@ export function throwCollected(errors: unknown[], message = 'Multiple unwatched 
 	}
 
 	if (errors.length > 1) {
-		throw new AggregateError(errors, message);
+		const aggregate = new AggregateError(
+			errors.flatMap((error) =>
+				collectedErrors.has(error as object) ? (error as AggregateError).errors : [error],
+			),
+			message,
+		);
+
+		collectedErrors.add(aggregate);
+		throw aggregate;
+	}
+}
+
+function runUnwatchedHook(hook: () => void): void {
+	try {
+		hook();
+	} catch (error) {
+		collectedErrors.delete(error as object);
+		throw error;
 	}
 }
 
@@ -84,7 +113,7 @@ export abstract class SignalNode<Value> implements Signal<Value>, DependencyNode
 			} catch (error) {
 				this.watcherListeners.delete(notify);
 				if (this.watcherListeners.size === 0) {
-					collectErrors([() => this.handleLastWatcherRemoved(true)]);
+					collectErrors([() => this.rollbackFirstWatcher()]);
 				}
 				throw error;
 			}
@@ -97,7 +126,10 @@ export abstract class SignalNode<Value> implements Signal<Value>, DependencyNode
 
 			if (this.watcherListeners.size === 0) {
 				throwCollected(
-					collectErrors([() => this.handleLastWatcherRemoved(false), () => this.onUnwatched?.call(this)]),
+					collectErrors([
+						() => this.handleLastWatcherRemoved(),
+						() => runUnwatchedHook(() => this.onUnwatched?.call(this)),
+					]),
 				);
 			}
 		};
@@ -117,12 +149,16 @@ export abstract class SignalNode<Value> implements Signal<Value>, DependencyNode
 
 	protected handleFirstWatcherAdded(): void {}
 
+	protected handleLastWatcherRemoved(): void {}
+
 	/**
-	 * @remarks
-	 * `rollback` is true when a failed first watch is being undone, so dependencies
-	 * are released in the reverse of the order they were watched.
+	 * Undoes {@link handleFirstWatcherAdded} after a failed first watch.
+	 *
+	 * @remarks An error from the release is dropped in favor of the one that
+	 * failed the watch. Dependencies are released in the reverse of the order
+	 * they were watched.
 	 */
-	protected handleLastWatcherRemoved(_rollback: boolean): void {}
+	protected rollbackFirstWatcher(): void {}
 
 	protected publish(nextValue: Value): void {
 		for (const subscriber of this.subscribers) {

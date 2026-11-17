@@ -1,4 +1,5 @@
 import type { RadiantElement } from '../core/radiant-element';
+import { isSkippedFunction } from '../helpers/dev-warnings';
 
 export type AttributeTypeConstant = typeof Array | typeof Boolean | typeof Number | typeof Object | typeof String;
 
@@ -186,10 +187,27 @@ export type ReadAttributeValueReturnType = ReturnType<typeof readAttributeValue>
  *
  * @param value - The value to be written.
  * @param type - The type of the attribute.
- * @returns The written attribute value.
+ * @param attributeName - Names the attribute in the function-value warning.
+ * @param owner - Names the host, such as `<x-card>`, in the warning, so each host warns once for the same attribute.
+ * Pass a function when the name can change before the warning, as a server host's tag does.
+ * @returns The written attribute value, or `null` when `value` is a function: it is skipped, never written out as
+ * its source.
  * @throws {TypeError} If the provided type is unknown.
  */
-export function writeAttributeValue(value: unknown, type: AttributeTypeConstant) {
+export function writeAttributeValue(
+	value: unknown,
+	type: AttributeTypeConstant,
+	attributeName?: string,
+	owner?: string | (() => string),
+): string | null {
+	if (
+		isSkippedFunction(value, () => {
+			const label = attributeName ? `reflected attribute "${attributeName}"` : 'a reflected attribute';
+			const name = typeof owner === 'function' ? owner() : owner;
+			return name ? `${label} of ${name}` : label;
+		})
+	)
+		return null;
 	const writerType = parseAttributeTypeConstant(type);
 	if (!writerType) throw new TypeError(`[radiant-element] Unknown type "${type}"`);
 	const writer: Writer = writers[writerType] ?? writers.default ?? writeString;

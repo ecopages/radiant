@@ -25,6 +25,14 @@ class SecondController extends RadiantController {
 	value!: ContextProvider<typeof secondContext>;
 }
 
+const elementContext = createContext<{ n: number }>(Symbol('hydration-scope-element-context'));
+
+@customElement('hydration-scope-provider-element')
+class ProviderElement extends RadiantElement {
+	@provideContext<typeof elementContext>({ context: elementContext, initialValue: { n: 0 }, hydrate: Object })
+	value!: ContextProvider<typeof elementContext>;
+}
+
 @controller('hydration-scope-signal')
 class SignalController extends RadiantController {
 	@signal({ hydrate: Number, initial: 0 }) count!: WritableSignal<number>;
@@ -72,6 +80,23 @@ describe('hydration keys on a host shared by several owners', () => {
 		expect(markup).toContain('data-hydration-key="hydration-scope-second:value"');
 	});
 
+	test('an element host and a controller provide the same field name on one element without reading each other', async () => {
+		const sourceElement = document.createElement('hydration-scope-provider-element') as ProviderElement;
+		sourceElement.value.setContext({ n: 9 });
+		const sourceController = create(FirstController, document.createElement('div'));
+		sourceController.value.setContext({ n: 1 });
+		const elementScript = sourceElement.value.renderHydrationScriptTag();
+		const controllerScript = sourceController.value.renderHydrationScriptTag();
+
+		document.body.innerHTML = `<hydration-scope-provider-element data-controller="hydration-scope-first">${controllerScript}${elementScript}</hydration-scope-provider-element>`;
+		const element = document.querySelector<ProviderElement>('hydration-scope-provider-element')!;
+
+		expect(elementScript).toContain('data-hydration-key="value"');
+		expect(controllerScript).toContain('data-hydration-key="hydration-scope-first:value"');
+		await waitFor(() => expect(element.value.getContext()).toEqual({ n: 9 }));
+		expect(create(FirstController, element).value.getContext()).toEqual({ n: 1 });
+	});
+
 	test('an element host does not read the signal payload of a controller on the same element', async () => {
 		const source = document.createElement('div');
 		const sourceController = create(SignalController, source);
@@ -86,6 +111,38 @@ describe('hydration keys on a host shared by several owners', () => {
 		expect(signalScript(sourceController.count)).toContain('data-hydration-key="hydration-scope-signal:count"');
 		expect(signalScript(sourceElement.count)).toContain('data-hydration-key="count"');
 		await waitFor(() => expect(element.count.get()).toBe(7));
+	});
+
+	test('a controller signal hydrates from its own payload under the controller host', () => {
+		const source = document.createElement('div');
+		const sourceController = create(SignalController, source);
+		sourceController.count.set(3);
+		const markup = signalScript(sourceController.count);
+
+		const target = document.createElement('div');
+		target.innerHTML = markup ?? '';
+		const hydrated = new SignalController(target);
+		hydrated.connect();
+
+		expect(hydrated.count.get()).toBe(3);
+		hydrated.disconnect();
+	});
+
+	test('a controller and an element host on one element each hydrate their own signal payload', async () => {
+		const sourceController = create(SignalController, document.createElement('div'));
+		sourceController.count.set(3);
+		const sourceElement = document.createElement('hydration-scope-element') as SignalElement;
+		sourceElement.count.set(7);
+		const markup = `${signalScript(sourceController.count)}${signalScript(sourceElement.count)}`;
+
+		document.body.innerHTML = `<hydration-scope-element data-controller="hydration-scope-signal">${markup}</hydration-scope-element>`;
+		const element = document.querySelector<SignalElement>('hydration-scope-element')!;
+		const hydrated = new SignalController(element);
+		hydrated.connect();
+
+		expect(hydrated.count.get()).toBe(3);
+		await waitFor(() => expect(element.count.get()).toBe(7));
+		hydrated.disconnect();
 	});
 
 	test('a controller registered without an identifier keeps the bare key', () => {

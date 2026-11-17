@@ -1,6 +1,7 @@
 import { render as renderJsx, type JsxRenderable, type SubscribableJsxValueWithAccess } from '@ecopages/jsx';
 import { TrackedRender } from './tracked-render';
 import type { UnknownContext } from '../context/types';
+import { ensureLegacyControllerReady } from '../decorators/legacy/controller-readiness';
 import { ensureLegacyHostReady } from '../decorators/legacy/host-readiness';
 import { REACTIVE_HOST, ReactiveHost, type ReactiveHostInternals, type ReactiveHostLike } from './reactive-host';
 import type { ReactiveState, ReadonlyReactiveState } from './reactivity-contract';
@@ -67,10 +68,7 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 			},
 			(propertyName) => this.updateCycle.markChanged(propertyName),
 		);
-		this.trackedRender = new TrackedRender<JsxRenderable>(
-			() => this.requestUpdate(),
-			this.reactiveHost.renderWarnings,
-		);
+		this.trackedRender = new TrackedRender<JsxRenderable>(this);
 		this.bindings = this.reactiveHost.bindings;
 		this.$ = this.reactiveHost.$;
 		ensureLegacyHostReady(this, 'construct');
@@ -81,13 +79,18 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 	 *
 	 * @remarks Runs the first update cycle synchronously: batched `@onUpdated`
 	 * callbacks for changes queued before connection, the first render when the
-	 * controller overrides `render()`, `@bindTo`, then `updated(changed)`.
+	 * controller overrides `render()`, `@bindTo`, then `updated(changed)`. It returns
+	 * without the cycle when a connection callback disconnected the host, or
+	 * disconnected and reconnected it, in which case the nested connect ran the cycle.
 	 */
 	public connect(): void {
-		ensureLegacyHostReady(this, 'connect');
+		ensureLegacyControllerReady(this);
 		this.connected = true;
 		markControllerRoot(this.host, this);
-		this.reactiveHost.connectHost();
+
+		if (!this.reactiveHost.connectHost()) {
+			return;
+		}
 
 		this.updateCycle.flush(() => {
 			this.updateCycle.runCallbacks();
@@ -207,7 +210,6 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 	public createReactiveProp<T = unknown>(propertyName: string, options: ReactivePropertyOptions<T>): void {
 		const { type, defaultValue, transform } = options;
 
-		this.reactiveHost.getWritableMember(propertyName);
 		validateReactivePropertyDefault(type, defaultValue, !!transform?.fromAttribute);
 
 		const hostPropertyBridge = new ControllerHostPropertyBridge<T>(this.host, this, propertyName);
@@ -215,7 +217,7 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 		const rawInitial = initialHostValue ?? resolveReactiveDefault(options);
 		const initialValue = (transform?.fromProperty ? transform.fromProperty(rawInitial) : rawInitial) as T;
 
-		const signal = this.reactiveHost.createReactiveMember(propertyName, initialValue);
+		const signal = this.reactiveHost.adoptReactiveMember(propertyName, initialValue);
 
 		this.reactiveHost.defineReactiveAccessor(propertyName, { signal, fromProperty: transform?.fromProperty });
 

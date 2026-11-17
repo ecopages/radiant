@@ -95,7 +95,7 @@ Use bindings confidently for child text, whole `data-*` / `aria-*` values, boole
 - Value controls host render logic → plain read
 - Value only feeds a stable JSX output position → binding
 - Value copies onto existing DOM the host does not `render()` → `@bindTo`
-- One field, one form: binding a `@state` or `@prop` field with `this.$` and also reading it in `render()` re-renders anyway; in development it warns once per class and field, as does a field that re-runs `render()` 30 times in a second
+- One field, one form: binding a `@state` or `@prop` field with `this.$` and also reading it in `render()` re-renders anyway; in development it warns once per class and field, as does a field that re-runs `render()` 30 times in a second (bind it with `this.$` if it fills one node; if it shapes a branch or list, derive a coarser field for `render()` and keep the fast value in bindings)
 
 ```tsx
 <article class={this.isExpanded ? 'user-card user-card--expanded' : 'user-card'}>

@@ -10,6 +10,7 @@ import {
 	type ReactivePropDefinition,
 	registerReactivePropDefinition,
 } from '../../core/reactive-prop-metadata';
+import { warnInitializerWithDefaultValue } from '../shared/initializer-default-warning';
 
 export type ReactivePropHost<P> = {
 	createReactiveProp(propertyName: string, options: ReactivePropertyOptions<P>): void;
@@ -58,6 +59,7 @@ export function reactiveProp<P = unknown>(propOptions: ReactivePropertyOptions<P
 		context.addInitializer(function (this: T) {
 			const initializerValue = (this as T & Record<PropertyKey, P | undefined>)[initializerValueKey];
 			const resolvedDefaultValue = defaultValue === undefined ? initializerValue : defaultValue;
+			warnInitializerWithDefaultValue(this, propertyName, initializerValue, defaultValue, context.metadata);
 
 			registerReactivePropDefinition(this, propertyName, options);
 			this.createReactiveProp(propertyName, {

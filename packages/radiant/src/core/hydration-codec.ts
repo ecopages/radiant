@@ -28,7 +28,7 @@ type HydrationScriptHost = {
  * inherits the identifier, so it shares the key.
  */
 export function resolveHydrationKey(owner: object, fieldName: string): string {
-	const identifier = getControllerIdentifier(owner.constructor as CustomElementConstructor);
+	const identifier = getControllerIdentifier(owner.constructor);
 
 	return identifier ? `${identifier}:${fieldName}` : fieldName;
 }

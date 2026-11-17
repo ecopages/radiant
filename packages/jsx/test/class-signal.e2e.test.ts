@@ -60,6 +60,37 @@ describe('a signal in class, classes or style', () => {
 		expect(paragraph.getAttribute('style')).toBe('font-size: 12px');
 	});
 
+	test('a style signal that holds a function drops it, and the next value takes over', () => {
+		const fn = () => 'secret source';
+		const style = state<unknown>({ color: 'red' });
+		const container = document.createElement('div');
+		createRoot(container).render(jsx('p', { style: style as never }));
+		const paragraph = container.querySelector('p')!;
+
+		style.set(fn);
+		expect(paragraph.hasAttribute('style')).toBe(false);
+		style.set({ color: fn, top: '1px' });
+		expect(paragraph.getAttribute('style')).toBe('top: 1px');
+		style.set({ color: 'blue' });
+		expect(paragraph.getAttribute('style')).toBe('color: blue');
+		expect(container.innerHTML).not.toContain('secret');
+	});
+
+	test('a class signal that holds a function, or a list with one, keeps only the other tokens', () => {
+		const fn = () => 'secret source';
+		const cls = state<unknown>(['a', fn]);
+		const container = document.createElement('div');
+		createRoot(container).render(jsx('p', { class: cls as never }));
+		const paragraph = container.querySelector('p')!;
+
+		expect(paragraph.getAttribute('class')).toBe('a');
+		cls.set(fn);
+		expect(paragraph.hasAttribute('class')).toBe(false);
+		cls.set(['b', fn, { c: true }]);
+		expect(paragraph.getAttribute('class')).toBe('b c');
+		expect(container.innerHTML).not.toContain('secret');
+	});
+
 	test('re-rendering with the same class signal keeps one subscription', () => {
 		const cls = state('a');
 		const container = document.createElement('div');

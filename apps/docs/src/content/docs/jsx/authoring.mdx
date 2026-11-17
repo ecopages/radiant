@@ -82,7 +82,9 @@ See [JSX Event Handling](/docs/jsx/events) and [JSX Custom Element Types](/docs/
 
 - The callback is called with the node once it is in the page, on a client render and on hydration with the adopted server node.
 - A function it returns runs when the element is removed or the callback is replaced. Otherwise the callback is called once more with `null`, so the parameter is `Element | null`.
-- The same callback on a re-render does nothing; a different one detaches the old and attaches the new. A keyed move does not call it again.
+- The same callback on a re-render does nothing; a different one detaches the old and attaches the new. A keyed move does not call it again. A callback that threw on attach is not retried either; only a different callback, or dropping `ref`, ends it.
+- Order follows React 19. Attaches run child before parent, siblings in document order, after every property write of the pass, so a parent's callback sees its whole subtree attached. Detaches run parent before child.
+- A callback or cleanup that throws is reported as an uncaught error (a `window` `error` event in a browser) and does not stop the other refs. A callback that threw on attach is still called with `null` on detach.
 - It never runs on the server and is never written out as an attribute. In hydrate mode the element carries a `ref:ref` marker with no function in it. Pass `ref` on the server and the client alike: when only one side has it, the later markers of that view are numbered differently and stay in the page after hydration.
 - A function component receives `ref` as an ordinary prop.
 

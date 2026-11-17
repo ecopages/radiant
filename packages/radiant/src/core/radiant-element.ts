@@ -361,9 +361,7 @@ export class RadiantElement<Bindings extends object = {}>
 			this.removeAttribute(SERVER_RENDERED_HOST_ATTRIBUTE);
 		}
 
-		this.reactiveHost.connectHost();
-
-		if (isReconnectDuringPendingFirstConnect) {
+		if (!this.reactiveHost.connectHost() || isReconnectDuringPendingFirstConnect) {
 			return;
 		}
 
@@ -739,7 +737,7 @@ export class RadiantElement<Bindings extends object = {}>
 			return this.renderRuntime;
 		}
 
-		this.renderRuntime = new RenderRuntime(this as RenderRuntimeHost, this.reactiveHost.renderWarnings);
+		this.renderRuntime = new RenderRuntime(this as RenderRuntimeHost);
 		return this.renderRuntime;
 	}
 }
