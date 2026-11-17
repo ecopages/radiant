@@ -10,12 +10,12 @@ import { createTemplateInstance, retargetTemplateInstance, updateTemplateInstanc
 import {
 	canRenderAsTextNode,
 	createNodesFromValue,
-	flushDeferredProperties,
 	getIterableChildren,
 	getKeyedChildren,
 	isIterableRenderable,
 	isReactiveChildSource,
 	isTemplateResultLike,
+	runRangePass,
 	readReactiveChildSourceValue,
 	subscribeToReactiveChildSource,
 	unwrapKeyedValue,
@@ -497,9 +497,10 @@ function removeRangeRecord(record: MountedRangeRecord): void {
 /**
  * Mounts a signal-like child source and keeps the range in sync with it.
  *
- * @remarks Only the source's own content is flushed here, through a local queue per value. It takes no caller queue:
- * whoever created that queue flushes it once the DOM is in place, and flushing it here too re-applied every queued
- * property once per signal child, so a list whose rows each hold one was quadratic.
+ * @remarks The mount joins the queue of the render or hydrate pass that is running, so a `ref` or property inside
+ * the source is applied with the rest of that pass, once the DOM is in place. A later change of the source has no
+ * pass running and flushes by itself. Joining the pass queue instead of flushing it keeps a list whose rows each hold
+ * a signal child linear.
  */
 export function mountReactiveChildSource(
 	range: ChildRange,
@@ -517,15 +518,15 @@ export function mountReactiveChildSource(
 	};
 
 	const applyValue = (nextValue: unknown) => {
-		const nextDeferredProperties: DeferredPropertyBinding[] = [];
-		mountedSubscription.mounted = updateRangeContent(
-			range,
-			nextValue,
-			mountedSubscription.mounted,
-			rootTarget,
-			nextDeferredProperties,
-		);
-		flushDeferredProperties(nextDeferredProperties);
+		runRangePass((deferredProperties) => {
+			mountedSubscription.mounted = updateRangeContent(
+				range,
+				nextValue,
+				mountedSubscription.mounted,
+				rootTarget,
+				deferredProperties,
+			);
+		});
 	};
 
 	mountedSubscription.unsubscribe = subscribeToReactiveChildSource(source, (nextValue) => {

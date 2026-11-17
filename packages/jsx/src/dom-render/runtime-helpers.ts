@@ -32,6 +32,48 @@ type TemplateMount = (
 	contextParent?: Node | null,
 ) => { rootNodes: readonly Node[] };
 
+let activePass: DeferredPropertyBinding[] | undefined;
+
+/**
+ * Runs `mount` with the deferred queue of one render or hydrate pass and flushes it once `mount` returns.
+ *
+ * @param shouldFlush Called with the result; returns `false` to drop the queue, as when hydration fell back to a
+ * client render and its nodes were discarded.
+ *
+ * @remarks Ranges mounted inside `mount` that need a queue of their own join this one through {@link runRangePass},
+ * so the whole pass flushes once, after its nodes are in the page. A root pass always starts its own queue, even when
+ * it runs inside another pass (a custom element rendering from `connectedCallback`), because its caller expects its
+ * refs and properties to be applied when it returns.
+ */
+export function runRootPass<T>(
+	mount: (deferredProperties: DeferredPropertyBinding[]) => T,
+	shouldFlush: (result: T) => boolean = () => true,
+): T {
+	const deferredProperties: DeferredPropertyBinding[] = [];
+	const outerPass = activePass;
+	let result: T;
+
+	activePass = deferredProperties;
+
+	try {
+		result = mount(deferredProperties);
+	} finally {
+		activePass = outerPass;
+	}
+
+	if (shouldFlush(result)) flushDeferredProperties(deferredProperties);
+	return result;
+}
+
+/**
+ * Runs `mount` for a range with the queue of the pass that is already running, or a pass of its own when none is.
+ *
+ * @remarks A signal child updating on its own, later, has no pass running and flushes by itself.
+ */
+export function runRangePass<T>(mount: (deferredProperties: DeferredPropertyBinding[]) => T): T {
+	return activePass ? mount(activePass) : runRootPass(mount);
+}
+
 /**
  * Flushes property assignments and `run` entries (`ref` attaches) after the DOM structure for the current pass is stable.
  *

@@ -1,3 +1,4 @@
+import { state } from '@ecopages/signals';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 async function loadModule<T>(path: string): Promise<T> {
@@ -412,6 +413,117 @@ describe('JSX ref', () => {
 			);
 
 			expect(log).toEqual(['a', 'b', 'list']);
+		});
+
+		test('hydrate mode attaches siblings and list items in document order, then the parent', async () => {
+			const [{ jsx, jsxs }, { createRoot }, { renderToString }] = await Promise.all([
+				loadJsxRuntime(),
+				loadJsxModule(),
+				loadServerRender(),
+			]);
+			const container = document.createElement('div');
+			const log: string[] = [];
+			const ref = (name: string) => () => log.push(name);
+			const view = () =>
+				jsxs('div', {
+					ref: ref('root'),
+					children: [
+						jsx('a', { ref: ref('a') }),
+						jsx('b', { ref: ref('b') }),
+						[jsx('u', { ref: ref('l1') }), jsx('u', { ref: ref('l2') })],
+						jsx('i', { ref: ref('c') }),
+					],
+				});
+
+			container.innerHTML = renderToString(view(), { mode: 'hydrate' });
+			createRoot(container).hydrate(view());
+
+			expect(log).toEqual(['a', 'b', 'l1', 'l2', 'c', 'root']);
+		});
+
+		test('a ref inside a signal child sees its node in the page and the ancestors properties written', async () => {
+			const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+			const container = document.createElement('div');
+			document.body.append(container);
+			let seen: { connected: boolean; property: unknown } | undefined;
+
+			createRoot(container).render(
+				jsx('radiant-jsx-ref-host', {
+					'prop:ref': 'set',
+					children: state(
+						jsx('span', {
+							ref: (node: Element | null) => {
+								if (node) {
+									seen = {
+										connected: node.isConnected,
+										property: (node.closest('radiant-jsx-ref-host') as RefHostElement).ref,
+									};
+								}
+							},
+						}),
+					),
+				}),
+			);
+
+			expect(seen).toEqual({ connected: true, property: 'set' });
+		});
+
+		test('a signal child among siblings attaches in document order before the parent', async () => {
+			const [{ jsx, jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+			const container = document.createElement('div');
+			const log: string[] = [];
+			const ref = (name: string) => () => log.push(name);
+
+			createRoot(container).render(
+				jsxs('div', {
+					ref: ref('root'),
+					children: [
+						jsx('a', { ref: ref('a') }),
+						state(jsx('b', { ref: ref('b') })),
+						jsx('i', { ref: ref('c') }),
+					],
+				}),
+			);
+
+			expect(log).toEqual(['a', 'b', 'c', 'root']);
+		});
+
+		test('a root rendered from connectedCallback has its refs attached when render returns', async () => {
+			const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+			const container = document.createElement('div');
+			document.body.append(container);
+			let attachedWhenRenderReturned: boolean | undefined;
+
+			customElements.define(
+				'radiant-jsx-ref-self-render',
+				class extends HTMLElement {
+					connectedCallback() {
+						let attached = false;
+						createRoot(this).render(jsx('span', { ref: (node: Element | null) => (attached ||= !!node) }));
+						attachedWhenRenderReturned = attached;
+					}
+				},
+			);
+
+			createRoot(container).render(
+				jsx('div', { ref: () => undefined, children: jsx('radiant-jsx-ref-self-render', {}) }),
+			);
+
+			expect(attachedWhenRenderReturned).toBe(true);
+		});
+
+		test('a later change of a signal child attaches its new ref on its own', async () => {
+			const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+			const container = document.createElement('div');
+			document.body.append(container);
+			const log: string[] = [];
+			const view = (name: string) => jsx('span', { ref: (node: Element | null) => node && log.push(name) });
+			const child = state(view('one'));
+
+			createRoot(container).render(jsx('div', { children: child }));
+			child.set(view('two'));
+
+			expect(log).toEqual(['one', 'two']);
 		});
 
 		test('hydrate mode attaches child refs before the parent ref', async () => {

@@ -13,7 +13,7 @@ import { disposeMountedRangeContent } from './mounted-disposal.ts';
 import { createHydratedRangeRecord, mountedContentFromNodes } from './range-records.ts';
 import {
 	canRenderAsTextNode,
-	flushDeferredProperties,
+	runRangePass,
 	getIterableChildren,
 	getKeyedChildren,
 	isIterableRenderable,
@@ -22,7 +22,6 @@ import {
 	unwrapKeyedValue,
 } from './runtime-helpers.ts';
 import type {
-	DeferredPropertyBinding,
 	MountedKeyedList,
 	MountedMixedList,
 	MountedRangeContent,
@@ -110,7 +109,7 @@ function hydrateMountedRangeContentSnapshot(
 		return bootstrapMounted;
 	}
 
-	return flushWithDeferredProperties((deferredProperties) =>
+	return runRangePass((deferredProperties) =>
 		updateRangeContent(
 			{ end: endMarker, start: startMarker },
 			nextValue,
@@ -138,19 +137,6 @@ function needsReconciliationAgainstSsrNodes(nextValue: unknown, bootstrapMounted
 }
 
 /**
- * Runs `mount` with a fresh deferred-property queue and flushes it before returning.
- *
- * Hydration mounts each range eagerly rather than joining the caller's render pass,
- * so property writes are flushed at the end of the range that produced them.
- */
-function flushWithDeferredProperties<T>(mount: (deferredProperties: DeferredPropertyBinding[]) => T): T {
-	const deferredProperties: DeferredPropertyBinding[] = [];
-	const result = mount(deferredProperties);
-	flushDeferredProperties(deferredProperties);
-	return result;
-}
-
-/**
  * Reconnects one template child of a range against the SSR nodes it already owns.
  *
  * Delegates to the full template hydrator instead of reimplementing a reduced
@@ -170,7 +156,7 @@ function hydrateTemplateRange(
 		return undefined;
 	}
 
-	return flushWithDeferredProperties((deferredProperties) =>
+	return runRangePass((deferredProperties) =>
 		hydrateTemplateInstance(template, rootTarget, deferredProperties, {
 			bindingBaseIndex,
 			hostRoots: existingNodes,

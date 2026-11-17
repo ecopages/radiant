@@ -6,10 +6,10 @@ import { hydrateTemplateInstance } from './dom-render/hydration.ts';
 import { canAdoptMarkerlessTemplate, fillsRenderedElement } from './dom-render/hydration-mounted-range.ts';
 import { disposeMountedRoot } from './dom-render/mounted-disposal.ts';
 import {
-	flushDeferredProperties,
 	isReactiveChildSource,
 	isTemplateResultLike,
 	readReactiveChildSourceValue,
+	runRootPass,
 	unwrapKeyedValue,
 } from './dom-render/runtime-helpers.ts';
 import type { DeferredPropertyBinding, MountedRangeContent, MountedRoot } from './dom-render/types.ts';
@@ -48,12 +48,11 @@ export interface JsxRoot {
  */
 export function render(element: JsxRenderable, target: HTMLElement): void {
 	const focusSnapshot = captureFocusSnapshot(target);
-	const deferredProperties: DeferredPropertyBinding[] = [];
 	const root = getOrCreateMountedRoot(target);
 
-	root.mounted = updateRangeContent(root, element, root.mounted, target, deferredProperties);
-
-	flushDeferredProperties(deferredProperties);
+	runRootPass((deferredProperties) => {
+		root.mounted = updateRangeContent(root, element, root.mounted, target, deferredProperties);
+	});
 	restoreFocusSnapshot(target, focusSnapshot);
 }
 
@@ -72,21 +71,24 @@ export function hydrate(element: JsxRenderable, target: HTMLElement): void {
 	ROOT_RENDER_STATE.delete(target);
 
 	const focusSnapshot = captureFocusSnapshot(target);
-	const deferredProperties: DeferredPropertyBinding[] = [];
 	const rootValue = unwrapKeyedValue(element);
 	const reconnectValue = isReactiveChildSource(rootValue)
 		? (readReactiveChildSourceValue(rootValue) as JsxRenderable)
 		: element;
-	const reconnectedContent = reconnectSsrRoot(reconnectValue, target, deferredProperties);
+	let root: ReturnType<typeof adoptHydratedRootRange> | undefined;
+	const reconnectedContent = runRootPass(
+		(deferredProperties) => {
+			const content = reconnectSsrRoot(reconnectValue, target, deferredProperties);
+			if (content) root = adoptHydratedRootRange(target, content);
+			return content;
+		},
+		(content) => content !== undefined,
+	);
 
-	if (!reconnectedContent) {
+	if (!reconnectedContent || !root) {
 		render(element, target);
 		return;
 	}
-
-	const root = adoptHydratedRootRange(target, reconnectedContent);
-
-	flushDeferredProperties(deferredProperties);
 
 	if (isReactiveChildSource(rootValue)) {
 		root.mounted = mountReactiveChildSource(root, rootValue, reconnectedContent, target);
