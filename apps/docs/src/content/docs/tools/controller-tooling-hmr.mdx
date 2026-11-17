@@ -28,7 +28,7 @@ When tooling really does need mutation, the registry exposes separate opt-in API
 
 Use these APIs deliberately:
 
-- `replaceController(identifier, ControllerClass)` replaces the registered class and reconnects matching live hosts
+- `replaceController(identifier, ControllerClass)` replaces the registered class and reconnects matching live hosts; like `registerController`, it throws on an identifier that contains `:` (see [Identifier Rules](/docs/decorators/controller#identifier-rules))
 - `enableControllerReplacementForHmr()` switches decorator-driven registration into replacement mode for the current runtime
 
 Vite sets `import.meta.hot` in development, so a Vite app can gate the opt-in on it:

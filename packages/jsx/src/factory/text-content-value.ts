@@ -5,7 +5,7 @@ import {
 	isKeyedJsxValue,
 	resolveReactiveSnapshot,
 } from '../types/renderable-guards.ts';
-import { isSkippedFunction } from '../warnings/dev-warnings.ts';
+import { isEmptyChild } from '../warnings/dev-warnings.ts';
 
 const OPEN_TAG_NAME_PATTERN = /<([a-z][a-z0-9-]*)(?:\s[^>]*)?>$/i;
 
@@ -36,7 +36,7 @@ export function endsWithTextContentOpenTag(html: string): boolean {
 export function stringifyTextContentValue(value: unknown): string {
 	const resolved = resolveReactiveSnapshot(isKeyedJsxValue(value) ? value.value : value);
 
-	if (resolved == null || typeof resolved === 'boolean' || isSkippedFunction(resolved, 'a child')) {
+	if (isEmptyChild(resolved)) {
 		return '';
 	}
 

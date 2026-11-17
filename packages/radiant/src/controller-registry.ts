@@ -247,7 +247,7 @@ export function registerController<
 		return existingController as TConstructor;
 	}
 
-	setControllerIdentifier(controller as unknown as CustomElementConstructor, identifier);
+	setControllerIdentifier(controller, identifier);
 	controllerRegistry.set(identifier, controller);
 
 	for (const runtime of Array.from(activeRuntimes)) {
@@ -281,7 +281,7 @@ export function replaceController<
 		return controller;
 	}
 
-	setControllerIdentifier(controller as unknown as CustomElementConstructor, identifier);
+	setControllerIdentifier(controller, identifier);
 	controllerRegistry.set(identifier, controller);
 
 	for (const runtime of Array.from(activeRuntimes)) {

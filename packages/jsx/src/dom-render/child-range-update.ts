@@ -1,4 +1,5 @@
 import type { JsxKey, KeyedJsxValue } from '../types/index.ts';
+import { isEmptyChild } from '../warnings/dev-warnings.ts';
 import { isKeyedJsxValue } from '../types/renderable-guards.ts';
 import { clearRange, getRangeFirstNode, getRangeParent, insertIntoRange } from './child-range.ts';
 import { moveRangeBefore } from './dom-operations.ts';
@@ -9,12 +10,13 @@ import { createTemplateInstance, retargetTemplateInstance, updateTemplateInstanc
 import {
 	canRenderAsTextNode,
 	createNodesFromValue,
-	flushDeferredProperties,
 	getIterableChildren,
 	getKeyedChildren,
 	isIterableRenderable,
 	isReactiveChildSource,
 	isTemplateResultLike,
+	runPassOf,
+	runRangePass,
 	readReactiveChildSourceValue,
 	subscribeToReactiveChildSource,
 	unwrapKeyedValue,
@@ -30,7 +32,6 @@ import type {
 	ReactiveChildSource,
 	TemplateInstance,
 } from './types.ts';
-import { isSkippedFunction } from '../warnings/dev-warnings.ts';
 
 /**
  * Reconciles the content of a child range against the next child value.
@@ -147,8 +148,7 @@ function updateSingleChildContent(
 function classifyChildValue(value: unknown): 'empty' | 'iterable' | 'template' | 'text' | 'nodes' {
 	if (isIterableRenderable(value)) return 'iterable';
 	if (isTemplateResultLike(value)) return 'template';
-	if (value === undefined || value === null || typeof value === 'boolean' || isSkippedFunction(value, 'a child'))
-		return 'empty';
+	if (isEmptyChild(value)) return 'empty';
 	return canRenderAsTextNode(value) ? 'text' : 'nodes';
 }
 
@@ -498,9 +498,11 @@ function removeRangeRecord(record: MountedRangeRecord): void {
 /**
  * Mounts a signal-like child source and keeps the range in sync with it.
  *
- * @remarks Only the source's own content is flushed here, through a local queue per value. It takes no caller queue:
- * whoever created that queue flushes it once the DOM is in place, and flushing it here too re-applied every queued
- * property once per signal child, so a list whose rows each hold one was quadratic.
+ * @remarks The mount joins the queue of the render or hydrate pass that is running, so a `ref` or property inside
+ * the source is applied with the rest of that pass, once the DOM is in place. Joining the pass queue instead of
+ * flushing it keeps a list whose rows each hold a signal child linear. A change of the source during that same pass
+ * appends to the same queue, after the first mount's writes. Any other change is independent of whatever pass happens
+ * to be running: it flushes by itself, so it is applied when `set()` returns.
  */
 export function mountReactiveChildSource(
 	range: ChildRange,
@@ -517,16 +519,24 @@ export function mountReactiveChildSource(
 		unsubscribe: () => undefined,
 	};
 
+	let mountQueue: DeferredPropertyBinding[] | undefined;
+
 	const applyValue = (nextValue: unknown) => {
-		const nextDeferredProperties: DeferredPropertyBinding[] = [];
-		mountedSubscription.mounted = updateRangeContent(
-			range,
-			nextValue,
-			mountedSubscription.mounted,
-			rootTarget,
-			nextDeferredProperties,
-		);
-		flushDeferredProperties(nextDeferredProperties);
+		const queue = mountQueue;
+		const run = queue
+			? (mount: (deferredProperties: DeferredPropertyBinding[]) => void) => runPassOf(queue, mount)
+			: runRangePass;
+
+		run((deferredProperties) => {
+			mountQueue ??= deferredProperties;
+			mountedSubscription.mounted = updateRangeContent(
+				range,
+				nextValue,
+				mountedSubscription.mounted,
+				rootTarget,
+				deferredProperties,
+			);
+		});
 	};
 
 	mountedSubscription.unsubscribe = subscribeToReactiveChildSource(source, (nextValue) => {

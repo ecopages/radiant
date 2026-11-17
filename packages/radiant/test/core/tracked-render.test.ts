@@ -5,8 +5,10 @@ import { TrackedRender } from '../../src/core/tracked-render';
 test('tracks render dependencies only while connected', () => {
 	const source = state(1);
 	let updates = 0;
-	const render = new TrackedRender<number>(() => {
-		updates += 1;
+	const render = new TrackedRender<number>({
+		requestUpdate: () => {
+			updates += 1;
+		},
 	});
 	expect(render.evaluate(() => source.get(), false)).toBe(1);
 	source.set(2);
@@ -34,8 +36,10 @@ function hookedState<Value>(value: Value) {
 
 function createTracked() {
 	const calls = { updates: 0 };
-	const render = new TrackedRender<number>(() => {
-		calls.updates += 1;
+	const render = new TrackedRender<number>({
+		requestUpdate: () => {
+			calls.updates += 1;
+		},
 	});
 	return { render, calls };
 }

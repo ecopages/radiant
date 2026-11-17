@@ -102,17 +102,6 @@ export class Computed<Value> extends SignalNode<Value> {
 		this.dependencyUnsubscribers.clear();
 	}
 
-	private clearDependencyWatcherSubscriptions(rollback: boolean): void {
-		const unsubscribers = [...this.dependencyWatcherUnsubscribers.values()];
-
-		if (rollback) {
-			unsubscribers.reverse();
-		}
-
-		this.dependencyWatcherUnsubscribers.clear();
-		throwCollected(collectErrors(unsubscribers));
-	}
-
 	private handleDependencyChange = () => {
 		this.stale = true;
 
@@ -298,8 +287,19 @@ export class Computed<Value> extends SignalNode<Value> {
 		this.syncDependencyWatcherSubscriptions();
 	}
 
-	protected override handleLastWatcherRemoved(rollback: boolean): void {
-		this.clearDependencyWatcherSubscriptions(rollback);
+	private takeDependencyWatchers(): (() => void)[] {
+		const unsubscribers = [...this.dependencyWatcherUnsubscribers.values()];
+
+		this.dependencyWatcherUnsubscribers.clear();
+		return unsubscribers;
+	}
+
+	protected override handleLastWatcherRemoved(): void {
+		throwCollected(collectErrors(this.takeDependencyWatchers()));
+	}
+
+	protected override rollbackFirstWatcher(): void {
+		collectErrors(this.takeDependencyWatchers().reverse());
 	}
 }
 

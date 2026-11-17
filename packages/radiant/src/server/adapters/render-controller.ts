@@ -8,6 +8,7 @@ import { REACTIVE_HOST } from '../../core/reactive-host';
 import { runSsrPreparationCallbacks } from '../../core/ssr-preparation';
 import { CONTROLLER_ATTRIBUTE } from '../../controller-registry';
 import { ensureLegacyHostReady } from '../../decorators/legacy/host-readiness';
+import { isSkippedFunction } from '../../helpers/dev-warnings';
 import { assertValidHtmlAttributeName, assertValidHtmlTagName } from '../../utils/html-names';
 import { toKebabCaseAttributeName } from '../../utils/attribute-utils';
 import { serializeHtmlAttribute } from '../../utils/serialize-html-attribute';
@@ -193,7 +194,12 @@ function createRenderedControllerHost(tagName: string, attributes: RenderedContr
 	const host = windowLike.document.createElement(tagName);
 
 	for (const [name, value] of Object.entries(attributes)) {
-		if (value === undefined || value === null || value === false) {
+		if (
+			value === undefined ||
+			value === null ||
+			value === false ||
+			isSkippedFunction(value, `attribute "${name}"`)
+		) {
 			continue;
 		}
 
@@ -225,7 +231,7 @@ function normalizeRenderedControllerHostAttributes<TController extends RadiantCo
 	appendRenderedControllerStructuredAttributes(normalizedAttributes, 'aria', host?.aria);
 	appendRenderedControllerFlatAttributes(normalizedAttributes, options.attributes);
 
-	const controllerIdentifier = getControllerIdentifier(Controller as unknown as CustomElementConstructor);
+	const controllerIdentifier = getControllerIdentifier(Controller);
 
 	if (controllerIdentifier && normalizedAttributes[CONTROLLER_ATTRIBUTE] == null) {
 		normalizedAttributes[CONTROLLER_ATTRIBUTE] = controllerIdentifier;

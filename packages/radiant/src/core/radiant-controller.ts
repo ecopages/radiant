@@ -68,10 +68,7 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 			},
 			(propertyName) => this.updateCycle.markChanged(propertyName),
 		);
-		this.trackedRender = new TrackedRender<JsxRenderable>(
-			() => this.requestUpdate(),
-			this.reactiveHost.renderWarnings,
-		);
+		this.trackedRender = new TrackedRender<JsxRenderable>(this);
 		this.bindings = this.reactiveHost.bindings;
 		this.$ = this.reactiveHost.$;
 		ensureLegacyHostReady(this, 'construct');

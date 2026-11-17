@@ -3,7 +3,7 @@
 import { waitFor } from '@testing-library/dom';
 import { CUSTOM_ELEMENT_CHILDREN_SYMBOL, createRoot, jsx, type JsxRenderable } from '@ecopages/jsx';
 import { state } from '@ecopages/signals';
-import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, onTestFinished, test, vi } from 'vitest';
 import { installRadiantHydrator, uninstallRadiantHydrator } from '../../src/client/hydrator';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { customElement } from '../../src/decorators/custom-element';
@@ -387,6 +387,8 @@ describe('hydrating server-rendered markup', () => {
 	});
 
 	test('updates a nested host and its parent after the parent adopted it', async () => {
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+		onTestFinished(() => warn.mockRestore());
 		installRadiantHydrator();
 		const element = mount<HydratedNestedHostParent>('nested-host-parent', 'hydrated-nested-host-parent-test');
 		const serverChild = element.querySelector('hydrated-nested-counter-test');
@@ -404,6 +406,9 @@ describe('hydrating server-rendered markup', () => {
 		});
 		expect(element.querySelector('button')).toBe(button);
 		expect(element.querySelector('hydrated-nested-counter-test')).toBe(serverChild);
+		expect(warn.mock.calls.map((call) => String(call[0]))).toEqual([
+			expect.stringContaining('<hydrated-nested-host-parent-test> binds "label" with this.$.label'),
+		]);
 	});
 
 	test('keeps keyed nested hosts through hydration and a reorder', async () => {

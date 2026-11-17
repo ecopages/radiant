@@ -320,6 +320,136 @@ describe('Watcher', () => {
 			expect(shared.getWatcherCount()).toBe(1);
 		});
 
+		test('keeps an AggregateError a hook threw itself as one error', () => {
+			const own = new AggregateError([new Error('x')], 'hook');
+			const other = new Error('other');
+			const a = new State(0, {
+				[subtle.unwatched]() {
+					throw own;
+				},
+			});
+			const b = new State(0, {
+				[subtle.unwatched]() {
+					throw other;
+				},
+			});
+			const watcher = new subtle.Watcher(() => undefined);
+
+			watcher.watch(a, b);
+
+			try {
+				watcher.unwatch(a, b);
+				expect.unreachable();
+			} catch (error) {
+				expect((error as AggregateError).errors).toEqual([own, other]);
+			}
+		});
+
+		test('keeps an aggregate that a hook let through from a nested unwatch as one error', () => {
+			const x = new Error('x');
+			const y = new Error('y');
+			const other = new Error('other');
+			const inner = new subtle.Watcher(() => undefined);
+			const failing = [x, y].map(
+				(error) =>
+					new State(0, {
+						[subtle.unwatched]() {
+							throw error;
+						},
+					}),
+			);
+			const a = new State(0, {
+				[subtle.unwatched]() {
+					inner.unwatch(...failing);
+				},
+			});
+			const b = new State(0, {
+				[subtle.unwatched]() {
+					throw other;
+				},
+			});
+			const watcher = new subtle.Watcher(() => undefined);
+
+			inner.watch(...failing);
+			watcher.watch(a, b);
+
+			try {
+				watcher.unwatch(a, b);
+				expect.unreachable();
+			} catch (error) {
+				const [nested, second] = (error as AggregateError).errors;
+
+				expect(nested).toBeInstanceOf(AggregateError);
+				expect((nested as AggregateError).errors).toEqual([x, y]);
+				expect(second).toBe(other);
+			}
+		});
+
+		test('a hook that writes a signal listed after it notifies the watcher', () => {
+			const notifications: string[] = [];
+			const watcher = new subtle.Watcher(() => {
+				notifications.push('notified');
+			});
+			const first: State<number> = new State(0, {
+				[subtle.unwatched]() {
+					notifications.push('first:unwatched');
+					second.set(1);
+				},
+			});
+			const second = new State(0);
+
+			watcher.watch(first, second);
+			watcher.unwatch(first, second);
+
+			expect(notifications).toEqual(['first:unwatched', 'notified']);
+			expect(first.getWatcherCount()).toBe(0);
+			expect(second.getWatcherCount()).toBe(0);
+		});
+
+		test('re-arms the watcher when the signals a hook invalidated are released and nothing is pending', () => {
+			const notifications: string[] = [];
+			const watcher = new subtle.Watcher(() => {
+				notifications.push('notified');
+			});
+			const first: State<number> = new State(0, {
+				[subtle.unwatched]() {
+					second.set(1);
+				},
+			});
+			const second = new State(0);
+			const kept = new State(0);
+
+			watcher.watch(first, second, kept);
+			watcher.unwatch(first, second);
+
+			expect(notifications).toEqual(['notified']);
+			expect(watcher.getPending()).toEqual([]);
+
+			kept.set(1);
+
+			expect(notifications).toEqual(['notified', 'notified']);
+			expect(watcher.getPending()).toEqual([kept]);
+		});
+
+		test('a hook that writes a signal listed before it does not notify the watcher', () => {
+			const notifications: string[] = [];
+			const watcher = new subtle.Watcher(() => {
+				notifications.push('notified');
+			});
+			const first = new State(0);
+			const second = new State(0, {
+				[subtle.unwatched]() {
+					first.set(1);
+				},
+			});
+
+			watcher.watch(first, second);
+			watcher.unwatch(first, second);
+
+			expect(notifications).toEqual([]);
+			expect(watcher.getPending()).toEqual([]);
+		});
+
 		test('reports several failures as an AggregateError', () => {
 			const first = new Error('first');
 			const second = new Error('second');
@@ -391,6 +521,24 @@ describe('Watcher', () => {
 
 			expect(() => watcher.watch(derived)).toThrow('own');
 			expect(events).toEqual(['a:watched', 'b:watched', 'b:unwatched', 'a:unwatched']);
+		});
+
+		test('keeps the watch error and releases every dependency when a computed rollback hits failing hooks', () => {
+			const events: string[] = [];
+			const own = new Error('own');
+			const a = hooks('a', events, { unwatched: new Error('a') });
+			const b = hooks('b', events, { unwatched: new Error('b') });
+			const derived = new Computed(() => a.get() + b.get(), {
+				[subtle.watched]() {
+					throw own;
+				},
+			});
+			const watcher = new subtle.Watcher(() => undefined);
+
+			expect(() => watcher.watch(derived)).toThrow(own);
+			expect(events).toEqual(['a:watched', 'b:watched', 'b:unwatched', 'a:unwatched']);
+			expect(a.getWatcherCount()).toBe(0);
+			expect(b.getWatcherCount()).toBe(0);
 		});
 
 		test('retries the sync on the next read when a recompute of a watched computed fails to watch', () => {
@@ -538,11 +686,7 @@ describe('Watcher', () => {
 				expect.unreachable();
 			} catch (error) {
 				expect(error).toBeInstanceOf(AggregateError);
-				const [inner, own] = (error as AggregateError).errors;
-
-				expect(inner).toBeInstanceOf(AggregateError);
-				expect((inner as AggregateError).errors).toEqual([e1, e2]);
-				expect(own).toBe(e3);
+				expect((error as AggregateError).errors).toEqual([e1, e2, e3]);
 			}
 
 			expect(events).toContain('own:unwatched');
