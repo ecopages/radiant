@@ -7,8 +7,8 @@ import { areJsxDevWarningsEnabled, warnOnceInDevelopment } from '../../helpers/d
  * Warns in development that a value assigned to a host before upgrade was discarded by an internal member.
  *
  * @remarks
- * `@prop` adopts a pre-upgrade value; `@state` and `@signal` are internal and keep their initializer, so the
- * assignment is lost. The warning fires once per element tag and member, from both the standard and the legacy
+ * `@prop` adopts a pre-upgrade value; `@state`, `@signal` and `@fromStore` are internal and keep their initializer
+ * (or the store snapshot), so the assignment is lost. The warning fires once per element tag and member, from both the standard and the legacy
  * decorators. The check wraps the warning instead of returning early, because some bundlers (Rollup) keep the
  * code after an early `return` inside a `try`; the `try` keeps an unbundled browser load, where `process` does
  * not exist, from throwing.

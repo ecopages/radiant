@@ -33,6 +33,24 @@ const cartStore: ExternalStoreSource<{ n: number; label: string }> = {
 	subscribe: () => () => {},
 };
 
+/** Zustand's `StoreApi<T>`: its listener takes the state and the previous state. */
+type ZustandStoreApi<T> = {
+	getInitialState: () => T;
+	getState: () => T;
+	setState: (partial: Partial<T>) => void;
+	subscribe: (listener: (state: T, previousState: T) => void) => () => void;
+};
+
+declare const zustandStore: ZustandStoreApi<{ n: number }>;
+/** What `create()` from `zustand` returns: the React hook, with the store API on it. */
+declare const zustandHook: ZustandStoreApi<{ n: number }> & (() => { n: number });
+/** The shape of a Redux Toolkit `configureStore()` result that `@fromStore` reads. */
+declare const reduxStore: {
+	dispatch: (action: { type: string }) => unknown;
+	getState: () => { user: string };
+	subscribe: (listener: () => void) => () => void;
+};
+
 export class ValidElementFields extends RadiantElement {
 	@prop({ type: Number, defaultValue: 0 }) p1: number;
 	@prop({ type: Number }) p2?: number;
@@ -84,6 +102,12 @@ export class ValidElementFields extends RadiantElement {
 	@bindTo<number>({ attr: 'data-n', map: (v) => v.toFixed() })
 	@fromStore(cartStore, (s) => s.n)
 	f3!: number;
+	@fromStore(zustandStore, (s) => s.n) f4!: number;
+	@fromStore(zustandHook, (s) => s.n) f5!: number;
+	@fromStore(reduxStore, (s) => s.user) f6!: string;
+	@fromStore(cartStore, (s) => s.label, { equals: (a, b) => a.toLowerCase() === b.toLowerCase() }) f7!: string;
+	// @ts-expect-error a store needs getSnapshot or getState
+	@fromStore({ subscribe: () => () => {} }) f8!: unknown;
 }
 
 export class ValidControllerFields extends RadiantController {

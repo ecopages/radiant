@@ -1,11 +1,8 @@
-import type { ExternalStoreSource } from '@ecopages/signals';
+import type { ExternalStoreSource, SignalOptions } from '@ecopages/signals';
 import type { ReactiveHostLike } from '../core/reactive-host';
 import { fieldDecorator, type ValueFieldDecorator } from './bridge';
 import { fromStore as legacyFromStore } from './legacy/from-store';
 import { fromStore as standardFromStore } from './standard/from-store';
-import type { FromStoreOptions } from './shared/from-store';
-
-export type { FromStoreOptions };
 
 /**
  * Declares a read-only host field over a Zustand, Redux, or `useSyncExternalStore` store.
@@ -14,10 +11,10 @@ export type { FromStoreOptions };
  * writes stay on the store (`setState`, `dispatch`, or the store's actions).
  *
  * @remarks
- * Same arguments as `fromExternalStore(store, select?, options?)`. The host subscribes while
- * connected. Server rendering reads one snapshot. When the store arrives through context, register
- * `fromExternalStore(...)` in `@onContextUpdate` instead: a field decorator cannot see a store that
- * is not known at class definition.
+ * Same arguments as `fromExternalStore(store, select?, options?)`. The host subscribes while connected on the
+ * client, `this.$` bindings included. Server rendering reads `getServerSnapshot()` when the store has one, and never
+ * subscribes. When the store arrives through context, register `fromExternalStore(...)` in `@onContextUpdate`
+ * instead: a field decorator cannot see a store that is not known at class definition.
  *
  * The declared field type is the selected value, and is the type `@bindTo` passes to `map`. Under
  * standard decorators a field that cannot hold that value is rejected. Legacy decorators never see
@@ -31,7 +28,7 @@ export type { FromStoreOptions };
 export function fromStore<Snapshot, Selected = Snapshot>(
 	store: ExternalStoreSource<Snapshot>,
 	select?: (snapshot: Snapshot) => Selected,
-	options?: FromStoreOptions<NoInfer<Selected>>,
+	options?: SignalOptions<NoInfer<Selected>>,
 ): ValueFieldDecorator<ReactiveHostLike, NoInfer<Selected>> {
 	return fieldDecorator(standardFromStore(store, select, options), legacyFromStore(store, select, options));
 }

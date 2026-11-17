@@ -1,11 +1,11 @@
-import type { ExternalStoreSource } from '@ecopages/signals';
+import type { ExternalStoreSource, SignalOptions } from '@ecopages/signals';
 import type { ReactiveHostLike } from '../../core/reactive-host';
-import { installFromStoreField, type FromStoreOptions } from '../shared/from-store';
+import { installFromStoreField } from '../shared/from-store';
 
 export function fromStore<Snapshot, Selected>(
 	store: ExternalStoreSource<Snapshot>,
 	select?: (snapshot: Snapshot) => Selected,
-	options?: FromStoreOptions<Selected>,
+	options?: SignalOptions<Selected>,
 ) {
 	return function <THost extends ReactiveHostLike>(
 		_: undefined,
