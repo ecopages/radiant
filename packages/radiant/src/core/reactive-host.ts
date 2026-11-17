@@ -145,11 +145,19 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 
 	/**
 	 * Runs all connection callbacks registered by decorators or host adapters.
+	 *
+	 * @remarks Stops as soon as the host is no longer observing: a callback that
+	 * disconnects the host has already run the cleanup callbacks, so a later
+	 * connection callback would acquire resources nothing releases.
 	 */
 	public connectHost(): void {
 		this.observeMembers();
 
 		for (const callback of this.onConnectedCallbacks) {
+			if (!this.observing) {
+				break;
+			}
+
 			callback();
 		}
 	}
@@ -186,6 +194,10 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 		this.observing = true;
 
 		for (const [propertyName, signal] of this.reactiveMembers) {
+			if (!this.observing) {
+				break;
+			}
+
 			this.observeMember(propertyName, signal);
 		}
 
@@ -384,7 +396,7 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 
 		if (this.observing) {
 			this.observeMember(propertyName, signal);
-		} else {
+		} else if (!this.memberSnapshots.has(propertyName)) {
 			this.memberSnapshots.set(propertyName, signal.get());
 		}
 
@@ -397,23 +409,28 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 		}
 	}
 
+	/**
+	 * @remarks Subscribes before reporting a diff so a callback that disconnects
+	 * the host finds this member in the observation it releases, and snapshots it
+	 * for the next connect.
+	 */
 	private observeMember(propertyName: string, signal: ReadonlyReactiveState<unknown>): void {
-		if (
-			this.memberSnapshots.has(propertyName) &&
-			!Object.is(this.memberSnapshots.get(propertyName), signal.get())
-		) {
-			this.memberChanged(propertyName);
-
-			for (const update of [...(this.updateCallbacks.get(propertyName)?.keys() ?? [])]) {
-				update();
-			}
-		}
+		const changed =
+			this.memberSnapshots.has(propertyName) && !Object.is(this.memberSnapshots.get(propertyName), signal.get());
 
 		this.memberSnapshots.delete(propertyName);
 		this.changeSubscriptions.set(
 			propertyName,
 			signal.subscribe(() => this.memberChanged(propertyName)),
 		);
+
+		if (changed) {
+			this.memberChanged(propertyName);
+
+			for (const update of [...(this.updateCallbacks.get(propertyName)?.keys() ?? [])]) {
+				update();
+			}
+		}
 	}
 
 	private memberChanged(propertyName: string): void {

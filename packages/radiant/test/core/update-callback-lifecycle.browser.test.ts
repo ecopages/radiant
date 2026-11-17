@@ -237,3 +237,39 @@ describe('update callback subscriptions follow host connection', () => {
 		controller.disconnect();
 	});
 });
+
+describe('update callbacks that disconnect their host during the connect pass', () => {
+	const aSource = createCountedSource(1);
+	const bSource = createCountedSource(1);
+
+	class DisconnectingController extends RadiantController {
+		@signal({ source: aSource.source })
+		a!: WritableSignal<number>;
+		@signal({ source: bSource.source })
+		b!: WritableSignal<number>;
+	}
+
+	test('leave no subscription behind and keep unvisited members for the next connect', () => {
+		aSource.source.set(1);
+		bSource.source.set(1);
+		const controller = new DisconnectingController(document.createElement('section'));
+		const seenB: number[] = [];
+		controller.registerUpdateCallback('a', () => controller.disconnect());
+		controller.registerUpdateCallback('b', () => seenB.push(controller.b.get()));
+		controller.connect();
+		controller.disconnect();
+
+		aSource.source.set(2);
+		bSource.source.set(2);
+		controller.connect();
+
+		expect(aSource.counter.listeners).toBe(0);
+		expect(bSource.counter.listeners).toBe(0);
+		expect(seenB).toEqual([]);
+
+		controller.connect();
+		expect(seenB).toEqual([2]);
+		controller.disconnect();
+		expect(bSource.counter.listeners).toBe(0);
+	});
+});
