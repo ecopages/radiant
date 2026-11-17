@@ -1,5 +1,23 @@
 # @ecopages/jsx
 
+## 0.11.0
+
+### Minor Changes
+
+- [#767](https://github.com/ecopages/radiant/pull/767) [`59f2b21`](https://github.com/ecopages/radiant/commit/59f2b21fe77e9404652635741559a0f10b3e8dad) Thanks [@andeeplus](https://github.com/andeeplus)! - Add `fromExternalStore(store, select?)`, a read-only signal over a Zustand, Redux, or `useSyncExternalStore` store, and `@fromStore(store, select?)`, a host field that reads a slice of it. The host subscribes to the store only while it is connected, and server rendering paints `getServerSnapshot()` without subscribing. Writes stay on the store. A `@fromStore` field with an initializer warns in development, because the store replaces it. A host now holds any read-only member registered with `registerReactiveMember`, including the `this.$` bindings in its view, only while it is connected on the client.
+
+    A signal or binding on a standard boolean attribute, such as `hidden={this.$.open}` or a store path, no longer re-runs the host's `render()`, or a computed that builds the element, when its value changes: creating the JSX tree no longer reads it. Each of its values now binds as a static value of the same type would, on the client, on the server and in hydration; before, its first value chose the binding for every later one. A host also releases the signals its view binds directly, such as a module-level signal, when it disconnects, and catches up when it reconnects, through `pauseSubscriptions` and `resumeSubscriptions`, hooks in `@ecopages/jsx` for a framework that owns a render target.
+
+- [#756](https://github.com/ecopages/radiant/pull/756) [`8de8063`](https://github.com/ecopages/radiant/commit/8de806399291a8d4a85e3ce24157530fc703ccd4) Thanks [@andeeplus](https://github.com/andeeplus)! - Add `ref` to every intrinsic element, custom elements included: a callback called with the node once it is in the page, including the server node adopted during hydration. A function it returns runs on removal; otherwise the callback is called once more with `null`. It never runs on the server and is never serialized. A string `ref` is now a type error and is no longer written out. This also fixes `ref={fn}` writing the function's source into the DOM and the server HTML, and assigning it as a property on custom elements.
+
+- [#763](https://github.com/ecopages/radiant/pull/763) [`0af1fcc`](https://github.com/ecopages/radiant/commit/0af1fccd55ea9773a05e73b50dea11d1305395da) Thanks [@andeeplus](https://github.com/andeeplus)! - Run nested `ref` callbacks child before parent, as React 19 does, so a parent's callback sees every ref in its subtree attached; detaches still run parent before child. This changes the order: refs used to attach parent first. A `ref` callback or cleanup that throws is now reported as an uncaught error without stopping the other refs or the disposal of the same pass. A function child no longer makes hydration rebuild the range: it counts as no nodes there, as it already did when mounting. A callback that detaches its own part while it attaches is no longer called with `null` mid-attach, and the cleanup it returns still runs.
+
+### Patch Changes
+
+- [#746](https://github.com/ecopages/radiant/pull/746) [`c13d35b`](https://github.com/ecopages/radiant/commit/c13d35bd0e0d58060b680d59b59101e8052d29c4) Thanks [@andeeplus](https://github.com/andeeplus)! - Stop writing a function in a child, `attr`, `bool`, `class`, `classes` or `style` position, a `style` object value, or a function that a signal or subscribable resolves to, out as its source code, in the DOM and in `renderToString` (plain and hydrate): the child renders nothing and the attribute or declaration is left off. The development runtime (`@ecopages/jsx/jsx-dev-runtime`) warns once per position, naming it. `prop:` bindings, event handlers and a custom element's properties keep a function as a value.
+- Updated dependencies [[`59f2b21`](https://github.com/ecopages/radiant/commit/59f2b21fe77e9404652635741559a0f10b3e8dad), [`6e7265e`](https://github.com/ecopages/radiant/commit/6e7265edd7b260060cef5e948bd6dfd47778ee0b), [`9bce50d`](https://github.com/ecopages/radiant/commit/9bce50d1567b72b3846b147a2323e10843f5ec53)]:
+    - @ecopages/signals@0.11.0
+
 ## 0.10.0
 
 ### Patch Changes
