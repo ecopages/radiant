@@ -91,6 +91,11 @@ class CartBadge extends RadiantElement<{ count: number }> {
 
 A sibling that selects `state.user` does not update when the cart items change.
 
+## Recipes
+
+- [Zustand store](/docs/examples/zustand-store) — `create()` from Zustand, a cart badge and a list
+- [Redux store](/docs/examples/redux-store) — `configureStore()`, two hosts, each on one slice
+
 ## Server snapshot and hydration
 
 Pass `getServerSnapshot` when the server and the first client paint must match, then let the live `getSnapshot` / `getState` take over once the host connects (or an effect / computed subscriber starts). The HTML is painted from that server snapshot. The client subscription is the takeover.

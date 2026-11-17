@@ -18,4 +18,6 @@ The cart lives in a store that is not a Radiant host: checkout, analytics, or an
 
 <ExternalStoreCart />
 
-The badge uses `@fromStore` and binds `this.$.count`, so adding an item patches the number without re-running that host's `render()`. The list reads the items in `render()` because the row structure changed. See [External stores](/docs/signals/signals-external-store) and [@fromStore](/docs/decorators/from-store).
+The badge uses `@fromStore` and binds `this.$.count`, so adding an item patches the number without re-running that host's `render()`. The list reads the items in `render()` because the row structure changed.
+
+Full recipes: [Zustand store](/docs/examples/zustand-store) and [Redux store](/docs/examples/redux-store). API: [@fromStore](/docs/decorators/from-store).

@@ -65,7 +65,7 @@ To recover a shadowed accessor after upgrade, save the value, `delete` the own p
 - use [@prop](/docs/decorators/prop) when the value is public API on a host
 - use [@state](/docs/decorators/state) for plain internal host state
 - use [@signal](/docs/decorators/signal) when the field itself should be a writable signal
-- use [@fromStore](/docs/decorators/from-store) when the value is a slice of a Zustand, Redux, or `useSyncExternalStore` store this host does not own
+- use [@fromStore](/docs/decorators/from-store) when the value is a slice of a Zustand, Redux, or `useSyncExternalStore` store this host does not own ([Zustand recipe](/docs/examples/zustand-store), [Redux recipe](/docs/examples/redux-store))
 
 ## Typing Decorated Fields
 

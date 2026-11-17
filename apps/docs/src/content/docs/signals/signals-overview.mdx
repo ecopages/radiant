@@ -51,6 +51,7 @@ It is not a drop-in implementation of the current proposal draft.
 Radiant builds on top of this package in two main ways:
 
 - `@signal` turns a host field into a real writable signal
+- `@fromStore` turns a host field into a read-only slice of a Zustand or Redux store
 - `createResource(...)` from `@ecopages/radiant` ties async state to a host lifecycle
 
 That split is intentional:
@@ -64,4 +65,5 @@ That split is intentional:
 - See [Signals Effects](/docs/signals/signals-effects)
 - See [Signals Stores](/docs/signals/signals-stores)
 - See [External stores](/docs/signals/signals-external-store)
+- See [Zustand store](/docs/examples/zustand-store) and [Redux store](/docs/examples/redux-store)
 - See [Resources](/docs/signals/signals-resources)

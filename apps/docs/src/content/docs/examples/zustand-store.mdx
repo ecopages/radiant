@@ -1,0 +1,88 @@
+---
+title: "Zustand store"
+description: "A Radiant header badge that reads a Zustand cart store it does not own."
+order: 7
+---
+
+import { ExternalStoreCart } from '@/components/external-store-cart';
+
+export const config = {
+	dependencies: {
+		components: [ExternalStoreCart],
+	},
+};
+
+# Zustand store
+
+The cart lives in Zustand (or a store with the same `getState` / `setState` / `subscribe` surface). Checkout, analytics, or a React island already call `setState`. A Radiant badge on the header should patch the count without copying snapshots into `@state`.
+
+<ExternalStoreCart />
+
+**Add mug** and **Add lamp** write the store. The badge binds `this.$.count`. The list reads `this.items` in `render()` because the row structure changed.
+
+## The store
+
+In an app, install Zustand and pass the object `create()` returns. That object is already `getState`, `setState`, and `subscribe`.
+
+```ts
+import { create } from 'zustand';
+
+type CartState = {
+	items: string[];
+};
+
+export const cartStore = create<CartState>(() => ({
+	items: ['Mug'],
+}));
+
+export function addCartItem(name: string): void {
+	cartStore.setState({ items: [...cartStore.getState().items, name] });
+}
+```
+
+Pass `cartStore` to `@fromStore`, not `cartStore()`. The object `create()` returns is the store. Calling it is the React hook.
+
+The live demo uses a store with that same surface so the docs app does not depend on Zustand.
+
+## The hosts
+
+```tsx
+import { RadiantElement, customElement, fromStore } from '@ecopages/radiant';
+import { addCartItem, cartStore } from './cart-store';
+
+@customElement('cart-badge')
+class CartBadge extends RadiantElement<{ count: number }> {
+	@fromStore(cartStore, (state) => state.items.length)
+	count!: number;
+
+	override render() {
+		return <span>{this.$.count}</span>;
+	}
+}
+
+@customElement('cart-list')
+class CartList extends RadiantElement<{ items: string[] }> {
+	@fromStore(cartStore, (state) => state.items)
+	items!: string[];
+
+	override render() {
+		return (
+			<ul>
+				{this.items.map((item) => (
+					<li>{item}</li>
+				))}
+			</ul>
+		);
+	}
+}
+```
+
+A selector that returns `state.items.length` stays quiet when something else in the store changes. Returning a new array from `filter` on every notification will update every time.
+
+Do not write `this.count = 2`. Assignment throws. Call `cartStore.setState` or an action on the store.
+
+## See Also
+
+- [@fromStore](/docs/decorators/from-store)
+- [Redux store](/docs/examples/redux-store)
+- [External stores](/docs/signals/signals-external-store)

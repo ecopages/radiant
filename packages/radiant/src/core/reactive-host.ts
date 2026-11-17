@@ -655,7 +655,9 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 		this.access.defineProperty(this.host, propertyName, {
 			get,
 			set: () => {
-				throw new TypeError(`[@ecopages/radiant] "${propertyName}" is a read-only member and cannot be assigned.`);
+				throw new TypeError(
+					`[@ecopages/radiant] "${propertyName}" is a read-only member and cannot be assigned.`,
+				);
 			},
 			enumerable: true,
 			configurable: true,

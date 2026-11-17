@@ -7,7 +7,10 @@ export function fromStore<Snapshot, Selected>(
 	select?: (snapshot: Snapshot) => Selected,
 	options?: FromStoreOptions<Selected>,
 ) {
-	return function <THost extends ReactiveHostLike>(_: undefined, context: ClassFieldDecoratorContext<THost, Selected>) {
+	return function <THost extends ReactiveHostLike>(
+		_: undefined,
+		context: ClassFieldDecoratorContext<THost, Selected>,
+	) {
 		const propertyName = String(context.name);
 
 		context.addInitializer(function (this: THost) {

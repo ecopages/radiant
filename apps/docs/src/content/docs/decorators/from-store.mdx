@@ -4,9 +4,27 @@ description: "Read a Zustand or Redux store as a host field."
 order: 6
 ---
 
+import { ExternalStoreCart } from '@/components/external-store-cart';
+
+export const config = {
+	dependencies: {
+		components: [ExternalStoreCart],
+	},
+};
+
 # @fromStore
 
-`@fromStore(store, select)` is a read-only host field over a Zustand, Redux, or `useSyncExternalStore` store. Use it when the source of truth is **already** that store. `@state` is for values this host owns. `createStore(...)` is for nested data Radiant owns.
+`@fromStore(store, select)` is a read-only host field over a Zustand, Redux, or `useSyncExternalStore` store. Use it when the source of truth is **already** that store.
+
+- [@state](/docs/decorators/state) / [@prop](/docs/decorators/prop) when this host owns the value
+- `createStore(...)` when Radiant owns nested data
+- `@fromStore` when other code already writes the store
+
+<ExternalStoreCart />
+
+The count patches in place (`this.$.count`). The list re-renders because its shape changed. **Add mug** and **Add lamp** call `setState`. They never write a Radiant field.
+
+Worked recipes: [Zustand store](/docs/examples/zustand-store) and [Redux store](/docs/examples/redux-store).
 
 ## Example
 
@@ -26,11 +44,31 @@ export class CartBadge extends RadiantElement<{ count: number }> {
 
 The declared field type is the selected value, and is the type [@bindTo](/docs/decorators/bind-to) passes to `map`: see [Typing Decorated Fields](/docs/decorators#typing-decorated-fields).
 
-Assignment throws. Write through `cartStore.setState`, `dispatch`, or the store's actions.
+Assignment throws. Write through `setState`, `dispatch`, or the store's actions.
 
-## When The Store Is Not Known On The Class
+## Arguments
 
-A field decorator cannot see a store that arrives later through context. Provide the store object, then register a slice in `@onContextUpdate`:
+Same arguments as `fromExternalStore(store, select?, options?)` from `@ecopages/signals`.
+
+| Argument | Type | Description |
+| --- | --- | --- |
+| `store` | `{ subscribe, getSnapshot? \| getState?, getServerSnapshot? }` | Zustand and Redux use `getState`. React's contract uses `getSnapshot`. |
+| `select` | `(snapshot) => Selected` | Optional. Omit it to bind the whole snapshot. |
+| `options.equals` | `(previous, next) => boolean` | Optional. Defaults to `Object.is`. A selected value equal to the last one does not notify. |
+
+The selector runs on every store notification. Return a stable slice (a primitive, `state.items`). Do not return a new object or array on every call.
+
+## What It Changes
+
+- the field holds the selected slice, like `@state`, but it has no setter
+- `this.$.name` patches that node; a direct read in `render()` re-renders when the slice changes
+- `@onUpdated('name')` and `@bindTo` work on the field
+- the host subscribes while connected, releases the store on disconnect, and subscribes again on reconnect
+- server rendering reads one snapshot and does not keep a listener
+
+## When The Store Arrives Through Context
+
+A field decorator cannot see a store that is not known at class definition. Provide the store object (its identity stays stable). Each descendant registers a slice in `@onContextUpdate`:
 
 ```tsx
 @onContextUpdate({ context: cartContext })
@@ -44,12 +82,26 @@ onCart(store: typeof cartStore) {
 
 `@contextSelector` is the wrong tool: it reacts when the context **value** is replaced, and a Zustand store is not replaced on `setState`.
 
-## Selectors
+## Server Snapshot
 
-The selector runs on every store notification. If the selected value is `Object.is` equal to the last one, nothing notifies. Return a stable slice (a primitive, `state.items`), or pass `{ equals }`. Do not return a new object or array on every call.
+Pass `getServerSnapshot` when the server HTML and the first client paint must match. Until something subscribes, `get()` returns that snapshot. After connect, the client `getSnapshot` / `getState` takes over.
 
-## See Also
+```ts
+@fromStore(
+	{
+		subscribe: store.subscribe,
+		getSnapshot: () => store.getState(),
+		getServerSnapshot: () => serverCart,
+	},
+	(state) => state.items.length,
+)
+count!: number;
+```
 
-- [External stores](/docs/signals/signals-external-store)
+## Related
+
+- [Zustand store](/docs/examples/zustand-store)
+- [Redux store](/docs/examples/redux-store)
+- [External stores](/docs/signals/signals-external-store) — `fromExternalStore(...)`, context, hydration
 - [@state](/docs/decorators/state)
 - [@signal](/docs/decorators/signal)
