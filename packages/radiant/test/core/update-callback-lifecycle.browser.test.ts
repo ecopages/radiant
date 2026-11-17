@@ -526,3 +526,82 @@ describe('a controller @prop written before connect', () => {
 		controller.disconnect();
 	});
 });
+
+describe('a connection callback that disconnects the host ends the connect pass', () => {
+	const controllerSource = createCountedSource(1);
+	const elementSource = createCountedSource(1);
+
+	class PaintingController extends RadiantController {
+		@bindTo({ attr: 'data-n' })
+		@signal({ source: controllerSource.source })
+		n!: WritableSignal<number>;
+		updates = 0;
+		renders = 0;
+		override updated(): void {
+			this.updates++;
+		}
+		override render() {
+			this.renders++;
+			return null;
+		}
+	}
+
+	@customElement('update-callback-painting-element')
+	class PaintingElement extends RadiantElement {
+		@bindTo({ attr: 'data-n' })
+		@signal({ source: elementSource.source })
+		n!: WritableSignal<number>;
+		connects = 0;
+		updates = 0;
+		override onConnected(): void {
+			this.connects++;
+		}
+		override updated(): void {
+			this.updates++;
+		}
+	}
+
+	test('a Controller Host neither paints nor runs updated()', async () => {
+		const host = document.createElement('section');
+		const controller = new PaintingController(host);
+		controller.registerConnectedCallback(() => controller.disconnect());
+		controller.connect();
+		await new Promise((resolve) => setTimeout(resolve));
+
+		expect(host.hasAttribute('data-n')).toBe(false);
+		expect(controller.renders).toBe(0);
+		expect(controller.updates).toBe(0);
+		expect(controllerSource.counter.listeners).toBe(0);
+	});
+
+	test('a Controller Host that a callback reconnects runs the cycle once, in the nested connect', async () => {
+		const host = document.createElement('section');
+		const controller = new PaintingController(host);
+		let reconnected = false;
+		controller.registerConnectedCallback(() => {
+			if (!reconnected) {
+				reconnected = true;
+				controller.disconnect();
+				controller.connect();
+			}
+		});
+		controller.connect();
+		await new Promise((resolve) => setTimeout(resolve));
+
+		expect(host.getAttribute('data-n')).toBe('1');
+		expect(controller.renders).toBe(1);
+		controller.disconnect();
+	});
+
+	test('an Element Host neither paints nor runs onConnected() or updated()', async () => {
+		const element = document.createElement('update-callback-painting-element') as PaintingElement;
+		element.registerConnectedCallback(() => element.remove());
+		document.body.append(element);
+		await new Promise((resolve) => setTimeout(resolve));
+
+		expect(element.hasAttribute('data-n')).toBe(false);
+		expect(element.connects).toBe(0);
+		expect(element.updates).toBe(0);
+		expect(elementSource.counter.listeners).toBe(0);
+	});
+});

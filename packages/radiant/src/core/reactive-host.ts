@@ -152,8 +152,12 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	 * disconnects the host has already run the cleanup callbacks, so a later
 	 * connection callback would acquire resources nothing releases, and one that
 	 * also reconnects it has already run the whole pass.
+	 *
+	 * @returns Whether observation is still the one this pass started. When it is not, the host
+	 * disconnected under the pass, or a nested connect already ran the rest of the connect work, so
+	 * the caller must not flush.
 	 */
-	public connectHost(): void {
+	public connectHost(): boolean {
 		const epoch = this.startObservation();
 
 		for (const callback of this.onConnectedCallbacks) {
@@ -163,6 +167,8 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 
 			callback();
 		}
+
+		return epoch === this.observationEpoch;
 	}
 
 	/**

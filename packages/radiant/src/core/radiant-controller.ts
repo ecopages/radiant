@@ -87,7 +87,10 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 		ensureLegacyHostReady(this, 'connect');
 		this.connected = true;
 		markControllerRoot(this.host, this);
-		this.reactiveHost.connectHost();
+
+		if (!this.reactiveHost.connectHost()) {
+			return;
+		}
 
 		this.updateCycle.flush(() => {
 			this.updateCycle.runCallbacks();
