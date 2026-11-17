@@ -136,10 +136,10 @@ Use `update()` for an immediate update or `requestUpdate()` for a scheduled one 
 
 `{this.count}` and `{this.$.count}` look alike and behave differently. A direct read in `render()` makes the whole view depend on `count`, so each change runs `render()` again and reconciles the output; that is the right choice for branching, list shape and anything else the view structure depends on. `{this.$.count}` binds one node: a change patches that node and `render()` does not run. A value that changes every frame, such as a media position, belongs behind `this.$`.
 
-In development, Radiant warns once per class and field in two cases where the direct read is clearly wasteful, naming the field and the host and pointing to `this.$`. The warnings cover `@state` and `@prop` fields; a `@signal` field, an `@attr` field and a `createStore(...)` read or path write do not warn.
+In development, Radiant warns once per class and field in two cases where the direct read is clearly wasteful, naming the field and the host and the remedy. The warnings cover `@state` and `@prop` fields; a `@signal` field, an `@attr` field and a `createStore(...)` read or path write do not warn.
 
 - Redundant path: a field is bound with `this.$` and also read directly in `render()`. Each change patches the bound node and then re-renders the view. A binding passed to a child host counts as bound.
-- Hot field: one field re-runs one host's `render()` 30 times within a second.
+- Hot field: one field re-runs one host's `render()` 30 times within a second. If the field fills one node or attribute, bind it with `this.$`; if it shapes the structure (a list length, a branch), move the per-frame value out of `render()`, for example into a `this.$` binding on the node that shows it or an imperative write.
 
 A host that reads a field directly without either pattern does not warn. Both warnings follow the development-warning rules in [Development Warnings](#development-warnings).
 

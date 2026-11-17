@@ -12,3 +12,8 @@ export interface ReactiveState<T> extends ReadonlyReactiveState<T> {
 	set(value: T): void;
 	update?(updater: (value: T) => T): void;
 }
+
+/** Whether a member state accepts writes, as opposed to a read-only `{ get, subscribe }` object. */
+export function isWritableState<T>(member: ReadonlyReactiveState<T>): member is ReactiveState<T> {
+	return typeof (member as Partial<ReactiveState<T>>).set === 'function';
+}

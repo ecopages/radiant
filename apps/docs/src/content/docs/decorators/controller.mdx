@@ -35,6 +35,7 @@ startControllers(document);
 ## Identifier Rules
 
 - the identifier must be unique across the page runtime
+- the identifier cannot contain `:`, which separates it from the field in a hydration key (see [the hydration key](/docs/context/provide-context#ssr-hydration)); `@controller` and `registerController` throw on one
 - re-registering the same constructor is a no-op
 - registering a different constructor for an existing identifier keeps the original controller by default
 

@@ -176,10 +176,15 @@ describe.each<HostKind>(['element', 'controller'])('whole-render read warnings o
 		expect(message).toContain('"count"');
 		expect(message).toContain('times within');
 		expect(message).toContain('this.$.count');
+		expect(message).toContain('fills one node or attribute');
+		expect(message).toContain('list length');
+		expect(message).toContain('out of render()');
 		expect(message).not.toContain('"other"');
 
+		const now = vi.spyOn(Date, 'now');
 		for (let value = 31; value <= 60; value++) await write(host, value);
 		expect(warn).toHaveBeenCalledTimes(1);
+		expect(now).not.toHaveBeenCalled();
 	});
 
 	test('each field that re-runs render() 30 times within a second warns once, by name', async () => {

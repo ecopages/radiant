@@ -7,6 +7,7 @@ import {
 	enableControllerReplacementForHmr,
 	hasRegisteredController,
 	registerController,
+	replaceController,
 	setControllerRegistrationStrategy,
 	startControllers,
 	stopControllers,
@@ -23,6 +24,16 @@ afterEach(() => {
 });
 
 describe('@controller', () => {
+	test('rejects an identifier with a colon, which separates the identifier from the field in a hydration key', () => {
+		class ColonController extends RadiantController {}
+		const identifier = `${createIdentifier('colon')}:scoped`;
+
+		expect(() => controller(identifier)(ColonController)).toThrow(/must not contain ":"/);
+		expect(() => registerController(identifier, ColonController)).toThrow(/must not contain ":"/);
+		expect(() => replaceController(identifier, ColonController)).toThrow(/must not contain ":"/);
+		expect(hasRegisteredController(identifier)).toBe(false);
+	});
+
 	test('registers decorated controller constructors and records their identifier metadata', () => {
 		const identifier = createIdentifier('metadata');
 

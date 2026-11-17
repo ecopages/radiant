@@ -5,6 +5,8 @@ const HOT_RENDER_COUNT = 30;
 const HOT_RENDER_WINDOW_MS = 1000;
 
 const classIds = new WeakMap<object, number>();
+const warningsByHost = new WeakMap<object, RenderWarnings>();
+const attributed = new Set<string>();
 let classCount = 0;
 
 function classIdOf(host: object): number {
@@ -40,7 +42,8 @@ function describeHost(host: object): string {
  * {@link HOT_RENDER_COUNT} times within {@link HOT_RENDER_WINDOW_MS} ms.
  *
  * The host creates this only behind its `process.env.NODE_ENV` guard, so a production build drops the class and
- * its text.
+ * its text. The instance registers itself for its host, which is how {@link renderWarningsOf} finds it. A field
+ * stops being attributed, on every instance of the class, once it has warned.
  */
 export class RenderWarnings {
 	private reads?: Set<string>;
@@ -49,7 +52,9 @@ export class RenderWarnings {
 	private readonly bindingSubscribers = new Map<string, number>();
 	private readonly renderTimes = new Map<string, number[]>();
 
-	constructor(private readonly host: object) {}
+	constructor(private readonly host: object) {
+		warningsByHost.set(host, this);
+	}
 
 	public trackReads<Value>(name: string, read: () => Value): () => Value {
 		return () => {
@@ -109,15 +114,15 @@ export class RenderWarnings {
 	}
 
 	private attribute(name: string): void {
-		const host = describeHost(this.host);
 		const prefix = `render:${classIdOf(this.host)}:${name}`;
 
+		if (attributed.has(prefix)) return;
+
 		if ((this.bindingSubscribers.get(name) ?? 0) > 0) {
-			warnOnceInDevelopment(
-				`${prefix}:redundant`,
-				() =>
-					`[@ecopages/radiant] ${host} binds "${name}" with this.$.${name} and also reads it in render(), so a change patches the bound node and then re-renders the whole view. Use {this.$.${name}} where render() shows it and stop reading this.${name} directly, or drop the binding.`,
-			);
+			warnOnceInDevelopment(`${prefix}:redundant`, () => {
+				attributed.add(prefix);
+				return `[@ecopages/radiant] ${describeHost(this.host)} binds "${name}" with this.$.${name} and also reads it in render(), so a change patches the bound node and then re-renders the whole view. Use {this.$.${name}} where render() shows it and stop reading this.${name} directly, or drop the binding.`;
+			});
 			return;
 		}
 
@@ -131,11 +136,15 @@ export class RenderWarnings {
 		}
 
 		if (times.length === HOT_RENDER_COUNT && now - times[0]! <= HOT_RENDER_WINDOW_MS) {
-			warnOnceInDevelopment(
-				`${prefix}:hot`,
-				() =>
-					`[@ecopages/radiant] ${host} re-ran render() ${HOT_RENDER_COUNT} times within ${HOT_RENDER_WINDOW_MS}ms because "${name}" changed. Bind it with {this.$.${name}} so a change patches only its node instead of re-rendering the view.`,
-			);
+			warnOnceInDevelopment(`${prefix}:hot`, () => {
+				attributed.add(prefix);
+				return `[@ecopages/radiant] ${describeHost(this.host)} re-ran render() ${HOT_RENDER_COUNT} times within ${HOT_RENDER_WINDOW_MS}ms because "${name}" changed. If "${name}" fills one node or attribute, bind it with {this.$.${name}} so a change patches only that node. If it shapes the view's structure (a list length, a branch), move the per-frame value out of render(), for example into a this.$ binding on the node that shows it or an imperative write.`;
+			});
 		}
 	}
+}
+
+/** The diagnostics a host created for itself, or `undefined` outside development. */
+export function renderWarningsOf(host: object): RenderWarnings | undefined {
+	return warningsByHost.get(host);
 }

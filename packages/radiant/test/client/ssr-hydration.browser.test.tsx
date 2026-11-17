@@ -3,7 +3,8 @@
 import { waitFor } from '@testing-library/dom';
 import { CUSTOM_ELEMENT_CHILDREN_SYMBOL, createRoot, jsx, type JsxRenderable } from '@ecopages/jsx';
 import { state } from '@ecopages/signals';
-import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { setDevWarningsEnabled } from '@ecopages/jsx/jsx-dev-runtime';
+import { afterEach, beforeEach, describe, expect, onTestFinished, test, vi } from 'vitest';
 import { installRadiantHydrator, uninstallRadiantHydrator } from '../../src/client/hydrator';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { customElement } from '../../src/decorators/custom-element';
@@ -387,6 +388,8 @@ describe('hydrating server-rendered markup', () => {
 	});
 
 	test('updates a nested host and its parent after the parent adopted it', async () => {
+		setDevWarningsEnabled(false);
+		onTestFinished(() => setDevWarningsEnabled(undefined));
 		installRadiantHydrator();
 		const element = mount<HydratedNestedHostParent>('nested-host-parent', 'hydrated-nested-host-parent-test');
 		const serverChild = element.querySelector('hydrated-nested-counter-test');

@@ -1,18 +1,19 @@
 import { Computed, subtle } from '@ecopages/signals';
-import type { RenderWarnings } from './render-warnings';
+import { renderWarningsOf } from './render-warnings';
 
-/** Tracks a host render and schedules its next update when a dependency changes. */
+/**
+ * Tracks a host render and schedules its next update when a dependency changes.
+ *
+ * @remarks In development, a render of an `owner` that has {@link renderWarningsOf} diagnostics runs inside them.
+ */
 export class TrackedRender<Value> {
 	private signal?: Computed<Value>;
 	private watching = false;
 	private refreshed = false;
 	private readonly watcher: InstanceType<typeof subtle.Watcher>;
 
-	constructor(
-		private readonly requestUpdate: () => void,
-		private readonly warnings?: RenderWarnings,
-	) {
-		this.watcher = new subtle.Watcher(requestUpdate);
+	constructor(private readonly owner: { requestUpdate(): void }) {
+		this.watcher = new subtle.Watcher(() => owner.requestUpdate());
 	}
 
 	/**
@@ -28,8 +29,16 @@ export class TrackedRender<Value> {
 			return value;
 		}
 
-		const warnings = this.warnings;
-		const signal = new Computed(warnings ? () => warnings.run(render) : render);
+		let tracked = render;
+
+		try {
+			if (process.env.NODE_ENV !== 'production') {
+				const warnings = renderWarningsOf(this.owner);
+				if (warnings) tracked = () => warnings.run(render);
+			}
+		} catch {}
+
+		const signal = new Computed(tracked);
 		const value = signal.get();
 		if (connected) {
 			const previous = this.watching ? this.signal : undefined;
@@ -53,7 +62,7 @@ export class TrackedRender<Value> {
 		this.watching = true;
 		if (this.signal.getVersion() !== previousVersion) {
 			this.refreshed = true;
-			this.requestUpdate();
+			this.owner.requestUpdate();
 		}
 	}
 

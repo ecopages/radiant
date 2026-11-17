@@ -11,6 +11,8 @@ import {
 import type { UnknownContext } from '../../src/context/types';
 import { registerSsrPreparationCallback } from '../../src/core/ssr-preparation';
 import { attr } from '../../src/decorators/attr';
+import { onUpdated } from '../../src/decorators/on-updated';
+import type { ReadonlyReactiveState } from '../../src/core/reactivity-contract';
 import { ensureLegacyHostReady } from '../../src/decorators/legacy/host-readiness';
 import { RadiantController } from '../../src/core/radiant-controller';
 import { getRadiantElementSsrRuntime } from '../../src/core/radiant-element-ssr-registry';
@@ -274,6 +276,45 @@ class RenderControllerCard extends RadiantController<{ signal: string }> {
 	}
 }
 
+function createReadonlyCount(initial: number) {
+	let current = initial;
+	const listeners = new Set<(value: number) => void>();
+	const member: ReadonlyReactiveState<number> = {
+		get: () => current,
+		subscribe(notify) {
+			listeners.add(notify);
+			return () => listeners.delete(notify);
+		},
+	};
+
+	return {
+		member,
+		listenerCount: () => listeners.size,
+		push(next: number) {
+			current = next;
+			for (const notify of [...listeners]) notify(next);
+		},
+	};
+}
+
+class RenderControllerReadonlyMember extends RadiantController<{ count: number }> {
+	readonly updates: number[] = [];
+
+	constructor(host: Element, member: ReadonlyReactiveState<number>) {
+		super(host);
+		this.registerReactiveMember('count', member);
+	}
+
+	@onUpdated('count')
+	onCount() {
+		this.updates.push(this.getReactiveMember<number>('count')!.get());
+	}
+
+	override render() {
+		return <p>Count: {this.$.count}</p>;
+	}
+}
+
 class ProgrammaticRenderControllerCard extends RadiantController {
 	override render() {
 		return <p>Programmatic controller</p>;
@@ -397,6 +438,30 @@ describe('render-component server helpers', () => {
 		expect(rendered.markup).toContain('<p>controller initialize context</p>');
 		expect(consumer?.connectedContextCalls).toBe(1);
 		expect(consumer?.selectorCalls).toBe(1);
+	});
+
+	test('renderController() observes a read-only member for the server render and releases it', async () => {
+		const source = createReadonlyCount(1);
+		let prepared: RenderControllerReadonlyMember | undefined;
+
+		const result = await renderController(
+			class extends RenderControllerReadonlyMember {
+				constructor(host: Element) {
+					super(host, source.member);
+				}
+			},
+			{
+				tagName: 'section',
+				initialize: (instance) => {
+					prepared = instance;
+					source.push(7);
+				},
+			},
+		);
+
+		expect(result.markup).toContain('Count: 7');
+		expect(prepared?.updates).toEqual([7]);
+		expect(source.listenerCount()).toBe(0);
 	});
 
 	test('renderComponent() returns the canonical server render descriptor', async () => {
