@@ -351,8 +351,9 @@ export function subscribeToReactiveChildSource(
 /**
  * Releases the source subscriptions of every binding mounted into `target`, and keeps the bindings.
  *
- * @remarks For a host that leaves the document: a signal or binding its view reads, such as a module-level store,
- * no longer holds the detached tree or patches it. {@link resumeSubscriptions} subscribes them again.
+ * @remarks A hook for a host framework that owns `target`, not for application code: Radiant calls it when a host
+ * leaves the document, so a signal or binding its view reads, such as a module-level store, no longer holds the
+ * detached tree or patches it. {@link resumeSubscriptions} subscribes them again.
  */
 export function pauseSubscriptions(target: HTMLElement): void {
 	const root = ROOT_SUBSCRIPTIONS.get(target);
@@ -378,8 +379,9 @@ export function pauseSubscriptions(target: HTMLElement): void {
  * Subscribes the bindings {@link pauseSubscriptions} paused again, and applies the value of each one whose source
  * changed meanwhile.
  *
- * @remarks An applied value can replace part of the tree: a binding that it removes is skipped, and one that it
- * mounts subscribes as it mounts.
+ * @remarks A hook for a host framework that owns `target`, not for application code; Radiant calls it when a host
+ * connects again. An applied value can replace part of the tree: a binding that it removes is skipped, and one that
+ * it mounts subscribes as it mounts.
  */
 export function resumeSubscriptions(target: HTMLElement): void {
 	const root = ROOT_SUBSCRIPTIONS.get(target);

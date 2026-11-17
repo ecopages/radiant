@@ -127,6 +127,10 @@ const html = withActiveSsrScopeValue(SHARED_SCOPE_KEY, { started: true }, () => 
 
 Radiant integrations should prefer Radiant-owned SSR entrypoints when they exist. For example, custom-element SSR runtime state flows through the same JSX scope mechanism internally.
 
+## Host Framework Hooks
+
+`pauseSubscriptions(target)` and `resumeSubscriptions(target)` are for a framework that owns a render target, not for application code. A binding stays subscribed to its source while it is mounted, also when its target is out of the document. Pausing releases the source subscription of every binding mounted into `target` and keeps the bindings; resuming subscribes them again and applies each source that changed meanwhile. Radiant hosts pause their view on disconnect and resume it on connect, so a long-lived signal or store neither holds a detached view nor patches it.
+
 ## Install And Configure
 
 Install both packages:
@@ -390,9 +394,7 @@ for (const subscriber of subscribers) {
 
 That contract is intentionally small. The package does not impose a single state container, computed graph, or scheduler. It just gives the renderer a stable subscription surface for either signal-like values or explicit subscribable wrappers.
 
-Creating the tree never reads a signal or binding, so a computation that tracks signal reads while it builds the tree, as a Radiant host's `render()` does, does not depend on a bound value. A signal or binding on a standard boolean attribute such as `hidden` binds as an attribute on any element: `true` writes it empty, `false`, `null` and `undefined` remove it, and any other value is written as text.
-
-A binding stays subscribed to its source for as long as it is mounted, also while its target is out of the document. `pauseSubscriptions(target)` releases the source subscription of every binding mounted into `target` and keeps the bindings, so a long-lived signal or store no longer holds the detached tree or patches it. `resumeSubscriptions(target)` subscribes them again and applies the current value of each source that changed meanwhile; a value that replaces part of the tree releases the bindings it removes and subscribes the ones it mounts. Radiant hosts pause their view on disconnect and resume it on reconnect.
+Creating the tree never reads a signal or binding, so a computation that tracks signal reads while it builds the tree, as a Radiant host's `render()` does, does not depend on a bound value. A signal or binding on a standard boolean attribute such as `hidden` binds each value as a static value of the same type would, on the client, on the server and in hydration: a boolean by presence, and anything else as an attribute, or as a property on a custom element unless the element takes that name as an attribute. One case cannot match a static value: on a custom element that takes the name as a property, such as `disabled`, a boolean or `undefined` that replaces a property value leaves the property written, where a static value would bind on a fresh element.
 
 Object-valued bindings expose typed nested members such as `binding.profile.name`. A member binding projects its source and updates when the source notifies. Mutating a nested plain object alone does not notify it.
 
@@ -957,7 +959,6 @@ Main exports:
 - `render`
 - `hydrate`
 - `hasHydrationMarkers`
-- `pauseSubscriptions` and `resumeSubscriptions`
 - `createSubscribableJsxValue`
 - `isKeyedJsxValue`
 - `isSubscribableJsxValue`
