@@ -1,6 +1,6 @@
 import { userEvent } from 'vitest/browser';
 import { afterEach, describe, expect, test, vi } from 'vitest';
-import { until, untilFrame, once } from './until';
+import { until, untilFrame, once, fakeTimers, settle } from './until';
 
 type Slider = HTMLElement & { value: number[]; disabled: boolean };
 
@@ -32,16 +32,6 @@ const status = (root: HTMLElement) => hook(root, '[data-status]').textContent;
 const state = (root: HTMLElement) => stage(root).getAttribute('data-state');
 const text = (root: HTMLElement, selector: string) => hook(root, selector).textContent;
 const segments = (root: HTMLElement) => [...root.querySelectorAll<HTMLElement>('[data-buffered] i')];
-const fakeTimers = () => vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
-
-/** Lets `milliseconds` pass: on the fake clock when the test installed one, else for real. */
-const settle = async (milliseconds: number) => {
-	if (vi.isFakeTimers()) {
-		vi.advanceTimersByTime(milliseconds);
-		return;
-	}
-	await new Promise((resolve) => setTimeout(resolve, milliseconds));
-};
 const ready = async (root: HTMLElement) => {
 	await until(() => expect(seek(root).disabled).toBe(false));
 	return root;

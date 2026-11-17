@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { bars } from './audio-visualizer-bars';
 import type { AudioFrame } from './audio-visualizer-controller';
 import { wave } from './audio-visualizer-wave';
+import { frames } from './event.fixture';
 
 function frame(level: number, fftSize = 1024): AudioFrame {
 	return {
@@ -11,10 +12,6 @@ function frame(level: number, fftSize = 1024): AudioFrame {
 		fftSize,
 	};
 }
-
-/** Two animation frames: a style change made now has been laid out and its resize observers have run. */
-const settle = () =>
-	new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
 
 function makeTarget(width = 120, height = 40): HTMLElement {
 	const target = document.createElement('div');
@@ -272,16 +269,16 @@ describe.each([
 		expect(canvas.width).toBe(Math.round(100 * ratio));
 
 		target.style.width = '60px';
-		await settle();
+		await frames();
 		expect(canvas.width).toBe(Math.round(60 * ratio));
 
 		target.style.height = '0px';
-		await settle();
+		await frames();
 		expect(canvas.height).toBe(0);
 		expect(() => preset.draw(frame(255, preset.fftSize ?? 1024))).not.toThrow();
 
 		target.style.height = '30px';
-		await settle();
+		await frames();
 		expect(canvas.height).toBe(Math.round(30 * ratio));
 		preset.destroy();
 	});
@@ -307,7 +304,7 @@ describe.each([
 		expect(canvas.height).toBe(Math.round(box.height * window.devicePixelRatio));
 
 		target.style.padding = '0px';
-		await settle();
+		await frames();
 		expect(canvas.width).toBe(Math.round(100 * window.devicePixelRatio));
 		preset.destroy();
 	});
@@ -376,7 +373,7 @@ describe.each([
 		expect(read()).toBe('red');
 
 		document.documentElement.style.setProperty('--test-color', 'rgb(0, 0, 255)');
-		await settle();
+		await frames();
 		preset.draw(input);
 		expect(read()).toBe('blue');
 		preset.destroy();
@@ -583,9 +580,9 @@ describe('bars canvas look', () => {
 		preset.rest();
 		const canvas = target.querySelector('canvas')!;
 		target.style.width = '60px';
-		await settle();
+		await frames();
 		expect(canvas.width).toBe(Math.round(60 * window.devicePixelRatio));
-		await settle();
+		await frames();
 		expect(coverage(target.querySelector('canvas')!, 30).filter(Boolean).length).toBeGreaterThan(0);
 		preset.destroy();
 	});

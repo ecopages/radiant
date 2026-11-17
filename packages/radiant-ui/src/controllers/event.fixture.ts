@@ -1,4 +1,4 @@
-import { onTestFinished } from 'vitest';
+import { onTestFinished, vi } from 'vitest';
 
 /**
  * Resolves with the next `type` event on `target`; create it before the action that dispatches the event.
@@ -12,3 +12,16 @@ export function once<E extends Event = Event>(target: EventTarget, type: string)
 		onTestFinished(() => target.removeEventListener(type, listener));
 	});
 }
+
+/** Resolves after `count` animation frames, at least one: layout has run and resize observers have reported. */
+export function frames(count = 2): Promise<void> {
+	return new Promise((resolve) => {
+		const step = (left: number) => requestAnimationFrame(() => (left <= 1 ? resolve() : step(left - 1)));
+		step(count);
+	});
+}
+
+/** Installs fake timers for `toFake`; the file's `afterEach` calls `vi.useRealTimers()`. */
+export const fakeTimers = (
+	toFake: NonNullable<Parameters<typeof vi.useFakeTimers>[0]>['toFake'] = ['setTimeout', 'clearTimeout'],
+) => vi.useFakeTimers({ toFake });

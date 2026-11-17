@@ -1,9 +1,8 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import type { ControllerHost } from './controller';
+import { frames } from './event.fixture';
 import { CaptionsController, createCaptionsController, type CaptionTrackSource } from './captions-controller';
 
-const frames = () =>
-	new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
 const SIGNALS = ['loadedmetadata', 'seeked', 'timeupdate', 'load', 'error', 'cuechange'];
 const waiters = new Set<() => void>();
 
@@ -14,22 +13,26 @@ const waiters = new Set<() => void>();
  */
 const settle = (check: () => boolean): Promise<void> =>
 	new Promise((resolve) => {
-		const attempt = () => {
-			if (!check()) {
-				return;
-			}
+		const tracks = [...document.querySelectorAll('track')].map((element) => element.track);
+		const observer = new MutationObserver(() => attempt());
+		const stop = () => {
 			observer.disconnect();
 			waiters.delete(attempt);
 			SIGNALS.forEach((type) => document.removeEventListener(type, attempt, true));
 			tracks.forEach((track) => track.removeEventListener('cuechange', attempt));
-			resolve();
 		};
-		const observer = new MutationObserver(attempt);
+		function attempt() {
+			if (!check()) {
+				return;
+			}
+			stop();
+			resolve();
+		}
 		observer.observe(document, { attributes: true, childList: true, characterData: true, subtree: true });
 		waiters.add(attempt);
 		SIGNALS.forEach((type) => document.addEventListener(type, attempt, true));
-		const tracks = [...document.querySelectorAll('track')].map((element) => element.track);
 		tracks.forEach((track) => track.addEventListener('cuechange', attempt));
+		onTestFinished(stop);
 		attempt();
 	});
 

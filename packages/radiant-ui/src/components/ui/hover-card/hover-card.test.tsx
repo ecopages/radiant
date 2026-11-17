@@ -4,6 +4,7 @@ import { resetPreviewTimingForTests, resolvePreviewOpenDelay } from '../shared/p
 import { RuiHoverCard, RuiHoverCardContent, RuiHoverCardTrigger } from './hover-card';
 import { RuiHoverCard as RuiHoverCardElement } from './hover-card.script';
 import { expectPopupFoundAcrossPortalCycle } from '../../../controllers/exit-transition.fixture';
+import { fakeTimers } from '../../../controllers/event.fixture';
 void RuiHoverCardElement;
 
 function mount(element: JsxRenderable): { host: HTMLElement; cleanup: () => void } {
@@ -22,8 +23,6 @@ function mount(element: JsxRenderable): { host: HTMLElement; cleanup: () => void
 		},
 	};
 }
-
-const fakeTimers = () => vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
 
 async function settled(): Promise<void> {
 	await Promise.resolve();
@@ -131,7 +130,7 @@ describe('RuiHoverCard', () => {
 	});
 
 	it('stays closed after Escape on a pointer-opened card, even with a warmed-up delay', async () => {
-		fakeTimers();
+		fakeTimers(['setTimeout', 'clearTimeout', 'Date']);
 		const { host, cleanup } = mount(
 			<RuiHoverCard delay={600} closeDelay={0}>
 				<RuiHoverCardTrigger>
@@ -176,7 +175,7 @@ describe('RuiHoverCard', () => {
 	});
 
 	it('keeps the card open when the pointer moves from the trigger onto the card', async () => {
-		fakeTimers();
+		fakeTimers(['setTimeout', 'clearTimeout', 'Date']);
 		const { host, cleanup } = mount(
 			<RuiHoverCard delay={0} closeDelay={60}>
 				<RuiHoverCardTrigger>
@@ -208,7 +207,7 @@ describe('RuiHoverCard', () => {
 	});
 
 	it('respects open delay before showing', async () => {
-		fakeTimers();
+		fakeTimers(['setTimeout', 'clearTimeout', 'Date']);
 		const { host, cleanup } = mount(
 			<RuiHoverCard delay={50} closeDelay={0}>
 				<RuiHoverCardTrigger>

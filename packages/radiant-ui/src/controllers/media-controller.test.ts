@@ -5,15 +5,9 @@ import {
 	type MediaControllerConfig,
 	type MediaState,
 } from './media-controller';
-import { once } from './event.fixture';
+import { fakeTimers, frames, once } from './event.fixture';
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
-const fakeTimers = () => vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
-const frames = (count: number) =>
-	new Promise<void>((resolve) => {
-		const step = (left: number) => (left === 0 ? resolve() : requestAnimationFrame(() => step(left - 1)));
-		step(count);
-	});
 
 const urls = new Set<string>();
 const live = new Set<string>();
@@ -385,6 +379,13 @@ describe('MediaController attach and state', () => {
 		media.setAttribute('src', 'blob:pending');
 		expect(status()).toBe('loading');
 		media.removeAttribute('src');
+		const child = media.appendChild(document.createElement('source'));
+		expect(status()).toBe('loading');
+		child.remove();
+		stub(media, 'srcObject', new MediaStream());
+		expect(status()).toBe('loading');
+		stub(media, 'srcObject', null);
+		expect(status()).toBe('idle');
 
 		stub(media, 'networkState', 2);
 		stub(media, 'readyState', 1);
@@ -411,6 +412,8 @@ describe('MediaController attach and state', () => {
 		stub(media, 'readyState', 4);
 		expect(status()).toBe('ended');
 		expect(harness.statuses()).toEqual([
+			'idle',
+			'loading',
 			'idle',
 			'loading',
 			'idle',

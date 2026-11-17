@@ -1,16 +1,15 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { createRoot, type JsxRenderable, type JsxRoot } from '@ecopages/jsx';
 import { RuiToaster, toast, TOAST_COLLAPSED_PEEK, TOAST_EXIT_MS, TOAST_GAP, TOAST_POSITIONS } from './index';
 import { collapsedStackHeight } from './stack-layout';
 import { RuiToast } from './toast.script';
 import { resetToastDeadlines } from './toast.script';
 import { RuiToaster as RuiToasterScript } from './toaster.script';
+import { fakeTimers } from '../../../controllers/event.fixture';
 void RuiToast;
 void RuiToasterScript;
 
 const cleanups: Array<() => void> = [];
-
-const fakeTimers = () => vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
 
 function mount(element: JsxRenderable): { host: HTMLElement } {
 	const host = document.createElement('div');
@@ -50,6 +49,7 @@ function untilMutated(target: Node, predicate: () => boolean): Promise<void> {
 			}
 		});
 		observer.observe(target, { attributes: true, childList: true, characterData: true, subtree: true });
+		onTestFinished(() => observer.disconnect());
 	});
 }
 
@@ -305,7 +305,7 @@ describe('rui-toaster', () => {
 	});
 
 	it('dismisses all toasts', async () => {
-		fakeTimers();
+		fakeTimers(['setTimeout', 'clearTimeout', 'Date']);
 		const { host } = mount(<RuiToaster />);
 		await settled();
 
@@ -356,7 +356,7 @@ describe('rui-toaster', () => {
 	});
 
 	it('auto-dismisses after duration when not hovered', async () => {
-		fakeTimers();
+		fakeTimers(['setTimeout', 'clearTimeout', 'Date']);
 		const { host } = mount(<RuiToaster position="bottom-end" duration={400} />);
 		await settled();
 
@@ -371,7 +371,7 @@ describe('rui-toaster', () => {
 	});
 
 	it('auto-dismisses stacked toasts without resetting sibling timers', async () => {
-		fakeTimers();
+		fakeTimers(['setTimeout', 'clearTimeout', 'Date']);
 		const { host } = mount(<RuiToaster position="bottom-end" duration={500} />);
 		await settled();
 
@@ -387,7 +387,7 @@ describe('rui-toaster', () => {
 	});
 
 	it('keeps lifetime running when expand prop is true', async () => {
-		fakeTimers();
+		fakeTimers(['setTimeout', 'clearTimeout', 'Date']);
 		const { host } = mount(<RuiToaster expand position="bottom-end" duration={400} />);
 		await settled();
 
@@ -425,7 +425,7 @@ describe('rui-toaster', () => {
 	});
 
 	it('resumes leftover lifetime after a remount instead of restarting duration', async () => {
-		fakeTimers();
+		fakeTimers(['setTimeout', 'clearTimeout', 'Date']);
 		const { host } = mount(<RuiToaster position="bottom-end" duration={800} />);
 		await settled();
 
@@ -526,7 +526,7 @@ describe('rui-toaster', () => {
 	});
 
 	it('pauses lifetime on hover and resumes leftover time after leave', async () => {
-		fakeTimers();
+		fakeTimers(['setTimeout', 'clearTimeout', 'Date']);
 		const { host } = mount(<RuiToaster position="bottom-end" duration={600} />);
 		await settled();
 

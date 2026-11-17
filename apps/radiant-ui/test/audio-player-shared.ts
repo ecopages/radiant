@@ -1,6 +1,6 @@
 import { userEvent } from 'vitest/browser';
 import { afterEach, describe, expect, test, vi } from 'vitest';
-import { until, untilFrame } from './until';
+import { until, untilFrame, fakeTimers, settle } from './until';
 import '@ecopages/radiant-ui/button/styles.css';
 import '@ecopages/radiant-ui/slider/styles.css';
 import '@ecopages/radiant-ui/toolbar/styles.css';
@@ -52,19 +52,8 @@ export const coverage = (root: HTMLElement): number => {
 /** Waits for the bars to be drawn above their resting coverage, which is what a playing track makes of them. */
 export const barsFollow = async (root: HTMLElement, rest: number) =>
 	untilFrame(() => expect(coverage(root)).toBeGreaterThan(rest * 1.3));
-/** Waits for the bars to be back at their resting coverage. */
 export const barsRest = async (root: HTMLElement, rest: number) =>
 	untilFrame(() => expect(Math.abs(coverage(root) - rest)).toBeLessThan(0.002));
-const fakeTimers = () => vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
-
-/** Lets `milliseconds` pass: on the fake clock when the test installed one, else for real. */
-const settle = async (milliseconds: number) => {
-	if (vi.isFakeTimers()) {
-		vi.advanceTimersByTime(milliseconds);
-		return;
-	}
-	await new Promise((resolve) => setTimeout(resolve, milliseconds));
-};
 const volumeThumb = (root: HTMLElement) => root.querySelector<HTMLElement>('[data-volume-input] [role="slider"]')!;
 const seekable = async (root: HTMLElement) => {
 	await until(() => expect(seek(root).disabled).toBe(false));

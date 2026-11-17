@@ -7,7 +7,7 @@ import {
 	type AudioVisualizerState,
 } from './audio-visualizer-controller';
 import { bars } from './audio-visualizer-bars';
-import { once } from './event.fixture';
+import { frames, once } from './event.fixture';
 import { wave } from './audio-visualizer-wave';
 
 function toneUrl(seconds = 1): string {
@@ -68,10 +68,10 @@ function spyPreset(options: { fftSize?: number; draw?: (frame: AudioFrame) => vo
 const stateWaiters = new WeakMap<object, Set<() => void>>();
 
 /** Resolves once `predicate` holds, re-checked on every `onState` call of a controller built by `make`. */
-function until(controller: object, predicate: () => boolean): Promise<void> {
+function untilState(controller: object, predicate: () => boolean): Promise<void> {
 	const waiters = stateWaiters.get(controller);
 	if (!waiters) {
-		throw new Error('until needs a controller built by make');
+		throw new Error('untilState needs a controller built by make');
 	}
 	return new Promise((resolve) => {
 		const check = () => {
@@ -87,13 +87,7 @@ function until(controller: object, predicate: () => boolean): Promise<void> {
 }
 
 const whenState = (controller: { getState(): AudioVisualizerState }, state: AudioVisualizerState) =>
-	until(controller, () => controller.getState() === state);
-
-const frames = (count: number) =>
-	new Promise<void>((resolve) => {
-		const step = (left: number) => requestAnimationFrame(() => (left <= 1 ? resolve() : step(left - 1)));
-		step(count);
-	});
+	untilState(controller, () => controller.getState() === state);
 
 /** A media query whose `matches` is counted, so a listener that outlives its controller shows. */
 class FakeMotionQuery extends EventTarget {
@@ -501,7 +495,7 @@ describe('AudioVisualizerController', () => {
 			expect(seen).toEqual([]);
 
 			await audio.play();
-			await until(controller, () => JSON.stringify(seen) === JSON.stringify(['running']));
+			await untilState(controller, () => JSON.stringify(seen) === JSON.stringify(['running']));
 			const drawn = await settled(preset);
 			expect(drawn).toBeGreaterThan(1);
 			expect(seen).toEqual(['running']);
@@ -510,9 +504,9 @@ describe('AudioVisualizerController', () => {
 			expect(seen).toEqual(['running', 'idle']);
 
 			audio.dispatchEvent(new Event('play'));
-			await until(controller, () => JSON.stringify(seen) === JSON.stringify(['running', 'idle', 'running']));
+			await untilState(controller, () => JSON.stringify(seen) === JSON.stringify(['running', 'idle', 'running']));
 			audio.pause();
-			await until(
+			await untilState(
 				controller,
 				() => JSON.stringify(seen) === JSON.stringify(['running', 'idle', 'running', 'idle']),
 			);
@@ -535,7 +529,7 @@ describe('AudioVisualizerController', () => {
 			expect(seen).toEqual([]);
 
 			FakeContext.instances[0].setState('running');
-			await until(controller, () => JSON.stringify(seen) === JSON.stringify(['running']));
+			await untilState(controller, () => JSON.stringify(seen) === JSON.stringify(['running']));
 		});
 
 		it('is called with reduced when the preference turns on', async () => {
@@ -598,7 +592,7 @@ describe('AudioVisualizerController', () => {
 			audio.pause();
 			audio.src = 'http://127.0.0.1:1/next.wav';
 			audio.play().catch(() => undefined);
-			await until(controller, () => seen.includes('opaque'));
+			await untilState(controller, () => seen.includes('opaque'));
 
 			audio.pause();
 			audio.src = toneUrl();

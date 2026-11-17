@@ -36,7 +36,7 @@ describe('MediaRecorderController', () => {
 	}
 
 	/** Resolves once `predicate` holds on the state, re-checked on every `onState` call. */
-	function until(controller: MediaRecorderController, predicate: () => boolean): Promise<void> {
+	function untilState(controller: MediaRecorderController, predicate: () => boolean): Promise<void> {
 		const listeners = waiters.get(controller)!;
 		return new Promise((resolve) => {
 			const check = () => {
@@ -310,7 +310,7 @@ describe('MediaRecorderController', () => {
 		await controller.start();
 
 		vi.advanceTimersByTime(300);
-		await until(controller, () => controller.getState().status === 'stopped');
+		await untilState(controller, () => controller.getState().status === 'stopped');
 
 		expect(onStop).toHaveBeenCalledTimes(1);
 		expect(onStop.mock.calls[0][0].duration).toBeGreaterThanOrEqual(0.29);
@@ -331,7 +331,7 @@ describe('MediaRecorderController', () => {
 		expect(controller.getState().status).toBe('recording');
 
 		vi.advanceTimersByTime(400);
-		await until(controller, () => controller.getState().status === 'stopped');
+		await untilState(controller, () => controller.getState().status === 'stopped');
 	});
 
 	it('keeps the state of two controllers apart', async () => {
@@ -444,7 +444,7 @@ describe('MediaRecorderController', () => {
 			await controller.start();
 			expect(controller.getAnalyser()).toBeInstanceOf(AnalyserNode);
 
-			await until(controller, () => controller.getState().level > 0);
+			await untilState(controller, () => controller.getState().level > 0);
 			expect(controller.getState().level).toBeLessThanOrEqual(1);
 
 			await controller.stop();
@@ -507,7 +507,7 @@ describe('MediaRecorderController', () => {
 			const audio = await context();
 			const controller = create({ getAudioContext: () => audio });
 			await controller.start();
-			await until(controller, () => controller.getState().level > 0);
+			await untilState(controller, () => controller.getState().level > 0);
 
 			controller.pause();
 
@@ -534,7 +534,7 @@ describe('MediaRecorderController', () => {
 
 			endAll(stream);
 
-			await until(controller, () => controller.getState().status === 'stopped');
+			await untilState(controller, () => controller.getState().status === 'stopped');
 			expect(onStop).toHaveBeenCalledTimes(1);
 			expect(onStop.mock.calls[0][0].blob.size).toBeGreaterThan(0);
 			expect(controller.getStream()).toBeNull();
@@ -564,7 +564,7 @@ describe('MediaRecorderController', () => {
 
 			recorder.current().stop();
 
-			await until(controller, () => controller.getState().status === 'stopped');
+			await untilState(controller, () => controller.getState().status === 'stopped');
 			expect(onStop).toHaveBeenCalledTimes(1);
 			expect(controller.getStream()).toBeNull();
 		});
@@ -578,7 +578,7 @@ describe('MediaRecorderController', () => {
 			expect(() => controller.pause()).not.toThrow();
 			expect(() => controller.resume()).not.toThrow();
 
-			await until(controller, () => controller.getState().status === 'stopped');
+			await untilState(controller, () => controller.getState().status === 'stopped');
 		});
 
 		it('does not hang or keep a rejected promise when recorder.stop() throws', async () => {

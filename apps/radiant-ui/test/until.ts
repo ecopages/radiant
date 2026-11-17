@@ -1,4 +1,4 @@
-import { onTestFinished } from 'vitest';
+import { onTestFinished, vi } from 'vitest';
 
 const SIGNAL_EVENTS = [
 	'loadstart',
@@ -99,10 +99,27 @@ export function untilFrame(check: () => void): Promise<void> {
 	});
 }
 
-/** Resolves with the next `type` event on `target`; create it before the action that dispatches the event. */
-export function once(target: EventTarget, type: string): Promise<Event> {
+/**
+ * Resolves with the next `type` event on `target`; create it before the action that dispatches the event.
+ *
+ * @remarks The listener is removed when the test ends, so an event that never comes leaves nothing behind.
+ */
+export function once<E extends Event = Event>(target: EventTarget, type: string): Promise<E> {
 	return new Promise((resolve) => {
-		target.addEventListener(type, resolve, { once: true });
-		onTestFinished(() => target.removeEventListener(type, resolve));
+		const listener = (event: Event) => resolve(event as E);
+		target.addEventListener(type, listener, { once: true });
+		onTestFinished(() => target.removeEventListener(type, listener));
 	});
+}
+
+/** Installs fake timers for the two calls the players schedule with; the file's `afterEach` restores real ones. */
+export const fakeTimers = () => vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+
+/** Lets `milliseconds` pass: on the fake clock when the test installed one, else for real. */
+export async function settle(milliseconds: number): Promise<void> {
+	if (vi.isFakeTimers()) {
+		vi.advanceTimersByTime(milliseconds);
+		return;
+	}
+	await new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
