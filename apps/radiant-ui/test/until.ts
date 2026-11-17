@@ -115,7 +115,11 @@ export function once<E extends Event = Event>(target: EventTarget, type: string)
 /** Installs fake timers for the two calls the players schedule with; the file's `afterEach` restores real ones. */
 export const fakeTimers = () => vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
 
-/** Lets `milliseconds` pass: on the fake clock when the test installed one, else for real. */
+/**
+ * Lets `milliseconds` pass: on the fake clock when the test installed one, else for real.
+ *
+ * @remarks The real wait is for negative assertions that nothing changed, which have no signal to wait on.
+ */
 export async function settle(milliseconds: number): Promise<void> {
 	if (vi.isFakeTimers()) {
 		vi.advanceTimersByTime(milliseconds);

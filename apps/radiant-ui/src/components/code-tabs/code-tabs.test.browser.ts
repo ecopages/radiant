@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DOCS_DEFAULT_THEME_IMPORT } from '@/lib/docs-theme-preview';
 import type { RadiantCodeTabs } from './code-tabs.script';
 import './code-tabs.script';
+import { until } from '../../../test/until';
 
 const waitForUpdate = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -83,6 +84,7 @@ describe('RadiantCodeTabs line counts', () => {
 describe('RadiantCodeTabs copy button', () => {
 	afterEach(() => {
 		document.body.innerHTML = '';
+		vi.useRealTimers();
 		vi.restoreAllMocks();
 	});
 
@@ -97,14 +99,16 @@ describe('RadiantCodeTabs copy button', () => {
 		).toEqual(['copy', 'check']);
 		expect(button.hasAttribute('data-copy-state')).toBe(false);
 
+		vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
 		button.click();
 
-		await vi.waitFor(() => expect(button.getAttribute('data-copy-state')).toBe('copied'));
+		await until(() => expect(button.getAttribute('data-copy-state')).toBe('copied'));
 		const others = [...element.querySelectorAll<HTMLElement>('[data-copy-button]')].filter(
 			(other) => other !== button,
 		);
 		expect(others.every((other) => !other.hasAttribute('data-copy-state'))).toBe(true);
-		await vi.waitFor(() => expect(button.hasAttribute('data-copy-state')).toBe(false), { timeout: 3000 });
+		vi.advanceTimersByTime(2000);
+		expect(button.hasAttribute('data-copy-state')).toBe(false);
 	});
 
 	it('sets the error state when the clipboard rejects', async () => {
@@ -114,6 +118,6 @@ describe('RadiantCodeTabs copy button', () => {
 
 		button.click();
 
-		await vi.waitFor(() => expect(button.getAttribute('data-copy-state')).toBe('error'));
+		await until(() => expect(button.getAttribute('data-copy-state')).toBe('error'));
 	});
 });

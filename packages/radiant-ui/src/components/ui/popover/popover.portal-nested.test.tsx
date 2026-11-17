@@ -4,6 +4,7 @@ import { RuiPopover } from './popover';
 import { RuiPopover as RuiPopoverElement } from './popover.script';
 import { RuiSelect } from '../select/select';
 import { RuiSelect as RuiSelectElement } from '../select/select.script';
+import { frames } from '../../../controllers/event.fixture';
 void RuiPopoverElement;
 void RuiSelectElement;
 
@@ -60,6 +61,7 @@ describe('rui-popover around a portaled rui-select', () => {
 		await select.updateComplete;
 		expect(select.value).toEqual(['dog']);
 		await host.updateComplete;
+		await frames();
 		expect(host.open).toBe(true);
 	});
 

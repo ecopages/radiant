@@ -7,6 +7,10 @@ import {
 } from './media-controller';
 import { fakeTimers, frames, once } from './event.fixture';
 
+/**
+ * A real wait, for the negative assertions that something did not happen: the controller emits nothing to wait on,
+ * and a timer-driven case uses `fakeTimers` instead.
+ */
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 const urls = new Set<string>();
@@ -1563,9 +1567,12 @@ describe('MediaController autoplay and toggle', () => {
 		vi.spyOn(harness.media, 'play').mockRejectedValue(new DOMException('blocked', 'NotAllowedError'));
 
 		const emptiedOnce = once(harness.media, 'emptied');
+		const loadstartOnce = once(harness.media, 'loadstart');
+		const canplayOnce = once(harness.media, 'canplay');
 		await harness.controller.load(wav(2), { autoplay: true });
 		await emptiedOnce;
-		await sleep(100);
+		await loadstartOnce;
+		await canplayOnce;
 
 		expect(harness.controller.getState()).toMatchObject({ blocked: true, status: 'paused' });
 	});
@@ -1797,7 +1804,7 @@ describe('MediaController source handling', () => {
 		harness.media.removeAttribute('src');
 		harness.media.load();
 		await emptied;
-		expect(harness.controller.getState().blocked).toBe(false);
+		expect(harness.controller.getState()).toMatchObject({ status: 'idle', blocked: false });
 	});
 
 	it('clears a failure when the host empties the element', async () => {
@@ -1811,7 +1818,7 @@ describe('MediaController source handling', () => {
 		harness.media.removeAttribute('src');
 		harness.media.load();
 		await emptied;
-		expect(harness.controller.getState().error).toBeNull();
+		expect(harness.controller.getState()).toMatchObject({ status: 'idle', error: null });
 	});
 
 	it('goes back to ready, not paused, when the host replaces the source after a pause', async () => {

@@ -59,7 +59,7 @@ describe('video player (controller)', () => {
 		vi.advanceTimersByTime(2800);
 
 		expect(stage.hasAttribute('data-controls-hidden')).toBe(false);
-	}, 10000);
+	});
 
 	test('a move to another parent keeps one working player: it loads again and the listeners are not doubled', async () => {
 		const root = await mountController('video-player');

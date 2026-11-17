@@ -432,7 +432,8 @@ describe('docs-theme-preview', () => {
 		body.mockRestore();
 		const bodyParsed = document.createComment('body parsed');
 		document.documentElement.append(bodyParsed);
-		await vi.waitFor(() => expect(appendedThemeLinks).toHaveLength(1));
+		await Promise.resolve();
+		expect(appendedThemeLinks).toHaveLength(1);
 		const themeLink = appendedThemeLinks[0];
 		expect(appendedHeadNodes.at(-1)).toBe(themeLink);
 		expect(appendedHeadNodes.at(-2)).toBe(baseStylesheet);

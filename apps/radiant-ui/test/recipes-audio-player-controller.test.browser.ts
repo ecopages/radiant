@@ -1,12 +1,12 @@
 import { userEvent } from 'vitest/browser';
-import { afterEach, describe, expect, test } from 'vitest';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 import '@ecopages/radiant-ui/themes/default';
 import '../src/components/primitive-example/primitive-example.css';
 import '../src/content/components/recipes/audio-player.css';
 import { syncExamples } from '../src/components/primitive-example/mount-example';
 import { barsFollow, barsRest, coverage, describeAudioPlayerForm, playToEnd } from './audio-player-shared';
 import { mountController, trackListeners } from './mount-recipe';
-import { until, untilFrame } from './until';
+import { fakeTimers, until, untilFrame } from './until';
 
 type Slider = HTMLElement & { value: number[]; disabled: boolean };
 
@@ -24,6 +24,7 @@ const track = (root: HTMLElement, name: string) =>
 	[...root.querySelectorAll<HTMLElement>('[data-track]')].find((row) => row.textContent?.includes(name))!;
 
 afterEach(() => {
+	vi.useRealTimers();
 	document.body.innerHTML = '';
 	syncExamples();
 });
@@ -151,9 +152,10 @@ describe('audio player (controller)', () => {
 		const seeks: number[] = [];
 		player.addEventListener('seeking', () => seeks.push(player.currentTime));
 
+		fakeTimers();
 		drag(seek, audio(root).duration / 2);
 		root.remove();
-		await new Promise((resolve) => setTimeout(resolve, 250));
+		vi.advanceTimersByTime(250);
 
 		expect(seeks).toEqual([]);
 	});

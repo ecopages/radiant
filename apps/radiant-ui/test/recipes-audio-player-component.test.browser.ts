@@ -1,11 +1,11 @@
 import { userEvent } from 'vitest/browser';
-import { afterEach, describe, expect, test } from 'vitest';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 import '@ecopages/radiant-ui/themes/default';
 import '../src/components/primitive-example/primitive-example.css';
 import '../src/content/components/recipes/audio-player.css';
 import { barsFollow, barsRest, coverage, describeAudioPlayerForm, playToEnd } from './audio-player-shared';
 import { mountComponent, trackListeners } from './mount-recipe';
-import { until, untilFrame } from './until';
+import { fakeTimers, until, untilFrame } from './until';
 
 type Slider = HTMLElement & { value: number[]; disabled: boolean };
 
@@ -28,6 +28,7 @@ const ready = async (root: HTMLElement) => {
 };
 
 afterEach(() => {
+	vi.useRealTimers();
 	document.body.innerHTML = '';
 });
 
@@ -150,9 +151,10 @@ describe('audio player (component)', () => {
 			const player = audio(root);
 			const half = player.duration / 2;
 			const seek = root.querySelector<Slider>('[data-seek]')!;
+			fakeTimers();
 			drag(seek, audio(root).duration / 2);
 			root.remove();
-			await new Promise((resolve) => setTimeout(resolve, 200));
+			await vi.advanceTimersByTimeAsync(200);
 
 			expect(player.currentTime).toBeLessThan(half - 1);
 			expect(player.paused).toBe(true);

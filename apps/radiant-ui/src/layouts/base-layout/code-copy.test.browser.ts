@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CODE_COPY_FEEDBACK_MS, registerCodeCopy } from './code-copy';
+import { until } from '../../../test/until';
 
 let unregister: () => void = () => {};
 
@@ -41,7 +42,7 @@ describe('code block copy', () => {
 
 		button.click();
 
-		await vi.waitFor(() => expect(status.textContent).toBe('Code copied to clipboard'));
+		await until(() => expect(status.textContent).toBe('Code copied to clipboard'));
 		expect(writeText).toHaveBeenCalledWith('echo hi');
 		expect(button.dataset.copyState).toBe('copied');
 		expect(button.getAttribute('aria-label')).toBe('Copy code');
@@ -54,7 +55,7 @@ describe('code block copy', () => {
 
 		button.click();
 
-		await vi.waitFor(() => expect(status.textContent).toBe('Could not copy code'));
+		await until(() => expect(status.textContent).toBe('Could not copy code'));
 		expect(button.dataset.copyState).toBe('error');
 		expect(button.getAttribute('aria-label')).toBe('Copy code');
 	});
@@ -106,9 +107,9 @@ describe('code block copy', () => {
 		});
 
 		button.click();
-		await vi.waitFor(() => expect(button.dataset.copyState).toBe('copied'));
+		await until(() => expect(button.dataset.copyState).toBe('copied'));
 		button.click();
-		await vi.waitFor(() => expect(previous).toHaveLength(3));
+		await until(() => expect(previous).toHaveLength(3));
 
 		expect(previous).toEqual([null, 'copied', null]);
 		expect(button.dataset.copyState).toBe('copied');
@@ -139,7 +140,7 @@ describe('code block copy', () => {
 
 		button.click();
 
-		await vi.waitFor(() => expect(status.textContent).toBe('Could not copy code'));
+		await until(() => expect(status.textContent).toBe('Could not copy code'));
 		expect(execCommand).toHaveBeenCalledWith('copy');
 		expect(button.dataset.copyState).toBe('error');
 		expect(document.activeElement).toBe(button);
@@ -154,7 +155,7 @@ describe('code block copy', () => {
 
 		button.click();
 
-		await vi.waitFor(() => expect(status.textContent).toBe('Code copied to clipboard'));
+		await until(() => expect(status.textContent).toBe('Code copied to clipboard'));
 		expect(button.dataset.copyState).toBe('copied');
 		expect(document.activeElement).toBe(button);
 	});

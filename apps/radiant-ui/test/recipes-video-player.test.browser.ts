@@ -60,7 +60,7 @@ describe('video player (plain)', () => {
 		vi.advanceTimersByTime(2800);
 
 		expect(stage.hasAttribute('data-controls-hidden')).toBe(false);
-	}, 10000);
+	});
 });
 
 describeVideoPlayerForm('plain', {

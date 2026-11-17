@@ -19,6 +19,10 @@ export const stateOf = (root: HTMLElement) => part(root, '[data-status]').datase
 export const statusOf = (root: HTMLElement) => part(root, '[data-status]').textContent;
 export const elapsedOf = (root: HTMLElement) => part(root, '[data-elapsed]').textContent;
 const click = (root: HTMLElement, selector: string) => userEvent.click(part(root, selector));
+/**
+ * A real wait: a recording runs on the capture clock of the fake microphone, and nothing signals that a second of
+ * audio has been captured.
+ */
 const sleep = (milliseconds: number) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 export const buttons = (root: HTMLElement) =>

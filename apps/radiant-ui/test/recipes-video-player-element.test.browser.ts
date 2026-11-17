@@ -56,7 +56,7 @@ describe('video player (element)', () => {
 		vi.advanceTimersByTime(2800);
 
 		expect(stage.hasAttribute('data-controls-hidden')).toBe(false);
-	}, 10000);
+	});
 
 	test('moving the element keeps the clip loaded and the same video element, and playback restarts paused', async () => {
 		const root = await mountForm('video-player', 'radiant');

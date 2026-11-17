@@ -1,6 +1,6 @@
 import { userEvent } from 'vitest/browser';
 import { afterEach, describe, expect, test, vi } from 'vitest';
-import { until, untilFrame, fakeTimers, settle } from './until';
+import { until, untilFrame, fakeTimers, once, settle } from './until';
 import '@ecopages/radiant-ui/button/styles.css';
 import '@ecopages/radiant-ui/slider/styles.css';
 import '@ecopages/radiant-ui/toolbar/styles.css';
@@ -255,15 +255,19 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 			expect(text(volumeThumb(root))).toBe('80%');
 
 			thumb(root).focus();
+			const seeked = once(audio(root), 'seeked');
 			await userEvent.keyboard('{ArrowRight}{ArrowRight}');
 			await until(() => expect(text(thumb(root))).toBe('0:02 of 0:08'));
 			await settle(150);
+			await seeked;
 			expect(text(thumb(root))).toBe('0:02 of 0:08');
 
 			volumeThumb(root).focus();
+			const volumechange = once(audio(root), 'volumechange');
 			await userEvent.keyboard('{ArrowLeft}');
 			await until(() => expect(text(volumeThumb(root))).toMatch(/^[0-9]+%$/));
 			await settle(150);
+			await volumechange;
 			expect(text(volumeThumb(root))).toBe(`${Math.round(audio(root).volume * 100)}%`);
 			expect(audio(root).volume).toBeLessThan(0.8);
 
@@ -655,9 +659,12 @@ export function describeAudioPlayerForm(name: string, form: AudioPlayerForm): vo
 			await seekable(root);
 
 			thumb(root).focus();
+			const seeked = once(audio(root), 'seeked');
 			await userEvent.keyboard('{End}');
 			await settle(500);
+			await seeked;
 
+			expect(audio(root).currentTime).toBeGreaterThan(audio(root).duration - 0.5);
 			expect(current(root)).toBe('Morning Light');
 			expect(audio(root).paused).toBe(true);
 		});
