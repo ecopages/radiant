@@ -394,6 +394,21 @@ describe('JSX ref', () => {
 			expect(log).toEqual(['parent', 'child']);
 		});
 
+		test('refs inside a list under a parent ref attach before the parent', async () => {
+			const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+			const container = document.createElement('div');
+			const log: string[] = [];
+
+			createRoot(container).render(
+				jsx('ul', {
+					ref: () => log.push('list'),
+					children: ['a', 'b'].map((name) => jsx('li', { ref: () => log.push(name) })),
+				}),
+			);
+
+			expect(log).toEqual(['a', 'b', 'list']);
+		});
+
 		test('hydrate mode attaches child refs before the parent ref', async () => {
 			const [{ jsx }, { createRoot }, { renderToString }] = await Promise.all([
 				loadJsxRuntime(),
@@ -430,7 +445,7 @@ describe('JSX ref', () => {
 			return () => vi.restoreAllMocks();
 		});
 
-		test('a throwing callback is reported and later refs and properties in the flush still run', async () => {
+		test('a throwing callback is reported and later refs in the flush still run', async () => {
 			const [{ jsx, jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 			const container = document.createElement('div');
 			const boom = new Error('boom');
@@ -445,14 +460,55 @@ describe('JSX ref', () => {
 							},
 						}),
 						jsx('span', { ref: later }),
-						jsx('radiant-jsx-ref-host', { 'prop:ref': 'written' }),
 					],
 				}),
 			);
 
 			expect(later).toHaveBeenCalledTimes(1);
-			expect((container.querySelector('radiant-jsx-ref-host') as RefHostElement).ref).toBe('written');
 			expect(errors).toEqual([boom]);
+		});
+
+		test('a throwing child callback still lets its ancestors attach, in order', async () => {
+			const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+			const container = document.createElement('div');
+			const boom = new Error('child');
+			const log: string[] = [];
+
+			createRoot(container).render(
+				jsx('div', {
+					ref: () => log.push('root'),
+					children: jsx('section', {
+						ref: () => log.push('section'),
+						children: jsx('p', {
+							ref: () => {
+								throw boom;
+							},
+						}),
+					}),
+				}),
+			);
+
+			expect(log).toEqual(['section', 'root']);
+			expect(errors).toEqual([boom]);
+		});
+
+		test('a callback that throws on detach is reported, including after it threw on attach', async () => {
+			const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+			const container = document.createElement('div');
+			const root = createRoot(container);
+			const attach = new Error('attach');
+			const detach = new Error('detach');
+
+			root.render(
+				jsx('p', {
+					ref: (node: Element | null) => {
+						throw node ? attach : detach;
+					},
+				}),
+			);
+			root.unmount();
+
+			expect(errors).toEqual([attach, detach]);
 		});
 
 		test('a throwing cleanup is reported and the rest of the disposal still runs', async () => {

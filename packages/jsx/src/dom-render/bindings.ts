@@ -166,7 +166,8 @@ function applyDeferredPropertyBinding(
 }
 
 /**
- * @remarks The callback attaches with the deferred property writes, so it sees its node in the page. The queued
+ * @remarks The callback attaches from the deferred queue, after every property write of the pass and before its
+ * ancestors' callbacks, so it sees its node in the page. The queued
  * attach checks that the part still holds the callback, so a part replaced or disposed before the queue runs does not
  * attach a stale one. A value that is not a function detaches the current ref and binds nothing.
  *

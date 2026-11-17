@@ -43,8 +43,9 @@ export class Watcher {
 	 * Release is not interrupted by a throwing `unwatched` hook: every signal is
 	 * released and every hook runs first, then the error is rethrown (several
 	 * become one flat `AggregateError`). A signal is released just before its own
-	 * hook, so a hook that writes a signal listed after it still notifies the watcher. The signals are no longer
-	 * watched afterwards, so a retry reports them as not watched.
+	 * hook, so a hook that writes a signal listed after it still notifies the
+	 * watcher. The signals are no longer watched afterwards, so a retry reports
+	 * them as not watched.
 	 */
 	public unwatch(...signals: Signal<unknown>[]): void {
 		assertSignalAccessAllowed();

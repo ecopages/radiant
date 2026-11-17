@@ -25,6 +25,10 @@ export function collectErrors(tasks: Iterable<() => void>): unknown[] {
 	return errors;
 }
 
+/**
+ * @remarks Marks the aggregates {@link throwCollected} produced, so only those
+ * are flattened into a later one.
+ */
 class CollectedErrors extends AggregateError {}
 
 /**
@@ -93,7 +97,7 @@ export abstract class SignalNode<Value> implements Signal<Value>, DependencyNode
 			} catch (error) {
 				this.watcherListeners.delete(notify);
 				if (this.watcherListeners.size === 0) {
-					this.rollbackFirstWatcher();
+					collectErrors([() => this.rollbackFirstWatcher()]);
 				}
 				throw error;
 			}
@@ -131,9 +135,9 @@ export abstract class SignalNode<Value> implements Signal<Value>, DependencyNode
 	/**
 	 * Undoes {@link handleFirstWatcherAdded} after a failed first watch.
 	 *
-	 * @remarks Never throws: an error from the release is dropped in favor of the
-	 * one that failed the watch. Dependencies are released in the reverse of the
-	 * order they were watched.
+	 * @remarks An error from the release is dropped in favor of the one that
+	 * failed the watch. Dependencies are released in the reverse of the order
+	 * they were watched.
 	 */
 	protected rollbackFirstWatcher(): void {}
 

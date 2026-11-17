@@ -31,12 +31,15 @@ export type DeferredPropertyBinding =
 			name: PropertyKey;
 			value: unknown;
 	  }
-	| {
-			/** Element whose `ref` this entry attaches, used to run descendants before ancestors. */
-			element: Element;
-			/** Runs after the property writes, once the nodes are in place. A `ref` part attaches its callback here. */
-			run: () => void;
-	  };
+	| DeferredRunBinding;
+
+/** The `run` variant of {@link DeferredPropertyBinding}. */
+export type DeferredRunBinding = {
+	/** Element whose `ref` this entry attaches, used to run descendants before ancestors. */
+	element: Element;
+	/** Runs after the property writes, once the nodes are in place. A `ref` part attaches its callback here. */
+	run: () => void;
+};
 
 /**
  * Static metadata for a dynamic attribute binding inside a compiled template blueprint.

@@ -9,7 +9,12 @@ import {
 import type { KeyedJsxValue, TemplateResultLike } from '../types/index.ts';
 import { createNodesFromJsxNodeLike } from './dom-operations.ts';
 import { materializeIterableChildren } from '../hydration/iterable-snapshot.ts';
-import type { DeferredPropertyBinding, ReactiveAttributeSource, ReactiveChildSource } from './types.ts';
+import type {
+	DeferredPropertyBinding,
+	DeferredRunBinding,
+	ReactiveAttributeSource,
+	ReactiveChildSource,
+} from './types.ts';
 
 export {
 	isIterableRenderable,
@@ -36,32 +41,46 @@ type TemplateMount = (
  * @remarks
  * Every property write comes first, in queue order, so a `ref` sees its node with all bound properties set.
  * `ref` attaches then run child before parent, siblings in document order, as in React 19: when a parent's callback
- * runs, every ref in its subtree is attached. The queue is in document order, so a stack of open ancestors turns it
- * into that post-order.
+ * runs, every ref in its subtree is attached. The queue is not always in document order, since keyed and mixed
+ * lists update last to first, so the attaches are sorted by document position and a stack of open ancestors turns
+ * that order into the post-order. `contains` does not cross a shadow root, so a `ref` inside a shadow tree attaches after its
+ * host; a shadow tree is rendered by its own root, with its own flush.
  */
 export function flushDeferredProperties(bindings: DeferredPropertyBinding[]): void {
-	const attaches: Extract<DeferredPropertyBinding, { run: () => void }>[] = [];
+	let attaches: DeferredRunBinding[] | undefined;
 
 	for (const binding of bindings) {
-		if ('run' in binding) attaches.push(binding);
+		if ('run' in binding) (attaches ??= []).push(binding);
 		else Reflect.set(binding.element, binding.name, binding.value);
 	}
 
-	const open: typeof attaches = [];
+	if (!attaches) return;
+
+	attaches.sort((a, b) => (a.element.compareDocumentPosition(b.element) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
+
+	const open: DeferredRunBinding[] = [];
+
+	const closeAncestors = (element?: Element): void => {
+		for (let top = open.at(-1); top && !top.element.contains(element ?? null); top = open.at(-1)) {
+			open.pop();
+			top.run();
+		}
+	};
 
 	for (const attach of attaches) {
-		while (open.length > 0 && !open[open.length - 1]!.element.contains(attach.element)) open.pop()!.run();
+		closeAncestors(attach.element);
 		open.push(attach);
 	}
 
-	while (open.length > 0) open.pop()!.run();
+	closeAncestors();
 }
 
 /**
  * Returns `true` when a child value renders as nothing: `null`, `undefined`, a boolean, or a function, which is
  * skipped with a dev warning.
  *
- * @remarks Mount and hydration share this one test, so a function child counts as no nodes in both.
+ * @remarks Mount and hydration share this one test, so a function child counts as no nodes in both. Testing a
+ * function child also warns once in development, so the check is not free of side effects.
  */
 export function isEmptyChild(value: unknown): boolean {
 	return value == null || typeof value === 'boolean' || isSkippedFunction(value, 'a child');
