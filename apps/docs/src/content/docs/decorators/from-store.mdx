@@ -44,7 +44,7 @@ export class CartBadge extends RadiantElement<{ count: number }> {
 
 The declared field type is the selected value, and is the type [@bindTo](/docs/decorators/bind-to) passes to `map`: see [Typing Decorated Fields](/docs/decorators#typing-decorated-fields).
 
-Assignment throws. Write through `setState`, `dispatch`, or the store's actions.
+Assignment throws. Write through `setState`, `dispatch`, or the store's actions. Declare the field without an initializer (`count!: number`): the store snapshot replaces one, and development builds warn once per class and field.
 
 ## Arguments
 

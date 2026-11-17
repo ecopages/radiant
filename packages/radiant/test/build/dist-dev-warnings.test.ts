@@ -14,6 +14,7 @@ const DEVELOPMENT_WARNING_TEXTS = [
 	'and also reads it in render()',
 	're-ran render()',
 	'has both a field initializer and a different defaultValue',
+	'but @fromStore reads its value from the store',
 	'Skipped a function in',
 	'fills one node or attribute',
 	'noteChange',

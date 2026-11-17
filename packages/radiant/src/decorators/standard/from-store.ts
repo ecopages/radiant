@@ -1,6 +1,7 @@
 import type { ExternalStoreSource, SignalOptions } from '@ecopages/signals';
 import type { ReactiveHostLike } from '../../core/reactive-host';
 import { installFromStoreField } from '../shared/from-store';
+import { warnInitializerOnStoreField } from '../shared/initializer-default-warning';
 
 export function fromStore<Snapshot, Selected>(
 	store: ExternalStoreSource<Snapshot>,
@@ -16,5 +17,10 @@ export function fromStore<Snapshot, Selected>(
 		context.addInitializer(function (this: THost) {
 			installFromStoreField(this, propertyName, store, select, options);
 		});
+
+		return function (this: THost, initializerValue: Selected): Selected {
+			warnInitializerOnStoreField(this, propertyName, initializerValue, context.metadata);
+			return initializerValue;
+		};
 	};
 }

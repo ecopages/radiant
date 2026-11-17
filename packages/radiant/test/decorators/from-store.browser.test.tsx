@@ -206,4 +206,52 @@ describe('@fromStore', () => {
 		expect(message).toContain('"count"');
 		expect(message).toContain('this.$.count');
 	});
+
+	test('a field initializer is ignored for the store snapshot and warns once per class and field', async () => {
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+		const store = createCartStore({ items: ['mug'], user: 'Ada' });
+		const tagName = nextTag('initializer');
+
+		@customElement(tagName)
+		class InitializedBadge extends RadiantElement<{ count: number }> {
+			@fromStore(store, (state) => state.items.length)
+			count = 5;
+		}
+
+		expect(customElements.get(tagName)).toBe(InitializedBadge);
+
+		const first = document.createElement(tagName) as InitializedBadge;
+		const second = document.createElement(tagName) as InitializedBadge;
+		document.body.append(first, second);
+		await first.updateComplete;
+
+		expect(first.count).toBe(1);
+		expect(second.count).toBe(1);
+		expect(warn).toHaveBeenCalledTimes(1);
+		const message = String(warn.mock.calls[0]?.[0]);
+		expect(message).toContain('"count"');
+		expect(message).toContain('InitializedBadge');
+		expect(message).toContain('initializer is ignored');
+	});
+
+	test('a field without an initializer does not warn', async () => {
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+		const store = createCartStore({ items: ['mug'], user: 'Ada' });
+		const tagName = nextTag('declared');
+
+		@customElement(tagName)
+		class Badge extends RadiantElement<{ count: number }> {
+			@fromStore(store, (state) => state.items.length)
+			count!: number;
+		}
+
+		expect(customElements.get(tagName)).toBe(Badge);
+
+		const host = document.createElement(tagName) as Badge;
+		document.body.append(host);
+		await host.updateComplete;
+
+		expect(host.count).toBe(1);
+		expect(warn).not.toHaveBeenCalled();
+	});
 });

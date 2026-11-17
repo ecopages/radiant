@@ -22,6 +22,7 @@ import { fromStore as standardFromStore } from './standard/from-store';
  *
  * `@fromStore` is internal, not public input: a value assigned to the host before upgrade is
  * discarded in favour of the store snapshot, and development builds warn once per tag and member.
+ * A field initializer is ignored the same way, and development builds warn once per class and field.
  *
  * @see `warnDiscardedPreUpgradeValue` in `shared/pre-upgrade-warning.ts` for the warning and an example.
  */
