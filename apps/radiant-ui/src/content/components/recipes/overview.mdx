@@ -15,7 +15,7 @@ A component is a composition of [controllers](/docs/controllers/overview) and [h
 
 ## What a recipe page contains
 
-Every recipe page has the same four parts, in this order. The example and the source come once for each authoring pattern the recipe has: a Radiant element, a Radiant component, a Radiant controller and plain JavaScript. A toggle above them switches between the patterns, and the pattern you pick is remembered, so every other recipe opens on it too. Only the selected pattern is on the page: switching destroys the running example, which runs its cleanup, and starts the new one, so two patterns never overlap:
+Every recipe page has the same four parts, in this order. The example and the source come once for each authoring pattern the recipe has: a Radiant element, a Radiant component, a Radiant controller and plain JavaScript. A recipe may leave out a pattern, but not plain. A toggle above them switches between the patterns, and the pattern you pick is remembered, so every other recipe opens on it too. Only the selected pattern is on the page: switching destroys the running example, which runs its cleanup, and starts the new one, so two patterns never overlap:
 
 1. **Goal.** The behavior in one or two sentences, and when you would want it.
 2. **Primitives.** Each controller and helper the recipe composes and why that one, one line apiece, linked to its page. A recipe states which decision it left to a config callback, a protected hook or its own code.

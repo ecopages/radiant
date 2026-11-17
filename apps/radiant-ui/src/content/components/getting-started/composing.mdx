@@ -197,7 +197,7 @@ private readonly sortable = createSortableController(this, {
 
 ## Choose a host
 
-The same composition runs in four hosts. A Radiant element is an Element Host, a Radiant component a Render-owning Element Host and a Radiant controller a Controller Host. The controllers, the helpers and the config are identical; only the wiring around them changes. Each recipe in [Recipes](/docs/recipes/overview) shows all four, with the code side by side.
+The same composition runs in four hosts. A Radiant element is an Element Host, a Radiant component a Render-owning Element Host and a Radiant controller a Controller Host. The controllers, the helpers and the config are identical; only the wiring around them changes. Each recipe in [Recipes](/docs/recipes/overview) shows the patterns it has, usually all four, with the code side by side.
 
 | Host                   | Markup comes from                          | How controllers start                                                      | Pick it when                                                   |
 | ---------------------- | ------------------------------------------ | -------------------------------------------------------------------------- | -------------------------------------------------------------- |
@@ -251,6 +251,6 @@ class PagedRoving extends RovingController {
 
 ## Where to go next
 
-- [Recipes](/docs/recipes/overview): worked compositions such as a modal, a board and an audio player, each in the four hosts.
+- [Recipes](/docs/recipes/overview): worked compositions such as a modal, a board and an audio player, each in the hosts that recipe has.
 - [Controllers](/docs/controllers/overview) and [Helpers](/docs/helpers/overview): every primitive with its config and hooks.
 - [Theming](/docs/getting-started/theming) and [Tokens](/docs/getting-started/tokens): the variables your composition reads.

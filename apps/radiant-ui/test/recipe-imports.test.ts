@@ -23,11 +23,19 @@ const sharedScripts = recipeFiles.filter((file) => /\.(data|loader)\.ts$/.test(f
 
 const importsOf = (file: string) =>
 	[...readFileSync(join(recipesDirectory, file), 'utf8').matchAll(importSpecifier)].map((match) => match[1]);
-/** The files every pattern of one recipe shares: `./<recipe>.data` and `./<recipe>.loader`. */
-const isSiblingOf = (file: string, specifier: string) =>
-	new RegExp(`^\\./${file.split('.')[0]}\\.(data|loader)$`).test(specifier);
+/**
+ * The files every pattern of one recipe shares: `./<recipe>.data` and `./<recipe>.loader`, or those of the recipe a
+ * `<recipe>-<variant>` is built on.
+ */
+const isSiblingOf = (file: string, specifier: string) => {
+	const stem = specifier.match(/^\.\/([a-z0-9-]+)\.(?:data|loader)$/)?.[1];
+	const recipe = file.split('.')[0];
+	return stem !== undefined && (stem === recipe || recipe.startsWith(`${stem}-`));
+};
 const isRadiantCore = (specifier: string) =>
 	specifier === '@ecopages/radiant' || specifier.startsWith('@ecopages/radiant/');
+const isSignals = (specifier: string) =>
+	specifier === '@ecopages/signals' || specifier.startsWith('@ecopages/signals/');
 
 describe('recipe scripts', () => {
 	test.each(plainScripts)('%s imports only public Radiant UI entries and the mount helper', (file) => {
@@ -40,11 +48,14 @@ describe('recipe scripts', () => {
 	});
 
 	test.each([...elementScripts, ...componentScripts, ...controllerScripts])(
-		'%s imports public Radiant UI entries and @ecopages/radiant, and no mount helper',
+		'%s imports public Radiant UI entries, @ecopages/radiant and @ecopages/signals, and no mount helper',
 		(file) => {
 			const rejected = importsOf(file).filter(
 				(specifier) =>
-					!radiantUiEntry.test(specifier) && !isRadiantCore(specifier) && !isSiblingOf(file, specifier),
+					!radiantUiEntry.test(specifier) &&
+					!isRadiantCore(specifier) &&
+					!isSignals(specifier) &&
+					!isSiblingOf(file, specifier),
 			);
 
 			expect(rejected).toEqual([]);
@@ -66,6 +77,12 @@ describe('recipe pages', () => {
 		.map((f) => f.slice(0, -4));
 	const patterns = PATTERNS;
 	const suffix = SCRIPT_SUFFIX;
+	/** The recipe a `<recipe>-<variant>` page borrows a pattern from: the longest other recipe its slug starts with. */
+	const baseOf = (slug: string) =>
+		slugs
+			.filter((other) => slug.startsWith(`${other}-`))
+			.sort((a, b) => b.length - a.length)
+			.at(0) ?? slug;
 	test.each(slugs)(
 		'%s lists its patterns with the Radiant forms first and plain JavaScript last, panels in the same order',
 		(slug) => {
@@ -102,22 +119,21 @@ describe('recipe pages', () => {
 		}
 	});
 
-	test.each(slugs.filter((slug) => recipeFiles.includes(`${slug}.css`)))(
-		'%s shows its stylesheet last, scoped to its example',
-		(slug) => {
-			const last = recipeTabs(slug, 'plain').at(-1)!;
+	test.each(cases)('%s shows the stylesheet of its %s pattern last, scoped to its example', (slug, pattern) => {
+		const last = recipeTabs(slug, pattern).at(-1)!;
 
-			expect(last.label).toBe(`${slug}.css`);
-			expect(last.content).toContain(slug);
-		},
-	);
+		expect(last.label).toMatch(/\.css$/);
+		expect(last.content).toContain(slug);
+	});
 
 	test.each(slugs)('%s renders its live examples from the markup files and keeps no copy in the page', (slug) => {
 		const page = readFileSync(join(recipesDirectory, `${slug}.mdx`), 'utf8');
 		const listed = patterns.filter((pattern) => page.includes(`<RecipePattern id="${pattern}">`));
 
 		for (const pattern of listed.filter((pattern) => pattern !== 'component')) {
-			expect(page).toMatch(new RegExp(`<RecipeExample recipe="${slug}" pattern="${pattern}"`));
+			const recipe = recipeFiles.includes(`${slug}.${suffix[pattern]}`) ? slug : baseOf(slug);
+			expect(page).toMatch(new RegExp(`<RecipeExample recipe="${recipe}" pattern="${pattern}"`));
+			expect(page).toContain(`<RecipeCode recipe="${recipe}" pattern="${pattern}" />`);
 		}
 		const markup = page.replace(/`[^`]*`/g, '');
 
@@ -125,10 +141,16 @@ describe('recipe pages', () => {
 	});
 
 	test.each(slugs)('%s renders the example elements its markup files carry', (slug) => {
-		expect(recipeMarkup(slug, 'element')).toMatch(new RegExp(`^<${slug}-element[\\s>]`));
-		expect(recipeMarkup(slug, 'controller')).toMatch(new RegExp(`^<[a-z]+[^>]* data-controller="${slug}"`));
-		expect(recipeMarkup(slug, 'plain')).not.toContain('data-example');
-		expect(recipeMarkup(slug, 'plain').length).toBeGreaterThan(0);
+		if (recipeFiles.includes(`${slug}.element.html`)) {
+			expect(recipeMarkup(slug, 'element')).toMatch(new RegExp(`^<${slug}-element[\\s>]`));
+		}
+		if (recipeFiles.includes(`${slug}.controller.html`)) {
+			expect(recipeMarkup(slug, 'controller')).toMatch(new RegExp(`^<[a-z]+[^>]* data-controller="${slug}"`));
+		}
+		if (recipeFiles.includes(`${slug}.plain.html`)) {
+			expect(recipeMarkup(slug, 'plain')).not.toContain('data-example');
+			expect(recipeMarkup(slug, 'plain').length).toBeGreaterThan(0);
+		}
 	});
 });
 

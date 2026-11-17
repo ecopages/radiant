@@ -30,9 +30,21 @@ export function withoutMount(source: string): string {
 }
 
 /**
+ * The recipe whose shared files a script uses: the `<stem>` of its `./<stem>.data` or `./<stem>.loader` import, or
+ * the recipe itself when it imports neither.
+ *
+ * @remarks
+ * A recipe built on a sibling, such as `video-player-store` on `video-player`, imports the sibling's data and loader
+ * and is styled by its stylesheet, so its tabs show those files.
+ */
+export function sharedStem(recipe: string, source: string): string {
+	return source.match(/from '\.\/([a-z0-9-]+)\.(?:data|loader)'/)?.[1] ?? recipe;
+}
+
+/**
  * The files shown for one pattern of a recipe, in tab order: the script or element, the files every pattern shares
- * (`<recipe>.data.ts` and `<recipe>.loader.ts`) when the recipe has them, then the markup, then the stylesheet when
- * the recipe has one.
+ * (`<stem>.data.ts` and `<stem>.loader.ts`, see {@link sharedStem}) when they exist, then the markup, then the
+ * stylesheet `<stem>.css` when there is one.
  *
  * @remarks
  * Every file is read from the recipe's directory, the same file the example runs, so the code on the page cannot
@@ -43,25 +55,27 @@ export function recipeFiles(recipe: string, pattern: RecipePatternId): RecipeFil
 	const files: RecipeFile[] = [];
 
 	const script = `${recipe}.${SCRIPT_SUFFIX[pattern]}`;
+	const source = read(script);
+	const stem = sharedStem(recipe, source);
 	files.push({
 		id: `${pattern}-script`,
 		label: script,
-		source: pattern === 'plain' ? withoutMount(read(script)) : read(script),
+		source: pattern === 'plain' ? withoutMount(source) : source,
 	});
 	for (const shared of ['data', 'loader']) {
-		if (present.includes(`${recipe}.${shared}.ts`)) {
+		if (present.includes(`${stem}.${shared}.ts`)) {
 			files.push({
 				id: `${pattern}-${shared}`,
-				label: `${recipe}.${shared}.ts`,
-				source: read(`${recipe}.${shared}.ts`),
+				label: `${stem}.${shared}.ts`,
+				source: read(`${stem}.${shared}.ts`),
 			});
 		}
 	}
 	if (pattern !== 'component' && present.includes(`${recipe}.${pattern}.html`)) {
 		files.push({ id: `${pattern}-markup`, label: `${recipe}.html`, source: read(`${recipe}.${pattern}.html`) });
 	}
-	if (present.includes(`${recipe}.css`)) {
-		files.push({ id: `${pattern}-styles`, label: `${recipe}.css`, source: read(`${recipe}.css`) });
+	if (present.includes(`${stem}.css`)) {
+		files.push({ id: `${pattern}-styles`, label: `${stem}.css`, source: read(`${stem}.css`) });
 	}
 	return files;
 }
