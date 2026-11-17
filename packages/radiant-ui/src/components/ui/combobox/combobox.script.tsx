@@ -102,7 +102,7 @@ export type RuiComboboxChangeDetail = { value: string[] };
  * @remarks
  * Minimum tree: `[data-ref="root"]` > `[data-combobox-input]` + `[data-combobox-listbox]`
  * > `rui-listbox[embedded]` > `[role="option"]`. BEM classes live on the view helpers.
- * With `portal` the popup leaves the host while it is open, so the host keeps a reference to it and listens on it
+ * With `portal` the popup leaves the host while it is open, so the host reads it from its popover controller, which finds it while it is portaled, and listens on it
  * directly instead of through the host.
  * Not form-associated: wrap in `rui-field` and read `RuiForm` `onSubmit`.
  * Typed filter text is not a form value and is not listed in native `FormData`.
@@ -143,7 +143,7 @@ export class RuiCombobox extends RadiantElement {
 	});
 	private readonly listboxPopover = createListboxPopoverController(this, {
 		getAnchor: () => this.rootTarget,
-		getFloating: () => this.getListboxPopup(),
+		getFloating: () => this.querySelector<HTMLElement>('[data-combobox-listbox]'),
 		getOpen: () => this.open,
 		getOptions: () => this.collection.getOptions(),
 		getActiveDescendantHost: () => this.getInput(),
@@ -153,8 +153,11 @@ export class RuiCombobox extends RadiantElement {
 	});
 
 	@query({ ref: 'root' }) rootTarget: HTMLElement | null;
-	/** @remarks Cached because a portaled popup is no longer inside the host to be found again. */
-	@query({ selector: '[data-combobox-listbox]', cache: true }) popupTarget: HTMLElement | null;
+
+	/** @remarks Read from the popover controller, which finds the popup while it is portaled out of the host. */
+	private get popupTarget(): HTMLElement | null {
+		return this.listboxPopover.getFloatingElement();
+	}
 
 	/**
 	 * The popup is a separate listener target, not host delegation, because a portaled popup is outside the host

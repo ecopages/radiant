@@ -3,6 +3,7 @@ import { userEvent } from 'vitest/browser';
 import { createRoot } from '@ecopages/jsx';
 import { RuiSelect } from './select';
 import { RuiSelect as RuiSelectElement } from './select.script';
+import { expectPopupFoundAcrossPortalCycle } from '../../../controllers/exit-transition.fixture';
 void RuiSelectElement;
 
 const OPTIONS = [
@@ -198,5 +199,29 @@ describe('RuiSelect portal container', () => {
 		await settled();
 
 		expect(select.contains(popup)).toBe(true);
+	});
+});
+
+describe('RuiSelect reads its portaled popup from the popover controller', () => {
+	afterEach(() => {
+		document.body.innerHTML = '';
+	});
+
+	it('finds the current popup while open, during its exit, and after a reopen with a new node', async () => {
+		const { select, trigger, popup } = await mountSelect(true);
+
+		await expectPopupFoundAcrossPortalCycle({
+			popup,
+			portaled: true,
+			find: () => Reflect.get(select, 'popupTarget'),
+			open: async () => {
+				trigger.click();
+				await settled();
+			},
+			close: async () => {
+				press(trigger, 'Escape');
+				await settled();
+			},
+		});
 	});
 });

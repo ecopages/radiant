@@ -1,15 +1,5 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
-import {
-	RadiantElement,
-	bindTo,
-	bound,
-	customElement,
-	event,
-	onEvent,
-	onUpdated,
-	prop,
-	query,
-} from '@ecopages/radiant';
+import { RadiantElement, bound, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { findFirstFocusableCandidate } from '../../../controllers/focusable-elements';
 import { uniqueId } from '@/lib/unique-id';
@@ -122,7 +112,6 @@ export class RuiHoverCard extends RadiantElement {
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) disabled: boolean;
 
 	@prop({ type: String, attribute: 'content-label', reflect: true, defaultValue: HOVER_CARD_DEFAULT_CONTENT_LABEL })
-	@bindTo({ ref: 'content', attr: 'aria-label' })
 	contentLabel: string;
 
 	@query({ ref: 'content' }) contentTarget: HTMLElement | null;
@@ -191,13 +180,14 @@ export class RuiHoverCard extends RadiantElement {
 	}
 
 	@bound
-	@onUpdated(['open', 'placement', 'portal', 'disabled'])
+	@onUpdated(['open', 'placement', 'portal', 'disabled', 'contentLabel'])
 	syncCard(): void {
 		const anchor = this.getAnchor();
-		const surface = this.contentTarget;
+		const surface = this.getFloatingElement();
 
 		if (surface) {
 			surface.id = this.contentId;
+			surface.setAttribute('aria-label', this.contentLabel);
 		}
 		if (anchor) {
 			anchor.setAttribute('aria-controls', this.contentId);

@@ -48,7 +48,7 @@ export type PopoverControllerConfig = {
  * @remarks
  * `sync()` does nothing until `attach()`, and nothing after `destroy()`, so an element that is not connected never
  * mounts a portal or registers floating listeners. `destroy()` removes the floating listeners and observer, returns
- * a portaled surface to its place and forgets the floating element. Dismissal is delegated to a
+ * a portaled surface to its place. Dismissal is delegated to a
  * `DismissController` over the anchor and the floating surface, attached with the popover. Its listeners sit on
  * `document`, so a surface portaled out of the host element still counts as inside: focus moving within it does
  * not dismiss, and focus leaving it does. A popup portaled out of this surface by another controller counts as
@@ -59,7 +59,6 @@ export class PopoverController implements Controller {
 	private config: PopoverControllerConfig;
 	private cleanupFloating: (() => void) | null = null;
 	private readonly portal: PortalController;
-	private floatingElement: HTMLElement | null = null;
 	private exitToken: object | null = null;
 	private readonly dismissal: DismissController;
 
@@ -154,6 +153,15 @@ export class PopoverController implements Controller {
 		return this.dismissal.isOutside(target);
 	}
 
+	/**
+	 * The floating surface now: the element `getFloating` finds, or, while the surface is portaled out of its owner
+	 * and the owner can no longer find it, the portal's mounted node.
+	 *
+	 * @remarks
+	 * Covers the whole open cycle, including the exit transition, when the surface is still in the portal container.
+	 * It is `null` once the surface is back in place and `getFloating` finds nothing. Nothing is remembered between
+	 * calls, so a surface the owner replaced is never returned stale.
+	 */
 	getFloatingElement(): HTMLElement | null {
 		return this.resolveFloating();
 	}
@@ -175,15 +183,10 @@ export class PopoverController implements Controller {
 		this.attached = false;
 		this.dismissal.destroy();
 		this.teardown();
-		this.floatingElement = null;
 	}
 
 	private resolveFloating(): HTMLElement | null {
-		const configuredFloating = this.config.getFloating();
-		if (configuredFloating) {
-			this.floatingElement = configuredFloating;
-		}
-		return configuredFloating ?? this.floatingElement;
+		return this.config.getFloating() ?? this.portal.mountedNode;
 	}
 
 	/**

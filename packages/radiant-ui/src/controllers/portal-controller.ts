@@ -78,6 +78,11 @@ export class PortalController implements Controller {
 		return this.mounted !== null;
 	}
 
+	/** The node `attach()` moved out and `destroy()` has not returned yet, or `null` when nothing is mounted. */
+	get mountedNode(): HTMLElement | null {
+		return this.mounted?.node ?? null;
+	}
+
 	/**
 	 * @remarks
 	 * Attaching again moves to the node the getter returns now: the previous node goes back to its place, and a

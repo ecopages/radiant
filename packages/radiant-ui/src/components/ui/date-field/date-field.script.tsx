@@ -1,15 +1,5 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
-import {
-	RadiantElement,
-	bindTo,
-	customElement,
-	event,
-	onEvent,
-	onUpdated,
-	prop,
-	query,
-	state,
-} from '@ecopages/radiant';
+import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop, state } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { effectiveVisibleMonths } from '@/lib/viewport/mobile-layout';
 import { uniqueId } from '@/lib/unique-id';
@@ -138,7 +128,7 @@ export class RuiDateField extends RadiantElement {
 	private readonly calendarPopover = createCalendarPopoverController(this, {
 		getHost: () => this,
 		getAnchor: () => this.getToggle()?.parentElement ?? this,
-		getFloating: () => this.popoverTarget,
+		getFloating: () => this.getRef<HTMLElement>('popover'),
 		getOpen: () => this.open,
 		getCalendar: () => this.getCalendar(),
 		getFocusIso: () => this.isoValue || undefined,
@@ -150,8 +140,10 @@ export class RuiDateField extends RadiantElement {
 		getPortalContainer: () => resolvePortalContainer(this.portalContainer),
 	});
 
-	/** @remarks Cached because a portaled popup is no longer inside the host to be found again. */
-	@query({ ref: 'popover', cache: true }) popoverTarget: HTMLElement | null;
+	/** @remarks Read from the popover controller, which finds the popup while it is portaled out of the host. */
+	private get popoverTarget(): HTMLElement | null {
+		return this.calendarPopover.getFloatingElement();
+	}
 
 	/**
 	 * The popup is a separate listener target, not host delegation, because a portaled popup is outside the host
