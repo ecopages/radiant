@@ -18,6 +18,10 @@
 	"files": [
 		"dist/**"
 	],
+	"sideEffects": [
+		"./dist/jsx-runtime.js",
+		"./dist/jsx-dev-runtime.js"
+	],
 	"exports": {
 		".": {
 			"types": "./dist/index.d.ts",
@@ -64,6 +68,7 @@
 		"watch:lib": "node --import tsx ./build.ts --watch"
 	},
 	"devDependencies": {
+		"rolldown": "catalog:",
 		"@ecopages/signals": "workspace:*",
 		"@types/node": "^24.13.2",
 		"esbuild": "^0.28.2",

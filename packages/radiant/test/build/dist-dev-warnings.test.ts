@@ -22,8 +22,8 @@ const DEVELOPMENT_WARNING_TEXTS = [
 	'trackReads',
 ];
 const NODE_ENV_READ = /process\.env\.NODE_ENV/g;
-/** Matches the check as the first expression in a `try` block, whether esbuild kept the `if` or minified it to `&&`. */
-const GUARDED_NODE_ENV_READ = /try\s*\{\s*(?:if\s*\(\s*)?process\.env\.NODE_ENV\s*!==\s*"production"/g;
+/** Matches the check as the first expression in a `try` block, whether the minifier kept the `if` or rewrote it to `&&`, in any quote style. */
+const GUARDED_NODE_ENV_READ = /try\s*\{\s*(?:if\s*\(\s*)?process\.env\.NODE_ENV\s*!==\s*["'`]production["'`]/g;
 
 /**
  * A consumer app that delegates a `focus` listener, which never bubbles to the host.

@@ -9,6 +9,9 @@ catalogs:
     oxlint:
       specifier: ^1.78.0
       version: 1.81.0
+    rolldown:
+      specifier: ^1.2.16
+      version: 1.2.16
     typescript:
       specifier: ~7.0.2
       version: 7.0.2
@@ -279,6 +282,9 @@ importers:
       playwright:
         specifier: ^1.52.0
         version: 1.62.1
+      rolldown:
+        specifier: 'catalog:'
+        version: 1.2.16
       tsx:
         specifier: ^4.20.6
         version: 4.23.13
@@ -346,6 +352,9 @@ importers:
       playwright:
         specifier: ^1.52.0
         version: 1.62.1
+      rolldown:
+        specifier: 'catalog:'
+        version: 1.2.16
       tsc-alias:
         specifier: 1.8.10
         version: 1.8.10
@@ -506,6 +515,9 @@ importers:
       esbuild:
         specifier: ^0.28.2
         version: 0.28.2
+      rolldown:
+        specifier: 'catalog:'
+        version: 1.2.16
       tsx:
         specifier: ^4.20.6
         version: 4.23.13

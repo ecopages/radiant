@@ -1,11 +1,8 @@
 import { copyFile, readFileSync, watch, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import * as esbuild from 'esbuild';
+import { build } from 'rolldown';
 
-const prodBrowserEntrypoints = ['src/index.ts', 'src/client.ts', 'src/jsx-runtime.ts'];
-const devBrowserEntrypoints = ['src/jsx-dev-runtime.ts'];
-const serverEntrypoints = ['src/server.ts'];
 
 type PackageJsonExport = string | { import?: string; types?: string };
 
@@ -79,53 +76,58 @@ function createDistPackageJson(): PackageJsonShape {
 			? Object.fromEntries(Object.entries(packageJson.exports).map(([key, value]) => [key, rewriteExport(value)]))
 			: undefined,
 		peerDependencies: packageJson.peerDependencies,
-		sideEffects: packageJson.sideEffects,
+		sideEffects: Array.isArray(packageJson.sideEffects)
+			? packageJson.sideEffects.map(stripDistPrefix)
+			: packageJson.sideEffects,
 	};
 }
 
 const packageRoot = import.meta.dirname;
-const externalPackages: string[] = [];
 const watchMode = process.argv.includes('--watch');
-const minify = !watchMode;
+const sourceRoot = path.join(packageRoot, 'src');
+const entrypoints = ['index', 'client', 'server', 'jsx-runtime', 'jsx-dev-runtime'];
+const sideEffectModules = new Set(['jsx-runtime', 'jsx-dev-runtime'].map((name) => path.join(sourceRoot, `${name}.ts`)));
 
-async function runEsbuild(label: string, options: esbuild.BuildOptions): Promise<boolean> {
+/**
+ * @remarks
+ * One output file per source module, so the app's bundler drops whole unused modules under `sideEffects` instead
+ * of guessing statement by statement inside one pre-bundled file. The runtime entries install the DOM renderer on
+ * import, so they are the only modules marked as having side effects, here and in `package.json`. Rolldown's
+ * minifier keeps the `@__PURE__` annotations that the remaining statement-level tree-shaking relies on.
+ */
+async function buildModules(): Promise<boolean> {
 	try {
-		await esbuild.build({
-			absWorkingDir: packageRoot,
-			bundle: true,
-			format: 'esm',
-			logLevel: 'silent',
-			minify,
-			sourcemap: true,
-			...options,
+		await build({
+			cwd: packageRoot,
+			input: Object.fromEntries(entrypoints.map((name) => [name, path.join(sourceRoot, `${name}.ts`)])),
+			platform: 'neutral',
+			logLevel: 'warn',
+			optimization: { inlineConst: false },
+			external: (id) => !id.startsWith('.') && !path.isAbsolute(id),
+			treeshake: { moduleSideEffects: (id, external) => external || sideEffectModules.has(id) },
+			output: {
+				dir: path.join(packageRoot, 'dist'),
+				format: 'esm',
+				preserveModules: true,
+				preserveModulesRoot: sourceRoot,
+				entryFileNames: '[name].js',
+				minify: !watchMode,
+				sourcemap: true,
+			},
 		});
 
 		return true;
 	} catch (error) {
-		console.log('[@ecopages/jsx]', label, error);
+		console.log('[@ecopages/jsx]', error);
 		process.exitCode = 1;
 
 		return false;
 	}
 }
 
-const browserOk = await runEsbuild('browser build', {
-	entryPoints: [...prodBrowserEntrypoints, ...devBrowserEntrypoints].map((entry) => path.join(packageRoot, entry)),
-	external: externalPackages,
-	outbase: path.join(packageRoot, 'src'),
-	outdir: path.join(packageRoot, 'dist'),
-	platform: 'browser',
-});
+const buildOk = await buildModules();
 
-const serverOk = await runEsbuild('server build', {
-	entryPoints: serverEntrypoints.map((entry) => path.join(packageRoot, entry)),
-	external: externalPackages,
-	outbase: path.join(packageRoot, 'src'),
-	outdir: path.join(packageRoot, 'dist'),
-	platform: 'node',
-});
-
-if (browserOk && serverOk) {
+if (buildOk) {
 	copyFile(path.join(packageRoot, 'LICENSE'), path.join(packageRoot, 'dist', 'LICENSE'), (error) => {
 		if (!error) {
 			return;
