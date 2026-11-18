@@ -1,8 +1,6 @@
 import {
 	CUSTOM_ELEMENT_CHILDREN_SYMBOL,
 	hasHydrationMarkers,
-	pauseSubscriptions,
-	resumeSubscriptions,
 	type JsxRenderable,
 	type SubscribableJsxValueWithAccess,
 } from '@ecopages/jsx';
@@ -31,6 +29,7 @@ import { isRadiantHydratorInstalled } from './radiant-hydrator-state';
 import { SERVER_RENDERED_CHILDREN_STAMP, SERVER_RENDERED_HOST_ATTRIBUTE } from './server-rendered-host';
 import { RADIANT_ELEMENT_BRAND } from './radiant-element-brand';
 import { resolvePart, resolveParts } from './parts';
+import { getDomRenderer } from './dom-renderer';
 
 export type {
 	PropTransform,
@@ -40,18 +39,6 @@ export type {
 	ReactiveProperty,
 	ReactivePropertyOptions,
 } from './reactive-prop-core';
-
-const RadiantElementBase = resolveRadiantElementBase();
-
-function resolveRadiantElementBase(): typeof HTMLElement {
-	if (typeof HTMLElement !== 'undefined') {
-		return HTMLElement;
-	}
-
-	throw new Error(
-		"RadiantElement requires HTMLElement. Install '@ecopages/radiant/server/light-dom-shim' before SSR imports.",
-	);
-}
 
 /**
  * Possible positions to insert a rendered template.
@@ -206,10 +193,7 @@ export interface IRadiantElement<Bindings extends object = {}> {
  * @extends HTMLElement
  * @implements IRadiantElement<Bindings>
  */
-export class RadiantElement<Bindings extends object = {}>
-	extends RadiantElementBase
-	implements IRadiantElement<Bindings>
-{
+export class RadiantElement<Bindings extends object = {}> extends HTMLElement implements IRadiantElement<Bindings> {
 	declare readonly [RADIANT_ELEMENT_BRAND]: true;
 	public readonly bindings: ReactiveBindings<Bindings>;
 	public readonly $: ReactiveBindings<Bindings>;
@@ -366,7 +350,7 @@ export class RadiantElement<Bindings extends object = {}>
 		const connected = this.reactiveHost.connectHost();
 
 		if (connected) {
-			resumeSubscriptions(this);
+			getDomRenderer()?.resumeSubscriptions(this);
 		}
 
 		if (!connected || isReconnectDuringPendingFirstConnect) {
@@ -495,7 +479,7 @@ export class RadiantElement<Bindings extends object = {}>
 	 * output as fresh slotted content.
 	 */
 	disconnectedCallback() {
-		pauseSubscriptions(this);
+		getDomRenderer()?.pauseSubscriptions(this);
 		this.renderRuntime?.dispose();
 		this.eventSubscriptionRegistry.removeAll();
 		this.reactiveHost.disconnectHost();

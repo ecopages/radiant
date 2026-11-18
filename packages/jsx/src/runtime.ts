@@ -1,3 +1,4 @@
+import { ensureDomRendererInstalled } from './dom-renderer-install.ts';
 import { createJsxElement, createMarkupNodeLike, fragmentSymbol, type JsxFragment } from './factory/jsx-factory.ts';
 import { isSubscribableJsxValue } from './types/renderable-guards.ts';
 import { SUBSCRIBABLE_JSX_VALUE_SYMBOL } from './types/index.ts';
@@ -119,6 +120,7 @@ export const Fragment: JsxFragment = fragmentSymbol;
  * logical value.
  */
 export function jsx<Props extends object>(type: JsxElementType<Props>, props: Props, key?: JsxKey): JsxRenderable {
+	ensureDomRendererInstalled();
 	return createJsxElement(type, props, 'single', false, key ?? (props as { key?: JsxKey }).key);
 }
 
@@ -127,6 +129,7 @@ export function jsx<Props extends object>(type: JsxElementType<Props>, props: Pr
  * slots.
  */
 export function jsxs<Props extends object>(type: JsxElementType<Props>, props: Props, key?: JsxKey): JsxRenderable {
+	ensureDomRendererInstalled();
 	return createJsxElement(type, props, 'multiple', false, key ?? (props as { key?: JsxKey }).key);
 }
 

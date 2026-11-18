@@ -185,18 +185,7 @@ function adoptHydratedRootRange(target: HTMLElement, mounted: MountedRangeConten
 	return { end: endMarker, mounted, rootTarget: target, start: startMarker };
 }
 
-/**
- * Returns `true` when `target` contains at least one element with a hydration-binding
- * attribute marker.
- *
- * Used by {@link hydrate} to decide whether the DOM was produced by an SSR pass that
- * embedded binding descriptors, or whether a full client render is needed instead.
- *
- * @param target Root element to inspect.
- */
-export function hasHydrationMarkers(target: HTMLElement): boolean {
-	return visitHydrationBindingMarkers(target, () => undefined);
-}
+export { hasHydrationMarkers } from './hydration/hydration-bindings.ts';
 
 /**
  * Creates a small root API for imperative mounting from plain application entrypoints.

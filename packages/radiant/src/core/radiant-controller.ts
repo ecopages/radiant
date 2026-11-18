@@ -1,10 +1,5 @@
-import {
-	pauseSubscriptions,
-	render as renderJsx,
-	resumeSubscriptions,
-	type JsxRenderable,
-	type SubscribableJsxValueWithAccess,
-} from '@ecopages/jsx';
+import type { JsxRenderable, SubscribableJsxValueWithAccess } from '@ecopages/jsx';
+import { getDomRenderer, mountView } from './dom-renderer';
 import { TrackedRender } from './tracked-render';
 import type { UnknownContext } from '../context/types';
 import { ensureLegacyControllerReady } from '../decorators/legacy/controller-readiness';
@@ -63,7 +58,7 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 					return;
 				}
 
-				renderJsx(this.resolveTrackedRenderOutput(), renderTarget);
+				mountView(this.host, 'render', this.resolveTrackedRenderOutput(), renderTarget);
 			},
 			updated: (changed) => this.updated(changed),
 		});
@@ -101,7 +96,7 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 		const renderTarget = this.getRenderTarget();
 
 		if (renderTarget) {
-			resumeSubscriptions(renderTarget);
+			getDomRenderer()?.resumeSubscriptions(renderTarget);
 		}
 
 		this.updateCycle.flush(() => {
@@ -138,7 +133,7 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 		const renderTarget = this.getRenderTarget();
 
 		if (renderTarget) {
-			pauseSubscriptions(renderTarget);
+			getDomRenderer()?.pauseSubscriptions(renderTarget);
 		}
 
 		this.disconnectRenderWatcher();

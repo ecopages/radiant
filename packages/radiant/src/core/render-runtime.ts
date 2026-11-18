@@ -1,4 +1,5 @@
-import { hasHydrationMarkers, hydrate as hydrateJsx, render as renderJsx, type JsxRenderable } from '@ecopages/jsx';
+import { hasHydrationMarkers, type JsxRenderable } from '@ecopages/jsx';
+import { mountView } from './dom-renderer';
 import { isMinimalDomElement } from './minimal-dom-identity';
 import { areJsxDevWarningsEnabled } from '../helpers/dev-warnings';
 import { TrackedRender } from './tracked-render';
@@ -104,11 +105,11 @@ export class RenderRuntime {
 	}
 
 	hydrate(renderTarget: HTMLElement): void {
-		this.commit(hydrateJsx, renderTarget);
+		this.commit((value, target) => mountView(this.#host, 'hydrate', value, target), renderTarget);
 	}
 
 	render(renderTarget: HTMLElement): void {
-		this.commit(renderJsx, renderTarget);
+		this.commit((value, target) => mountView(this.#host, 'render', value, target), renderTarget);
 	}
 
 	holdsSlotted(value: JsxRenderable): boolean {

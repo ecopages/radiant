@@ -28,6 +28,13 @@
 			"entrypoint": "./src/server/render-controller.ts",
 			"maxBytes": 66938,
 			"maxGzipBytes": 26154
+		},
+		{
+			"label": "element-without-jsx",
+			"entrypoint": "./scripts/size-fixtures/element-without-jsx.ts",
+			"external": [],
+			"maxBytes": 43000,
+			"maxGzipBytes": 12900
 		}
 	]
 }

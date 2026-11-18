@@ -28,7 +28,7 @@ export {
 	type SubscribableJsxValue,
 	type SubscribableJsxValueWithAccess,
 	type TemplateResultLike,
-} from './jsx-runtime.ts';
+} from './runtime.ts';
 
 export type { JSX_PROPS } from './types/index.ts';
 

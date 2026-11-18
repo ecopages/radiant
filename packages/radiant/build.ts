@@ -141,7 +141,9 @@ function serverBoundary(): Plugin {
 			for (const id of this.getModuleIds()) {
 				if (id.startsWith(serverRoot)) continue;
 
-				const serverImport = this.getModuleInfo(id)?.importedIds.find((imported) => imported.startsWith(serverRoot));
+				const serverImport = this.getModuleInfo(id)?.importedIds.find((imported) =>
+					imported.startsWith(serverRoot),
+				);
 
 				if (serverImport) {
 					this.error(
@@ -171,7 +173,8 @@ async function buildModules(): Promise<boolean> {
 			external: (id) => !id.startsWith('.') && !id.startsWith('@/') && !path.isAbsolute(id),
 			resolve: { alias: { '@': sourceRoot } },
 			treeshake: {
-				moduleSideEffects: (id, external) => external || id.startsWith(serverRoot) || id === installHydratorModule,
+				moduleSideEffects: (id, external) =>
+					external || id.startsWith(serverRoot) || id === installHydratorModule,
 			},
 			plugins: [serverBoundary()],
 			output: {

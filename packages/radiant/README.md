@@ -22,6 +22,10 @@ bun add @ecopages/radiant @ecopages/jsx @ecopages/signals
 
 Application code does not need to import JSX helpers or Signals primitives directly for every feature, but both peer dependencies must be installed alongside Radiant.
 
+The JSX renderer ships only when you use it. Radiant never imports it: `@ecopages/jsx` installs it when `@ecopages/jsx/jsx-runtime` loads, which every module compiled from JSX imports, and on the first `jsx()` call, so a view written as JSX or with `jsx()` finds it with no extra setup. An app whose elements only wire events, refs and reactive fields, without a JSX view, does not bundle the renderer. Without the renderer, a view that returns a plain value is written as text and one that returns a DOM node replaces the host's children; any other view, such as a lone signal, needs `import '@ecopages/jsx/jsx-runtime'` once, and `render()` throws an error naming it otherwise.
+
+The packages publish one file per source module and declare `sideEffects`, so a bundler drops every module an app does not import.
+
 ## RadiantElement Mental Model
 
 `RadiantElement` is the structured base class for reactive custom elements.

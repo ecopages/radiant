@@ -3,7 +3,6 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { build } from 'rolldown';
 
-
 type PackageJsonExport = string | { import?: string; types?: string };
 
 type PackageJsonShape = {
@@ -86,7 +85,9 @@ const packageRoot = import.meta.dirname;
 const watchMode = process.argv.includes('--watch');
 const sourceRoot = path.join(packageRoot, 'src');
 const entrypoints = ['index', 'client', 'server', 'jsx-runtime', 'jsx-dev-runtime'];
-const sideEffectModules = new Set(['jsx-runtime', 'jsx-dev-runtime'].map((name) => path.join(sourceRoot, `${name}.ts`)));
+const sideEffectModules = new Set(
+	['jsx-runtime', 'jsx-dev-runtime'].map((name) => path.join(sourceRoot, `${name}.ts`)),
+);
 
 /**
  * @remarks
