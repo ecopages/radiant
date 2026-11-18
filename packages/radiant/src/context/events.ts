@@ -2,12 +2,18 @@ import type { Context, ContextCallback, ContextType, UnknownContext } from './ty
 
 /**
  * List of events which can be emitted by a context provider or requester.
+ *
+ * @remarks
+ * A constant object rather than a TypeScript `enum`: an enum is not erasable syntax, and bundlers inline its members
+ * across modules, which left an empty import of this module in the published per-module build.
  */
-export enum ContextEventsTypes {
-	SUBSCRIPTION_REQUEST = 'context-subscription-request',
-	CONTEXT_REQUEST = 'context-request',
-	PROVIDER = 'context-provider',
-}
+export const ContextEventsTypes = {
+	SUBSCRIPTION_REQUEST: 'context-subscription-request',
+	CONTEXT_REQUEST: 'context-request',
+	PROVIDER: 'context-provider',
+} as const;
+
+export type ContextEventsTypes = (typeof ContextEventsTypes)[keyof typeof ContextEventsTypes];
 
 /**
  * An event fired by a context requester to signal it desires a named context.
