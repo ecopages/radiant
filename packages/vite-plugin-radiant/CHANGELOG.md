@@ -1,5 +1,14 @@
 # @ecopages/vite-plugin-radiant
 
+## 0.2.4
+
+### Patch Changes
+
+- Updated dependencies [[`e7eab07`](https://github.com/ecopages/radiant/commit/e7eab07b4aac4911ebf87776027a031a1f32336f)]:
+    - @ecopages/radiant@0.11.2
+    - @ecopages/jsx@0.11.2
+    - @ecopages/signals@0.11.2
+
 ## 0.2.3
 
 ### Patch Changes

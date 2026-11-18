@@ -44,9 +44,9 @@
 		"typecheck": "tsc --noEmit -p tsconfig.app.json"
 	},
 	"peerDependencies": {
-		"@ecopages/jsx": ">=0.11.1",
-		"@ecopages/radiant": ">=0.11.1",
-		"@ecopages/signals": ">=0.11.1"
+		"@ecopages/jsx": ">=0.11.2",
+		"@ecopages/radiant": ">=0.11.2",
+		"@ecopages/signals": ">=0.11.2"
 	},
 	"devDependencies": {
 		"@babel/core": "^7.28.0",
