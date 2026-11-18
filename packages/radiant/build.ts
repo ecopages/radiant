@@ -1,29 +1,22 @@
 /**
- * `@ecopages/radiant` dist build (esbuild only).
+ * `@ecopages/radiant` dist build (Rolldown).
  *
- * **Hard boundary (asymmetric):** Server code must never ship in client bundles. Client
- * and shared core code may be pulled into server bundles — that is expected for SSR.
- * Enforcement: `deriveEntrypoints` sends only `src/server/*` (and explicit server export
- * paths) through the Node build; browser entrypoints never start from `server/`. The root
- * barrel (`src/index.ts`) is browser-only and does not re-export server modules.
+ * **One output file per source module** (Rolldown `preserveModules`): the `exports` targets are the inputs, and every
+ * module they reach is emitted once, at the path that mirrors its source. The root barrel, subpaths and server
+ * entries share each module, which keeps module-local state, such as SSR registries, a single instance, and lets
+ * the app's bundler drop whole unused modules under `sideEffects`.
  *
- * **Browser (one esbuild invocation):** Root barrel plus every non-server export subpath.
- * Each entry is a self-contained bundle (`splitting: false`); server chunks stay separate.
- *
- * **Server (one esbuild invocation, `splitting: true`):** All `server/*` entrypoints share
- * chunks so module-local SSR state stays a single instance.
- *
- * **Platform split:** Browser builds use `platform: 'browser'`; server builds use
- * `platform: 'node'` with `@ecopages/jsx` / `@ecopages/signals` external.
+ * **Hard boundary (asymmetric):** server code must never ship in client bundles. A module outside `src/server/`
+ * that imports one inside it fails the build (see `serverBoundary`). Server modules may import client and core modules; that is
+ * expected for SSR.
  *
  * **Development warnings:** `process.env.NODE_ENV` stays in the dist, so the app's bundler,
- * not this build, decides whether development warnings ship (see `runEsbuild`).
+ * not this build, decides whether development warnings ship (see `buildModules`).
  */
 import { copyFile, readFileSync, watch, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import * as esbuild from 'esbuild';
-import { deriveEntrypoints } from './scripts/derive-entrypoints.js';
+import { build, type Plugin } from 'rolldown';
 
 type PackageJsonExport = string | { [condition: string]: PackageJsonExport };
 
@@ -117,79 +110,91 @@ function runPackageScript(script: string): void {
 const packageRoot = import.meta.dirname;
 const packageJson = JSON.parse(readFileSync(path.join(packageRoot, 'package.json'), 'utf8')) as PackageJsonShape;
 
-if (!packageJson.exports) {
-	throw new Error('[@ecopages/radiant] package.json must define exports for the dist build.');
+const watchMode = process.argv.includes('--watch');
+const sourceRoot = path.join(packageRoot, 'src');
+const serverRoot = path.join(sourceRoot, 'server');
+const installHydratorModule = path.join(sourceRoot, 'client', 'install-hydrator.ts');
+
+function exportTargets(value: PackageJsonExport): string[] {
+	return typeof value === 'string' ? [value] : Object.values(value).flatMap(exportTargets);
 }
 
-const { browserSubpathEntrypoints, serverEntrypoints } = deriveEntrypoints(packageRoot, packageJson.exports);
+/** Every JavaScript `exports` target, mapped from `./dist/<name>.js` to its source module. */
+function exportInputs(): Record<string, string> {
+	const targets = Object.values(packageJson.exports ?? {})
+		.flatMap(exportTargets)
+		.filter((target) => target.startsWith('./dist/') && target.endsWith('.js'));
 
-const externalPackages = [
-	'@ecopages/jsx',
-	'@ecopages/jsx/*',
-	'@ecopages/signals',
-	'@ecopages/signals/*',
-	'@ecopages/radiant/is-server',
-];
-const watchMode = process.argv.includes('--watch');
-const minify = !watchMode;
+	return Object.fromEntries(
+		targets.map((target) => {
+			const name = target.slice('./dist/'.length, -'.js'.length);
+			return [name, path.join(sourceRoot, `${name}.ts`)];
+		}),
+	);
+}
+
+/** Fails the build when a module outside `src/server/` imports one inside it. */
+function serverBoundary(): Plugin {
+	return {
+		name: 'radiant:server-boundary',
+		generateBundle() {
+			for (const id of this.getModuleIds()) {
+				if (id.startsWith(serverRoot)) continue;
+
+				const serverImport = this.getModuleInfo(id)?.importedIds.find((imported) =>
+					imported.startsWith(serverRoot),
+				);
+
+				if (serverImport) {
+					this.error(
+						`${path.relative(packageRoot, id)} imports server module ${path.relative(packageRoot, serverImport)}: server code must not ship in client bundles.`,
+					);
+				}
+			}
+		},
+	};
+}
 
 /**
  * @remarks
- * The identity `define` stops esbuild from replacing `process.env.NODE_ENV` with
- * `"production"` (minified browser builds) or `"development"` (unminified browser builds,
- * as in watch mode), which would fix the development-warning decision when Radiant is
- * built instead of when the app is.
+ * `process.env.NODE_ENV` is left as written, so the app's bundler, not this build, decides whether development
+ * warnings ship. Rolldown's minifier keeps the `@__PURE__` annotations that the remaining statement-level
+ * tree-shaking relies on. Server modules and the hydrator installer run code on import, so they are the only
+ * internal modules marked as having side effects, here and in `package.json`.
  */
-async function runEsbuild(label: string, options: esbuild.BuildOptions): Promise<boolean> {
+async function buildModules(): Promise<boolean> {
 	try {
-		await esbuild.build({
-			absWorkingDir: packageRoot,
-			bundle: true,
-			define: { 'process.env.NODE_ENV': 'process.env.NODE_ENV' },
-			format: 'esm',
-			logLevel: 'silent',
-			minify,
-			sourcemap: true,
-			...options,
+		await build({
+			cwd: packageRoot,
+			input: exportInputs(),
+			platform: 'neutral',
+			logLevel: 'warn',
+			optimization: { inlineConst: false },
+			external: (id) => !id.startsWith('.') && !id.startsWith('@/') && !path.isAbsolute(id),
+			resolve: { alias: { '@': sourceRoot } },
+			treeshake: {
+				moduleSideEffects: (id, external) =>
+					external || id.startsWith(serverRoot) || id === installHydratorModule,
+			},
+			plugins: [serverBoundary()],
+			output: {
+				dir: path.join(packageRoot, 'dist'),
+				format: 'esm',
+				preserveModules: true,
+				preserveModulesRoot: sourceRoot,
+				entryFileNames: '[name].js',
+				minify: !watchMode,
+				sourcemap: true,
+			},
 		});
 
 		return true;
 	} catch (error) {
-		console.log(`[@ecopages/radiant] ${label}`, error);
+		console.log('[@ecopages/radiant] build', error);
 		process.exitCode = 1;
 
 		return false;
 	}
-}
-
-async function buildBrowserEntrypoints(): Promise<boolean> {
-	const entryPoints = [
-		path.join(packageRoot, 'src/index.ts'),
-		...browserSubpathEntrypoints.map((entry) => path.join(packageRoot, entry)),
-	];
-
-	return runEsbuild('browser build', {
-		entryPoints,
-		external: externalPackages,
-		outbase: path.join(packageRoot, 'src'),
-		outdir: path.join(packageRoot, 'dist'),
-		platform: 'browser',
-	});
-}
-
-async function buildServerEntrypoints(): Promise<boolean> {
-	if (serverEntrypoints.length === 0) {
-		return true;
-	}
-
-	return runEsbuild('server build', {
-		entryPoints: serverEntrypoints.map((entry) => path.join(packageRoot, entry)),
-		external: [...externalPackages, 'node:async_hooks'],
-		outbase: path.join(packageRoot, 'src'),
-		outdir: path.join(packageRoot, 'dist'),
-		platform: 'node',
-		splitting: true,
-	});
 }
 
 /**
@@ -207,9 +212,9 @@ function runVerifyExports(): void {
 	}
 
 	const verifyIndexScript = path.join(packageRoot, 'scripts', 'verify-dist-exports.ts');
-	const verifyServerScript = path.join(packageRoot, 'scripts', 'verify-server-shared-chunks.ts');
+	const verifyModulesScript = path.join(packageRoot, 'scripts', 'verify-dist-modules.ts');
 
-	for (const verifyScript of [verifyIndexScript, verifyServerScript]) {
+	for (const verifyScript of [verifyIndexScript, verifyModulesScript]) {
 		const result = spawnSync(process.execPath, ['--import', 'tsx', verifyScript], {
 			cwd: packageRoot,
 			stdio: 'inherit',
@@ -221,10 +226,7 @@ function runVerifyExports(): void {
 	}
 }
 
-const browserOk = await buildBrowserEntrypoints();
-const serverOk = await buildServerEntrypoints();
-
-if (browserOk && serverOk) {
+if (await buildModules()) {
 	writeFileSync(
 		path.join(packageRoot, 'dist', 'package.json'),
 		`${JSON.stringify(createDistPackageJson(), null, '\t')}\n`,

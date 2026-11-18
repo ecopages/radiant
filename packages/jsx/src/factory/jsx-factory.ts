@@ -273,8 +273,15 @@ const BOOLEAN_SHAPES = ['other', 'boolean', 'reactive'] as const;
 const BINDING_PARTS = new Map<string, (AttributePartDescriptor | undefined)[]>();
 const MAX_BINDING_PARTS = 2048;
 
-/** Descriptors that are shared, and so can key a node of the shape tree. */
+const CHILD_PART: TemplatePartDescriptor = { type: 'child' };
+const CHILDREN_PART: AttributePartDescriptor = { kind: 'children', name: 'children', type: 'attribute' };
+
+/** Binding descriptors that are shared, and so can key a node of the shape tree. */
 const SHARED_PARTS = new WeakSet<TemplatePartDescriptor>();
+
+function isSharedPart(part: TemplatePartDescriptor): boolean {
+	return part === CHILD_PART || part === CHILDREN_PART || SHARED_PARTS.has(part);
+}
 
 /**
  * @remarks Never reads a reactive value. The factory runs inside a tracking computation such as a Radiant host's
@@ -455,11 +462,6 @@ function toChildSlot(child: JsxRenderable | undefined, owner?: string): unknown 
 	return filledSlots.every(isKeyedJsxValue) ? filledSlots : slots;
 }
 
-const CHILD_PART: TemplatePartDescriptor = Object.freeze({ type: 'child' });
-const CHILDREN_PART: AttributePartDescriptor = Object.freeze({ kind: 'children', name: 'children', type: 'attribute' });
-SHARED_PARTS.add(CHILD_PART);
-SHARED_PARTS.add(CHILDREN_PART);
-
 type ShapeNode = {
 	readonly key: string;
 	next?: Map<TemplatePartDescriptor, ShapeNode>;
@@ -499,7 +501,7 @@ function getFactoryShapeKey(type: string, parts: readonly TemplatePartDescriptor
 		let child: ShapeNode | undefined = node.next?.get(part);
 
 		if (!child) {
-			if (shapeNodeCount >= MAX_SHAPE_NODES || !SHARED_PARTS.has(part))
+			if (shapeNodeCount >= MAX_SHAPE_NODES || !isSharedPart(part))
 				return appendShapeTokens(node.key, parts, index);
 			child = { key: `${node.key}\u0002${describeShapePart(part)}` };
 			(node.next ??= new Map()).set(part, child);

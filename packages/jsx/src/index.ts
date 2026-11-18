@@ -7,6 +7,7 @@ export {
 	resumeSubscriptions,
 	type JsxRoot,
 } from './dom-render.ts';
+export { getDomRenderer, type DomRenderer } from './dom-renderer.ts';
 export { CUSTOM_ELEMENT_CHILDREN_SYMBOL } from './types/index.ts';
 export type { JSX_PROPS } from './types/index.ts';
 
@@ -24,7 +25,7 @@ export {
 	type JsxFragment,
 	isKeyedJsxValue,
 	isSubscribableJsxValue,
-} from './jsx-runtime.ts';
+} from './runtime.ts';
 
 export type { DelegatedEventName } from './factory/event-binding-policy.ts';
 export type {

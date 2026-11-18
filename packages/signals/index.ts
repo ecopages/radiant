@@ -44,11 +44,11 @@ import { Watcher } from './src/watcher';
  * This groups the lower-level pieces that mirror the TC39 proposal naming
  * without forcing application code onto the subtle surface by default.
  */
-export const subtle = Object.freeze({
+export const subtle = {
 	Watcher,
 	currentComputed,
 	trackDependency,
 	untrack,
 	watched,
 	unwatched,
-});
+} as const;

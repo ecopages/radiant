@@ -61,15 +61,22 @@ function pushStyleAsset(seen: Set<string>, assets: RadiantSsrAsset[], href: stri
 	assets.push({ kind: 'style', href: normalizedHref });
 }
 
+/**
+ * @remarks `visited` stops the walk at modules already seen, so an import cycle, which a package published as one
+ * file per module can contain, does not recurse forever.
+ */
 function visitImportedStyles(
 	server: ViteDevServer,
 	mod: ModuleNode | undefined,
 	seen: Set<string>,
 	assets: RadiantSsrAsset[],
+	visited = new Set<ModuleNode>(),
 ): void {
-	if (!mod) {
+	if (!mod || visited.has(mod)) {
 		return;
 	}
+
+	visited.add(mod);
 
 	for (const imported of mod.importedModules) {
 		const id = imported.url ?? imported.id;
@@ -81,7 +88,7 @@ function visitImportedStyles(
 			pushStyleAsset(seen, assets, toViteSsrModulePath(id.split('?')[0]!, server.config.root));
 		}
 
-		visitImportedStyles(server, imported, seen, assets);
+		visitImportedStyles(server, imported, seen, assets, visited);
 	}
 }
 

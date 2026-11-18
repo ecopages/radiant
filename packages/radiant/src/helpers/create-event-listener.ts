@@ -1,4 +1,5 @@
 import { eventMatchesDelegatedRef, eventMatchesDelegatedSelector } from '../core/delegated-event';
+import { partSelector } from '../core/parts';
 import { isServer } from '@ecopages/radiant/is-server';
 import { areJsxDevWarningsEnabled } from './dev-warnings';
 import { resolveHostElement } from './resolve-host-element';
@@ -245,11 +246,12 @@ function attachDelegatedListeners(
 	listener: EventListener,
 ): void {
 	const { ref, selector } = config;
+	const refSelector = ref === undefined ? undefined : partSelector(ref);
 	const matches =
 		selector !== undefined
 			? (event: Event) => eventMatchesDelegatedSelector(event, hostElement, selector)
-			: ref !== undefined
-				? (event: Event) => eventMatchesDelegatedRef(event, hostElement, ref)
+			: refSelector !== undefined
+				? (event: Event) => eventMatchesDelegatedRef(event, hostElement, refSelector)
 				: undefined;
 	if (!matches) return;
 	if (!cleanups.has('delegated'))

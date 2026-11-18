@@ -127,7 +127,7 @@ One boot path for Node adapters:
 
 ### Server dist (published layout)
 
-The server build may inline shared element/controller **client** modules; the inverse is forbidden — browser builds never emit `dist/server/*` or server-only chunks. Shared `dist/chunk-*.js` under the package root are server-graph artifacts. Depend only on documented `package.json` exports. Invariants are documented in TSDoc on `packages/radiant/build.ts` and `install-ssr-runtime.ts`.
+The dist has one file per source module, shared by client and server entries, so each module-local registry exists once per process. Server modules may import client and core modules; the inverse is forbidden, and the build fails when a module outside `src/server/` imports one inside it. Every `dist/server/*` file is declared in `sideEffects`. `install-ssr-runtime` also imports `@ecopages/jsx/jsx-runtime`, which installs the DOM renderer that hosts mount their views with against the minimal DOM. Depend only on documented `package.json` exports. Invariants are documented in TSDoc on `packages/radiant/build.ts` and `install-ssr-runtime.ts`.
 
 **Allowed on `globalThis`:** Radiant-owned minimal-DOM constructors, `document` / `customElements` from the shim, controller registry, hydrator flags. Installation first checks for a complete usable DOM and leaves it unchanged; missing, malformed, or partial DOM globals are replaced with Radiant's coherent minimal surface rather than patched in place. SSR scope adapters and HTML parser registration stay module-local.
 

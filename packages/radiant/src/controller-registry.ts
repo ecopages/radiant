@@ -17,28 +17,24 @@ type ControllerRegistryGlobalState = {
 
 export const CONTROLLER_REGISTRY_STATE_KEY = Symbol.for('@ecopages/radiant.controller-registry-state');
 
+let controllerRegistryState: ControllerRegistryGlobalState | undefined;
+
+/**
+ * @remarks
+ * Created on first use, not at import, so a bundle that never touches controllers can drop this module. Kept on
+ * `globalThis` so duplicate package copies share one registry.
+ */
 function getControllerRegistryGlobalState(): ControllerRegistryGlobalState {
-	const globalScope = globalThis as typeof globalThis & Record<PropertyKey, unknown>;
-	const existingState = globalScope[CONTROLLER_REGISTRY_STATE_KEY];
+	const globalScope = globalThis as typeof globalThis &
+		Record<PropertyKey, ControllerRegistryGlobalState | undefined>;
 
-	if (existingState) {
-		return existingState as ControllerRegistryGlobalState;
-	}
-
-	const nextState: ControllerRegistryGlobalState = {
-		activeRuntimes: new Set<ControllerRegistryRuntime>(),
-		controllerRegistrationStrategy: 'keep-current',
-		controllerRegistry: new Map<string, ControllerConstructor>(),
-	};
-
-	globalScope[CONTROLLER_REGISTRY_STATE_KEY] = nextState;
-
-	return nextState;
+	return (controllerRegistryState ??= globalScope[CONTROLLER_REGISTRY_STATE_KEY] ??=
+		{
+			activeRuntimes: new Set<ControllerRegistryRuntime>(),
+			controllerRegistrationStrategy: 'keep-current',
+			controllerRegistry: new Map<string, ControllerConstructor>(),
+		});
 }
-
-const controllerRegistryState = getControllerRegistryGlobalState();
-const controllerRegistry = controllerRegistryState.controllerRegistry;
-const activeRuntimes = controllerRegistryState.activeRuntimes;
 
 export function parseControllerIdentifiers(element: Element): string[] {
 	const value = element.getAttribute(CONTROLLER_ATTRIBUTE);
@@ -87,7 +83,7 @@ export class ControllerRegistryRuntime {
 			}
 		}
 
-		activeRuntimes.delete(this);
+		getControllerRegistryGlobalState().activeRuntimes.delete(this);
 	}
 
 	public reconcileRegisteredController(identifier: string): void {
@@ -118,7 +114,7 @@ export class ControllerRegistryRuntime {
 		});
 
 		if (typeof MutationObserver === 'undefined') {
-			activeRuntimes.add(this);
+			getControllerRegistryGlobalState().activeRuntimes.add(this);
 			return;
 		}
 
@@ -160,7 +156,7 @@ export class ControllerRegistryRuntime {
 			subtree: true,
 		});
 
-		activeRuntimes.add(this);
+		getControllerRegistryGlobalState().activeRuntimes.add(this);
 	}
 
 	private reconcileElement(element: Element): void {
@@ -181,7 +177,7 @@ export class ControllerRegistryRuntime {
 	}
 
 	private connectController(element: Element, identifier: string): void {
-		const controllerConstructor = controllerRegistry.get(identifier);
+		const controllerConstructor = getControllerRegistryGlobalState().controllerRegistry.get(identifier);
 
 		if (!controllerConstructor) {
 			return;
@@ -241,16 +237,16 @@ export function registerController<
 	TController extends RadiantController,
 	TConstructor extends ControllerConstructor<TController>,
 >(identifier: string, controller: TConstructor): TConstructor {
-	const existingController = controllerRegistry.get(identifier);
+	const existingController = getControllerRegistryGlobalState().controllerRegistry.get(identifier);
 
 	if (existingController) {
 		return existingController as TConstructor;
 	}
 
 	setControllerIdentifier(controller, identifier);
-	controllerRegistry.set(identifier, controller);
+	getControllerRegistryGlobalState().controllerRegistry.set(identifier, controller);
 
-	for (const runtime of Array.from(activeRuntimes)) {
+	for (const runtime of Array.from(getControllerRegistryGlobalState().activeRuntimes)) {
 		runtime.reconcileRegisteredController(identifier);
 	}
 
@@ -258,7 +254,7 @@ export function registerController<
 }
 
 export function hasRegisteredController(identifier: string): boolean {
-	return controllerRegistry.has(identifier);
+	return getControllerRegistryGlobalState().controllerRegistry.has(identifier);
 }
 
 /**
@@ -268,23 +264,23 @@ export function hasRegisteredController(identifier: string): boolean {
  * authored hosts before the browser registry attaches controllers at runtime.
  */
 export function resolveRegisteredController(identifier: string): ControllerConstructor | undefined {
-	return controllerRegistry.get(identifier);
+	return getControllerRegistryGlobalState().controllerRegistry.get(identifier);
 }
 
 export function replaceController<
 	TController extends RadiantController,
 	TConstructor extends ControllerConstructor<TController>,
 >(identifier: string, controller: TConstructor): TConstructor {
-	const existingController = controllerRegistry.get(identifier);
+	const existingController = getControllerRegistryGlobalState().controllerRegistry.get(identifier);
 
 	if (existingController === controller) {
 		return controller;
 	}
 
 	setControllerIdentifier(controller, identifier);
-	controllerRegistry.set(identifier, controller);
+	getControllerRegistryGlobalState().controllerRegistry.set(identifier, controller);
 
-	for (const runtime of Array.from(activeRuntimes)) {
+	for (const runtime of Array.from(getControllerRegistryGlobalState().activeRuntimes)) {
 		runtime.replaceRegisteredController(identifier);
 	}
 
@@ -292,7 +288,7 @@ export function replaceController<
 }
 
 export function setControllerRegistrationStrategy(strategy: ControllerRegistrationStrategy): void {
-	controllerRegistryState.controllerRegistrationStrategy = strategy;
+	getControllerRegistryGlobalState().controllerRegistrationStrategy = strategy;
 }
 
 /**
@@ -321,7 +317,7 @@ export function registerControllerWithConfiguredStrategy<
 	TController extends RadiantController,
 	TConstructor extends ControllerConstructor<TController>,
 >(identifier: string, controller: TConstructor): TConstructor {
-	if (controllerRegistryState.controllerRegistrationStrategy === 'replace') {
+	if (getControllerRegistryGlobalState().controllerRegistrationStrategy === 'replace') {
 		return replaceController(identifier, controller);
 	}
 
@@ -333,7 +329,7 @@ export function startControllers(root: ParentNode = document): ControllerRegistr
 }
 
 export function stopControllers(): void {
-	for (const runtime of Array.from(activeRuntimes)) {
+	for (const runtime of Array.from(getControllerRegistryGlobalState().activeRuntimes)) {
 		runtime.stop();
 	}
 }

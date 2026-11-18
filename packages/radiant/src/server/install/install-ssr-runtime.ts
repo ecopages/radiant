@@ -1,5 +1,5 @@
 /**
- * Canonical Node SSR boot for Radiant: JSX scope adapters, light-DOM shim, HTML parsers.
+ * Canonical Node SSR boot for Radiant: JSX scope adapters, JSX DOM renderer, light-DOM shim, HTML parsers.
  *
  * Import this module once per process (side-effect import). Other `@ecopages/radiant/server/*`
  * entrypoints also import it; app SSR bundles should import it first when the bundler may
@@ -7,9 +7,10 @@
  * so the server esbuild graph cannot tree-shake it into an empty chunk.
  *
  * @remarks
- * Scope adapters and HTML parser tables are **module-local**; the published server build
- * uses esbuild code splitting (`packages/radiant/build.ts`) so all server entries share one
- * instance. `globalThis` is reserved for light-DOM constructors and other process APIs, not
+ * Scope adapters and HTML parser tables are **module-local**; the published build emits one
+ * file per module (`packages/radiant/build.ts`) so all server entries share one instance. The
+ * JSX runtime import installs the DOM renderer that hosts mount their views with against the
+ * minimal DOM, even when the server bundle compiled no JSX of its own. `globalThis` is reserved for light-DOM constructors and other process APIs, not
  * for duplicating registry state across bundles.
  *
  * @packageDocumentation
@@ -18,6 +19,7 @@ import { getActiveSsrScopeValue, withActiveSsrScopeValue } from '@ecopages/jsx/s
 import { installRadiantElementSsrScopeAdapters } from '../../core/radiant-element-ssr-registry';
 import { installLightDomShim } from '../shim/light-dom-shim';
 import '../shim/minimal-dom/html';
+import '@ecopages/jsx/jsx-runtime';
 
 installRadiantElementSsrScopeAdapters({
 	get: getActiveSsrScopeValue,

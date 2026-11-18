@@ -1,6 +1,6 @@
 import { copyFile, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import * as esbuild from 'esbuild';
+import { build } from 'rolldown';
 
 type PackageJsonShape = {
 	name: string;
@@ -60,21 +60,32 @@ function createDistPackageJson(): PackageJsonShape {
 
 const packageRoot = import.meta.dirname;
 const watchMode = process.argv.includes('--watch');
-const minify = !watchMode;
 
 let buildOk = false;
 
+/**
+ * @remarks
+ * One output file per source module, so the app's bundler drops whole unused modules under `sideEffects: false`
+ * instead of guessing statement by statement inside one pre-bundled file. Rolldown's minifier keeps the
+ * `@__PURE__` annotations that the remaining statement-level tree-shaking relies on.
+ */
 try {
-	await esbuild.build({
-		absWorkingDir: packageRoot,
-		bundle: true,
-		entryPoints: [path.join(packageRoot, 'index.ts')],
-		format: 'esm',
-		logLevel: 'silent',
-		minify,
-		outfile: path.join(packageRoot, 'dist', 'index.js'),
-		platform: 'browser',
-		sourcemap: true,
+	await build({
+		cwd: packageRoot,
+		input: { index: path.join(packageRoot, 'index.ts') },
+		platform: 'neutral',
+		logLevel: 'warn',
+		optimization: { inlineConst: false },
+		external: (id) => !id.startsWith('.') && !path.isAbsolute(id),
+		output: {
+			dir: path.join(packageRoot, 'dist'),
+			format: 'esm',
+			preserveModules: true,
+			preserveModulesRoot: packageRoot,
+			entryFileNames: '[name].js',
+			minify: !watchMode,
+			sourcemap: true,
+		},
 	});
 	buildOk = true;
 } catch (error) {
@@ -108,5 +119,5 @@ if (buildOk) {
 }
 
 if (watchMode) {
-	console.warn('[@ecopages/signals] --watch is not implemented for the esbuild pipeline yet.');
+	console.warn('[@ecopages/signals] --watch is not implemented for the build yet.');
 }

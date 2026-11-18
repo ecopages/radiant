@@ -265,3 +265,19 @@ function getChildElementAt(children: HTMLCollection, index: number): Element | n
 
 	return (children as unknown as ArrayLike<Element | null | undefined>)[index] ?? null;
 }
+
+/**
+ * Returns `true` when `target` contains at least one element with a hydration-binding
+ * attribute marker.
+ *
+ * Used by `hydrate` to decide whether the DOM was produced by an SSR pass that
+ * embedded binding descriptors, or whether a full client render is needed instead.
+ *
+ * @remarks Lives apart from the DOM renderer so a host library can check for server output before any view is
+ * built, without importing the renderer.
+ *
+ * @param target Root element to inspect.
+ */
+export function hasHydrationMarkers(target: HTMLElement): boolean {
+	return visitHydrationBindingMarkers(target, () => undefined);
+}

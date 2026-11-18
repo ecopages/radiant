@@ -1,4 +1,4 @@
-import { isPartOwnedBy, partSelector } from './parts';
+import { isPartOwnedBy } from './parts';
 
 /**
  * Returns whether a bubbling event should fire a delegated listener on `root`.
@@ -30,9 +30,9 @@ function closestFromTarget(event: Event, selector: string): Element | null {
  * outer handler unless that part sits inside an outer part of the same name, and lets a container part
  * hear events from nested hosts that reuse a common name such as `root` or `trigger`. A `data-ref` on
  * `root` itself never matches, unlike the selector path, which accepts `root`. The walk ends at `root`.
+ * `selector` is the part's `partSelector(ref)`, built once by the caller rather than on every event.
  */
-export function eventMatchesDelegatedRef(event: Event, root: Element, ref: string): boolean {
-	const selector = partSelector(ref);
+export function eventMatchesDelegatedRef(event: Event, root: Element, selector: string): boolean {
 	let matched = closestFromTarget(event, selector);
 
 	while (matched && matched !== root && root.contains(matched)) {
