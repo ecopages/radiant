@@ -19,6 +19,9 @@ catalogs:
 overrides:
   tsup>esbuild: ^0.28.2
 
+patchedDependencies:
+  '@ecopages/ecopages-jsx@0.7.1': 32e28a028da7cf578f48cb2bdd1df710ce01eaa8c7cb4d445d90422e2cddf90a
+
 importers:
 
   .:
@@ -74,7 +77,7 @@ importers:
         version: 0.7.1(@ecopages/signals@packages+signals+dist)
       '@ecopages/ecopages-jsx':
         specifier: 0.7.1
-        version: 0.7.1(@ecopages/core@0.7.1(@ecopages/dev-toolbar@0.7.1(@ecopages/signals@packages+signals+dist))(typescript@7.0.2))(@ecopages/jsx@packages+jsx+dist)(@ecopages/radiant@packages+radiant+dist)(supports-color@7.2.0)(typescript@7.0.2)
+        version: 0.7.1(patch_hash=32e28a028da7cf578f48cb2bdd1df710ce01eaa8c7cb4d445d90422e2cddf90a)(@ecopages/core@0.7.1(@ecopages/dev-toolbar@0.7.1(@ecopages/signals@packages+signals+dist))(typescript@7.0.2))(@ecopages/jsx@packages+jsx+dist)(@ecopages/radiant@packages+radiant+dist)(supports-color@7.2.0)(typescript@7.0.2)
       '@ecopages/file-system':
         specifier: 0.7.1
         version: 0.7.1
@@ -179,7 +182,7 @@ importers:
         version: 0.7.1(@ecopages/dev-toolbar@0.7.1(@ecopages/signals@packages+signals+dist))(typescript@7.0.2)
       '@ecopages/ecopages-jsx':
         specifier: 0.7.1
-        version: 0.7.1(@ecopages/core@0.7.1(@ecopages/dev-toolbar@0.7.1(@ecopages/signals@packages+signals+dist))(typescript@7.0.2))(@ecopages/jsx@packages+jsx+dist)(@ecopages/radiant@packages+radiant+dist)(supports-color@7.2.0)(typescript@7.0.2)
+        version: 0.7.1(patch_hash=32e28a028da7cf578f48cb2bdd1df710ce01eaa8c7cb4d445d90422e2cddf90a)(@ecopages/core@0.7.1(@ecopages/dev-toolbar@0.7.1(@ecopages/signals@packages+signals+dist))(typescript@7.0.2))(@ecopages/jsx@packages+jsx+dist)(@ecopages/radiant@packages+radiant+dist)(supports-color@7.2.0)(typescript@7.0.2)
       '@ecopages/file-system':
         specifier: 0.7.1
         version: 0.7.1
@@ -4911,7 +4914,7 @@ snapshots:
     transitivePeerDependencies:
       - '@ecopages/signals'
 
-  '@ecopages/ecopages-jsx@0.7.1(@ecopages/core@0.7.1(@ecopages/dev-toolbar@0.7.1(@ecopages/signals@packages+signals+dist))(typescript@7.0.2))(@ecopages/jsx@packages+jsx+dist)(@ecopages/radiant@packages+radiant+dist)(supports-color@7.2.0)(typescript@7.0.2)':
+  '@ecopages/ecopages-jsx@0.7.1(patch_hash=32e28a028da7cf578f48cb2bdd1df710ce01eaa8c7cb4d445d90422e2cddf90a)(@ecopages/core@0.7.1(@ecopages/dev-toolbar@0.7.1(@ecopages/signals@packages+signals+dist))(typescript@7.0.2))(@ecopages/jsx@packages+jsx+dist)(@ecopages/radiant@packages+radiant+dist)(supports-color@7.2.0)(typescript@7.0.2)':
     dependencies:
       '@ecopages/core': 0.7.1(@ecopages/dev-toolbar@0.7.1(@ecopages/signals@packages+signals+dist))(typescript@7.0.2)
       '@ecopages/file-system': 0.7.1

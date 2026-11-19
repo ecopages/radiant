@@ -37,6 +37,8 @@ Component pages combine three layers. Keep them separate — do not generate usa
 
 `Demo` renders `Canvas` (preview mount) and `Controls` (arg panel). It does not render example source code.
 
+This app shares the workspace patch to `@ecopages/ecopages-jsx` that loads the Radiant hydrator before demo scripts; see [Docs shell](../docs/README.md#docs-shell) for what it changes and when to remove it.
+
 ## Authoring a component page
 
 ### 1. Create the story module

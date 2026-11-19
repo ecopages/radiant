@@ -30,3 +30,6 @@ minimumReleaseAgeExclude:
     - '@ecopages/mdx@0.7.0 || 0.7.1'
     - '@ecopages/postcss-processor@0.7.0 || 0.7.1'
     - ecopages@0.7.0 || 0.7.1
+
+patchedDependencies:
+    '@ecopages/ecopages-jsx@0.7.1': patches/@ecopages__ecopages-jsx@0.7.1.patch
