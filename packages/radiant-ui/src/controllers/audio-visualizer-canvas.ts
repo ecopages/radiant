@@ -25,6 +25,10 @@ export interface CanvasSurface {
  * (`--primary`) or any CSS color; a property is read on every call, not once, because a theme or light and dark
  * switch changes it while the audio plays. `onResize` runs after each resize, which has cleared the canvas, for a
  * preset that shows something at rest.
+ *
+ * A resize the observer reports is applied on the next animation frame. Writing the bitmap size inside the
+ * observer callback can change the canvas box during delivery, and the browser then reports a
+ * `ResizeObserver loop completed with undelivered notifications` error on `window`.
  */
 export function createCanvasSurface(target: HTMLElement, onResize?: () => void): CanvasSurface {
 	const canvas = document.createElement('canvas');
@@ -46,7 +50,12 @@ export function createCanvasSurface(target: HTMLElement, onResize?: () => void):
 		onResize?.();
 	};
 	fit();
-	const resize = new ResizeController({ getTargets: () => [canvas], onResize: fit });
+	let pendingFit = 0;
+	const scheduleFit = () => {
+		cancelAnimationFrame(pendingFit);
+		pendingFit = requestAnimationFrame(fit);
+	};
+	const resize = new ResizeController({ getTargets: () => [canvas], onResize: scheduleFit });
 	resize.attach();
 
 	let ratioQuery: MediaQueryList | null = null;
@@ -79,6 +88,7 @@ export function createCanvasSurface(target: HTMLElement, onResize?: () => void):
 		},
 		destroy() {
 			resize.destroy();
+			cancelAnimationFrame(pendingFit);
 			ratioQuery?.removeEventListener('change', onRatio);
 			canvas.remove();
 		},

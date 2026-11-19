@@ -51,7 +51,9 @@ export type PortalCycle = {
  * while open, during the exit, and after a close and reopen that swapped the node.
  *
  * @remarks The swap stands for a re-render that stamps a new popup while the old one is closed. A reference taken
- * once, such as a cached query, answers with the old node from then on.
+ * once, such as a cached query, answers with the old node from then on. The clone is normalized: it would otherwise
+ * copy the empty text nodes the JSX renderer leaves around its ranges, and a nested host upgrading in the clone reads
+ * them as a view that rendered it before its tag was defined, which a real re-render never does.
  */
 export async function expectPopupFoundAcrossPortalCycle(cycle: PortalCycle): Promise<void> {
 	const { portaled, open, close, find } = cycle;
@@ -69,7 +71,9 @@ export async function expectPopupFoundAcrossPortalCycle(cycle: PortalCycle): Pro
 
 	await animationsFinished(cycle.popup);
 	expect(cycle.popup.parentElement).toBe(home);
-	const next = withSlowExit(cycle.popup.cloneNode(true) as HTMLElement);
+	const clone = cycle.popup.cloneNode(true) as HTMLElement;
+	clone.normalize();
+	const next = withSlowExit(clone);
 	cycle.popup.replaceWith(next);
 
 	await open();
