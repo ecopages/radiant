@@ -14,8 +14,6 @@ Pages live in section folders: `src/content/docs/<section>/<slug>.mdx` is served
 
 Fenced code blocks get a Copy button from `rehype-pretty-code` and `transformerCopyButton`. `src/mdx/rehype-pretty-copy-compatibility.ts` moves the button next to the `pre` inside its figure, and the click handler lives in `src/layouts/base-layout/code-copy.ts`, registered by the base layout script. The button text changes to Copied or Try again for 1.2 s while its accessible name stays "Copy code"; the result is announced through the visually hidden `role="status"` region that `BaseLayout` renders at the end of every page body, so it survives browser-router navigation. `src/mdx/rehype-heading-ids.ts` gives headings build-time ids so `#fragment` links land correctly. Previous and next links render on the server from `src/layouts/docs-layout/components/docs-pagination`.
 
-`patches/@ecopages__ecopages-jsx@0.7.1.patch`, applied through `patchedDependencies` in `pnpm-workspace.yaml`, makes `@ecopages/ecopages-jsx` bundle the Radiant hydrator and load it as a module script in the head, before the page's custom-element scripts. Demos then reuse their server-rendered DOM when the elements upgrade instead of re-rendering it. The patch is a workaround until the same change ships upstream; upgrading `@ecopages/ecopages-jsx` means regenerating the patch or removing it.
-
 `pnpm --filter radiant-docs test` runs the Node and browser (Chromium) Vitest projects; `test:e2e` builds and checks the site.
 
 ## Agent-facing exports
