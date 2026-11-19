@@ -35,6 +35,29 @@ test.after(async () => {
 	await stopServer(docsPreviewServer);
 });
 
+test('Docs Redux demo updates the server-rendered badge in place', browserTestOptions, async () => {
+	await withBrowserPage(async (page) => {
+		await page.addInitScript(() => {
+			const observer = new MutationObserver(() => {
+				const badge = document.querySelector('radiant-redux-user strong');
+				if (badge) {
+					window.serverRenderedReduxBadge = badge;
+					observer.disconnect();
+				}
+			});
+			observer.observe(document, { childList: true, subtree: true });
+		});
+
+		await page.goto(`${origin}/docs/examples/redux-store`);
+		const demo = page.locator('radiant-redux-demo');
+		const badge = demo.locator('radiant-redux-user strong');
+		await waitForLocatorText(badge, 'Ada');
+		await demo.getByRole('button', { name: 'Sign in as Bea' }).click();
+		await waitForLocatorText(badge, 'Bea');
+		assert.equal(await badge.evaluate((node) => node === window.serverRenderedReduxBadge), true);
+	});
+});
+
 test(
 	'Docs todo example preserves SSR todos after upgrade and keeps context interactions live',
 	browserTestOptions,

@@ -1,32 +1,34 @@
 packages:
-    - 'apps/*'
-    - 'packages/*'
-    - 'playground/*'
+  - 'apps/*'
+  - 'packages/*'
+  - 'playground/*'
 
 catalog:
-    # Lint rules and config typing must use the same Oxlint release.
-    oxlint: ^1.78.0
-    typescript: ~7.0.2
-    # Library builds: one output file per source module (preserveModules).
-    rolldown: ^1.2.16
+  # Lint rules and config typing must use the same Oxlint release.
+  oxlint: ^1.78.0
+  typescript: ~7.0.2
+  # Library builds: one output file per source module (preserveModules).
+  rolldown: ^1.2.16
 
 # tsup 8 pins esbuild ~0.27, which has an advisory fixed in 0.28.1; tsup works with 0.28.
 overrides:
-    'tsup>esbuild': ^0.28.2
+  'tsup>esbuild': ^0.28.2
 
 allowBuilds:
-    esbuild: true
-    '@swc/core': true
-    msw: false
+  esbuild: true
+  '@swc/core': true
+  msw: false
 
 minimumReleaseAgeExclude:
-    - '@ecopages/browser-router@0.7.0 || 0.7.1'
-    - '@ecopages/content-processor@0.7.0 || 0.7.1'
-    - '@ecopages/core@0.7.0 || 0.7.1'
-    - '@ecopages/dev-toolbar@0.7.0 || 0.7.1'
-    - '@ecopages/ecopages-jsx@0.7.0 || 0.7.1'
-    - '@ecopages/file-system@0.7.0 || 0.7.1'
-    - '@ecopages/lightningcss-processor@0.7.0 || 0.7.1'
-    - '@ecopages/mdx@0.7.0 || 0.7.1'
-    - '@ecopages/postcss-processor@0.7.0 || 0.7.1'
-    - ecopages@0.7.0 || 0.7.1
+  - '@ecopages/browser-router@0.10.1'
+  - '@ecopages/content-processor@0.10.1'
+  - '@ecopages/core@0.10.1'
+  - '@ecopages/dev-toolbar@0.10.1'
+  - '@ecopages/ecopages-jsx@0.10.1'
+  - '@ecopages/file-system@0.10.1'
+  - '@ecopages/lightningcss-processor@0.10.1'
+  - '@ecopages/mdx@0.10.1'
+  - '@ecopages/postcss-processor@0.10.1'
+  - ecopages@0.10.1
+  - '@ecopages/jsx@0.11.2'
+  - '@ecopages/radiant@0.11.2'
