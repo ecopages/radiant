@@ -4,11 +4,11 @@ description: "Two Radiant hosts that each read one slice of a Redux session stor
 order: 8
 ---
 
-import { ReduxSessionStore } from '@/components/redux-session-store';
+import { RadiantReduxDemo } from '@/components/redux-session-store/redux-session-store.script';
 
 export const config = {
 	dependencies: {
-		components: [ReduxSessionStore],
+		scripts: ['../../../components/redux-session-store/redux-session-store.script.tsx'],
 	},
 };
 
@@ -16,7 +16,7 @@ export const config = {
 
 The session lives in Redux (or a store with `getState`, `subscribe`, and `dispatch`). A form or another framework dispatches. Radiant hosts read one slice each: the user name and the theme. Changing the theme does not update the user host.
 
-<ReduxSessionStore />
+<RadiantReduxDemo />
 
 **Sign in as Bea** dispatches `session/rename`. **Toggle theme** dispatches `session/toggleTheme`. Neither button writes a Radiant field.
 
