@@ -1,4 +1,5 @@
-import { readFile } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
+import { posix } from 'node:path';
 import type { Plugin, ViteDevServer } from 'vite';
 import { normalizePath } from 'vite';
 import { createClientRegistryModule, createDomRegistryModule } from './client';
@@ -56,13 +57,18 @@ export function radiantElements(options: RadiantElementsPluginOptions = {}): Plu
 			getResolvedRadiantVirtualModule('ssrRegistry'),
 			() => createSsrRegistryModule(componentGlob, RADIANT_DOM_METADATA_QUERY),
 		],
-		[getResolvedRadiantVirtualModule('ssrAssetRegistry'), () => createSsrAssetRegistryModule(componentStyleGlob)],
+		[
+			getResolvedRadiantVirtualModule('ssrAssetRegistry'),
+			() => createSsrAssetRegistryModule(componentStyleGlob, builtStyleUrls),
+		],
 		[
 			getResolvedRadiantVirtualModule('appLoadMode'),
 			() => createAppLoadModeModule({ appLoadMode, appLoadModeHeader, clientOnlySearchParam }),
 		],
 	]);
 	const domMetadataCache = new Map<string, string>();
+	const styleReferences = new Map<string, string>();
+	const builtStyleUrls = new Map<string, string>();
 	let rootDirectory = '';
 	let devServer: ViteDevServer | undefined;
 	let isComponentFile: (filePath: string) => boolean = () => false;
@@ -93,6 +99,14 @@ export function radiantElements(options: RadiantElementsPluginOptions = {}): Plu
 		server.ws.send({
 			type: 'full-reload',
 		});
+	}
+
+	async function listComponentStyleFiles(): Promise<string[]> {
+		const componentRoot = posix.join(rootDirectory, componentDirectory);
+		const entries = await readdir(componentRoot, { recursive: true }).catch(() => []);
+		return entries
+			.map((entry) => posix.join(componentRoot, normalizePath(entry)))
+			.filter((filePath) => isComponentStyleFile(filePath));
 	}
 
 	return {
@@ -147,6 +161,39 @@ export function radiantElements(options: RadiantElementsPluginOptions = {}): Plu
 			}
 
 			invalidateVirtualModules();
+		},
+		sharedDuringBuild: true,
+		/**
+		 * @remarks A server build does not write the assets it references, so a component style the SSR asset
+		 * registry links to must come from the browser build. It emits every component style and records the file
+		 * name it gets, and a server build that runs after it links to those names. A server build that runs first
+		 * keeps the URLs of its own `?url` glob.
+		 */
+		async buildStart() {
+			if (this.environment.config.command !== 'build' || this.environment.config.consumer !== 'client') {
+				return;
+			}
+
+			styleReferences.clear();
+			builtStyleUrls.clear();
+			for (const filePath of await listComponentStyleFiles()) {
+				const referenceId = this.emitFile({
+					type: 'asset',
+					name: posix.basename(filePath),
+					originalFileName: posix.relative(rootDirectory, filePath),
+					source: await readFile(filePath),
+				});
+				styleReferences.set(referenceId, `/${posix.relative(rootDirectory, filePath)}`);
+			}
+		},
+		generateBundle() {
+			if (this.environment.config.consumer !== 'client') {
+				return;
+			}
+
+			for (const [referenceId, sourceKey] of styleReferences) {
+				builtStyleUrls.set(sourceKey, `${this.environment.config.base}${this.getFileName(referenceId)}`);
+			}
 		},
 		resolveId(source) {
 			return resolveRadiantVirtualModuleId(source);
