@@ -275,6 +275,10 @@ describe.each([
 	});
 
 	it('follows the container size, to zero and back', async () => {
+		const errors: string[] = [];
+		const onError = (event: ErrorEvent) => errors.push(event.message);
+		window.addEventListener('error', onError);
+		onTestFinished(() => window.removeEventListener('error', onError));
 		const target = makeTarget(100, 40);
 		const preset = create();
 		preset.mount(target);
@@ -292,6 +296,7 @@ describe.each([
 		target.style.height = '30px';
 		await untilResized(canvas, () => canvas.height === Math.round(30 * ratio));
 		preset.destroy();
+		expect(errors).toEqual([]);
 	});
 
 	it('draws nothing visible in a zero-size container without throwing', () => {

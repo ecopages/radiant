@@ -77,6 +77,8 @@ radiant({
 });
 ```
 
+`styles` selects the component stylesheets that `resolveRadiantSsrStyleAssets()` from `virtual:radiant/ssr-asset-registry` can link in server-rendered HTML. In a production build the browser build writes every matched file to its assets, and a server build that runs after it links to those files. A server build that runs first links to the URLs of its own `?url` import, which point at files only that build knows.
+
 Add types for virtual modules:
 
 ```ts

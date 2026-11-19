@@ -58,14 +58,26 @@ export async function resolveRadiantSsrClientModuleKey(component) {
 `;
 }
 
-export function createSsrAssetRegistryModule(styleGlob: string | string[]): string {
+/**
+ * @param builtStyleUrls Component style URLs the browser build already wrote, keyed like the glob (`/src/...`).
+ * When it is empty, the URLs come from `import.meta.glob(..., { query: '?url' })` in the module's own environment.
+ */
+export function createSsrAssetRegistryModule(
+	styleGlob: string | string[],
+	builtStyleUrls: ReadonlyMap<string, string> = new Map(),
+): string {
+	const styleAssetUrls =
+		builtStyleUrls.size > 0
+			? JSON.stringify(Object.fromEntries(builtStyleUrls))
+			: `import.meta.glob(${serializeGlobPattern(styleGlob)}, { eager: true, import: 'default', query: '?url' })`;
+
 	return `import {
 	resolveRadiantSsrClientModuleKey,
 	resolveRadiantSsrClientModuleKeyByControllerIdentifier,
 	resolveRadiantSsrClientModuleKeyByTagName,
 } from 'virtual:radiant/ssr-client-module-registry';
 
-const radiantStyleAssetUrls = import.meta.glob(${serializeGlobPattern(styleGlob)}, { eager: true, import: 'default', query: '?url' });
+const radiantStyleAssetUrls = ${styleAssetUrls};
 
 export async function resolveRadiantSsrAssets(component) {
 	const moduleKey = await resolveRadiantSsrClientModuleKey(component);
