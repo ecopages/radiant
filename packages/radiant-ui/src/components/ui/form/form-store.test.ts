@@ -1,4 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, expectTypeOf, it, vi } from 'vitest';
+import type { FormContextValue } from './form-context';
+import type { FormStateStore } from './form-state-store';
 import { FormStore } from './form-store';
 
 describe('FormStore', () => {
@@ -186,6 +188,77 @@ describe('FormStore', () => {
 			store.reset();
 
 			expect(store.getValues().qty).toBe(1);
+		});
+	});
+
+	describe('FormStateStore', () => {
+		it('satisfies the interface and is the type of the form context store', () => {
+			expectTypeOf<FormStore>().toExtend<FormStateStore>();
+			expectTypeOf<FormContextValue['store']>().toEqualTypeOf<FormStateStore | undefined>();
+		});
+
+		it('reads values and keeps a snapshot stable until state changes', () => {
+			const store = new FormStore({ defaultValues: { title: 'A' } });
+			const first = store.getSnapshot();
+
+			expect(store.getValue('title')).toBe('A');
+			expect(store.getSnapshot()).toBe(first);
+
+			store.setValue('title', 'B');
+
+			expect(store.getSnapshot()).not.toBe(first);
+			expect(store.getSnapshot().values).toEqual({ title: 'B' });
+			expect(first.values).toEqual({ title: 'A' });
+		});
+
+		it('validates the given paths or everything and reports validity', async () => {
+			const store = new FormStore<{ a: string; b: string }>();
+			for (const name of ['a', 'b']) {
+				store.register({
+					name,
+					rules: { required: `${name} required` },
+					getValue: () => '',
+					setValue: () => {},
+				});
+			}
+
+			expect(await store.validate(['a'])).toBe(false);
+			expect(store.getFieldError('a')).toBe('a required');
+			expect(store.getFieldError('b')).toBeUndefined();
+			expect(await store.validate()).toBe(false);
+			expect(store.getFieldError('b')).toBe('b required');
+		});
+
+		it('merges source errors, keeps them through validation, and clears them by source', async () => {
+			const store = new FormStore<{ a: string }>();
+			store.register({ name: 'a', getValue: () => 'ok', setValue: () => {} });
+			const listener = vi.fn();
+			store.subscribe(listener);
+
+			store.setErrors('server', { a: { type: 'server', message: 'Taken' } });
+
+			expect(listener).toHaveBeenCalledTimes(1);
+			expect(store.getFieldError('a')).toBe('Taken');
+			expect(await store.validate(['a'])).toBe(false);
+			expect(store.getFieldError('a')).toBe('Taken');
+
+			store.setErrors('server', {});
+
+			expect(store.getFieldError('a')).toBeUndefined();
+			expect(await store.validate(['a'])).toBe(true);
+		});
+
+		it('lets a rule message win over a source error and clears sources on reset', async () => {
+			const store = new FormStore<{ a: string }>();
+			store.register({ name: 'a', rules: { required: 'Rule' }, getValue: () => '', setValue: () => {} });
+			store.setErrors('server', { a: { message: 'Server' } });
+			await store.validate(['a']);
+
+			expect(store.getFieldError('a')).toBe('Rule');
+
+			store.reset();
+
+			expect(store.getFieldError('a')).toBeUndefined();
 		});
 	});
 });

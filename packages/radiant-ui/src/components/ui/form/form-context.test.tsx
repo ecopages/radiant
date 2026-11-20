@@ -117,7 +117,7 @@ describe('public form store context', () => {
 			new ContextSubscriptionRequestEvent(
 				formContext,
 				(context) => {
-					values.push(String(context.store?.getValues().title));
+					values.push(String(context.store?.getValue('title')));
 				},
 				undefined,
 				true,

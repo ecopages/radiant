@@ -10,7 +10,10 @@ import {
 	type FormFieldPresentation,
 } from './form-context';
 import { FormStore } from './form-store';
-import type { FieldValues, Resolver, ValidationMode } from './types';
+import type { FormDriver } from './form-driver';
+import type { FormStateStore } from './form-state-store';
+import { InjectedFormDriver } from './injected-form-driver';
+import type { FieldRegistration, FieldValues, RegisterOptions, Resolver, ValidationMode } from './types';
 import { RUI_FORM_DEFAULT_VALUES_ATTR } from './control-protocol';
 import { uniqueId } from '@/lib/unique-id';
 
@@ -27,6 +30,11 @@ export type RuiFormProps<T extends FieldValues = FieldValues> = {
 	action?: string;
 	/** Native form HTTP method, used when `onSubmit` is not provided. */
 	method?: HTMLFormElement['method'];
+	/**
+	 * A form state store the host owns. Without it the form creates its own
+	 * {@link FormStore}. See {@link FormStateStore}.
+	 */
+	store?: FormStateStore;
 };
 
 export type RuiFormSubmitDetail<T extends FieldValues = FieldValues> = {
@@ -51,7 +59,7 @@ const initialFormActions: FormContextActions = {
  * `<rui-form>` — form coordinator with RHF-like validation and field registration.
  *
  * The custom element is a behavior host: it does not render field markup. It owns
- * the {@link FormStore}, publishes field presentation via {@link formContext}, and
+ * the {@link FormStore} unless a {@link FormStateStore} is injected, publishes field presentation via {@link formContext}, and
  * coordinates `<rui-field>` connectors and a composed native `<form>`.
  *
  * ## Light-DOM contract
@@ -88,8 +96,17 @@ const initialFormActions: FormContextActions = {
  * `action` / `method` navigation receive listed controls only. `onSubmit` skips
  * native navigation.
  *
- * `formContext.store` exposes the live store to scoped consumers once ready.
+ * `formContext.store` exposes the live store to scoped consumers once ready: the
+ * injected store when `store` is set, otherwise the form's own {@link FormStore}.
  * Hydration payloads contain presentation only, never the store or its actions.
+ *
+ * With an injected store the form keeps control registration, native validity,
+ * touched and dirty bookkeeping, validation timing from `mode`, error
+ * presentation, submit and `FormData`. The store keeps values and errors, so
+ * `defaultValues`, `resolver` and field `rules` are ignored. Setting, replacing or
+ * clearing `store` re-registers every control: the new store's values are written
+ * into the controls, and clearing it returns to the form's own store, which keeps
+ * the values it held before the injection.
  */
 @customElement('rui-form')
 export class RuiForm extends RadiantElement {
@@ -124,34 +141,40 @@ export class RuiForm extends RadiantElement {
 	reValidateMode: ValidationMode;
 	@prop({ type: String, reflect: true }) action?: string;
 	@prop({ type: String, reflect: true }) method?: HTMLFormElement['method'];
+	@prop({ type: Object }) store?: FormStateStore;
 	onSubmit?: (values: FieldValues) => void | Promise<void>;
 
-	private store: FormStore | undefined;
-	private unsubscribeStore?: () => void;
+	private driver: FormDriver | undefined;
+	private ownStore: FormStore | undefined;
+	private drivenStore: FormStateStore | undefined;
+	private unsubscribeDriver?: () => void;
+	private readonly registrations = new Set<{ registration: FieldRegistration; unregister: () => void }>();
 	private readonly nativeFormId = uniqueId('rui-form');
 	private lastPublishedRevision = -1;
 	private lastPublishedContext: FormContextValue | undefined;
 	private readonly presentationListeners = new Set<(value: FormContextValue) => void>();
 	private readonly formActions: FormContextActions = {
 		register: (registration) => {
-			const store = this.ensureStore();
-			const unregister = store.register(registration);
+			const entry = { registration, unregister: this.ensureDriver().register(registration) };
+			this.registrations.add(entry);
 			this.publishFormContext({ force: true });
 			return () => {
-				unregister();
+				this.registrations.delete(entry);
+				entry.unregister();
 				this.publishFormContext({ force: true });
 			};
 		},
 		updateFieldOptions: (name, options) => {
-			this.ensureStore().updateFieldOptions(name, options);
+			this.ensureDriver().updateFieldOptions(name, options);
+			this.rememberFieldOptions(name, options);
 		},
 		handleFieldChange: (name) => {
-			void this.ensureStore()
+			void this.ensureDriver()
 				.handleFieldChange(name)
 				.then(() => this.publishFormContext({ force: true }));
 		},
 		handleFieldBlur: (name) => {
-			void this.ensureStore()
+			void this.ensureDriver()
 				.handleFieldBlur(name)
 				.then(() => this.publishFormContext({ force: true }));
 		},
@@ -166,7 +189,7 @@ export class RuiForm extends RadiantElement {
 
 	override connectedCallback(): void {
 		super.connectedCallback();
-		this.ensureStore();
+		this.ensureDriver();
 		this.publishFormContext({ force: true });
 	}
 
@@ -196,8 +219,7 @@ export class RuiForm extends RadiantElement {
 	}
 
 	private runFormSubmit(): void {
-		const store = this.ensureStore();
-		void store.handleSubmit(
+		void this.ensureDriver().handleSubmit(
 			async (values) => {
 				this.submitEvent.emit({ values });
 				if (typeof this.onSubmit === 'function') {
@@ -222,8 +244,8 @@ export class RuiForm extends RadiantElement {
 	}
 
 	override disconnectedCallback(): void {
-		this.unsubscribeStore?.();
-		this.unsubscribeStore = undefined;
+		this.unsubscribeDriver?.();
+		this.unsubscribeDriver = undefined;
 		super.disconnectedCallback();
 	}
 
@@ -259,20 +281,88 @@ export class RuiForm extends RadiantElement {
 		}
 	}
 
-	private ensureStore(): FormStore {
-		if (!this.store) {
-			this.store = new FormStore({
-				defaultValues: this.resolveDefaultValues(),
-				resolver: typeof this.resolver === 'function' ? this.resolver : undefined,
+	private resolveInjectedStore(): FormStateStore | undefined {
+		return typeof this.store === 'object' && this.store !== null ? this.store : undefined;
+	}
+
+	/** The store `formContext` exposes: the injected one, else the form's own. */
+	private resolveStateStore(): FormStateStore | undefined {
+		return this.drivenStore ?? this.ownStore;
+	}
+
+	/**
+	 * Returns the driver for the current `store` property, switching drivers when it changed.
+	 *
+	 * @remarks A switch unregisters every control from the old driver and registers it
+	 * into the new one, which writes the new store's values into the controls. The
+	 * form's own {@link FormStore} is created once and reused when the injected
+	 * store is removed.
+	 */
+	private ensureDriver(): FormDriver {
+		const injected = this.resolveInjectedStore();
+		if (this.driver && this.drivenStore === injected) {
+			this.bindDriver(this.driver);
+			return this.driver;
+		}
+		const switching = this.driver !== undefined;
+		this.unsubscribeDriver?.();
+		this.unsubscribeDriver = undefined;
+		if (this.driver instanceof InjectedFormDriver) {
+			this.driver.dispose();
+		}
+		this.drivenStore = injected;
+		if (injected) {
+			this.driver = new InjectedFormDriver(injected, {
 				mode: this.resolveMode(),
 				reValidateMode: this.resolveReValidateMode(),
 			});
+		} else {
+			if (this.ownStore) {
+				this.ownStore.updateOptions({
+					defaultValues: this.resolveDefaultValues(),
+					mode: this.resolveMode(),
+					reValidateMode: this.resolveReValidateMode(),
+				});
+			} else {
+				this.ownStore = new FormStore({
+					defaultValues: this.resolveDefaultValues(),
+					resolver: typeof this.resolver === 'function' ? this.resolver : undefined,
+					mode: this.resolveMode(),
+					reValidateMode: this.resolveReValidateMode(),
+				});
+			}
+			this.driver = this.ownStore;
 		}
-		this.unsubscribeStore ??= this.store.subscribe(() => this.publishFormContext());
-		return this.store;
+		this.bindDriver(this.driver);
+		if (switching) {
+			for (const entry of this.registrations) {
+				entry.unregister();
+				entry.unregister = this.driver.register(entry.registration);
+			}
+			this.publishFormContext({ force: true });
+		}
+		return this.driver;
 	}
 
-	private buildFieldPresentations(store: FormStore): Record<string, FormFieldPresentation> {
+	private bindDriver(driver: FormDriver): void {
+		this.unsubscribeDriver ??= driver.subscribe(() => this.publishFormContext());
+	}
+
+	/** Keep what a driver switch re-registers current with later `rui-field` updates. */
+	private rememberFieldOptions(name: string, options: RegisterOptions): void {
+		for (const entry of this.registrations) {
+			if (entry.registration.name !== name) {
+				continue;
+			}
+			entry.registration = {
+				...entry.registration,
+				...(options.rules !== undefined ? { rules: options.rules } : {}),
+				...('defaultValue' in options ? { defaultValue: options.defaultValue } : {}),
+			};
+		}
+	}
+
+	private buildFieldPresentations(store: FormDriver): Record<string, FormFieldPresentation> {
 		const fields: Record<string, FormFieldPresentation> = {};
 		for (const name of store.getRegisteredFieldNames()) {
 			const message = store.getFieldError(name);
@@ -286,8 +376,9 @@ export class RuiForm extends RadiantElement {
 	}
 
 	private publishFormContext(options?: { force?: boolean }): void {
-		const store = this.store;
-		if (!store) {
+		const store = this.driver;
+		const stateStore = this.resolveStateStore();
+		if (!store || !stateStore) {
 			return;
 		}
 		const revision = store.getRevision();
@@ -297,7 +388,7 @@ export class RuiForm extends RadiantElement {
 		this.lastPublishedRevision = revision;
 		const nextContext = {
 			ready: true,
-			store,
+			store: stateStore,
 			revision,
 			fields: this.buildFieldPresentations(store),
 			errors: { ...store.errors },
@@ -312,8 +403,7 @@ export class RuiForm extends RadiantElement {
 
 	@onUpdated(['defaultValues', 'defaultValuesData', 'mode', 'reValidateMode'])
 	syncOptions(): void {
-		const store = this.ensureStore();
-		store.updateOptions({
+		this.ensureDriver().updateOptions({
 			defaultValues: this.resolveDefaultValues(),
 			mode: this.resolveMode(),
 			reValidateMode: this.resolveReValidateMode(),
@@ -323,8 +413,14 @@ export class RuiForm extends RadiantElement {
 	@onUpdated(['resolver'])
 	syncResolver(): void {
 		if (typeof this.resolver === 'function') {
-			this.ensureStore().updateOptions({ resolver: this.resolver });
+			this.ownStore?.updateOptions({ resolver: this.resolver });
 		}
+	}
+
+	@onUpdated(['store'])
+	syncInjectedStore(): void {
+		this.ensureDriver();
+		this.publishFormContext({ force: true });
 	}
 
 	/** Save clicks must run validation even when the button is not associated with the inner `<form>`. */
@@ -342,7 +438,7 @@ export class RuiForm extends RadiantElement {
 
 	@onEvent({ ref: 'form', type: 'reset' })
 	onNativeReset(): void {
-		this.store?.reset();
+		this.driver?.reset();
 	}
 }
 

@@ -1,4 +1,5 @@
 import { createRulesResolver } from './resolvers';
+import type { FormStateSnapshot, FormStateStore } from './form-state-store';
 import type {
 	FieldError,
 	FieldRegistration,
@@ -32,11 +33,15 @@ function normalizeResolver<T extends FieldValues>(resolver: unknown): Resolver<T
 }
 
 /** A field default counts only when it is neither `undefined` nor `null` (a bare `rui-field` reports `null`). */
-function hasDefault(value: unknown): boolean {
+export function hasDefault(value: unknown): boolean {
 	return value !== undefined && value !== null;
 }
 
-export class FormStore<T extends FieldValues = FieldValues> {
+/**
+ * The store `<rui-form>` creates when no store is injected. It also owns control
+ * registration and submit state, which a {@link FormStateStore} does not.
+ */
+export class FormStore<T extends FieldValues = FieldValues> implements FormStateStore {
 	mode: ValidationMode;
 	reValidateMode: ValidationMode;
 	private resolver: Resolver<T>;
@@ -46,7 +51,10 @@ export class FormStore<T extends FieldValues = FieldValues> {
 	private defaultValues: Partial<T>;
 
 	values: T;
-	errors: Partial<Record<keyof T, FieldError>> = {};
+	private ownErrors: Partial<Record<keyof T, FieldError>> = {};
+	private mergedErrors: Partial<Record<keyof T, FieldError>> = this.ownErrors;
+	private readonly sourceErrors = new Map<string, Record<string, FieldError>>();
+	private snapshot: { revision: number; value: FormStateSnapshot } | undefined;
 	touched: Partial<Record<keyof T, boolean>> = {};
 	dirty: Partial<Record<keyof T, boolean>> = {};
 	isSubmitting = false;
@@ -58,6 +66,73 @@ export class FormStore<T extends FieldValues = FieldValues> {
 		this.resolver = normalizeResolver(options.resolver);
 		this.defaultValues = { ...(options.defaultValues ?? {}) } as Partial<T>;
 		this.values = { ...this.defaultValues, ...(options.values ?? {}) } as T;
+	}
+
+	/**
+	 * Resolver and rule errors merged with errors contributed through `setErrors`.
+	 *
+	 * @remarks A resolver or rule error wins over a source error on the same field.
+	 * Assigning replaces the resolver and rule errors only.
+	 */
+	get errors(): Partial<Record<keyof T, FieldError>> {
+		return this.mergedErrors;
+	}
+
+	set errors(next: Partial<Record<keyof T, FieldError>>) {
+		this.ownErrors = next;
+		this.mergeErrors();
+	}
+
+	private mergeErrors(): void {
+		if (this.sourceErrors.size === 0) {
+			this.mergedErrors = this.ownErrors;
+			return;
+		}
+		const merged: Record<string, FieldError> = {};
+		for (const errors of this.sourceErrors.values()) {
+			for (const [path, error] of Object.entries(errors)) {
+				merged[path] ??= error;
+			}
+		}
+		this.mergedErrors = { ...merged, ...this.ownErrors } as Partial<Record<keyof T, FieldError>>;
+	}
+
+	getValue(path: string): unknown {
+		const field = this.fields.get(path);
+		return field ? field.getValue() : this.values[path as keyof T];
+	}
+
+	getSnapshot(): FormStateSnapshot {
+		if (this.snapshot?.revision !== this.revision) {
+			this.snapshot = {
+				revision: this.revision,
+				value: { values: this.values, errors: this.mergedErrors as Record<string, FieldError> },
+			};
+		}
+		return this.snapshot.value;
+	}
+
+	async validate(paths?: string[]): Promise<boolean> {
+		let valid = true;
+		if (paths) {
+			for (const path of paths) {
+				valid = (await this.validateField(path)) && valid;
+			}
+		} else {
+			valid = await this.validateAll();
+		}
+		const scope = paths ?? Object.keys(this.mergedErrors);
+		return valid && scope.every((path) => !this.mergedErrors[path as keyof T]?.message);
+	}
+
+	setErrors(source: string, errors: Record<string, FieldError>): void {
+		if (Object.keys(errors).length === 0) {
+			this.sourceErrors.delete(source);
+		} else {
+			this.sourceErrors.set(source, { ...errors });
+		}
+		this.mergeErrors();
+		this.notify();
 	}
 
 	/** Update options without dropping registered fields. */
@@ -171,12 +246,19 @@ export class FormStore<T extends FieldValues = FieldValues> {
 
 	clearErrors(name?: string): void {
 		if (name) {
-			const next = { ...this.errors };
+			const next = { ...this.ownErrors };
 			delete next[name as keyof T];
+			for (const [source, errors] of this.sourceErrors) {
+				this.sourceErrors.set(
+					source,
+					Object.fromEntries(Object.entries(errors).filter(([path]) => path !== name)),
+				);
+			}
 			this.errors = next;
 			this.notify();
 			return;
 		}
+		this.sourceErrors.clear();
 		this.errors = {};
 		this.notify();
 	}
@@ -202,7 +284,7 @@ export class FormStore<T extends FieldValues = FieldValues> {
 	async validateField(name: string): Promise<boolean> {
 		const values = this.getValues();
 		const result = await this.resolver(values, { fields: this.buildResolverFields() }, { names: [name] });
-		const next = { ...this.errors };
+		const next = { ...this.ownErrors };
 		const resolverError: FieldError | undefined = (result.errors as Partial<Record<string, FieldError>>)[name];
 		const error = resolverError?.message ? resolverError : (this.readNativeError(name) ?? resolverError);
 		if (error?.message) {
@@ -227,7 +309,7 @@ export class FormStore<T extends FieldValues = FieldValues> {
 		}
 		this.errors = errors;
 		this.notify();
-		return Object.keys(this.errors).length === 0;
+		return Object.keys(this.mergedErrors).length === 0;
 	}
 
 	/**
@@ -337,6 +419,7 @@ export class FormStore<T extends FieldValues = FieldValues> {
 	reset(values?: Partial<T>): void {
 		const nextDefaults = values ?? { ...this.defaultValues, ...this.collectFieldDefaults() };
 		this.values = { ...nextDefaults } as T;
+		this.sourceErrors.clear();
 		this.errors = {};
 		this.touched = {};
 		this.dirty = {};

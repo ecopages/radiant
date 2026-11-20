@@ -3,7 +3,7 @@ import { RuiForm as RuiFormElement, type RuiFormProps } from './form.script';
 
 /**
  * Form coordinator view. Stamps `[data-ref="form"]` on the native `<form>` and passes
- * `defaultValues`, `resolver`, and `onSubmit` through property bindings.
+ * `defaultValues`, `resolver`, `store`, and `onSubmit` through property bindings.
  *
  * @cssclass rui-form - Root form surface (`<form noValidate>`).
  */
@@ -12,6 +12,7 @@ export function RuiForm({
 	defaultValues,
 	defaultValuesData,
 	resolver,
+	store,
 	reValidateMode,
 	onSubmit,
 	action,
@@ -27,6 +28,7 @@ export function RuiForm({
 			attr:revalidate-mode={reValidateMode}
 			prop:defaultValues={defaultValues}
 			prop:resolver={resolver}
+			prop:store={store}
 			prop:onSubmit={onSubmit}
 			data={{
 				defaultValues:

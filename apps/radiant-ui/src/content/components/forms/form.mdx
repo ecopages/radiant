@@ -139,6 +139,34 @@ For other hosts, `submission` is `native` by default (name the native ARIA targe
 
 <p>Pass `defaultValues` to pre-populate edit forms. Fields read their initial state from the form store. Multi-value controls (`RuiSelect`, `RuiCombobox`, `RuiListbox`, `RuiCheckboxGroup`, `RuiTagGroup`) store `string[]` — seed them with an array (`{ language: ['ts'] }`). A CSV string still writes because the host parses it; after that the stored value is an array. `RuiSlider` stores `number[]`.</p>
 
+## Inject a form state store
+
+A host that already owns form state, such as a schema-driven forms layer, passes it to the form with the `store` property. The form then keeps what only the DOM can answer (control registration, native validity, ARIA, error presentation, submit, `FormData`, hydration) and the store keeps values and errors. Without `store` the form creates its own `FormStore` and behaves as before.
+
+```tsx
+<RuiForm store={store} mode="onBlur">
+	<RuiField name="profile.name">
+		<RuiInput />
+		<RuiFieldError />
+	</RuiField>
+</RuiForm>
+```
+
+The store implements `FormStateStore`. Paths are the dotted `name` of each `RuiField`, and a host store reads and writes a nested tree by them. The built-in `FormStore` satisfies the type but keeps values flat, so it treats `profile.name` as one literal key.
+
+| Member | The form calls it to |
+| --- | --- |
+| `getValue(path)` | Seed a control on registration and compare controls with the store after each notification. A control with its own default (`defaultValue` on `RuiField`) is written into the store with `setValue` when the store has no value for it. |
+| `setValue(path, value)` | Write a control's typed value; the branch at `path` is replaced. |
+| `getSnapshot()` / `subscribe(listener)` | Present errors, and read `values` for `rui-submit`. The snapshot must be the same object until state changes. |
+| `reset()` | Back the native `reset` event, called without arguments; controls are rewritten from the store afterwards. |
+| `validate(paths?)` | Run the store's validation for the changed field, or for everything on submit, per `mode` and `revalidate-mode`. |
+| `setErrors(source, errors)` | Contribute native control validity under the `native` source. |
+
+Because the store validates, `defaultValues`, `defaultValuesData`, `resolver` and field `rules` are ignored while a store is injected. The form also keeps touched and dirty state itself, so a store has no `touched`, `dirty`, `checkValidity()` or submission members to provide. `validate` must count errors from every source, including `native`, and must not clear another source's errors.
+
+A store write updates the matching control. Setting, replacing or clearing `store` re-registers every control: the new store's values are written into the controls, and clearing it returns to the form's own store, with the values it held before the injection, or created from `defaultValues` if it had none. `rui-submit` carries the snapshot `values` and `rui-invalid` the snapshot `errors`.
+
 ## Theming
 
 Form surfaces map to **semantic surface roles**, never Tailwind palette steps:
@@ -169,6 +197,7 @@ The form itself carries no color roles; fields, labels, and controls inside keep
 | --- | --- | --- |
 | `defaultValues` | `Partial<FieldValues>` | Initial values; fields read their state from the form store. |
 | `resolver` | `Resolver<T>` | Custom validation resolver (e.g. from `createRulesResolver`). |
+| `store` | `FormStateStore` | A host-owned form state store; see Inject a form state store. |
 | `onSubmit` | `(values: T) => void \| Promise<void>` | Receives the store. Skips native navigation. When omitted, `action` or `method` POSTs listed controls after validation passes. |
 
 ### Light-DOM contract
@@ -183,7 +212,7 @@ Nested hosts: `rui-field` and each field's control host.
 
 ### Context
 
-`formContext` exposes `ready`, `revision`, `fields`, `errors`, `actions`, and the live `store` once the form is ready. Scoped consumers resolve the nearest provider (`@consumeContext` / `ContextSubscriptionRequestEvent`) and use `context.store` for value reads/writes, `reset`, `subscribe`, and validation. Nested forms still resolve the nearest provider. Hydration payloads contain presentation only (`ready`, `revision`, `fields`, `errors`); they never include the store or its actions. `RuiField` reads the matching field state and applies it to its control as `aria-invalid`; use `fieldContext` for a control's local `error` and `invalid` values.
+`formContext` exposes `ready`, `revision`, `fields`, `errors`, `actions`, and the live `store` once the form is ready (the injected `FormStateStore`, or the form's own `FormStore`). Scoped consumers resolve the nearest provider (`@consumeContext` / `ContextSubscriptionRequestEvent`) and use `context.store` for `getValue` / `setValue`, `reset`, `subscribe`, and `validate`; narrow with `instanceof FormStore` for the rest of `FormStore`. Nested forms still resolve the nearest provider. Hydration payloads contain presentation only (`ready`, `revision`, `fields`, `errors`); they never include the store or its actions. `RuiField` reads the matching field state and applies it to its control as `aria-invalid`; use `fieldContext` for a control's local `error` and `invalid` values.
 
 ### Events
 
