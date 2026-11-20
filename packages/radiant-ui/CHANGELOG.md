@@ -1,5 +1,11 @@
 # @ecopages/radiant-ui
 
+## 0.4.4
+
+### Patch Changes
+
+- [#774](https://github.com/ecopages/radiant/pull/774) [`630f08d`](https://github.com/ecopages/radiant/commit/630f08da261769d09eebedcc569b6fb2825637cb) Thanks [@andeeplus](https://github.com/andeeplus)! - Canvas audio visualizer presets no longer report `ResizeObserver loop completed with undelivered notifications` on `window` when their container resizes: the canvas refits on the next animation frame.
+
 ## 0.4.3
 
 ### Patch Changes

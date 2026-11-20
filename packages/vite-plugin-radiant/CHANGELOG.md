@@ -1,5 +1,11 @@
 # @ecopages/vite-plugin-radiant
 
+## 0.2.5
+
+### Patch Changes
+
+- [#774](https://github.com/ecopages/radiant/pull/774) [`47b99de`](https://github.com/ecopages/radiant/commit/47b99de48a52470f6dbc6d2231da2dd4e4ecf6b9) Thanks [@andeeplus](https://github.com/andeeplus)! - Component stylesheets linked through `resolveRadiantSsrStyleAssets()` now load in production. The browser build writes every stylesheet that `elements.styles` matches, and the server-rendered HTML links to those files instead of to asset URLs only the server build knew, which returned 404.
+
 ## 0.2.4
 
 ### Patch Changes
