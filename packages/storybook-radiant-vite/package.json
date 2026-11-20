@@ -1,6 +1,6 @@
 {
 	"name": "@ecopages/storybook-radiant-vite",
-	"version": "0.2.4",
+	"version": "0.2.5",
 	"description": "Storybook framework for @ecopages/radiant — Vite builder, Radiant JSX renderer, and SSR story modes",
 	"keywords": [
 		"storybook",
