@@ -1,26 +1,26 @@
 packages:
-  - 'apps/*'
-  - 'packages/*'
-  - 'playground/*'
+    - 'apps/*'
+    - 'packages/*'
+    - 'playground/*'
 
 catalog:
-  # Lint rules and config typing must use the same Oxlint release.
-  oxlint: ^1.78.0
-  typescript: ~7.0.2
-  # Library builds: one output file per source module (preserveModules).
-  rolldown: ^1.2.16
+    # Lint rules and config typing must use the same Oxlint release.
+    oxlint: ^1.78.0
+    typescript: ~7.0.2
+    # Library builds: one output file per source module (preserveModules).
+    rolldown: ^1.2.16
 
 linkWorkspacePackages: true
 
 # tsup 8 pins esbuild ~0.27, which has an advisory fixed in 0.28.1; tsup works with 0.28.
 overrides:
-  'tsup>esbuild': ^0.28.2
+    'tsup>esbuild': ^0.28.2
 
 allowBuilds:
-  esbuild: true
-  '@swc/core': true
-  msw: false
+    esbuild: true
+    '@swc/core': true
+    msw: false
 
 minimumReleaseAgeExclude:
-  - '@ecopages/*'
-  - ecopages
+    - '@ecopages/*'
+    - ecopages
