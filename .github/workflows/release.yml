@@ -59,10 +59,19 @@ jobs:
               env:
                   NPM_CONFIG_PROVENANCE: true
 
-            # A PR opened with GITHUB_TOKEN gets its pull_request CI run held for approval,
-            # so start CI on the PR branch with workflow_dispatch to report the required checks.
-            - name: Run CI on the Version Packages PR
+            # A PR opened with GITHUB_TOKEN gets its pull_request CI run held for approval. Only
+            # that run reports its checks on the PR (a workflow_dispatch run passes the ruleset
+            # but stays hidden), so wait for it to appear and approve it.
+            - name: Approve CI on the Version Packages PR
               if: steps.changesets.outputs.pr-number != ''
               env:
                   GH_TOKEN: ${{ github.token }}
-              run: gh workflow run ci.yml --repo "$GITHUB_REPOSITORY" --ref "changeset-release/$GITHUB_REF_NAME"
+                  PR_NUMBER: ${{ steps.changesets.outputs.pr-number }}
+              run: |
+                  sha=$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json headRefOid --jq .headRefOid)
+                  for attempt in $(seq 1 12); do
+                      run=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow ci.yml --event pull_request --commit "$sha" --status action_required --json databaseId --jq '.[0].databaseId // empty')
+                      [ -n "$run" ] && break
+                      sleep 5
+                  done
+                  gh api -X POST "repos/$GITHUB_REPOSITORY/actions/runs/$run/approve"
