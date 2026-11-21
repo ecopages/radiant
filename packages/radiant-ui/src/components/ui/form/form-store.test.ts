@@ -524,4 +524,39 @@ describe('FormStore', () => {
 			expect(store.errors.a).toBeUndefined();
 		});
 	});
+
+	describe('reported native validity and failing validation', () => {
+		it('blocks whole-form validation on a path whose control is not registered here', async () => {
+			const store = new FormStore<{ a: string }>();
+			store.setNativeValidity({ elsewhere: { type: 'valueMissing', message: 'Fill this in' } });
+
+			expect(await store.validateAll()).toBe(false);
+			expect(store.errors.elsewhere).toEqual({ type: 'valueMissing', message: 'Fill this in' });
+		});
+
+		it('notifies about the written value even when change validation rejects', async () => {
+			const store = new FormStore<{ title: string }>({
+				mode: 'onChange',
+				resolver: async () => {
+					throw new Error('resolver down');
+				},
+			});
+			store.register({ name: 'title', getValue: () => 'x', setValue: () => {} });
+			const listener = vi.fn();
+			store.subscribe(listener);
+			const reported = vi.fn();
+			const onError = (event: ErrorEvent) => {
+				event.preventDefault();
+				reported(event.error);
+			};
+			window.addEventListener('error', onError);
+
+			store.setValue('title', 'After');
+			await vi.waitFor(() => expect(reported).toHaveBeenCalled());
+			window.removeEventListener('error', onError);
+
+			expect(listener).toHaveBeenCalled();
+			expect(store.dirty.title).toBe(true);
+		});
+	});
 });

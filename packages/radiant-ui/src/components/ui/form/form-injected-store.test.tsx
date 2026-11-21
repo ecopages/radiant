@@ -4,6 +4,8 @@ import { RuiForm } from './form';
 import { RuiForm as RuiFormElement } from './form.script';
 import { RuiField, RuiFieldError } from '../field';
 import { RuiInput } from '../input';
+import { RuiCheckbox } from '../checkbox';
+import { RuiCheckbox as RuiCheckboxScript } from '../checkbox/checkbox.script';
 import { RuiField as RuiFieldScript } from '../field/field.script';
 import { formContext, type FormContextValue } from './form-context';
 import { ContextSubscriptionRequestEvent } from '@ecopages/radiant/context';
@@ -13,6 +15,7 @@ import type { FieldError } from './types';
 
 void RuiFieldScript;
 void RuiFormElement;
+void RuiCheckboxScript;
 
 async function flushRender(): Promise<void> {
 	await new Promise<void>((resolve) => {
@@ -1040,6 +1043,39 @@ describe('rui-form with an injected store', () => {
 			await settle();
 
 			expect(reset).toHaveBeenCalledTimes(1);
+		});
+	});
+
+	describe('submitHandler focus on composite controls', () => {
+		it('focuses the interactive element inside a composite control', async () => {
+			const { store } = createTestStore({ agree: false });
+			const host = document.createElement('div');
+			document.body.append(host);
+			const root = createRoot(host);
+			root.render(
+				<RuiForm store={store}>
+					<RuiField name="agree">
+						<RuiCheckbox />
+					</RuiField>
+				</RuiForm>,
+			);
+			cleanup.push(() => {
+				root.unmount();
+				host.remove();
+			});
+			await customElements.whenDefined('rui-field');
+			await flushRender();
+			const form = host.querySelector('rui-form') as RuiFormElement;
+			let focus: (path: string) => void = () => {};
+			form.submitHandler = (context) => {
+				focus = context.focus;
+			};
+			host.querySelector('form')?.requestSubmit();
+			await settle();
+
+			focus('agree');
+
+			expect(document.activeElement).toBe(host.querySelector('input[type="checkbox"]'));
 		});
 	});
 

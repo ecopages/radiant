@@ -340,10 +340,15 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	private async afterChange(name: string): Promise<void> {
 		this.dirty = { ...this.dirty, [name]: true };
 		this.clearSourceErrorsAt(name);
-		if (this.shouldValidate(name, 'change')) {
-			await this.validateField(name);
-		} else {
+		if (!this.shouldValidate(name, 'change')) {
 			this.notify();
+			return;
+		}
+		try {
+			await this.validateField(name);
+		} catch (error) {
+			this.notify();
+			throw error;
 		}
 	}
 
@@ -434,7 +439,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		const values = this.getValues();
 		const result = await this.resolver(values, { fields: this.buildResolverFields() }, {});
 		const errors = { ...result.errors } as Partial<Record<string, FieldError>>;
-		for (const name of this.fields.keys()) {
+		for (const name of new Set([...this.fields.keys(), ...Object.keys(this.reportedNative)])) {
 			const resolverError = errors[name];
 			const native = resolverError?.message ? undefined : this.readNativeError(name);
 			if (native) {

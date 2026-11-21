@@ -16,6 +16,7 @@ import {
 	findFieldError,
 	findFieldErrorElements,
 	findFieldLabel,
+	getAriaControlTarget,
 	getAriaControlTargets,
 	isNativeTextControl,
 	isPrimaryFieldControlEvent,
@@ -283,7 +284,10 @@ export class RuiField extends RadiantElement {
 				return control ? readControlValidity(control) : undefined;
 			},
 			focus: () => {
-				findFieldControl(this)?.focus();
+				const control = findFieldControl(this);
+				if (control) {
+					getAriaControlTarget(control).focus();
+				}
 			},
 			setValue: (value) => {
 				const control = findFieldControl(this);
