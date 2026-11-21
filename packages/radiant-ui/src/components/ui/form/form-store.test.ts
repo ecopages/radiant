@@ -277,17 +277,147 @@ describe('FormStore', () => {
 			expect(await store.validate(['a'])).toBe(true);
 		});
 
-		it('lets a rule message win over a source error and clears sources on reset', async () => {
+		it('lets a source message win over a rule message and clears sources on reset', async () => {
 			const store = new FormStore<{ a: string }>();
 			store.register({ name: 'a', rules: { required: 'Rule' }, getValue: () => '', setValue: () => {} });
 			store.setErrors('server', { a: { message: 'Server' } });
 			await store.validate(['a']);
 
-			expect(store.getFieldError('a')).toBe('Rule');
+			expect(store.getFieldError('a')).toBe('Server');
 
 			store.reset();
 
 			expect(store.getFieldError('a')).toBeUndefined();
+		});
+	});
+
+	describe('nested values', () => {
+		function field(name: string, initial: unknown = undefined, extra: object = {}) {
+			let current = initial;
+			return {
+				name,
+				getValue: () => current,
+				setValue: vi.fn((next: unknown) => {
+					current = next;
+				}),
+				...extra,
+			};
+		}
+
+		it('addresses dotted field names as a nested tree', () => {
+			const defaults = { profile: { name: 'Ada' }, rows: [{ title: 'T' }] };
+			const store = new FormStore({ defaultValues: defaults });
+			store.register(field('profile.name'));
+			store.register(field('rows.0.title'));
+
+			expect(store.getValues()).toEqual(defaults);
+			expect(store.getSnapshot().values).toEqual(defaults);
+			expect(store.getValue('profile.name')).toBe('Ada');
+		});
+
+		it('writes by path and seeds controls from a nested default tree', () => {
+			const store = new FormStore({ defaultValues: { profile: { name: 'Grace', city: 'NYC' } } });
+			const name = field('profile.name');
+			store.register(name);
+
+			expect(name.setValue).toHaveBeenCalledWith('Grace');
+
+			store.setValue('profile.name', 'Hopper');
+
+			expect(store.getSnapshot().values).toEqual({ profile: { name: 'Hopper', city: 'NYC' } });
+			expect(name.setValue).toHaveBeenLastCalledWith('Hopper');
+		});
+
+		it('seeds a field default at its path and restores nested defaults on reset', () => {
+			const store = new FormStore({ defaultValues: { profile: { city: 'NYC' } } });
+			store.register(field('profile.name', undefined, { defaultValue: 'Seeded' }));
+
+			expect(store.getSnapshot().values).toEqual({ profile: { city: 'NYC', name: 'Seeded' } });
+
+			store.setValue('profile.name', 'Changed');
+			store.reset();
+
+			expect(store.getSnapshot().values).toEqual({ profile: { city: 'NYC', name: 'Seeded' } });
+		});
+
+		it('hands rules and resolvers nested values', async () => {
+			const seen: unknown[] = [];
+			const store = new FormStore();
+			store.register(
+				field('profile.name', '', {
+					rules: {
+						required: 'Name required',
+						validate: (_value: unknown, values: unknown) => {
+							seen.push(values);
+							return true;
+						},
+					},
+				}),
+			);
+
+			expect(await store.validate()).toBe(false);
+			expect(store.errors['profile.name']?.message).toBe('Name required');
+
+			store.setValue('profile.name', 'Ada');
+			expect(await store.validate()).toBe(true);
+			expect(seen.at(-1)).toEqual({ profile: { name: 'Ada' } });
+		});
+	});
+
+	describe('FieldError contract', () => {
+		it('treats an entry without a message as an invalid field that shows no text', async () => {
+			const store = new FormStore<{ a: string }>();
+			store.register({ name: 'a', getValue: () => 'ok', setValue: () => {} });
+			store.isSubmitted = true;
+
+			store.setErrors('server', { a: {} });
+
+			expect(await store.validate(['a'])).toBe(false);
+			expect(store.getFieldError('a')).toBeUndefined();
+			expect(store.shouldDisplayFieldError('a')).toBe(true);
+		});
+
+		it('shows the message of another source when the winning entry has none', async () => {
+			const store = new FormStore<{ a: string }>();
+			store.register({ name: 'a', getValue: () => 'ok', setValue: () => {} });
+
+			store.setErrors('native', { a: { message: 'Native text' } });
+			store.setErrors('server', { a: {} });
+
+			expect(store.errors.a).toEqual({ message: 'Native text' });
+			expect(await store.validate(['a'])).toBe(false);
+		});
+
+		it('treats an empty message like a missing one', async () => {
+			const store = new FormStore<{ a: string }>();
+			store.register({ name: 'a', getValue: () => 'ok', setValue: () => {} });
+
+			store.setErrors('server', { a: { message: '' } });
+
+			expect(await store.validate(['a'])).toBe(false);
+			expect(store.getFieldError('a')).toBeUndefined();
+		});
+
+		it('merges sources as native, then validation, then any other source', async () => {
+			const store = new FormStore<{ a: string }>();
+			store.register({
+				name: 'a',
+				rules: { required: 'Rule' },
+				getValue: () => '',
+				setValue: () => {},
+				getValidity: () => ({ valid: false, message: 'Native' }),
+			});
+			await store.validate(['a']);
+			expect(store.errors.a?.message).toBe('Rule');
+
+			store.setErrors('native', { a: { message: 'Native source' } });
+			expect(store.errors.a?.message).toBe('Rule');
+
+			store.setErrors('server', { a: { message: 'Server' } });
+			expect(store.errors.a?.message).toBe('Server');
+
+			store.setErrors('audit', { a: { message: 'Audit' } });
+			expect(store.errors.a?.message).toBe('Audit');
 		});
 	});
 });

@@ -1,5 +1,5 @@
 ---
-'@ecopages/radiant-ui': patch
+'@ecopages/radiant-ui': minor
 ---
 
 `rui-form` can drive a form state store it did not create. Set the new `store` property to a `FormStateStore` and the form becomes a control bridge: control changes call `setValue`, blur calls `blur`, submit writes every control value that differs from the store and awaits `validate()`, and native control validity is re-read from the controls and sent through `setErrors('native', ...)`. The store owns validation timing, touched and dirty state, defaults and which errors show, so `mode`, `revalidate-mode`, field `defaultValue`, `defaultValues`, `resolver` and field `rules` are ignored while a store is injected. Without `store` the form behaves as before.

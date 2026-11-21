@@ -1,3 +1,4 @@
+import { getPath } from './value-path';
 import type { FieldRules, FieldValues, Resolver, ResolverContext, ResolverResult } from './types';
 
 function resolveRuleMessage(
@@ -95,7 +96,7 @@ export async function runRulesResolver<T extends FieldValues>(
 
 	for (const name of targetNames) {
 		const rules = context.fields[name]?.rules;
-		const message = await validateFieldRules(name, values[name], rules, values);
+		const message = await validateFieldRules(name, getPath(values, name), rules, values);
 		if (message) {
 			errors[name as keyof T] = { type: 'validation', message };
 		}

@@ -7,14 +7,18 @@ import type { FieldError } from './types';
 export type FormStateSnapshot = {
 	/** Nested value tree. A field named `profile.name` reads `values.profile.name`. */
 	readonly values: Readonly<Record<string, unknown>>;
-	/** Errors keyed by dotted path, merged across every source by the store. */
+	/**
+	 * Errors keyed by dotted path, merged across every source by the store in the
+	 * order {@link formErrorSourceRank} declares. An entry is an error even when its
+	 * `message` is missing or empty; see {@link FieldError}.
+	 */
 	readonly errors: Readonly<Record<string, FieldError>>;
 };
 
 /**
  * The state `<rui-form>` drives when a host owns form state. Assign an instance to
  * the form's `store` property; without one the form creates its own `FormStore`,
- * which satisfies the type but keeps values flat, so `profile.name` is one literal key.
+ * which satisfies the type and nests values the same way.
  *
  * Paths are dotted field names (`address.street`), the same string a `rui-field`
  * carries as its `name`.
@@ -85,3 +89,22 @@ export interface FormStateStore {
  * (`ElementInternals.setValidity`) read from form-associated controls.
  */
 export const FORM_NATIVE_ERROR_SOURCE = 'native';
+
+/** Source name for errors a store's own validation produces. */
+export const FORM_VALIDATION_ERROR_SOURCE = 'validation';
+
+/**
+ * Rank of an error source when several report an error at one path; the higher
+ * rank is the one shown.
+ *
+ * @remarks The declared order is native, then validation, then any other source
+ * (a server, an audit), so a message from a later source replaces an earlier one.
+ * The built-in `FormStore` merges in this order, and an injected store is expected
+ * to as well. Within one rank the source set last wins.
+ */
+export function formErrorSourceRank(source: string): number {
+	if (source === FORM_NATIVE_ERROR_SOURCE) {
+		return 0;
+	}
+	return source === FORM_VALIDATION_ERROR_SOURCE ? 1 : 2;
+}

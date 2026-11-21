@@ -409,11 +409,10 @@ export class RuiForm extends RadiantElement {
 	private buildFieldPresentations(store: FormDriver): Record<string, FormFieldPresentation> {
 		const fields: Record<string, FormFieldPresentation> = {};
 		for (const name of store.getRegisteredFieldNames()) {
-			const message = store.getFieldError(name);
 			const show = store.shouldDisplayFieldError(name);
 			fields[name] = {
-				error: show ? message : undefined,
-				invalid: Boolean(show && message),
+				error: show ? store.getFieldError(name) : undefined,
+				invalid: show,
 			};
 		}
 		return fields;

@@ -183,12 +183,12 @@ export class InjectedFormDriver implements FormDriver {
 	updateFieldOptions(_name: string, _options: RegisterOptions): void {}
 
 	getFieldError(name: string): string | undefined {
-		return this.errors[name]?.message;
+		return this.errors[name]?.message || undefined;
 	}
 
 	/** The store decides which errors show, so every error in the snapshot is presented. */
 	shouldDisplayFieldError(name: string): boolean {
-		return Boolean(this.getFieldError(name));
+		return this.errors[name] !== undefined;
 	}
 
 	/** Write a control's value into the store when it differs, as a control change no event reported would not. */

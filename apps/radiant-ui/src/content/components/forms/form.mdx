@@ -164,7 +164,7 @@ A host that already owns form state, such as a schema-driven forms layer, passes
 </RuiForm>
 ```
 
-The store implements `FormStateStore`. Paths are the dotted `name` of each `RuiField`, and a host store reads and writes a nested tree by them. The built-in `FormStore` satisfies the type but keeps values flat, so it treats `profile.name` as one literal key.
+The store implements `FormStateStore`. Paths are the dotted `name` of each `RuiField`, and the store reads and writes a nested tree by them: `profile.name` is `values.profile.name`, and `rows.0.title` is `values.rows[0].title`. The built-in `FormStore` does the same, so `getValues()`, `getSnapshot().values`, `rui-submit` values, `defaultValues`, rules and resolvers all see the nested tree, while the HTML `name` attributes and the keys of `errors`, `touched` and `dirty` stay dotted. An entry in an errors record marks its field invalid even when its `message` is missing or empty, and then shows no text unless another source gave a message for that path. Sources merge as `native`, then `validation`, then any other source, so a later source replaces an earlier one.
 
 | Control event      | The form does                                                                                                                                                                                       |
 | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

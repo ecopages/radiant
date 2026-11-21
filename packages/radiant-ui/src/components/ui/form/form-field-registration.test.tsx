@@ -278,6 +278,43 @@ describe('rui-field registration', () => {
 	});
 });
 
+describe('built-in store with dotted field names', () => {
+	it('seeds controls from a nested default tree and submits nested values', async () => {
+		const host = document.createElement('div');
+		document.body.append(host);
+		const root = createRoot(host);
+		root.render(
+			<RuiForm defaultValues={{ profile: { name: 'Ada' }, rows: [{ title: 'T' }] }}>
+				<RuiField name="profile.name">
+					<RuiInput />
+				</RuiField>
+				<RuiField name="rows.0.title">
+					<RuiInput />
+				</RuiField>
+			</RuiForm>,
+		);
+		cleanup.push(() => {
+			root.unmount();
+			host.remove();
+		});
+		await customElements.whenDefined('rui-field');
+		await settle();
+		const inputs = Array.from(host.querySelectorAll('input'));
+		expect(inputs.map((input) => input.value)).toEqual(['Ada', 'T']);
+		const onSubmit = vi.fn();
+		host.querySelector('rui-form')?.addEventListener('rui-submit', (event) =>
+			onSubmit((event as CustomEvent).detail),
+		);
+
+		inputs[0].value = 'Grace';
+		inputs[0].dispatchEvent(new Event('input', { bubbles: true }));
+		host.querySelector('form')?.requestSubmit();
+		await settle();
+
+		expect(onSubmit).toHaveBeenCalledWith({ values: { profile: { name: 'Grace' }, rows: [{ title: 'T' }] } });
+	});
+});
+
 async function mountRenamable(store: FormStateStore | undefined) {
 	const host = document.createElement('div');
 	document.body.append(host);

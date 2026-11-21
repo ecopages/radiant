@@ -1,5 +1,7 @@
 import { createRulesResolver } from './resolvers';
+import { formErrorSourceRank, FORM_NATIVE_ERROR_SOURCE, FORM_VALIDATION_ERROR_SOURCE } from './form-state-store';
 import type { FormStateSnapshot, FormStateStore } from './form-state-store';
+import { getPath, setPath } from './value-path';
 import type {
 	FieldError,
 	FieldRegistration,
@@ -91,23 +93,51 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		this.mergeErrors();
 	}
 
+	/**
+	 * Own errors (rules, the resolver and native validity) rank as `validation`, or
+	 * `native` for a native one, and merge with `setErrors` sources in the order
+	 * {@link formErrorSourceRank} declares; an own error wins a tie.
+	 */
 	private mergeErrors(): void {
 		if (this.sourceErrors.size === 0) {
 			this.mergedErrors = this.ownErrors;
 			return;
 		}
-		const merged: Record<string, FieldError> = {};
-		for (const errors of this.sourceErrors.values()) {
+		const candidates = new Map<string, Array<{ rank: number; error: FieldError }>>();
+		const consider = (path: string, error: FieldError, rank: number) => {
+			const list = candidates.get(path) ?? [];
+			list.push({ rank, error });
+			candidates.set(path, list);
+		};
+		for (const [source, errors] of this.sourceErrors) {
 			for (const [path, error] of Object.entries(errors)) {
-				merged[path] ??= error;
+				consider(path, error, formErrorSourceRank(source));
 			}
 		}
-		this.mergedErrors = { ...merged, ...this.ownErrors } as Partial<Record<keyof T, FieldError>>;
+		for (const [path, error] of Object.entries(this.ownErrors) as Array<[string, FieldError]>) {
+			consider(
+				path,
+				error,
+				formErrorSourceRank(error.type === 'native' ? FORM_NATIVE_ERROR_SOURCE : FORM_VALIDATION_ERROR_SOURCE),
+			);
+		}
+		const merged: Record<string, FieldError> = {};
+		for (const [path, list] of candidates) {
+			const ordered = list
+				.map((candidate, index) => ({ ...candidate, index }))
+				.sort((a, b) => a.rank - b.rank || a.index - b.index);
+			const winner = ordered[ordered.length - 1]?.error;
+			const worded = [...ordered].reverse().find((candidate) => candidate.error.message);
+			if (winner) {
+				merged[path] = winner.message || !worded ? winner : { ...winner, message: worded.error.message };
+			}
+		}
+		this.mergedErrors = merged as Partial<Record<keyof T, FieldError>>;
 	}
 
 	getValue(path: string): unknown {
 		const field = this.fields.get(path);
-		return field ? field.getValue() : this.values[path as keyof T];
+		return field ? field.getValue() : getPath(this.values, path);
 	}
 
 	getSnapshot(): FormStateSnapshot {
@@ -131,7 +161,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 			valid = await this.validateAll();
 		}
 		const scope = paths ?? Object.keys(this.mergedErrors);
-		return valid && scope.every((path) => !this.mergedErrors[path as keyof T]?.message);
+		return valid && scope.every((path) => !this.mergedErrors[path as keyof T]);
 	}
 
 	setErrors(source: string, errors: Record<string, FieldError>): void {
@@ -190,11 +220,11 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		};
 		this.fields.set(registration.name, entry);
 
-		if (this.values[registration.name as keyof T] === undefined && hasDefault(entry.defaultValue)) {
-			this.values = { ...this.values, [registration.name]: entry.defaultValue } as T;
+		if (getPath(this.values, registration.name) === undefined && hasDefault(entry.defaultValue)) {
+			this.values = setPath(this.values, registration.name, entry.defaultValue);
 		}
 
-		entry.setValue(this.values[registration.name as keyof T]);
+		entry.setValue(getPath(this.values, registration.name));
 
 		return this.unregisterFn(registration.name, entry);
 	}
@@ -252,16 +282,16 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	}
 
 	getValues(): T {
-		const next = { ...this.values } as T;
+		let next = this.values;
 		for (const [name, field] of this.fields) {
-			next[name as keyof T] = field.getValue() as T[keyof T];
+			next = setPath(next, name, field.getValue());
 		}
 		return next;
 	}
 
-	setValue(name: keyof T, value: unknown, options?: { shouldDirty?: boolean; shouldTouch?: boolean }): void {
-		this.values = { ...this.values, [name]: value } as T;
-		const field = this.fields.get(String(name));
+	setValue(name: string, value: unknown, options?: { shouldDirty?: boolean; shouldTouch?: boolean }): void {
+		this.values = setPath(this.values, name, value);
+		const field = this.fields.get(name);
 		field?.setValue(value);
 		if (options?.shouldDirty) {
 			this.dirty = { ...this.dirty, [name]: true };
@@ -301,8 +331,9 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		this.notify();
 	}
 
+	/** The message to show, or `undefined` when the field has no error or its error has no message. */
 	getFieldError(name: string): string | undefined {
-		return this.errors[name as keyof T]?.message;
+		return this.errors[name as keyof T]?.message || undefined;
 	}
 
 	getState(): FormState<T> {
@@ -325,14 +356,14 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		const next = { ...this.ownErrors };
 		const resolverError: FieldError | undefined = (result.errors as Partial<Record<string, FieldError>>)[name];
 		const error = resolverError?.message ? resolverError : (this.readNativeError(name) ?? resolverError);
-		if (error?.message) {
+		if (error) {
 			next[name as keyof T] = error.type === 'native' ? error : { type: 'validation', message: error.message };
 		} else {
 			delete next[name as keyof T];
 		}
 		this.errors = next;
 		this.notify();
-		return !error?.message;
+		return !error;
 	}
 
 	async validateAll(): Promise<boolean> {
@@ -340,7 +371,8 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		const result = await this.resolver(values, { fields: this.buildResolverFields() }, {});
 		const errors = { ...result.errors } as Partial<Record<keyof T, FieldError>>;
 		for (const name of this.fields.keys()) {
-			const native = errors[name as keyof T]?.message ? undefined : this.readNativeError(name);
+			const resolverError = errors[name as keyof T];
+			const native = resolverError?.message ? undefined : this.readNativeError(name);
 			if (native) {
 				errors[name as keyof T] = native;
 			}
@@ -388,7 +420,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 			return;
 		}
 		const value = field.getValue();
-		this.values = { ...this.values, [name]: value } as T;
+		this.values = setPath(this.values, name, value);
 		this.dirty = { ...this.dirty, [name]: true };
 		if (this.shouldValidate(name, 'change')) {
 			await this.validateField(name);
@@ -413,8 +445,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 
 	/** Whether a field's validation message should be shown in the UI (RHF-style). */
 	shouldDisplayFieldError(name: string): boolean {
-		const message = this.errors[name as keyof T]?.message;
-		if (!message) {
+		if (!this.errors[name as keyof T]) {
 			return false;
 		}
 		if (this.isSubmitted) {
@@ -476,8 +507,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	}
 
 	reset(values?: Partial<T>): void {
-		const nextDefaults = values ?? { ...this.defaultValues, ...this.collectFieldDefaults() };
-		this.values = { ...nextDefaults } as T;
+		this.values = values ? ({ ...values } as T) : this.withFieldDefaults({ ...this.defaultValues } as T);
 		this.sourceErrors.clear();
 		this.errors = {};
 		this.touched = {};
@@ -485,7 +515,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		this.isSubmitted = false;
 		this.isSubmitting = false;
 		for (const field of this.fields.values()) {
-			field.setValue(this.values[field.name as keyof T]);
+			field.setValue(getPath(this.values, field.name));
 		}
 		this.notify();
 	}
@@ -495,14 +525,14 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	 * default of `rui-field`). Only a non-null default overrides the form's
 	 * `defaultValues`, so a bare field never wipes them on reset.
 	 */
-	private collectFieldDefaults(): Partial<T> {
-		const defaults: Partial<T> = {};
+	private withFieldDefaults(tree: T): T {
+		let next = tree;
 		for (const [name, field] of this.fields) {
 			if (hasDefault(field.defaultValue)) {
-				defaults[name as keyof T] = field.defaultValue as T[keyof T];
+				next = setPath(next, name, field.defaultValue);
 			}
 		}
-		return defaults;
+		return next;
 	}
 
 	private buildResolverFields(): Record<string, { rules?: FieldRules }> {
