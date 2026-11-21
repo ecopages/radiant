@@ -11,7 +11,7 @@ import {
 } from './form-context';
 import { FormStore } from './form-store';
 import type { FormDriver } from './form-driver';
-import type { FormIssue, FormStateStore, NativeValidity } from './form-state-store';
+import type { FormStateStore, NativeValidity } from './form-state-store';
 import { InjectedFormDriver } from './injected-form-driver';
 import type {
 	FieldError,
@@ -52,15 +52,16 @@ export type RuiFormProps<T extends FieldValues = FieldValues> = {
 };
 
 /** What `RuiForm` hands a {@link RuiFormSubmitHandler}. */
-export type RuiFormSubmitContext = {
-	/** The injected store, with the controls' values and native validity already flushed into it. */
-	store: FormStateStore;
+export type RuiFormSubmitContext<TIssue extends FieldError = FieldError> = {
+	/** The injected store, with the controls' values already flushed into it. */
+	store: FormStateStore<TIssue>;
 	/** Focuses the control registered for a path, for the host to move focus to the first invalid field. */
 	focus: (path: string) => void;
 	/**
-	 * Validates through the store with the current native validity of every control,
-	 * so the store checks against facts as fresh as the call. Prefer it to
-	 * `store.validate()` in a submit handler.
+	 * Validates through the store with the current native validity of every control.
+	 * It is sugar for a host with no submission protocol of its own; a host runtime
+	 * that does, such as one holding a submission token, calls its container's
+	 * `validate` itself with `readNativeValidity()`.
 	 */
 	validate: (paths?: string[]) => Promise<boolean>;
 	/**
@@ -79,12 +80,14 @@ export type RuiFormSubmitContext = {
  * focuses and submits; the form emits neither `rui-submit` nor `rui-invalid`. A
  * rejection is reported with `reportError`.
  */
-export type RuiFormSubmitHandler = (context: RuiFormSubmitContext) => void | Promise<void>;
+export type RuiFormSubmitHandler<TIssue extends FieldError = FieldError> = (
+	context: RuiFormSubmitContext<TIssue>,
+) => void | Promise<void>;
 
 /** What `RuiForm` hands a {@link RuiFormResetHandler}. */
-export type RuiFormResetContext = {
+export type RuiFormResetContext<TIssue extends FieldError = FieldError> = {
 	/** The injected store. */
-	store: FormStateStore;
+	store: FormStateStore<TIssue>;
 };
 
 /**
@@ -94,7 +97,9 @@ export type RuiFormResetContext = {
  * form then rewrites every control from the store, again after the browser's own
  * reset. A rejection is reported with `reportError`.
  */
-export type RuiFormResetHandler = (context: RuiFormResetContext) => void | Promise<void>;
+export type RuiFormResetHandler<TIssue extends FieldError = FieldError> = (
+	context: RuiFormResetContext<TIssue>,
+) => void | Promise<void>;
 
 /**
  * Produces the text for an error or a warning from its type and params, so an issue
@@ -102,7 +107,17 @@ export type RuiFormResetHandler = (context: RuiFormResetContext) => void | Promi
  *
  * @remarks A result that is empty falls back to the issue's `message`.
  */
-export type RuiFormFormatError = (issue: FormIssue, field: { path: string }) => string;
+export type RuiFormFormatError<TIssue extends FieldError = FieldError> = (
+	issue: TIssue,
+	field: { path: string },
+) => string;
+
+/** The handlers `connect` takes, typed by the store's own issue type. */
+export type RuiFormHandlers<TIssue extends FieldError = FieldError> = {
+	formatError?: RuiFormFormatError<TIssue>;
+	submitHandler?: RuiFormSubmitHandler<TIssue>;
+	resetHandler?: RuiFormResetHandler<TIssue>;
+};
 
 export type RuiFormSubmitDetail<T extends FieldValues = FieldValues> = {
 	values: T;
@@ -558,6 +573,22 @@ export class RuiForm extends RadiantElement {
 		if (typeof this.resolver === 'function') {
 			this.ownStore?.updateOptions({ resolver: this.resolver });
 		}
+	}
+
+	/**
+	 * Connect a store and the handlers that work with its own issue type: the
+	 * formatter's `issue` and each handler's `context.store` are typed from `store`,
+	 * so a store whose entries carry more than `FieldError` needs no cast.
+	 *
+	 * @remarks The element keeps its handlers typed for `FieldError`, because a custom
+	 * element property cannot be generic. This is the one place that ties them to the
+	 * store, and the form only ever hands a handler issues that store produced.
+	 */
+	connect<TIssue extends FieldError>(store: FormStateStore<TIssue>, handlers: RuiFormHandlers<TIssue> = {}): void {
+		this.store = store;
+		this.formatError = handlers.formatError as RuiFormFormatError | undefined;
+		this.submitHandler = handlers.submitHandler as RuiFormSubmitHandler | undefined;
+		this.resetHandler = handlers.resetHandler as RuiFormResetHandler | undefined;
 	}
 
 	/**

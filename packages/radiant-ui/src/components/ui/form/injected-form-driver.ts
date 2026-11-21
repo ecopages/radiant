@@ -78,7 +78,7 @@ type BoundField = {
  */
 export class InjectedFormDriver implements FormDriver {
 	private readonly fields = new Map<string, BoundField>();
-	private readonly pendingFactReports = new Set<BoundField>();
+	private readonly pendingFactReports = new Map<BoundField, string>();
 	private readonly listeners = new Set<() => void>();
 	private revision = 0;
 	private unsubscribeStore: (() => void) | undefined;
@@ -151,28 +151,26 @@ export class InjectedFormDriver implements FormDriver {
 	}
 
 	/**
-	 * Report a control's fact again after the store wrote a value into it.
+	 * Report a control's fact on its own after the store wrote a value into it.
 	 *
 	 * @remarks A store write is not a user change, so nothing else tells the store
 	 * what the control now says about its new value: `setValue('email', 'not-an-email')`
 	 * would otherwise leave `typeMismatch` unreported. The report runs after the
-	 * notification that wrote the control, not inside it, and sends the value the
-	 * store already holds with the fresh fact; the store treats a new fact with an
-	 * unchanged value as a change.
+	 * notification that wrote the control, not inside it, and goes through
+	 * `reportNative`, which the store binds to the value it holds without counting a
+	 * change. A control that was removed or renamed in the meantime is skipped.
 	 */
 	private scheduleFactReport(entry: BoundField): void {
-		this.pendingFactReports.add(entry);
+		this.pendingFactReports.set(entry, entry.name);
 		if (this.pendingFactReports.size > 1) {
 			return;
 		}
 		queueMicrotask(() => {
-			const entries = [...this.pendingFactReports];
+			const pending = [...this.pendingFactReports];
 			this.pendingFactReports.clear();
-			for (const pending of entries) {
-				if (pending.live && this.fields.get(pending.name) === pending) {
-					this.state.setValue(pending.name, this.state.getValue(pending.name), {
-						native: this.factOf(pending),
-					});
+			for (const [reported, name] of pending) {
+				if (reported.live && reported.name === name && this.fields.get(name) === reported) {
+					this.state.reportNative(name, this.factOf(reported));
 				}
 			}
 		});
@@ -272,7 +270,7 @@ export class InjectedFormDriver implements FormDriver {
 	}
 
 	/** The current fact of every registered control, `null` for a valid one. */
-	readNativeValidity(): Record<string, NativeValidity | null> {
+	private factsOfAll(): Record<string, NativeValidity | null> {
 		const facts: Record<string, NativeValidity | null> = {};
 		for (const [name, entry] of this.fields) {
 			facts[name] = this.factOf(entry);
@@ -315,6 +313,16 @@ export class InjectedFormDriver implements FormDriver {
 				this.writeControlValue(name, entry);
 			}
 		}
+	}
+
+	/**
+	 * The current fact of every registered control, `null` for a valid one, after
+	 * writing the controls the user changed, so a check outside submit never binds a
+	 * fact to a value the control does not hold.
+	 */
+	readNativeValidity(): Record<string, NativeValidity | null> {
+		this.flush();
+		return this.factsOfAll();
 	}
 
 	/** Validate through the store, handing it the current fact of every control. */

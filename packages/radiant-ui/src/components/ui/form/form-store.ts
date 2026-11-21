@@ -369,7 +369,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	 */
 	setValue(name: string, value: unknown, options?: FormStateNativeOptions & { shouldTouch?: boolean }): void {
 		this.values = setPath(this.values, name, value);
-		this.reportNative(name, options?.native);
+		this.recordNative(name, options?.native);
 		this.rewriteRelatedControls(name);
 		if (options?.shouldTouch) {
 			this.touched = { ...this.touched, [name]: true };
@@ -495,13 +495,30 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	}
 
 	/**
+	 * Bind a control's reported validity to the value held at `path`.
+	 *
+	 * @remarks Never a user change: nothing is marked dirty and no validation runs
+	 * unless the path already failed, in which case it is validated again so its
+	 * error follows the fact. A path the store does not hold is ignored.
+	 */
+	reportNative(path: string, native: NativeValidity | null): void {
+		if (!this.fields.has(path) && getPath(this.values, path) === undefined) {
+			return;
+		}
+		this.recordNative(path, native);
+		if (this.ownRead(this.errors, path)) {
+			this.validateField(path).catch((error: unknown) => reportError(error));
+		}
+	}
+
+	/**
 	 * Keep the native fact a host reports for a path with no control registered here.
 	 *
 	 * @remarks A registered control is read directly when validating, which is
 	 * fresher, so a fact only fills in for a path with no registered control. `null`
 	 * clears it.
 	 */
-	private reportNative(path: string, fact: NativeValidity | null | undefined): void {
+	private recordNative(path: string, fact: NativeValidity | null | undefined): void {
 		if (fact) {
 			this.reportedNative = { ...this.reportedNative, [path]: fact };
 		} else if (Object.hasOwn(this.reportedNative, path)) {
@@ -564,7 +581,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		if (options && 'value' in options) {
 			this.setValue(path, options.value, { native: options.native });
 		} else if (options?.native !== undefined) {
-			this.reportNative(path, options.native);
+			this.recordNative(path, options.native);
 		}
 		this.handleFieldBlur(path).catch((error: unknown) => reportError(error));
 	}

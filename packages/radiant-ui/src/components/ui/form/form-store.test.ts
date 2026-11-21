@@ -660,6 +660,36 @@ describe('FormStore', () => {
 			expect(store.errors.age).toEqual({ type: 'min', params: { min: 18 } });
 		});
 
+		it('binds a reported fact to a held path without counting it as a change', async () => {
+			const store = new FormStore<{ a: string }>({ defaultValues: { a: 'x' }, mode: 'onChange' });
+			const listener = vi.fn();
+			store.subscribe(listener);
+
+			store.reportNative('a', { type: 'typeMismatch' });
+
+			expect(listener).not.toHaveBeenCalled();
+			expect(store.dirty.a).toBeUndefined();
+			expect(await store.validate(['a'])).toBe(false);
+		});
+
+		it('ignores a reported fact for a path it does not hold', async () => {
+			const store = new FormStore<{ a: string }>();
+
+			store.reportNative('nowhere', { type: 'valueMissing' });
+
+			expect(await store.validate(['nowhere'])).toBe(true);
+		});
+
+		it('re-validates a path that already failed when a fact is reported', async () => {
+			const store = new FormStore<{ a: string }>({ defaultValues: { a: 'x' } });
+			store.setErrors('server', { a: { message: 'Taken' } });
+
+			store.reportNative('a', null);
+			await Promise.resolve();
+
+			expect(store.errors.a?.message).toBe('Taken');
+		});
+
 		it('exposes no warnings', () => {
 			expect(new FormStore().getSnapshot().warnings).toEqual({});
 		});

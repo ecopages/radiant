@@ -16,7 +16,6 @@ export {
 } from './form-context';
 export { FormStore } from './form-store';
 export type {
-	FormIssue,
 	FormStateBlurOptions,
 	FormStateNativeOptions,
 	FormStateStore,

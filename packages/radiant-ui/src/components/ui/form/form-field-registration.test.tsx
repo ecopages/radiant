@@ -64,6 +64,7 @@ function createHostStore(): { store: FormStateStore; values: Record<string, unkn
 		async validate() {
 			return true;
 		},
+		reportNative() {},
 	};
 	return { store, values };
 }
