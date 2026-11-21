@@ -1,5 +1,10 @@
 export { RuiForm, type RuiFormSubmitDetail, type RuiFormInvalidDetail } from './form';
-export { RuiForm as RuiFormElement, type RuiFormProps } from './form.script';
+export {
+	RuiForm as RuiFormElement,
+	type RuiFormProps,
+	type RuiFormSubmitContext,
+	type RuiFormSubmitHandler,
+} from './form.script';
 export {
 	formContext,
 	type FormContextValue,

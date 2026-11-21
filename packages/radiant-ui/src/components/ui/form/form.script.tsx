@@ -42,7 +42,26 @@ export type RuiFormProps<T extends FieldValues = FieldValues> = {
 	 * {@link FormStore}. See {@link FormStateStore}.
 	 */
 	store?: FormStateStore;
+	/** Takes over submit when `store` is injected; see {@link RuiFormSubmitHandler}. */
+	submitHandler?: RuiFormSubmitHandler;
 };
+
+/** What `RuiForm` hands a {@link RuiFormSubmitHandler}. */
+export type RuiFormSubmitContext = {
+	/** The injected store, with the controls' values and native validity already flushed into it. */
+	store: FormStateStore;
+	/** Submits the native `<form>` to its `action` and `method`; does nothing when neither is set. */
+	submitNative: () => void;
+};
+
+/**
+ * Called on submit instead of the form's own validate-then-emit path.
+ *
+ * @remarks Only with an injected store. The host validates, counts attempts,
+ * focuses and submits; the form emits neither `rui-submit` nor `rui-invalid`. A
+ * rejection is reported with `reportError`.
+ */
+export type RuiFormSubmitHandler = (context: RuiFormSubmitContext) => void | Promise<void>;
 
 export type RuiFormSubmitDetail<T extends FieldValues = FieldValues> = {
 	values: T;
@@ -161,6 +180,7 @@ export class RuiForm extends RadiantElement {
 	@prop({ type: String, reflect: true }) action?: string;
 	@prop({ type: String, reflect: true }) method?: HTMLFormElement['method'];
 	@prop({ type: Object }) store?: FormStateStore;
+	@prop({ type: Object }) submitHandler?: RuiFormSubmitHandler;
 	onSubmit?: (values: FieldValues) => void | Promise<void>;
 
 	private driver: FormDriver | undefined;
@@ -252,7 +272,23 @@ export class RuiForm extends RadiantElement {
 	 * event.
 	 */
 	private runFormSubmit(): void {
-		this.ensureDriver()
+		const driver = this.ensureDriver();
+		if (driver instanceof InjectedFormDriver && this.drivenStore && typeof this.submitHandler === 'function') {
+			driver.flush();
+			const context: RuiFormSubmitContext = {
+				store: this.drivenStore,
+				submitNative: () => {
+					if (this.getAttribute('action') !== null || this.getAttribute('method') !== null) {
+						this.queryNativeForm()?.submit();
+					}
+				},
+			};
+			Promise.resolve()
+				.then(() => this.submitHandler?.(context))
+				.catch((error: unknown) => reportError(error));
+			return;
+		}
+		driver
 			.handleSubmit(
 				async (values) => {
 					this.submitEvent.emit({ values });

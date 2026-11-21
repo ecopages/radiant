@@ -745,4 +745,120 @@ describe('rui-form with an injected store', () => {
 
 		expect(store.getSnapshot().errors.code).toBeUndefined();
 	});
+
+	it('does not write an untouched empty control over a store value of undefined on submit', async () => {
+		const { store } = createTestStore({ title: undefined, profile: { name: 'Ada' } });
+		store.setErrors('server', { title: { type: 'server', message: 'Taken' } });
+		const setValue = vi.spyOn(store, 'setValue');
+		const { host } = await mountInputs(store);
+		setValue.mockClear();
+
+		host.querySelector('form')?.requestSubmit();
+		await settle();
+
+		expect(setValue).not.toHaveBeenCalled();
+		expect(store.getSnapshot().errors.title?.message).toBe('Taken');
+	});
+
+	it('writes a control the user emptied after typing', async () => {
+		const { store } = createTestStore({ title: undefined, profile: { name: '' } });
+		const { title, host } = await mountInputs(store);
+		type(title, 'a');
+		await settle();
+		title.value = '';
+
+		host.querySelector('form')?.requestSubmit();
+		await settle();
+
+		expect(store.getValue('title')).toBe('');
+	});
+
+	describe('submitHandler', () => {
+		it('flushes control values and native validity, then hands the form to the host', async () => {
+			const { store, setErrorsCalls } = createTestStore({ title: '', profile: { name: '' } });
+			const validate = vi.spyOn(store, 'validate');
+			const { form, title, host } = await mountInputs(store);
+			const seen: unknown[] = [];
+			form.submitHandler = (context) => {
+				seen.push(context.store.getValue('title'), setErrorsCalls.length > 0);
+				expect(context.store).toBe(store);
+			};
+			const onSubmit = vi.fn();
+			const onInvalid = vi.fn();
+			form.addEventListener('rui-submit', onSubmit);
+			form.addEventListener('rui-invalid', onInvalid);
+			title.value = 'silent';
+
+			host.querySelector('form')?.requestSubmit();
+			await settle();
+
+			expect(seen).toEqual(['silent', true]);
+			expect(validate).not.toHaveBeenCalled();
+			expect(onSubmit).not.toHaveBeenCalled();
+			expect(onInvalid).not.toHaveBeenCalled();
+		});
+
+		it('offers a native submit that follows the form action', async () => {
+			const { store } = createTestStore({ title: '', profile: { name: '' } });
+			const { form, host } = await mountInputs(store);
+			const nativeForm = host.querySelector('form') as HTMLFormElement;
+			const submit = vi.spyOn(nativeForm, 'submit').mockImplementation(() => {});
+			let submitNative: () => void = () => {};
+			form.submitHandler = (context) => {
+				submitNative = context.submitNative;
+			};
+
+			nativeForm.requestSubmit();
+			await settle();
+			submitNative();
+			expect(submit).not.toHaveBeenCalled();
+
+			form.setAttribute('action', '/save');
+			submitNative();
+			expect(submit).toHaveBeenCalledTimes(1);
+		});
+
+		it('reports a rejecting handler without an unhandled rejection', async () => {
+			const boom = new Error('host');
+			const errors = vi.fn();
+			const unhandled = vi.fn();
+			const onError = (event: ErrorEvent) => {
+				event.preventDefault();
+				errors(event.error);
+			};
+			const onRejection = (event: PromiseRejectionEvent) => {
+				event.preventDefault();
+				unhandled(event.reason);
+			};
+			window.addEventListener('error', onError);
+			window.addEventListener('unhandledrejection', onRejection);
+			cleanup.push(() => {
+				window.removeEventListener('error', onError);
+				window.removeEventListener('unhandledrejection', onRejection);
+			});
+			const { store } = createTestStore({ title: '', profile: { name: '' } });
+			const { form, host } = await mountInputs(store);
+			form.submitHandler = () => Promise.reject(boom);
+
+			host.querySelector('form')?.requestSubmit();
+			await settle();
+
+			expect(errors).toHaveBeenCalledWith(boom);
+			expect(unhandled).not.toHaveBeenCalled();
+		});
+
+		it('keeps the own validate-then-emit path when no handler is set', async () => {
+			const { store } = createTestStore({ title: 'Ready', profile: { name: '' } });
+			const validate = vi.spyOn(store, 'validate');
+			const { form, host } = await mountInputs(store);
+			const onSubmit = vi.fn();
+			form.addEventListener('rui-submit', onSubmit);
+
+			host.querySelector('form')?.requestSubmit();
+			await settle();
+
+			expect(validate).toHaveBeenCalledWith();
+			expect(onSubmit).toHaveBeenCalledTimes(1);
+		});
+	});
 });

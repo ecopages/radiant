@@ -58,6 +58,10 @@ type BoundField = {
 	live: boolean;
 	/** The store value at `name` the last time this driver looked. */
 	lastSeen?: unknown;
+	/** What the control read right after this driver last synchronised it with the store. */
+	baseline?: unknown;
+	/** True while this driver writes the control, so events that write raises are not user changes. */
+	writing?: boolean;
 };
 
 /**
@@ -129,8 +133,13 @@ export class InjectedFormDriver implements FormDriver {
 			const next = this.state.getValue(name);
 			const changed = !isSameValue(next, entry.lastSeen);
 			entry.lastSeen = next;
-			if ((force || changed) && !isSameValue(next, entry.registration.getValue())) {
-				entry.registration.setValue(next);
+			if (!force && !changed) {
+				continue;
+			}
+			if (isSameValue(next, entry.registration.getValue())) {
+				entry.baseline = entry.registration.getValue();
+			} else {
+				this.writeToControl(entry, next);
 			}
 		}
 	}
@@ -153,7 +162,24 @@ export class InjectedFormDriver implements FormDriver {
 	private seed(entry: BoundField): void {
 		const value = this.state.getValue(entry.name);
 		entry.lastSeen = value;
-		entry.registration.setValue(value);
+		this.writeToControl(entry, value);
+	}
+
+	/**
+	 * Write `value` into a control and take its read-back as the baseline.
+	 *
+	 * @remarks A control does not always read back what it was given: an empty text
+	 * input reads `''` after it is given `undefined`. Taking the read-back is how
+	 * the driver tells a control the user changed from one it only synchronised.
+	 */
+	private writeToControl(entry: BoundField, value: unknown): void {
+		entry.writing = true;
+		try {
+			entry.registration.setValue(value);
+		} finally {
+			entry.writing = false;
+		}
+		entry.baseline = entry.registration.getValue();
 	}
 
 	private removeEntry(entry: BoundField): void {
@@ -198,12 +224,33 @@ export class InjectedFormDriver implements FormDriver {
 		return this.errors[name] !== undefined;
 	}
 
-	/** Write a control's value into the store when it differs, as a control change no event reported would not. */
+	/**
+	 * Write a control's value into the store when the user changed it since the
+	 * driver last synchronised it.
+	 *
+	 * @remarks The comparison is with the control's own baseline, not with the
+	 * store, so a flush on submit writes only what the user changed. Comparing with
+	 * the store would write an untouched empty text input, which reads `''`, over a
+	 * store value of `undefined`, marking it dirty and dropping its server error.
+	 */
 	private writeControlValue(name: string, entry: BoundField): void {
-		const value = entry.registration.getValue();
-		if (!isSameValue(value, this.state.getValue(name))) {
-			this.state.setValue(name, value);
+		if (entry.writing) {
+			return;
 		}
+		const value = entry.registration.getValue();
+		if (isSameValue(value, entry.baseline)) {
+			return;
+		}
+		this.state.setValue(name, value);
+		entry.baseline = value;
+	}
+
+	/** Write every control the user changed into the store and send native validity, as submit needs. */
+	flush(): void {
+		for (const [name, entry] of this.fields) {
+			this.writeControlValue(name, entry);
+		}
+		this.publishNativeErrors();
 	}
 
 	/**
@@ -248,10 +295,7 @@ export class InjectedFormDriver implements FormDriver {
 		onValid: (values: FieldValues) => void | Promise<void>,
 		onInvalid?: (errors: Partial<Record<string, FieldError>>, error?: unknown) => void,
 	): Promise<void> {
-		for (const [name, entry] of this.fields) {
-			this.writeControlValue(name, entry);
-		}
-		this.publishNativeErrors();
+		this.flush();
 		let valid: boolean;
 		try {
 			valid = await this.state.validate();

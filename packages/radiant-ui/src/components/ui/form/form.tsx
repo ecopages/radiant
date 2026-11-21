@@ -13,6 +13,7 @@ export function RuiForm({
 	defaultValuesData,
 	resolver,
 	store,
+	submitHandler,
 	reValidateMode,
 	onSubmit,
 	action,
@@ -29,6 +30,7 @@ export function RuiForm({
 			prop:defaultValues={defaultValues}
 			prop:resolver={resolver}
 			prop:store={store}
+			prop:submitHandler={submitHandler}
 			prop:onSubmit={onSubmit}
 			data={{
 				defaultValues:
