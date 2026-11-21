@@ -18,9 +18,15 @@ export interface FormDriver {
 	shouldDisplayFieldError(name: string): boolean;
 	handleFieldChange(name: string): Promise<void>;
 	handleFieldBlur(name: string): Promise<void>;
+	/**
+	 * Validate, then run `onValid` or `onInvalid`.
+	 *
+	 * @remarks A validation that throws calls `onInvalid` with the current errors and
+	 * the thrown value as `error`, and resolves. A rejection from `onValid` rejects.
+	 */
 	handleSubmit(
 		onValid: (values: FieldValues) => void | Promise<void>,
-		onInvalid?: (errors: Partial<Record<string, FieldError>>) => void,
+		onInvalid?: (errors: Partial<Record<string, FieldError>>, error?: unknown) => void,
 	): Promise<void>;
 	reset(): void;
 }

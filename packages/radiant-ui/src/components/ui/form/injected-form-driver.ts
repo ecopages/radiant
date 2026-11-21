@@ -220,13 +220,20 @@ export class InjectedFormDriver implements FormDriver {
 
 	async handleSubmit(
 		onValid: (values: FieldValues) => void | Promise<void>,
-		onInvalid?: (errors: Partial<Record<string, FieldError>>) => void,
+		onInvalid?: (errors: Partial<Record<string, FieldError>>, error?: unknown) => void,
 	): Promise<void> {
 		for (const [name, field] of this.fields) {
 			this.writeControlValue(name, field);
 		}
 		this.publishNativeErrors();
-		const valid = await this.state.validate();
+		let valid: boolean;
+		try {
+			valid = await this.state.validate();
+		} catch (error) {
+			this.bump();
+			onInvalid?.(this.state.getSnapshot().errors, error);
+			return;
+		}
 		this.bump();
 		const snapshot = this.state.getSnapshot();
 		if (valid) {

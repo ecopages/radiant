@@ -43,6 +43,8 @@ export type RuiFormSubmitDetail<T extends FieldValues = FieldValues> = {
 
 export type RuiFormInvalidDetail<T extends FieldValues = FieldValues> = {
 	errors: Partial<Record<keyof T, { message?: string }>>;
+	/** Set when validation threw instead of reporting errors; the submission is invalid. */
+	error?: unknown;
 };
 
 const noopUnregister = () => {};
@@ -86,7 +88,7 @@ const initialFormActions: FormContextActions = {
  * @attr {string} method - Native form HTTP method when `onSubmit` is not provided.
  *
  * @fires rui-submit - Emitted when validation passes; `detail.values` holds field values.
- * @fires rui-invalid - Emitted when validation fails on submit; `detail.errors` maps field names to error messages.
+ * @fires rui-invalid - Emitted when validation fails on submit; `detail.errors` maps field names to error messages. `detail.error` is set when a validator threw.
  *
  * @remarks
  * `defaultValues` and `resolver` are object props — they only reach the element via
@@ -229,22 +231,31 @@ export class RuiForm extends RadiantElement {
 		}
 	}
 
+	/**
+	 * @remarks A validation that throws emits `rui-invalid` with the thrown value as
+	 * `detail.error`, so every submission ends in `rui-submit` or `rui-invalid`. A
+	 * rejection from `onSubmit` has no event of its own; it is reported with
+	 * `reportError` so it is not an unhandled rejection and `window` sees an `error`
+	 * event.
+	 */
 	private runFormSubmit(): void {
-		void this.ensureDriver().handleSubmit(
-			async (values) => {
-				this.submitEvent.emit({ values });
-				if (typeof this.onSubmit === 'function') {
-					await this.onSubmit(values);
-					return;
-				}
-				if (this.hasNativeSubmission()) {
-					this.queryNativeForm()?.submit();
-				}
-			},
-			(errors) => {
-				this.invalidEvent.emit({ errors });
-			},
-		);
+		this.ensureDriver()
+			.handleSubmit(
+				async (values) => {
+					this.submitEvent.emit({ values });
+					if (typeof this.onSubmit === 'function') {
+						await this.onSubmit(values);
+						return;
+					}
+					if (this.hasNativeSubmission()) {
+						this.queryNativeForm()?.submit();
+					}
+				},
+				(errors, error) => {
+					this.invalidEvent.emit(error === undefined ? { errors } : { errors, error });
+				},
+			)
+			.catch((error: unknown) => reportError(error));
 	}
 
 	private hasNativeSubmission(): boolean {

@@ -429,9 +429,18 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		}
 	}
 
+	/**
+	 * Validate, then run `onValid` with the values or `onInvalid` with the errors.
+	 *
+	 * @remarks `isSubmitting` stays true until the whole submission settles,
+	 * including an awaited `onValid`, and is always cleared. A validation that
+	 * throws counts as invalid: `onInvalid` receives the current errors and the
+	 * thrown value as `error`, and the returned promise resolves. A rejection from
+	 * `onValid` clears `isSubmitting` and rejects.
+	 */
 	async handleSubmit(
 		onValid: (values: T) => void | Promise<void>,
-		onInvalid?: (errors: Partial<Record<keyof T, FieldError>>) => void,
+		onInvalid?: (errors: Partial<Record<keyof T, FieldError>>, error?: unknown) => void,
 	): Promise<void> {
 		this.isSubmitting = true;
 		this.isSubmitted = true;
@@ -441,16 +450,23 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		}
 		this.notify();
 
-		const valid = await this.validateAll();
-		this.isSubmitting = false;
-		this.notify();
-
-		if (valid) {
-			await onValid(this.getValues());
-			return;
+		try {
+			let valid: boolean;
+			try {
+				valid = await this.validateAll();
+			} catch (error) {
+				onInvalid?.(this.errors, error);
+				return;
+			}
+			if (valid) {
+				await onValid(this.getValues());
+				return;
+			}
+			onInvalid?.(this.errors);
+		} finally {
+			this.isSubmitting = false;
+			this.notify();
 		}
-
-		onInvalid?.(this.errors);
 	}
 
 	reset(values?: Partial<T>): void {
