@@ -52,8 +52,8 @@ function writePath(tree: Record<string, unknown>, path: string, value: unknown):
 }
 
 type TestStoreOptions = {
-	/** Make `validate` ignore errors other sources set, as a store with a narrow notion of validity would. */
-	validateIgnoresOtherSources?: boolean;
+	/** Drop every source's error at a path when that path is written, as a store clearing stale errors would. */
+	dropErrorsOnSetValue?: boolean;
 	/** Returns validation errors for the whole tree; a path scope filters them. */
 	validate?: (values: Record<string, unknown>) => Record<string, FieldError>;
 };
@@ -63,6 +63,7 @@ function createTestStore(initial: Record<string, unknown>, options: TestStoreOpt
 	let values = initial;
 	const sources = new Map<string, Record<string, FieldError>>();
 	const listeners = new Set<() => void>();
+	const blurCalls: string[] = [];
 	const setErrorsCalls: Array<{ source: string; errors: Record<string, FieldError> }> = [];
 
 	function mergedErrors(): Record<string, FieldError> {
@@ -92,15 +93,23 @@ function createTestStore(initial: Record<string, unknown>, options: TestStoreOpt
 		getValue: (path) => readPath(values, path),
 		setValue(path, value) {
 			values = writePath(values, path, value);
+			if (options.dropErrorsOnSetValue) {
+				for (const [source, errors] of sources) {
+					sources.set(source, Object.fromEntries(Object.entries(errors).filter(([key]) => key !== path)));
+				}
+			}
 			publish();
+		},
+		blur(path) {
+			blurCalls.push(path);
 		},
 		getSnapshot: () => snapshot,
 		subscribe(listener) {
 			listeners.add(listener);
 			return () => listeners.delete(listener);
 		},
-		reset(next) {
-			values = next ?? initial;
+		reset() {
+			values = initial;
 			sources.clear();
 			publish();
 		},
@@ -118,9 +127,6 @@ function createTestStore(initial: Record<string, unknown>, options: TestStoreOpt
 				: {};
 			sources.set('validation', { ...kept, ...scoped });
 			publish();
-			if (options.validateIgnoresOtherSources) {
-				return Object.keys(sources.get('validation') ?? {}).length === 0;
-			}
 			const inScope = Object.keys(mergedErrors()).filter((path) => !paths || paths.includes(path));
 			return inScope.length === 0;
 		},
@@ -131,7 +137,7 @@ function createTestStore(initial: Record<string, unknown>, options: TestStoreOpt
 		},
 	};
 
-	return { store, setErrorsCalls, listenerCount: () => listeners.size };
+	return { store, setErrorsCalls, blurCalls, listenerCount: () => listeners.size };
 }
 
 function titleRequired(values: Record<string, unknown>): Record<string, FieldError> {
@@ -255,17 +261,6 @@ describe('rui-form with an injected store', () => {
 		expect(name.value).toBe('Hopper');
 	});
 
-	it('does not write back to the store when a store write reaches a control', async () => {
-		const { store } = createTestStore({ title: 'Initial', profile: { name: '' } });
-		const setValue = vi.spyOn(store, 'setValue');
-		await mountInputs(store);
-
-		store.setValue('title', 'Changed');
-		await settle();
-
-		expect(setValue).toHaveBeenCalledTimes(1);
-	});
-
 	it('resets controls when the store resets', async () => {
 		const { store } = createTestStore({ title: 'Initial', profile: { name: '' } });
 		const { title } = await mountInputs(store);
@@ -370,21 +365,6 @@ describe('rui-form with an injected store', () => {
 		expect(onSubmit).toHaveBeenCalledWith({ values: { title: 'Ready', profile: { name: 'Ada' } } });
 	});
 
-	it('validates a changed field on change when mode is onChange', async () => {
-		const { store } = createTestStore({ title: 'x', profile: { name: '' } }, { validate: titleRequired });
-		const spy = vi.spyOn(store, 'validate');
-		const { form, title } = await mountInputs(store);
-		form.setAttribute('mode', 'onChange');
-		await settle();
-
-		type(title, '');
-		await settle();
-
-		expect(spy).toHaveBeenCalledWith(['title']);
-		const field = form.querySelector('rui-field') as HTMLElement;
-		expect(findFieldError(field)?.textContent).toBe('Title is required');
-	});
-
 	it('moves controls to a swapped store and stops writing to the old one', async () => {
 		const first = createTestStore({ title: 'First', profile: { name: '' } });
 		const second = createTestStore({ title: 'Second', profile: { name: '' } });
@@ -416,60 +396,6 @@ describe('rui-form with an injected store', () => {
 		type(title, 'Typed');
 		await settle();
 		expect(store.getValue('title')).toBe('Injected');
-	});
-
-	it('blocks submit on native validity even when the store ignores the native source', async () => {
-		const { store } = createTestStore({ code: '' }, { validateIgnoresOtherSources: true });
-		const { form, nativeForm, face } = await mountCode(store);
-		face.internals.setValidity({ valueMissing: true }, 'Enter the code');
-		const onSubmit = vi.fn();
-		form.addEventListener('rui-submit', onSubmit);
-
-		nativeForm.requestSubmit();
-		await settle();
-
-		expect(onSubmit).not.toHaveBeenCalled();
-	});
-
-	it('does not validate while typing in the default onSubmit mode', async () => {
-		const { store } = createTestStore({ title: '', profile: { name: '' } }, { validate: titleRequired });
-		const validate = vi.spyOn(store, 'validate');
-		const { title, host } = await mountInputs(store);
-
-		type(title, 'a');
-		title.blur();
-		await settle();
-		expect(validate).not.toHaveBeenCalled();
-
-		host.querySelector('form')?.requestSubmit();
-		await settle();
-		expect(validate).toHaveBeenCalledWith();
-	});
-
-	it('writes a field default into the store only when the store has no value', async () => {
-		const { store } = createTestStore({ seeded: 'kept' });
-		const host = document.createElement('div');
-		document.body.append(host);
-		const root = createRoot(host);
-		root.render(
-			<RuiForm store={store}>
-				<RuiField name="seeded" defaultValue="ignored">
-					<RuiInput />
-				</RuiField>
-				<RuiField name="fresh" defaultValue="from-field">
-					<RuiInput />
-				</RuiField>
-			</RuiForm>,
-		);
-		cleanup.push(() => {
-			root.unmount();
-			host.remove();
-		});
-		await customElements.whenDefined('rui-field');
-		await flushRender();
-
-		expect(store.getValue('seeded')).toBe('kept');
-		expect(store.getValue('fresh')).toBe('from-field');
 	});
 
 	it('exposes the injected store through the form context', async () => {
@@ -561,5 +487,193 @@ describe('rui-form with an injected store', () => {
 		await settle();
 
 		expect(written.length).toBeGreaterThan(0);
+	});
+
+	it('does not echo a store write back when a control emits rui-change for programmatic writes', async () => {
+		if (!customElements.get('x-echo')) {
+			customElements.define(
+				'x-echo',
+				class extends HTMLElement {
+					static get formAssociated(): boolean {
+						return true;
+					}
+				},
+			);
+		}
+		registerFieldControl('x-echo', {
+			submission: 'none',
+			read: (host) => host.getAttribute('value') ?? '',
+			write: (host, value) => {
+				host.setAttribute('value', value == null ? '' : String(value));
+				host.dispatchEvent(new CustomEvent('rui-change', { bubbles: true, composed: true }));
+			},
+		});
+		const { store } = createTestStore({ echo: 'a' });
+		const setValue = vi.spyOn(store, 'setValue');
+		const form = document.createElement('rui-form') as RuiFormElement;
+		form.store = store;
+		const nativeForm = document.createElement('form');
+		nativeForm.setAttribute('data-ref', 'form');
+		const field = document.createElement('rui-field') as HTMLElement & { name: string };
+		field.name = 'echo';
+		field.innerHTML = '<x-echo></x-echo>';
+		nativeForm.append(field);
+		form.append(nativeForm);
+		document.body.append(form);
+		cleanup.push(() => form.remove());
+		await customElements.whenDefined('rui-field');
+		await flushRender();
+		setValue.mockClear();
+
+		store.setValue('echo', 'b');
+		await settle();
+
+		expect(setValue).toHaveBeenCalledTimes(1);
+	});
+
+	it('writes uncommitted control input on submit before validating', async () => {
+		const { store } = createTestStore({ title: '', profile: { name: '' } });
+		const validate = vi.spyOn(store, 'validate');
+		const { form, title, host } = await mountInputs(store);
+		const onSubmit = vi.fn();
+		form.addEventListener('rui-submit', (event) => onSubmit((event as CustomEvent).detail.values));
+		title.value = 'silent';
+
+		host.querySelector('form')?.requestSubmit();
+		await settle();
+
+		expect(store.getValue('title')).toBe('silent');
+		expect(onSubmit.mock.calls[0]?.[0].title).toBe('silent');
+		expect(validate).toHaveBeenCalledWith();
+	});
+
+	it('calls onSubmit with the store values when the store is valid', async () => {
+		const { store } = createTestStore({ title: 'Ready', profile: { name: '' } });
+		const { form, host } = await mountInputs(store);
+		const onSubmit = vi.fn();
+		form.onSubmit = onSubmit;
+
+		host.querySelector('form')?.requestSubmit();
+		await settle();
+
+		expect(onSubmit).toHaveBeenCalledWith({ title: 'Ready', profile: { name: '' } });
+	});
+
+	it('writes the control value then reports blur, and never validates itself', async () => {
+		const { store, blurCalls } = createTestStore({ title: '', profile: { name: '' } });
+		const validate = vi.spyOn(store, 'validate');
+		const { title } = await mountInputs(store);
+
+		title.focus();
+		title.value = 'typed';
+		title.blur();
+		await settle();
+
+		expect(store.getValue('title')).toBe('typed');
+		expect(blurCalls).toEqual(['title']);
+		type(title, 'more');
+		await settle();
+		expect(validate).not.toHaveBeenCalled();
+	});
+
+	it('ignores mode, revalidate-mode and presents exactly the snapshot errors', async () => {
+		const { store } = createTestStore({ title: '', profile: { name: '' } });
+		const { form } = await mountInputs(store);
+		form.setAttribute('mode', 'onSubmit');
+		store.setErrors('server', { title: { type: 'server', message: 'Taken' } });
+		await settle();
+
+		const field = form.querySelector('rui-field') as HTMLElement;
+		expect(findFieldError(field)?.textContent).toBe('Taken');
+		expect(findFieldError(field)?.hidden).toBe(false);
+	});
+
+	it('does not seed field defaults into the store', async () => {
+		const { store } = createTestStore({ seeded: 'kept' });
+		const host = document.createElement('div');
+		document.body.append(host);
+		const root = createRoot(host);
+		root.render(
+			<RuiForm store={store}>
+				<RuiField name="fresh" defaultValue="from-field">
+					<RuiInput />
+				</RuiField>
+			</RuiForm>,
+		);
+		cleanup.push(() => {
+			root.unmount();
+			host.remove();
+		});
+		await customElements.whenDefined('rui-field');
+		await flushRender();
+
+		expect(store.getValue('fresh')).toBeUndefined();
+	});
+
+	it('does not resurrect a fixed control error that the store dropped on write', async () => {
+		const { store } = createTestStore({ a: '', b: '' }, { dropErrorsOnSetValue: true });
+		const { form, nativeForm, field, face } = await mountCode(store);
+		void form;
+		void nativeForm;
+		face.internals.setValidity({ valueMissing: true }, 'Enter the code');
+		face.dispatchEvent(new CustomEvent('rui-change', { bubbles: true, composed: true }));
+		await settle();
+		expect(store.getSnapshot().errors.code?.message).toBe('Enter the code');
+
+		face.setAttribute('value', '123456');
+		face.internals.setValidity({});
+		face.dispatchEvent(new CustomEvent('rui-change', { bubbles: true, composed: true }));
+		await settle();
+		store.setErrors('other', {});
+		face.dispatchEvent(new FocusEvent('focusout', { bubbles: true, composed: true }));
+		await settle();
+
+		expect(store.getSnapshot().errors.code).toBeUndefined();
+		expect(findFieldError(field)?.hidden).toBe(true);
+	});
+
+	it('re-reads native validity on every change, not from an earlier read', async () => {
+		const { store, setErrorsCalls } = createTestStore({ code: '' });
+		const { face } = await mountCode(store);
+		face.internals.setValidity({ valueMissing: true }, 'Enter the code');
+		face.dispatchEvent(new CustomEvent('rui-change', { bubbles: true, composed: true }));
+		await settle();
+		store.reset();
+		face.internals.setValidity({});
+		face.dispatchEvent(new CustomEvent('rui-change', { bubbles: true, composed: true }));
+		await settle();
+
+		expect(setErrorsCalls.at(-1)).toEqual({ source: 'native', errors: {} });
+		expect(store.getSnapshot().errors.code).toBeUndefined();
+	});
+
+	it('picks up store changes made while the form was disconnected', async () => {
+		const { store } = createTestStore({ title: 'A', profile: { name: '' } });
+		const { form, title } = await mountInputs(store);
+		const parent = form.parentElement as HTMLElement;
+		form.remove();
+
+		store.setValue('title', 'changed');
+		parent.append(form);
+		await settle();
+
+		expect(title.value).toBe('changed');
+	});
+
+	it('does not subscribe to a store swapped in while disconnected', async () => {
+		const first = createTestStore({ title: 'A', profile: { name: '' } });
+		const second = createTestStore({ title: 'B', profile: { name: '' } });
+		const { form } = await mountInputs(first.store);
+		const parent = form.parentElement as HTMLElement;
+		form.remove();
+
+		form.store = second.store;
+		await settle();
+		expect(first.listenerCount()).toBe(0);
+		expect(second.listenerCount()).toBe(0);
+
+		parent.append(form);
+		await settle();
+		expect(second.listenerCount()).toBe(1);
 	});
 });

@@ -211,6 +211,26 @@ describe('FormStore', () => {
 			expect(first.values).toEqual({ title: 'A' });
 		});
 
+		it('keeps the snapshot in step with direct assignment to values and errors', () => {
+			const store = new FormStore<{ a: string }>();
+			const first = store.getSnapshot();
+
+			store.errors = { a: { message: 'x' } };
+			expect(store.getSnapshot().errors).toEqual({ a: { message: 'x' } });
+			store.values = { a: 'y' };
+			expect(store.getSnapshot().values).toEqual({ a: 'y' });
+			expect(store.getSnapshot()).not.toBe(first);
+		});
+
+		it('blur marks the field touched and validates per mode', async () => {
+			const store = new FormStore<{ a: string }>({ mode: 'onBlur' });
+			store.register({ name: 'a', rules: { required: 'Req' }, getValue: () => '', setValue: () => {} });
+
+			store.blur('a');
+			await vi.waitFor(() => expect(store.getFieldError('a')).toBe('Req'));
+			expect(store.touched.a).toBe(true);
+		});
+
 		it('reflects a field default seeded at registration in the snapshot', () => {
 			const store = new FormStore<{ title: string }>();
 			expect(store.getSnapshot().values).toEqual({});

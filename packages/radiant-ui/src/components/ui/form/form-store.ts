@@ -54,7 +54,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	private ownErrors: Partial<Record<keyof T, FieldError>> = {};
 	private mergedErrors: Partial<Record<keyof T, FieldError>> = this.ownErrors;
 	private readonly sourceErrors = new Map<string, Record<string, FieldError>>();
-	private snapshot: { revision: number; value: FormStateSnapshot } | undefined;
+	private snapshot: { values: T; errors: Partial<Record<keyof T, FieldError>>; value: FormStateSnapshot } | undefined;
 	touched: Partial<Record<keyof T, boolean>> = {};
 	dirty: Partial<Record<keyof T, boolean>> = {};
 	isSubmitting = false;
@@ -103,9 +103,10 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	}
 
 	getSnapshot(): FormStateSnapshot {
-		if (this.snapshot?.revision !== this.revision) {
+		if (this.snapshot?.values !== this.values || this.snapshot.errors !== this.mergedErrors) {
 			this.snapshot = {
-				revision: this.revision,
+				values: this.values,
+				errors: this.mergedErrors,
 				value: { values: this.values, errors: this.mergedErrors as Record<string, FieldError> },
 			};
 		}
@@ -183,7 +184,6 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 
 		if (this.values[registration.name as keyof T] === undefined && hasDefault(entry.defaultValue)) {
 			this.values = { ...this.values, [registration.name]: entry.defaultValue } as T;
-			this.snapshot = undefined;
 		}
 
 		entry.setValue(this.values[registration.name as keyof T]);
@@ -358,6 +358,11 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		} else {
 			this.notify();
 		}
+	}
+
+	/** Interface form of {@link FormStore.handleFieldBlur}; validation runs per `mode`. */
+	blur(path: string): void {
+		void this.handleFieldBlur(path);
 	}
 
 	async handleFieldBlur(name: string): Promise<void> {

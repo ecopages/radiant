@@ -1,4 +1,3 @@
-import type { FormStoreOptions } from './form-store';
 import type { FieldError, FieldRegistration, FieldValues, RegisterOptions } from './types';
 
 /**
@@ -12,7 +11,6 @@ export interface FormDriver {
 	readonly errors: Partial<Record<string, FieldError>>;
 	register(registration: FieldRegistration): () => void;
 	updateFieldOptions(name: string, options: RegisterOptions): void;
-	updateOptions(options: FormStoreOptions<FieldValues>): void;
 	getRegisteredFieldNames(): string[];
 	getFieldError(name: string): string | undefined;
 	shouldDisplayFieldError(name: string): boolean;

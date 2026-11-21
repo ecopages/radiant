@@ -100,13 +100,14 @@ const initialFormActions: FormContextActions = {
  * injected store when `store` is set, otherwise the form's own {@link FormStore}.
  * Hydration payloads contain presentation only, never the store or its actions.
  *
- * With an injected store the form keeps control registration, native validity,
- * touched and dirty bookkeeping, validation timing from `mode`, error
- * presentation, submit and `FormData`. The store keeps values and errors, so
- * `defaultValues`, `resolver` and field `rules` are ignored. Setting, replacing or
- * clearing `store` re-registers every control: the new store's values are written
- * into the controls, and clearing it returns to the form's own store, which keeps
- * the values it held before the injection.
+ * With an injected store the form is a control bridge: it keeps control
+ * registration, native validity, error presentation, submit and `FormData`, and
+ * the store owns validation timing, touched and dirty state, defaults and which
+ * errors show. `mode`, `revalidate-mode`, `defaultValues`, field `defaultValue`,
+ * `resolver` and field `rules` are ignored. Setting, replacing or clearing `store`
+ * re-registers every control: the new store's values are written into the
+ * controls, and clearing it returns to the form's own store in the state it left,
+ * including its earlier errors, touched fields and submitted flag.
  */
 @customElement('rui-form')
 export class RuiForm extends RadiantElement {
@@ -296,7 +297,8 @@ export class RuiForm extends RadiantElement {
 	 * @remarks A switch unregisters every control from the old driver and registers it
 	 * into the new one, which writes the new store's values into the controls. The
 	 * form's own {@link FormStore} is created once and reused when the injected
-	 * store is removed.
+	 * store is removed, with its earlier values, errors, touched fields and submitted
+	 * flag. A disconnected form binds no driver, so it holds no store subscription.
 	 */
 	private ensureDriver(): FormDriver {
 		const injected = this.resolveInjectedStore();
@@ -312,10 +314,7 @@ export class RuiForm extends RadiantElement {
 		}
 		this.drivenStore = injected;
 		if (injected) {
-			this.driver = new InjectedFormDriver(injected, {
-				mode: this.resolveMode(),
-				reValidateMode: this.resolveReValidateMode(),
-			});
+			this.driver = new InjectedFormDriver(injected);
 		} else {
 			if (this.ownStore) {
 				this.ownStore.updateOptions({
@@ -345,6 +344,9 @@ export class RuiForm extends RadiantElement {
 	}
 
 	private bindDriver(driver: FormDriver): void {
+		if (!this.isConnected) {
+			return;
+		}
 		this.unsubscribeDriver ??= driver.subscribe(() => this.publishFormContext());
 	}
 
@@ -403,7 +405,8 @@ export class RuiForm extends RadiantElement {
 
 	@onUpdated(['defaultValues', 'defaultValuesData', 'mode', 'reValidateMode'])
 	syncOptions(): void {
-		this.ensureDriver().updateOptions({
+		this.ensureDriver();
+		this.ownStore?.updateOptions({
 			defaultValues: this.resolveDefaultValues(),
 			mode: this.resolveMode(),
 			reValidateMode: this.resolveReValidateMode(),
