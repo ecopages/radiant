@@ -241,8 +241,14 @@ export class InjectedFormDriver implements FormDriver {
 		if (isSameValue(value, entry.baseline)) {
 			return;
 		}
-		this.state.setValue(name, value);
+		const previous = entry.baseline;
 		entry.baseline = value;
+		try {
+			this.state.setValue(name, value);
+		} catch (error) {
+			entry.baseline = previous;
+			throw error;
+		}
 	}
 
 	/** Write every control the user changed into the store and send native validity, as submit needs. */

@@ -71,12 +71,12 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	private defaultValues: Partial<T>;
 
 	values: T;
-	private ownErrors: Partial<Record<keyof T, FieldError>> = {};
-	private mergedErrors: Partial<Record<keyof T, FieldError>> = this.ownErrors;
+	private ownErrors: Partial<Record<string, FieldError>> = {};
+	private mergedErrors: Partial<Record<string, FieldError>> = this.ownErrors;
 	private readonly sourceErrors = new Map<string, Record<string, FieldError>>();
-	private snapshot: { values: T; errors: Partial<Record<keyof T, FieldError>>; value: FormStateSnapshot } | undefined;
-	touched: Partial<Record<keyof T, boolean>> = {};
-	dirty: Partial<Record<keyof T, boolean>> = {};
+	private snapshot: { values: T; errors: Partial<Record<string, FieldError>>; value: FormStateSnapshot } | undefined;
+	touched: Partial<Record<string, boolean>> = {};
+	dirty: Partial<Record<string, boolean>> = {};
 	isSubmitting = false;
 	isSubmitted = false;
 
@@ -94,11 +94,11 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	 * @remarks A resolver or rule error wins over a source error on the same field.
 	 * Assigning replaces the resolver and rule errors only.
 	 */
-	get errors(): Partial<Record<keyof T, FieldError>> {
+	get errors(): Partial<Record<string, FieldError>> {
 		return this.mergedErrors;
 	}
 
-	set errors(next: Partial<Record<keyof T, FieldError>>) {
+	set errors(next: Partial<Record<string, FieldError>>) {
 		this.ownErrors = next;
 		this.mergeErrors();
 	}
@@ -142,7 +142,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 				merged[path] = winner.message || !worded ? winner : { ...winner, message: worded.error.message };
 			}
 		}
-		this.mergedErrors = merged as Partial<Record<keyof T, FieldError>>;
+		this.mergedErrors = merged as Partial<Record<string, FieldError>>;
 	}
 
 	getValue(path: string): unknown {
@@ -171,13 +171,12 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 			valid = await this.validateAll();
 		}
 		const scope = paths ?? Object.keys(this.mergedErrors);
-		return valid && scope.every((path) => !this.mergedErrors[path as keyof T]);
+		return valid && scope.every((path) => !this.mergedErrors[path]);
 	}
 
 	setErrors(source: string, errors: Record<string, FieldError>): void {
-		if (Object.keys(errors).length === 0) {
-			this.sourceErrors.delete(source);
-		} else {
+		this.sourceErrors.delete(source);
+		if (Object.keys(errors).length > 0) {
 			this.sourceErrors.set(source, { ...errors });
 		}
 		this.mergeErrors();
@@ -280,21 +279,34 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		this.fields.set(to, entry);
 		entry.name = to;
 		entry.carried = undefined;
-		const value = entry.getValue();
-		this.values = value === undefined ? deletePath(this.values, to) : setPath(this.values, to, value);
-		this.writeFieldState(to, moved);
 		if (!this.fields.has(from)) {
 			this.values = deletePath(this.values, from);
 			this.writeFieldState(from, {});
 		}
+		const value = entry.getValue();
+		this.values = value === undefined ? deletePath(this.values, to) : setPath(this.values, to, value);
+		this.writeFieldState(to, moved);
 		this.notify();
+	}
+
+	/**
+	 * Write the stored value into every registered control whose path is `path`, under
+	 * it or above it, so replacing a branch reaches the controls inside it and writing
+	 * inside a control that holds an object reaches that control.
+	 */
+	private rewriteRelatedControls(path: string): void {
+		for (const [name, field] of this.fields) {
+			if (name === path || name.startsWith(`${path}.`) || path.startsWith(`${name}.`)) {
+				field.setValue(getPath(this.values, name));
+			}
+		}
 	}
 
 	private readFieldState(name: string): FieldState {
 		return {
-			touched: this.touched[name as keyof T],
-			dirty: this.dirty[name as keyof T],
-			error: this.ownErrors[name as keyof T],
+			touched: this.touched[name],
+			dirty: this.dirty[name],
+			error: this.ownErrors[name],
 		};
 	}
 
@@ -331,8 +343,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 
 	setValue(name: string, value: unknown, options?: { shouldDirty?: boolean; shouldTouch?: boolean }): void {
 		this.values = setPath(this.values, name, value);
-		const field = this.fields.get(name);
-		field?.setValue(value);
+		this.rewriteRelatedControls(name);
 		if (options?.shouldDirty) {
 			this.dirty = { ...this.dirty, [name]: true };
 		}
@@ -355,7 +366,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	clearErrors(name?: string): void {
 		if (name) {
 			const next = { ...this.ownErrors };
-			delete next[name as keyof T];
+			delete next[name];
 			for (const [source, errors] of this.sourceErrors) {
 				this.sourceErrors.set(
 					source,
@@ -373,7 +384,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 
 	/** The message to show, or `undefined` when the field has no error or its error has no message. */
 	getFieldError(name: string): string | undefined {
-		return this.errors[name as keyof T]?.message || undefined;
+		return this.errors[name]?.message || undefined;
 	}
 
 	getState(): FormState<T> {
@@ -397,9 +408,9 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		const resolverError: FieldError | undefined = (result.errors as Partial<Record<string, FieldError>>)[name];
 		const error = resolverError?.message ? resolverError : (this.readNativeError(name) ?? resolverError);
 		if (error) {
-			next[name as keyof T] = error.type === 'native' ? error : { type: 'validation', message: error.message };
+			next[name] = error.type === 'native' ? error : { type: 'validation', message: error.message };
 		} else {
-			delete next[name as keyof T];
+			delete next[name];
 		}
 		this.errors = next;
 		this.notify();
@@ -409,12 +420,12 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	async validateAll(): Promise<boolean> {
 		const values = this.getValues();
 		const result = await this.resolver(values, { fields: this.buildResolverFields() }, {});
-		const errors = { ...result.errors } as Partial<Record<keyof T, FieldError>>;
+		const errors = { ...result.errors } as Partial<Record<string, FieldError>>;
 		for (const name of this.fields.keys()) {
-			const resolverError = errors[name as keyof T];
+			const resolverError = errors[name];
 			const native = resolverError?.message ? undefined : this.readNativeError(name);
 			if (native) {
-				errors[name as keyof T] = native;
+				errors[name] = native;
 			}
 		}
 		this.errors = errors;
@@ -446,7 +457,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 			case 'onBlur':
 				return trigger === 'blur';
 			case 'onTouched':
-				return trigger === 'blur' && Boolean(this.touched[name as keyof T]);
+				return trigger === 'blur' && Boolean(this.touched[name]);
 			case 'onSubmit':
 				return false;
 			default:
@@ -485,7 +496,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 
 	/** Whether a field's validation message should be shown in the UI (RHF-style). */
 	shouldDisplayFieldError(name: string): boolean {
-		if (!this.errors[name as keyof T]) {
+		if (!this.errors[name]) {
 			return false;
 		}
 		if (this.isSubmitted) {
@@ -494,12 +505,12 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 
 		switch (this.mode) {
 			case 'all':
-				return Boolean(this.dirty[name as keyof T] || this.touched[name as keyof T]);
+				return Boolean(this.dirty[name] || this.touched[name]);
 			case 'onChange':
-				return Boolean(this.dirty[name as keyof T]);
+				return Boolean(this.dirty[name]);
 			case 'onBlur':
 			case 'onTouched':
-				return Boolean(this.touched[name as keyof T]);
+				return Boolean(this.touched[name]);
 			case 'onSubmit':
 			default:
 				return false;
@@ -517,7 +528,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	 */
 	async handleSubmit(
 		onValid: (values: T) => void | Promise<void>,
-		onInvalid?: (errors: Partial<Record<keyof T, FieldError>>, error?: unknown) => void,
+		onInvalid?: (errors: Partial<Record<string, FieldError>>, error?: unknown) => void,
 	): Promise<void> {
 		this.isSubmitting = true;
 		this.isSubmitted = true;

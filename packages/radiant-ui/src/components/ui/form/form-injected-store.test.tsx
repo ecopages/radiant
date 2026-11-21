@@ -861,4 +861,22 @@ describe('rui-form with an injected store', () => {
 			expect(onSubmit).toHaveBeenCalledTimes(1);
 		});
 	});
+
+	it('keeps the baseline a synchronous store normalisation set', async () => {
+		const { store } = createTestStore({ title: '', profile: { name: '' } });
+		const original = store.setValue.bind(store);
+		store.setValue = (path, value) => {
+			original(path, typeof value === 'string' ? value.trim() : value);
+		};
+		const setValue = vi.spyOn(store, 'setValue');
+		const { title, host } = await mountInputs(store);
+		type(title, ' Ada ');
+		await settle();
+		setValue.mockClear();
+
+		host.querySelector('form')?.requestSubmit();
+		await settle();
+
+		expect(setValue).not.toHaveBeenCalled();
+	});
 });

@@ -34,9 +34,9 @@ export type ResolverSuccess<T extends FieldValues> = {
 	errors: Record<string, never>;
 };
 
-export type ResolverError<T extends FieldValues> = {
+export type ResolverError<_T extends FieldValues> = {
 	values: Record<string, never>;
-	errors: Partial<Record<keyof T, FieldError>>;
+	errors: Partial<Record<string, FieldError>>;
 };
 
 export type ResolverResult<T extends FieldValues> = ResolverSuccess<T> | ResolverError<T>;
@@ -59,9 +59,9 @@ export type ResolverOptions<_T extends FieldValues> = {
 
 export type FormState<T extends FieldValues = FieldValues> = {
 	values: T;
-	errors: Partial<Record<keyof T, FieldError>>;
-	touched: Partial<Record<keyof T, boolean>>;
-	dirty: Partial<Record<keyof T, boolean>>;
+	errors: Partial<Record<string, FieldError>>;
+	touched: Partial<Record<string, boolean>>;
+	dirty: Partial<Record<string, boolean>>;
 	isSubmitting: boolean;
 	isSubmitted: boolean;
 	isValid: boolean;

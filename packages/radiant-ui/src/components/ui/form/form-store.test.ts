@@ -420,4 +420,71 @@ describe('FormStore', () => {
 			expect(store.errors.a?.message).toBe('Audit');
 		});
 	});
+
+	describe('paths and ordering', () => {
+		function field(name: string, initial: unknown) {
+			let current = initial;
+			return {
+				name,
+				getValue: () => current,
+				setValue: vi.fn((next: unknown) => {
+					current = next;
+				}),
+			};
+		}
+
+		it('rewrites registered descendants when a parent branch is replaced', async () => {
+			const store = new FormStore({ defaultValues: { profile: { name: 'Ada' } } });
+			const name = field('profile.name', 'Ada');
+			store.register(name);
+
+			store.setValue('profile', { name: 'Grace' });
+
+			expect(name.setValue).toHaveBeenLastCalledWith('Grace');
+			expect(store.getValue('profile.name')).toBe('Grace');
+			expect(store.getValues()).toEqual({ profile: { name: 'Grace' } });
+		});
+
+		it('rewrites a registered ancestor when a descendant path is written', () => {
+			const store = new FormStore({ defaultValues: { profile: { name: 'Ada' } } });
+			const profile = field('profile', { name: 'Ada' });
+			store.register(profile);
+
+			store.setValue('profile.name', 'Grace');
+
+			expect(profile.setValue).toHaveBeenLastCalledWith({ name: 'Grace' });
+		});
+
+		it('keeps the value when a field is renamed beneath its previous path', () => {
+			const store = new FormStore({ defaultValues: { a: 'kept' } });
+			const handle = store.register(field('a', 'kept'));
+
+			handle.rename('a.b');
+
+			expect(store.getValues()).toEqual({ a: { b: 'kept' } });
+			expect(store.getRegisteredFieldNames()).toEqual(['a.b']);
+		});
+
+		it('accepts dotted paths in the typed error, touched and dirty records', () => {
+			const store = new FormStore<{ profile: { name: string } }>({
+				resolver: async () => ({ values: {}, errors: { 'profile.name': { message: 'bad' } } }),
+			});
+			store.register(field('profile.name', 'x'));
+			store.markTouched('profile.name');
+			const touched: boolean | undefined = store.touched['profile.name'];
+			const dirty: boolean | undefined = store.dirty['profile.name'];
+
+			expect(touched).toBe(true);
+			expect(dirty).toBeUndefined();
+		});
+
+		it('lets the source set most recently win among sources of one rank', () => {
+			const store = new FormStore<{ a: string }>();
+			store.setErrors('server', { a: { message: 'first' } });
+			store.setErrors('audit', { a: { message: 'second' } });
+			store.setErrors('server', { a: { message: 'updated' } });
+
+			expect(store.errors.a?.message).toBe('updated');
+		});
+	});
 });
