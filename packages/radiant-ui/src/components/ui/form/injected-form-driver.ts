@@ -3,28 +3,33 @@ import { FORM_NATIVE_ERROR_SOURCE, type FormStateStore } from './form-state-stor
 import type { FieldError, FieldRegistration, FieldValues, RegisterOptions } from './types';
 
 /**
- * Structural equality for control values; `null` and `undefined` both mean "no value".
+ * Structural equality for control values; at the top level `null` and `undefined`
+ * both mean "no value".
  *
- * @remarks Dates compare by time. Any other non-plain object compares by identity,
- * so it is rewritten rather than wrongly treated as equal.
+ * @remarks Inside arrays and objects the two differ and a missing key differs from
+ * a key holding `null`. Dates compare by time. Any other non-plain object compares
+ * by identity, so it is rewritten rather than wrongly treated as equal.
  */
 function isSameValue(a: unknown, b: unknown): boolean {
-	if (Object.is(a, b) || (a == null && b == null)) {
+	return (a == null && b == null) || isSameNested(a, b);
+}
+
+function isSameNested(a: unknown, b: unknown): boolean {
+	if (Object.is(a, b)) {
 		return true;
 	}
 	if (Array.isArray(a) || Array.isArray(b)) {
-		return isSameArray(a, b);
+		return (
+			Array.isArray(a) &&
+			Array.isArray(b) &&
+			a.length === b.length &&
+			a.every((item, i) => isSameNested(item, b[i]))
+		);
 	}
 	if (a instanceof Date || b instanceof Date) {
 		return a instanceof Date && b instanceof Date && a.getTime() === b.getTime();
 	}
 	return isSameRecord(a, b);
-}
-
-function isSameArray(a: unknown, b: unknown): boolean {
-	return (
-		Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every((item, i) => isSameValue(item, b[i]))
-	);
 }
 
 function isSameRecord(a: unknown, b: unknown): boolean {
@@ -34,8 +39,11 @@ function isSameRecord(a: unknown, b: unknown): boolean {
 	if (!isPlainObject(a) || !isPlainObject(b)) {
 		return false;
 	}
-	const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
-	return [...keys].every((key) => isSameValue(Reflect.get(a, key), Reflect.get(b, key)));
+	const keys = Object.keys(a);
+	return (
+		keys.length === Object.keys(b).length &&
+		keys.every((key) => Object.hasOwn(b, key) && isSameNested(Reflect.get(a, key), Reflect.get(b, key)))
+	);
 }
 
 function isPlainObject(value: object): boolean {

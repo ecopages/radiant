@@ -705,7 +705,17 @@ describe('rui-form with an injected store', () => {
 		current = { start: null };
 		nativeForm.requestSubmit();
 		await settle();
+		expect(store.getValue('range')).toEqual({ start: null });
 
+		current = { end: null };
+		nativeForm.requestSubmit();
+		await settle();
+		expect(store.getValue('range')).toEqual({ end: null });
+
+		store.setValue('range', {});
+		current = { start: null };
+		nativeForm.requestSubmit();
+		await settle();
 		expect(store.getValue('range')).toEqual({ start: null });
 	});
 
