@@ -151,10 +151,13 @@ describe('rui-field registration', () => {
 			const original = actions.register;
 			actions.register = (registration) => {
 				registers(registration.name);
-				const unregister = original(registration);
-				return () => {
-					unregisters(registration.name);
-					unregister();
+				const handle = original(registration);
+				return {
+					rename: (name) => handle.rename(name),
+					unregister: () => {
+						unregisters(registration.name);
+						handle.unregister();
+					},
 				};
 			};
 			await customElements.whenDefined('rui-field');
@@ -253,18 +256,18 @@ describe('rui-field registration', () => {
 		expect(store.getRegisteredFieldNames()).toEqual([]);
 	});
 
-	it('keeps a renamed field value under the new path in an injected store, and removes it cleanly', async () => {
+	it('rebinds a renamed field to the store path without writing a value, and removes it cleanly', async () => {
 		const host = createHostStore();
 		host.values.old = 'kept';
+		host.values.renamed = 'there';
 		const { field, input } = await mountRenamable(host.store);
-		const ownedBy = host.store.subscribe(() => {});
-		ownedBy();
+		expect(input.value).toBe('kept');
 
 		field.name = 'renamed';
 		await settle();
 
-		expect(input.value).toBe('kept');
-		expect(host.values.renamed).toBe('kept');
+		expect(input.value).toBe('there');
+		expect(host.values.old).toBe('kept');
 
 		input.value = 'edited';
 		input.dispatchEvent(new Event('input', { bubbles: true }));
@@ -273,7 +276,9 @@ describe('rui-field registration', () => {
 
 		field.remove();
 		await settle();
+		input.value = 'after removal';
 		input.dispatchEvent(new Event('input', { bubbles: true }));
+		await settle();
 		expect(host.values.renamed).toBe('edited');
 	});
 });

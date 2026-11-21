@@ -76,7 +76,20 @@ export type RegisterOptions = {
 /** A control's own validity, as `ElementInternals.setValidity` reports it. */
 export type FieldControlValidity = { valid: boolean; message?: string };
 
+/**
+ * What registering a field returns. It identifies the registration itself, not its
+ * name, so it stays valid when the field is renamed and a swap of two names cannot
+ * lose either registration.
+ */
+export type FieldRegistrationHandle = {
+	/** Move this registration to another name, keeping its state; a no-op once removed. */
+	rename(name: string): void;
+	/** Remove this registration; a no-op once removed. */
+	unregister(): void;
+};
+
 export type FieldRegistration = RegisterOptions & {
+	/** The name at registration time; later names come from {@link FieldRegistrationHandle.rename}. */
 	name: string;
 	getValue: () => unknown;
 	setValue: (value: unknown) => void;

@@ -1,10 +1,11 @@
 import { createRulesResolver } from './resolvers';
 import { formErrorSourceRank, FORM_NATIVE_ERROR_SOURCE, FORM_VALIDATION_ERROR_SOURCE } from './form-state-store';
 import type { FormStateSnapshot, FormStateStore } from './form-state-store';
-import { getPath, setPath } from './value-path';
+import { deletePath, getPath, setPath } from './value-path';
 import type {
 	FieldError,
 	FieldRegistration,
+	FieldRegistrationHandle,
 	FieldRules,
 	FieldValues,
 	FormState,
@@ -25,6 +26,10 @@ type InternalField = FieldRegistration & {
 	rules?: FieldRules;
 	defaultValue?: unknown;
 	getRules?: () => FieldRules | undefined;
+	/** False once the registration was removed. */
+	live: boolean;
+	/** State of this entry's old name that another entry took, kept until this entry is renamed. */
+	carried?: FieldState;
 };
 
 function normalizeResolver<T extends FieldValues>(resolver: unknown): Resolver<T> {
@@ -39,12 +44,17 @@ export function hasDefault(value: unknown): boolean {
 	return value !== undefined && value !== null;
 }
 
-function moveKey<R extends Partial<Record<string, unknown>>>(record: R, from: string, to: string): R {
-	if (!(from in record)) {
-		return record;
+type FieldState = { touched?: boolean; dirty?: boolean; error?: FieldError };
+
+function withKey<R extends Partial<Record<string, unknown>>>(record: R, key: string, value: unknown): R {
+	if (value === undefined) {
+		if (!(key in record)) {
+			return record;
+		}
+		const { [key]: _removed, ...rest } = record;
+		return rest as R;
 	}
-	const { [from]: moved, ...rest } = record;
-	return { ...rest, [to]: moved } as R;
+	return { ...record, [key]: value } as R;
 }
 
 /**
@@ -210,13 +220,14 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		return Array.from(this.fields.keys());
 	}
 
-	register(registration: FieldRegistration): () => void {
+	register(registration: FieldRegistration): FieldRegistrationHandle {
 		const existing = this.fields.get(registration.name);
 		const entry: InternalField = {
 			...registration,
 			rules: registration.rules ?? existing?.rules,
 			defaultValue: hasDefault(registration.defaultValue) ? registration.defaultValue : existing?.defaultValue,
 			getRules: registration.getRules ?? existing?.getRules,
+			live: true,
 		};
 		this.fields.set(registration.name, entry);
 
@@ -226,42 +237,71 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 
 		entry.setValue(getPath(this.values, registration.name));
 
-		return this.unregisterFn(registration.name, entry);
-	}
-
-	private unregisterFn(name: string, entry: InternalField): () => void {
-		return () => {
-			if (this.fields.get(name) === entry) {
-				this.fields.delete(name);
-				this.notify();
-			}
+		return {
+			rename: (name) => this.renameEntry(entry, name),
+			unregister: () => this.removeEntry(entry),
 		};
 	}
 
-	/** @returns The unregister function for the field under its new name. */
-	renameField(from: string, registration: FieldRegistration): () => void {
-		const existing = this.fields.get(from);
-		const to = registration.name;
-		if (!existing) {
-			return this.register(registration);
+	private removeEntry(entry: InternalField): void {
+		if (!entry.live) {
+			return;
 		}
-		if (from === to) {
-			return this.unregisterFn(to, existing);
+		entry.live = false;
+		entry.carried = undefined;
+		if (this.fields.get(entry.name) === entry) {
+			this.fields.delete(entry.name);
 		}
-		this.fields.delete(from);
-		const entry: InternalField = {
-			...registration,
-			rules: registration.rules ?? existing.rules,
-			defaultValue: hasDefault(registration.defaultValue) ? registration.defaultValue : existing.defaultValue,
-			getRules: registration.getRules ?? existing.getRules,
-		};
-		this.fields.set(to, entry);
-		this.values = moveKey(this.values, from, to);
-		this.touched = moveKey(this.touched, from, to);
-		this.dirty = moveKey(this.dirty, from, to);
-		this.errors = moveKey(this.ownErrors, from, to);
 		this.notify();
-		return this.unregisterFn(to, entry);
+	}
+
+	/**
+	 * Move an entry to `to` with its value and field state.
+	 *
+	 * @remarks The value comes from the control, which is the truth for a keyed row
+	 * that moved. Touched, dirty and own-error state lives under a name, so an entry
+	 * whose name another entry takes first carries its state until it is renamed
+	 * too: two rows can swap names in two calls without either losing state. The old
+	 * name is cleared only when no entry still holds it.
+	 */
+	private renameEntry(entry: InternalField, to: string): void {
+		const from = entry.name;
+		if (!entry.live || from === to) {
+			return;
+		}
+		const moved = entry.carried ?? this.readFieldState(from);
+		const occupant = this.fields.get(to);
+		if (occupant && occupant !== entry && !occupant.carried) {
+			occupant.carried = this.readFieldState(to);
+		}
+		if (this.fields.get(from) === entry) {
+			this.fields.delete(from);
+		}
+		this.fields.set(to, entry);
+		entry.name = to;
+		entry.carried = undefined;
+		const value = entry.getValue();
+		this.values = value === undefined ? deletePath(this.values, to) : setPath(this.values, to, value);
+		this.writeFieldState(to, moved);
+		if (!this.fields.has(from)) {
+			this.values = deletePath(this.values, from);
+			this.writeFieldState(from, {});
+		}
+		this.notify();
+	}
+
+	private readFieldState(name: string): FieldState {
+		return {
+			touched: this.touched[name as keyof T],
+			dirty: this.dirty[name as keyof T],
+			error: this.ownErrors[name as keyof T],
+		};
+	}
+
+	private writeFieldState(name: string, state: FieldState): void {
+		this.touched = withKey(this.touched, name, state.touched);
+		this.dirty = withKey(this.dirty, name, state.dirty);
+		this.errors = withKey(this.ownErrors, name, state.error);
 	}
 
 	/**

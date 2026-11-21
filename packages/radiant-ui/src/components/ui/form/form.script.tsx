@@ -13,7 +13,14 @@ import { FormStore } from './form-store';
 import type { FormDriver } from './form-driver';
 import type { FormStateStore } from './form-state-store';
 import { InjectedFormDriver } from './injected-form-driver';
-import type { FieldRegistration, FieldValues, RegisterOptions, Resolver, ValidationMode } from './types';
+import type {
+	FieldRegistration,
+	FieldRegistrationHandle,
+	FieldValues,
+	RegisterOptions,
+	Resolver,
+	ValidationMode,
+} from './types';
 import { RUI_FORM_DEFAULT_VALUES_ATTR } from './control-protocol';
 import { uniqueId } from '@/lib/unique-id';
 
@@ -49,19 +56,17 @@ export type RuiFormInvalidDetail<T extends FieldValues = FieldValues> = {
 
 /** A field's registration as the form tracks it across driver switches and renames. */
 type RegistrationEntry = {
+	/** The registration with its current name, so a driver switch re-registers it as it stands. */
 	registration: FieldRegistration;
-	unregister: () => void;
-	/** True while a driver renames the field, whose unregister function is not known yet. */
-	renaming?: boolean;
-	/** Set when the field was removed during its rename; the new unregister runs once it exists. */
-	removed?: boolean;
+	handle: FieldRegistrationHandle;
 };
 
 const noopUnregister = () => {};
 
+const noopHandle: FieldRegistrationHandle = { rename: () => {}, unregister: noopUnregister };
+
 const initialFormActions: FormContextActions = {
-	register: () => noopUnregister,
-	renameField: () => {},
+	register: () => noopHandle,
 	updateFieldOptions: () => {},
 	handleFieldChange: () => {},
 	handleFieldBlur: () => {},
@@ -169,34 +174,21 @@ export class RuiForm extends RadiantElement {
 	private readonly presentationListeners = new Set<(value: FormContextValue) => void>();
 	private readonly formActions: FormContextActions = {
 		register: (registration) => {
-			const entry: RegistrationEntry = { registration, unregister: this.ensureDriver().register(registration) };
+			const entry: RegistrationEntry = { registration, handle: this.ensureDriver().register(registration) };
 			this.registrations.add(entry);
 			this.publishFormContext({ force: true });
-			return () => {
-				this.registrations.delete(entry);
-				if (entry.renaming) {
-					entry.removed = true;
-					return;
-				}
-				entry.unregister();
-				this.publishFormContext({ force: true });
+			return {
+				rename: (name) => {
+					entry.registration = { ...entry.registration, name };
+					entry.handle.rename(name);
+					this.publishFormContext({ force: true });
+				},
+				unregister: () => {
+					this.registrations.delete(entry);
+					entry.handle.unregister();
+					this.publishFormContext({ force: true });
+				},
 			};
-		},
-		renameField: (from, registration) => {
-			const entry = [...this.registrations].find((candidate) => candidate.registration.name === from);
-			if (entry) {
-				entry.renaming = true;
-				entry.registration = registration;
-			}
-			const unregister = this.ensureDriver().renameField(from, registration);
-			if (entry) {
-				entry.renaming = false;
-				entry.unregister = unregister;
-				if (entry.removed) {
-					unregister();
-				}
-			}
-			this.publishFormContext({ force: true });
 		},
 		updateFieldOptions: (name, options) => {
 			this.ensureDriver().updateFieldOptions(name, options);
@@ -289,6 +281,9 @@ export class RuiForm extends RadiantElement {
 	override disconnectedCallback(): void {
 		this.unsubscribeDriver?.();
 		this.unsubscribeDriver = undefined;
+		if (this.driver instanceof InjectedFormDriver) {
+			this.driver.dispose();
+		}
 		super.disconnectedCallback();
 	}
 
@@ -377,8 +372,8 @@ export class RuiForm extends RadiantElement {
 		this.bindDriver(this.driver);
 		if (switching) {
 			for (const entry of this.registrations) {
-				entry.unregister();
-				entry.unregister = this.driver.register(entry.registration);
+				entry.handle.unregister();
+				entry.handle = this.driver.register(entry.registration);
 			}
 			this.publishFormContext({ force: true });
 		}

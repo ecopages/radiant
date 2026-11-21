@@ -1,6 +1,6 @@
 import type { FormDriver } from './form-driver';
 import { FORM_NATIVE_ERROR_SOURCE, type FormStateStore } from './form-state-store';
-import type { FieldError, FieldRegistration, FieldValues, RegisterOptions } from './types';
+import type { FieldError, FieldRegistration, FieldRegistrationHandle, FieldValues, RegisterOptions } from './types';
 
 /**
  * Structural equality for control values; at the top level `null` and `undefined`
@@ -51,6 +51,15 @@ function isPlainObject(value: object): boolean {
 	return prototype === Object.prototype || prototype === null;
 }
 
+type BoundField = {
+	registration: FieldRegistration;
+	/** The path the control is bound to; it changes on rename. */
+	name: string;
+	live: boolean;
+	/** The store value at `name` the last time this driver looked. */
+	lastSeen?: unknown;
+};
+
 /**
  * Bridges a host {@link FormStateStore} to the form's controls. It owns control
  * registration, the control value bridge and native validity, and keeps no
@@ -64,8 +73,7 @@ function isPlainObject(value: object): boolean {
  * disconnected form does not keep the host store alive.
  */
 export class InjectedFormDriver implements FormDriver {
-	private readonly fields = new Map<string, FieldRegistration>();
-	private readonly lastSeen = new Map<string, unknown>();
+	private readonly fields = new Map<string, BoundField>();
 	private readonly listeners = new Set<() => void>();
 	private revision = 0;
 	private unsubscribeStore: (() => void) | undefined;
@@ -117,12 +125,12 @@ export class InjectedFormDriver implements FormDriver {
 	 * value, so it is never echoed back.
 	 */
 	private syncControls(force = false): void {
-		for (const [name, field] of this.fields) {
+		for (const [name, entry] of this.fields) {
 			const next = this.state.getValue(name);
-			const changed = !isSameValue(next, this.lastSeen.get(name));
-			this.lastSeen.set(name, next);
-			if ((force || changed) && !isSameValue(next, field.getValue())) {
-				field.setValue(next);
+			const changed = !isSameValue(next, entry.lastSeen);
+			entry.lastSeen = next;
+			if ((force || changed) && !isSameValue(next, entry.registration.getValue())) {
+				entry.registration.setValue(next);
 			}
 		}
 	}
@@ -131,53 +139,52 @@ export class InjectedFormDriver implements FormDriver {
 		return Array.from(this.fields.keys());
 	}
 
-	register(registration: FieldRegistration): () => void {
-		this.fields.set(registration.name, registration);
-		const seeded = this.state.getValue(registration.name);
-		this.lastSeen.set(registration.name, seeded);
-		registration.setValue(seeded);
-		return this.unregisterFn(registration);
-	}
-
-	private unregisterFn(registration: FieldRegistration): () => void {
-		return () => {
-			if (this.fields.get(registration.name) === registration) {
-				this.fields.delete(registration.name);
-				this.lastSeen.delete(registration.name);
-				this.publishNativeErrors();
-				this.bump();
-			}
+	register(registration: FieldRegistration): FieldRegistrationHandle {
+		const entry: BoundField = { registration, name: registration.name, live: true };
+		this.fields.set(entry.name, entry);
+		this.seed(entry);
+		return {
+			rename: (name) => this.renameEntry(entry, name),
+			unregister: () => this.removeEntry(entry),
 		};
 	}
 
-	/**
-	 * @remarks The host owns values. A value the store already holds at the new path
-	 * is written into the control; otherwise the control's value moves to the new
-	 * path, and the old path stays as the host left it.
-	 */
-	renameField(from: string, registration: FieldRegistration): () => void {
-		const existing = this.fields.get(from);
-		if (!existing) {
-			return this.register(registration);
+	/** Write the store's value at the entry's path into its control, even when the store holds nothing. */
+	private seed(entry: BoundField): void {
+		const value = this.state.getValue(entry.name);
+		entry.lastSeen = value;
+		entry.registration.setValue(value);
+	}
+
+	private removeEntry(entry: BoundField): void {
+		if (!entry.live) {
+			return;
 		}
-		if (from === registration.name) {
-			return this.unregisterFn(existing);
-		}
-		const carried = existing.getValue();
-		this.fields.delete(from);
-		this.lastSeen.delete(from);
-		this.fields.set(registration.name, registration);
-		const held = this.state.getValue(registration.name);
-		if (held === undefined) {
-			this.state.setValue(registration.name, carried);
-			this.lastSeen.set(registration.name, carried);
-		} else {
-			this.lastSeen.set(registration.name, held);
-			registration.setValue(held);
+		entry.live = false;
+		if (this.fields.get(entry.name) === entry) {
+			this.fields.delete(entry.name);
 		}
 		this.publishNativeErrors();
 		this.bump();
-		return this.unregisterFn(registration);
+	}
+
+	/**
+	 * @remarks The store owns values, so a rename never writes one: the control is
+	 * rebound to the new path and seeded from the store, even when the store holds
+	 * nothing there. Deleting the old path is the host's decision.
+	 */
+	private renameEntry(entry: BoundField, to: string): void {
+		if (!entry.live || entry.name === to) {
+			return;
+		}
+		if (this.fields.get(entry.name) === entry) {
+			this.fields.delete(entry.name);
+		}
+		entry.name = to;
+		this.fields.set(to, entry);
+		this.seed(entry);
+		this.publishNativeErrors();
+		this.bump();
 	}
 
 	updateFieldOptions(_name: string, _options: RegisterOptions): void {}
@@ -192,8 +199,8 @@ export class InjectedFormDriver implements FormDriver {
 	}
 
 	/** Write a control's value into the store when it differs, as a control change no event reported would not. */
-	private writeControlValue(name: string, field: FieldRegistration): void {
-		const value = field.getValue();
+	private writeControlValue(name: string, entry: BoundField): void {
+		const value = entry.registration.getValue();
 		if (!isSameValue(value, this.state.getValue(name))) {
 			this.state.setValue(name, value);
 		}
@@ -207,8 +214,8 @@ export class InjectedFormDriver implements FormDriver {
 	 */
 	private publishNativeErrors(): void {
 		const errors: Record<string, FieldError> = {};
-		for (const [name, field] of this.fields) {
-			const validity = field.getValidity?.();
+		for (const [name, entry] of this.fields) {
+			const validity = entry.registration.getValidity?.();
 			if (validity && !validity.valid) {
 				errors[name] = { type: 'native', message: validity.message || 'Invalid value' };
 			}
@@ -217,21 +224,21 @@ export class InjectedFormDriver implements FormDriver {
 	}
 
 	async handleFieldChange(name: string): Promise<void> {
-		const field = this.fields.get(name);
-		if (!field) {
+		const entry = this.fields.get(name);
+		if (!entry) {
 			return;
 		}
-		this.writeControlValue(name, field);
+		this.writeControlValue(name, entry);
 		this.publishNativeErrors();
 		this.bump();
 	}
 
 	async handleFieldBlur(name: string): Promise<void> {
-		const field = this.fields.get(name);
-		if (!field) {
+		const entry = this.fields.get(name);
+		if (!entry) {
 			return;
 		}
-		this.writeControlValue(name, field);
+		this.writeControlValue(name, entry);
 		this.publishNativeErrors();
 		this.state.blur(name);
 		this.bump();
@@ -241,8 +248,8 @@ export class InjectedFormDriver implements FormDriver {
 		onValid: (values: FieldValues) => void | Promise<void>,
 		onInvalid?: (errors: Partial<Record<string, FieldError>>, error?: unknown) => void,
 	): Promise<void> {
-		for (const [name, field] of this.fields) {
-			this.writeControlValue(name, field);
+		for (const [name, entry] of this.fields) {
+			this.writeControlValue(name, entry);
 		}
 		this.publishNativeErrors();
 		let valid: boolean;

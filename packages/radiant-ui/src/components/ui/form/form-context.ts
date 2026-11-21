@@ -1,6 +1,6 @@
 import { createContext } from '@ecopages/radiant/context';
 import type { FormStateStore } from './form-state-store';
-import type { FieldError, FieldRegistration, RegisterOptions } from './types';
+import type { FieldError, FieldRegistration, FieldRegistrationHandle, RegisterOptions } from './types';
 
 /** UI slice for one field, computed by `<rui-form>` from the store. */
 export type FormFieldPresentation = {
@@ -9,14 +9,7 @@ export type FormFieldPresentation = {
 };
 
 export type FormContextActions = {
-	register: (registration: FieldRegistration) => () => void;
-	/**
-	 * Move a registered field to the name in `registration`, keeping its value, errors
-	 * and field state, with one notification and no moment where either name is missing.
-	 *
-	 * @remarks The unregister function `register` returned stays valid.
-	 */
-	renameField: (from: string, registration: FieldRegistration) => void;
+	register: (registration: FieldRegistration) => FieldRegistrationHandle;
 	updateFieldOptions: (name: string, options: RegisterOptions) => void;
 	handleFieldChange: (name: string) => void;
 	handleFieldBlur: (name: string) => void;

@@ -1,4 +1,4 @@
-import type { FieldError, FieldRegistration, FieldValues, RegisterOptions } from './types';
+import type { FieldError, FieldRegistration, FieldRegistrationHandle, FieldValues, RegisterOptions } from './types';
 
 /**
  * What `<rui-form>` needs from the object that registers its controls and runs
@@ -9,13 +9,7 @@ export interface FormDriver {
 	subscribe(listener: () => void): () => void;
 	getRevision(): number;
 	readonly errors: Partial<Record<string, FieldError>>;
-	register(registration: FieldRegistration): () => void;
-	/**
-	 * Move the registration named `from` to `registration.name`, keeping its state.
-	 *
-	 * @returns The unregister function for the field under its new name.
-	 */
-	renameField(from: string, registration: FieldRegistration): () => void;
+	register(registration: FieldRegistration): FieldRegistrationHandle;
 	updateFieldOptions(name: string, options: RegisterOptions): void;
 	getRegisteredFieldNames(): string[];
 	getFieldError(name: string): string | undefined;

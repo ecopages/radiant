@@ -30,7 +30,7 @@ import {
 } from '../form/control-protocol';
 import { formContext, type FormContextValue } from '../form/form-context';
 import { fieldContext, type FieldContextValue } from './field-context';
-import type { FieldRegistration, FieldRules } from '../form/types';
+import type { FieldRegistration, FieldRegistrationHandle, FieldRules } from '../form/types';
 import { bindVisibleLabel } from '../shared/field-label';
 import { uniqueId } from '@/lib/unique-id';
 import { MutationController } from '../../../controllers/mutation-controller';
@@ -157,7 +157,7 @@ export class RuiField extends RadiantElement {
 		return (this.name || this.getAttribute('name') || '').trim();
 	}
 
-	private unregister?: () => void;
+	private registration?: FieldRegistrationHandle;
 	private unregisterPresentation?: () => void;
 	private registeredWithForm = false;
 	private registeredName: string | undefined;
@@ -191,8 +191,8 @@ export class RuiField extends RadiantElement {
 	}
 
 	override disconnectedCallback(): void {
-		this.unregister?.();
-		this.unregister = undefined;
+		this.registration?.unregister();
+		this.registration = undefined;
 		this.unregisterPresentation?.();
 		this.unregisterPresentation = undefined;
 		this.registeredWithForm = false;
@@ -309,7 +309,7 @@ export class RuiField extends RadiantElement {
 			this.unregisterPresentation?.();
 			this.unregisterPresentation = actions.subscribePresentation((ctx) => this.syncField(ctx));
 			this.registeredName = fieldName;
-			this.unregister = actions.register(this.buildRegistration(fieldName));
+			this.registration = actions.register(this.buildRegistration(fieldName));
 			this.syncField();
 			return;
 		}
@@ -337,18 +337,17 @@ export class RuiField extends RadiantElement {
 	@onUpdated(['name'])
 	onNameUpdated(): void {
 		const nextName = this.resolveFieldName();
-		const actions = this.currentFormContext?.actions;
 		if (this.registeredWithForm && this.registeredName === nextName) {
 			return;
 		}
-		if (this.registeredWithForm && this.registeredName && nextName && actions) {
-			actions.renameField(this.registeredName, this.buildRegistration(nextName));
+		if (this.registeredWithForm && this.registration && nextName) {
+			this.registration.rename(nextName);
 			this.registeredName = nextName;
 			this.syncField();
 			return;
 		}
-		this.unregister?.();
-		this.unregister = undefined;
+		this.registration?.unregister();
+		this.registration = undefined;
 		this.unregisterPresentation?.();
 		this.unregisterPresentation = undefined;
 		this.registeredWithForm = false;
