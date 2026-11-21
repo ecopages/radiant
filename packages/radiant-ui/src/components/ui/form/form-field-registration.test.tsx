@@ -64,7 +64,6 @@ function createHostStore(): { store: FormStateStore; values: Record<string, unkn
 		async validate() {
 			return true;
 		},
-		releaseNative() {},
 	};
 	return { store, values };
 }

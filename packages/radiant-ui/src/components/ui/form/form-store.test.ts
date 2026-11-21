@@ -588,14 +588,55 @@ describe('FormStore', () => {
 			expect(await store.validate(['elsewhere'])).toBe(true);
 		});
 
-		it('releases a fact and takes the facts a validate call brings', async () => {
+		it('treats the facts a validate call brings as authoritative', async () => {
 			const store = new FormStore<{ a: string }>();
-			await store.validate(undefined, { native: { elsewhere: { type: 'valueMissing' } } });
-			expect(await store.validate(['elsewhere'])).toBe(false);
+			await store.validate(undefined, {
+				native: { first: { type: 'valueMissing' }, second: { type: 'valueMissing' } },
+			});
+			expect(await store.validate(['first'])).toBe(false);
 
-			store.releaseNative('elsewhere');
+			await store.validate(undefined, { native: { second: { type: 'valueMissing' }, first: null } });
 
-			expect(await store.validate(['elsewhere'])).toBe(true);
+			expect(await store.validate(['first'])).toBe(true);
+			expect(await store.validate(['second'])).toBe(false);
+			await store.validate(undefined, { native: {} });
+			expect(await store.validate(['second'])).toBe(true);
+		});
+
+		it('writes the value and the fact of a blur in one call', () => {
+			const store = new FormStore<{ a: string }>();
+			const listener = vi.fn();
+			store.subscribe(listener);
+
+			store.blur('a', { value: 'typed', native: null });
+
+			expect(store.getValue('a')).toBe('typed');
+			expect(store.touched.a).toBe(true);
+		});
+
+		it('reads the native validity of every registered control', () => {
+			const store = new FormStore<{ a: string; b: string }>();
+			store.register({
+				name: 'a',
+				getValue: () => '',
+				setValue: () => {},
+				getValidity: () => ({ valid: false, type: 'valueMissing', message: 'Fill' }),
+			});
+			store.register({ name: 'b', getValue: () => '', setValue: () => {}, getValidity: () => ({ valid: true }) });
+
+			expect(store.readNativeValidity()).toEqual({
+				a: { type: 'valueMissing', params: undefined, message: 'Fill' },
+				b: null,
+			});
+		});
+
+		it('does not read through Object.prototype for a field named constructor', () => {
+			const store = new FormStore<Record<string, string>>();
+			store.register({ name: 'constructor', getValue: () => 'x', setValue: () => {} });
+
+			expect(store.shouldDisplayFieldError('constructor')).toBe(false);
+			expect(store.getFieldError('toString')).toBeUndefined();
+			expect(store.getValue('constructor')).toBe('x');
 		});
 
 		it('clears reported facts on reset', async () => {

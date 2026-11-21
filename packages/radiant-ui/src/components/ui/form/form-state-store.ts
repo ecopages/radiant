@@ -36,13 +36,12 @@ export type NativeValidity = {
 };
 
 /**
- * What `<rui-form>` passes `formatError` to produce text for an error or a warning.
+ * An error or warning entry as `<rui-form>` hands it to `formatError`: the store's
+ * own entry, untouched, so any field the store adds travels with it.
  */
-export type FormIssue = {
-	type: string;
-	params?: Record<string, unknown>;
-	message?: string;
-	source?: string;
+export type FormIssue = FieldError & {
+	ruleId?: string;
+	[extra: string]: unknown;
 };
 
 /** Options on a call that carries the native validity of the control it describes. */
@@ -52,6 +51,12 @@ export type FormStateNativeOptions = {
 	 * control reports valid. Absent when the form did not read the control.
 	 */
 	native?: NativeValidity | null;
+};
+
+/** Options on `blur`: the control's fact, and its value when the user changed it since the last synchronisation. */
+export type FormStateBlurOptions = FormStateNativeOptions & {
+	/** Present only when the user changed the control; the store writes it as `setValue` would, in the same call. */
+	value?: unknown;
 };
 
 /**
@@ -74,21 +79,22 @@ export type FormStateNativeOptions = {
  * Native validity always travels in the same call as the value or event it
  * describes, so a store never holds a fact older than the value it validates: a
  * `setValue` without `native` carries no fact, and a store must not reuse the one
- * it held for that path.
+ * it held for that path. On `validate`, the `native` record is authoritative: it
+ * holds the fact of every control the form bridges, `null` for a valid one, and a
+ * store drops any fact it held for a path the record does not list.
  *
  * Each member is here because `<rui-form>` calls it:
  * - `getValue` seeds a control when it registers and compares controls with the
  *   store on every notification.
- * - `setValue` receives a control's value on change and on blur or submit for a
- *   control the user changed, replacing the branch at `path`.
- * - `blur` reports that a control lost focus, so the store can run its own
- *   touched and validation-on-blur policy.
+ * - `setValue` receives a control's value on change and on submit for a control
+ *   the user changed, replacing the branch at `path`.
+ * - `blur` reports that a control lost focus, with its value when the user changed
+ *   it, so the store can run its own touched and validation-on-blur policy in one call.
  * - `getSnapshot` and `subscribe` publish presentation and the submit values.
  * - `reset` backs the native `reset` event when no `resetHandler` is set; the form
  *   then rewrites controls from the store.
  * - `validate` runs on submit when no `submitHandler` is set and decides whether
  *   `rui-submit` or `rui-invalid` follows.
- * - `releaseNative` drops the fact held for a control that disappeared.
  *
  * Not required: `checkValidity()` and `touched` / `dirty` in the snapshot (the
  * store keeps them for its own policy). A store may still expose them.
@@ -105,7 +111,7 @@ export interface FormStateStore {
 	 * Mark `path` touched and run any validation the store ties to blur. Notifies
 	 * when state changed.
 	 */
-	blur(path: string, options?: FormStateNativeOptions): void;
+	blur(path: string, options?: FormStateBlurOptions): void;
 	/** Stable snapshot; the same object until state changes. */
 	getSnapshot(): FormStateStoreSnapshot;
 	/** Register a change listener; returns its unsubscribe. */
@@ -123,13 +129,9 @@ export interface FormStateStore {
 	 * whether or not it shows it. Warnings do not count.
 	 *
 	 * @remarks The form calls it without paths on submit. `options.native` holds the
-	 * current validity of every control it registers, `null` for a valid one, so the
-	 * store validates against facts as fresh as the call.
+	 * current validity of every control it registers, `null` for a valid one, and is
+	 * authoritative: the store drops any fact it held for a path the record omits,
+	 * such as a control that was removed.
 	 */
 	validate(paths?: string[], options?: { native?: Record<string, NativeValidity | null> }): Promise<boolean>;
-	/**
-	 * Drop the native fact held for `path`, because the control that reported it was
-	 * removed or moved to another path.
-	 */
-	releaseNative(path: string): void;
 }

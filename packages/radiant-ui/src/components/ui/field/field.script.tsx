@@ -26,6 +26,8 @@ import {
 	readControlValue,
 	readControlValidity,
 	RUI_FIELD_DEFAULT_VALUE_ATTR,
+	RUI_FIELD_ERROR_ATTR,
+	RUI_FIELD_WARNING_ATTR,
 	RUI_FIELD_MANAGED_ATTR,
 	writeControlValue,
 	wireFieldControlName,
@@ -175,8 +177,24 @@ export class RuiField extends RadiantElement {
 	private readonly controlObserver = new MutationController({
 		getTarget: () => this,
 		options: { childList: true, subtree: true },
-		onMutate: () => this.syncField(),
+		onMutate: (records) => {
+			if (!records.every((record) => this.isOwnPresentationRegion(record.target))) {
+				this.syncField();
+			}
+		},
 	});
+
+	/**
+	 * Whether a mutation happened inside a region this field writes its own error or
+	 * warning text into.
+	 *
+	 * @remarks The field must not react to its own presentation: writing the text is a
+	 * mutation, and reacting to it would write again, forever.
+	 */
+	private isOwnPresentationRegion(node: Node): boolean {
+		const element = node instanceof Element ? node : node.parentElement;
+		return element?.closest(`[${RUI_FIELD_ERROR_ATTR}], [${RUI_FIELD_WARNING_ATTR}]`) != null;
+	}
 
 	/**
 	 * @remarks Registers SSR-prep rules on `fieldProvider` so hydrated fields recover them after a
@@ -252,7 +270,7 @@ export class RuiField extends RadiantElement {
 			return undefined;
 		}
 		const ctx = formCtx ?? this.currentFormContext;
-		return ctx?.fields[fieldName]?.error;
+		return ctx && Object.hasOwn(ctx.fields, fieldName) ? ctx.fields[fieldName]?.error : undefined;
 	}
 
 	private resolveInvalid(formCtx?: FormContextValue): boolean {
@@ -267,7 +285,7 @@ export class RuiField extends RadiantElement {
 			return false;
 		}
 		const ctx = formCtx ?? this.currentFormContext;
-		return ctx?.fields[fieldName]?.invalid ?? false;
+		return ctx && Object.hasOwn(ctx.fields, fieldName) ? (ctx.fields[fieldName]?.invalid ?? false) : false;
 	}
 
 	private buildRegistration(name: string): FieldRegistration {
@@ -588,7 +606,7 @@ export class RuiField extends RadiantElement {
 
 	private syncWarningPresentation(warning: string | undefined): void {
 		for (const region of findFieldWarningElements(this)) {
-			region.textContent = warning ?? '';
+			setTextIfChanged(region, warning ?? '');
 			region.hidden = !warning;
 			if (warning) region.removeAttribute('hidden');
 		}
@@ -599,12 +617,13 @@ export class RuiField extends RadiantElement {
 		if (!fieldName) {
 			return undefined;
 		}
-		return (formCtx ?? this.currentFormContext)?.fields[fieldName]?.warning;
+		const fields = (formCtx ?? this.currentFormContext)?.fields;
+		return fields && Object.hasOwn(fields, fieldName) ? fields[fieldName]?.warning : undefined;
 	}
 
 	private syncErrorPresentation(errorMessage: string | undefined): void {
 		for (const error of findFieldErrorElements(this)) {
-			error.textContent = errorMessage ?? '';
+			setTextIfChanged(error, errorMessage ?? '');
 			error.hidden = !errorMessage;
 			if (errorMessage) error.removeAttribute('hidden');
 		}
@@ -614,6 +633,13 @@ export class RuiField extends RadiantElement {
 		const previous = this.fieldProvider.getContext();
 		if (isSameFieldContext(previous, next)) return;
 		this.fieldProvider.setContext(next);
+	}
+}
+
+/** Assigning `textContent` is a mutation even for the same text, so write only on a change. */
+function setTextIfChanged(element: HTMLElement, text: string): void {
+	if (element.textContent !== text) {
+		element.textContent = text;
 	}
 }
 

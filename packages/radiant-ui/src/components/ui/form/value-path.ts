@@ -11,7 +11,7 @@ export function getPath(tree: unknown, path: string): unknown {
 		if (!isBranch(node)) {
 			return undefined;
 		}
-		node = Reflect.get(node, key);
+		node = Object.hasOwn(node, key) ? Reflect.get(node, key) : undefined;
 	}
 	return node;
 }

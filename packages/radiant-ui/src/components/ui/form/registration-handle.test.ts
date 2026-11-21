@@ -41,7 +41,6 @@ function createHostStore(initial: Record<string, unknown>) {
 		async validate() {
 			return true;
 		},
-		releaseNative() {},
 	};
 	return store;
 }

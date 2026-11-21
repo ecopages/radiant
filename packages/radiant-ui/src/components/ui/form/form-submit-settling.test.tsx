@@ -42,7 +42,6 @@ function createThrowingStore(error: Error): FormStateStore {
 		async validate() {
 			throw error;
 		},
-		releaseNative() {},
 	};
 }
 

@@ -78,6 +78,7 @@ type BoundField = {
  */
 export class InjectedFormDriver implements FormDriver {
 	private readonly fields = new Map<string, BoundField>();
+	private readonly pendingFactReports = new Set<BoundField>();
 	private readonly listeners = new Set<() => void>();
 	private revision = 0;
 	private unsubscribeStore: (() => void) | undefined;
@@ -144,8 +145,37 @@ export class InjectedFormDriver implements FormDriver {
 				entry.baseline = entry.registration.getValue();
 			} else {
 				this.writeToControl(entry, next);
+				this.scheduleFactReport(entry);
 			}
 		}
+	}
+
+	/**
+	 * Report a control's fact again after the store wrote a value into it.
+	 *
+	 * @remarks A store write is not a user change, so nothing else tells the store
+	 * what the control now says about its new value: `setValue('email', 'not-an-email')`
+	 * would otherwise leave `typeMismatch` unreported. The report runs after the
+	 * notification that wrote the control, not inside it, and sends the value the
+	 * store already holds with the fresh fact; the store treats a new fact with an
+	 * unchanged value as a change.
+	 */
+	private scheduleFactReport(entry: BoundField): void {
+		this.pendingFactReports.add(entry);
+		if (this.pendingFactReports.size > 1) {
+			return;
+		}
+		queueMicrotask(() => {
+			const entries = [...this.pendingFactReports];
+			this.pendingFactReports.clear();
+			for (const pending of entries) {
+				if (pending.live && this.fields.get(pending.name) === pending) {
+					this.state.setValue(pending.name, this.state.getValue(pending.name), {
+						native: this.factOf(pending),
+					});
+				}
+			}
+		});
 	}
 
 	getRegisteredFieldNames(): string[] {
@@ -194,15 +224,7 @@ export class InjectedFormDriver implements FormDriver {
 		if (this.fields.get(entry.name) === entry) {
 			this.fields.delete(entry.name);
 		}
-		this.releaseUnheld(entry.name);
 		this.bump();
-	}
-
-	/** Release the fact held for `name` once no live control is bound to it. */
-	private releaseUnheld(name: string): void {
-		if (!this.fields.has(name)) {
-			this.state.releaseNative(name);
-		}
 	}
 
 	/**
@@ -221,7 +243,6 @@ export class InjectedFormDriver implements FormDriver {
 		entry.name = to;
 		this.fields.set(to, entry);
 		this.seed(entry);
-		this.releaseUnheld(from);
 		this.bump();
 	}
 
@@ -229,7 +250,7 @@ export class InjectedFormDriver implements FormDriver {
 
 	/** The store decides which errors show, so every error in the snapshot is presented. */
 	shouldDisplayFieldError(name: string): boolean {
-		return this.errors[name] !== undefined;
+		return Object.hasOwn(this.errors, name);
 	}
 
 	/**
@@ -251,7 +272,7 @@ export class InjectedFormDriver implements FormDriver {
 	}
 
 	/** The current fact of every registered control, `null` for a valid one. */
-	private allFacts(): Record<string, NativeValidity | null> {
+	readNativeValidity(): Record<string, NativeValidity | null> {
 		const facts: Record<string, NativeValidity | null> = {};
 		for (const [name, entry] of this.fields) {
 			facts[name] = this.factOf(entry);
@@ -298,7 +319,7 @@ export class InjectedFormDriver implements FormDriver {
 
 	/** Validate through the store, handing it the current fact of every control. */
 	validate(paths?: string[]): Promise<boolean> {
-		return this.state.validate(paths, { native: this.allFacts() });
+		return this.state.validate(paths, { native: this.readNativeValidity() });
 	}
 
 	async handleFieldChange(name: string): Promise<void> {
@@ -315,10 +336,14 @@ export class InjectedFormDriver implements FormDriver {
 		if (!entry) {
 			return;
 		}
+		const native = this.factOf(entry);
 		if (this.isChanged(entry)) {
-			this.writeControlValue(name, entry);
+			const value = entry.registration.getValue();
+			entry.baseline = value;
+			this.state.blur(name, { value, native });
+		} else {
+			this.state.blur(name, { native });
 		}
-		this.state.blur(name, { native: this.factOf(entry) });
 		this.bump();
 	}
 
@@ -345,14 +370,11 @@ export class InjectedFormDriver implements FormDriver {
 	}
 
 	/**
-	 * Cancel a pending post-reset write and release the facts held for the controls
-	 * this driver bound; call before leaving the store.
+	 * Cancel pending writes; call before leaving the store.
 	 */
 	dispose(): void {
 		clearTimeout(this.resetTimer);
-		for (const name of this.fields.keys()) {
-			this.state.releaseNative(name);
-		}
+		this.pendingFactReports.clear();
 	}
 
 	/** Focus the control registered for `path`; nothing happens for a path with no control. */

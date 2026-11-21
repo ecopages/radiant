@@ -1,5 +1,6 @@
 import { createRulesResolver } from './resolvers';
 import type {
+	FormStateBlurOptions,
 	FormStateNativeOptions,
 	FormStateStore,
 	FormStateStoreSnapshot,
@@ -52,7 +53,7 @@ type FieldState = { touched?: boolean; dirty?: boolean; error?: FieldError };
 
 function withKey<R extends Partial<Record<string, unknown>>>(record: R, key: string, value: unknown): R {
 	if (value === undefined) {
-		if (!(key in record)) {
+		if (!Object.hasOwn(record, key)) {
 			return record;
 		}
 		const { [key]: _removed, ...rest } = record;
@@ -128,9 +129,26 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		this.mergedErrors = merged;
 	}
 
+	/** The current native validity of every registered control, `null` for a valid one. */
+	readNativeValidity(): Record<string, NativeValidity | null> {
+		const facts: Record<string, NativeValidity | null> = {};
+		for (const name of this.fields.keys()) {
+			const error = this.readNativeError(name);
+			facts[name] = error
+				? { type: error.type ?? 'customError', params: error.params, message: error.message }
+				: null;
+		}
+		return facts;
+	}
+
 	/** The built-in store has no source of warnings. */
 	get warnings(): Partial<Record<string, FieldError>> {
 		return NO_WARNINGS;
+	}
+
+	/** Reads a map by name without reaching `Object.prototype`, so a field named `constructor` is not an error. */
+	private ownRead<V>(map: Partial<Record<string, V>>, name: string): V | undefined {
+		return Object.hasOwn(map, name) ? map[name] : undefined;
 	}
 
 	getValue(path: string): unknown {
@@ -154,8 +172,10 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	}
 
 	async validate(paths?: string[], options?: { native?: Record<string, NativeValidity | null> }): Promise<boolean> {
-		for (const [path, fact] of Object.entries(options?.native ?? {})) {
-			this.reportNative(path, fact);
+		if (options?.native) {
+			this.reportedNative = Object.fromEntries(
+				Object.entries(options.native).filter((entry): entry is [string, NativeValidity] => entry[1] !== null),
+			);
 		}
 		let valid = true;
 		if (paths) {
@@ -166,7 +186,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 			valid = await this.validateAll();
 		}
 		const scope = paths ?? Object.keys(this.mergedErrors);
-		return valid && scope.every((path) => !this.mergedErrors[path]);
+		return valid && scope.every((path) => !this.ownRead(this.mergedErrors, path));
 	}
 
 	/**
@@ -305,9 +325,9 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 
 	private readFieldState(name: string): FieldState {
 		return {
-			touched: this.touched[name],
-			dirty: this.dirty[name],
-			error: this.ownErrors[name],
+			touched: this.ownRead(this.touched, name),
+			dirty: this.ownRead(this.dirty, name),
+			error: this.ownRead(this.ownErrors, name),
 		};
 	}
 
@@ -375,7 +395,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	private clearSourceErrorsAt(name: string): void {
 		let changed = false;
 		for (const [source, errors] of this.sourceErrors) {
-			if (name in errors) {
+			if (Object.hasOwn(errors, name)) {
 				const { [name]: _removed, ...rest } = errors;
 				if (Object.keys(rest).length > 0) {
 					this.sourceErrors.set(source, rest);
@@ -421,7 +441,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 
 	/** The message to show, or `undefined` when the field has no error or its error has no message. */
 	getFieldError(name: string): string | undefined {
-		return this.errors[name]?.message || undefined;
+		return this.ownRead(this.errors, name)?.message || undefined;
 	}
 
 	getState(): FormState<T> {
@@ -442,7 +462,10 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		const values = this.getValues();
 		const result = await this.resolver(values, { fields: this.buildResolverFields() }, { names: [name] });
 		const next = { ...this.ownErrors };
-		const resolverError: FieldError | undefined = (result.errors as Partial<Record<string, FieldError>>)[name];
+		const resolverError: FieldError | undefined = this.ownRead(
+			result.errors as Partial<Record<string, FieldError>>,
+			name,
+		);
 		const nativeError = resolverError?.message ? undefined : this.readNativeError(name);
 		const error = nativeError ?? resolverError;
 		if (error) {
@@ -460,7 +483,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		const result = await this.resolver(values, { fields: this.buildResolverFields() }, {});
 		const errors = { ...result.errors } as Partial<Record<string, FieldError>>;
 		for (const name of new Set([...this.fields.keys(), ...Object.keys(this.reportedNative)])) {
-			const resolverError = errors[name];
+			const resolverError = this.ownRead(errors, name);
 			const native = resolverError?.message ? undefined : this.readNativeError(name);
 			if (native) {
 				errors[name] = native;
@@ -481,14 +504,10 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	private reportNative(path: string, fact: NativeValidity | null | undefined): void {
 		if (fact) {
 			this.reportedNative = { ...this.reportedNative, [path]: fact };
-		} else if (path in this.reportedNative) {
+		} else if (Object.hasOwn(this.reportedNative, path)) {
 			const { [path]: _gone, ...rest } = this.reportedNative;
 			this.reportedNative = rest;
 		}
-	}
-
-	releaseNative(path: string): void {
-		this.reportNative(path, null);
 	}
 
 	/**
@@ -497,7 +516,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	 * calls `checkValidity()`, which fires an `invalid` event.
 	 */
 	private readNativeError(name: string): FieldError | undefined {
-		const reported = this.fields.has(name) ? undefined : this.reportedNative[name];
+		const reported = this.fields.has(name) ? undefined : this.ownRead(this.reportedNative, name);
 		if (reported) {
 			return { type: reported.type, params: reported.params, message: reported.message || undefined };
 		}
@@ -523,7 +542,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 			case 'onBlur':
 				return trigger === 'blur';
 			case 'onTouched':
-				return trigger === 'blur' && Boolean(this.touched[name]);
+				return trigger === 'blur' && Boolean(this.ownRead(this.touched, name));
 			case 'onSubmit':
 				return false;
 			default:
@@ -541,8 +560,10 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	}
 
 	/** Interface form of {@link FormStore.handleFieldBlur}; validation runs per `mode`. */
-	blur(path: string, options?: FormStateNativeOptions): void {
-		if (options?.native !== undefined) {
+	blur(path: string, options?: FormStateBlurOptions): void {
+		if (options && 'value' in options) {
+			this.setValue(path, options.value, { native: options.native });
+		} else if (options?.native !== undefined) {
 			this.reportNative(path, options.native);
 		}
 		this.handleFieldBlur(path).catch((error: unknown) => reportError(error));
@@ -559,7 +580,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 
 	/** Whether a field's validation message should be shown in the UI (RHF-style). */
 	shouldDisplayFieldError(name: string): boolean {
-		if (!this.errors[name]) {
+		if (!this.ownRead(this.errors, name)) {
 			return false;
 		}
 		if (this.isSubmitted) {
@@ -568,12 +589,12 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 
 		switch (this.mode) {
 			case 'all':
-				return Boolean(this.dirty[name] || this.touched[name]);
+				return Boolean(this.ownRead(this.dirty, name) || this.ownRead(this.touched, name));
 			case 'onChange':
-				return Boolean(this.dirty[name]);
+				return Boolean(this.ownRead(this.dirty, name));
 			case 'onBlur':
 			case 'onTouched':
-				return Boolean(this.touched[name]);
+				return Boolean(this.ownRead(this.touched, name));
 			case 'onSubmit':
 			default:
 				return false;
@@ -651,7 +672,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	}
 
 	private buildResolverFields(): Record<string, { rules?: FieldRules }> {
-		const fields: Record<string, { rules?: FieldRules }> = {};
+		const fields: Record<string, { rules?: FieldRules }> = Object.create(null);
 		for (const [name, field] of this.fields) {
 			const rules = field.getRules?.() ?? field.rules;
 			fields[name] = { rules };

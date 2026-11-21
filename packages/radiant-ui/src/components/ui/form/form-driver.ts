@@ -1,3 +1,4 @@
+import type { NativeValidity } from './form-state-store';
 import type { FieldError, FieldRegistration, FieldRegistrationHandle, FieldValues, RegisterOptions } from './types';
 
 /**
@@ -28,4 +29,6 @@ export interface FormDriver {
 		onInvalid?: (errors: Partial<Record<string, FieldError>>, error?: unknown) => void,
 	): Promise<void>;
 	reset(): void;
+	/** The current native validity of every bridged control, `null` for a valid one. */
+	readNativeValidity(): Record<string, NativeValidity | null>;
 }

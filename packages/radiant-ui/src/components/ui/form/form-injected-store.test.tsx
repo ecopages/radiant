@@ -73,7 +73,13 @@ type TestStoreOptions = {
 
 type TestStore = FormStateStore & { setHostErrors(errors: Record<string, FieldError>): void };
 
-type Call = { kind: 'setValue' | 'blur' | 'validate' | 'releaseNative'; path?: string; native?: unknown };
+type Call = {
+	kind: 'setValue' | 'blur' | 'validate';
+	path?: string;
+	native?: unknown;
+	value?: unknown;
+	hasValue?: boolean;
+};
 
 /**
  * A host store that owns validation timing and display: nested values by dotted
@@ -149,8 +155,17 @@ function createTestStore(initial: Record<string, unknown>, options: TestStoreOpt
 			publish();
 		},
 		blur(path, opts) {
-			calls.push({ kind: 'blur', path, native: opts?.native });
+			calls.push({
+				kind: 'blur',
+				path,
+				native: opts?.native,
+				hasValue: opts ? 'value' in opts : false,
+				value: opts?.value,
+			});
 			blurCalls.push(path);
+			if (opts && 'value' in opts) {
+				values = writePath(values, path, opts.value);
+			}
 			if (opts?.native !== undefined) {
 				setFact(path, opts.native);
 			}
@@ -172,8 +187,10 @@ function createTestStore(initial: Record<string, unknown>, options: TestStoreOpt
 		},
 		async validate(paths, opts) {
 			calls.push({ kind: 'validate', native: opts?.native });
-			for (const [path, fact] of Object.entries(opts?.native ?? {})) {
-				setFact(path, fact);
+			if (opts?.native) {
+				native = Object.fromEntries(
+					Object.entries(opts.native).filter((entry): entry is [string, NativeValidity] => entry[1] !== null),
+				);
 			}
 			for (const path of paths ?? []) {
 				shown.add(path);
@@ -181,10 +198,6 @@ function createTestStore(initial: Record<string, unknown>, options: TestStoreOpt
 			allShown ||= !paths;
 			publish();
 			return Object.keys(allErrors()).filter((path) => !paths || paths.includes(path)).length === 0;
-		},
-		releaseNative(path) {
-			calls.push({ kind: 'releaseNative', path });
-			setFact(path, null);
 		},
 		setHostErrors(errors) {
 			hostErrors = errors;
@@ -587,7 +600,11 @@ describe('rui-form with an injected store', () => {
 		store.setValue('echo', 'b');
 		await settle();
 
-		expect(setValue).toHaveBeenCalledTimes(1);
+		expect(setValue.mock.calls.map(([path, value]) => [path, value])).toEqual([
+			['echo', 'b'],
+			['echo', 'b'],
+		]);
+		expect(setValue.mock.calls[1]?.[2]).toEqual({ native: null });
 	});
 
 	it('writes uncommitted control input on submit before validating', async () => {
@@ -768,19 +785,6 @@ describe('rui-form with an injected store', () => {
 		await settle();
 
 		expect(store.getSnapshot().errors.code).toBeUndefined();
-	});
-
-	it('withdraws its native validity from the host store while detached', async () => {
-		const { store, facts } = createTestStore({ code: '' });
-		const { form, nativeForm, face } = await mountCode(store);
-		face.internals.setValidity({ valueMissing: true }, 'Enter the code');
-		nativeForm.requestSubmit();
-		await settle();
-		expect(store.getSnapshot().errors.code).toBeDefined();
-
-		form.remove();
-
-		expect(facts()).toEqual({});
 	});
 
 	it('does not write an untouched empty control over a store value of undefined on submit', async () => {
@@ -1267,18 +1271,172 @@ describe('rui-form with an injected store', () => {
 			});
 		});
 
-		it('releases the fact of a control that is removed or moved', async () => {
+		it('keeps each control fact on its own path through a row swap and a removal', async () => {
+			const { store, calls, facts } = createTestStore({ a: 'x', b: '' });
+			const host = document.createElement('div');
+			document.body.append(host);
+			const root = createRoot(host);
+			root.render(
+				<RuiForm store={store}>
+					<RuiField name="a">
+						<RuiInput required />
+					</RuiField>
+					<RuiField name="b">
+						<RuiInput type="email" required />
+					</RuiField>
+				</RuiForm>,
+			);
+			cleanup.push(() => {
+				root.unmount();
+				host.remove();
+			});
+			await customElements.whenDefined('rui-field');
+			await flushRender();
+			const [first, second] = Array.from(host.querySelectorAll('rui-field')) as Array<
+				HTMLElement & { name: string }
+			>;
+
+			first.name = 'b';
+			second.name = 'a';
+			await settle();
+			calls.length = 0;
+			host.querySelector('form')?.requestSubmit();
+			await settle();
+
+			expect(facts()).toMatchObject({ b: { type: 'valueMissing' }, a: { type: 'typeMismatch' } });
+
+			first.remove();
+			await settle();
+			host.querySelector('form')?.requestSubmit();
+			await settle();
+			expect(Object.keys(facts())).toEqual(['a']);
+		});
+
+		it('sends a blur with the changed value in the same call', async () => {
 			const { store, calls } = createTestStore({ email: '', extra: '' });
-			const { extraField, emailField } = await mountEmail(store);
+			const { email } = await mountEmail(store);
+			email.focus();
+			email.value = 'a@b.co';
 			calls.length = 0;
 
-			extraField.remove();
+			email.blur();
 			await settle();
-			expect(calls).toContainEqual({ kind: 'releaseNative', path: 'extra' });
 
-			(emailField as HTMLElement & { name: string }).name = 'moved';
+			expect(calls.filter((call) => call.kind === 'setValue')).toHaveLength(0);
+			expect(calls.filter((call) => call.kind === 'blur')).toEqual([
+				expect.objectContaining({ path: 'email', hasValue: true, value: 'a@b.co', native: null }),
+			]);
+			expect(store.getValue('email')).toBe('a@b.co');
+		});
+
+		it('sends a blur without a value when the user changed nothing', async () => {
+			const { store, calls } = createTestStore({ email: '', extra: '' });
+			const { email } = await mountEmail(store);
+			email.focus();
+			calls.length = 0;
+
+			email.blur();
 			await settle();
-			expect(calls).toContainEqual({ kind: 'releaseNative', path: 'email' });
+
+			expect(calls.find((call) => call.kind === 'blur')).toMatchObject({ hasValue: false });
+		});
+
+		it('exposes the facts of every bridged control on the form and on the submit context', async () => {
+			const { store } = createTestStore({ email: '', extra: '' });
+			const { form, host } = await mountEmail(store);
+			let given: Record<string, unknown> = {};
+			form.submitHandler = (context) => {
+				given = context.readNativeValidity();
+			};
+
+			const direct = form.readNativeValidity();
+			host.querySelector('form')?.requestSubmit();
+			await settle();
+
+			expect(direct).toEqual({ email: expect.objectContaining({ type: 'valueMissing' }), extra: null });
+			expect(given).toEqual(direct);
+		});
+
+		it('reports the fact again after a store write reaches a control', async () => {
+			const { store, calls, facts } = createTestStore({ email: '', extra: '' });
+			await mountEmail(store);
+			await settle();
+			calls.length = 0;
+
+			store.setValue('email', 'not-an-email');
+			await settle();
+
+			expect(calls.filter((call) => call.kind === 'setValue')).toHaveLength(2);
+			expect(calls.at(-1)).toMatchObject({
+				kind: 'setValue',
+				path: 'email',
+				native: expect.objectContaining({ type: 'typeMismatch' }),
+			});
+			expect(facts().email?.type).toBe('typeMismatch');
+		});
+
+		it('settles when a field has a pending control write and no recognised control', async () => {
+			const { store } = createTestStore({ x: 'v' });
+			store.setHostErrors({ x: { type: 'server', message: 'Taken' } });
+			const host = document.createElement('div');
+			document.body.append(host);
+			const root = createRoot(host);
+			root.render(
+				<RuiForm store={store}>
+					<RuiField name="x">
+						<input />
+						<RuiFieldError />
+					</RuiField>
+				</RuiForm>,
+			);
+			cleanup.push(() => {
+				root.unmount();
+				host.remove();
+			});
+			await customElements.whenDefined('rui-field');
+			await flushRender();
+			let mutations = 0;
+			const observer = new MutationObserver((records) => {
+				mutations += records.length;
+			});
+			observer.observe(host, { childList: true, subtree: true, characterData: true });
+
+			await new Promise((resolve) => setTimeout(resolve, 300));
+			observer.disconnect();
+
+			expect(mutations).toBeLessThan(5);
+			expect(findFieldError(host.querySelector('rui-field') as HTMLElement)?.textContent).toBe('Taken');
+		});
+
+		it('does not mark fields named like Object.prototype members as invalid', async () => {
+			const { store } = createTestStore({ constructor: '', toString: '', valueOf: '' });
+			const host = document.createElement('div');
+			document.body.append(host);
+			const root = createRoot(host);
+			root.render(
+				<RuiForm store={store}>
+					<RuiField name="constructor">
+						<RuiInput />
+						<RuiFieldError />
+					</RuiField>
+					<RuiField name="toString">
+						<RuiInput />
+						<RuiFieldError />
+					</RuiField>
+				</RuiForm>,
+			);
+			cleanup.push(() => {
+				root.unmount();
+				host.remove();
+			});
+			await customElements.whenDefined('rui-field');
+			await flushRender();
+			await settle();
+
+			for (const field of Array.from(host.querySelectorAll('rui-field')) as HTMLElement[]) {
+				expect(findFieldControl(field)?.getAttribute('aria-invalid')).not.toBe('true');
+				expect(findFieldError(field)?.hidden).toBe(true);
+			}
 		});
 
 		it('presents a warning without invalidating the field or blocking submit', async () => {
@@ -1317,7 +1475,7 @@ describe('rui-form with an injected store', () => {
 
 		it('uses formatError for an issue without a message and falls back to the message', async () => {
 			const { store } = createTestStore({ email: 'a@b.co', extra: '' });
-			const formatError = vi.fn((issue: { type: string; params?: Record<string, unknown> }) =>
+			const formatError = vi.fn((issue: { type?: string; params?: Record<string, unknown> }) =>
 				issue.type === 'min' ? `Enter at least ${issue.params?.min}` : '',
 			);
 			const { emailField } = await mountEmail(store, { formatError });
@@ -1325,7 +1483,9 @@ describe('rui-form with an injected store', () => {
 			await settle();
 
 			expect(findFieldError(emailField)?.textContent).toBe('Enter at least 3');
-			expect(formatError).toHaveBeenCalledWith(expect.objectContaining({ type: 'min', params: { min: 3 } }));
+			expect(formatError).toHaveBeenCalledWith(expect.objectContaining({ type: 'min', params: { min: 3 } }), {
+				path: 'email',
+			});
 
 			store.setHostErrors({ email: { type: 'other', message: 'Plain message' } });
 			await settle();

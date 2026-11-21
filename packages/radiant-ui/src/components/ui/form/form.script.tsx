@@ -11,7 +11,7 @@ import {
 } from './form-context';
 import { FormStore } from './form-store';
 import type { FormDriver } from './form-driver';
-import type { FormIssue, FormStateStore } from './form-state-store';
+import type { FormIssue, FormStateStore, NativeValidity } from './form-state-store';
 import { InjectedFormDriver } from './injected-form-driver';
 import type {
 	FieldError,
@@ -63,6 +63,11 @@ export type RuiFormSubmitContext = {
 	 * `store.validate()` in a submit handler.
 	 */
 	validate: (paths?: string[]) => Promise<boolean>;
+	/**
+	 * The current native validity of every bridged control, `null` for a valid one,
+	 * to pass as `validate`'s `native` option when the host validates itself.
+	 */
+	readNativeValidity: () => Record<string, NativeValidity | null>;
 	/** Submits the native `<form>` to its `action` and `method`; does nothing when neither is set. */
 	submitNatively: () => void;
 };
@@ -97,7 +102,7 @@ export type RuiFormResetHandler = (context: RuiFormResetContext) => void | Promi
  *
  * @remarks A result that is empty falls back to the issue's `message`.
  */
-export type RuiFormFormatError = (issue: FormIssue) => string;
+export type RuiFormFormatError = (issue: FormIssue, field: { path: string }) => string;
 
 export type RuiFormSubmitDetail<T extends FieldValues = FieldValues> = {
 	values: T;
@@ -317,6 +322,7 @@ export class RuiForm extends RadiantElement {
 				store: this.drivenStore,
 				focus: (path) => driver.focus(path),
 				validate: (paths) => driver.validate(paths),
+				readNativeValidity: () => driver.readNativeValidity(),
 				submitNatively: () => {
 					if (this.getAttribute('action') !== null || this.getAttribute('method') !== null) {
 						this.queryNativeForm()?.submit();
@@ -481,19 +487,11 @@ export class RuiForm extends RadiantElement {
 	 * The text for an error or warning: `formatError` when set, else the issue's own
 	 * message. `undefined` when neither gives any, so the field is invalid with no text.
 	 */
-	private issueText(issue: FieldError | undefined): string | undefined {
+	private issueText(issue: FieldError | undefined, path: string): string | undefined {
 		if (!issue) {
 			return undefined;
 		}
-		const formatted =
-			typeof this.formatError === 'function'
-				? this.formatError({
-						type: issue.type ?? 'unknown',
-						params: issue.params,
-						message: issue.message,
-						source: issue.source,
-					})
-				: undefined;
+		const formatted = typeof this.formatError === 'function' ? this.formatError(issue, { path }) : undefined;
 		return formatted || issue.message || undefined;
 	}
 
@@ -501,10 +499,12 @@ export class RuiForm extends RadiantElement {
 		const fields: Record<string, FormFieldPresentation> = {};
 		for (const name of driver.getRegisteredFieldNames()) {
 			const show = driver.shouldDisplayFieldError(name);
+			const error = Object.hasOwn(driver.errors, name) ? driver.errors[name] : undefined;
+			const warning = Object.hasOwn(driver.warnings, name) ? driver.warnings[name] : undefined;
 			fields[name] = {
-				error: show ? this.issueText(driver.errors[name]) : undefined,
+				error: show ? this.issueText(error, name) : undefined,
 				invalid: show,
-				warning: this.issueText(driver.warnings[name]),
+				warning: this.issueText(warning, name),
 			};
 		}
 		return fields;
@@ -551,6 +551,14 @@ export class RuiForm extends RadiantElement {
 		if (typeof this.resolver === 'function') {
 			this.ownStore?.updateOptions({ resolver: this.resolver });
 		}
+	}
+
+	/**
+	 * The current native validity of every control the form bridges, `null` for a
+	 * valid one. Hosts that validate on their own pass it to the store's `validate`.
+	 */
+	readNativeValidity(): Record<string, NativeValidity | null> {
+		return this.ensureDriver().readNativeValidity();
 	}
 
 	@onUpdated(['formatError'])

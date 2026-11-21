@@ -505,17 +505,17 @@ function isControlledFieldError(node: HTMLElement): boolean {
 	return node.hasAttribute(RUI_FIELD_ERROR_CONTROLLED_ATTR);
 }
 
+/** The regions that show a field's warning, in document order. */
+export function findFieldWarningElements(root: HTMLElement): HTMLElement[] {
+	return Array.from(root.querySelectorAll<HTMLElement>(`[${RUI_FIELD_WARNING_ATTR}]`));
+}
+
 /**
  * Every error region the field owns (handles duplicate copies of slotted content).
  *
  * @remarks Skips controlled regions, whose content and visibility belong to their author; see
  * {@link findControlledFieldErrors}.
  */
-/** The regions that show a field's warning, in document order. */
-export function findFieldWarningElements(root: HTMLElement): HTMLElement[] {
-	return Array.from(root.querySelectorAll<HTMLElement>(`[${RUI_FIELD_WARNING_ATTR}]`));
-}
-
 export function findFieldErrorElements(root: HTMLElement): HTMLElement[] {
 	return collectFieldErrorRegions(root).filter((node) => !isControlledFieldError(node));
 }
