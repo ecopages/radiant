@@ -47,6 +47,16 @@ export type RuiFormInvalidDetail<T extends FieldValues = FieldValues> = {
 	error?: unknown;
 };
 
+/** A field's registration as the form tracks it across driver switches and renames. */
+type RegistrationEntry = {
+	registration: FieldRegistration;
+	unregister: () => void;
+	/** True while a driver renames the field, whose unregister function is not known yet. */
+	renaming?: boolean;
+	/** Set when the field was removed during its rename; the new unregister runs once it exists. */
+	removed?: boolean;
+};
+
 const noopUnregister = () => {};
 
 const initialFormActions: FormContextActions = {
@@ -152,28 +162,38 @@ export class RuiForm extends RadiantElement {
 	private ownStore: FormStore | undefined;
 	private drivenStore: FormStateStore | undefined;
 	private unsubscribeDriver?: () => void;
-	private readonly registrations = new Set<{ registration: FieldRegistration; unregister: () => void }>();
+	private readonly registrations = new Set<RegistrationEntry>();
 	private readonly nativeFormId = uniqueId('rui-form');
 	private lastPublishedRevision = -1;
 	private lastPublishedContext: FormContextValue | undefined;
 	private readonly presentationListeners = new Set<(value: FormContextValue) => void>();
 	private readonly formActions: FormContextActions = {
 		register: (registration) => {
-			const entry = { registration, unregister: this.ensureDriver().register(registration) };
+			const entry: RegistrationEntry = { registration, unregister: this.ensureDriver().register(registration) };
 			this.registrations.add(entry);
 			this.publishFormContext({ force: true });
 			return () => {
 				this.registrations.delete(entry);
+				if (entry.renaming) {
+					entry.removed = true;
+					return;
+				}
 				entry.unregister();
 				this.publishFormContext({ force: true });
 			};
 		},
 		renameField: (from, registration) => {
+			const entry = [...this.registrations].find((candidate) => candidate.registration.name === from);
+			if (entry) {
+				entry.renaming = true;
+				entry.registration = registration;
+			}
 			const unregister = this.ensureDriver().renameField(from, registration);
-			for (const entry of this.registrations) {
-				if (entry.registration.name === from) {
-					entry.registration = registration;
-					entry.unregister = unregister;
+			if (entry) {
+				entry.renaming = false;
+				entry.unregister = unregister;
+				if (entry.removed) {
+					unregister();
 				}
 			}
 			this.publishFormContext({ force: true });

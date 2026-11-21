@@ -236,6 +236,23 @@ describe('rui-field registration', () => {
 		expect(store.getRegisteredFieldNames()).toEqual([]);
 	});
 
+	it('removes the renamed registration when a subscriber removes the field during the rename', async () => {
+		const { form, field } = await mountRenamable(undefined);
+		const store = (
+			form as unknown as { formProvider: { getContext(): FormContextValue } }
+		).formProvider.getContext().store as FormStore;
+		store.subscribe(() => {
+			if (store.getRegisteredFieldNames().includes('renamed')) {
+				field.remove();
+			}
+		});
+
+		field.name = 'renamed';
+		await settle();
+
+		expect(store.getRegisteredFieldNames()).toEqual([]);
+	});
+
 	it('keeps a renamed field value under the new path in an injected store, and removes it cleanly', async () => {
 		const host = createHostStore();
 		host.values.old = 'kept';
