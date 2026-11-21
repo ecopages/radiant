@@ -196,36 +196,42 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 
 		entry.setValue(this.values[registration.name as keyof T]);
 
+		return this.unregisterFn(registration.name, entry);
+	}
+
+	private unregisterFn(name: string, entry: InternalField): () => void {
 		return () => {
-			const current = this.fields.get(registration.name);
-			if (current === entry) {
-				this.fields.delete(registration.name);
+			if (this.fields.get(name) === entry) {
+				this.fields.delete(name);
 				this.notify();
 			}
 		};
 	}
 
-	renameField(from: string, registration: FieldRegistration): void {
+	/** @returns The unregister function for the field under its new name. */
+	renameField(from: string, registration: FieldRegistration): () => void {
 		const existing = this.fields.get(from);
 		const to = registration.name;
-		if (!existing || from === to) {
-			if (!existing) {
-				this.register(registration);
-			}
-			return;
+		if (!existing) {
+			return this.register(registration);
+		}
+		if (from === to) {
+			return this.unregisterFn(to, existing);
 		}
 		this.fields.delete(from);
-		this.fields.set(to, {
+		const entry: InternalField = {
 			...registration,
 			rules: registration.rules ?? existing.rules,
 			defaultValue: hasDefault(registration.defaultValue) ? registration.defaultValue : existing.defaultValue,
 			getRules: registration.getRules ?? existing.getRules,
-		});
+		};
+		this.fields.set(to, entry);
 		this.values = moveKey(this.values, from, to);
 		this.touched = moveKey(this.touched, from, to);
 		this.dirty = moveKey(this.dirty, from, to);
 		this.errors = moveKey(this.ownErrors, from, to);
 		this.notify();
+		return this.unregisterFn(to, entry);
 	}
 
 	/**

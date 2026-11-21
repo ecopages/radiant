@@ -169,12 +169,13 @@ export class RuiForm extends RadiantElement {
 			};
 		},
 		renameField: (from, registration) => {
+			const unregister = this.ensureDriver().renameField(from, registration);
 			for (const entry of this.registrations) {
 				if (entry.registration.name === from) {
 					entry.registration = registration;
+					entry.unregister = unregister;
 				}
 			}
-			this.ensureDriver().renameField(from, registration);
 			this.publishFormContext({ force: true });
 		},
 		updateFieldOptions: (name, options) => {

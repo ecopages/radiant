@@ -136,7 +136,10 @@ export class InjectedFormDriver implements FormDriver {
 		const seeded = this.state.getValue(registration.name);
 		this.lastSeen.set(registration.name, seeded);
 		registration.setValue(seeded);
+		return this.unregisterFn(registration);
+	}
 
+	private unregisterFn(registration: FieldRegistration): () => void {
 		return () => {
 			if (this.fields.get(registration.name) === registration) {
 				this.fields.delete(registration.name);
@@ -147,18 +150,34 @@ export class InjectedFormDriver implements FormDriver {
 		};
 	}
 
-	renameField(from: string, registration: FieldRegistration): void {
-		if (!this.fields.has(from) || from === registration.name) {
-			return;
+	/**
+	 * @remarks The host owns values. A value the store already holds at the new path
+	 * is written into the control; otherwise the control's value moves to the new
+	 * path, and the old path stays as the host left it.
+	 */
+	renameField(from: string, registration: FieldRegistration): () => void {
+		const existing = this.fields.get(from);
+		if (!existing) {
+			return this.register(registration);
 		}
+		if (from === registration.name) {
+			return this.unregisterFn(existing);
+		}
+		const carried = existing.getValue();
 		this.fields.delete(from);
 		this.lastSeen.delete(from);
 		this.fields.set(registration.name, registration);
-		const seeded = this.state.getValue(registration.name);
-		this.lastSeen.set(registration.name, seeded);
-		registration.setValue(seeded);
+		const held = this.state.getValue(registration.name);
+		if (held === undefined) {
+			this.state.setValue(registration.name, carried);
+			this.lastSeen.set(registration.name, carried);
+		} else {
+			this.lastSeen.set(registration.name, held);
+			registration.setValue(held);
+		}
 		this.publishNativeErrors();
 		this.bump();
+		return this.unregisterFn(registration);
 	}
 
 	updateFieldOptions(_name: string, _options: RegisterOptions): void {}

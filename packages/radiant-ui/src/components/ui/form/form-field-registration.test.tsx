@@ -221,4 +221,63 @@ describe('rui-field registration', () => {
 		expect(input.value).toBe('kept');
 		expect(store.getRegisteredFieldNames()).toEqual(['renamed']);
 	});
+
+	it('removes the renamed registration when the renamed field is removed (built-in store)', async () => {
+		const { form, field } = await mountRenamable(undefined);
+		const store = (
+			form as unknown as { formProvider: { getContext(): FormContextValue } }
+		).formProvider.getContext().store as FormStore;
+
+		field.name = 'renamed';
+		await settle();
+		field.remove();
+		await settle();
+
+		expect(store.getRegisteredFieldNames()).toEqual([]);
+	});
+
+	it('keeps a renamed field value under the new path in an injected store, and removes it cleanly', async () => {
+		const host = createHostStore();
+		host.values.old = 'kept';
+		const { field, input } = await mountRenamable(host.store);
+		const ownedBy = host.store.subscribe(() => {});
+		ownedBy();
+
+		field.name = 'renamed';
+		await settle();
+
+		expect(input.value).toBe('kept');
+		expect(host.values.renamed).toBe('kept');
+
+		input.value = 'edited';
+		input.dispatchEvent(new Event('input', { bubbles: true }));
+		await settle();
+		expect(host.values.renamed).toBe('edited');
+
+		field.remove();
+		await settle();
+		input.dispatchEvent(new Event('input', { bubbles: true }));
+		expect(host.values.renamed).toBe('edited');
+	});
 });
+
+async function mountRenamable(store: FormStateStore | undefined) {
+	const host = document.createElement('div');
+	document.body.append(host);
+	const form = document.createElement('rui-form') as RuiFormElement;
+	if (store) {
+		form.store = store;
+	}
+	const nativeForm = document.createElement('form');
+	nativeForm.setAttribute('data-ref', 'form');
+	const field = document.createElement('rui-field') as RuiFieldElement;
+	field.name = 'old';
+	field.innerHTML = '<input data-rui-control type="text" />';
+	nativeForm.append(field);
+	form.append(nativeForm);
+	host.append(form);
+	cleanup.push(() => host.remove());
+	await customElements.whenDefined('rui-field');
+	await settle();
+	return { form, field, input: field.querySelector('input') as HTMLInputElement };
+}
