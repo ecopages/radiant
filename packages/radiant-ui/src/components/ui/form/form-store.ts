@@ -183,6 +183,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 
 		if (this.values[registration.name as keyof T] === undefined && hasDefault(entry.defaultValue)) {
 			this.values = { ...this.values, [registration.name]: entry.defaultValue } as T;
+			this.snapshot = undefined;
 		}
 
 		entry.setValue(this.values[registration.name as keyof T]);

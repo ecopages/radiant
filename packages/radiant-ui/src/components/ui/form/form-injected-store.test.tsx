@@ -537,4 +537,29 @@ describe('rui-form with an injected store', () => {
 
 		expect(title.value).toBe('Initial');
 	});
+
+	it('keeps store values in the controls after a real native form reset', async () => {
+		const { store } = createTestStore({ title: 'Initial', profile: { name: '' } });
+		const { title, host } = await mountInputs(store);
+		type(title, 'Typed');
+		await settle();
+
+		host.querySelector('form')?.reset();
+		await settle();
+
+		expect(store.getValue('title')).toBe('Initial');
+		expect(title.value).toBe('Initial');
+	});
+
+	it('writes a changed Date value into a control', async () => {
+		const { store } = createTestStore({ title: new Date('2026-01-01'), profile: { name: '' } });
+		const { title } = await mountInputs(store);
+		const written: unknown[] = [];
+		Object.defineProperty(title, 'value', { configurable: true, get: () => '', set: (v) => written.push(v) });
+
+		store.setValue('title', new Date('2026-02-01'));
+		await settle();
+
+		expect(written.length).toBeGreaterThan(0);
+	});
 });

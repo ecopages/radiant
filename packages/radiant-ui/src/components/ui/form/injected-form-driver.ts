@@ -5,27 +5,48 @@ import type { FieldError, FieldRegistration, FieldValues, RegisterOptions, Valid
 
 type DrivenField = FieldRegistration & { defaultValue?: unknown };
 
-/** Structural equality for control values; `null` and `undefined` both mean "no value". */
+/**
+ * Structural equality for control values; `null` and `undefined` both mean "no value".
+ *
+ * @remarks Dates compare by time. Any other non-plain object compares by identity,
+ * so it is rewritten rather than wrongly treated as equal.
+ */
 export function isSameValue(a: unknown, b: unknown): boolean {
 	if (Object.is(a, b) || (a == null && b == null)) {
 		return true;
 	}
 	if (Array.isArray(a) || Array.isArray(b)) {
-		return (
-			Array.isArray(a) &&
-			Array.isArray(b) &&
-			a.length === b.length &&
-			a.every((item, i) => isSameValue(item, b[i]))
-		);
+		return isSameArray(a, b);
 	}
-	if (typeof a === 'object' && typeof b === 'object' && a !== null && b !== null) {
-		const keys = Object.keys(a);
-		return (
-			keys.length === Object.keys(b).length &&
-			keys.every((key) => isSameValue(Reflect.get(a, key), Reflect.get(b, key)))
-		);
+	if (a instanceof Date || b instanceof Date) {
+		return a instanceof Date && b instanceof Date && a.getTime() === b.getTime();
 	}
-	return false;
+	return isSameRecord(a, b);
+}
+
+function isSameArray(a: unknown, b: unknown): boolean {
+	return (
+		Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every((item, i) => isSameValue(item, b[i]))
+	);
+}
+
+function isSameRecord(a: unknown, b: unknown): boolean {
+	if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) {
+		return false;
+	}
+	if (!isPlainObject(a) || !isPlainObject(b)) {
+		return false;
+	}
+	const keys = Object.keys(a);
+	return (
+		keys.length === Object.keys(b).length &&
+		keys.every((key) => isSameValue(Reflect.get(a, key), Reflect.get(b, key)))
+	);
+}
+
+function isPlainObject(value: object): boolean {
+	const prototype = Object.getPrototypeOf(value);
+	return prototype === Object.prototype || prototype === null;
 }
 
 /**
@@ -276,6 +297,16 @@ export class InjectedFormDriver implements FormDriver {
 		onInvalid?.(snapshot.errors);
 	}
 
+	/**
+	 * Write the store values once more after the current task.
+	 *
+	 * @remarks The `reset` event fires before the browser resets the form's controls
+	 * to their default attributes, which would overwrite the values just restored.
+	 */
+	private syncControlsAfterNativeReset(): void {
+		setTimeout(() => this.syncControls(true), 0);
+	}
+
 	/** Withdraw the `native` errors this driver contributed; call before leaving the store. */
 	dispose(): void {
 		if (Object.keys(this.nativeErrors).length > 0) {
@@ -295,6 +326,7 @@ export class InjectedFormDriver implements FormDriver {
 		this.dirty.clear();
 		this.submitted = false;
 		this.syncControls(true);
+		this.syncControlsAfterNativeReset();
 		this.bump();
 	}
 }

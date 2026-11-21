@@ -211,6 +211,15 @@ describe('FormStore', () => {
 			expect(first.values).toEqual({ title: 'A' });
 		});
 
+		it('reflects a field default seeded at registration in the snapshot', () => {
+			const store = new FormStore<{ title: string }>();
+			expect(store.getSnapshot().values).toEqual({});
+
+			store.register({ name: 'title', defaultValue: 'Seeded', getValue: () => 'Seeded', setValue: () => {} });
+
+			expect(store.getSnapshot().values).toEqual({ title: 'Seeded' });
+		});
+
 		it('validates the given paths or everything and reports validity', async () => {
 			const store = new FormStore<{ a: string; b: string }>();
 			for (const name of ['a', 'b']) {
