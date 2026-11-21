@@ -803,18 +803,18 @@ describe('rui-form with an injected store', () => {
 			const { form, host } = await mountInputs(store);
 			const nativeForm = host.querySelector('form') as HTMLFormElement;
 			const submit = vi.spyOn(nativeForm, 'submit').mockImplementation(() => {});
-			let submitNative: () => void = () => {};
+			let submitNatively: () => void = () => {};
 			form.submitHandler = (context) => {
-				submitNative = context.submitNative;
+				submitNatively = context.submitNatively;
 			};
 
 			nativeForm.requestSubmit();
 			await settle();
-			submitNative();
+			submitNatively();
 			expect(submit).not.toHaveBeenCalled();
 
 			form.setAttribute('action', '/save');
-			submitNative();
+			submitNatively();
 			expect(submit).toHaveBeenCalledTimes(1);
 		});
 

@@ -51,7 +51,7 @@ export type RuiFormSubmitContext = {
 	/** The injected store, with the controls' values and native validity already flushed into it. */
 	store: FormStateStore;
 	/** Submits the native `<form>` to its `action` and `method`; does nothing when neither is set. */
-	submitNative: () => void;
+	submitNatively: () => void;
 };
 
 /**
@@ -277,7 +277,7 @@ export class RuiForm extends RadiantElement {
 			driver.flush();
 			const context: RuiFormSubmitContext = {
 				store: this.drivenStore,
-				submitNative: () => {
+				submitNatively: () => {
 					if (this.getAttribute('action') !== null || this.getAttribute('method') !== null) {
 						this.queryNativeForm()?.submit();
 					}

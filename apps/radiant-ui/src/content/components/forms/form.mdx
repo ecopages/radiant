@@ -168,15 +168,19 @@ The store implements `FormStateStore`. Paths are the dotted `name` of each `RuiF
 
 | Control event      | The form does                                                                                                                                                                                       |
 | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Value change       | `setValue(path, value)` when the control differs from the store, then sends native validity with `setErrors('native', …)`.                                                                          |
+| Value change | `setValue(path, value)` when the control changed since the form last synchronised it, then sends native validity with `setErrors('native', …)`. |
 | Blur               | Writes the control value the same way, sends native validity, then `blur(path)`.                                                                                                                    |
-| Submit             | Writes every control value that differs from the store, sends native validity, awaits `validate()`, then emits `rui-submit` with the snapshot `values` or `rui-invalid` with the snapshot `errors`. |
+| Submit | Writes every control the user changed, sends native validity, then either calls `submitHandler` or awaits `validate()` and emits `rui-submit` with the snapshot `values` or `rui-invalid` with the snapshot `errors`. |
 | Native `reset`     | Calls `reset()`, then rewrites every control from the store, again after the browser's own reset.                                                                                                   |
 | Store notification | Writes a path's value into its control when that value changed since the form last saw it.                                                                                                          |
 
 Native validity is re-read from the controls each time, never replayed from an earlier read. The form presents exactly the errors in the snapshot. `validate()` must resolve `false` while any error from any source, including `native`, remains, and must not clear another source's errors.
 
 With an injected store the form ignores `mode`, `revalidate-mode`, field `defaultValue`, `defaultValues`, `defaultValuesData`, `resolver` and field `rules`, because the store owns each of them. A store therefore has no `touched`, `dirty`, `checkValidity()` or submission members to provide, and `rui-field` defaults are never written to it.
+
+The form compares a control with what the control read right after the form last synchronised it, not with the store, so a submit writes only what the user changed: an untouched empty text input reads `''`, and is not written over a store value of `undefined`.
+
+Set `submitHandler` to take over submit. The form flushes the changed control values and native validity into the store, then calls `submitHandler({ store, submitNatively })`: the host validates, counts attempts, focuses and submits, `submitNatively()` submits the native `<form>` to its `action` and `method`, and the form emits neither `rui-submit` nor `rui-invalid`. A rejection is reported with `reportError`. Without a handler the form validates and emits as above. `submitHandler` applies only with an injected store.
 
 A store write updates the matching control, and only when that path's value changed: an unrelated store notification leaves input a control holds but has not committed alone. Setting, replacing or clearing `store` re-registers every control: the new store's values are written into the controls, and clearing it returns to the form's own store in the state it left: its earlier values, errors, touched fields and submitted flag, or a fresh store built from `defaultValues` if it never existed. A form that is disconnected holds no subscription to the host store. The built-in store does not rewrite controls after a native `reset`; only the injected path does.
 
@@ -210,6 +214,7 @@ The form itself carries no color roles; fields, labels, and controls inside keep
 | --------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | `defaultValues` | `Partial<FieldValues>`                 | Initial values; fields read their state from the form store.                                                                   |
 | `resolver`      | `Resolver<T>`                          | Custom validation resolver (e.g. from `createRulesResolver`).                                                                  |
+| `submitHandler` | `(context: { store, submitNatively }) => void \| Promise<void>` | With an injected store, takes over submit after the form flushes control values and native validity. |
 | `store`         | `FormStateStore`                       | A host-owned form state store that owns validation timing, field state, defaults and errors; see Inject a form state store.    |
 | `onSubmit`      | `(values: T) => void \| Promise<void>` | Receives the store. Skips native navigation. When omitted, `action` or `method` POSTs listed controls after validation passes. |
 
@@ -229,9 +234,9 @@ Nested hosts: `rui-field` and each field's control host.
 
 ### Events
 
-| Event         | Detail                                             | Description                              |
-| ------------- | -------------------------------------------------- | ---------------------------------------- |
-| `rui-submit`  | `{ values: T }`                                    | Emitted when validation passes.          |
+| Event         | Detail                                                              | Description                                                                                                                                   |
+| ------------- | ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `rui-submit`  | `{ values: T }`                                                     | Emitted when validation passes.                                                                                                               |
 | `rui-invalid` | `{ errors: Record<string, { message?: string }>; error?: unknown }` | Emitted when validation fails on submit. `error` is set when a validator threw instead of reporting errors: the submission counts as invalid. |
 
 ### View helpers
