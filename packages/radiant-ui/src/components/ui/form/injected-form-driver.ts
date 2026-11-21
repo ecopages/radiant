@@ -34,11 +34,8 @@ function isSameRecord(a: unknown, b: unknown): boolean {
 	if (!isPlainObject(a) || !isPlainObject(b)) {
 		return false;
 	}
-	const keys = Object.keys(a);
-	return (
-		keys.length === Object.keys(b).length &&
-		keys.every((key) => isSameValue(Reflect.get(a, key), Reflect.get(b, key)))
-	);
+	const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
+	return [...keys].every((key) => isSameValue(Reflect.get(a, key), Reflect.get(b, key)));
 }
 
 function isPlainObject(value: object): boolean {
@@ -238,7 +235,6 @@ export class InjectedFormDriver implements FormDriver {
 		clearTimeout(this.resetTimer);
 		this.resetTimer = setTimeout(() => {
 			this.syncControls(true);
-			this.publishNativeErrors();
 			this.bump();
 		}, 0);
 		this.bump();

@@ -676,4 +676,50 @@ describe('rui-form with an injected store', () => {
 		await settle();
 		expect(second.listenerCount()).toBe(1);
 	});
+
+	it('writes an object value whose keys differ from the store value', async () => {
+		const { store } = createTestStore({ range: { end: '2026-01-01' } });
+		const form = document.createElement('rui-form') as RuiFormElement;
+		form.store = store;
+		const nativeForm = document.createElement('form');
+		nativeForm.setAttribute('data-ref', 'form');
+		const field = document.createElement('rui-field') as HTMLElement & { name: string };
+		field.name = 'range';
+		field.innerHTML = '<x-range></x-range>';
+		if (!customElements.get('x-range')) customElements.define('x-range', class extends HTMLElement {});
+		let current: unknown = { end: '2026-01-01' };
+		registerFieldControl('x-range', {
+			submission: 'none',
+			read: () => current,
+			write: (_host, value) => {
+				current = value;
+			},
+		});
+		nativeForm.append(field);
+		form.append(nativeForm);
+		document.body.append(form);
+		cleanup.push(() => form.remove());
+		await customElements.whenDefined('rui-field');
+		await flushRender();
+
+		current = { start: null };
+		nativeForm.requestSubmit();
+		await settle();
+
+		expect(store.getValue('range')).toEqual({ start: null });
+	});
+
+	it('leaves errors cleared after a native form reset until the next interaction', async () => {
+		const { store } = createTestStore({ code: '' });
+		const { nativeForm, face } = await mountCode(store);
+		face.internals.setValidity({ valueMissing: true }, 'Enter the code');
+		nativeForm.requestSubmit();
+		await settle();
+		expect(store.getSnapshot().errors.code).toBeDefined();
+
+		nativeForm.reset();
+		await settle();
+
+		expect(store.getSnapshot().errors.code).toBeUndefined();
+	});
 });
