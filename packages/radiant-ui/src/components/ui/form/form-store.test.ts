@@ -1,6 +1,7 @@
 import { describe, expect, expectTypeOf, it, vi } from 'vitest';
 import type { FormContextValue } from './form-context';
 import type { FormStateStore } from './form-state-store';
+import type { RuiFormInvalidDetail } from './form.script';
 import { FormStore } from './form-store';
 
 describe('FormStore', () => {
@@ -195,6 +196,9 @@ describe('FormStore', () => {
 		it('satisfies the interface and is the type of the form context store', () => {
 			expectTypeOf<FormStore>().toExtend<FormStateStore>();
 			expectTypeOf<FormContextValue['store']>().toEqualTypeOf<FormStateStore | undefined>();
+			expectTypeOf<RuiFormInvalidDetail<{ profile: { name: string } }>['errors']['profile.name']>().toEqualTypeOf<
+				{ message?: string } | undefined
+			>();
 		});
 
 		it('reads values and keeps a snapshot stable until state changes', () => {

@@ -67,8 +67,8 @@ export type RuiFormSubmitDetail<T extends FieldValues = FieldValues> = {
 	values: T;
 };
 
-export type RuiFormInvalidDetail<T extends FieldValues = FieldValues> = {
-	errors: Partial<Record<keyof T, { message?: string }>>;
+export type RuiFormInvalidDetail<_T extends FieldValues = FieldValues> = {
+	errors: Partial<Record<string, { message?: string }>>;
 	/** Set when validation threw instead of reporting errors; the submission is invalid. */
 	error?: unknown;
 };
