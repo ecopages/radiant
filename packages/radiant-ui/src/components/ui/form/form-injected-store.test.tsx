@@ -1302,6 +1302,19 @@ describe('rui-form with an injected store', () => {
 			expect(onSubmit).toHaveBeenCalledTimes(1);
 		});
 
+		it('refreshes presentation when formatError changes', async () => {
+			const { store } = createTestStore({ email: 'a@b.co', extra: '' });
+			const { emailField, form } = await mountEmail(store, { formatError: () => 'one' });
+			store.setHostErrors({ email: { type: 'x' } });
+			await settle();
+			expect(findFieldError(emailField)?.textContent).toBe('one');
+
+			form.formatError = () => 'two';
+			await settle();
+
+			expect(findFieldError(emailField)?.textContent).toBe('two');
+		});
+
 		it('uses formatError for an issue without a message and falls back to the message', async () => {
 			const { store } = createTestStore({ email: 'a@b.co', extra: '' });
 			const formatError = vi.fn((issue: { type: string; params?: Record<string, unknown> }) =>

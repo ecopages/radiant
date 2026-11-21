@@ -553,6 +553,11 @@ export class RuiForm extends RadiantElement {
 		}
 	}
 
+	@onUpdated(['formatError'])
+	syncFormatError(): void {
+		this.publishFormContext({ force: true });
+	}
+
 	@onUpdated(['store'])
 	syncInjectedStore(): void {
 		this.ensureDriver();

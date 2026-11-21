@@ -598,6 +598,27 @@ describe('FormStore', () => {
 			expect(await store.validate(['elsewhere'])).toBe(true);
 		});
 
+		it('clears reported facts on reset', async () => {
+			const store = new FormStore<{ a: string }>({ defaultValues: { a: 'a@b.co' } });
+			store.setValue('a', 'x', { native: { type: 'typeMismatch' } });
+
+			store.reset();
+
+			expect(await store.validate(['a'])).toBe(true);
+		});
+
+		it('keeps a resolver issue whole, params and type, for formatError', async () => {
+			const store = new FormStore<{ age: number }>({
+				mode: 'onChange',
+				resolver: async () => ({ values: {}, errors: { age: { type: 'min', params: { min: 18 } } } }),
+			});
+			store.register({ name: 'age', getValue: () => 3, setValue: () => {} });
+
+			await store.validateField('age');
+
+			expect(store.errors.age).toEqual({ type: 'min', params: { min: 18 } });
+		});
+
 		it('exposes no warnings', () => {
 			expect(new FormStore().getSnapshot().warnings).toEqual({});
 		});

@@ -446,7 +446,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		const nativeError = resolverError?.message ? undefined : this.readNativeError(name);
 		const error = nativeError ?? resolverError;
 		if (error) {
-			next[name] = nativeError ?? { type: 'validation', message: error.message };
+			next[name] = nativeError ?? resolverError ?? {};
 		} else {
 			delete next[name];
 		}
@@ -623,6 +623,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	reset(values?: Partial<T>): void {
 		this.values = values ? ({ ...values } as T) : this.withFieldDefaults({ ...this.defaultValues } as T);
 		this.sourceErrors.clear();
+		this.reportedNative = {};
 		this.errors = {};
 		this.touched = {};
 		this.dirty = {};
