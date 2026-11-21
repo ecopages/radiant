@@ -12,7 +12,11 @@ export type FieldValues = Record<string, unknown>;
  */
 export type FieldError = {
 	type?: string;
+	/** The constraint behind `type`, for a message: `{ minLength: 8 }`. */
+	params?: Record<string, unknown>;
 	message?: string;
+	/** Where the error came from, such as `native`, `validation` or `server`. */
+	source?: string;
 };
 
 export type FieldRules = {
@@ -76,6 +80,8 @@ export type FieldControlValidity = {
 	valid: boolean;
 	/** The failing `ValidityState` flag (`valueMissing`, `typeMismatch`, ...); `customError` when a reader gave none. */
 	type?: string;
+	/** The constraint the control failed, such as `{ minLength: 8 }`. */
+	params?: Record<string, unknown>;
 	/** The control's own `validationMessage`, when it has one. */
 	message?: string;
 };

@@ -22,13 +22,13 @@ function control(name: string, initial: unknown) {
 
 function createHostStore(initial: Record<string, unknown>) {
 	let values = initial;
-	let snapshot: FormStateStoreSnapshot = { values, errors: {} };
+	let snapshot: FormStateStoreSnapshot = { values, errors: {}, warnings: {} };
 	const listeners = new Set<() => void>();
 	const store: FormStateStore = {
 		getValue: (path) => getPath(values, path),
 		setValue: vi.fn((path: string, value: unknown) => {
 			values = setPath(values, path, value);
-			snapshot = { values, errors: snapshot.errors };
+			snapshot = { values, errors: snapshot.errors, warnings: {} };
 			for (const listener of [...listeners]) listener();
 		}),
 		blur() {},
@@ -41,7 +41,7 @@ function createHostStore(initial: Record<string, unknown>) {
 		async validate() {
 			return true;
 		},
-		setNativeValidity() {},
+		releaseNative() {},
 	};
 	return store;
 }

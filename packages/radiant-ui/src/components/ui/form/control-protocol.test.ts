@@ -1,3 +1,4 @@
+import { userEvent } from 'vitest/browser';
 import { describe, expect, it, vi } from 'vitest';
 import {
 	findFieldControl,
@@ -153,6 +154,46 @@ describe('field control protocol in the browser', () => {
 			input.remove();
 			textarea.remove();
 			select.remove();
+		});
+
+		it('carries the constraint of the failing flag as params', () => {
+			const input = document.createElement('input');
+			document.body.append(input);
+
+			input.type = 'number';
+			input.min = '5';
+			input.max = '10';
+			input.value = '3';
+			expect(readControlValidity(input)).toMatchObject({ type: 'rangeUnderflow', params: { min: 5 } });
+			input.value = '30';
+			expect(readControlValidity(input)).toMatchObject({ type: 'rangeOverflow', params: { max: 10 } });
+
+			input.type = 'text';
+			input.removeAttribute('min');
+			input.removeAttribute('max');
+			input.pattern = '[a-z]+';
+			input.value = '123';
+			expect(readControlValidity(input)).toMatchObject({
+				type: 'patternMismatch',
+				params: { pattern: '[a-z]+' },
+			});
+
+			input.type = 'email';
+			input.removeAttribute('pattern');
+			input.value = 'x';
+			expect(readControlValidity(input)).toMatchObject({ type: 'typeMismatch', params: { inputType: 'email' } });
+			input.remove();
+		});
+
+		it('carries minLength for a value the user typed too short', async () => {
+			const input = document.createElement('input');
+			input.minLength = 8;
+			document.body.append(input);
+			input.focus();
+			await userEvent.keyboard('abc');
+
+			expect(readControlValidity(input)).toMatchObject({ type: 'tooShort', params: { minLength: 8 } });
+			input.remove();
 		});
 
 		it('treats a control barred from constraint validation as valid', () => {

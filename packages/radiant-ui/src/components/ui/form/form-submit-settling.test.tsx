@@ -31,7 +31,7 @@ afterEach(() => {
 
 /** A store whose `validate` throws, as a validator reaching a failing network would. */
 function createThrowingStore(error: Error): FormStateStore {
-	const snapshot: FormStateStoreSnapshot = { values: {}, errors: {} };
+	const snapshot: FormStateStoreSnapshot = { values: {}, errors: {}, warnings: {} };
 	return {
 		getValue: () => undefined,
 		setValue() {},
@@ -42,7 +42,7 @@ function createThrowingStore(error: Error): FormStateStore {
 		async validate() {
 			throw error;
 		},
-		setNativeValidity() {},
+		releaseNative() {},
 	};
 }
 

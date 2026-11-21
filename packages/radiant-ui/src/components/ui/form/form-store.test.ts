@@ -528,10 +528,16 @@ describe('FormStore', () => {
 	describe('reported native validity and failing validation', () => {
 		it('blocks whole-form validation on a path whose control is not registered here', async () => {
 			const store = new FormStore<{ a: string }>();
-			store.setNativeValidity({ elsewhere: { type: 'valueMissing', message: 'Fill this in' } });
+			await store.validate(undefined, {
+				native: { elsewhere: { type: 'valueMissing', params: { required: true }, message: 'Fill this in' } },
+			});
 
 			expect(await store.validateAll()).toBe(false);
-			expect(store.errors.elsewhere).toEqual({ type: 'valueMissing', message: 'Fill this in' });
+			expect(store.errors.elsewhere).toEqual({
+				type: 'valueMissing',
+				params: { required: true },
+				message: 'Fill this in',
+			});
 		});
 
 		it('notifies about the written value even when change validation rejects', async () => {
@@ -557,6 +563,43 @@ describe('FormStore', () => {
 
 			expect(listener).toHaveBeenCalled();
 			expect(store.dirty.title).toBe(true);
+		});
+	});
+
+	describe('native facts', () => {
+		it('does not reuse a fact after a write that carries none', async () => {
+			const store = new FormStore<{ a: string }>();
+			store.setValue('elsewhere', 'x', { native: { type: 'valueMissing' } });
+			expect(await store.validate(['elsewhere'])).toBe(false);
+
+			store.setValue('elsewhere', 'y');
+
+			expect(await store.validate(['elsewhere'])).toBe(true);
+		});
+
+		it('replaces the fact when the same write sends a new one and clears it with null', async () => {
+			const store = new FormStore<{ a: string }>();
+			store.setValue('elsewhere', 'x', { native: { type: 'tooShort', params: { minLength: 8 } } });
+			expect(store.errors.elsewhere).toBeUndefined();
+			await store.validate(['elsewhere']);
+			expect(store.errors.elsewhere).toEqual({ type: 'tooShort', params: { minLength: 8 }, message: undefined });
+
+			store.setValue('elsewhere', 'y', { native: null });
+			expect(await store.validate(['elsewhere'])).toBe(true);
+		});
+
+		it('releases a fact and takes the facts a validate call brings', async () => {
+			const store = new FormStore<{ a: string }>();
+			await store.validate(undefined, { native: { elsewhere: { type: 'valueMissing' } } });
+			expect(await store.validate(['elsewhere'])).toBe(false);
+
+			store.releaseNative('elsewhere');
+
+			expect(await store.validate(['elsewhere'])).toBe(true);
+		});
+
+		it('exposes no warnings', () => {
+			expect(new FormStore().getSnapshot().warnings).toEqual({});
 		});
 	});
 });

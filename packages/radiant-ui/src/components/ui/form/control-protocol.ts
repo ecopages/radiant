@@ -7,6 +7,7 @@ export const RUI_FIELD_MANAGED_ATTR = 'data-rui-field-managed';
 export const RUI_FIELD_LABEL_ATTR = 'data-rui-field-label';
 export const RUI_FIELD_DESCRIPTION_ATTR = 'data-rui-field-description';
 export const RUI_FIELD_ERROR_ATTR = 'data-rui-field-error';
+export const RUI_FIELD_WARNING_ATTR = 'data-rui-field-warning';
 export const RUI_FIELD_ERROR_CONTROLLED_ATTR = 'data-rui-field-error-controlled';
 export const RUI_FIELD_DEFAULT_VALUE_ATTR = 'data-default-value';
 export const RUI_FORM_DEFAULT_VALUES_ATTR = 'data-default-values';
@@ -373,7 +374,42 @@ export function readControlValidity(control: HTMLElement): FieldControlValidity 
 	}
 	const message = Reflect.get(host, 'validationMessage');
 	const text = typeof message === 'string' ? message : undefined;
-	return valid ? { valid, message: text } : { valid, type: failingFlag(validity), message: text };
+	if (valid) {
+		return { valid, message: text };
+	}
+	const type = failingFlag(validity);
+	return { valid, type, params: native ? constraintParams(host, type) : undefined, message: text };
+}
+
+/**
+ * The constraint a native control failed, so a message can say "at least 8 characters"
+ * without parsing the browser's own text.
+ */
+function constraintParams(host: HTMLElement, flag: string): Record<string, unknown> | undefined {
+	const read = (key: string): unknown => Reflect.get(host, key);
+	const bound = (key: 'min' | 'max'): unknown => {
+		const value = read(key);
+		const numeric = read('type') === 'number' || read('type') === 'range';
+		return numeric && typeof value === 'string' && value !== '' ? Number(value) : value;
+	};
+	switch (flag) {
+		case 'tooShort':
+			return { minLength: read('minLength') };
+		case 'tooLong':
+			return { maxLength: read('maxLength') };
+		case 'rangeUnderflow':
+			return { min: bound('min') };
+		case 'rangeOverflow':
+			return { max: bound('max') };
+		case 'patternMismatch':
+			return { pattern: read('pattern') };
+		case 'stepMismatch':
+			return { step: read('step') };
+		case 'typeMismatch':
+			return { inputType: read('type') };
+		default:
+			return undefined;
+	}
 }
 
 /** Detected by tag name, like the other native controls, so it works where the DOM globals do not exist. */
@@ -394,6 +430,21 @@ const VALIDITY_FLAGS = [
 
 function failingFlag(validity: object): string {
 	return VALIDITY_FLAGS.find((flag) => Reflect.get(validity, flag) === true) ?? 'customError';
+}
+
+const FOCUSABLE =
+	'input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+/**
+ * Move focus into a field's control.
+ *
+ * @remarks Focuses the ARIA target, or, when that is a container that cannot take
+ * focus such as a checkbox or radio group, its first enabled focusable descendant.
+ */
+export function focusFieldControl(control: HTMLElement): void {
+	const target = getAriaControlTarget(control);
+	const focusable = target.matches(FOCUSABLE) ? target : target.querySelector<HTMLElement>(FOCUSABLE);
+	(focusable ?? target).focus();
 }
 
 export function writeControlValue(control: HTMLElement, value: unknown): void {
@@ -460,6 +511,11 @@ function isControlledFieldError(node: HTMLElement): boolean {
  * @remarks Skips controlled regions, whose content and visibility belong to their author; see
  * {@link findControlledFieldErrors}.
  */
+/** The regions that show a field's warning, in document order. */
+export function findFieldWarningElements(root: HTMLElement): HTMLElement[] {
+	return Array.from(root.querySelectorAll<HTMLElement>(`[${RUI_FIELD_WARNING_ATTR}]`));
+}
+
 export function findFieldErrorElements(root: HTMLElement): HTMLElement[] {
 	return collectFieldErrorRegions(root).filter((node) => !isControlledFieldError(node));
 }

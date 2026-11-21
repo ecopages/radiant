@@ -6,6 +6,8 @@ import type { FieldError, FieldRegistration, FieldRegistrationHandle, RegisterOp
 export type FormFieldPresentation = {
 	error?: string;
 	invalid: boolean;
+	/** Advice that never marks the field invalid or blocks submit. */
+	warning?: string;
 };
 
 export type FormContextActions = {

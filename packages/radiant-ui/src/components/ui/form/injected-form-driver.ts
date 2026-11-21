@@ -89,6 +89,10 @@ export class InjectedFormDriver implements FormDriver {
 		return this.state.getSnapshot().errors;
 	}
 
+	get warnings(): Partial<Record<string, FieldError>> {
+		return this.state.getSnapshot().warnings;
+	}
+
 	getRevision(): number {
 		return this.revision;
 	}
@@ -190,8 +194,15 @@ export class InjectedFormDriver implements FormDriver {
 		if (this.fields.get(entry.name) === entry) {
 			this.fields.delete(entry.name);
 		}
-		this.reportNativeValidity();
+		this.releaseUnheld(entry.name);
 		this.bump();
+	}
+
+	/** Release the fact held for `name` once no live control is bound to it. */
+	private releaseUnheld(name: string): void {
+		if (!this.fields.has(name)) {
+			this.state.releaseNative(name);
+		}
 	}
 
 	/**
@@ -203,21 +214,18 @@ export class InjectedFormDriver implements FormDriver {
 		if (!entry.live || entry.name === to) {
 			return;
 		}
-		if (this.fields.get(entry.name) === entry) {
-			this.fields.delete(entry.name);
+		const from = entry.name;
+		if (this.fields.get(from) === entry) {
+			this.fields.delete(from);
 		}
 		entry.name = to;
 		this.fields.set(to, entry);
 		this.seed(entry);
-		this.reportNativeValidity();
+		this.releaseUnheld(from);
 		this.bump();
 	}
 
 	updateFieldOptions(_name: string, _options: RegisterOptions): void {}
-
-	getFieldError(name: string): string | undefined {
-		return this.errors[name]?.message || undefined;
-	}
 
 	/** The store decides which errors show, so every error in the snapshot is presented. */
 	shouldDisplayFieldError(name: string): boolean {
@@ -225,64 +233,79 @@ export class InjectedFormDriver implements FormDriver {
 	}
 
 	/**
-	 * Write a control's value into the store when the user changed it since the
-	 * driver last synchronised it.
+	 * The control's validity as a fact, or `null` when it reports valid.
 	 *
-	 * @remarks The comparison is with the control's own baseline, not with the
-	 * store, so a flush on submit writes only what the user changed. Comparing with
-	 * the store would write an untouched empty text input, which reads `''`, over a
-	 * store value of `undefined`, marking it dirty and dropping its server error.
+	 * @remarks Reads `validity` data only; it never calls `checkValidity()`, which
+	 * fires an `invalid` event.
+	 */
+	private factOf(entry: BoundField): NativeValidity | null {
+		const validity = entry.registration.getValidity?.();
+		if (!validity || validity.valid) {
+			return null;
+		}
+		return {
+			type: validity.type ?? 'customError',
+			params: validity.params,
+			message: validity.message || undefined,
+		};
+	}
+
+	/** The current fact of every registered control, `null` for a valid one. */
+	private allFacts(): Record<string, NativeValidity | null> {
+		const facts: Record<string, NativeValidity | null> = {};
+		for (const [name, entry] of this.fields) {
+			facts[name] = this.factOf(entry);
+		}
+		return facts;
+	}
+
+	/** Whether the user changed a control since the driver last synchronised it. */
+	private isChanged(entry: BoundField): boolean {
+		return !entry.writing && !isSameValue(entry.registration.getValue(), entry.baseline);
+	}
+
+	/**
+	 * Write a control's value into the store, with the fact it describes, and take it
+	 * as the new baseline.
 	 */
 	private writeControlValue(name: string, entry: BoundField): void {
-		if (entry.writing) {
-			return;
-		}
 		const value = entry.registration.getValue();
-		if (isSameValue(value, entry.baseline)) {
-			return;
-		}
 		const previous = entry.baseline;
 		entry.baseline = value;
 		try {
-			this.state.setValue(name, value);
+			this.state.setValue(name, value, { native: this.factOf(entry) });
 		} catch (error) {
 			entry.baseline = previous;
 			throw error;
 		}
 	}
 
-	/** Report native validity, then write every control the user changed into the store, as submit needs. */
+	/**
+	 * Write every control the user changed into the store, as submit needs.
+	 *
+	 * @remarks The comparison is with the control's own baseline, not with the
+	 * store, so a flush writes only what the user changed. Comparing with the store
+	 * would write an untouched empty text input, which reads `''`, over a store
+	 * value of `undefined`, marking it dirty and dropping its server error.
+	 */
 	flush(): void {
-		this.reportNativeValidity();
 		for (const [name, entry] of this.fields) {
-			this.writeControlValue(name, entry);
+			if (this.isChanged(entry)) {
+				this.writeControlValue(name, entry);
+			}
 		}
 	}
 
-	/**
-	 * Report every registered control's current native validity to the store.
-	 *
-	 * @remarks Reads `validity` data only; it never calls `checkValidity()`, which
-	 * fires an `invalid` event. It is the first call of every change, blur, submit,
-	 * rename and removal, so the store has the facts before the call that follows.
-	 */
-	private reportNativeValidity(): void {
-		const facts: Record<string, NativeValidity> = {};
-		for (const [name, entry] of this.fields) {
-			const validity = entry.registration.getValidity?.();
-			if (validity && !validity.valid) {
-				facts[name] = { type: validity.type ?? 'customError', message: validity.message || undefined };
-			}
-		}
-		this.state.setNativeValidity(facts);
+	/** Validate through the store, handing it the current fact of every control. */
+	validate(paths?: string[]): Promise<boolean> {
+		return this.state.validate(paths, { native: this.allFacts() });
 	}
 
 	async handleFieldChange(name: string): Promise<void> {
 		const entry = this.fields.get(name);
-		if (!entry) {
+		if (!entry || entry.writing) {
 			return;
 		}
-		this.reportNativeValidity();
 		this.writeControlValue(name, entry);
 		this.bump();
 	}
@@ -292,9 +315,10 @@ export class InjectedFormDriver implements FormDriver {
 		if (!entry) {
 			return;
 		}
-		this.reportNativeValidity();
-		this.writeControlValue(name, entry);
-		this.state.blur(name);
+		if (this.isChanged(entry)) {
+			this.writeControlValue(name, entry);
+		}
+		this.state.blur(name, { native: this.factOf(entry) });
 		this.bump();
 	}
 
@@ -305,7 +329,7 @@ export class InjectedFormDriver implements FormDriver {
 		this.flush();
 		let valid: boolean;
 		try {
-			valid = await this.state.validate();
+			valid = await this.validate();
 		} catch (error) {
 			this.bump();
 			onInvalid?.(this.state.getSnapshot().errors, error);
@@ -321,12 +345,14 @@ export class InjectedFormDriver implements FormDriver {
 	}
 
 	/**
-	 * Cancel a pending post-reset write and withdraw the validity facts this driver
-	 * reported; call before leaving the store.
+	 * Cancel a pending post-reset write and release the facts held for the controls
+	 * this driver bound; call before leaving the store.
 	 */
 	dispose(): void {
 		clearTimeout(this.resetTimer);
-		this.state.setNativeValidity({});
+		for (const name of this.fields.keys()) {
+			this.state.releaseNative(name);
+		}
 	}
 
 	/** Focus the control registered for `path`; nothing happens for a path with no control. */
@@ -356,7 +382,6 @@ export class InjectedFormDriver implements FormDriver {
 			await handler();
 		} finally {
 			this.syncControls(true);
-			this.reportNativeValidity();
 			this.bump();
 		}
 	}
@@ -371,7 +396,6 @@ export class InjectedFormDriver implements FormDriver {
 		clearTimeout(this.resetTimer);
 		this.resetTimer = setTimeout(() => {
 			this.syncControls(true);
-			this.reportNativeValidity();
 			this.bump();
 		}, 0);
 	}

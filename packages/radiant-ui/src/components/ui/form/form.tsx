@@ -15,6 +15,7 @@ export function RuiForm({
 	store,
 	submitHandler,
 	resetHandler,
+	formatError,
 	reValidateMode,
 	onSubmit,
 	action,
@@ -33,6 +34,7 @@ export function RuiForm({
 			prop:store={store}
 			prop:submitHandler={submitHandler}
 			prop:resetHandler={resetHandler}
+			prop:formatError={formatError}
 			prop:onSubmit={onSubmit}
 			data={{
 				defaultValues:

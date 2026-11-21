@@ -15,8 +15,9 @@ import {
 	findFieldDescription,
 	findFieldError,
 	findFieldErrorElements,
+	findFieldWarningElements,
 	findFieldLabel,
-	getAriaControlTarget,
+	focusFieldControl,
 	getAriaControlTargets,
 	isNativeTextControl,
 	isPrimaryFieldControlEvent,
@@ -286,7 +287,7 @@ export class RuiField extends RadiantElement {
 			focus: () => {
 				const control = findFieldControl(this);
 				if (control) {
-					getAriaControlTarget(control).focus();
+					focusFieldControl(control);
 				}
 			},
 			setValue: (value) => {
@@ -443,6 +444,7 @@ export class RuiField extends RadiantElement {
 		const labelId = this.syncLabel(ariaTargets, ariaTarget, paintedByHost, controlId);
 
 		this.syncErrorPresentation(errorMessage);
+		this.syncWarningPresentation(this.resolveWarning(formCtx));
 
 		const nextFieldContext = {
 			name: fieldName,
@@ -582,6 +584,22 @@ export class RuiField extends RadiantElement {
 	private disableAriaTarget(target: HTMLElement): void {
 		target.setAttribute('aria-disabled', 'true');
 		if (isNativeTextControl(target)) target.disabled = true;
+	}
+
+	private syncWarningPresentation(warning: string | undefined): void {
+		for (const region of findFieldWarningElements(this)) {
+			region.textContent = warning ?? '';
+			region.hidden = !warning;
+			if (warning) region.removeAttribute('hidden');
+		}
+	}
+
+	private resolveWarning(formCtx?: FormContextValue): string | undefined {
+		const fieldName = this.resolveFieldName();
+		if (!fieldName) {
+			return undefined;
+		}
+		return (formCtx ?? this.currentFormContext)?.fields[fieldName]?.warning;
 	}
 
 	private syncErrorPresentation(errorMessage: string | undefined): void {

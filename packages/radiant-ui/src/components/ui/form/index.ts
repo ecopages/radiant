@@ -2,6 +2,7 @@ export { RuiForm, type RuiFormSubmitDetail, type RuiFormInvalidDetail } from './
 export {
 	RuiForm as RuiFormElement,
 	type RuiFormProps,
+	type RuiFormFormatError,
 	type RuiFormResetContext,
 	type RuiFormResetHandler,
 	type RuiFormSubmitContext,
@@ -14,7 +15,13 @@ export {
 	type FormContextActions,
 } from './form-context';
 export { FormStore } from './form-store';
-export type { FormStateStore, FormStateStoreSnapshot, NativeValidity } from './form-state-store';
+export type {
+	FormIssue,
+	FormStateNativeOptions,
+	FormStateStore,
+	FormStateStoreSnapshot,
+	NativeValidity,
+} from './form-state-store';
 export { createRulesResolver, runRulesResolver } from './resolvers';
 export type { FieldRegistrationHandle } from './types';
 export type { FieldRules, FieldValues, Resolver, ValidationMode, FormState, FieldError } from './types';

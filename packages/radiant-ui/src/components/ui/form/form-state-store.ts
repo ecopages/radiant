@@ -8,11 +8,18 @@ export type FormStateStoreSnapshot = {
 	/** Nested value tree. A field named `profile.name` reads `values.profile.name`. */
 	readonly values: Readonly<Record<string, unknown>>;
 	/**
-	 * The errors the store shows, keyed by dotted path. `<rui-form>` presents each one
-	 * on the registered control with that path and ignores keys it has no control for,
-	 * such as a form-level key. An entry may carry fields beyond `type` and `message`.
+	 * The errors the store shows, keyed by dotted path. They block submit, and
+	 * `<rui-form>` presents each on the registered control with that path. Keys with
+	 * no registered control, such as a form-level key, are ignored: the host renders
+	 * them itself. An entry may carry fields beyond `type` and `message`.
 	 */
 	readonly errors: Readonly<Record<string, FieldError>>;
+	/**
+	 * Advice the store shows, keyed by dotted path like `errors`. A warning never
+	 * blocks submit; `<rui-form>` presents it beside the control without marking the
+	 * control invalid.
+	 */
+	readonly warnings: Readonly<Record<string, FieldError>>;
 };
 
 /**
@@ -22,8 +29,29 @@ export type FormStateStoreSnapshot = {
 export type NativeValidity = {
 	/** The failing `ValidityState` flag: `valueMissing`, `typeMismatch`, `tooShort`, `patternMismatch`, `rangeUnderflow`, ... */
 	type: string;
-	/** The control's `validationMessage`, when it has one. */
+	/** The constraint the control failed, for a message: `{ minLength: 8 }`, `{ min: 1 }`, `{ max: 10 }`, `{ pattern: '[a-z]+' }`. */
+	params?: Record<string, unknown>;
+	/** The control's `validationMessage`; a fallback for when the store has no better text. */
 	message?: string;
+};
+
+/**
+ * What `<rui-form>` passes `formatError` to produce text for an error or a warning.
+ */
+export type FormIssue = {
+	type: string;
+	params?: Record<string, unknown>;
+	message?: string;
+	source?: string;
+};
+
+/** Options on a call that carries the native validity of the control it describes. */
+export type FormStateNativeOptions = {
+	/**
+	 * The control's validity at the time of the call: a fact, or `null` when the
+	 * control reports valid. Absent when the form did not read the control.
+	 */
+	native?: NativeValidity | null;
 };
 
 /**
@@ -36,28 +64,31 @@ export type NativeValidity = {
  *
  * @remarks
  * With an injected store the store owns validation timing, touched and dirty
- * state, defaults, which errors show and how errors from different origins
- * combine. `<rui-form>` is a control bridge: it keeps control registration, the
- * control value bridge, native validity reading, ARIA and error presentation,
- * submit and `FormData`. It presents `getSnapshot().errors` as the store gives
- * it, and ignores its own `mode` and `revalidate-mode`, field `defaultValue`,
- * `defaultValues`, `resolver` and field `rules`.
+ * state, defaults, which errors and warnings show and how errors from different
+ * origins combine. `<rui-form>` is a control bridge: it keeps control registration,
+ * the control value bridge, native validity reading, ARIA and presentation, submit
+ * and `FormData`. It presents `getSnapshot().errors` and `warnings` as the store
+ * gives them, and ignores its own `mode` and `revalidate-mode`, field
+ * `defaultValue`, `defaultValues`, `resolver` and field `rules`.
+ *
+ * Native validity always travels in the same call as the value or event it
+ * describes, so a store never holds a fact older than the value it validates: a
+ * `setValue` without `native` carries no fact, and a store must not reuse the one
+ * it held for that path.
  *
  * Each member is here because `<rui-form>` calls it:
  * - `getValue` seeds a control when it registers and compares controls with the
  *   store on every notification.
- * - `setValue` receives a control's value on change, on blur and on submit, for
- *   every control the user changed, replacing the branch at `path`.
- * - `blur` reports that a control lost focus, after its value was written, so the
- *   store can run its own touched and validation-on-blur policy.
+ * - `setValue` receives a control's value on change and on blur or submit for a
+ *   control the user changed, replacing the branch at `path`.
+ * - `blur` reports that a control lost focus, so the store can run its own
+ *   touched and validation-on-blur policy.
  * - `getSnapshot` and `subscribe` publish presentation and the submit values.
  * - `reset` backs the native `reset` event when no `resetHandler` is set; the form
  *   then rewrites controls from the store.
  * - `validate` runs on submit when no `submitHandler` is set and decides whether
  *   `rui-submit` or `rui-invalid` follows.
- * - `setNativeValidity` reports what the controls' own validity says, so the
- *   store can treat it as an input to its validation with the same timing as its
- *   own rules.
+ * - `releaseNative` drops the fact held for a control that disappeared.
  *
  * Not required: `checkValidity()` and `touched` / `dirty` in the snapshot (the
  * store keeps them for its own policy). A store may still expose them.
@@ -65,16 +96,23 @@ export type NativeValidity = {
 export interface FormStateStore {
 	/** Read the value at a dotted path; `undefined` when the branch is absent. */
 	getValue(path: string): unknown;
-	/** Replace the branch at a dotted path with `value`, creating parents as needed, and notify when state changed. */
-	setValue(path: string, value: unknown): void;
-	/** Mark `path` touched and run any validation the store ties to blur. Notifies when state changed. */
-	blur(path: string): void;
+	/**
+	 * Replace the branch at a dotted path with `value`, creating parents as needed,
+	 * and notify when state changed.
+	 */
+	setValue(path: string, value: unknown, options?: FormStateNativeOptions): void;
+	/**
+	 * Mark `path` touched and run any validation the store ties to blur. Notifies
+	 * when state changed.
+	 */
+	blur(path: string, options?: FormStateNativeOptions): void;
 	/** Stable snapshot; the same object until state changes. */
 	getSnapshot(): FormStateStoreSnapshot;
 	/** Register a change listener; returns its unsubscribe. */
 	subscribe(listener: () => void): () => void;
 	/**
-	 * Restore initial values and clear errors and field state. Notifies when state changed.
+	 * Restore initial values and clear errors, warnings and field state, including
+	 * every native fact. Notifies when state changed.
 	 *
 	 * @remarks `<rui-form>` calls it without arguments, then rewrites every control from the store.
 	 */
@@ -82,21 +120,16 @@ export interface FormStateStore {
 	/**
 	 * Validate `paths`, or the whole tree when omitted, and resolve with whether that
 	 * scope is valid: `false` when the store holds any error at the validated paths,
-	 * whether or not it shows it.
+	 * whether or not it shows it. Warnings do not count.
 	 *
-	 * @remarks The form calls it without paths on submit, after reporting native
-	 * validity. Native validity counts, as does every other error the store holds.
+	 * @remarks The form calls it without paths on submit. `options.native` holds the
+	 * current validity of every control it registers, `null` for a valid one, so the
+	 * store validates against facts as fresh as the call.
 	 */
-	validate(paths?: string[]): Promise<boolean>;
+	validate(paths?: string[], options?: { native?: Record<string, NativeValidity | null> }): Promise<boolean>;
 	/**
-	 * Replace the validity facts of the form's controls. `validity` holds one entry
-	 * for each control that is currently invalid, keyed by path; a path with no entry
-	 * is valid, and an empty record means every control is valid.
-	 *
-	 * @remarks The form calls it before the `setValue`, `blur` or `validate` call it
-	 * accompanies, and when a control is renamed or removed, so one user change is
-	 * one notification: the store applies the facts to the next validation and
-	 * display decision, and need not notify for them alone.
+	 * Drop the native fact held for `path`, because the control that reported it was
+	 * removed or moved to another path.
 	 */
-	setNativeValidity(validity: Record<string, NativeValidity>): void;
+	releaseNative(path: string): void;
 }

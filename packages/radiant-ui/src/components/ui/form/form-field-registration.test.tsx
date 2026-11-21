@@ -43,9 +43,9 @@ afterEach(() => {
 function createHostStore(): { store: FormStateStore; values: Record<string, unknown> } {
 	const values: Record<string, unknown> = {};
 	const listeners = new Set<() => void>();
-	let snapshot: FormStateStoreSnapshot = { values: { ...values }, errors: {} };
+	let snapshot: FormStateStoreSnapshot = { values: { ...values }, errors: {}, warnings: {} };
 	const publish = () => {
-		snapshot = { values: { ...values }, errors: snapshot.errors };
+		snapshot = { values: { ...values }, errors: snapshot.errors, warnings: {} };
 		for (const listener of [...listeners]) listener();
 	};
 	const store: FormStateStore = {
@@ -64,7 +64,7 @@ function createHostStore(): { store: FormStateStore; values: Record<string, unkn
 		async validate() {
 			return true;
 		},
-		setNativeValidity() {},
+		releaseNative() {},
 	};
 	return { store, values };
 }

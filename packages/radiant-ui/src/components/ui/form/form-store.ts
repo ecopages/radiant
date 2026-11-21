@@ -1,5 +1,10 @@
 import { createRulesResolver } from './resolvers';
-import type { FormStateStore, FormStateStoreSnapshot, NativeValidity } from './form-state-store';
+import type {
+	FormStateNativeOptions,
+	FormStateStore,
+	FormStateStoreSnapshot,
+	NativeValidity,
+} from './form-state-store';
 import { deletePath, getPath, setPath } from './value-path';
 import type {
 	FieldError,
@@ -55,6 +60,8 @@ function withKey<R extends Partial<Record<string, unknown>>>(record: R, key: str
 	}
 	return { ...record, [key]: value } as R;
 }
+
+const NO_WARNINGS: Readonly<Record<string, FieldError>> = Object.freeze({});
 
 /**
  * The store `<rui-form>` creates when no store is injected. It also owns control
@@ -121,6 +128,11 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		this.mergedErrors = merged;
 	}
 
+	/** The built-in store has no source of warnings. */
+	get warnings(): Partial<Record<string, FieldError>> {
+		return NO_WARNINGS;
+	}
+
 	getValue(path: string): unknown {
 		const field = this.fields.get(path);
 		return field ? field.getValue() : getPath(this.values, path);
@@ -131,13 +143,20 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 			this.snapshot = {
 				values: this.values,
 				errors: this.mergedErrors,
-				value: { values: this.values, errors: this.mergedErrors as Record<string, FieldError> },
+				value: {
+					values: this.values,
+					errors: this.mergedErrors as Record<string, FieldError>,
+					warnings: NO_WARNINGS,
+				},
 			};
 		}
 		return this.snapshot.value;
 	}
 
-	async validate(paths?: string[]): Promise<boolean> {
+	async validate(paths?: string[], options?: { native?: Record<string, NativeValidity | null> }): Promise<boolean> {
+		for (const [path, fact] of Object.entries(options?.native ?? {})) {
+			this.reportNative(path, fact);
+		}
 		let valid = true;
 		if (paths) {
 			for (const path of paths) {
@@ -328,8 +347,9 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	 * field becomes dirty, validation runs per `mode`, and an error a host set at the
 	 * path with `setErrors` is cleared, since the user has now edited that field.
 	 */
-	setValue(name: string, value: unknown, options?: { shouldTouch?: boolean }): void {
+	setValue(name: string, value: unknown, options?: FormStateNativeOptions & { shouldTouch?: boolean }): void {
 		this.values = setPath(this.values, name, value);
+		this.reportNative(name, options?.native);
 		this.rewriteRelatedControls(name);
 		if (options?.shouldTouch) {
 			this.touched = { ...this.touched, [name]: true };
@@ -452,14 +472,23 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	}
 
 	/**
-	 * Take the validity facts a host reports for controls it does not register here.
+	 * Keep the native fact a host reports for a path with no control registered here.
 	 *
-	 * @remarks The store also reads each registered control's own validity when it
-	 * validates, which is fresher than a report, so a report only fills in for a path
-	 * with no registered control. It does not notify, as the interface documents.
+	 * @remarks A registered control is read directly when validating, which is
+	 * fresher, so a fact only fills in for a path with no registered control. `null`
+	 * clears it.
 	 */
-	setNativeValidity(validity: Record<string, NativeValidity>): void {
-		this.reportedNative = validity;
+	private reportNative(path: string, fact: NativeValidity | null | undefined): void {
+		if (fact) {
+			this.reportedNative = { ...this.reportedNative, [path]: fact };
+		} else if (path in this.reportedNative) {
+			const { [path]: _gone, ...rest } = this.reportedNative;
+			this.reportedNative = rest;
+		}
+	}
+
+	releaseNative(path: string): void {
+		this.reportNative(path, null);
 	}
 
 	/**
@@ -470,13 +499,17 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	private readNativeError(name: string): FieldError | undefined {
 		const reported = this.fields.has(name) ? undefined : this.reportedNative[name];
 		if (reported) {
-			return { type: reported.type, message: reported.message || undefined };
+			return { type: reported.type, params: reported.params, message: reported.message || undefined };
 		}
 		const validity = this.fields.get(name)?.getValidity?.();
 		if (!validity || validity.valid) {
 			return undefined;
 		}
-		return { type: validity.type ?? 'customError', message: validity.message || undefined };
+		return {
+			type: validity.type ?? 'customError',
+			params: validity.params,
+			message: validity.message || undefined,
+		};
 	}
 
 	shouldValidate(name: string, trigger: 'change' | 'blur'): boolean {
@@ -508,8 +541,11 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	}
 
 	/** Interface form of {@link FormStore.handleFieldBlur}; validation runs per `mode`. */
-	blur(path: string): void {
-		void this.handleFieldBlur(path);
+	blur(path: string, options?: FormStateNativeOptions): void {
+		if (options?.native !== undefined) {
+			this.reportNative(path, options.native);
+		}
+		this.handleFieldBlur(path).catch((error: unknown) => reportError(error));
 	}
 
 	async handleFieldBlur(name: string): Promise<void> {

@@ -9,10 +9,11 @@ export interface FormDriver {
 	subscribe(listener: () => void): () => void;
 	getRevision(): number;
 	readonly errors: Partial<Record<string, FieldError>>;
+	/** Advice that never blocks submit; empty for the built-in store. */
+	readonly warnings: Partial<Record<string, FieldError>>;
 	register(registration: FieldRegistration): FieldRegistrationHandle;
 	updateFieldOptions(name: string, options: RegisterOptions): void;
 	getRegisteredFieldNames(): string[];
-	getFieldError(name: string): string | undefined;
 	shouldDisplayFieldError(name: string): boolean;
 	handleFieldChange(name: string): Promise<void>;
 	handleFieldBlur(name: string): Promise<void>;

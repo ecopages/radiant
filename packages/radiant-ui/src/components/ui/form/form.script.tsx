@@ -11,9 +11,10 @@ import {
 } from './form-context';
 import { FormStore } from './form-store';
 import type { FormDriver } from './form-driver';
-import type { FormStateStore } from './form-state-store';
+import type { FormIssue, FormStateStore } from './form-state-store';
 import { InjectedFormDriver } from './injected-form-driver';
 import type {
+	FieldError,
 	FieldRegistration,
 	FieldRegistrationHandle,
 	FieldValues,
@@ -46,6 +47,8 @@ export type RuiFormProps<T extends FieldValues = FieldValues> = {
 	submitHandler?: RuiFormSubmitHandler;
 	/** Takes over the native `reset` event when `store` is injected; see {@link RuiFormResetHandler}. */
 	resetHandler?: RuiFormResetHandler;
+	/** Text for errors and warnings; see {@link RuiFormFormatError}. */
+	formatError?: RuiFormFormatError;
 };
 
 /** What `RuiForm` hands a {@link RuiFormSubmitHandler}. */
@@ -54,6 +57,12 @@ export type RuiFormSubmitContext = {
 	store: FormStateStore;
 	/** Focuses the control registered for a path, for the host to move focus to the first invalid field. */
 	focus: (path: string) => void;
+	/**
+	 * Validates through the store with the current native validity of every control,
+	 * so the store checks against facts as fresh as the call. Prefer it to
+	 * `store.validate()` in a submit handler.
+	 */
+	validate: (paths?: string[]) => Promise<boolean>;
 	/** Submits the native `<form>` to its `action` and `method`; does nothing when neither is set. */
 	submitNatively: () => void;
 };
@@ -81,6 +90,14 @@ export type RuiFormResetContext = {
  * reset. A rejection is reported with `reportError`.
  */
 export type RuiFormResetHandler = (context: RuiFormResetContext) => void | Promise<void>;
+
+/**
+ * Produces the text for an error or a warning from its type and params, so an issue
+ * with no message of its own is never shown blank.
+ *
+ * @remarks A result that is empty falls back to the issue's `message`.
+ */
+export type RuiFormFormatError = (issue: FormIssue) => string;
 
 export type RuiFormSubmitDetail<T extends FieldValues = FieldValues> = {
 	values: T;
@@ -201,6 +218,7 @@ export class RuiForm extends RadiantElement {
 	@prop({ type: Object }) store?: FormStateStore;
 	@prop({ type: Object }) submitHandler?: RuiFormSubmitHandler;
 	@prop({ type: Object }) resetHandler?: RuiFormResetHandler;
+	@prop({ type: Object }) formatError?: RuiFormFormatError;
 	onSubmit?: (values: FieldValues) => void | Promise<void>;
 
 	private driver: FormDriver | undefined;
@@ -298,6 +316,7 @@ export class RuiForm extends RadiantElement {
 			const context: RuiFormSubmitContext = {
 				store: this.drivenStore,
 				focus: (path) => driver.focus(path),
+				validate: (paths) => driver.validate(paths),
 				submitNatively: () => {
 					if (this.getAttribute('action') !== null || this.getAttribute('method') !== null) {
 						this.queryNativeForm()?.submit();
@@ -458,13 +477,34 @@ export class RuiForm extends RadiantElement {
 		}
 	}
 
-	private buildFieldPresentations(store: FormDriver): Record<string, FormFieldPresentation> {
+	/**
+	 * The text for an error or warning: `formatError` when set, else the issue's own
+	 * message. `undefined` when neither gives any, so the field is invalid with no text.
+	 */
+	private issueText(issue: FieldError | undefined): string | undefined {
+		if (!issue) {
+			return undefined;
+		}
+		const formatted =
+			typeof this.formatError === 'function'
+				? this.formatError({
+						type: issue.type ?? 'unknown',
+						params: issue.params,
+						message: issue.message,
+						source: issue.source,
+					})
+				: undefined;
+		return formatted || issue.message || undefined;
+	}
+
+	private buildFieldPresentations(driver: FormDriver): Record<string, FormFieldPresentation> {
 		const fields: Record<string, FormFieldPresentation> = {};
-		for (const name of store.getRegisteredFieldNames()) {
-			const show = store.shouldDisplayFieldError(name);
+		for (const name of driver.getRegisteredFieldNames()) {
+			const show = driver.shouldDisplayFieldError(name);
 			fields[name] = {
-				error: show ? store.getFieldError(name) : undefined,
+				error: show ? this.issueText(driver.errors[name]) : undefined,
 				invalid: show,
+				warning: this.issueText(driver.warnings[name]),
 			};
 		}
 		return fields;
