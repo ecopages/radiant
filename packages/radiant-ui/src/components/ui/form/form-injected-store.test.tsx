@@ -513,4 +513,28 @@ describe('rui-form with an injected store', () => {
 		await settle();
 		expect(title.value).toBe('Typed');
 	});
+
+	it('keeps uncommitted control input when the store notifies for another reason', async () => {
+		const { store } = createTestStore({ title: 'Initial', profile: { name: '' } });
+		const { title, name } = await mountInputs(store);
+		name.value = 'half-typed';
+
+		store.setErrors('server', { title: { type: 'server', message: 'Taken' } });
+		store.setValue('title', 'Changed');
+		await settle();
+
+		expect(name.value).toBe('half-typed');
+		expect(title.value).toBe('Changed');
+	});
+
+	it('still rewrites uncommitted input on a native form reset', async () => {
+		const { store } = createTestStore({ title: 'Initial', profile: { name: '' } });
+		const { title, host } = await mountInputs(store);
+		title.value = 'half-typed';
+
+		host.querySelector('form')?.dispatchEvent(new Event('reset', { bubbles: true, cancelable: true }));
+		await settle();
+
+		expect(title.value).toBe('Initial');
+	});
 });

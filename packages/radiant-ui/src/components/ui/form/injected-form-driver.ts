@@ -44,6 +44,7 @@ export class InjectedFormDriver implements FormDriver {
 	private readonly fields = new Map<string, DrivenField>();
 	private readonly touched = new Set<string>();
 	private readonly dirty = new Set<string>();
+	private readonly lastSeen = new Map<string, unknown>();
 	private readonly listeners = new Set<() => void>();
 	private nativeErrors: Record<string, FieldError> = {};
 	private submitted = false;
@@ -96,11 +97,22 @@ export class InjectedFormDriver implements FormDriver {
 		}
 	}
 
-	/** Write the store's value into every control that differs, so a control never echoes its own write. */
-	private syncControls(): void {
+	/**
+	 * Write a path's store value into its control, but only when the store value
+	 * changed since this driver last saw it (or `force` is set, as on reset).
+	 *
+	 * @remarks Comparing with the last seen store value, not only with the control,
+	 * keeps an unrelated store notification, such as a `setErrors` call or another
+	 * field's validation, from reverting input a control holds but has not yet
+	 * committed. A control's own write reaches the store and then equals the store
+	 * value, so it is never echoed back.
+	 */
+	private syncControls(force = false): void {
 		for (const [name, field] of this.fields) {
 			const next = this.state.getValue(name);
-			if (!isSameValue(next, field.getValue())) {
+			const changed = !isSameValue(next, this.lastSeen.get(name));
+			this.lastSeen.set(name, next);
+			if ((force || changed) && !isSameValue(next, field.getValue())) {
 				field.setValue(next);
 			}
 		}
@@ -120,13 +132,16 @@ export class InjectedFormDriver implements FormDriver {
 		if (this.state.getValue(registration.name) === undefined && hasDefault(entry.defaultValue)) {
 			this.state.setValue(registration.name, entry.defaultValue);
 		}
-		entry.setValue(this.state.getValue(registration.name));
+		const seeded = this.state.getValue(registration.name);
+		this.lastSeen.set(registration.name, seeded);
+		entry.setValue(seeded);
 
 		return () => {
 			if (this.fields.get(registration.name) === entry) {
 				this.fields.delete(registration.name);
 				this.touched.delete(registration.name);
 				this.dirty.delete(registration.name);
+				this.lastSeen.delete(registration.name);
 				if (this.nativeErrors[registration.name]) {
 					const { [registration.name]: _gone, ...rest } = this.nativeErrors;
 					this.nativeErrors = rest;
@@ -279,7 +294,7 @@ export class InjectedFormDriver implements FormDriver {
 		this.touched.clear();
 		this.dirty.clear();
 		this.submitted = false;
-		this.syncControls();
+		this.syncControls(true);
 		this.bump();
 	}
 }

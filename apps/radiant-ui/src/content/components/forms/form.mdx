@@ -165,7 +165,7 @@ The store implements `FormStateStore`. Paths are the dotted `name` of each `RuiF
 
 Because the store validates, `defaultValues`, `defaultValuesData`, `resolver` and field `rules` are ignored while a store is injected. The form also keeps touched and dirty state itself, so a store has no `touched`, `dirty`, `checkValidity()` or submission members to provide. `validate` must count errors from every source, including `native`, and must not clear another source's errors.
 
-A store write updates the matching control. Setting, replacing or clearing `store` re-registers every control: the new store's values are written into the controls, and clearing it returns to the form's own store, with the values it held before the injection, or created from `defaultValues` if it had none. `rui-submit` carries the snapshot `values` and `rui-invalid` the snapshot `errors`.
+A store write updates the matching control, and only when that path's value changed: an unrelated store notification leaves input a control holds but has not committed alone. Setting, replacing or clearing `store` re-registers every control: the new store's values are written into the controls, and clearing it returns to the form's own store, with the values it held before the injection, or created from `defaultValues` if it had none. `rui-submit` carries the snapshot `values` and `rui-invalid` the snapshot `errors`.
 
 ## Theming
 
