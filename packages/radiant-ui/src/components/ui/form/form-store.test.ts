@@ -29,14 +29,14 @@ describe('FormStore', () => {
 				name: 'code',
 				getValue: () => 'ab',
 				setValue: () => {},
-				getValidity: () => ({ valid: false, message: 'Enter all 6 characters' }),
+				getValidity: () => ({ valid: false, type: 'tooShort', message: 'Enter all 6 characters' }),
 			});
 
 			expect(await store.validateAll()).toBe(false);
-			expect(store.errors.code).toEqual({ type: 'native', message: 'Enter all 6 characters' });
+			expect(store.errors.code).toEqual({ type: 'tooShort', message: 'Enter all 6 characters' });
 		});
 
-		it('falls back to a generic message', async () => {
+		it('reports an invalid control without inventing a message', async () => {
 			const store = new FormStore<{ code: string }>();
 			store.register({
 				name: 'code',
@@ -46,7 +46,8 @@ describe('FormStore', () => {
 			});
 
 			expect(await store.validateField('code')).toBe(false);
-			expect(store.getFieldError('code')).toBe('Invalid value');
+			expect(store.getFieldError('code')).toBeUndefined();
+			expect(store.errors.code).toEqual({ type: 'customError', message: undefined });
 		});
 
 		it('lets a rule message win over the control message', async () => {
@@ -91,7 +92,7 @@ describe('FormStore', () => {
 			expect(await store.validateField('code')).toBe(false);
 			expect(store.getFieldError('code')).toBe('Too short');
 			expect(await store.validateAll()).toBe(false);
-			expect(store.errors.code).toEqual({ type: 'native', message: 'Too short' });
+			expect(store.errors.code).toEqual({ type: 'customError', message: 'Too short' });
 		});
 
 		it('clears the error once the control is valid', async () => {
@@ -381,17 +382,6 @@ describe('FormStore', () => {
 			expect(store.shouldDisplayFieldError('a')).toBe(true);
 		});
 
-		it('shows the message of another source when the winning entry has none', async () => {
-			const store = new FormStore<{ a: string }>();
-			store.register({ name: 'a', getValue: () => 'ok', setValue: () => {} });
-
-			store.setErrors('native', { a: { message: 'Native text' } });
-			store.setErrors('server', { a: {} });
-
-			expect(store.errors.a).toEqual({ message: 'Native text' });
-			expect(await store.validate(['a'])).toBe(false);
-		});
-
 		it('treats an empty message like a missing one', async () => {
 			const store = new FormStore<{ a: string }>();
 			store.register({ name: 'a', getValue: () => 'ok', setValue: () => {} });
@@ -402,7 +392,7 @@ describe('FormStore', () => {
 			expect(store.getFieldError('a')).toBeUndefined();
 		});
 
-		it('merges sources as native, then validation, then any other source', async () => {
+		it('lets a host source replace its own validation and the later source win', async () => {
 			const store = new FormStore<{ a: string }>();
 			store.register({
 				name: 'a',
@@ -412,9 +402,6 @@ describe('FormStore', () => {
 				getValidity: () => ({ valid: false, message: 'Native' }),
 			});
 			await store.validate(['a']);
-			expect(store.errors.a?.message).toBe('Rule');
-
-			store.setErrors('native', { a: { message: 'Native source' } });
 			expect(store.errors.a?.message).toBe('Rule');
 
 			store.setErrors('server', { a: { message: 'Server' } });
@@ -489,6 +476,52 @@ describe('FormStore', () => {
 			store.setErrors('server', { a: { message: 'updated' } });
 
 			expect(store.errors.a?.message).toBe('updated');
+		});
+	});
+
+	describe('a value written to the store is a change', () => {
+		function field(name: string, initial: unknown = '') {
+			let current = initial;
+			return {
+				name,
+				getValue: () => current,
+				setValue: (next: unknown) => {
+					current = next;
+				},
+			};
+		}
+
+		it('marks the field dirty and validates it per mode', async () => {
+			const store = new FormStore<{ a: string }>({ mode: 'onChange' });
+			store.register({ ...field('a'), rules: { required: 'Req' } });
+
+			store.setValue('a', '');
+			await vi.waitFor(() => expect(store.getFieldError('a')).toBe('Req'));
+
+			expect(store.dirty.a).toBe(true);
+		});
+
+		it('clears a host error at the path when the user edits that field', async () => {
+			const store = new FormStore<{ a: string; b: string }>();
+			store.register(field('a', 'x'));
+			store.register(field('b', 'y'));
+			store.setErrors('server', { a: { message: 'Taken' }, b: { message: 'Other' } });
+
+			await store.handleFieldChange('a');
+
+			expect(store.errors.a).toBeUndefined();
+			expect(store.errors.b?.message).toBe('Other');
+			expect(await store.validate(['a'])).toBe(true);
+		});
+
+		it('clears a host error at the path when a value is written through setValue', () => {
+			const store = new FormStore<{ a: string }>();
+			store.register(field('a'));
+			store.setErrors('server', { a: { message: 'Taken' } });
+
+			store.setValue('a', 'fixed');
+
+			expect(store.errors.a).toBeUndefined();
 		});
 	});
 });

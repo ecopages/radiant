@@ -74,7 +74,13 @@ export type RegisterOptions = {
 };
 
 /** A control's own validity, as `ElementInternals.setValidity` reports it. */
-export type FieldControlValidity = { valid: boolean; message?: string };
+export type FieldControlValidity = {
+	valid: boolean;
+	/** The failing `ValidityState` flag (`valueMissing`, `typeMismatch`, ...); `customError` when a reader gave none. */
+	type?: string;
+	/** The control's own `validationMessage`, when it has one. */
+	message?: string;
+};
 
 /**
  * What registering a field returns. It identifies the registration itself, not its

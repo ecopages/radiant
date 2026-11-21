@@ -1,5 +1,4 @@
 import { createRulesResolver } from './resolvers';
-import { formErrorSourceRank, FORM_NATIVE_ERROR_SOURCE, FORM_VALIDATION_ERROR_SOURCE } from './form-state-store';
 import type { FormStateSnapshot, FormStateStore } from './form-state-store';
 import { deletePath, getPath, setPath } from './value-path';
 import type {
@@ -113,36 +112,11 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 			this.mergedErrors = this.ownErrors;
 			return;
 		}
-		const candidates = new Map<string, Array<{ rank: number; error: FieldError }>>();
-		const consider = (path: string, error: FieldError, rank: number) => {
-			const list = candidates.get(path) ?? [];
-			list.push({ rank, error });
-			candidates.set(path, list);
-		};
-		for (const [source, errors] of this.sourceErrors) {
-			for (const [path, error] of Object.entries(errors)) {
-				consider(path, error, formErrorSourceRank(source));
-			}
+		const merged: Record<string, FieldError> = { ...this.ownErrors } as Record<string, FieldError>;
+		for (const errors of this.sourceErrors.values()) {
+			Object.assign(merged, errors);
 		}
-		for (const [path, error] of Object.entries(this.ownErrors) as Array<[string, FieldError]>) {
-			consider(
-				path,
-				error,
-				formErrorSourceRank(error.type === 'native' ? FORM_NATIVE_ERROR_SOURCE : FORM_VALIDATION_ERROR_SOURCE),
-			);
-		}
-		const merged: Record<string, FieldError> = {};
-		for (const [path, list] of candidates) {
-			const ordered = list
-				.map((candidate, index) => ({ ...candidate, index }))
-				.sort((a, b) => a.rank - b.rank || a.index - b.index);
-			const winner = ordered[ordered.length - 1]?.error;
-			const worded = [...ordered].reverse().find((candidate) => candidate.error.message);
-			if (winner) {
-				merged[path] = winner.message || !worded ? winner : { ...winner, message: worded.error.message };
-			}
-		}
-		this.mergedErrors = merged as Partial<Record<string, FieldError>>;
+		this.mergedErrors = merged;
 	}
 
 	getValue(path: string): unknown {
@@ -341,16 +315,46 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		return next;
 	}
 
-	setValue(name: string, value: unknown, options?: { shouldDirty?: boolean; shouldTouch?: boolean }): void {
+	/**
+	 * Write a value as a change, the way the injected store contract defines it: the
+	 * field becomes dirty, validation runs per `mode`, and an error a host set at the
+	 * path with `setErrors` is cleared, since the user has now edited that field.
+	 */
+	setValue(name: string, value: unknown, options?: { shouldTouch?: boolean }): void {
 		this.values = setPath(this.values, name, value);
 		this.rewriteRelatedControls(name);
-		if (options?.shouldDirty) {
-			this.dirty = { ...this.dirty, [name]: true };
-		}
 		if (options?.shouldTouch) {
 			this.touched = { ...this.touched, [name]: true };
 		}
-		this.notify();
+		this.afterChange(name).catch((error: unknown) => reportError(error));
+	}
+
+	private async afterChange(name: string): Promise<void> {
+		this.dirty = { ...this.dirty, [name]: true };
+		this.clearSourceErrorsAt(name);
+		if (this.shouldValidate(name, 'change')) {
+			await this.validateField(name);
+		} else {
+			this.notify();
+		}
+	}
+
+	private clearSourceErrorsAt(name: string): void {
+		let changed = false;
+		for (const [source, errors] of this.sourceErrors) {
+			if (name in errors) {
+				const { [name]: _removed, ...rest } = errors;
+				if (Object.keys(rest).length > 0) {
+					this.sourceErrors.set(source, rest);
+				} else {
+					this.sourceErrors.delete(source);
+				}
+				changed = true;
+			}
+		}
+		if (changed) {
+			this.mergeErrors();
+		}
 	}
 
 	markTouched(name: string): void {
@@ -406,9 +410,10 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		const result = await this.resolver(values, { fields: this.buildResolverFields() }, { names: [name] });
 		const next = { ...this.ownErrors };
 		const resolverError: FieldError | undefined = (result.errors as Partial<Record<string, FieldError>>)[name];
-		const error = resolverError?.message ? resolverError : (this.readNativeError(name) ?? resolverError);
+		const nativeError = resolverError?.message ? undefined : this.readNativeError(name);
+		const error = nativeError ?? resolverError;
 		if (error) {
-			next[name] = error.type === 'native' ? error : { type: 'validation', message: error.message };
+			next[name] = nativeError ?? { type: 'validation', message: error.message };
 		} else {
 			delete next[name];
 		}
@@ -443,7 +448,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		if (!validity || validity.valid) {
 			return undefined;
 		}
-		return { type: 'native', message: validity.message || 'Invalid value' };
+		return { type: validity.type ?? 'customError', message: validity.message || undefined };
 	}
 
 	shouldValidate(name: string, trigger: 'change' | 'blur'): boolean {
@@ -470,14 +475,8 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		if (!field) {
 			return;
 		}
-		const value = field.getValue();
-		this.values = setPath(this.values, name, value);
-		this.dirty = { ...this.dirty, [name]: true };
-		if (this.shouldValidate(name, 'change')) {
-			await this.validateField(name);
-		} else {
-			this.notify();
-		}
+		this.values = setPath(this.values, name, field.getValue());
+		await this.afterChange(name);
 	}
 
 	/** Interface form of {@link FormStore.handleFieldBlur}; validation runs per `mode`. */

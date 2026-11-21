@@ -345,7 +345,7 @@ export function readControlValue(control: HTMLElement): unknown {
 }
 
 /**
- * Reads the control's validity through its adapter, or the form-associated default.
+ * Reads the control's validity through its adapter, or from the native element or form-associated host.
  *
  * @remarks Reads properties, never `checkValidity()`, which fires an `invalid` event.
  * Returns `undefined` when the host exposes no validity, such as on the server.
@@ -356,8 +356,12 @@ export function readControlValidity(control: HTMLElement): FieldControlValidity 
 	if (adapter?.validity) {
 		return adapter.validity(host);
 	}
-	if (!isFormAssociatedHost(host)) {
+	const native = NATIVE_VALIDATED.has(host.localName);
+	if (!native && !isFormAssociatedHost(host)) {
 		return undefined;
+	}
+	if (native && Reflect.get(host, 'willValidate') === false) {
+		return { valid: true };
 	}
 	const validity: unknown = Reflect.get(host, 'validity');
 	if (typeof validity !== 'object' || validity === null) {
@@ -368,7 +372,28 @@ export function readControlValidity(control: HTMLElement): FieldControlValidity 
 		return undefined;
 	}
 	const message = Reflect.get(host, 'validationMessage');
-	return { valid, message: typeof message === 'string' ? message : undefined };
+	const text = typeof message === 'string' ? message : undefined;
+	return valid ? { valid, message: text } : { valid, type: failingFlag(validity), message: text };
+}
+
+/** Detected by tag name, like the other native controls, so it works where the DOM globals do not exist. */
+const NATIVE_VALIDATED: ReadonlySet<string> = new Set(['input', 'textarea', 'select']);
+
+const VALIDITY_FLAGS = [
+	'valueMissing',
+	'typeMismatch',
+	'patternMismatch',
+	'tooLong',
+	'tooShort',
+	'rangeUnderflow',
+	'rangeOverflow',
+	'stepMismatch',
+	'badInput',
+	'customError',
+] as const;
+
+function failingFlag(validity: object): string {
+	return VALIDITY_FLAGS.find((flag) => Reflect.get(validity, flag) === true) ?? 'customError';
 }
 
 export function writeControlValue(control: HTMLElement, value: unknown): void {

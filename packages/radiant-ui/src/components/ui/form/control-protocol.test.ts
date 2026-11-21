@@ -117,8 +117,52 @@ describe('field control protocol in the browser', () => {
 			expect(readControlValidity(host)).toEqual({ valid: true, message: '' });
 
 			host.internals.setValidity({ customError: true }, 'Enter all 6 characters');
-			expect(readControlValidity(host)).toEqual({ valid: false, message: 'Enter all 6 characters' });
+			expect(readControlValidity(host)).toEqual({
+				valid: false,
+				type: 'customError',
+				message: 'Enter all 6 characters',
+			});
 			host.remove();
+		});
+
+		it('reads a native input, textarea or select and names the failing flag', () => {
+			const input = document.createElement('input');
+			input.type = 'email';
+			input.required = true;
+			document.body.append(input);
+			expect(readControlValidity(input)).toMatchObject({ valid: false, type: 'valueMissing' });
+
+			input.value = 'x';
+			expect(readControlValidity(input)).toMatchObject({ valid: false, type: 'typeMismatch' });
+			expect(readControlValidity(input)?.message).toBeTruthy();
+
+			input.value = 'a@b.co';
+			expect(readControlValidity(input)).toMatchObject({ valid: true });
+
+			const textarea = document.createElement('textarea');
+			textarea.required = true;
+			textarea.minLength = 3;
+			document.body.append(textarea);
+			expect(readControlValidity(textarea)).toMatchObject({ valid: false, type: 'valueMissing' });
+
+			const select = document.createElement('select');
+			select.required = true;
+			select.innerHTML = '<option value=""></option><option value="a">a</option>';
+			document.body.append(select);
+			expect(readControlValidity(select)).toMatchObject({ valid: false, type: 'valueMissing' });
+			input.remove();
+			textarea.remove();
+			select.remove();
+		});
+
+		it('treats a control barred from constraint validation as valid', () => {
+			const input = document.createElement('input');
+			input.required = true;
+			input.disabled = true;
+			document.body.append(input);
+
+			expect(readControlValidity(input)).toMatchObject({ valid: true });
+			input.remove();
 		});
 
 		it('does not fire invalid while reading', () => {
