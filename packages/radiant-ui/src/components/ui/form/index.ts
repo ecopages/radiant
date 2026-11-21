@@ -2,6 +2,8 @@ export { RuiForm, type RuiFormSubmitDetail, type RuiFormInvalidDetail } from './
 export {
 	RuiForm as RuiFormElement,
 	type RuiFormProps,
+	type RuiFormResetContext,
+	type RuiFormResetHandler,
 	type RuiFormSubmitContext,
 	type RuiFormSubmitHandler,
 } from './form.script';

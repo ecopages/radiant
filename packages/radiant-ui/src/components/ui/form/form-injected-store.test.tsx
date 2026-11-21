@@ -966,4 +966,99 @@ describe('rui-form with an injected store', () => {
 			expect(context.errors.title).toBe(store.getSnapshot().errors.title);
 		});
 	});
+
+	describe('resetHandler', () => {
+		it('hands the native reset to the host instead of resetting the store', async () => {
+			const { store } = createTestStore({ title: 'Initial', profile: { name: '' } });
+			const reset = vi.spyOn(store, 'reset');
+			const { form, title, host } = await mountInputs(store);
+			const handler = vi.fn(({ store: given }: { store: FormStateStore }) => {
+				given.setValue('title', 'From host');
+			});
+			form.resetHandler = handler;
+			type(title, 'Typed');
+			await settle();
+
+			host.querySelector('form')?.reset();
+			await settle();
+
+			expect(handler).toHaveBeenCalledTimes(1);
+			expect(handler.mock.calls[0]?.[0].store).toBe(store);
+			expect(reset).not.toHaveBeenCalled();
+			expect(title.value).toBe('From host');
+		});
+
+		it('rewrites controls from the store after the browser reset even when the handler is async', async () => {
+			const { store } = createTestStore({ title: 'Initial', profile: { name: '' } });
+			const { form, title, host } = await mountInputs(store);
+			form.resetHandler = async ({ store: given }) => {
+				await Promise.resolve();
+				given.setValue('title', 'Later');
+			};
+
+			host.querySelector('form')?.reset();
+			await settle();
+
+			expect(title.value).toBe('Later');
+		});
+
+		it('reports a rejecting handler without an unhandled rejection', async () => {
+			const boom = new Error('reset');
+			const errors = vi.fn();
+			const unhandled = vi.fn();
+			const onError = (event: ErrorEvent) => {
+				event.preventDefault();
+				errors(event.error);
+			};
+			const onRejection = (event: PromiseRejectionEvent) => {
+				event.preventDefault();
+				unhandled(event.reason);
+			};
+			window.addEventListener('error', onError);
+			window.addEventListener('unhandledrejection', onRejection);
+			cleanup.push(() => {
+				window.removeEventListener('error', onError);
+				window.removeEventListener('unhandledrejection', onRejection);
+			});
+			const { store } = createTestStore({ title: 'Initial', profile: { name: '' } });
+			const { form, host } = await mountInputs(store);
+			form.resetHandler = () => Promise.reject(boom);
+
+			host.querySelector('form')?.reset();
+			await settle();
+
+			expect(errors).toHaveBeenCalledWith(boom);
+			expect(unhandled).not.toHaveBeenCalled();
+		});
+
+		it('keeps resetting the store itself when no handler is set', async () => {
+			const { store } = createTestStore({ title: 'Initial', profile: { name: '' } });
+			const reset = vi.spyOn(store, 'reset');
+			const { host } = await mountInputs(store);
+
+			host.querySelector('form')?.reset();
+			await settle();
+
+			expect(reset).toHaveBeenCalledTimes(1);
+		});
+	});
+
+	describe('submitHandler focus', () => {
+		it('focuses the control registered for a path and ignores an unknown path', async () => {
+			const { store } = createTestStore({ title: '', profile: { name: '' } });
+			const { form, name, host } = await mountInputs(store);
+			let focus: (path: string) => void = () => {};
+			form.submitHandler = (context) => {
+				focus = context.focus;
+			};
+
+			host.querySelector('form')?.requestSubmit();
+			await settle();
+			focus('profile.name');
+			expect(document.activeElement).toBe(name);
+
+			expect(() => focus('nope')).not.toThrow();
+			expect(document.activeElement).toBe(name);
+		});
+	});
 });

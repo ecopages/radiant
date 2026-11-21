@@ -100,6 +100,8 @@ export type FieldRegistration = RegisterOptions & {
 	getRules?: () => FieldRules | undefined;
 	/** Read at validation time; an invalid result adds a `native` error when no rule or resolver error exists. */
 	getValidity?: () => FieldControlValidity | undefined;
+	/** Move focus to this field's control. */
+	focus?: () => void;
 	onBlur?: () => void;
 	onChange?: () => void;
 };

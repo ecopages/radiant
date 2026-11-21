@@ -329,21 +329,50 @@ export class InjectedFormDriver implements FormDriver {
 		this.state.setNativeValidity({});
 	}
 
+	/** Focus the control registered for `path`; nothing happens for a path with no control. */
+	focus(path: string): void {
+		this.fields.get(path)?.registration.focus?.();
+	}
+
 	/**
 	 * Reset the store and rewrite the controls from it, again after the current task.
-	 *
-	 * @remarks The `reset` event fires before the browser resets the form's controls
-	 * to their default attributes, which would overwrite the values just restored.
 	 */
 	reset(): void {
 		this.state.reset();
 		this.syncControls(true);
+		this.resyncAfterNativeReset();
+		this.bump();
+	}
+
+	/**
+	 * Let the host reset its own state, then rewrite the controls from the store.
+	 *
+	 * @remarks The handler may be async, so the controls are rewritten once it settles
+	 * and again after the browser's own reset.
+	 */
+	async resetThrough(handler: () => void | Promise<void>): Promise<void> {
+		this.resyncAfterNativeReset();
+		try {
+			await handler();
+		} finally {
+			this.syncControls(true);
+			this.reportNativeValidity();
+			this.bump();
+		}
+	}
+
+	/**
+	 * Write the store values into the controls once more after the current task.
+	 *
+	 * @remarks The `reset` event fires before the browser resets the form's controls
+	 * to their default attributes, which would overwrite the values just restored.
+	 */
+	private resyncAfterNativeReset(): void {
 		clearTimeout(this.resetTimer);
 		this.resetTimer = setTimeout(() => {
 			this.syncControls(true);
 			this.reportNativeValidity();
 			this.bump();
 		}, 0);
-		this.bump();
 	}
 }

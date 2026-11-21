@@ -44,12 +44,16 @@ export type RuiFormProps<T extends FieldValues = FieldValues> = {
 	store?: FormStateStore;
 	/** Takes over submit when `store` is injected; see {@link RuiFormSubmitHandler}. */
 	submitHandler?: RuiFormSubmitHandler;
+	/** Takes over the native `reset` event when `store` is injected; see {@link RuiFormResetHandler}. */
+	resetHandler?: RuiFormResetHandler;
 };
 
 /** What `RuiForm` hands a {@link RuiFormSubmitHandler}. */
 export type RuiFormSubmitContext = {
 	/** The injected store, with the controls' values and native validity already flushed into it. */
 	store: FormStateStore;
+	/** Focuses the control registered for a path, for the host to move focus to the first invalid field. */
+	focus: (path: string) => void;
 	/** Submits the native `<form>` to its `action` and `method`; does nothing when neither is set. */
 	submitNatively: () => void;
 };
@@ -62,6 +66,21 @@ export type RuiFormSubmitContext = {
  * rejection is reported with `reportError`.
  */
 export type RuiFormSubmitHandler = (context: RuiFormSubmitContext) => void | Promise<void>;
+
+/** What `RuiForm` hands a {@link RuiFormResetHandler}. */
+export type RuiFormResetContext = {
+	/** The injected store. */
+	store: FormStateStore;
+};
+
+/**
+ * Called on the native `reset` event instead of resetting the store.
+ *
+ * @remarks Only with an injected store. The host restores its own state, and the
+ * form then rewrites every control from the store, again after the browser's own
+ * reset. A rejection is reported with `reportError`.
+ */
+export type RuiFormResetHandler = (context: RuiFormResetContext) => void | Promise<void>;
 
 export type RuiFormSubmitDetail<T extends FieldValues = FieldValues> = {
 	values: T;
@@ -181,6 +200,7 @@ export class RuiForm extends RadiantElement {
 	@prop({ type: String, reflect: true }) method?: HTMLFormElement['method'];
 	@prop({ type: Object }) store?: FormStateStore;
 	@prop({ type: Object }) submitHandler?: RuiFormSubmitHandler;
+	@prop({ type: Object }) resetHandler?: RuiFormResetHandler;
 	onSubmit?: (values: FieldValues) => void | Promise<void>;
 
 	private driver: FormDriver | undefined;
@@ -277,6 +297,7 @@ export class RuiForm extends RadiantElement {
 			driver.flush();
 			const context: RuiFormSubmitContext = {
 				store: this.drivenStore,
+				focus: (path) => driver.focus(path),
 				submitNatively: () => {
 					if (this.getAttribute('action') !== null || this.getAttribute('method') !== null) {
 						this.queryNativeForm()?.submit();
@@ -513,7 +534,13 @@ export class RuiForm extends RadiantElement {
 
 	@onEvent({ ref: 'form', type: 'reset' })
 	onNativeReset(): void {
-		this.driver?.reset();
+		const driver = this.driver;
+		if (driver instanceof InjectedFormDriver && this.drivenStore && typeof this.resetHandler === 'function') {
+			const context: RuiFormResetContext = { store: this.drivenStore };
+			driver.resetThrough(() => this.resetHandler?.(context)).catch((error: unknown) => reportError(error));
+			return;
+		}
+		driver?.reset();
 	}
 }
 

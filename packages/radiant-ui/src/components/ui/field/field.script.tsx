@@ -282,6 +282,9 @@ export class RuiField extends RadiantElement {
 				const control = findFieldControl(this);
 				return control ? readControlValidity(control) : undefined;
 			},
+			focus: () => {
+				findFieldControl(this)?.focus();
+			},
 			setValue: (value) => {
 				const control = findFieldControl(this);
 				if (control) {
