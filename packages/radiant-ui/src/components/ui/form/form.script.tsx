@@ -258,14 +258,16 @@ export class RuiForm extends RadiantElement {
 			this.rememberFieldOptions(name, options);
 		},
 		handleFieldChange: (name) => {
-			void this.ensureDriver()
+			this.ensureDriver()
 				.handleFieldChange(name)
-				.then(() => this.publishFormContext({ force: true }));
+				.then(() => this.publishFormContext({ force: true }))
+				.catch((error: unknown) => reportError(error));
 		},
 		handleFieldBlur: (name) => {
-			void this.ensureDriver()
+			this.ensureDriver()
 				.handleFieldBlur(name)
-				.then(() => this.publishFormContext({ force: true }));
+				.then(() => this.publishFormContext({ force: true }))
+				.catch((error: unknown) => reportError(error));
 		},
 		subscribePresentation: (listener) => {
 			this.presentationListeners.add(listener);
@@ -495,19 +497,24 @@ export class RuiForm extends RadiantElement {
 		return formatted || issue.message || undefined;
 	}
 
+	/**
+	 * Built with `Object.fromEntries`, which defines own properties, so a field named
+	 * `__proto__` is a key like any other instead of replacing the map's prototype.
+	 */
 	private buildFieldPresentations(driver: FormDriver): Record<string, FormFieldPresentation> {
-		const fields: Record<string, FormFieldPresentation> = {};
-		for (const name of driver.getRegisteredFieldNames()) {
-			const show = driver.shouldDisplayFieldError(name);
-			const error = Object.hasOwn(driver.errors, name) ? driver.errors[name] : undefined;
-			const warning = Object.hasOwn(driver.warnings, name) ? driver.warnings[name] : undefined;
-			fields[name] = {
-				error: show ? this.issueText(error, name) : undefined,
-				invalid: show,
-				warning: this.issueText(warning, name),
-			};
-		}
-		return fields;
+		return Object.fromEntries(
+			driver.getRegisteredFieldNames().map((name) => {
+				const show = driver.shouldDisplayFieldError(name);
+				const error = Object.hasOwn(driver.errors, name) ? driver.errors[name] : undefined;
+				const warning = Object.hasOwn(driver.warnings, name) ? driver.warnings[name] : undefined;
+				const presentation: FormFieldPresentation = {
+					error: show ? this.issueText(error, name) : undefined,
+					invalid: show,
+					warning: this.issueText(warning, name),
+				};
+				return [name, presentation];
+			}),
+		);
 	}
 
 	private publishFormContext(options?: { force?: boolean }): void {

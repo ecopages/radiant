@@ -107,13 +107,13 @@ function createTestStore(initial: Record<string, unknown>, options: TestStoreOpt
 	}
 
 	function allErrors(): Record<string, FieldError> {
-		const errors: Record<string, FieldError> = {};
-		for (const [path, fact] of Object.entries(native)) {
-			errors[path] = { type: fact.type, params: fact.params, message: fact.message, source: 'native' };
-		}
-		Object.assign(errors, options.validate?.(values) ?? {});
-		Object.assign(errors, hostErrors);
-		return errors;
+		const fromFacts = Object.fromEntries(
+			Object.entries(native).map(([path, fact]) => [
+				path,
+				{ type: fact.type, params: fact.params, message: fact.message, source: 'native' },
+			]),
+		);
+		return { ...fromFacts, ...(options.validate?.(values) ?? {}), ...hostErrors };
 	}
 
 	function visibleErrors(): Record<string, FieldError> {
@@ -1406,6 +1406,65 @@ describe('rui-form with an injected store', () => {
 
 			expect(mutations).toBeLessThan(5);
 			expect(findFieldError(host.querySelector('rui-field') as HTMLElement)?.textContent).toBe('Taken');
+		});
+
+		it('presents an error for a field named __proto__', async () => {
+			const { store } = createTestStore({ ['__proto__']: '', other: '' });
+			store.setHostErrors(JSON.parse('{"__proto__": {"type": "server", "message": "Nope"}}'));
+			const host = document.createElement('div');
+			document.body.append(host);
+			const root = createRoot(host);
+			root.render(
+				<RuiForm store={store}>
+					<RuiField name="__proto__">
+						<RuiInput />
+						<RuiFieldError />
+					</RuiField>
+				</RuiForm>,
+			);
+			cleanup.push(() => {
+				root.unmount();
+				host.remove();
+			});
+			await customElements.whenDefined('rui-field');
+			await flushRender();
+			await settle();
+
+			const field = host.querySelector('rui-field') as HTMLElement;
+			expect(findFieldError(field)?.textContent).toBe('Nope');
+			expect(findFieldControl(field)?.getAttribute('aria-invalid')).toBe('true');
+		});
+
+		it('retries the write on submit when the store throws during blur', async () => {
+			const { store, calls } = createTestStore({ email: '', extra: '' });
+			const original = store.blur.bind(store);
+			let throwOnce = true;
+			store.blur = (path, options) => {
+				if (throwOnce) {
+					throwOnce = false;
+					throw new Error('blur failed');
+				}
+				original(path, options);
+			};
+			const { host, email } = await mountEmail(store);
+			const errors = vi.fn();
+			const onError = (event: ErrorEvent) => {
+				event.preventDefault();
+				errors(event.error);
+			};
+			window.addEventListener('error', onError);
+			email.focus();
+			email.value = 'a@b.co';
+			email.blur();
+			await settle();
+			window.removeEventListener('error', onError);
+			calls.length = 0;
+
+			host.querySelector('form')?.requestSubmit();
+			await settle();
+
+			expect(calls.filter((call) => call.kind === 'setValue' && call.path === 'email')).toHaveLength(1);
+			expect(store.getValue('email')).toBe('a@b.co');
 		});
 
 		it('does not mark fields named like Object.prototype members as invalid', async () => {

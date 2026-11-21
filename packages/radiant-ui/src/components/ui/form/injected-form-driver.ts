@@ -339,8 +339,14 @@ export class InjectedFormDriver implements FormDriver {
 		const native = this.factOf(entry);
 		if (this.isChanged(entry)) {
 			const value = entry.registration.getValue();
+			const previous = entry.baseline;
 			entry.baseline = value;
-			this.state.blur(name, { value, native });
+			try {
+				this.state.blur(name, { value, native });
+			} catch (error) {
+				entry.baseline = previous;
+				throw error;
+			}
 		} else {
 			this.state.blur(name, { native });
 		}
