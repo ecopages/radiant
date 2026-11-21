@@ -10,6 +10,8 @@ export interface FormDriver {
 	getRevision(): number;
 	readonly errors: Partial<Record<string, FieldError>>;
 	register(registration: FieldRegistration): () => void;
+	/** Move the registration named `from` to `registration.name`, keeping its state. */
+	renameField(from: string, registration: FieldRegistration): void;
 	updateFieldOptions(name: string, options: RegisterOptions): void;
 	getRegisteredFieldNames(): string[];
 	getFieldError(name: string): string | undefined;

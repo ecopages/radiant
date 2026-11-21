@@ -10,6 +10,13 @@ export type FormFieldPresentation = {
 
 export type FormContextActions = {
 	register: (registration: FieldRegistration) => () => void;
+	/**
+	 * Move a registered field to the name in `registration`, keeping its value, errors
+	 * and field state, with one notification and no moment where either name is missing.
+	 *
+	 * @remarks The unregister function `register` returned stays valid.
+	 */
+	renameField: (from: string, registration: FieldRegistration) => void;
 	updateFieldOptions: (name: string, options: RegisterOptions) => void;
 	handleFieldChange: (name: string) => void;
 	handleFieldBlur: (name: string) => void;

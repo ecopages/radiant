@@ -49,6 +49,7 @@ const noopUnregister = () => {};
 
 const initialFormActions: FormContextActions = {
 	register: () => noopUnregister,
+	renameField: () => {},
 	updateFieldOptions: () => {},
 	handleFieldChange: () => {},
 	handleFieldBlur: () => {},
@@ -164,6 +165,15 @@ export class RuiForm extends RadiantElement {
 				entry.unregister();
 				this.publishFormContext({ force: true });
 			};
+		},
+		renameField: (from, registration) => {
+			for (const entry of this.registrations) {
+				if (entry.registration.name === from) {
+					entry.registration = registration;
+				}
+			}
+			this.ensureDriver().renameField(from, registration);
+			this.publishFormContext({ force: true });
 		},
 		updateFieldOptions: (name, options) => {
 			this.ensureDriver().updateFieldOptions(name, options);

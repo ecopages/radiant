@@ -37,6 +37,14 @@ export function hasDefault(value: unknown): boolean {
 	return value !== undefined && value !== null;
 }
 
+function moveKey<R extends Partial<Record<string, unknown>>>(record: R, from: string, to: string): R {
+	if (!(from in record)) {
+		return record;
+	}
+	const { [from]: moved, ...rest } = record;
+	return { ...rest, [to]: moved } as R;
+}
+
 /**
  * The store `<rui-form>` creates when no store is injected. It also owns control
  * registration and submit state, which a {@link FormStateStore} does not.
@@ -195,6 +203,29 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 				this.notify();
 			}
 		};
+	}
+
+	renameField(from: string, registration: FieldRegistration): void {
+		const existing = this.fields.get(from);
+		const to = registration.name;
+		if (!existing || from === to) {
+			if (!existing) {
+				this.register(registration);
+			}
+			return;
+		}
+		this.fields.delete(from);
+		this.fields.set(to, {
+			...registration,
+			rules: registration.rules ?? existing.rules,
+			defaultValue: hasDefault(registration.defaultValue) ? registration.defaultValue : existing.defaultValue,
+			getRules: registration.getRules ?? existing.getRules,
+		});
+		this.values = moveKey(this.values, from, to);
+		this.touched = moveKey(this.touched, from, to);
+		this.dirty = moveKey(this.dirty, from, to);
+		this.errors = moveKey(this.ownErrors, from, to);
+		this.notify();
 	}
 
 	/**

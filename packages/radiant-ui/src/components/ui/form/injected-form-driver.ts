@@ -147,6 +147,20 @@ export class InjectedFormDriver implements FormDriver {
 		};
 	}
 
+	renameField(from: string, registration: FieldRegistration): void {
+		if (!this.fields.has(from) || from === registration.name) {
+			return;
+		}
+		this.fields.delete(from);
+		this.lastSeen.delete(from);
+		this.fields.set(registration.name, registration);
+		const seeded = this.state.getValue(registration.name);
+		this.lastSeen.set(registration.name, seeded);
+		registration.setValue(seeded);
+		this.publishNativeErrors();
+		this.bump();
+	}
+
 	updateFieldOptions(_name: string, _options: RegisterOptions): void {}
 
 	getFieldError(name: string): string | undefined {

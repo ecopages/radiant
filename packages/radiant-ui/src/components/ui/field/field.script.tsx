@@ -30,7 +30,7 @@ import {
 } from '../form/control-protocol';
 import { formContext, type FormContextValue } from '../form/form-context';
 import { fieldContext, type FieldContextValue } from './field-context';
-import type { FieldRules } from '../form/types';
+import type { FieldRegistration, FieldRules } from '../form/types';
 import { bindVisibleLabel } from '../shared/field-label';
 import { uniqueId } from '@/lib/unique-id';
 import { MutationController } from '../../../controllers/mutation-controller';
@@ -160,6 +160,7 @@ export class RuiField extends RadiantElement {
 	private unregister?: () => void;
 	private unregisterPresentation?: () => void;
 	private registeredWithForm = false;
+	private registeredName: string | undefined;
 	/**
 	 * Last form write that landed before `findFieldControl` could see a host.
 	 * JSX can add the control later without reconnecting this field.
@@ -195,6 +196,7 @@ export class RuiField extends RadiantElement {
 		this.unregisterPresentation?.();
 		this.unregisterPresentation = undefined;
 		this.registeredWithForm = false;
+		this.registeredName = undefined;
 		this.clearPendingControlWrite();
 		super.disconnectedCallback();
 	}
@@ -266,6 +268,33 @@ export class RuiField extends RadiantElement {
 		return ctx?.fields[fieldName]?.invalid ?? false;
 	}
 
+	private buildRegistration(name: string): FieldRegistration {
+		return {
+			name,
+			rules: this.readFieldRules(),
+			getRules: () => this.readFieldRules(),
+			defaultValue: this.readDefaultValue(),
+			getValue: () => {
+				const control = findFieldControl(this);
+				return control ? readControlValue(control) : undefined;
+			},
+			getValidity: () => {
+				const control = findFieldControl(this);
+				return control ? readControlValidity(control) : undefined;
+			},
+			setValue: (value) => {
+				const control = findFieldControl(this);
+				if (control) {
+					writeControlValue(control, value);
+					this.clearPendingControlWrite();
+					return;
+				}
+				this.pendingControlWrite = { value };
+				this.controlObserver.attach();
+			},
+		};
+	}
+
 	private connectToForm(): void {
 		const fieldName = this.resolveFieldName();
 		const ctx = this.currentFormContext;
@@ -279,30 +308,8 @@ export class RuiField extends RadiantElement {
 			this.registeredWithForm = true;
 			this.unregisterPresentation?.();
 			this.unregisterPresentation = actions.subscribePresentation((ctx) => this.syncField(ctx));
-			this.unregister = actions.register({
-				name: fieldName,
-				rules: this.readFieldRules(),
-				getRules: () => this.readFieldRules(),
-				defaultValue: this.readDefaultValue(),
-				getValue: () => {
-					const control = findFieldControl(this);
-					return control ? readControlValue(control) : undefined;
-				},
-				getValidity: () => {
-					const control = findFieldControl(this);
-					return control ? readControlValidity(control) : undefined;
-				},
-				setValue: (value) => {
-					const control = findFieldControl(this);
-					if (control) {
-						writeControlValue(control, value);
-						this.clearPendingControlWrite();
-						return;
-					}
-					this.pendingControlWrite = { value };
-					this.controlObserver.attach();
-				},
-			});
+			this.registeredName = fieldName;
+			this.unregister = actions.register(this.buildRegistration(fieldName));
 			this.syncField();
 			return;
 		}
@@ -329,11 +336,23 @@ export class RuiField extends RadiantElement {
 
 	@onUpdated(['name'])
 	onNameUpdated(): void {
+		const nextName = this.resolveFieldName();
+		const actions = this.currentFormContext?.actions;
+		if (this.registeredWithForm && this.registeredName === nextName) {
+			return;
+		}
+		if (this.registeredWithForm && this.registeredName && nextName && actions) {
+			actions.renameField(this.registeredName, this.buildRegistration(nextName));
+			this.registeredName = nextName;
+			this.syncField();
+			return;
+		}
 		this.unregister?.();
 		this.unregister = undefined;
 		this.unregisterPresentation?.();
 		this.unregisterPresentation = undefined;
 		this.registeredWithForm = false;
+		this.registeredName = undefined;
 		this.clearPendingControlWrite();
 		this.connectToForm();
 	}
