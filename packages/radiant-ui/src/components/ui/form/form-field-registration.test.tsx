@@ -11,7 +11,7 @@ import { RuiCheckbox as RuiCheckboxScript } from '../checkbox/checkbox.script';
 import { RuiCheckboxGroup as RuiCheckboxGroupScript } from '../checkbox-group/checkbox-group.script';
 import { FormStore } from './form-store';
 import type { FormContextValue } from './form-context';
-import type { FormStateSnapshot, FormStateStore } from './form-state-store';
+import type { FormStateStoreSnapshot, FormStateStore } from './form-state-store';
 
 void RuiFormElement;
 void RuiFieldElement;
@@ -43,7 +43,7 @@ afterEach(() => {
 function createHostStore(): { store: FormStateStore; values: Record<string, unknown> } {
 	const values: Record<string, unknown> = {};
 	const listeners = new Set<() => void>();
-	let snapshot: FormStateSnapshot = { values: { ...values }, errors: {} };
+	let snapshot: FormStateStoreSnapshot = { values: { ...values }, errors: {} };
 	const publish = () => {
 		snapshot = { values: { ...values }, errors: snapshot.errors };
 		for (const listener of [...listeners]) listener();
@@ -64,10 +64,7 @@ function createHostStore(): { store: FormStateStore; values: Record<string, unkn
 		async validate() {
 			return true;
 		},
-		setErrors(_source, errors) {
-			snapshot = { values: snapshot.values, errors };
-			for (const listener of [...listeners]) listener();
-		},
+		setNativeValidity() {},
 	};
 	return { store, values };
 }

@@ -1,5 +1,5 @@
 import { createRulesResolver } from './resolvers';
-import type { FormStateSnapshot, FormStateStore } from './form-state-store';
+import type { FormStateStore, FormStateStoreSnapshot, NativeValidity } from './form-state-store';
 import { deletePath, getPath, setPath } from './value-path';
 import type {
 	FieldError,
@@ -73,7 +73,9 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	private ownErrors: Partial<Record<string, FieldError>> = {};
 	private mergedErrors: Partial<Record<string, FieldError>> = this.ownErrors;
 	private readonly sourceErrors = new Map<string, Record<string, FieldError>>();
-	private snapshot: { values: T; errors: Partial<Record<string, FieldError>>; value: FormStateSnapshot } | undefined;
+	private reportedNative: Record<string, NativeValidity> = {};
+	private snapshot:
+		{ values: T; errors: Partial<Record<string, FieldError>>; value: FormStateStoreSnapshot } | undefined;
 	touched: Partial<Record<string, boolean>> = {};
 	dirty: Partial<Record<string, boolean>> = {};
 	isSubmitting = false;
@@ -90,7 +92,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	/**
 	 * Resolver and rule errors merged with errors contributed through `setErrors`.
 	 *
-	 * @remarks A resolver or rule error wins over a source error on the same field.
+	 * @remarks A source error replaces a resolver or rule error on the same field.
 	 * Assigning replaces the resolver and rule errors only.
 	 */
 	get errors(): Partial<Record<string, FieldError>> {
@@ -103,9 +105,9 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	}
 
 	/**
-	 * Own errors (rules, the resolver and native validity) rank as `validation`, or
-	 * `native` for a native one, and merge with `setErrors` sources in the order
-	 * {@link formErrorSourceRank} declares; an own error wins a tie.
+	 * Own errors (rules, the resolver and native validity) merge with `setErrors`
+	 * sources; a host source replaces an own error at the same path, and the source set
+	 * most recently wins among sources. No message is borrowed between them.
 	 */
 	private mergeErrors(): void {
 		if (this.sourceErrors.size === 0) {
@@ -124,7 +126,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		return field ? field.getValue() : getPath(this.values, path);
 	}
 
-	getSnapshot(): FormStateSnapshot {
+	getSnapshot(): FormStateStoreSnapshot {
 		if (this.snapshot?.values !== this.values || this.snapshot.errors !== this.mergedErrors) {
 			this.snapshot = {
 				values: this.values,
@@ -148,6 +150,12 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		return valid && scope.every((path) => !this.mergedErrors[path]);
 	}
 
+	/**
+	 * Contribute errors from another origin, such as a server. Not part of
+	 * {@link FormStateStore}: an injected store decides for itself how a host's errors
+	 * enter. Replaces every error `source` set before, and an error at a path is
+	 * cleared when the user edits that field.
+	 */
 	setErrors(source: string, errors: Record<string, FieldError>): void {
 		this.sourceErrors.delete(source);
 		if (Object.keys(errors).length > 0) {
@@ -439,11 +447,26 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	}
 
 	/**
+	 * Take the validity facts a host reports for controls it does not register here.
+	 *
+	 * @remarks The store also reads each registered control's own validity when it
+	 * validates, which is fresher than a report, so a report only fills in for a path
+	 * with no registered control. It does not notify, as the interface documents.
+	 */
+	setNativeValidity(validity: Record<string, NativeValidity>): void {
+		this.reportedNative = validity;
+	}
+
+	/**
 	 * @remarks Evaluated after the resolver, so a custom resolver cannot disable it
 	 * and a rule or resolver message wins. Reads `validity` data only; it never
 	 * calls `checkValidity()`, which fires an `invalid` event.
 	 */
 	private readNativeError(name: string): FieldError | undefined {
+		const reported = this.fields.has(name) ? undefined : this.reportedNative[name];
+		if (reported) {
+			return { type: reported.type, message: reported.message || undefined };
+		}
 		const validity = this.fields.get(name)?.getValidity?.();
 		if (!validity || validity.valid) {
 			return undefined;

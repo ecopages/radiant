@@ -5,12 +5,10 @@ export type FieldValues = Record<string, unknown>;
 /**
  * An error at one field path.
  *
- * @remarks Both members are optional. The presence of an entry in an errors record
- * is what makes a field invalid: an entry whose `message` is missing or empty marks
- * the field invalid (`aria-invalid`, a failed `validate`, a blocked submit) and
- * shows no text, unless another source reported a message for the same path, which
- * is then shown: a missing or empty message never hides one. The built-in
- * `FormStore` applies this everywhere, and an injected store is expected to.
+ * @remarks Both members are optional, and an entry may carry other fields, which
+ * the form leaves alone. The presence of an entry in an errors record is what
+ * makes a field invalid (`aria-invalid`, a failed `validate`, a blocked submit);
+ * a missing or empty `message` shows no text.
  */
 export type FieldError = {
 	type?: string;

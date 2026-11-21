@@ -4,15 +4,26 @@ import type { FieldError } from './types';
  * Immutable view of an injected store. A new object is returned only when state
  * changed, so `getSnapshot()` can be compared by identity.
  */
-export type FormStateSnapshot = {
+export type FormStateStoreSnapshot = {
 	/** Nested value tree. A field named `profile.name` reads `values.profile.name`. */
 	readonly values: Readonly<Record<string, unknown>>;
 	/**
-	 * Errors keyed by dotted path, merged across every source by the store in the
-	 * order {@link formErrorSourceRank} declares. An entry is an error even when its
-	 * `message` is missing or empty; see {@link FieldError}.
+	 * The errors the store shows, keyed by dotted path. `<rui-form>` presents each one
+	 * on the registered control with that path and ignores keys it has no control for,
+	 * such as a form-level key. An entry may carry fields beyond `type` and `message`.
 	 */
 	readonly errors: Readonly<Record<string, FieldError>>;
+};
+
+/**
+ * What one control's own validity reports, as `ElementInternals` and the constraint
+ * validation API do: a fact about the control, not an error to show.
+ */
+export type NativeValidity = {
+	/** The failing `ValidityState` flag: `valueMissing`, `typeMismatch`, `tooShort`, `patternMismatch`, `rangeUnderflow`, ... */
+	type: string;
+	/** The control's `validationMessage`, when it has one. */
+	message?: string;
 };
 
 /**
@@ -25,29 +36,31 @@ export type FormStateSnapshot = {
  *
  * @remarks
  * With an injected store the store owns validation timing, touched and dirty
- * state, defaults and which errors show. `<rui-form>` is a control bridge: it
- * keeps control registration, the control value bridge, native validity, ARIA and
- * error presentation, submit and `FormData`, and presents exactly the errors in
- * the snapshot. It ignores its own `mode` and `revalidate-mode`, field
- * `defaultValue`, `defaultValues`, `resolver` and field `rules`.
+ * state, defaults, which errors show and how errors from different origins
+ * combine. `<rui-form>` is a control bridge: it keeps control registration, the
+ * control value bridge, native validity reading, ARIA and error presentation,
+ * submit and `FormData`. It presents `getSnapshot().errors` as the store gives
+ * it, and ignores its own `mode` and `revalidate-mode`, field `defaultValue`,
+ * `defaultValues`, `resolver` and field `rules`.
  *
  * Each member is here because `<rui-form>` calls it:
  * - `getValue` seeds a control when it registers and compares controls with the
- *   store on every notification and before each write.
+ *   store on every notification.
  * - `setValue` receives a control's value on change, on blur and on submit, for
- *   every control that differs from the store, replacing the branch at `path`.
+ *   every control the user changed, replacing the branch at `path`.
  * - `blur` reports that a control lost focus, after its value was written, so the
  *   store can run its own touched and validation-on-blur policy.
  * - `getSnapshot` and `subscribe` publish presentation and the submit values.
- * - `reset` backs the native `reset` event; the form then rewrites controls from the store.
- * - `validate` runs on submit and decides whether `rui-submit` or `rui-invalid` follows.
- * - `setErrors` carries native control validity under the
- *   {@link FORM_NATIVE_ERROR_SOURCE} source, re-read from the controls and sent
- *   on every change, blur and submit.
+ * - `reset` backs the native `reset` event when no `resetHandler` is set; the form
+ *   then rewrites controls from the store.
+ * - `validate` runs on submit when no `submitHandler` is set and decides whether
+ *   `rui-submit` or `rui-invalid` follows.
+ * - `setNativeValidity` reports what the controls' own validity says, so the
+ *   store can treat it as an input to its validation with the same timing as its
+ *   own rules.
  *
- * Not required: `checkValidity()` (the form never needs validity without
- * presenting it) and `touched` / `dirty` in the snapshot (the store keeps them for
- * its own policy). A store may still expose them for its own consumers.
+ * Not required: `checkValidity()` and `touched` / `dirty` in the snapshot (the
+ * store keeps them for its own policy). A store may still expose them.
  */
 export interface FormStateStore {
 	/** Read the value at a dotted path; `undefined` when the branch is absent. */
@@ -57,7 +70,7 @@ export interface FormStateStore {
 	/** Mark `path` touched and run any validation the store ties to blur. Notifies when state changed. */
 	blur(path: string): void;
 	/** Stable snapshot; the same object until state changes. */
-	getSnapshot(): FormStateSnapshot;
+	getSnapshot(): FormStateStoreSnapshot;
 	/** Register a change listener; returns its unsubscribe. */
 	subscribe(listener: () => void): () => void;
 	/**
@@ -68,43 +81,22 @@ export interface FormStateStore {
 	reset(): void;
 	/**
 	 * Validate `paths`, or the whole tree when omitted, and resolve with whether that
-	 * scope is valid: `false` when any error from any source remains at the
-	 * validated paths.
+	 * scope is valid: `false` when the store holds any error at the validated paths,
+	 * whether or not it shows it.
 	 *
-	 * @remarks The form calls it without paths on submit, after sending the `native`
-	 * source. It must count `native` errors and must not clear errors another
-	 * source set.
+	 * @remarks The form calls it without paths on submit, after reporting native
+	 * validity. Native validity counts, as does every other error the store holds.
 	 */
 	validate(paths?: string[]): Promise<boolean>;
 	/**
-	 * Replace every error contributed by `source` with `errors`; an empty record
-	 * clears the source. Notifies when state changed. How sources merge, for example
-	 * which message wins on one path, is the store's decision.
+	 * Replace the validity facts of the form's controls. `validity` holds one entry
+	 * for each control that is currently invalid, keyed by path; a path with no entry
+	 * is valid, and an empty record means every control is valid.
+	 *
+	 * @remarks The form calls it before the `setValue`, `blur` or `validate` call it
+	 * accompanies, and when a control is renamed or removed, so one user change is
+	 * one notification: the store applies the facts to the next validation and
+	 * display decision, and need not notify for them alone.
 	 */
-	setErrors(source: string, errors: Record<string, FieldError>): void;
-}
-
-/**
- * Source name `<rui-form>` passes to `setErrors` for native control validity
- * (`ElementInternals.setValidity`) read from form-associated controls.
- */
-export const FORM_NATIVE_ERROR_SOURCE = 'native';
-
-/** Source name for errors a store's own validation produces. */
-export const FORM_VALIDATION_ERROR_SOURCE = 'validation';
-
-/**
- * Rank of an error source when several report an error at one path; the higher
- * rank is the one shown.
- *
- * @remarks The declared order is native, then validation, then any other source
- * (a server, an audit), so a message from a later source replaces an earlier one.
- * The built-in `FormStore` merges in this order, and an injected store is expected
- * to as well. Within one rank the source set last wins.
- */
-export function formErrorSourceRank(source: string): number {
-	if (source === FORM_NATIVE_ERROR_SOURCE) {
-		return 0;
-	}
-	return source === FORM_VALIDATION_ERROR_SOURCE ? 1 : 2;
+	setNativeValidity(validity: Record<string, NativeValidity>): void;
 }

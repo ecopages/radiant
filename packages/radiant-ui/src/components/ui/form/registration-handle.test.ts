@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { FormDriver } from './form-driver';
-import type { FormStateSnapshot, FormStateStore } from './form-state-store';
+import type { FormStateStoreSnapshot, FormStateStore } from './form-state-store';
 import { FormStore } from './form-store';
 import { InjectedFormDriver } from './injected-form-driver';
 import type { FieldRegistration } from './types';
@@ -22,7 +22,7 @@ function control(name: string, initial: unknown) {
 
 function createHostStore(initial: Record<string, unknown>) {
 	let values = initial;
-	let snapshot: FormStateSnapshot = { values, errors: {} };
+	let snapshot: FormStateStoreSnapshot = { values, errors: {} };
 	const listeners = new Set<() => void>();
 	const store: FormStateStore = {
 		getValue: (path) => getPath(values, path),
@@ -41,7 +41,7 @@ function createHostStore(initial: Record<string, unknown>) {
 		async validate() {
 			return true;
 		},
-		setErrors() {},
+		setNativeValidity() {},
 	};
 	return store;
 }

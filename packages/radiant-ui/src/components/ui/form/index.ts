@@ -12,7 +12,7 @@ export {
 	type FormContextActions,
 } from './form-context';
 export { FormStore } from './form-store';
-export { FORM_NATIVE_ERROR_SOURCE, type FormStateSnapshot, type FormStateStore } from './form-state-store';
+export type { FormStateStore, FormStateStoreSnapshot, NativeValidity } from './form-state-store';
 export { createRulesResolver, runRulesResolver } from './resolvers';
 export type { FieldRegistrationHandle } from './types';
 export type { FieldRules, FieldValues, Resolver, ValidationMode, FormState, FieldError } from './types';

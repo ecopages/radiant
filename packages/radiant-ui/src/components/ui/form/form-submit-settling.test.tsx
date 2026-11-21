@@ -3,7 +3,7 @@ import { RuiForm as RuiFormElement } from './form.script';
 import { RuiField as RuiFieldElement } from '../field/field.script';
 import type { FormContextValue } from './form-context';
 import type { FormStore } from './form-store';
-import type { FormStateSnapshot, FormStateStore } from './form-state-store';
+import type { FormStateStoreSnapshot, FormStateStore } from './form-state-store';
 
 void RuiFormElement;
 void RuiFieldElement;
@@ -31,7 +31,7 @@ afterEach(() => {
 
 /** A store whose `validate` throws, as a validator reaching a failing network would. */
 function createThrowingStore(error: Error): FormStateStore {
-	const snapshot: FormStateSnapshot = { values: {}, errors: {} };
+	const snapshot: FormStateStoreSnapshot = { values: {}, errors: {} };
 	return {
 		getValue: () => undefined,
 		setValue() {},
@@ -42,7 +42,7 @@ function createThrowingStore(error: Error): FormStateStore {
 		async validate() {
 			throw error;
 		},
-		setErrors() {},
+		setNativeValidity() {},
 	};
 }
 

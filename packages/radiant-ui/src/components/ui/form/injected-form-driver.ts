@@ -1,5 +1,5 @@
 import type { FormDriver } from './form-driver';
-import { FORM_NATIVE_ERROR_SOURCE, type FormStateStore } from './form-state-store';
+import type { FormStateStore, NativeValidity } from './form-state-store';
 import type { FieldError, FieldRegistration, FieldRegistrationHandle, FieldValues, RegisterOptions } from './types';
 
 /**
@@ -190,7 +190,7 @@ export class InjectedFormDriver implements FormDriver {
 		if (this.fields.get(entry.name) === entry) {
 			this.fields.delete(entry.name);
 		}
-		this.publishNativeErrors();
+		this.reportNativeValidity();
 		this.bump();
 	}
 
@@ -209,7 +209,7 @@ export class InjectedFormDriver implements FormDriver {
 		entry.name = to;
 		this.fields.set(to, entry);
 		this.seed(entry);
-		this.publishNativeErrors();
+		this.reportNativeValidity();
 		this.bump();
 	}
 
@@ -251,29 +251,30 @@ export class InjectedFormDriver implements FormDriver {
 		}
 	}
 
-	/** Write every control the user changed into the store and send native validity, as submit needs. */
+	/** Report native validity, then write every control the user changed into the store, as submit needs. */
 	flush(): void {
+		this.reportNativeValidity();
 		for (const [name, entry] of this.fields) {
 			this.writeControlValue(name, entry);
 		}
-		this.publishNativeErrors();
 	}
 
 	/**
-	 * Send every registered control's current native validity as the `native` source.
+	 * Report every registered control's current native validity to the store.
 	 *
 	 * @remarks Reads `validity` data only; it never calls `checkValidity()`, which
-	 * fires an `invalid` event.
+	 * fires an `invalid` event. It is the first call of every change, blur, submit,
+	 * rename and removal, so the store has the facts before the call that follows.
 	 */
-	private publishNativeErrors(): void {
-		const errors: Record<string, FieldError> = {};
+	private reportNativeValidity(): void {
+		const facts: Record<string, NativeValidity> = {};
 		for (const [name, entry] of this.fields) {
 			const validity = entry.registration.getValidity?.();
 			if (validity && !validity.valid) {
-				errors[name] = { type: 'native', message: validity.message || 'Invalid value' };
+				facts[name] = { type: validity.type ?? 'customError', message: validity.message || undefined };
 			}
 		}
-		this.state.setErrors(FORM_NATIVE_ERROR_SOURCE, errors);
+		this.state.setNativeValidity(facts);
 	}
 
 	async handleFieldChange(name: string): Promise<void> {
@@ -281,8 +282,8 @@ export class InjectedFormDriver implements FormDriver {
 		if (!entry) {
 			return;
 		}
+		this.reportNativeValidity();
 		this.writeControlValue(name, entry);
-		this.publishNativeErrors();
 		this.bump();
 	}
 
@@ -291,8 +292,8 @@ export class InjectedFormDriver implements FormDriver {
 		if (!entry) {
 			return;
 		}
+		this.reportNativeValidity();
 		this.writeControlValue(name, entry);
-		this.publishNativeErrors();
 		this.state.blur(name);
 		this.bump();
 	}
@@ -320,12 +321,12 @@ export class InjectedFormDriver implements FormDriver {
 	}
 
 	/**
-	 * Cancel a pending post-reset write and withdraw the `native` errors this driver
-	 * sent; call before leaving the store.
+	 * Cancel a pending post-reset write and withdraw the validity facts this driver
+	 * reported; call before leaving the store.
 	 */
 	dispose(): void {
 		clearTimeout(this.resetTimer);
-		this.state.setErrors(FORM_NATIVE_ERROR_SOURCE, {});
+		this.state.setNativeValidity({});
 	}
 
 	/**
@@ -340,6 +341,7 @@ export class InjectedFormDriver implements FormDriver {
 		clearTimeout(this.resetTimer);
 		this.resetTimer = setTimeout(() => {
 			this.syncControls(true);
+			this.reportNativeValidity();
 			this.bump();
 		}, 0);
 		this.bump();
