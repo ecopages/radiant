@@ -13,6 +13,7 @@ import { FormStore } from './form-store';
 import type { FormDriver } from './form-driver';
 import type { FormStateStore, NativeValidity } from './form-state-store';
 import { InjectedFormDriver } from './injected-form-driver';
+import { StoreBinding, type BoundStore, type SubmitHelpers } from './store-binding';
 import type {
 	FieldError,
 	FieldRegistration,
@@ -244,6 +245,7 @@ export class RuiForm extends RadiantElement {
 	private driver: FormDriver | undefined;
 	private ownStore: FormStore | undefined;
 	private drivenStore: FormStateStore | undefined;
+	private explicitBinding: BoundStore | undefined;
 	private unsubscribeDriver?: () => void;
 	private readonly registrations = new Set<RegistrationEntry>();
 	private readonly nativeFormId = uniqueId('rui-form');
@@ -333,10 +335,10 @@ export class RuiForm extends RadiantElement {
 	 */
 	private runFormSubmit(): void {
 		const driver = this.ensureDriver();
-		if (driver instanceof InjectedFormDriver && this.drivenStore && typeof this.submitHandler === 'function') {
+		const binding = this.binding();
+		if (driver instanceof InjectedFormDriver && binding?.hasSubmitHandler) {
 			driver.flush();
-			const context: RuiFormSubmitContext = {
-				store: this.drivenStore,
+			const helpers: SubmitHelpers = {
 				focus: (path) => driver.focus(path),
 				validate: (paths) => driver.validate(paths),
 				readNativeValidity: () => driver.readNativeValidity(),
@@ -347,7 +349,7 @@ export class RuiForm extends RadiantElement {
 				},
 			};
 			Promise.resolve()
-				.then(() => this.submitHandler?.(context))
+				.then(() => binding.submit(helpers))
 				.catch((error: unknown) => reportError(error));
 			return;
 		}
@@ -501,15 +503,23 @@ export class RuiForm extends RadiantElement {
 	}
 
 	/**
-	 * The text for an error or warning: `formatError` when set, else the issue's own
-	 * message. `undefined` when neither gives any, so the field is invalid with no text.
+	 * The binding of the current store with its handlers: the one `connect` made for
+	 * it, else one built from the plain `formatError`, `submitHandler` and
+	 * `resetHandler` properties, which are typed for `FieldError`.
 	 */
-	private issueText(issue: FieldError | undefined, path: string): string | undefined {
-		if (!issue) {
+	private binding(): BoundStore | undefined {
+		const store = this.resolveStateStore();
+		if (!store) {
 			return undefined;
 		}
-		const formatted = typeof this.formatError === 'function' ? this.formatError(issue, { path }) : undefined;
-		return formatted || issue.message || undefined;
+		if (this.explicitBinding?.store === store) {
+			return this.explicitBinding;
+		}
+		return new StoreBinding<FieldError>(store, {
+			formatError: this.formatError,
+			submitHandler: this.submitHandler,
+			resetHandler: this.resetHandler,
+		});
 	}
 
 	/**
@@ -517,15 +527,14 @@ export class RuiForm extends RadiantElement {
 	 * `__proto__` is a key like any other instead of replacing the map's prototype.
 	 */
 	private buildFieldPresentations(driver: FormDriver): Record<string, FormFieldPresentation> {
+		const binding = this.binding();
 		return Object.fromEntries(
 			driver.getRegisteredFieldNames().map((name) => {
 				const show = driver.shouldDisplayFieldError(name);
-				const error = Object.hasOwn(driver.errors, name) ? driver.errors[name] : undefined;
-				const warning = Object.hasOwn(driver.warnings, name) ? driver.warnings[name] : undefined;
 				const presentation: FormFieldPresentation = {
-					error: show ? this.issueText(error, name) : undefined,
+					error: show ? binding?.text('errors', name) : undefined,
 					invalid: show,
-					warning: this.issueText(warning, name),
+					warning: binding?.text('warnings', name),
 				};
 				return [name, presentation];
 			}),
@@ -580,15 +589,17 @@ export class RuiForm extends RadiantElement {
 	 * formatter's `issue` and each handler's `context.store` are typed from `store`,
 	 * so a store whose entries carry more than `FieldError` needs no cast.
 	 *
-	 * @remarks The element keeps its handlers typed for `FieldError`, because a custom
-	 * element property cannot be generic. This is the one place that ties them to the
-	 * store, and the form only ever hands a handler issues that store produced.
+	 * @remarks The element builds a {@link StoreBinding} that holds the store and the
+	 * handlers together, so an issue goes from the store's snapshot to `formatError`
+	 * with its type intact. The binding stands in for the plain `formatError`,
+	 * `submitHandler` and `resetHandler` properties as long as `store` is the one it
+	 * was made for; assign those properties instead when the store's entries are the
+	 * minimal `FieldError`.
 	 */
 	connect<TIssue extends FieldError>(store: FormStateStore<TIssue>, handlers: RuiFormHandlers<TIssue> = {}): void {
+		this.explicitBinding = new StoreBinding(store, handlers);
 		this.store = store;
-		this.formatError = handlers.formatError as RuiFormFormatError | undefined;
-		this.submitHandler = handlers.submitHandler as RuiFormSubmitHandler | undefined;
-		this.resetHandler = handlers.resetHandler as RuiFormResetHandler | undefined;
+		this.publishFormContext({ force: true });
 	}
 
 	/**
@@ -626,9 +637,9 @@ export class RuiForm extends RadiantElement {
 	@onEvent({ ref: 'form', type: 'reset' })
 	onNativeReset(): void {
 		const driver = this.driver;
-		if (driver instanceof InjectedFormDriver && this.drivenStore && typeof this.resetHandler === 'function') {
-			const context: RuiFormResetContext = { store: this.drivenStore };
-			driver.resetThrough(() => this.resetHandler?.(context)).catch((error: unknown) => reportError(error));
+		const binding = this.binding();
+		if (driver instanceof InjectedFormDriver && binding?.hasResetHandler) {
+			driver.resetThrough(() => binding.reset()).catch((error: unknown) => reportError(error));
 			return;
 		}
 		driver?.reset();

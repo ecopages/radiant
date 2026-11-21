@@ -82,6 +82,8 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	private mergedErrors: Partial<Record<string, FieldError>> = this.ownErrors;
 	private readonly sourceErrors = new Map<string, Record<string, FieldError>>();
 	private reportedNative: Record<string, NativeValidity> = {};
+	/** Paths whose validation has run since the last reset, whether it passed or failed. */
+	private readonly validatedPaths = new Set<string>();
 	private snapshot:
 		{ values: T; errors: Partial<Record<string, FieldError>>; value: FormStateStoreSnapshot } | undefined;
 	touched: Partial<Record<string, boolean>> = {};
@@ -459,6 +461,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	}
 
 	async validateField(name: string): Promise<boolean> {
+		this.validatedPaths.add(name);
 		const values = this.getValues();
 		const result = await this.resolver(values, { fields: this.buildResolverFields() }, { names: [name] });
 		const next = { ...this.ownErrors };
@@ -479,6 +482,9 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	}
 
 	async validateAll(): Promise<boolean> {
+		for (const name of new Set([...this.fields.keys(), ...Object.keys(this.reportedNative)])) {
+			this.validatedPaths.add(name);
+		}
 		const values = this.getValues();
 		const result = await this.resolver(values, { fields: this.buildResolverFields() }, {});
 		const errors = { ...result.errors } as Partial<Record<string, FieldError>>;
@@ -498,15 +504,15 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	 * Bind a control's reported validity to the value held at `path`.
 	 *
 	 * @remarks Never a user change: nothing is marked dirty and no validation runs
-	 * unless the path already failed, in which case it is validated again so its
-	 * error follows the fact. A path the store does not hold is ignored.
+	 * unless the path was already validated, whether it passed or failed, or is in a
+	 * failed scope, in which case it is validated again so its error follows the fact. A path the store does not hold is ignored.
 	 */
 	reportNative(path: string, native: NativeValidity | null): void {
 		if (!this.fields.has(path) && getPath(this.values, path) === undefined) {
 			return;
 		}
 		this.recordNative(path, native);
-		if (this.ownRead(this.errors, path)) {
+		if (this.validatedPaths.has(path) || this.ownRead(this.errors, path)) {
 			this.validateField(path).catch((error: unknown) => reportError(error));
 		}
 	}
@@ -662,6 +668,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		this.values = values ? ({ ...values } as T) : this.withFieldDefaults({ ...this.defaultValues } as T);
 		this.sourceErrors.clear();
 		this.reportedNative = {};
+		this.validatedPaths.clear();
 		this.errors = {};
 		this.touched = {};
 		this.dirty = {};

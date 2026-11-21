@@ -690,6 +690,55 @@ describe('FormStore', () => {
 			expect(store.errors.a?.message).toBe('Taken');
 		});
 
+		it('shows a fact at once for a path that was checked and passed', async () => {
+			let invalid = false;
+			const store = new FormStore<{ a: string }>({ defaultValues: { a: 'x' } });
+			store.register({
+				name: 'a',
+				getValue: () => 'x',
+				setValue: () => {},
+				getValidity: () => (invalid ? { valid: false, type: 'typeMismatch' } : { valid: true }),
+			});
+			expect(await store.validate(['a'])).toBe(true);
+
+			invalid = true;
+			store.reportNative('a', { type: 'typeMismatch' });
+
+			await vi.waitFor(() => expect(store.errors.a?.type).toBe('typeMismatch'));
+		});
+
+		it('does not validate a path that was never checked when a fact is reported', async () => {
+			const store = new FormStore<{ a: string }>({ defaultValues: { a: 'x' } });
+			store.register({
+				name: 'a',
+				getValue: () => 'x',
+				setValue: () => {},
+				getValidity: () => ({ valid: false, type: 'typeMismatch' }),
+			});
+
+			store.reportNative('a', { type: 'typeMismatch' });
+			await new Promise((resolve) => setTimeout(resolve, 10));
+
+			expect(store.errors.a).toBeUndefined();
+		});
+
+		it('forgets which paths were checked on reset', async () => {
+			const store = new FormStore<{ a: string }>({ defaultValues: { a: 'x' } });
+			store.register({
+				name: 'a',
+				getValue: () => 'x',
+				setValue: () => {},
+				getValidity: () => ({ valid: false, type: 'typeMismatch' }),
+			});
+			await store.validate(['a']);
+			store.reset();
+
+			store.reportNative('a', { type: 'typeMismatch' });
+			await new Promise((resolve) => setTimeout(resolve, 10));
+
+			expect(store.errors.a).toBeUndefined();
+		});
+
 		it('exposes no warnings', () => {
 			expect(new FormStore().getSnapshot().warnings).toEqual({});
 		});
