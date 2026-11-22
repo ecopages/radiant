@@ -84,7 +84,7 @@ function createDistPackageJson(): PackageJsonShape {
 const packageRoot = import.meta.dirname;
 const watchMode = process.argv.includes('--watch');
 const sourceRoot = path.join(packageRoot, 'src');
-const entrypoints = ['index', 'client', 'server', 'jsx-runtime', 'jsx-dev-runtime'];
+const entrypoints = ['index', 'client', 'server', 'raw-text-element-names', 'jsx-runtime', 'jsx-dev-runtime'];
 const sideEffectModules = new Set(
 	['jsx-runtime', 'jsx-dev-runtime'].map((name) => path.join(sourceRoot, `${name}.ts`)),
 );

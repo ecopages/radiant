@@ -992,7 +992,7 @@ Server-only exports from `@ecopages/jsx/server` include:
 - `withServerCustomElementRenderHook`
 - `isServerRenderHydrationActive`
 
-`RAW_TEXT_ELEMENT_NAMES` is exported from `@ecopages/jsx/server` for Radiant's server HTML parser.
+`RAW_TEXT_ELEMENT_NAMES` is exported for Radiant's server HTML parser from `@ecopages/jsx/server` and, without the rest of the server renderer, from `@ecopages/jsx/raw-text-element-names`.
 
 ## Constraints
 
