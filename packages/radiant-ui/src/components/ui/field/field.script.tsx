@@ -31,10 +31,10 @@ import {
 	RUI_FIELD_MANAGED_ATTR,
 	writeControlValue,
 	wireFieldControlName,
-} from '../form/control-protocol';
-import { formContext, type FormContextValue } from '../form/form-context';
+} from '@/lib/form/control-protocol';
+import { formContext, type FormContextValue } from '@/lib/form/form-context';
 import { fieldContext, type FieldContextValue } from './field-context';
-import type { FieldRegistration, FieldRegistrationHandle, FieldRules } from '../form/types';
+import type { FieldRegistration, FieldRegistrationHandle, FieldRules } from '@/lib/form/types';
 import { bindVisibleLabel } from '../shared/field-label';
 import { uniqueId } from '@/lib/unique-id';
 import { MutationController } from '../../../controllers/mutation-controller';

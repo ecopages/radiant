@@ -5,7 +5,7 @@ import { createRuiIconX } from '@/lib/icons/x';
 import { uniqueId } from '@/lib/unique-id';
 import { createRovingController } from '../../../controllers/roving-controller';
 import { createSortableController, type SortableChange } from '../../../controllers/sortable-controller';
-import { multiValuePropOptions, type ViewMultiValue } from '../shared/multi-value';
+import { multiValuePropOptions, type ViewMultiValue } from '@/lib/multi-value';
 
 export type RuiTagGroupSelectionMode = 'single' | 'multiple';
 export type RuiTagGroupItem = { value: string; label: string };

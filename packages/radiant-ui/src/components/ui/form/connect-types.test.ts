@@ -1,9 +1,9 @@
 import { describe, expect, expectTypeOf, it, vi } from 'vitest';
-import type { FormStateStore, FormStateStoreSnapshot } from './form-state-store';
+import type { FormStateStore, FormStateStoreSnapshot } from '@/lib/form/form-state-store';
 import { RuiForm } from './form.script';
 import { RuiField } from '../field/field.script';
-import type { RuiFormFormatError } from './form.script';
-import type { FieldError } from './types';
+import type { RuiFormFormatError, RuiFormInvalidDetail } from './form.script';
+import type { FieldError } from '@/lib/form/types';
 
 void RuiForm;
 void RuiField;
@@ -98,6 +98,12 @@ describe('typed connect', () => {
 		expectTypeOf(engineStore()).toExtend<FormStateStore>();
 		expectTypeOf<EngineIssue>().toExtend<FieldError>();
 		disconnect();
+	});
+
+	it('keys the invalid-event errors by dotted path', () => {
+		expectTypeOf<RuiFormInvalidDetail<{ profile: { name: string } }>['errors']['profile.name']>().toEqualTypeOf<
+			{ message?: string } | undefined
+		>();
 	});
 
 	it('has no plain properties for a store or its handlers', () => {

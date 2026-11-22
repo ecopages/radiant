@@ -8,11 +8,11 @@ import { RuiCheckbox } from '../checkbox';
 import { RuiCheckboxGroup, RuiCheckboxGroupControl } from '../checkbox-group';
 import { RuiCheckbox as RuiCheckboxScript } from '../checkbox/checkbox.script';
 import { RuiField as RuiFieldScript } from '../field/field.script';
-import { formContext, type FormContextValue } from './form-context';
+import { formContext, type FormContextValue } from '@/lib/form/form-context';
 import { ContextSubscriptionRequestEvent } from '@ecopages/radiant/context';
-import { findFieldControl, findFieldError, registerFieldControl } from './control-protocol';
-import type { FormStateStore, FormStateStoreSnapshot, NativeValidity } from './form-state-store';
-import type { FieldError } from './types';
+import { findFieldControl, findFieldError, registerFieldControl } from '@/lib/form/control-protocol';
+import type { FormStateStore, FormStateStoreSnapshot, NativeValidity } from '@/lib/form/form-state-store';
+import type { FieldError } from '@/lib/form/types';
 import type { RuiFormFormatError } from './form.script';
 
 void RuiFieldScript;

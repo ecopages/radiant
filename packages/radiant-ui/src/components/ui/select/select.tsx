@@ -4,7 +4,7 @@ import { cx } from '@/lib/cx';
 import { RuiIconChevronDown, RuiIconX } from '@/lib/icons';
 import type { NativeButtonProps, NativeInputProps } from '@/lib/native-element-props';
 import { RuiListbox, type RuiListboxOptionData } from '../listbox';
-import { parseViewValue, type ViewMultiValue } from '../shared/multi-value';
+import { parseViewValue, type ViewMultiValue } from '@/lib/multi-value';
 import { RuiTagGroup } from '../tag-group';
 import { RuiSelect as RuiSelectElement, type RuiSelectProps } from './select.script';
 

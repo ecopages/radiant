@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { runSsrPreparationCallbacks } from '@ecopages/radiant';
-import { RUI_FIELD_MANAGED_ATTR } from '../form/control-protocol';
+import { RUI_FIELD_MANAGED_ATTR } from '@/lib/form/control-protocol';
 import { RuiField as RuiFieldElement } from './field.script';
 void RuiFieldElement;
 

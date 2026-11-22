@@ -13,18 +13,18 @@ export {
 	type FormContextValue,
 	type FormFieldPresentation,
 	type FormContextActions,
-} from './form-context';
-export { FormStore } from './form-store';
+} from '@/lib/form/form-context';
+export { FormStore } from '@/lib/form/form-store';
 export type {
 	FormStateBlurOptions,
 	FormStateNativeOptions,
 	FormStateStore,
 	FormStateStoreSnapshot,
 	NativeValidity,
-} from './form-state-store';
-export { createRulesResolver, runRulesResolver } from './resolvers';
-export type { FieldRegistrationHandle } from './types';
-export type { FieldRules, FieldValues, Resolver, ValidationMode, FormState, FieldError } from './types';
+} from '@/lib/form/form-state-store';
+export { createRulesResolver, runRulesResolver } from '@/lib/form/resolvers';
+export type { FieldRegistrationHandle } from '@/lib/form/types';
+export type { FieldRules, FieldValues, Resolver, ValidationMode, FormState, FieldError } from '@/lib/form/types';
 export {
 	findFieldControl,
 	isNativeTextControl,
@@ -36,5 +36,5 @@ export {
 	RUI_FIELD_DESCRIPTION_ATTR,
 	RUI_FIELD_ERROR_ATTR,
 	RUI_FIELD_MANAGED_ATTR,
-} from './control-protocol';
-export type { FieldControlAdapter } from './control-protocol';
+} from '@/lib/form/control-protocol';
+export type { FieldControlAdapter } from '@/lib/form/control-protocol';

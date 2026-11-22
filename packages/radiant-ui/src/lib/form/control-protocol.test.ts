@@ -6,7 +6,7 @@ import {
 	readControlValidity,
 	registerFieldControl,
 	wireFieldControlName,
-} from '../form/control-protocol';
+} from './control-protocol';
 
 /**
  * Client behaviour of the field control protocol: bubbling events, native `.value`, and custom elements upgraded by

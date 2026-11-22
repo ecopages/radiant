@@ -9,9 +9,9 @@ import { RuiCheckbox } from '../checkbox';
 import { RuiCheckboxGroup, RuiCheckboxGroupControl } from '../checkbox-group';
 import { RuiCheckbox as RuiCheckboxScript } from '../checkbox/checkbox.script';
 import { RuiCheckboxGroup as RuiCheckboxGroupScript } from '../checkbox-group/checkbox-group.script';
-import { FormStore } from './form-store';
-import type { FormContextValue } from './form-context';
-import type { FormStateStoreSnapshot, FormStateStore } from './form-state-store';
+import { FormStore } from '@/lib/form/form-store';
+import type { FormContextValue } from '@/lib/form/form-context';
+import type { FormStateStoreSnapshot, FormStateStore } from '@/lib/form/form-state-store';
 
 void RuiFormElement;
 void RuiFieldElement;

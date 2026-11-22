@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { RuiForm as RuiFormElement } from './form.script';
 import { RuiField as RuiFieldElement } from '../field/field.script';
-import type { FormContextValue } from './form-context';
-import type { FormStore } from './form-store';
-import type { FormStateStoreSnapshot, FormStateStore } from './form-state-store';
+import type { FormContextValue } from '@/lib/form/form-context';
+import type { FormStore } from '@/lib/form/form-store';
+import type { FormStateStoreSnapshot, FormStateStore } from '@/lib/form/form-state-store';
 
 void RuiFormElement;
 void RuiFieldElement;

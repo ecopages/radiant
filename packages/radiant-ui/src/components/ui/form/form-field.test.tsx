@@ -36,11 +36,11 @@ import { RuiDateInput as RuiDateInputScript } from '../date-input/date-input.scr
 import { RuiNumberField as RuiNumberFieldScript } from '../number-field/number-field.script';
 import { RuiSlider as RuiSliderScript } from '../slider/slider.script';
 import { RuiKnob as RuiKnobScript } from '../knob/knob.script';
-import { findFieldControl, findFieldError, registerFieldControl } from './control-protocol';
+import { findFieldControl, findFieldError, registerFieldControl } from '@/lib/form/control-protocol';
 import { RuiField as RuiFieldElement } from '../field/field.script';
 import { RuiForm as RuiFormElement } from './form.script';
-import type { FormContextValue } from './form-context';
-import type { FieldRules } from './types';
+import type { FormContextValue } from '@/lib/form/form-context';
+import type { FieldRules } from '@/lib/form/types';
 void RuiFieldElement;
 void RuiFormElement;
 void RuiSwitchScript;

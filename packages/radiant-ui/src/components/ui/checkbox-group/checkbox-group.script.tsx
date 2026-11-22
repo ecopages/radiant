@@ -3,7 +3,7 @@ import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop 
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { nonEmpty } from '@/lib/non-empty';
 import { RuiCheckbox } from '../checkbox/checkbox.script';
-import { multiValuePropOptions, type ViewMultiValue } from '../shared/multi-value';
+import { multiValuePropOptions, type ViewMultiValue } from '@/lib/multi-value';
 
 export type RuiCheckboxGroupOrientation = 'horizontal' | 'vertical';
 

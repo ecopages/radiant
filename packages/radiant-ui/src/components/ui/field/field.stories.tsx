@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { RuiButton } from '../button';
 import { RuiForm } from '../form';
-import { findFieldControl } from '../form/control-protocol';
+import { findFieldControl } from '@/lib/form/control-protocol';
 import { RuiInput } from '../input';
 import { RuiLabel } from '../label';
 import { RuiSelect } from '../select';

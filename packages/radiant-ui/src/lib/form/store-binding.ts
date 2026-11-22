@@ -1,5 +1,5 @@
 import type { FormStateStore } from './form-state-store';
-import type { RuiFormHandlers, RuiFormResetContext, RuiFormSubmitContext } from './form.script';
+import type { RuiFormHandlers, RuiFormResetContext, RuiFormSubmitContext } from './form-handlers';
 import type { FieldError } from './types';
 
 /** The parts of a submit context the form supplies; the binding adds the typed `store`. */

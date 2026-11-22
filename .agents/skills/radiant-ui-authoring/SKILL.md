@@ -60,8 +60,8 @@ Update the README beside the code when behavior or ownership changes.
 | Listbox in a popup (select, combobox)                             | `ListboxPopoverController` + `ListboxHost` (both in `components/ui/shared`)  |
 | Portaled overlay                                                  | `PopoverController`                                                          |
 | Anything else (drag, sort, roving focus, dates, masks, filtering) | [primitives catalog](../../../packages/radiant-ui/src/controllers/README.md) |
-| Field label / control protocol                                    | `shared/field-label.ts`, `form/control-protocol.ts`                          |
-| Comma-separated list values (`string[]` / `number[]`)             | `shared/multi-value.ts`                                                      |
+| Field label / control protocol                                    | `shared/field-label.ts`, `@/lib/form/control-protocol`                       |
+| Comma-separated list values (`string[]` / `number[]`)             | `@/lib/multi-value`                                                          |
 | Numeric range / slider math                                       | `@/lib/numeric-range`                                                        |
 | Generated ARIA ids                                                | `@/lib/unique-id` (`uniqueId`)                                               |
 

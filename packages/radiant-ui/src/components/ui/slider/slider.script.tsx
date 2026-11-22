@@ -3,7 +3,7 @@ import { bindTo, customElement, event, onEvent, onUpdated, prop, ref } from '@ec
 import { FormAssociatedElement, type FormValue } from '@ecopages/radiant/form-associated-element';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { createPointerDragController } from '../../../controllers/pointer-drag-controller';
-import { numberArrayTransform, type ViewNumericValue } from '../shared/multi-value';
+import { numberArrayTransform, type ViewNumericValue } from '@/lib/multi-value';
 import {
 	createNumericRange,
 	formatNumericValue,

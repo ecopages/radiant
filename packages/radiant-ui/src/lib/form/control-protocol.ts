@@ -1,6 +1,6 @@
 import type { PropTransform } from '@ecopages/radiant';
 import type { FieldControlValidity } from './types';
-import { multiValueTransform, numberArrayTransform } from '../shared/multi-value';
+import { multiValueTransform, numberArrayTransform } from '../multi-value';
 
 export const RUI_CONTROL_ATTR = 'data-rui-control';
 export const RUI_FIELD_MANAGED_ATTR = 'data-rui-field-managed';

@@ -3,7 +3,7 @@ import { createRoot } from '@ecopages/jsx';
 import { ContextSubscriptionRequestEvent } from '@ecopages/radiant/context';
 import { RuiForm } from './form';
 import { RuiForm as RuiFormElement } from './form.script';
-import { formContext, type FormContextValue } from './form-context';
+import { formContext, type FormContextValue } from '@/lib/form/form-context';
 import { RuiField } from '../field';
 import { RuiInput } from '../input';
 import { RuiField as RuiFieldScript } from '../field/field.script';

@@ -33,9 +33,14 @@ import {
 import { RuiSwitch } from '../switch';
 import { RuiTagGroup, RuiTagList } from '../tag-group';
 import { RuiTextarea } from '../textarea';
-import { findFieldControl, findFieldError, getAriaControlTarget, isNativeTextControl } from './control-protocol';
+import {
+	findFieldControl,
+	findFieldError,
+	getAriaControlTarget,
+	isNativeTextControl,
+} from '@/lib/form/control-protocol';
 import { RuiForm as RuiFormElement } from './form.script';
-import { formContext, type FormContextValue } from './form-context';
+import { formContext, type FormContextValue } from '@/lib/form/form-context';
 import { RuiField as RuiFieldScript } from '../field/field.script';
 void RuiFieldScript;
 void RuiFormElement;

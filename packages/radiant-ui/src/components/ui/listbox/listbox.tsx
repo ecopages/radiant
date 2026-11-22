@@ -1,7 +1,7 @@
 import type { JsxCustomElementAttributes, JsxElementProps, JsxRenderable } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
 import { RuiIconCheck } from '@/lib/icons';
-import { parseViewValue } from '../shared/multi-value';
+import { parseViewValue } from '@/lib/multi-value';
 import { RuiListbox as RuiListboxElement, type RuiListboxProps, type RuiListboxSelectionMode } from './listbox.script';
 
 export type RuiListboxOptionProps = JsxElementProps<HTMLDivElement> & {

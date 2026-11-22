@@ -5,7 +5,7 @@ import { uniqueId } from '@/lib/unique-id';
 import { createRovingController } from '../../../controllers/roving-controller';
 import { syncFieldLabel } from '../shared/field-label';
 import { getListboxOptionValue } from '../shared/listbox-option';
-import { multiValuePropOptions, type ViewMultiValue } from '../shared/multi-value';
+import { multiValuePropOptions, type ViewMultiValue } from '@/lib/multi-value';
 
 export type RuiListboxSelectionMode = 'single' | 'multiple';
 
