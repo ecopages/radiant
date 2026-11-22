@@ -224,4 +224,29 @@ describe('InjectedFormDriver fact reports', () => {
 
 		expect(reportNative.mock.calls).toEqual([[{ a: null }]]);
 	});
+
+	it('delivers a withdrawal in the same flush as a control whose validity read throws', async () => {
+		const state = createHostStore({ a: 'x', b: 'y' });
+		const reportNative = vi.spyOn(state, 'reportNative');
+		const reportError = vi.spyOn(globalThis, 'reportError').mockImplementation(() => {});
+		const driver = new InjectedFormDriver(state);
+		driver.subscribe(() => {});
+		const broken = control('a', '');
+		broken.getValidity = () => {
+			throw new Error('validity broke');
+		};
+		driver.register(broken);
+		const removed = driver.register(control('b', ''));
+		await Promise.resolve();
+		reportNative.mockClear();
+		reportError.mockClear();
+
+		state.setValue('a', 'x2');
+		removed.unregister();
+		await Promise.resolve();
+
+		expect(reportNative.mock.calls).toEqual([[{ b: null }]]);
+		expect(reportError).toHaveBeenCalledTimes(1);
+		reportError.mockRestore();
+	});
 });

@@ -209,7 +209,11 @@ export class InjectedFormDriver implements FormDriver {
 				}
 				for (const entry of entries) {
 					if (entry.live && this.fields.get(entry.name) === entry) {
-						facts[entry.name] = this.factOf(entry);
+						try {
+							facts[entry.name] = this.factOf(entry);
+						} catch (error) {
+							reportError(error);
+						}
 					}
 				}
 				if (Object.keys(facts).length > 0) {
