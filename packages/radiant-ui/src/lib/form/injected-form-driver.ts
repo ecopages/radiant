@@ -196,24 +196,25 @@ export class InjectedFormDriver implements FormDriver {
 		this.reportQueued = true;
 		queueMicrotask(() => {
 			this.reportQueued = false;
-			const facts: Record<string, NativeValidity | null> = {};
-			for (const path of this.withdrawnPaths) {
-				if (!this.fields.has(path)) {
-					facts[path] = null;
-				}
-			}
-			for (const entry of this.pendingFactReports) {
-				if (entry.live && this.fields.get(entry.name) === entry) {
-					facts[entry.name] = this.factOf(entry);
-				}
-			}
+			const entries = [...this.pendingFactReports];
+			const withdrawn = [...this.withdrawnPaths];
 			this.withdrawnPaths.clear();
 			this.pendingFactReports.clear();
-			if (Object.keys(facts).length === 0) {
-				return;
-			}
 			try {
-				this.state.reportNative(facts);
+				const facts: Record<string, NativeValidity | null> = {};
+				for (const path of withdrawn) {
+					if (!this.fields.has(path)) {
+						facts[path] = null;
+					}
+				}
+				for (const entry of entries) {
+					if (entry.live && this.fields.get(entry.name) === entry) {
+						facts[entry.name] = this.factOf(entry);
+					}
+				}
+				if (Object.keys(facts).length > 0) {
+					this.state.reportNative(facts);
+				}
 			} catch (error) {
 				reportError(error);
 			}
@@ -351,10 +352,19 @@ export class InjectedFormDriver implements FormDriver {
 		}
 	}
 
-	/** Write a control the user changed, then report its fact for the value it holds. */
+	/**
+	 * Write a control the user changed, then report its fact for the value it holds.
+	 *
+	 * @remarks A report the store rejects goes to `reportError`, so the write that
+	 * already landed is not undone and a following `blur` still runs.
+	 */
 	private pushUserChange(name: string, entry: BoundField): void {
 		this.writeControlValue(name, entry);
-		this.state.reportNative({ [name]: this.factOf(entry) });
+		try {
+			this.state.reportNative({ [name]: this.factOf(entry) });
+		} catch (error) {
+			reportError(error);
+		}
 	}
 
 	/**

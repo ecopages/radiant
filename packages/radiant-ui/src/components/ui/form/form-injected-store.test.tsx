@@ -1772,6 +1772,74 @@ describe('rui-form with an injected store', () => {
 			expect(errors).toHaveBeenCalledTimes(1);
 		});
 
+		it('still blurs the store when the report of a changed control is rejected', async () => {
+			const { store, calls } = createTestStore({ email: '', extra: '' }, { rejectReportFor: ['email'] });
+			const errors = vi.fn();
+			const onError = (event: ErrorEvent) => {
+				event.preventDefault();
+				errors(event.error);
+			};
+			window.addEventListener('error', onError);
+			cleanup.push(() => window.removeEventListener('error', onError));
+			const { email } = await mountEmail(store);
+			await settle();
+			email.focus();
+			email.value = 'not-an-email';
+			calls.length = 0;
+			errors.mockClear();
+
+			email.blur();
+			await settle();
+
+			expect(calls.map((call) => call.kind)).toEqual(['setValue', 'reportNative', 'blur']);
+			expect(errors).toHaveBeenCalledTimes(1);
+		});
+
+		it('keeps delivering withdrawals after a control validity read throws', async () => {
+			const { store, calls } = createTestStore({ rows: [{ x: '' }, { x: '' }] });
+			const host = document.createElement('div');
+			document.body.append(host);
+			const root = createRoot(host);
+			root.render(
+				<RuiForm ref={(form) => (form && store ? form.connect(store) : undefined)}>
+					<RuiField name="rows.0.x">
+						<RuiInput required />
+					</RuiField>
+					<RuiField name="rows.1.x">
+						<RuiInput required />
+					</RuiField>
+				</RuiForm>,
+			);
+			cleanup.push(() => {
+				root.unmount();
+				host.remove();
+			});
+			await customElements.whenDefined('rui-field');
+			await flushRender();
+			await settle();
+			const errors = vi.fn();
+			const onError = (event: ErrorEvent) => {
+				event.preventDefault();
+				errors(event.error);
+			};
+			window.addEventListener('error', onError);
+			cleanup.push(() => window.removeEventListener('error', onError));
+			const fields = Array.from(host.querySelectorAll('rui-field')) as HTMLElement[];
+			const first = findFieldControl(fields[0] as HTMLElement) as HTMLInputElement;
+			vi.spyOn(first, 'validity', 'get').mockImplementation(() => {
+				throw new Error('validity broke');
+			});
+
+			store.setValue('rows.0.x', 'a');
+			await settle();
+			expect(errors).toHaveBeenCalled();
+			calls.length = 0;
+			fields[1]?.remove();
+			await settle();
+
+			expect(calls.some((call) => call.facts?.['rows.1.x'] === null)).toBe(true);
+		});
+
 		it('replaces the binding when connect is called again and lets only the last disposer act', async () => {
 			const { store, listenerCount: listeners } = createTestStore({ email: 'a@b.co', extra: '' });
 			const { form } = await mountEmail(store);
