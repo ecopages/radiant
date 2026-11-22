@@ -329,11 +329,20 @@ export class InjectedFormDriver implements FormDriver {
 		};
 	}
 
-	/** The current fact of every registered control, `null` for a valid one. */
+	/**
+	 * The current fact of every registered control, `null` for a valid one.
+	 *
+	 * @remarks A control whose validity read throws is reported with `reportError` and
+	 * left out, so it does not hold back the other facts.
+	 */
 	private factsOfAll(): Record<string, NativeValidity | null> {
 		const facts: Record<string, NativeValidity | null> = {};
 		for (const [name, entry] of this.fields) {
-			facts[name] = this.factOf(entry);
+			try {
+				facts[name] = this.factOf(entry);
+			} catch (error) {
+				reportError(error);
+			}
 		}
 		return facts;
 	}

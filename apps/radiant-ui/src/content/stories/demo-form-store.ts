@@ -59,6 +59,11 @@ export function createDemoStore({ initial, rules = {}, warnings = {} }: DemoStor
 		snapshot = build();
 		for (const listener of [...listeners]) listener();
 	};
+	const holds = (path: string) => {
+		const parent = path.split('.').slice(0, -1).join('.');
+		const branch = getPath(values, parent);
+		return getPath(values, path) !== undefined || parent === '' || (typeof branch === 'object' && branch !== null);
+	};
 	const keep = (path: string, fact: NativeValidity | null) => {
 		const { [path]: _old, ...rest } = facts;
 		facts = fact ? { ...rest, [path]: fact } : rest;
@@ -94,7 +99,7 @@ export function createDemoStore({ initial, rules = {}, warnings = {} }: DemoStor
 		reportNative(reported) {
 			let shown = false;
 			for (const [path, fact] of Object.entries(reported)) {
-				if (fact !== null && getPath(values, path) === undefined) continue;
+				if (fact !== null && !holds(path)) continue;
 				keep(path, fact);
 				shown ||= checked.has(path);
 			}

@@ -249,4 +249,27 @@ describe('InjectedFormDriver fact reports', () => {
 		expect(reportError).toHaveBeenCalledTimes(1);
 		reportError.mockRestore();
 	});
+
+	it('reports the other facts on sync when one control validity read throws', async () => {
+		const state = createHostStore({ a: 'x', b: 'y' });
+		const reportNative = vi.spyOn(state, 'reportNative');
+		const reportError = vi.spyOn(globalThis, 'reportError').mockImplementation(() => {});
+		const driver = new InjectedFormDriver(state);
+		driver.subscribe(() => {});
+		const broken = control('a', '');
+		broken.getValidity = () => {
+			throw new Error('validity broke');
+		};
+		driver.register(broken);
+		driver.register(control('b', '', { valid: false, type: 'valueMissing' }));
+		await Promise.resolve();
+		reportNative.mockClear();
+		reportError.mockClear();
+
+		driver.sync();
+
+		expect(reportNative.mock.calls).toEqual([[{ b: { type: 'valueMissing' } }]]);
+		expect(reportError).toHaveBeenCalledTimes(1);
+		reportError.mockRestore();
+	});
 });

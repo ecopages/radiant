@@ -103,6 +103,11 @@ export function createDemoStore({ initial, rules = {}, warnings = {} }: DemoStor
 		snapshot = build();
 		for (const listener of [...listeners]) listener();
 	};
+	const holds = (path: string) => {
+		const parent = path.split('.').slice(0, -1).join('.');
+		const branch = getPath(values, parent);
+		return getPath(values, path) !== undefined || parent === '' || (typeof branch === 'object' && branch !== null);
+	};
 	const keep = (path: string, fact: NativeValidity | null) => {
 		const { [path]: _old, ...rest } = facts;
 		facts = fact ? { ...rest, [path]: fact } : rest;
@@ -138,7 +143,7 @@ export function createDemoStore({ initial, rules = {}, warnings = {} }: DemoStor
 		reportNative(reported) {
 			let shown = false;
 			for (const [path, fact] of Object.entries(reported)) {
-				if (fact !== null && getPath(values, path) === undefined) continue;
+				if (fact !== null && !holds(path)) continue;
 				keep(path, fact);
 				shown ||= checked.has(path);
 			}
@@ -152,7 +157,7 @@ export function createDemoStore({ initial, rules = {}, warnings = {} }: DemoStor
 
 - **Nested values by path.** `setValue('profile.name', 'Ada')` replaces that branch and creates its parents. Return a new snapshot object only when something changed.
 - **Facts are pushed.** `reportNative(facts)` maps a path to a `NativeValidity` (`{ type, params?, message? }`, `type` being the failing `ValidityState` flag), or to `null` for a valid control or one that left the form. The form calls it whenever a control's value or presence changes, from either side: right after `setValue` for a user change (before `blur`), and after a store write, a reset, a rename, a connect or a disconnect. Keep a fact until its path is reported again, and count a native problem like any other error.
-- **`reportNative` never counts as a change.** Bind the fact to the value you hold, show it only if the path was already validated, and ignore a non-`null` fact for a path you do not hold. A `null` always clears.
+- **`reportNative` never counts as a change.** Bind the fact to the value you hold, show it only if the path was already validated, and ignore a non-`null` fact for a path you do not hold: one with no value whose parent object is missing too, such as a row that was removed. A required field missing from your initial values is still held, because its parent exists. A `null` always clears.
 - **`reset` clears the facts.** The form reports each control's fact again afterwards.
 - **Native validity is evidence, not an error.** You decide when it shows, with the same timing as your own rules. See [Native validity](/docs/forms/form#native-validity).
 - **`errors` are what you show.** An entry makes its field invalid even without a message. Keys with no control, such as a form-level `__root__`, are ignored by the form. Entries may carry more than `type` and `message`, and `formatError` receives the whole entry.

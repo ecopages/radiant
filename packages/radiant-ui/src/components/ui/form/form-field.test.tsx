@@ -185,6 +185,38 @@ describe('rui-field composed content discovery', () => {
 		host.remove();
 	});
 
+	it('copies an action and method set after render onto the native form it submits', async () => {
+		const host = document.createElement('div');
+		document.body.append(host);
+		const root = createRoot(host);
+		root.render(
+			<RuiForm defaultValues={{ email: 'hello@example.com' }}>
+				<RuiField name="email">
+					<RuiInput type="email" />
+				</RuiField>
+				<RuiButton type="submit">Save</RuiButton>
+			</RuiForm>,
+		);
+		await customElements.whenDefined('rui-form');
+		await flushRender();
+		await new Promise((resolve) => setTimeout(resolve, 0));
+		const form = host.querySelector('rui-form') as RuiFormElement;
+		const nativeForm = form.getRef<HTMLFormElement>('form')!;
+		const submit = vi.fn();
+		nativeForm.submit = submit;
+
+		form.action = '/later';
+		form.method = 'post';
+		await new Promise((resolve) => setTimeout(resolve, 0));
+		(host.querySelector('button') as HTMLButtonElement).click();
+		await new Promise((resolve) => setTimeout(resolve, 0));
+
+		expect(nativeForm.getAttribute('action')).toBe('/later');
+		expect(nativeForm.method).toBe('post');
+		expect(submit).toHaveBeenCalledOnce();
+		host.remove();
+	});
+
 	it('publishes a custom host onto native FormData', async () => {
 		const host = document.createElement('div');
 		document.body.append(host);

@@ -87,6 +87,15 @@ const initialFormActions: FormContextActions = {
 	subscribePresentation: () => noopUnregister,
 };
 
+/** An unset string prop reads `''`, which stands for no attribute. */
+function setOptionalAttribute(element: Element, name: string, value: string | undefined): void {
+	if (value) {
+		element.setAttribute(name, value);
+	} else {
+		element.removeAttribute(name);
+	}
+}
+
 /**
  * `<rui-form>` — form coordinator with RHF-like validation and field registration.
  *
@@ -246,6 +255,28 @@ export class RuiForm extends RadiantElement {
 
 	protected override onConnected(): void {
 		this.wireOrphanSubmitButtons();
+		this.syncNativeTarget();
+	}
+
+	/**
+	 * Copy `action` and `method` onto the native `<form>`, which the view renders once
+	 * with their first values, so a later change still reaches the form that submits.
+	 */
+	@onUpdated(['action', 'method'])
+	syncNativeTarget(): void {
+		const formEl = this.queryNativeForm();
+		if (!formEl) {
+			return;
+		}
+		setOptionalAttribute(formEl, 'action', this.action);
+		setOptionalAttribute(formEl, 'method', this.method);
+	}
+
+	/** Submit the native `<form>` to its `action` and `method`; does nothing when neither is set. */
+	private submitNatively(): void {
+		if (this.action || this.method) {
+			this.queryNativeForm()?.submit();
+		}
 	}
 
 	private queryNativeForm(): HTMLFormElement | null {
@@ -282,11 +313,7 @@ export class RuiForm extends RadiantElement {
 		if (driver instanceof InjectedFormDriver && binding?.hasSubmitHandler) {
 			const helpers: SubmitHelpers = {
 				focus: (path) => driver.focus(path),
-				submitNatively: () => {
-					if (this.getAttribute('action') !== null || this.getAttribute('method') !== null) {
-						this.queryNativeForm()?.submit();
-					}
-				},
+				submitNatively: () => this.submitNatively(),
 			};
 			Promise.resolve()
 				.then(() => {
@@ -308,20 +335,11 @@ export class RuiForm extends RadiantElement {
 					await this.onSubmit(values);
 					return;
 				}
-				if (this.hasNativeSubmission()) {
-					this.queryNativeForm()?.submit();
-				}
+				this.submitNatively();
 			},
 			(errors, error) => {
 				this.invalidEvent.emit(error === undefined ? { errors } : { errors, error });
 			},
-		);
-	}
-
-	private hasNativeSubmission(): boolean {
-		return (
-			typeof this.onSubmit !== 'function' &&
-			(this.getAttribute('action') !== null || this.getAttribute('method') !== null)
 		);
 	}
 
