@@ -1,6 +1,6 @@
 import type { JsxElementProps, JsxRenderable } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
-import { RUI_FIELD_ERROR_ATTR, RUI_FIELD_ERROR_CONTROLLED_ATTR } from '../form/control-protocol';
+import { RUI_FIELD_ERROR_ATTR, RUI_FIELD_ERROR_CONTROLLED_ATTR } from '@/lib/form/control-protocol';
 
 export type RuiFieldErrorProps = JsxElementProps<HTMLParagraphElement> & {
 	/**

@@ -4,9 +4,12 @@
 
 - Field and form
 - Native FormData
+- Nested values and native validity
 - Multi-value `value`
 - Custom controls
 - Errors that do not belong to a control
+- Injecting a form state store
+- Warnings
 
 ## Field and form
 
@@ -21,6 +24,12 @@ Controls fire a bubbling `rui-change` event when their value changes. Listen for
 - `RuiInput`, `RuiTextarea`, checkbox, switch, radio, checkbox group and radio group submit through their inner native input.
 - `rui-date-input`, `rui-number-field`, `rui-slider` and `rui-knob` are form-associated and submit through `name` on the host; a range slider also submits `{name}-max`. `RuiDateField` copies `name` to its nested `rui-date-input`; `RuiDateRangePicker` puts `start-name` / `end-name` on its two inputs.
 - `RuiSelect`, `RuiCombobox`, `RuiListbox` and `RuiTagGroup` are store-only: read them from `RuiForm` `onSubmit`, not from `FormData`.
+
+## Nested values and native validity
+
+A dotted field `name` addresses a nested value tree: `profile.name` is `values.profile.name` and `rows.0.title` is `values.rows[0].title`. `rui-submit` carries that tree, `defaultValues` are given as one, and the HTML `name` attribute stays dotted.
+
+Native `input`, `textarea` and `select` controls count: `required`, `type="email"`, `minlength`, `pattern`, `min`, `max` and `step` block submit in the built-in store and show their error. The browser computes the verdict; `RuiForm` forwards the failing flag as the error `type` and the constraint as `params`. There is no switch, and a control with no constraint attributes contributes nothing. A native `select` is read as its value, or as a list of values when `multiple`.
 
 ## Multi-value `value`
 
@@ -40,3 +49,11 @@ To put a third-party host in a `RuiField`, call `registerFieldControl` from `@ec
 ## Errors that do not belong to a control
 
 `<RuiFieldError error="Add at least one item" />` (from `@ecopages/radiant-ui/field`) is a controlled region: it shows `error` (`children` as fallback), is visible while it has content, works outside `RuiField` and in server output, and an enclosing field never overwrites or hides it. `error=""` keeps it controlled and hidden; omit `error` for the default, where the field fills the region from its message. For a group, point `aria-describedby` or `aria-errormessage` at the region's `id`. Inside a field a controlled region without an `id` gets one and is listed in the control's `aria-describedby`.
+
+## Injecting a form state store
+
+When something else owns form state, hand it to the form with `form.connect(store, { formatError, submitHandler, resetHandler })`. It is the only way to inject a store and it returns a disposer that returns the form to its own store. The store implements `FormStateStore` (`getValue`, `setValue`, `blur`, `getSnapshot`, `subscribe`, `reset`, `validate`, `reportNative`), owns validation timing, defaults and which errors and warnings show, and receives each control's native validity as a pushed fact, `reportNative(facts)`, whenever a control's value or presence changes. Call `form.sync()` before validating the store yourself outside submit; submit calls it first. The form ignores `mode`, `revalidate-mode`, `defaultValues`, `resolver` and field `rules` while a store is connected. A custom control must emit a bubbling `rui-change` after it commits a value to be written; only native controls are written on native `input` and `change`. It must also call `announceControlConnect(this)` when it connects, so a field that registered earlier seeds it; a native `data-rui-control` input, select or textarea must already be inside its field when the field connects.
+
+## Warnings
+
+`<RuiFieldWarning />` (from `@ecopages/radiant-ui/field`, `role="status"`) shows a warning that a connected store reports for the field. A warning never marks the control invalid and never blocks submit.

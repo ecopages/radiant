@@ -36,11 +36,11 @@ import { RuiDateInput as RuiDateInputScript } from '../date-input/date-input.scr
 import { RuiNumberField as RuiNumberFieldScript } from '../number-field/number-field.script';
 import { RuiSlider as RuiSliderScript } from '../slider/slider.script';
 import { RuiKnob as RuiKnobScript } from '../knob/knob.script';
-import { findFieldControl, findFieldError, registerFieldControl } from './control-protocol';
+import { findFieldControl, findFieldError, registerFieldControl } from '@/lib/form/control-protocol';
 import { RuiField as RuiFieldElement } from '../field/field.script';
 import { RuiForm as RuiFormElement } from './form.script';
-import type { FormContextValue } from './form-context';
-import type { FieldRules } from './types';
+import type { FormContextValue } from '@/lib/form/form-context';
+import type { FieldRules } from '@/lib/form/types';
 void RuiFieldElement;
 void RuiFormElement;
 void RuiSwitchScript;
@@ -180,6 +180,38 @@ describe('rui-field composed content discovery', () => {
 		await new Promise((resolve) => setTimeout(resolve, 0));
 
 		expect(nativeForm.action).toContain('/accounts');
+		expect(nativeForm.method).toBe('post');
+		expect(submit).toHaveBeenCalledOnce();
+		host.remove();
+	});
+
+	it('copies an action and method set after render onto the native form it submits', async () => {
+		const host = document.createElement('div');
+		document.body.append(host);
+		const root = createRoot(host);
+		root.render(
+			<RuiForm defaultValues={{ email: 'hello@example.com' }}>
+				<RuiField name="email">
+					<RuiInput type="email" />
+				</RuiField>
+				<RuiButton type="submit">Save</RuiButton>
+			</RuiForm>,
+		);
+		await customElements.whenDefined('rui-form');
+		await flushRender();
+		await new Promise((resolve) => setTimeout(resolve, 0));
+		const form = host.querySelector('rui-form') as RuiFormElement;
+		const nativeForm = form.getRef<HTMLFormElement>('form')!;
+		const submit = vi.fn();
+		nativeForm.submit = submit;
+
+		form.action = '/later';
+		form.method = 'post';
+		await new Promise((resolve) => setTimeout(resolve, 0));
+		(host.querySelector('button') as HTMLButtonElement).click();
+		await new Promise((resolve) => setTimeout(resolve, 0));
+
+		expect(nativeForm.getAttribute('action')).toBe('/later');
 		expect(nativeForm.method).toBe('post');
 		expect(submit).toHaveBeenCalledOnce();
 		host.remove();

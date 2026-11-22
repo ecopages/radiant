@@ -1,5 +1,5 @@
 import { createContext } from '@ecopages/radiant/context';
-import type { FieldRules } from '../form/types';
+import type { FieldRules } from '@/lib/form/types';
 
 export type FieldContextValue = {
 	name: string;

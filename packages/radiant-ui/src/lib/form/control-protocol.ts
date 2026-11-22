@@ -1,12 +1,31 @@
 import type { PropTransform } from '@ecopages/radiant';
 import type { FieldControlValidity } from './types';
-import { multiValueTransform, numberArrayTransform } from '../shared/multi-value';
+import { multiValueTransform, numberArrayTransform } from '../multi-value';
 
 export const RUI_CONTROL_ATTR = 'data-rui-control';
 export const RUI_FIELD_MANAGED_ATTR = 'data-rui-field-managed';
 export const RUI_FIELD_LABEL_ATTR = 'data-rui-field-label';
 export const RUI_FIELD_DESCRIPTION_ATTR = 'data-rui-field-description';
 export const RUI_FIELD_ERROR_ATTR = 'data-rui-field-error';
+export const RUI_FIELD_WARNING_ATTR = 'data-rui-field-warning';
+
+/**
+ * Bubbling, composed event a control host dispatches on itself when it connects.
+ *
+ * @remarks A `rui-field` listens for it to seed a control that appeared after the field
+ * registered, from the value the form holds, and to report its validity. Every Radiant
+ * control host dispatches it from `onConnected`, and a third-party host registered with
+ * `registerFieldControl` must dispatch it too (call {@link announceControlConnect}). A
+ * native `<input>`, `<select>` or `<textarea>` marked `data-rui-control` announces nothing,
+ * so it must already be inside its field when the field connects; one inserted later is
+ * picked up on the field's next sync.
+ */
+export const RUI_CONTROL_CONNECT_EVENT = 'rui-control-connect';
+
+/** Dispatch {@link RUI_CONTROL_CONNECT_EVENT} from a control host that just connected. */
+export function announceControlConnect(host: HTMLElement): void {
+	host.dispatchEvent(new CustomEvent(RUI_CONTROL_CONNECT_EVENT, { bubbles: true, composed: true }));
+}
 export const RUI_FIELD_ERROR_CONTROLLED_ATTR = 'data-rui-field-error-controlled';
 export const RUI_FIELD_DEFAULT_VALUE_ATTR = 'data-default-value';
 export const RUI_FORM_DEFAULT_VALUES_ATTR = 'data-default-values';
@@ -54,6 +73,10 @@ function isNativeInput(node: Element): node is HTMLInputElement {
 
 function isNativeTextarea(node: Element): node is HTMLTextAreaElement {
 	return node.localName === 'textarea';
+}
+
+function isNativeSelect(node: Element): node is HTMLSelectElement {
+	return node.localName === 'select';
 }
 
 /** True when the constructor opted into the form-associated custom element lifecycle. */
@@ -340,12 +363,16 @@ export function readControlValue(control: HTMLElement): unknown {
 		return control.value;
 	}
 
+	if (isNativeSelect(control)) {
+		return control.multiple ? Array.from(control.selectedOptions, (option) => option.value) : control.value;
+	}
+
 	const host = resolveControlHost(control);
 	return CONTROL_VALUE_ADAPTERS.get(host.localName)?.read(host) ?? host.getAttribute('value') ?? '';
 }
 
 /**
- * Reads the control's validity through its adapter, or the form-associated default.
+ * Reads the control's validity through its adapter, or from the native element or form-associated host.
  *
  * @remarks Reads properties, never `checkValidity()`, which fires an `invalid` event.
  * Returns `undefined` when the host exposes no validity, such as on the server.
@@ -356,8 +383,12 @@ export function readControlValidity(control: HTMLElement): FieldControlValidity 
 	if (adapter?.validity) {
 		return adapter.validity(host);
 	}
-	if (!isFormAssociatedHost(host)) {
+	const native = NATIVE_VALIDATED.has(host.localName);
+	if (!native && !isFormAssociatedHost(host)) {
 		return undefined;
+	}
+	if (native && Reflect.get(host, 'willValidate') === false) {
+		return { valid: true };
 	}
 	const validity: unknown = Reflect.get(host, 'validity');
 	if (typeof validity !== 'object' || validity === null) {
@@ -368,7 +399,92 @@ export function readControlValidity(control: HTMLElement): FieldControlValidity 
 		return undefined;
 	}
 	const message = Reflect.get(host, 'validationMessage');
-	return { valid, message: typeof message === 'string' ? message : undefined };
+	const text = typeof message === 'string' ? message : undefined;
+	if (valid) {
+		return { valid, message: text };
+	}
+	const type = failingFlag(validity);
+	return { valid, type, params: native ? constraintParams(host, type) : undefined, message: text };
+}
+
+/**
+ * The constraint a native control failed, so a message can say "at least 8 characters"
+ * without parsing the browser's own text.
+ */
+function constraintParams(host: HTMLElement, flag: string): Record<string, unknown> | undefined {
+	const read = (key: string): unknown => Reflect.get(host, key);
+	const bound = (key: 'min' | 'max'): unknown => {
+		const value = read(key);
+		const numeric = read('type') === 'number' || read('type') === 'range';
+		return numeric && typeof value === 'string' && value !== '' ? Number(value) : value;
+	};
+	switch (flag) {
+		case 'tooShort':
+			return { minLength: read('minLength') };
+		case 'tooLong':
+			return { maxLength: read('maxLength') };
+		case 'rangeUnderflow':
+			return { min: bound('min') };
+		case 'rangeOverflow':
+			return { max: bound('max') };
+		case 'patternMismatch':
+			return { pattern: read('pattern') };
+		case 'stepMismatch':
+			return { step: read('step') };
+		case 'typeMismatch':
+			return { inputType: read('type') };
+		default:
+			return undefined;
+	}
+}
+
+/** Detected by tag name, like the other native controls, so it works where the DOM globals do not exist. */
+const NATIVE_VALIDATED: ReadonlySet<string> = new Set(['input', 'textarea', 'select']);
+
+const VALIDITY_FLAGS = [
+	'valueMissing',
+	'typeMismatch',
+	'patternMismatch',
+	'tooLong',
+	'tooShort',
+	'rangeUnderflow',
+	'rangeOverflow',
+	'stepMismatch',
+	'badInput',
+	'customError',
+] as const;
+
+function failingFlag(validity: object): string {
+	return VALIDITY_FLAGS.find((flag) => Reflect.get(validity, flag) === true) ?? 'customError';
+}
+
+const FOCUSABLE =
+	'input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+/**
+ * Move focus into a field's control.
+ *
+ * @remarks Focuses the ARIA target, or, when that is a container that cannot take
+ * focus such as a checkbox or radio group, its first enabled focusable descendant.
+ */
+export function focusFieldControl(control: HTMLElement): void {
+	const target = getAriaControlTarget(control);
+	const focusable = target.matches(FOCUSABLE) ? target : target.querySelector<HTMLElement>(FOCUSABLE);
+	(focusable ?? target).focus();
+}
+
+/** A multiple select takes a list of values, or one value as a list of one; a single select takes one. */
+function writeSelectValue(control: HTMLSelectElement, value: unknown): void {
+	if (!control.multiple) {
+		control.value = value == null ? '' : String(value);
+		return;
+	}
+	const chosen = new Set(
+		Array.isArray(value) ? value.map(String) : value == null || value === '' ? [] : [String(value)],
+	);
+	for (const option of control.options) {
+		option.selected = chosen.has(option.value);
+	}
 }
 
 export function writeControlValue(control: HTMLElement, value: unknown): void {
@@ -400,6 +516,11 @@ export function writeControlValue(control: HTMLElement, value: unknown): void {
 		return;
 	}
 
+	if (isNativeSelect(control)) {
+		writeSelectValue(control, value);
+		return;
+	}
+
 	const host = resolveControlHost(control);
 	CONTROL_VALUE_ADAPTERS.get(host.localName)?.write(host, value);
 }
@@ -427,6 +548,11 @@ export function findFieldError(root: HTMLElement): HTMLElement | null {
 
 function isControlledFieldError(node: HTMLElement): boolean {
 	return node.hasAttribute(RUI_FIELD_ERROR_CONTROLLED_ATTR);
+}
+
+/** The regions that show a field's warning, in document order. */
+export function findFieldWarningElements(root: HTMLElement): HTMLElement[] {
+	return Array.from(root.querySelectorAll<HTMLElement>(`[${RUI_FIELD_WARNING_ATTR}]`));
 }
 
 /**

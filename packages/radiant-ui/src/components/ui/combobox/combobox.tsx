@@ -5,7 +5,7 @@ import { RuiIconChevronDown, RuiIconX } from '@/lib/icons';
 import type { NativeButtonProps, NativeInputProps } from '@/lib/native-element-props';
 import { RuiAutocomplete, RuiAutocompleteCollection, RuiAutocompleteEmpty } from '../autocomplete';
 import { RuiListbox, type RuiListboxOptionData } from '../listbox';
-import { parseViewValue } from '../shared/multi-value';
+import { parseViewValue } from '@/lib/multi-value';
 import { RuiTagGroup } from '../tag-group';
 import { RuiCombobox as RuiComboboxElement, type RuiComboboxProps } from './combobox.script';
 

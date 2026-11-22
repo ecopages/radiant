@@ -10,7 +10,7 @@ import {
 	registerFieldControl,
 	wireFieldControlName,
 	writeControlValue,
-} from '../form/control-protocol';
+} from './control-protocol';
 
 describe('field control protocol on the SSR DOM', () => {
 	it('discovers rui-select hosts when no marked descendant exists', () => {

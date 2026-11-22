@@ -5,6 +5,7 @@ import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { createPointerDragController } from '../../../controllers/pointer-drag-controller';
 import { createNumericRange, valueFromSliderKey, valuesAlignOnStep } from '@/lib/numeric-range';
 import { createKnobRing, knobValueFromPointer } from './knob-geometry';
+import { announceControlConnect } from '@/lib/form/control-protocol';
 
 export type RuiKnobValuePosition = 'center' | 'below';
 
@@ -166,6 +167,7 @@ export class RuiKnob extends FormAssociatedElement {
 
 	protected override onConnected(): void {
 		this.syncPresentation();
+		announceControlConnect(this);
 	}
 
 	protected override formValue(): FormValue {

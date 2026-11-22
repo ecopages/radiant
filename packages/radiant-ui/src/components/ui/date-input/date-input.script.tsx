@@ -27,6 +27,7 @@ import {
 import { resolveLocale } from '@/lib/intl/locale';
 import { uniqueId } from '@/lib/unique-id';
 import { getSegmentDomProps } from './date-input-segment-dom';
+import { announceControlConnect } from '@/lib/form/control-protocol';
 
 export type RuiDateInputProps = {
 	value?: string;
@@ -301,6 +302,7 @@ export class RuiDateInput extends FormAssociatedElement {
 	protected override onConnected(): void {
 		this.syncSegmentsFromValue();
 		this.syncGroupLabel();
+		announceControlConnect(this);
 	}
 
 	protected override formValue(): FormValue {

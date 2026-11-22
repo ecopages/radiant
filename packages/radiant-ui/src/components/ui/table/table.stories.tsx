@@ -3,7 +3,7 @@ import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, onEvent, state } from '@ecopages/radiant';
 import { expect, spyOn, userEvent, waitFor } from 'storybook/test';
 import { applyDesignTokens } from '../../../../.storybook/apply-design-tokens';
-import type { ViewMultiValue } from '../shared/multi-value';
+import type { ViewMultiValue } from '@/lib/multi-value';
 import {
 	RuiTable,
 	RuiTableBody,

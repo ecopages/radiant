@@ -3,7 +3,7 @@ title: Field
 description: Fields wrap a single form control with label, description, and error messaging in a consistent layout.
 ---
 
-import { meta as FieldMeta, Default } from '@/content/stories/field';
+import { meta as FieldMeta, Default, warningMeta, WithWarning } from '@/content/stories/field';
 import Canvas from '@/components/component-docs/canvas';
 import Demo from '@/components/component-docs/demo';
 
@@ -87,6 +87,39 @@ import { RuiFieldError } from '@ecopages/radiant-ui/field';
 
 An empty `error` keeps the region controlled and hidden; omit `error` to leave the region to the enclosing field. Give the region an `id` and point the group's `aria-describedby` or `aria-errormessage` at it. Inside a field, a controlled region without an `id` gets one and is added to the control's `aria-describedby` and stays listed while hidden, since an empty region adds nothing to the description.
 
+## Warnings
+
+A form store you inject can report warnings beside its errors. A warning is advice: `RuiFieldWarning` shows it under the control, and it never marks the control invalid, never reaches `aria-invalid` or `aria-describedby`, and never blocks submit. The field fills the region and hides it when there is no warning, the way it does `RuiFieldError`. The region renders `role="status"`, a polite live region, so a warning that appears is announced without interrupting.
+
+<Canvas of={WithWarning} meta={warningMeta} />
+
+```tsx
+import { RuiField, RuiFieldError, RuiFieldWarning } from '@ecopages/radiant-ui/field';
+
+<RuiField name="password">
+	<RuiInput type="password" />
+	<RuiFieldError />
+	<RuiFieldWarning />
+</RuiField>;
+```
+
+A field writes a native control (`<input>`, `<textarea>`, `<select>`) to its form on the native `input` and `change` events, and any other control, such as a checkbox group or a multi-select, only on its bubbling `rui-change`. See [Form](/docs/forms/form#inject-a-form-state-store) for how to inject a store that reports warnings.
+
+## Required fields
+
+`required` marks a field for `aria-required` and for a required marker (it is reflected as an attribute, so CSS can target `rui-field[required]`, and `fieldContext.required` carries it to a control). It validates nothing, so it is the way to mark a field required when a form store you inject owns validation and the form ignores `rules`. With the built-in store a `required` rule still validates as before and also implies the flag.
+
+```tsx
+<RuiField name="email" required>
+	<RuiLabel>Email</RuiLabel>
+	<RuiInput type="email" />
+</RuiField>
+```
+
+## Controls that arrive late
+
+A field finds its control when it connects. A Radiant control host, or a custom host that calls `announceControlConnect`, can appear later: it announces itself with a bubbling `rui-control-connect` event and the field seeds it from the form and reads its validity. A native `<input>`, `<select>` or `<textarea>` marked `data-rui-control` announces nothing, so it must already be inside its `rui-field` when the field connects. One inserted later is picked up on the field's next sync, that is, on the next store notification or re-render.
+
 ## Disabled fields
 
 <p>Set `disabled` on the field to dim the label and prevent interaction with nested controls.</p>
@@ -100,6 +133,7 @@ Field surfaces map to **semantic surface roles**, never Tailwind palette steps:
 | Root (`.rui-field`) | `space-inline` gap |
 | Description (`.rui-field__description`) | `on-surface`, `text-body-sm` |
 | Error (`.rui-field__error`) | `error`, `text-body-sm` |
+| Warning (`.rui-field__warning`) | `warning`, `text-body-sm` |
 
 The nested control keeps its own control tokens (`--size-control-*`, `--radius-control`) so fields stack consistently. Override at the theme layer, not in component CSS.
 
@@ -115,6 +149,7 @@ The nested control keeps its own control tokens (`--size-control-*`, `--radius-c
 | `error` | `string` | `''` | Standalone error message when not using a form provider. |
 | `invalid` | `boolean` | `false` | Standalone invalid flag when not using a form provider. |
 | `disabled` | `boolean` | `false` | Dims the field and disables nested controls. |
+| `required` | `boolean` | `false` | Presentation only: sets `aria-required` on the control and `fieldContext.required` for a required marker, in every mode. It validates nothing. A `required` rule still validates with the built-in store and also implies it. |
 | `data-default-value` | `string` | | JSON-serialized default value for SSR hydration. |
 
 ### Props
@@ -133,6 +168,7 @@ The nested control keeps its own control tokens (`--size-control-*`, `--radius-c
 | `[data-rui-field-label]` | no | `htmlFor`; `id` when the control is a registered custom host | label text |
 | `[data-rui-field-description]` | no | `id` | description content |
 | `[data-rui-field-error]` | no | `id`, `textContent`, `hidden` (skipped when `data-rui-field-error-controlled`; only a missing `id` is written) | error region presence |
+| `[data-rui-field-warning]` | no | `textContent`, `hidden` | warning region presence |
 | `[data-ref="field"]` | no | — | presentation column |
 
 Nested hosts: registered control hosts inside the field (`rui-switch`, `rui-slider`, …).
@@ -200,6 +236,7 @@ A form-associated host that reports invalid through `setValidity` also makes its
 | `RuiField` | `[data-ref="field"]` | Passes `rules` / `defaultValue` via `prop:` bindings. |
 | `RuiFieldDescription` | `[data-rui-field-description]` | Wired into `aria-describedby`. |
 | `RuiFieldError` | `[data-rui-field-error]` | Text populated by the field; `role="alert"`. `error` makes it controlled (`data-rui-field-error-controlled`). |
+| `RuiFieldWarning` | `[data-rui-field-warning]` | Text populated by the field from a warning an injected form store reports; `role="status"`, hidden until set. A warning never marks the control invalid or blocks submit. |
 
 ### CSS classes
 
@@ -210,6 +247,7 @@ Public BEM classes (documented via `@cssclass`):
 | `.rui-field` | Root column (authored by the element). |
 | `.rui-field__description` | Helper text below the control. |
 | `.rui-field__error` | Error text; hidden until a message is set. |
+| `.rui-field__warning` | Warning text; hidden until a warning is set. |
 
 ### Theme roles
 
@@ -218,6 +256,7 @@ Public BEM classes (documented via `@cssclass`):
 | Root | `--space-inline` |
 | Description | `--on-surface`, `--text-body-sm` |
 | Error | `--error`, `--text-body-sm` |
+| Warning | `--warning`, `--text-body-sm` |
 
 ## Accessibility
 

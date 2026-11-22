@@ -1,14 +1,24 @@
 export { RuiForm, type RuiFormSubmitDetail, type RuiFormInvalidDetail } from './form';
-export { RuiForm as RuiFormElement, type RuiFormProps } from './form.script';
+export {
+	RuiForm as RuiFormElement,
+	type RuiFormProps,
+	type RuiFormFormatError,
+	type RuiFormHandlers,
+	type RuiFormResetHandler,
+	type RuiFormSubmitContext,
+	type RuiFormSubmitHandler,
+} from './form.script';
 export {
 	formContext,
 	type FormContextValue,
 	type FormFieldPresentation,
 	type FormContextActions,
-} from './form-context';
-export { FormStore } from './form-store';
-export { createRulesResolver, runRulesResolver } from './resolvers';
-export type { FieldRules, FieldValues, Resolver, ValidationMode, FormState, FieldError } from './types';
+} from '@/lib/form/form-context';
+export { FormStore } from '@/lib/form/form-store';
+export type { FormStateStore, FormStateStoreSnapshot, NativeValidity } from '@/lib/form/form-state-store';
+export { createRulesResolver, runRulesResolver } from '@/lib/form/resolvers';
+export type { FieldRegistration, FieldRegistrationHandle } from '@/lib/form/types';
+export type { FieldRules, FieldValues, Resolver, ValidationMode, FormState, FieldError } from '@/lib/form/types';
 export {
 	findFieldControl,
 	isNativeTextControl,
@@ -20,5 +30,8 @@ export {
 	RUI_FIELD_DESCRIPTION_ATTR,
 	RUI_FIELD_ERROR_ATTR,
 	RUI_FIELD_MANAGED_ATTR,
-} from './control-protocol';
-export type { FieldControlAdapter } from './control-protocol';
+	RUI_CONTROL_CONNECT_EVENT,
+	announceControlConnect,
+	RUI_FIELD_WARNING_ATTR,
+} from '@/lib/form/control-protocol';
+export type { FieldControlAdapter } from '@/lib/form/control-protocol';

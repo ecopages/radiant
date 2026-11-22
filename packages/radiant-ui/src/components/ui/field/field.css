@@ -23,4 +23,13 @@ rui-field {
 	.rui-field__error[hidden] {
 		display: none;
 	}
+
+	.rui-field__warning {
+		@apply text-warning;
+		font-size: var(--text-body-sm, 0.875rem);
+	}
+
+	.rui-field__warning[hidden] {
+		display: none;
+	}
 }

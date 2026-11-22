@@ -1,6 +1,6 @@
 import type { JsxElementProps } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
-import { RUI_FIELD_DESCRIPTION_ATTR } from '../form/control-protocol';
+import { RUI_FIELD_DESCRIPTION_ATTR } from '@/lib/form/control-protocol';
 
 export type RuiFieldDescriptionProps = JsxElementProps<HTMLParagraphElement>;
 

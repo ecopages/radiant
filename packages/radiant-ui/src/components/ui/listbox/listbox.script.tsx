@@ -5,7 +5,8 @@ import { uniqueId } from '@/lib/unique-id';
 import { createRovingController } from '../../../controllers/roving-controller';
 import { syncFieldLabel } from '../shared/field-label';
 import { getListboxOptionValue } from '../shared/listbox-option';
-import { multiValuePropOptions, type ViewMultiValue } from '../shared/multi-value';
+import { multiValuePropOptions, type ViewMultiValue } from '@/lib/multi-value';
+import { announceControlConnect } from '@/lib/form/control-protocol';
 
 export type RuiListboxSelectionMode = 'single' | 'multiple';
 
@@ -119,6 +120,7 @@ export class RuiListbox extends RadiantElement {
 	protected override onConnected(): void {
 		this.syncLabel();
 		this.sync();
+		announceControlConnect(this);
 	}
 
 	@onUpdated(['value', 'label', 'disabled', 'embedded', 'selectionMode'])

@@ -154,7 +154,7 @@ Not exported from either entry; do not import them from `dist` or `src` in consu
 
 - `ListboxHost` (`components/ui/shared`): reads `RuiListbox` host types from the catalog.
 - `ListboxPopoverController` and `CalendarPopoverController` (`components/ui/shared`): they encode select and combobox key policy and the calendar's day markup, so no public API yet.
-- `preview-timing`, `multi-value`, `field-label` and `form-owner` in `components/ui/shared`: catalog-specific.
+- `preview-timing`, `field-label` and `form-owner` in `components/ui/shared`: catalog-specific. `multi-value` lives in `src/lib`, and the form state logic in `src/lib/form`.
 
 ## Adding a primitive
 

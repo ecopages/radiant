@@ -4,7 +4,7 @@ import { contextSelector } from '@ecopages/radiant/context';
 import { fieldAria, fieldAriaBindings } from '../field/field-aria';
 import { fieldContext, type FieldContextValue } from '../field/field-context';
 import { RuiField as RuiFieldElement } from '../field/field.script';
-import { registerFieldControl } from './control-protocol';
+import { registerFieldControl } from '@/lib/form/control-protocol';
 void RuiFieldElement;
 
 /**

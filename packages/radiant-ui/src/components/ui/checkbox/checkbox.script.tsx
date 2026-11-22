@@ -2,6 +2,7 @@ import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, bindTo, customElement, event, onEvent, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { nonEmpty } from '@/lib/non-empty';
+import { announceControlConnect } from '@/lib/form/control-protocol';
 
 export type RuiCheckboxProps = {
 	/** Whether the checkbox is checked. Default: `false`. */
@@ -127,6 +128,10 @@ export class RuiCheckbox extends RadiantElement {
 		this.checked = input.checked;
 		input.indeterminate = this.indeterminate;
 		this.changeEvent.emit({ checked: this.checked, indeterminate: this.indeterminate });
+	}
+
+	protected override onConnected(): void {
+		announceControlConnect(this);
 	}
 }
 

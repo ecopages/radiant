@@ -2,6 +2,7 @@ import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop, queryAll } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { nonEmpty } from '@/lib/non-empty';
+import { announceControlConnect } from '@/lib/form/control-protocol';
 
 export type RuiRadioGroupProps = {
 	/** Currently selected value. Reflects to markup. */
@@ -98,6 +99,7 @@ export class RuiRadioGroup extends RadiantElement {
 
 	protected override onConnected(): void {
 		this.syncRadios();
+		announceControlConnect(this);
 	}
 
 	@onUpdated(['value', 'name', 'disabled'])

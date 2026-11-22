@@ -1,11 +1,14 @@
+import { userEvent } from 'vitest/browser';
 import { describe, expect, it, vi } from 'vitest';
 import {
 	findFieldControl,
 	isPrimaryFieldControlEvent,
 	readControlValidity,
+	readControlValue,
 	registerFieldControl,
 	wireFieldControlName,
-} from '../form/control-protocol';
+	writeControlValue,
+} from './control-protocol';
 
 /**
  * Client behaviour of the field control protocol: bubbling events, native `.value`, and custom elements upgraded by
@@ -81,6 +84,42 @@ describe('field control protocol in the browser', () => {
 		expect(input.hasAttribute('name')).toBe(false);
 	});
 
+	describe('native select', () => {
+		function select(multiple: boolean) {
+			const element = document.createElement('select');
+			element.multiple = multiple;
+			element.innerHTML = '<option value="a">A</option><option value="b">B</option><option value="c">C</option>';
+			document.body.append(element);
+			return element;
+		}
+
+		it('reads and writes a single select by value', () => {
+			const element = select(false);
+
+			writeControlValue(element, 'b');
+			expect(element.value).toBe('b');
+			expect(readControlValue(element)).toBe('b');
+
+			writeControlValue(element, undefined);
+			expect(readControlValue(element)).not.toBe('b');
+			element.remove();
+		});
+
+		it('reads and writes a multiple select as a list of values', () => {
+			const element = select(true);
+
+			writeControlValue(element, ['a', 'c']);
+			expect(Array.from(element.selectedOptions, (option) => option.value)).toEqual(['a', 'c']);
+			expect(readControlValue(element)).toEqual(['a', 'c']);
+
+			writeControlValue(element, []);
+			expect(readControlValue(element)).toEqual([]);
+			writeControlValue(element, 'b');
+			expect(readControlValue(element)).toEqual(['b']);
+			element.remove();
+		});
+	});
+
 	describe('control validity', () => {
 		function defineFace(tag: string, adapter?: Parameters<typeof registerFieldControl>[1]) {
 			if (!customElements.get(tag)) {
@@ -117,8 +156,92 @@ describe('field control protocol in the browser', () => {
 			expect(readControlValidity(host)).toEqual({ valid: true, message: '' });
 
 			host.internals.setValidity({ customError: true }, 'Enter all 6 characters');
-			expect(readControlValidity(host)).toEqual({ valid: false, message: 'Enter all 6 characters' });
+			expect(readControlValidity(host)).toEqual({
+				valid: false,
+				type: 'customError',
+				message: 'Enter all 6 characters',
+			});
 			host.remove();
+		});
+
+		it('reads a native input, textarea or select and names the failing flag', () => {
+			const input = document.createElement('input');
+			input.type = 'email';
+			input.required = true;
+			document.body.append(input);
+			expect(readControlValidity(input)).toMatchObject({ valid: false, type: 'valueMissing' });
+
+			input.value = 'x';
+			expect(readControlValidity(input)).toMatchObject({ valid: false, type: 'typeMismatch' });
+			expect(readControlValidity(input)?.message).toBeTruthy();
+
+			input.value = 'a@b.co';
+			expect(readControlValidity(input)).toMatchObject({ valid: true });
+
+			const textarea = document.createElement('textarea');
+			textarea.required = true;
+			textarea.minLength = 3;
+			document.body.append(textarea);
+			expect(readControlValidity(textarea)).toMatchObject({ valid: false, type: 'valueMissing' });
+
+			const select = document.createElement('select');
+			select.required = true;
+			select.innerHTML = '<option value=""></option><option value="a">a</option>';
+			document.body.append(select);
+			expect(readControlValidity(select)).toMatchObject({ valid: false, type: 'valueMissing' });
+			input.remove();
+			textarea.remove();
+			select.remove();
+		});
+
+		it('carries the constraint of the failing flag as params', () => {
+			const input = document.createElement('input');
+			document.body.append(input);
+
+			input.type = 'number';
+			input.min = '5';
+			input.max = '10';
+			input.value = '3';
+			expect(readControlValidity(input)).toMatchObject({ type: 'rangeUnderflow', params: { min: 5 } });
+			input.value = '30';
+			expect(readControlValidity(input)).toMatchObject({ type: 'rangeOverflow', params: { max: 10 } });
+
+			input.type = 'text';
+			input.removeAttribute('min');
+			input.removeAttribute('max');
+			input.pattern = '[a-z]+';
+			input.value = '123';
+			expect(readControlValidity(input)).toMatchObject({
+				type: 'patternMismatch',
+				params: { pattern: '[a-z]+' },
+			});
+
+			input.type = 'email';
+			input.removeAttribute('pattern');
+			input.value = 'x';
+			expect(readControlValidity(input)).toMatchObject({ type: 'typeMismatch', params: { inputType: 'email' } });
+			input.remove();
+		});
+
+		it('carries minLength for a value the user typed too short', async () => {
+			const input = document.createElement('input');
+			input.minLength = 8;
+			document.body.append(input);
+			input.focus();
+			await userEvent.keyboard('abc');
+
+			expect(readControlValidity(input)).toMatchObject({ type: 'tooShort', params: { minLength: 8 } });
+			input.remove();
+		});
+
+		it('treats a control barred from constraint validation as valid', () => {
+			const input = document.createElement('input');
+			input.required = true;
+			input.disabled = true;
+			document.body.append(input);
+
+			expect(readControlValidity(input)).toMatchObject({ valid: true });
+			input.remove();
 		});
 
 		it('does not fire invalid while reading', () => {

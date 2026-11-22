@@ -11,6 +11,7 @@ import {
 	type RuiPortalContainer,
 } from '../shared/portal-container';
 import { effectiveVisibleMonths } from '@/lib/viewport/mobile-layout';
+import { announceControlConnect } from '@/lib/form/control-protocol';
 
 export type RuiDateRangePickerProps = {
 	value?: string;
@@ -286,6 +287,7 @@ export class RuiDateRangePicker extends RadiantElement {
 
 	protected override onConnected(): void {
 		this.initialize();
+		announceControlConnect(this);
 	}
 
 	@onUpdated(['value', 'min', 'max', 'disabled', 'readOnly', 'locale', 'visibleMonths', 'portal'])

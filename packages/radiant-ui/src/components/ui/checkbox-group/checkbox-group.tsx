@@ -1,7 +1,7 @@
 import type { JsxCustomElementAttributes, JsxElementProps, JsxRenderable } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
 import { RuiCheckbox } from '../checkbox';
-import { parseViewValue } from '../shared/multi-value';
+import { parseViewValue } from '@/lib/multi-value';
 import {
 	RuiCheckboxGroup as RuiCheckboxGroupElement,
 	type RuiCheckboxGroupOrientation,

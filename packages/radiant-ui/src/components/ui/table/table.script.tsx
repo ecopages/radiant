@@ -1,7 +1,7 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, event, onEvent, onUpdated, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
-import { multiValuePropOptions, type ViewMultiValue } from '../shared/multi-value';
+import { multiValuePropOptions, type ViewMultiValue } from '@/lib/multi-value';
 import type { RuiCheckbox, RuiCheckboxChangeDetail } from '../checkbox/checkbox.script';
 import { createMutationController } from '../../../controllers/mutation-controller';
 import { createRovingController } from '../../../controllers/roving-controller';

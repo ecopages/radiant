@@ -1,6 +1,6 @@
 import { cx } from '@/lib/cx';
 import type { NativeTextareaProps } from '@/lib/native-element-props';
-import { RUI_CONTROL_ATTR } from '../form/control-protocol';
+import { RUI_CONTROL_ATTR } from '@/lib/form/control-protocol';
 
 export type RuiTextareaProps = NativeTextareaProps & {
 	value?: string;

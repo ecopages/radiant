@@ -15,7 +15,9 @@ import {
 	findFieldDescription,
 	findFieldError,
 	findFieldErrorElements,
+	findFieldWarningElements,
 	findFieldLabel,
+	focusFieldControl,
 	getAriaControlTargets,
 	isNativeTextControl,
 	isPrimaryFieldControlEvent,
@@ -23,17 +25,17 @@ import {
 	paintsOwnFieldAria,
 	readControlValue,
 	readControlValidity,
+	RUI_CONTROL_CONNECT_EVENT,
 	RUI_FIELD_DEFAULT_VALUE_ATTR,
 	RUI_FIELD_MANAGED_ATTR,
 	writeControlValue,
 	wireFieldControlName,
-} from '../form/control-protocol';
-import { formContext, type FormContextValue } from '../form/form-context';
+} from '@/lib/form/control-protocol';
+import { formContext, type FormContextValue } from '@/lib/form/form-context';
 import { fieldContext, type FieldContextValue } from './field-context';
-import type { FieldRules } from '../form/types';
+import type { FieldRegistration, FieldRegistrationHandle, FieldRules } from '@/lib/form/types';
 import { bindVisibleLabel } from '../shared/field-label';
 import { uniqueId } from '@/lib/unique-id';
-import { MutationController } from '../../../controllers/mutation-controller';
 
 /**
  * The JSON-safe subset of `FieldRules` for SSR hydration — a `validate` function can't
@@ -53,6 +55,8 @@ export type RuiFieldProps = {
 	defaultValue?: unknown;
 	defaultValueData?: string;
 	disabled?: boolean;
+	/** Presentation only: `aria-required` and the required marker; validates nothing. */
+	required?: boolean;
 	/** Standalone error message when not using a form provider. */
 	error?: string;
 	/** Standalone invalid flag when not using a form provider. */
@@ -77,16 +81,24 @@ export type RuiFieldProps = {
  *   writes values through the control protocol; see each host's contract for inner targets.
  *   An embedded `rui-listbox` is an option surface, not a field control.
  *   Third-party hosts: register a value adapter with `registerFieldControl` before
- *   connection, stamp `data-rui-control`, and fire bubbling `rui-change`.
+ *   connection, stamp `data-rui-control`, fire bubbling `rui-change` after committing a value,
+ *   and call `announceControlConnect` (a bubbling `rui-control-connect`) when connecting so
+ *   a field that registered earlier can seed it. A native `<input>`, `<select>` or
+ *   `<textarea>` marked `data-rui-control` announces nothing: it must be inside the field
+ *   when the field connects, and one inserted later is picked up on the next sync.
  *
  * Optional:
  * - `[data-rui-field-label]` — visible label. Host sets `htmlFor`.
  * - `[data-rui-field-description]` — helper text. Host sets `id` and wires `aria-describedby`.
  * - `[data-rui-field-error]` — error region. Host sets `id`, `textContent`, and `hidden`.
+ * - `[data-rui-field-warning]` — warning region. Host sets `textContent` and `hidden`.
  * - `[data-ref="field"]` — column wrapping children; used to locate error regions.
  *
  * On each ARIA target the host writes `id` (when missing), `data-rui-field-managed`,
  * `aria-invalid`, `aria-required`, `aria-describedby`, and `aria-disabled` (when `disabled`).
+ * `aria-required` is set when the `required` attribute is present or a `required` rule exists:
+ * the attribute is presentation only and works in every mode, including with an injected store
+ * that ignores `rules`. `fieldContext.required` carries the same flag for a required marker.
  * Do not fight those attributes on controls inside a field.
  *
  * A host registered with `registerFieldControl` that declares `data-rui-aria-target(s)` is the exception:
@@ -120,10 +132,16 @@ export class RuiField extends RadiantElement {
 	declare readonly [JSX_PROPS]?: RuiFieldProps;
 
 	@prop({ type: String, reflect: true, defaultValue: '' }) name: string;
-	@prop({ type: Object }) rules?: FieldRules;
-	@prop({ type: Object }) defaultValue?: unknown;
+	@prop({ type: Object, attribute: false }) rules?: FieldRules;
+	@prop({ type: Object, attribute: false }) defaultValue?: unknown;
 	@prop({ type: String, attribute: RUI_FIELD_DEFAULT_VALUE_ATTR }) defaultValueData?: string;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) disabled: boolean;
+	/**
+	 * Presentation only: marks the field required for `aria-required` and the required
+	 * marker. It validates nothing; with the built-in store a `required` rule validates
+	 * and also implies this flag, and an injected store validates for itself.
+	 */
+	@prop({ type: Boolean, reflect: true, defaultValue: false }) required: boolean;
 	@prop({ type: String, defaultValue: '' }) error: string;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) invalid: boolean;
 
@@ -157,23 +175,16 @@ export class RuiField extends RadiantElement {
 		return (this.name || this.getAttribute('name') || '').trim();
 	}
 
-	private unregister?: () => void;
+	private registration?: FieldRegistrationHandle;
 	private unregisterPresentation?: () => void;
 	private registeredWithForm = false;
+	private registeredName: string | undefined;
 	/**
-	 * Last form write that landed before `findFieldControl` could see a host.
-	 * JSX can add the control later without reconnecting this field.
+	 * Last form write that landed before `findFieldControl` could see a host. A custom control
+	 * that connects later announces itself with `rui-control-connect` and is seeded then; a
+	 * native control inserted later is written on the field's next sync.
 	 */
 	private pendingControlWrite?: { value: unknown };
-	/**
-	 * @remarks JSX can insert the control after `register()` without reconnecting
-	 * the field. Attached while a write is pending: `syncField` applies `pendingControlWrite` once the host exists.
-	 */
-	private readonly controlObserver = new MutationController({
-		getTarget: () => this,
-		options: { childList: true, subtree: true },
-		onMutate: () => this.syncField(),
-	});
 
 	/**
 	 * @remarks Registers SSR-prep rules on `fieldProvider` so hydrated fields recover them after a
@@ -190,11 +201,12 @@ export class RuiField extends RadiantElement {
 	}
 
 	override disconnectedCallback(): void {
-		this.unregister?.();
-		this.unregister = undefined;
+		this.registration?.unregister();
+		this.registration = undefined;
 		this.unregisterPresentation?.();
 		this.unregisterPresentation = undefined;
 		this.registeredWithForm = false;
+		this.registeredName = undefined;
 		this.clearPendingControlWrite();
 		super.disconnectedCallback();
 	}
@@ -236,7 +248,7 @@ export class RuiField extends RadiantElement {
 	}
 
 	private isRequired(): boolean {
-		return Boolean(this.readFieldRules()?.required);
+		return this.required || Boolean(this.readFieldRules()?.required);
 	}
 
 	private resolveErrorMessage(formCtx?: FormContextValue): string | undefined {
@@ -248,7 +260,7 @@ export class RuiField extends RadiantElement {
 			return undefined;
 		}
 		const ctx = formCtx ?? this.currentFormContext;
-		return ctx?.fields[fieldName]?.error;
+		return ctx && Object.hasOwn(ctx.fields, fieldName) ? ctx.fields[fieldName]?.error : undefined;
 	}
 
 	private resolveInvalid(formCtx?: FormContextValue): boolean {
@@ -263,7 +275,40 @@ export class RuiField extends RadiantElement {
 			return false;
 		}
 		const ctx = formCtx ?? this.currentFormContext;
-		return ctx?.fields[fieldName]?.invalid ?? false;
+		return ctx && Object.hasOwn(ctx.fields, fieldName) ? (ctx.fields[fieldName]?.invalid ?? false) : false;
+	}
+
+	private buildRegistration(name: string): FieldRegistration {
+		return {
+			name,
+			element: this,
+			rules: this.readFieldRules(),
+			getRules: () => this.readFieldRules(),
+			defaultValue: this.readDefaultValue(),
+			getValue: () => {
+				const control = findFieldControl(this);
+				return control ? readControlValue(control) : undefined;
+			},
+			getValidity: () => {
+				const control = findFieldControl(this);
+				return control ? readControlValidity(control) : undefined;
+			},
+			focus: () => {
+				const control = findFieldControl(this);
+				if (control) {
+					focusFieldControl(control);
+				}
+			},
+			setValue: (value) => {
+				const control = findFieldControl(this);
+				if (control) {
+					writeControlValue(control, value);
+					this.clearPendingControlWrite();
+					return;
+				}
+				this.pendingControlWrite = { value };
+			},
+		};
 	}
 
 	private connectToForm(): void {
@@ -279,30 +324,8 @@ export class RuiField extends RadiantElement {
 			this.registeredWithForm = true;
 			this.unregisterPresentation?.();
 			this.unregisterPresentation = actions.subscribePresentation((ctx) => this.syncField(ctx));
-			this.unregister = actions.register({
-				name: fieldName,
-				rules: this.readFieldRules(),
-				getRules: () => this.readFieldRules(),
-				defaultValue: this.readDefaultValue(),
-				getValue: () => {
-					const control = findFieldControl(this);
-					return control ? readControlValue(control) : undefined;
-				},
-				getValidity: () => {
-					const control = findFieldControl(this);
-					return control ? readControlValidity(control) : undefined;
-				},
-				setValue: (value) => {
-					const control = findFieldControl(this);
-					if (control) {
-						writeControlValue(control, value);
-						this.clearPendingControlWrite();
-						return;
-					}
-					this.pendingControlWrite = { value };
-					this.controlObserver.attach();
-				},
-			});
+			this.registeredName = fieldName;
+			this.registration = actions.register(this.buildRegistration(fieldName));
 			this.syncField();
 			return;
 		}
@@ -329,11 +352,22 @@ export class RuiField extends RadiantElement {
 
 	@onUpdated(['name'])
 	onNameUpdated(): void {
-		this.unregister?.();
-		this.unregister = undefined;
+		const nextName = this.resolveFieldName();
+		if (this.registeredWithForm && this.registeredName === nextName) {
+			return;
+		}
+		if (this.registeredWithForm && this.registration && nextName) {
+			this.registration.rename(nextName);
+			this.registeredName = nextName;
+			this.syncField();
+			return;
+		}
+		this.registration?.unregister();
+		this.registration = undefined;
 		this.unregisterPresentation?.();
 		this.unregisterPresentation = undefined;
 		this.registeredWithForm = false;
+		this.registeredName = undefined;
 		this.clearPendingControlWrite();
 		this.connectToForm();
 	}
@@ -343,7 +377,7 @@ export class RuiField extends RadiantElement {
 		this.connectToForm();
 	}
 
-	@onUpdated(['disabled', 'error', 'invalid'])
+	@onUpdated(['disabled', 'error', 'invalid', 'required'])
 	onPresentationUpdated(): void {
 		this.syncField();
 	}
@@ -363,13 +397,28 @@ export class RuiField extends RadiantElement {
 		this.syncControlToForm();
 	}
 
+	/**
+	 * A control host announces itself when it connects, so a control inserted after the
+	 * field registered is seeded from the form and reports its validity.
+	 */
+	@onEvent({ selector: '*', type: RUI_CONTROL_CONNECT_EVENT })
+	onControlConnect(event: Event): void {
+		if (!isPrimaryFieldControlEvent(this, event)) {
+			return;
+		}
+		this.syncField();
+		this.registration?.refresh();
+	}
+
 	@onEvent({
 		selector: '[data-rui-control]',
 		type: 'input',
 		options: { capture: true },
 	})
-	onControlInput(): void {
-		this.syncControlToForm();
+	onControlInput(event: Event): void {
+		if (this.isNativeControlEvent(event)) {
+			this.syncControlToForm();
+		}
 	}
 
 	@onEvent({
@@ -377,8 +426,24 @@ export class RuiField extends RadiantElement {
 		type: 'change',
 		options: { capture: true },
 	})
-	onControlNativeChange(): void {
-		this.syncControlToForm();
+	onControlNativeChange(event: Event): void {
+		if (this.isNativeControlEvent(event)) {
+			this.syncControlToForm();
+		}
+	}
+
+	/**
+	 * Whether a native `input` or `change` event came from the field's control itself.
+	 *
+	 * @remarks A native control (`<input>`, `<textarea>`, `<select>`) has committed its
+	 * value when the event fires. A composite control (a checkbox group, a multi-select)
+	 * receives the native event from a part inside it, in the capture phase, before it
+	 * has updated its own value, so reading it then writes the old value. A composite
+	 * announces its committed value with `rui-change`, which the field already handles,
+	 * so one toggle is one write.
+	 */
+	private isNativeControlEvent(event: Event): boolean {
+		return event.target === findFieldControl(this);
 	}
 
 	@onEvent({ selector: '[data-rui-control], rui-knob, rui-slider', type: 'focusout' })
@@ -418,6 +483,7 @@ export class RuiField extends RadiantElement {
 		const labelId = this.syncLabel(ariaTargets, ariaTarget, paintedByHost, controlId);
 
 		this.syncErrorPresentation(errorMessage);
+		this.syncWarningPresentation(this.resolveWarning(formCtx));
 
 		const nextFieldContext = {
 			name: fieldName,
@@ -443,7 +509,6 @@ export class RuiField extends RadiantElement {
 
 	private clearPendingControlWrite(): void {
 		this.pendingControlWrite = undefined;
-		this.controlObserver.destroy();
 	}
 
 	private syncDescriptions(descriptionId: string, errorId: string, errorMessage: string | undefined): string[] {
@@ -559,9 +624,26 @@ export class RuiField extends RadiantElement {
 		if (isNativeTextControl(target)) target.disabled = true;
 	}
 
+	private syncWarningPresentation(warning: string | undefined): void {
+		for (const region of findFieldWarningElements(this)) {
+			setTextIfChanged(region, warning ?? '');
+			region.hidden = !warning;
+			if (warning) region.removeAttribute('hidden');
+		}
+	}
+
+	private resolveWarning(formCtx?: FormContextValue): string | undefined {
+		const fieldName = this.resolveFieldName();
+		if (!fieldName) {
+			return undefined;
+		}
+		const fields = (formCtx ?? this.currentFormContext)?.fields;
+		return fields && Object.hasOwn(fields, fieldName) ? fields[fieldName]?.warning : undefined;
+	}
+
 	private syncErrorPresentation(errorMessage: string | undefined): void {
 		for (const error of findFieldErrorElements(this)) {
-			error.textContent = errorMessage ?? '';
+			setTextIfChanged(error, errorMessage ?? '');
 			error.hidden = !errorMessage;
 			if (errorMessage) error.removeAttribute('hidden');
 		}
@@ -571,6 +653,13 @@ export class RuiField extends RadiantElement {
 		const previous = this.fieldProvider.getContext();
 		if (isSameFieldContext(previous, next)) return;
 		this.fieldProvider.setContext(next);
+	}
+}
+
+/** Assigning `textContent` is a mutation even for the same text, so write only on a change. */
+function setTextIfChanged(element: HTMLElement, text: string): void {
+	if (element.textContent !== text) {
+		element.textContent = text;
 	}
 }
 

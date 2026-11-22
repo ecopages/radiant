@@ -3,7 +3,8 @@ import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop 
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { nonEmpty } from '@/lib/non-empty';
 import { RuiCheckbox } from '../checkbox/checkbox.script';
-import { multiValuePropOptions, type ViewMultiValue } from '../shared/multi-value';
+import { multiValuePropOptions, type ViewMultiValue } from '@/lib/multi-value';
+import { announceControlConnect } from '@/lib/form/control-protocol';
 
 export type RuiCheckboxGroupOrientation = 'horizontal' | 'vertical';
 
@@ -108,6 +109,7 @@ export class RuiCheckboxGroup extends RadiantElement {
 
 	protected override onConnected(): void {
 		this.syncCheckboxes();
+		announceControlConnect(this);
 	}
 
 	@onUpdated(['value', 'name', 'disabled'])

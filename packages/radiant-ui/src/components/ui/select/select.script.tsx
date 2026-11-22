@@ -7,12 +7,13 @@ import { ListboxHost } from '../shared/listbox-host';
 import { getListboxOptionValue } from '../shared/listbox-option';
 import { createEventListenerController } from '../../../controllers/event-listener-controller';
 import { createListboxPopoverController } from '../shared/listbox-popover-controller';
-import { multiValuePropOptions, type ViewMultiValue } from '../shared/multi-value';
+import { multiValuePropOptions, type ViewMultiValue } from '@/lib/multi-value';
 import {
 	portalContainerPropOptions,
 	resolvePortalContainer,
 	type RuiPortalContainer,
 } from '../shared/portal-container';
+import { announceControlConnect } from '@/lib/form/control-protocol';
 
 export type RuiSelectSelectionMode = 'single' | 'multiple';
 export type RuiSelectTriggerKind = 'focus' | 'manual';
@@ -554,6 +555,7 @@ export class RuiSelect extends RadiantElement {
 
 	protected override onConnected(): void {
 		this.initialize();
+		announceControlConnect(this);
 	}
 
 	@onUpdated([

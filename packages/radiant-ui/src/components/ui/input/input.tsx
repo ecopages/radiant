@@ -1,7 +1,7 @@
 import { cx } from '@/lib/cx';
 import { applyInputMask, maskToPlaceholder } from '@/lib/mask';
 import type { NativeInputProps } from '@/lib/native-element-props';
-import { RUI_CONTROL_ATTR } from '../form/control-protocol';
+import { RUI_CONTROL_ATTR } from '@/lib/form/control-protocol';
 
 export type RuiInputProps = NativeInputProps & {
 	value?: string;
