@@ -229,7 +229,7 @@ describe('agent tools on a RadiantElement', () => {
 		await vi.waitFor(() => expect(modelContext.names).toEqual(['add-item-two']));
 	});
 
-	it('does not fail when the browser frees an aborted name a microtask later', async () => {
+	it('registers again after a move without reporting an error when the browser frees the name a microtask later', async () => {
 		modelContext.releaseOnAbort = 'microtask';
 		const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 

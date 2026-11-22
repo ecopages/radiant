@@ -137,22 +137,23 @@ function describeToolIssues(tool: AgentTool): string | undefined {
  * denied, and does so after the call has returned: the rejection is reported with `console.error` naming
  * the tool, unless this registration was already unregistered, so a duplicate whose owner disconnects before the
  * rejection arrives goes unreported. The development warnings follow the shared `@ecopages/jsx` switch, so
- * `setDevWarningsEnabled(false)` silences them. Nothing the agent sends or the tool returns is logged: the
+ * `setDevWarningsEnabled(false)` silences them. Each logs once per description, so a tool registered under a name per
+ * instance warns once rather than once per instance. Nothing the agent sends or the tool returns is logged: the
  * warnings name the tool and its sizes, never the values. The API is an origin trial and may change.
  */
 export function registerAgentTool<Input = unknown>(
 	config: RegisterAgentToolConfig<Input>,
 	options: RegisterAgentToolOptions = {},
 ): () => void {
-	const modelContext = (globalThis.document as (Document & { modelContext?: ModelContext }) | undefined)
-		?.modelContext;
-	if (isServer || !modelContext) return () => {};
+	if (isServer) return () => {};
+	const modelContext = (document as Document & { modelContext?: ModelContext }).modelContext;
+	if (!modelContext) return () => {};
 
 	const { parse, exposedTo, execute, ...tool } = config;
-	warnOnceInDevelopment(`agent-tool:${tool.name}`, () => describeToolIssues(config));
+	warnOnceInDevelopment(`agent-tool:${tool.description}`, () => describeToolIssues(config));
 
-	warnOnceInDevelopment(`agent-tool-exposed:${tool.name}`, () =>
-		exposedTo
+	warnOnceInDevelopment(`agent-tool-exposed:${tool.description}`, () =>
+		exposedTo?.length
 			? `[@ecopages/radiant] Agent tool "${tool.name}" is exposed to ${exposedTo.join(', ')}. Those origins can call it with their own arguments, so treat its input as untrusted and return nothing you would not give them.`
 			: undefined,
 	);
@@ -164,7 +165,7 @@ export function registerAgentTool<Input = unknown>(
 				...tool,
 				execute: async (input, executeOptions) => {
 					const result = await execute(parse ? parse(input) : (input as Input), executeOptions);
-					warnOnceInDevelopment(`agent-tool-output:${tool.name}`, () => {
+					warnOnceInDevelopment(`agent-tool-output:${tool.description}`, () => {
 						const text = JSON.stringify(result);
 						return text !== undefined && text.length > OUTPUT_BUDGET
 							? `[@ecopages/radiant] Agent tool "${tool.name}" returned over ${OUTPUT_BUDGET} characters. Return only what the agent needs: output can leave the device.`

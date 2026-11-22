@@ -99,8 +99,8 @@ describe('registerAgentTool', () => {
 		const warn = vi.spyOn(console, 'warn').mockImplementation(noop);
 		const name = 'a-name-that-is-longer-than-the-recommended-budget';
 
-		registerAgentTool({ name, description: 'Adds an item', execute: noop })();
-		registerAgentTool({ name, description: 'Adds an item', execute: noop })();
+		registerAgentTool({ name, description: 'Name budget probe', execute: noop })();
+		registerAgentTool({ name, description: 'Name budget probe', execute: noop })();
 
 		expect(warn).toHaveBeenCalledTimes(1);
 		expect(warn.mock.calls[0]?.[0]).toContain(name);
@@ -122,7 +122,7 @@ describe('registerAgentTool', () => {
 
 		registerAgentTool({
 			name: 'long-parameter',
-			description: 'Adds an item',
+			description: 'Parameter budget probe',
 			inputSchema: { type: 'object', properties: { sku: { type: 'string', description: 'x'.repeat(151) } } },
 			execute: noop,
 		})();
@@ -135,13 +135,14 @@ describe('registerAgentTool', () => {
 		const warn = vi.spyOn(console, 'warn').mockImplementation(noop);
 		const tool = {
 			name: 'exposed-item',
-			description: 'Adds an item',
+			description: 'Exposure probe',
 			exposedTo: ['https://agent.example.com'],
 			annotations: { consequentialHint: false },
 			execute: noop,
 		};
 
 		registerAgentTool(tool)();
+		registerAgentTool({ ...tool, exposedTo: [], name: 'closed-item', description: 'Closed probe' })();
 		registerAgentTool({ ...tool, exposedTo: undefined, name: 'private-item' })();
 
 		expect(warn).toHaveBeenCalledTimes(1);
@@ -159,13 +160,13 @@ describe('registerAgentTool', () => {
 		})();
 		registerAgentTool({
 			name: 'decided-item',
-			description: 'Adds an item',
+			description: 'Annotation probe',
 			annotations: { consequentialHint: false },
 			execute: noop,
 		})();
 		expect(warn).not.toHaveBeenCalled();
 
-		registerAgentTool({ name: 'unannotated-item', description: 'Adds an item', execute: noop })();
+		registerAgentTool({ name: 'unannotated-item', description: 'Annotation probe', execute: noop })();
 		expect(warn).toHaveBeenCalledTimes(1);
 		expect(warn.mock.calls[0]?.[0]).toContain('neither readOnlyHint nor consequentialHint');
 	});
