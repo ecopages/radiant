@@ -11,6 +11,7 @@
 	"include": [
 		"./src/index.ts",
 		"./src/server.ts",
+		"./src/raw-text-element-names.ts",
 		"./src/client.ts",
 		"./src/jsx-runtime.ts",
 		"./src/jsx-dev-runtime.ts",

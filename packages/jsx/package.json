@@ -35,6 +35,10 @@
 			"types": "./dist/server.d.ts",
 			"import": "./dist/server.js"
 		},
+		"./raw-text-element-names": {
+			"types": "./dist/raw-text-element-names.d.ts",
+			"import": "./dist/raw-text-element-names.js"
+		},
 		"./jsx-runtime": {
 			"types": "./dist/jsx-runtime.d.ts",
 			"import": "./dist/jsx-runtime.js"
