@@ -78,6 +78,7 @@ const MAX_NAME_LENGTH = 128;
 const NAME_BUDGET = 30;
 const DESCRIPTION_BUDGET = 500;
 const PARAMETER_DESCRIPTION_BUDGET = 150;
+const OUTPUT_BUDGET = 1500;
 
 function longestParameterDescription(schema: unknown): number {
 	if (typeof schema !== 'object' || schema === null) return 0;
@@ -114,6 +115,8 @@ function describeToolIssues(tool: AgentTool): string | undefined {
 		issues.push(`the description is over ${DESCRIPTION_BUDGET} characters`);
 	if (longestParameterDescription(tool.inputSchema) > PARAMETER_DESCRIPTION_BUDGET)
 		issues.push(`a parameter description is over ${PARAMETER_DESCRIPTION_BUDGET} characters`);
+	if (tool.annotations?.readOnlyHint === undefined && tool.annotations?.consequentialHint === undefined)
+		issues.push('neither readOnlyHint nor consequentialHint is set, so an agent cannot tell what the tool changes');
 
 	return issues.length > 0
 		? `[@ecopages/radiant] Agent tool "${tool.name}": ${issues.join(', ')}. See https://developer.chrome.com/docs/ai/webmcp/secure-tools.`
@@ -134,7 +137,8 @@ function describeToolIssues(tool: AgentTool): string | undefined {
  * denied, and does so after the call has returned: the rejection is reported with `console.error` naming
  * the tool, unless this registration was already unregistered, so a duplicate whose owner disconnects before the
  * rejection arrives goes unreported. The development warnings follow the shared `@ecopages/jsx` switch, so
- * `setDevWarningsEnabled(false)` silences them. The API is an origin trial and may change.
+ * `setDevWarningsEnabled(false)` silences them. Nothing the agent sends or the tool returns is logged: the
+ * warnings name the tool and its sizes, never the values. The API is an origin trial and may change.
  */
 export function registerAgentTool<Input = unknown>(
 	config: RegisterAgentToolConfig<Input>,
@@ -147,13 +151,27 @@ export function registerAgentTool<Input = unknown>(
 	const { parse, exposedTo, execute, ...tool } = config;
 	warnOnceInDevelopment(`agent-tool:${tool.name}`, () => describeToolIssues(config));
 
+	warnOnceInDevelopment(`agent-tool-exposed:${tool.name}`, () =>
+		exposedTo
+			? `[@ecopages/radiant] Agent tool "${tool.name}" is exposed to ${exposedTo.join(', ')}. Those origins can call it with their own arguments, so treat its input as untrusted and return nothing you would not give them.`
+			: undefined,
+	);
+
 	const controller = new AbortController();
 	modelContext
 		.registerTool(
 			{
 				...tool,
-				execute: async (input, executeOptions) =>
-					execute(parse ? parse(input) : (input as Input), executeOptions),
+				execute: async (input, executeOptions) => {
+					const result = await execute(parse ? parse(input) : (input as Input), executeOptions);
+					warnOnceInDevelopment(`agent-tool-output:${tool.name}`, () => {
+						const text = JSON.stringify(result);
+						return text !== undefined && text.length > OUTPUT_BUDGET
+							? `[@ecopages/radiant] Agent tool "${tool.name}" returned over ${OUTPUT_BUDGET} characters. Return only what the agent needs: output can leave the device.`
+							: undefined;
+					});
+					return result;
+				},
 			},
 			{ signal: controller.signal, exposedTo },
 		)

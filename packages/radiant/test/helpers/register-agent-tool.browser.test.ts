@@ -130,4 +130,61 @@ describe('registerAgentTool', () => {
 		expect(warn).toHaveBeenCalledTimes(1);
 		expect(warn.mock.calls[0]?.[0]).toContain('a parameter description is over 150 characters');
 	});
+
+	it('warns once that a tool exposed to other origins takes untrusted input', () => {
+		const warn = vi.spyOn(console, 'warn').mockImplementation(noop);
+		const tool = {
+			name: 'exposed-item',
+			description: 'Adds an item',
+			exposedTo: ['https://agent.example.com'],
+			annotations: { consequentialHint: false },
+			execute: noop,
+		};
+
+		registerAgentTool(tool)();
+		registerAgentTool({ ...tool, exposedTo: undefined, name: 'private-item' })();
+
+		expect(warn).toHaveBeenCalledTimes(1);
+		expect(warn.mock.calls[0]?.[0]).toContain('exposed to https://agent.example.com');
+	});
+
+	it('warns once when neither readOnlyHint nor consequentialHint is set, and not when one is', () => {
+		const warn = vi.spyOn(console, 'warn').mockImplementation(noop);
+
+		registerAgentTool({
+			name: 'annotated-item',
+			description: 'Reads an item',
+			annotations: { readOnlyHint: true },
+			execute: noop,
+		})();
+		registerAgentTool({
+			name: 'decided-item',
+			description: 'Adds an item',
+			annotations: { consequentialHint: false },
+			execute: noop,
+		})();
+		expect(warn).not.toHaveBeenCalled();
+
+		registerAgentTool({ name: 'unannotated-item', description: 'Adds an item', execute: noop })();
+		expect(warn).toHaveBeenCalledTimes(1);
+		expect(warn.mock.calls[0]?.[0]).toContain('neither readOnlyHint nor consequentialHint');
+	});
+
+	it('warns once when a tool returns more than the recommended output size, without logging the value', async () => {
+		const warn = vi.spyOn(console, 'warn').mockImplementation(noop);
+		registerAgentTool({
+			name: 'large-output',
+			description: 'Lists items',
+			annotations: { readOnlyHint: true },
+			execute: () => ({ secret: 'x'.repeat(1600) }),
+		});
+		const run = () => modelContext.tools.get('large-output')?.execute({}, { signal: new AbortController().signal });
+
+		await run();
+		await run();
+
+		expect(warn).toHaveBeenCalledTimes(1);
+		expect(warn.mock.calls[0]?.[0]).toContain('over 1500 characters');
+		expect(warn.mock.calls[0]?.[0]).not.toContain('xxxx');
+	});
 });

@@ -294,6 +294,7 @@ class RadCart extends RadiantElement {
 	@agentTool({
 		name: (host: RadCart) => `add-item-${host.id}`,
 		description: 'Adds a product to the cart',
+		annotations: { consequentialHint: false },
 		inputSchema: { type: 'object', properties: { sku: { type: 'string' } }, required: ['sku'] },
 		parse: (input) => parseAddItem(input),
 	})
@@ -323,6 +324,17 @@ Rules worth knowing:
 - A server-rendered element that waits for its children registers only after it hydrates.
 - Like `@onEvent`, `@agentTool` binds the method it decorates, so a subclass override is not what the agent calls.
 - In development, a tool with an empty name or description, or text over the budgets Chrome recommends (30 characters per name, 500 per description, 150 per parameter description), logs a warning once.
+
+**Security.** A tool runs page code on behalf of an agent, with the page's cookies and DOM, and what it returns can leave the device. Radiant has no generic "read the page" tool, so a tool exposes only what its author returns. Decide these per tool:
+
+- **Return the least.** Return only what the agent needs for the next step, never tokens, secrets or the contents of password, card or one-time-code fields. A read-only tool can still leak, such as one that returns a user's favorites. In development a tool that returns over 1,500 characters logs a warning once; nothing the agent sends or the tool returns is ever logged by Radiant.
+- **Ask for the least.** A schema that asks for age, location or history lets an agent pull personal context out of the person. Ask only for what the action needs.
+- **Say what it changes.** Set `readOnlyHint` for a tool that changes nothing and `consequentialHint` for a high-stakes or irreversible one, so the agent or browser can ask a person first. Annotations are optional, and in development a tool with neither hint logs a warning once. Set `untrustedContentHint` when the output carries text a user or another site wrote, because an agent treats tool output as trusted and it can carry a prompt injection.
+- **Confirm in your own UI.** WebMCP has no confirmation API. For a consequential tool, await the app's own dialog inside `execute` and close it when `signal` aborts.
+- **Validate in code, authorize on the server.** `inputSchema` is advisory and the agent can skip the validation the UI does, so check the input with `parse` and check permission on the server, not only in the browser. Bind a consequential call to an id or version so a stale call is rejected.
+- **Keep descriptions honest.** The name and description are read by the agent as instructions, so name side effects (a tool that finalizes a purchase is not called `finalize-cart` if it also charges a card) and keep them short.
+- **Keep `exposedTo` closed.** A tool is visible only to the page's own origin unless `exposedTo` lists secure origins, and other origins then call it with arguments you cannot trust. In development a tool that sets `exposedTo` logs a warning once. A cross-origin iframe needs `allow="tools"`, and `Permissions-Policy: tools=()` turns WebMCP off for a page and its frames, which suits account and payment pages.
+- **Mind the combination.** Do not put a tool that returns private data on the same page as a tool that sends data out, such as a share, a message or a form post, unless the sending one needs confirmation. This is our reasoning, not a rule from the spec.
 
 ### `@event(...)`
 
