@@ -1,0 +1,47 @@
+import { afterEach, describe, expect, test } from 'vitest';
+import { installStandIn } from '../src/content/components/recipes/agent-tools.stand-in';
+import { syncExamples } from '../src/components/primitive-example/mount-example';
+import { mountForm, type Form } from './mount-recipe';
+import { until } from './until';
+
+const standIn = installStandIn()!;
+
+afterEach(() => {
+	document.body.innerHTML = '';
+	syncExamples();
+});
+
+describe('recipes', () => {
+	describe.each<Form>(['plain', 'radiant'])('agent tools, %s form', (form) => {
+		test('registers the tool while the example is on the page and removes it with it', async () => {
+			const root = await mountForm('agent-tools', form);
+			await until(() => expect([...standIn.tools.keys()]).toEqual(['add_to_cart']));
+
+			root.remove();
+			syncExamples();
+			await until(() => expect([...standIn.tools.keys()]).toEqual([]));
+		});
+
+		test('the form and the agent add to the same cart', async () => {
+			const root = await mountForm('agent-tools', form);
+			await until(() => expect(standIn.tools.has('add_to_cart')).toBe(true));
+
+			root.querySelector('form')!.requestSubmit();
+			const result = await standIn.tools
+				.get('add_to_cart')!
+				.execute({ sku: 'pear' }, { signal: new AbortController().signal });
+
+			expect(result).toEqual({ count: 2 });
+			expect([...root.querySelectorAll('li')].map((item) => item.textContent)).toEqual(['apple', 'pear']);
+		});
+
+		test('rejects an input that fails the schema', async () => {
+			await mountForm('agent-tools', form);
+			await until(() => expect(standIn.tools.has('add_to_cart')).toBe(true));
+
+			await expect(
+				standIn.tools.get('add_to_cart')!.execute({ sku: '' }, { signal: new AbortController().signal }),
+			).rejects.toThrow();
+		});
+	});
+});

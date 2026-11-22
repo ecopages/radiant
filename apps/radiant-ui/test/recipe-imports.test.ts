@@ -34,6 +34,13 @@ const isSiblingOf = (file: string, specifier: string) => {
 };
 const isRadiantCore = (specifier: string) =>
 	specifier === '@ecopages/radiant' || specifier.startsWith('@ecopages/radiant/');
+/**
+ * The schema library the agent-tools recipe shows, and the core helper its plain form registers with. They are
+ * allowed there because the recipe is about them, and nowhere else.
+ */
+const isAgentToolsRecipeEntry = (file: string, specifier: string) =>
+	file.startsWith('agent-tools.') &&
+	(specifier === 'zod' || specifier === '@ecopages/radiant/helpers/register-agent-tool');
 const isSignals = (specifier: string) =>
 	specifier === '@ecopages/signals' || specifier.startsWith('@ecopages/signals/');
 
@@ -41,7 +48,10 @@ describe('recipe scripts', () => {
 	test.each(plainScripts)('%s imports only public Radiant UI entries and the mount helper', (file) => {
 		const rejected = importsOf(file).filter(
 			(specifier) =>
-				!radiantUiEntry.test(specifier) && specifier !== mountHelper && !isSiblingOf(file, specifier),
+				!radiantUiEntry.test(specifier) &&
+				specifier !== mountHelper &&
+				!isSiblingOf(file, specifier) &&
+				!isAgentToolsRecipeEntry(file, specifier),
 		);
 
 		expect(rejected).toEqual([]);
@@ -55,7 +65,8 @@ describe('recipe scripts', () => {
 					!radiantUiEntry.test(specifier) &&
 					!isRadiantCore(specifier) &&
 					!isSignals(specifier) &&
-					!isSiblingOf(file, specifier),
+					!isSiblingOf(file, specifier) &&
+					!isAgentToolsRecipeEntry(file, specifier),
 			);
 
 			expect(rejected).toEqual([]);
