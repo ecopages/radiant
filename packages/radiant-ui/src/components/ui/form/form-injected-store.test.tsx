@@ -1788,4 +1788,49 @@ describe('rui-form with an injected store', () => {
 			expect(findFieldError(emailField)?.textContent).toBe('Plain message');
 		});
 	});
+
+	describe('composite controls', () => {
+		async function mountGroup(store: FormStateStore) {
+			const host = document.createElement('div');
+			document.body.append(host);
+			const root = createRoot(host);
+			root.render(
+				<RuiForm ref={(form) => (form ? form.connect(store) : undefined)}>
+					<RuiField name="topics">
+						<RuiCheckboxGroup>
+							<RuiCheckboxGroupControl>
+								<RuiCheckbox value="a" />
+								<RuiCheckbox value="b" />
+							</RuiCheckboxGroupControl>
+						</RuiCheckboxGroup>
+					</RuiField>
+				</RuiForm>,
+			);
+			cleanup.push(() => {
+				root.unmount();
+				host.remove();
+			});
+			await customElements.whenDefined('rui-field');
+			await flushRender();
+			await settle();
+			return host;
+		}
+
+		it('writes nothing for a group nobody toggled and one value for one toggle', async () => {
+			const { store, calls } = createTestStore({ topics: undefined });
+			const host = await mountGroup(store);
+			expect(calls.filter((call) => call.kind === 'setValue')).toHaveLength(0);
+
+			(
+				host.querySelector(
+					'input[type="checkbox"][value="b"], rui-checkbox[value="b"] input',
+				) as HTMLInputElement
+			).click();
+			await settle();
+
+			const writes = calls.filter((call) => call.kind === 'setValue');
+			expect(writes).toHaveLength(1);
+			expect(store.getValue('topics')).toEqual(['b']);
+		});
+	});
 });

@@ -124,8 +124,8 @@ export class RuiField extends RadiantElement {
 	declare readonly [JSX_PROPS]?: RuiFieldProps;
 
 	@prop({ type: String, reflect: true, defaultValue: '' }) name: string;
-	@prop({ type: Object }) rules?: FieldRules;
-	@prop({ type: Object }) defaultValue?: unknown;
+	@prop({ type: Object, attribute: false }) rules?: FieldRules;
+	@prop({ type: Object, attribute: false }) defaultValue?: unknown;
 	@prop({ type: String, attribute: RUI_FIELD_DEFAULT_VALUE_ATTR }) defaultValueData?: string;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) disabled: boolean;
 	@prop({ type: String, defaultValue: '' }) error: string;
@@ -412,8 +412,10 @@ export class RuiField extends RadiantElement {
 		type: 'input',
 		options: { capture: true },
 	})
-	onControlInput(): void {
-		this.syncControlToForm();
+	onControlInput(event: Event): void {
+		if (this.isNativeControlEvent(event)) {
+			this.syncControlToForm();
+		}
 	}
 
 	@onEvent({
@@ -421,8 +423,24 @@ export class RuiField extends RadiantElement {
 		type: 'change',
 		options: { capture: true },
 	})
-	onControlNativeChange(): void {
-		this.syncControlToForm();
+	onControlNativeChange(event: Event): void {
+		if (this.isNativeControlEvent(event)) {
+			this.syncControlToForm();
+		}
+	}
+
+	/**
+	 * Whether a native `input` or `change` event came from the field's control itself.
+	 *
+	 * @remarks A native control (`<input>`, `<textarea>`, `<select>`) has committed its
+	 * value when the event fires. A composite control (a checkbox group, a multi-select)
+	 * receives the native event from a part inside it, in the capture phase, before it
+	 * has updated its own value, so reading it then writes the old value. A composite
+	 * announces its committed value with `rui-change`, which the field already handles,
+	 * so one toggle is one write.
+	 */
+	private isNativeControlEvent(event: Event): boolean {
+		return event.target === findFieldControl(this);
 	}
 
 	@onEvent({ selector: '[data-rui-control], rui-knob, rui-slider', type: 'focusout' })

@@ -320,6 +320,34 @@ describe('built-in store with dotted field names', () => {
 	});
 });
 
+describe('object-valued props on form elements', () => {
+	it('are property-only, so they never reach an attribute', async () => {
+		const host = document.createElement('div');
+		document.body.append(host);
+		const form = document.createElement('rui-form') as RuiFormElement;
+		const field = document.createElement('rui-field') as RuiFieldElement;
+		field.name = 'a';
+		field.rules = { required: 'Required' };
+		field.defaultValue = { nested: true };
+		form.defaultValues = { a: { nested: true } };
+		form.resolver = async (values) => ({ values, errors: {} });
+		form.append(field);
+		host.append(form);
+		cleanup.push(() => host.remove());
+		await customElements.whenDefined('rui-field');
+		await settle();
+
+		expect(field.hasAttribute('rules')).toBe(false);
+		expect(field.hasAttribute('default-value')).toBe(false);
+		expect(form.hasAttribute('default-values')).toBe(false);
+		expect(form.hasAttribute('resolver')).toBe(false);
+		expect(form.hasAttribute('format-error')).toBe(false);
+		field.setAttribute('rules', '{"required":"From attribute"}');
+		await settle();
+		expect(field.rules).toEqual({ required: 'Required' });
+	});
+});
+
 async function mountRenamable(store: FormStateStore | undefined) {
 	const host = document.createElement('div');
 	document.body.append(host);

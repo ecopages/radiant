@@ -166,15 +166,15 @@ export class RuiForm extends RadiantElement {
 	@event({ name: 'rui-invalid', bubbles: true, composed: true })
 	invalidEvent: EventEmitter<RuiFormInvalidDetail>;
 
-	@prop({ type: Object, defaultValue: {} }) defaultValues: FieldValues;
+	@prop({ type: Object, attribute: false, defaultValue: {} }) defaultValues: FieldValues;
 	@prop({ type: String, attribute: RUI_FORM_DEFAULT_VALUES_ATTR }) defaultValuesData?: string;
-	@prop({ type: Object }) resolver?: Resolver<FieldValues>;
+	@prop({ type: Object, attribute: false }) resolver?: Resolver<FieldValues>;
 	@prop({ type: String, reflect: true, defaultValue: 'onSubmit' }) mode: ValidationMode;
 	@prop({ type: String, reflect: true, attribute: 'revalidate-mode', defaultValue: 'onChange' })
 	reValidateMode: ValidationMode;
 	@prop({ type: String, reflect: true }) action?: string;
 	@prop({ type: String, reflect: true }) method?: HTMLFormElement['method'];
-	@prop({ type: Object }) formatError?: RuiFormFormatError;
+	@prop({ type: Object, attribute: false }) formatError?: RuiFormFormatError;
 	onSubmit?: (values: FieldValues) => void | Promise<void>;
 
 	private driver: FormDriver | undefined;
