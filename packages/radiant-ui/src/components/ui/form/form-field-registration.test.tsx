@@ -356,6 +356,71 @@ describe('object-valued props on form elements', () => {
 	});
 });
 
+describe('presentational required', () => {
+	async function mountRequired(store: FormStateStore | undefined, field: { required?: boolean; rules?: boolean }) {
+		const host = document.createElement('div');
+		document.body.append(host);
+		const root = createRoot(host);
+		root.render(
+			<RuiForm ref={(form) => (form && store ? form.connect(store) : undefined)}>
+				<RuiField name="n" required={field.required} rules={field.rules ? { required: 'Required' } : undefined}>
+					<RuiInput />
+					<RuiFieldError />
+				</RuiField>
+			</RuiForm>,
+		);
+		cleanup.push(() => {
+			root.unmount();
+			host.remove();
+		});
+		await customElements.whenDefined('rui-field');
+		await settle();
+		return {
+			host,
+			field: host.querySelector('rui-field') as RuiFieldElement,
+			input: host.querySelector('input') as HTMLInputElement,
+		};
+	}
+
+	it('marks a field required without rules when the built-in store validates', async () => {
+		const { host, field, input } = await mountRequired(undefined, { required: true });
+		const onSubmit = vi.fn();
+		host.querySelector('rui-form')?.addEventListener('rui-submit', onSubmit);
+
+		expect(input.getAttribute('aria-required')).toBe('true');
+		expect(field.hasAttribute('required')).toBe(true);
+		host.querySelector('form')?.requestSubmit();
+		await settle();
+		expect(onSubmit).toHaveBeenCalledTimes(1);
+	});
+
+	it('marks a field required with an injected store that owns validation', async () => {
+		const { store } = createHostStore();
+		const { input, field } = await mountRequired(store, { required: true });
+
+		expect(input.getAttribute('aria-required')).toBe('true');
+		expect(field.hasAttribute('required')).toBe(true);
+	});
+
+	it('lets a required rule imply the flag and validate as before', async () => {
+		const { host, input } = await mountRequired(undefined, { rules: true });
+		const onInvalid = vi.fn();
+		host.querySelector('rui-form')?.addEventListener('rui-invalid', onInvalid);
+
+		expect(input.getAttribute('aria-required')).toBe('true');
+		host.querySelector('form')?.requestSubmit();
+		await settle();
+		expect(onInvalid).toHaveBeenCalledTimes(1);
+	});
+
+	it('is not required without the flag or a rule', async () => {
+		const { input, field } = await mountRequired(undefined, {});
+
+		expect(input.hasAttribute('aria-required')).toBe(false);
+		expect(field.hasAttribute('required')).toBe(false);
+	});
+});
+
 async function mountRenamable(store: FormStateStore | undefined) {
 	const host = document.createElement('div');
 	document.body.append(host);

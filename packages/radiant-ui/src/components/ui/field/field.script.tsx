@@ -57,6 +57,8 @@ export type RuiFieldProps = {
 	defaultValue?: unknown;
 	defaultValueData?: string;
 	disabled?: boolean;
+	/** Presentation only: `aria-required` and the required marker; validates nothing. */
+	required?: boolean;
 	/** Standalone error message when not using a form provider. */
 	error?: string;
 	/** Standalone invalid flag when not using a form provider. */
@@ -92,6 +94,9 @@ export type RuiFieldProps = {
  *
  * On each ARIA target the host writes `id` (when missing), `data-rui-field-managed`,
  * `aria-invalid`, `aria-required`, `aria-describedby`, and `aria-disabled` (when `disabled`).
+ * `aria-required` is set when the `required` attribute is present or a `required` rule exists:
+ * the attribute is presentation only and works in every mode, including with an injected store
+ * that ignores `rules`. `fieldContext.required` carries the same flag for a required marker.
  * Do not fight those attributes on controls inside a field.
  *
  * A host registered with `registerFieldControl` that declares `data-rui-aria-target(s)` is the exception:
@@ -129,6 +134,12 @@ export class RuiField extends RadiantElement {
 	@prop({ type: Object, attribute: false }) defaultValue?: unknown;
 	@prop({ type: String, attribute: RUI_FIELD_DEFAULT_VALUE_ATTR }) defaultValueData?: string;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) disabled: boolean;
+	/**
+	 * Presentation only: marks the field required for `aria-required` and the required
+	 * marker. It validates nothing; with the built-in store a `required` rule validates
+	 * and also implies this flag, and an injected store validates for itself.
+	 */
+	@prop({ type: Boolean, reflect: true, defaultValue: false }) required: boolean;
 	@prop({ type: String, defaultValue: '' }) error: string;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) invalid: boolean;
 
@@ -259,7 +270,7 @@ export class RuiField extends RadiantElement {
 	}
 
 	private isRequired(): boolean {
-		return Boolean(this.readFieldRules()?.required);
+		return this.required || Boolean(this.readFieldRules()?.required);
 	}
 
 	private resolveErrorMessage(formCtx?: FormContextValue): string | undefined {
@@ -388,7 +399,7 @@ export class RuiField extends RadiantElement {
 		this.connectToForm();
 	}
 
-	@onUpdated(['disabled', 'error', 'invalid'])
+	@onUpdated(['disabled', 'error', 'invalid', 'required'])
 	onPresentationUpdated(): void {
 		this.syncField();
 	}

@@ -105,6 +105,17 @@ import { RuiField, RuiFieldError, RuiFieldWarning } from '@ecopages/radiant-ui/f
 
 A field writes a native control (`<input>`, `<textarea>`, `<select>`) to its form on the native `input` and `change` events, and any other control, such as a checkbox group or a multi-select, only on its bubbling `rui-change`. See [Form](/docs/forms/form#inject-a-form-state-store) for how to inject a store that reports warnings.
 
+## Required fields
+
+`required` marks a field for `aria-required` and for a required marker (it is reflected as an attribute, so CSS can target `rui-field[required]`, and `fieldContext.required` carries it to a control). It validates nothing, so it is the way to mark a field required when a form store you inject owns validation and the form ignores `rules`. With the built-in store a `required` rule still validates as before and also implies the flag.
+
+```tsx
+<RuiField name="email" required>
+	<RuiLabel>Email</RuiLabel>
+	<RuiInput type="email" />
+</RuiField>
+```
+
 ## Disabled fields
 
 <p>Set `disabled` on the field to dim the label and prevent interaction with nested controls.</p>
@@ -134,6 +145,7 @@ The nested control keeps its own control tokens (`--size-control-*`, `--radius-c
 | `error` | `string` | `''` | Standalone error message when not using a form provider. |
 | `invalid` | `boolean` | `false` | Standalone invalid flag when not using a form provider. |
 | `disabled` | `boolean` | `false` | Dims the field and disables nested controls. |
+| `required` | `boolean` | `false` | Presentation only: sets `aria-required` on the control and `fieldContext.required` for a required marker, in every mode. It validates nothing. A `required` rule still validates with the built-in store and also implies it. |
 | `data-default-value` | `string` | | JSON-serialized default value for SSR hydration. |
 
 ### Props
