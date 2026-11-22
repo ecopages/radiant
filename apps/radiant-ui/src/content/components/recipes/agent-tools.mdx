@@ -34,11 +34,19 @@ A page that lets an agent do what a person does: add a product to the cart, clos
 - `registerAgentTool` registers a tool without a host and returns the function that removes it. The plain form uses it, and the decorator is built from it through `createAgentTool(host, config)`, which ties a tool to an element's connect and disconnect.
 - A schema library describes the input once. This recipe uses [Zod](https://zod.dev): `z.toJSONSchema(schema)` gives the `inputSchema` the browser shows the agent, and `schema.parse` goes in `parse`, which checks what the agent sent before the method runs. Radiant takes plain JSON Schema and a `parse` function, so Valibot, ArkType or hand-written code work the same way.
 
-Left to the recipe: the schema, what the method does, and what it returns. The tool name is unique on the page, so a component that can appear twice builds the name from an instance value, for example `name: (host) => \`add*to_cart*${host.id}\``.
+Left to the recipe: the schema, what the method does, and what it returns. The tool name is unique on the page, so a component that can appear twice builds the name from an instance value, and types the host parameter because the decorator is written before TypeScript knows the class:
+
+```ts
+@agentTool({
+	name: (host: AgentToolsElement) => `add_to_cart_${host.id}`,
+	description: 'Adds a product to the cart by its SKU.',
+})
+addItem(item: Item) {}
+```
 
 ## Example
 
-Add a product with the form, or call the tool from the inspector below the example, which stands in for an agent. The inspector lists the page's tools and calls one with the JSON in its box. A call that fails the schema is rejected with the parse error, which is what an agent receives and can correct. This page uses a small stand-in for `document.modelContext` where the browser has none; the recipe code never touches it.
+Add a product with the form, or call the tool from the inspector below the example, which stands in for an agent. The inspector lists the page's tools and calls one with the JSON in its box. A call that fails the schema is rejected before the method runs, so the cart does not change and the agent receives an error. This page uses a small stand-in for `document.modelContext` where the browser has none; the recipe code never touches it.
 
 Pick an authoring pattern below; they behave the same, and the one you pick is remembered on the other recipes.
 
@@ -91,9 +99,9 @@ A `mount` function registers the tool and returns the cleanup that removes it.
 A tool runs page code for an agent, and what it returns can leave the device. Radiant has no tool that reads the page, so a tool exposes only what you return from it. The full list is in the [package README](https://github.com/ecopages/radiant/blob/main/packages/radiant/README.md#agent-tools-experimental); the ones this recipe shows:
 
 - **Say what it changes.** The tool sets `annotations: { consequentialHint: false }`: adding to a cart is easy to undo. An action that is hard to undo sets `consequentialHint: true`, and one that changes nothing sets `readOnlyHint: true`. In development a tool with neither hint logs a warning.
-- **Return the least.** `{ count }` is all the agent needs. Never return tokens, secrets or the contents of password, card or one-time-code fields, and set `untrustedContentHint: true` on output that carries text a user or another site wrote, because an agent treats tool output as trusted.
+- **Return the least.** `{ count }` is all the agent needs. Never return tokens, secrets or the contents of password, card or one-time-code fields, and set `untrustedContentHint: true` on output that carries text a user or another site wrote, because an agent may treat tool output as trusted.
 - **Ask for the least.** The schema asks for a SKU and nothing about the person.
-- **Confirm in your own UI.** WebMCP has no confirmation API. A consequential tool awaits the app's own dialog inside `execute` and closes it when the `signal` aborts.
+- **Confirm in your own UI.** The current WebMCP spec has no confirmation API. A consequential tool awaits the app's own dialog inside `execute` and closes it when the `signal` aborts.
 - **Authorize on the server.** The agent can skip the checks the UI does, so a real cart checks permission on the server and binds a consequential call to an id or version.
 - **Keep it on this origin.** Tools are visible only to the page's own origin. `exposedTo` lets other origins call them with arguments you cannot trust, and logs a warning in development.
 

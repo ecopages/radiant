@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test } from 'vitest';
 import { installStandIn } from '../src/content/components/recipes/agent-tools.stand-in';
 import { syncExamples } from '../src/components/primitive-example/mount-example';
-import { mountForm, type Form } from './mount-recipe';
+import { mountForm, trackListeners, type Form } from './mount-recipe';
 import { until } from './until';
 
 const standIn = installStandIn()!;
@@ -42,6 +42,30 @@ describe('recipes', () => {
 			await expect(
 				standIn.tools.get('add_to_cart')!.execute({ sku: '' }, { signal: new AbortController().signal }),
 			).rejects.toThrow();
+		});
+
+		test('leaves nothing on the document or window once the example leaves the page, and a fresh copy works', async () => {
+			(await mountForm('agent-tools', form)).remove();
+			syncExamples();
+			await until(() => expect(standIn.tools.size).toBe(0));
+			const tracker = trackListeners();
+			try {
+				const baseline = tracker.live(document, window);
+				const root = await mountForm('agent-tools', form);
+				await until(() => expect(standIn.tools.has('add_to_cart')).toBe(true));
+
+				root.remove();
+				syncExamples();
+				await until(() => expect(standIn.tools.size).toBe(0));
+				expect(tracker.live(document, window)).toEqual(baseline);
+
+				const fresh = await mountForm('agent-tools', form);
+				await until(() => expect(standIn.tools.has('add_to_cart')).toBe(true));
+				fresh.querySelector('form')!.requestSubmit();
+				expect(fresh.querySelectorAll('li')).toHaveLength(1);
+			} finally {
+				tracker.stop();
+			}
 		});
 	});
 });

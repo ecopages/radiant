@@ -32,7 +32,7 @@ Example, "a calendar with draggable events and a filter":
 
 ## Agent tools
 
-Exposing an action to a browser agent through WebMCP is not a controller. `createAgentTool(host, config)`, `registerAgentTool(config)` and `@agentTool` live in `@ecopages/radiant` (see its README, "Agent tools"), take a host the way the controllers do, and follow its connect and disconnect. The [agent tools recipe](/docs/recipes/agent-tools) composes them with a schema library. The API is experimental.
+Exposing an action to a browser agent through WebMCP is not a controller. `createAgentTool(host, config)` and `@agentTool` live in `@ecopages/radiant` (see its README, "Agent tools"), take a host the way the controllers do, and follow its connect and disconnect, and `registerAgentTool(config)` registers a tool without a host. The Agent tools recipe in the docs app composes them with a schema library. The API is experimental.
 
 ## Controllers
 
