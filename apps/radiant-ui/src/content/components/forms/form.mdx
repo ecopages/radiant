@@ -292,7 +292,7 @@ Nested hosts: `rui-field` and each field's control host.
 | Event         | Detail                                                              | Description                                                                                                                                   |
 | ------------- | ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | `rui-submit`  | `{ values: T }`                                                     | Emitted when validation passes.                                                                                                               |
-| `rui-invalid` | `{ errors: Record<string, { message?: string }>; error?: unknown }` | Emitted when validation fails on submit. `error` is set when a validator threw instead of reporting errors: the submission counts as invalid. |
+| `rui-invalid` | `{ errors: Partial<Record<string, FieldError>>; error?: unknown }` | Emitted when validation fails on submit. `error` is set when a validator threw instead of reporting errors: the submission counts as invalid. |
 
 ### View helpers
 
