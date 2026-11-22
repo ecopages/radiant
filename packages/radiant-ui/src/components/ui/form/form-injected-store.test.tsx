@@ -1340,6 +1340,40 @@ describe('rui-form with an injected store', () => {
 			});
 		});
 
+		const subStores: Array<[string, () => FormStateStore | undefined]> = [
+			['the built-in store', () => undefined],
+			['an injected store', () => createTestStore({ late: '', sub: '' }).store],
+		];
+
+		describe.each(subStores)('with %s and a field element of another tag', (_label, makeStore) => {
+			it('focuses a RuiField subclass registered under its own tag, in document order', async () => {
+				if (!customElements.get('x-sub-field')) {
+					customElements.define('x-sub-field', class extends RuiFieldScript {});
+				}
+				const host = document.createElement('div');
+				host.innerHTML = `<rui-form><form data-ref="form">
+					<rui-field name="late"><input data-rui-control /></rui-field>
+					<x-sub-field name="sub"><input data-rui-control /></x-sub-field>
+				</form></rui-form>`;
+				document.body.append(host);
+				cleanup.push(() => host.remove());
+				const form = host.querySelector('rui-form') as RuiFormElement;
+				const store = makeStore();
+				if (store) {
+					form.connect(store);
+				}
+				await customElements.whenDefined('rui-field');
+				await settle();
+				const [late, sub] = Array.from(host.querySelectorAll('input'));
+
+				form.focusField(['sub']);
+				expect(document.activeElement).toBe(sub);
+
+				form.focusField(['sub', 'late']);
+				expect(document.activeElement).toBe(late);
+			});
+		});
+
 		it('is the focus the submit context hands a handler', async () => {
 			const { store } = createTestStore({ first: '', rows: [{ x: '' }], last: '' });
 			const { form, inputs } = await mountRows(store);

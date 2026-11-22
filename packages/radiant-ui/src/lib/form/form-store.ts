@@ -226,6 +226,10 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		return Array.from(this.fields.keys());
 	}
 
+	getFieldElement(path: string): Element | undefined {
+		return this.fields.get(path)?.element;
+	}
+
 	register(registration: FieldRegistration): FieldRegistrationHandle {
 		const existing = this.fields.get(registration.name);
 		const entry: InternalField = {

@@ -229,6 +229,10 @@ export class InjectedFormDriver implements FormDriver {
 		return Array.from(this.fields.keys());
 	}
 
+	getFieldElement(path: string): Element | undefined {
+		return this.fields.get(path)?.registration.element;
+	}
+
 	register(registration: FieldRegistration): FieldRegistrationHandle {
 		const entry: BoundField = { registration, name: registration.name, live: true };
 		this.fields.set(entry.name, entry);

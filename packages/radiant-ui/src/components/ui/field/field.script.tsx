@@ -281,6 +281,7 @@ export class RuiField extends RadiantElement {
 	private buildRegistration(name: string): FieldRegistration {
 		return {
 			name,
+			element: this,
 			rules: this.readFieldRules(),
 			getRules: () => this.readFieldRules(),
 			defaultValue: this.readDefaultValue(),

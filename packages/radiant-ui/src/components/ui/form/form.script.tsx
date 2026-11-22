@@ -276,18 +276,27 @@ export class RuiForm extends RadiantElement {
 	 * Focus the first registered field among `paths`, in document order. Unknown paths
 	 * are ignored and nothing happens when none has a field.
 	 *
+	 * @remarks Fields come from the form's own registrations, never from a tag name, so
+	 * a `RuiField` subclass under another tag is found. A field registered without an
+	 * element has no document position and is not matched.
+	 *
 	 * @remarks Named `focusField`, not `focus`, so the element keeps `HTMLElement.focus`.
 	 * The submit context's `focus(path)` calls this, so there is one focus path.
 	 */
 	focusField(paths: readonly string[]): void {
 		const driver = this.ensureDriver();
-		const registered = new Set(driver.getRegisteredFieldNames());
-		for (const field of this.querySelectorAll('rui-field')) {
-			const name = field.getAttribute('name');
-			if (name !== null && paths.includes(name) && registered.has(name)) {
-				driver.focus(name);
-				return;
+		let first: { path: string; element: Element } | undefined;
+		for (const path of paths) {
+			const element = driver.getFieldElement(path);
+			if (
+				element &&
+				(!first || first.element.compareDocumentPosition(element) & Node.DOCUMENT_POSITION_PRECEDING)
+			) {
+				first = { path, element };
 			}
+		}
+		if (first) {
+			driver.focus(first.path);
 		}
 	}
 

@@ -14,6 +14,8 @@ export interface FormDriver {
 	register(registration: FieldRegistration): FieldRegistrationHandle;
 	updateFieldOptions(name: string, options: RegisterOptions): void;
 	getRegisteredFieldNames(): string[];
+	/** The element of the field registered for `path`, when it supplied one. */
+	getFieldElement(path: string): Element | undefined;
 	shouldDisplayFieldError(name: string): boolean;
 	handleFieldChange(name: string): Promise<void>;
 	handleFieldBlur(name: string): Promise<void>;

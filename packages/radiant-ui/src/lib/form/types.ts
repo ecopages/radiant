@@ -104,6 +104,8 @@ export type FieldRegistrationHandle = {
 };
 
 export type FieldRegistration = RegisterOptions & {
+	/** The field element, so the form can order registered fields by document position. */
+	element?: Element;
 	/** The name at registration time; later names come from {@link FieldRegistrationHandle.rename}. */
 	name: string;
 	getValue: () => unknown;
