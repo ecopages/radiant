@@ -121,6 +121,11 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		]);
 	}
 
+	/** Focus the control registered for `path`; nothing happens for a path with no control. */
+	focus(path: string): void {
+		this.fields.get(path)?.focus?.();
+	}
+
 	/**
 	 * Nothing to flush: the store reads its registered controls directly whenever it
 	 * validates.

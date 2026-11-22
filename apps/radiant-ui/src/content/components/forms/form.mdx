@@ -229,7 +229,7 @@ Pass `submitHandler` to `connect` to take over submit. The form calls `sync()`, 
 | Member | What it does |
 | --- | --- |
 | `store` | The connected store, typed by its own issue type. |
-| `focus(path)` | Moves focus to the interactive element of the control registered for a path. |
+| `focus(path)` | Moves focus to the interactive element of the control registered for a path; the same call as `focusField([path])`. |
 | `submitNatively()` | Submits the native `<form>` to its `action` and `method`. |
 
 The form then emits neither `rui-submit` nor `rui-invalid`, and a rejection is reported with `reportError`. Without a handler the form validates and emits as above. Pass `resetHandler` to take over the native `reset` event the same way: it is called with `{ store }` instead of `reset()`, may be async, and the form rewrites the controls from the store when it settles and again after the browser's own reset. Both handlers apply only with an injected store. The built-in store does not rewrite controls after a native `reset`; only the injected path does.
@@ -286,6 +286,7 @@ Nested hosts: `rui-field` and each field's control host.
 | Method | Description |
 | --- | --- |
 | `connect(store, handlers?)` | Injects a `FormStateStore` with its `formatError`, `submitHandler` and `resetHandler`, typed by the store's own issue type. Returns a disposer. |
+| `focusField(paths)` | Focuses the first registered field among `paths` in document order, with the built-in or an injected store. Unknown paths are ignored, and nothing happens when none has a field. Use it to move focus outside a submit, such as after a failed step. |
 | `sync()` | Writes the controls the user changed into the injected store and reports every bridged control's fact. Submit calls it first. |
 
 ### Events

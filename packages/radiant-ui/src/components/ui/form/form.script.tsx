@@ -272,6 +272,25 @@ export class RuiForm extends RadiantElement {
 		setOptionalAttribute(formEl, 'method', this.method);
 	}
 
+	/**
+	 * Focus the first registered field among `paths`, in document order. Unknown paths
+	 * are ignored and nothing happens when none has a field.
+	 *
+	 * @remarks Named `focusField`, not `focus`, so the element keeps `HTMLElement.focus`.
+	 * The submit context's `focus(path)` calls this, so there is one focus path.
+	 */
+	focusField(paths: readonly string[]): void {
+		const driver = this.ensureDriver();
+		const registered = new Set(driver.getRegisteredFieldNames());
+		for (const field of this.querySelectorAll('rui-field')) {
+			const name = field.getAttribute('name');
+			if (name !== null && paths.includes(name) && registered.has(name)) {
+				driver.focus(name);
+				return;
+			}
+		}
+	}
+
 	/** Submit the native `<form>` to its `action` and `method`; does nothing when neither is set. */
 	private submitNatively(): void {
 		if (this.action || this.method) {
@@ -312,7 +331,7 @@ export class RuiForm extends RadiantElement {
 		const binding = this.binding();
 		if (driver instanceof InjectedFormDriver && binding?.hasSubmitHandler) {
 			const helpers: SubmitHelpers = {
-				focus: (path) => driver.focus(path),
+				focus: (path) => this.focusField([path]),
 				submitNatively: () => this.submitNatively(),
 			};
 			Promise.resolve()

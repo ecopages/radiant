@@ -1275,6 +1275,89 @@ describe('rui-form with an injected store', () => {
 		});
 	});
 
+	describe('rui-form focusField(paths)', () => {
+		async function mountRows(store: FormStateStore | undefined) {
+			const host = document.createElement('div');
+			document.body.append(host);
+			const root = createRoot(host);
+			root.render(
+				<RuiForm
+					defaultValues={{ first: '', rows: [{ x: '' }], last: '' }}
+					ref={(form) => (form && store ? form.connect(store) : undefined)}
+				>
+					<RuiField name="first">
+						<RuiInput />
+					</RuiField>
+					<RuiField name="rows.0.x">
+						<RuiInput />
+					</RuiField>
+					<RuiField name="last">
+						<RuiInput />
+					</RuiField>
+				</RuiForm>,
+			);
+			cleanup.push(() => {
+				root.unmount();
+				host.remove();
+			});
+			await customElements.whenDefined('rui-field');
+			await flushRender();
+			await settle();
+			const inputs = Array.from(host.querySelectorAll('rui-field')).map((field) => findFieldControl(field));
+			return { form: host.querySelector('rui-form') as RuiFormElement, inputs };
+		}
+
+		const stores: Array<[string, () => FormStateStore | undefined]> = [
+			['the built-in store', () => undefined],
+			['an injected store', () => createTestStore({ first: '', rows: [{ x: '' }], last: '' }).store],
+		];
+
+		describe.each(stores)('with %s', (_label, makeStore) => {
+			it('focuses the first listed field in document order, not in the order of the paths', async () => {
+				const { form, inputs } = await mountRows(makeStore());
+
+				form.focusField(['last', 'first']);
+
+				expect(document.activeElement).toBe(inputs[0]);
+			});
+
+			it('focuses a field inside a row and ignores unknown paths', async () => {
+				const { form, inputs } = await mountRows(makeStore());
+
+				form.focusField(['nope', 'rows.0.x']);
+
+				expect(document.activeElement).toBe(inputs[1]);
+			});
+
+			it('does nothing when no listed path has a field', async () => {
+				const { form, inputs } = await mountRows(makeStore());
+				inputs[2]?.focus();
+
+				expect(() => form.focusField(['nope'])).not.toThrow();
+				expect(() => form.focusField([])).not.toThrow();
+
+				expect(document.activeElement).toBe(inputs[2]);
+			});
+		});
+
+		it('is the focus the submit context hands a handler', async () => {
+			const { store } = createTestStore({ first: '', rows: [{ x: '' }], last: '' });
+			const { form, inputs } = await mountRows(store);
+			let focus: (path: string) => void = () => {};
+			form.connect(store, {
+				submitHandler: (context) => {
+					focus = context.focus;
+				},
+			});
+
+			form.querySelector('form')?.requestSubmit();
+			await settle();
+			focus('last');
+
+			expect(document.activeElement).toBe(inputs[2]);
+		});
+	});
+
 	describe('native facts are pushed to the store', () => {
 		async function mountEmail(store: FormStateStore, extra: { formatError?: RuiFormFormatError } = {}) {
 			const host = document.createElement('div');
