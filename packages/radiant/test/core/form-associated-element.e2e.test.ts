@@ -53,12 +53,20 @@ class RangeControl extends FormAssociatedElement {
 	}
 }
 
+@customElement('fae-checked-tone')
+class CheckedToneControl extends ToneControl {
+	protected override updated(changed: ReadonlySet<string>): void {
+		super.updated(changed);
+		this.require('Pick a tone');
+	}
+}
+
 async function mount(html: string): Promise<HTMLFormElement> {
 	const form = document.createElement('form');
 	form.innerHTML = html;
 	document.body.append(form);
 	await Promise.resolve();
-	for (const host of form.querySelectorAll<FormAssociatedElement>('fae-tone, fae-range')) {
+	for (const host of form.querySelectorAll<FormAssociatedElement>('fae-tone, fae-range, fae-checked-tone')) {
 		await host.updateComplete;
 	}
 	return form;
@@ -237,5 +245,61 @@ describe('FormAssociatedElement validity', () => {
 		expect(host.validity?.valid).toBe(false);
 		expect(host.validationMessage).toBe('Pick a tone');
 		host.remove();
+	});
+
+	test('restores its value from the state it saved when the browser restores or autofills it', async () => {
+		const form = await mount('<fae-tone name="tone"></fae-tone>');
+		const host = form.querySelector('fae-tone') as ToneControl;
+		host.value = 'green';
+		await host.updateComplete;
+
+		host.formStateRestoreCallback('red', 'restore');
+		expect(host.value).toBe('red');
+		expect(new FormData(form).get('tone')).toBe('red');
+
+		host.formStateRestoreCallback('teal', 'autocomplete');
+		expect(host.value).toBe('teal');
+		expect(new FormData(form).get('tone')).toBe('teal');
+	});
+
+	test('ignores a restore with no saved state', async () => {
+		const form = await mount('<fae-tone name="tone"></fae-tone>');
+		const host = form.querySelector('fae-tone') as ToneControl;
+		host.value = 'green';
+		await host.updateComplete;
+
+		host.formStateRestoreCallback(null, 'restore');
+
+		expect(host.value).toBe('green');
+	});
+
+	test('runs the host validity again for the restored value', async () => {
+		const form = await mount('<fae-checked-tone name="tone" value=""></fae-checked-tone>');
+		const host = form.querySelector('fae-checked-tone') as CheckedToneControl;
+		await host.updateComplete;
+		expect(host.validity?.valueMissing).toBe(true);
+
+		host.formStateRestoreCallback('red', 'restore');
+		await host.updateComplete;
+
+		expect(host.value).toBe('red');
+		expect(host.validity?.valid).toBe(true);
+	});
+
+	test('round-trips a subclass whose state differs from its submission value', async () => {
+		const form = await mount('<fae-range name="price"></fae-range>');
+		const host = form.querySelector('fae-range') as RangeControl;
+		host.low = 10;
+		host.high = 90;
+		await host.updateComplete;
+		const saved = `${host.low},${host.high}`;
+		host.low = 40;
+		host.high = 60;
+		await host.updateComplete;
+
+		host.formStateRestoreCallback(saved, 'restore');
+
+		expect([host.low, host.high]).toEqual([10, 90]);
+		expect(new FormData(form).get('price-max')).toBe('90');
 	});
 });

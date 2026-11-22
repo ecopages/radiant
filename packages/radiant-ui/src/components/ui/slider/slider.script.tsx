@@ -1,6 +1,10 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
 import { bindTo, customElement, event, onEvent, onUpdated, prop, ref } from '@ecopages/radiant';
-import { FormAssociatedElement, type FormValue } from '@ecopages/radiant/form-associated-element';
+import {
+	FormAssociatedElement,
+	type FormStateRestoreMode,
+	type FormValue,
+} from '@ecopages/radiant/form-associated-element';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { createPointerDragController } from '../../../controllers/pointer-drag-controller';
 import { numberArrayTransform, type ViewNumericValue } from '@/lib/multi-value';
@@ -379,6 +383,17 @@ export class RuiSlider extends FormAssociatedElement {
 
 	protected override formState(): FormValue {
 		return this.committedValues().join(',');
+	}
+
+	/**
+	 * @remarks Autofill hands a range one string, which cannot carry both ends, so it
+	 * is ignored; a saved state restores both.
+	 */
+	override formStateRestoreCallback(state: FormValue, mode: FormStateRestoreMode): void {
+		if (mode === 'autocomplete' && this.liveValues().length === 2) {
+			return;
+		}
+		super.formStateRestoreCallback(state, mode);
 	}
 
 	protected override restoreFormState(state: FormValue): void {

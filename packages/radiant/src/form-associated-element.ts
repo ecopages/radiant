@@ -4,6 +4,9 @@ import type { ReactiveState } from './core/reactivity-contract';
 /** A value `ElementInternals.setFormValue()` accepts. */
 export type FormValue = File | string | FormData | null;
 
+/** Why the browser calls `formStateRestoreCallback`: a saved state comes back, or autofill fills the host. */
+export type FormStateRestoreMode = 'restore' | 'autocomplete';
+
 /**
  * Base class for a form-associated custom element (FACE): a host that lists on
  * native `FormData`, follows fieldset disability, and restores on form reset
@@ -11,7 +14,8 @@ export type FormValue = File | string | FormData | null;
  *
  * It owns the single `ElementInternals`, the reflected `name` and `disabled`
  * properties, the effective disabled state, the reset value, and the submission
- * value. A subclass supplies {@link formValue} and {@link restoreFormState}.
+ * value. A subclass supplies {@link formValue} and {@link restoreFormState}, which the base
+ * calls on form reset and when the browser restores or autofills the host.
  *
  * @remarks
  * `formAssociated` is a static getter. The browser reads it once, at
@@ -22,9 +26,9 @@ export type FormValue = File | string | FormData | null;
  *
  * The submission value is synced from {@link updated} after every update cycle
  * and after a reset. A subclass that overrides `updated()` must call
- * `super.updated(changed)`. Overrides of `formDisabledCallback()` and
- * `formResetCallback()` must call their `super` method to preserve the base's
- * effective disabled state and reset behavior.
+ * `super.updated(changed)`. Overrides of `formDisabledCallback()`,
+ * `formResetCallback()` and `formStateRestoreCallback()` must call their `super` method to preserve the base's
+ * effective disabled state, reset and restore behavior.
  *
  * Reset follows the native `defaultValue` model. The reset value is the
  * {@link formState} captured by the first {@link syncFormValue} call, normally
@@ -135,6 +139,29 @@ export abstract class FormAssociatedElement extends RadiantElement {
 		if (this.#reset) {
 			this.restoreFormState(this.#reset.state);
 		}
+		this.syncFormValue();
+	}
+
+	/**
+	 * Called by the browser when it restores the host after back/forward or session
+	 * restore (`mode` is `'restore'`), or fills it in (`'autocomplete'`).
+	 *
+	 * @remarks `state` is what {@link formState} saved through `setFormValue`, so the
+	 * host is written back with {@link restoreFormState}, the same call reset makes,
+	 * and its submission value is synced again. Nothing is restored for a `null`
+	 * state, which means the browser saved none. The write starts an update cycle, so a
+	 * host that sets its validity from `updated()` re-runs it for the restored value;
+	 * one that sets it elsewhere overrides this with `super.formStateRestoreCallback(state, mode)`
+	 * and checks validity afterwards. In `'autocomplete'` mode the browser passes the
+	 * autofilled string, not a saved state, so a subclass whose {@link formState} is not
+	 * parseable from its submission string overrides this too. The reset value is not
+	 * moved.
+	 */
+	formStateRestoreCallback(state: FormValue, _mode: FormStateRestoreMode): void {
+		if (state === null) {
+			return;
+		}
+		this.restoreFormState(state);
 		this.syncFormValue();
 	}
 
