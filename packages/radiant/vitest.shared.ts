@@ -55,6 +55,14 @@ function createRadiantJsxConfig(): Plugin {
 	};
 }
 
+/**
+ * The Babel pass that compiles standard decorators for the standard lane.
+ *
+ * @remarks
+ * It runs only on source that has a decorator at the start of a line and is not prebuilt output. The earlier filter,
+ * any file containing `@`, matched every file with a TSDoc tag, so Babel (single-threaded JavaScript) also processed
+ * workspace `dist` files that have no decorators, which made a cold import slow enough to time out on a busy machine.
+ */
 async function createRadiantDecoratorBabelPlugin(): Promise<Plugin> {
 	const { default: babel } = await import('@rolldown/plugin-babel');
 	const plugins: Array<string | [string, Record<string, unknown>] | (() => object)> = [
@@ -67,7 +75,12 @@ async function createRadiantDecoratorBabelPlugin(): Promise<Plugin> {
 		presets: [
 			{
 				preset: () => ({ plugins }),
-				rolldown: { filter: { code: '@' } },
+				rolldown: {
+					filter: {
+						id: { include: /\.[cm]?[jt]sx?(?:\?|$)/, exclude: [/node_modules/, /\/dist\//] },
+						code: /^[ \t]*@\w/m,
+					},
+				},
 			},
 		],
 	});
