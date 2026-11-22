@@ -12,6 +12,7 @@ import { formContext, type FormContextValue } from '@/lib/form/form-context';
 import { ContextSubscriptionRequestEvent } from '@ecopages/radiant/context';
 import { findFieldControl, findFieldError, registerFieldControl } from '@/lib/form/control-protocol';
 import type { FormStateStore, FormStateStoreSnapshot, NativeValidity } from '@/lib/form/form-state-store';
+import { FormStore } from '@/lib/form/form-store';
 import type { FieldError } from '@/lib/form/types';
 import type { RuiFormFormatError } from './form.script';
 
@@ -1351,6 +1352,30 @@ describe('rui-form with an injected store', () => {
 			});
 		});
 
+		it('reports the facts again after a native reset cleared them', async () => {
+			const { store, facts } = createTestStore({ email: '', extra: '' });
+			const { host } = await mountEmail(store);
+			await settle();
+			expect(facts().email).toMatchObject({ type: 'valueMissing' });
+
+			host.querySelector('form')?.reset();
+			await settle();
+
+			expect(facts().email).toMatchObject({ type: 'valueMissing' });
+		});
+
+		it('reports the facts again after a resetHandler cleared them', async () => {
+			const { store, facts } = createTestStore({ email: '', extra: '' });
+			const { host, form } = await mountEmail(store);
+			form.connect(store, { resetHandler: ({ store: given }) => given.reset() });
+			await settle();
+
+			host.querySelector('form')?.reset();
+			await settle();
+
+			expect(facts().email).toMatchObject({ type: 'valueMissing' });
+		});
+
 		it('keeps each control fact on its own path through a row swap and a removal', async () => {
 			const { store, calls, facts } = createTestStore({ a: 'x', b: '' });
 			const host = document.createElement('div');
@@ -1700,7 +1725,7 @@ describe('rui-form with an injected store', () => {
 		});
 
 		it('replaces the binding when connect is called again and lets only the last disposer act', async () => {
-			const { store } = createTestStore({ email: 'a@b.co', extra: '' });
+			const { store, listenerCount: listeners } = createTestStore({ email: 'a@b.co', extra: '' });
 			const { form } = await mountEmail(store);
 			const first = vi.fn(() => 'first');
 			const second = vi.fn(() => 'second');
@@ -1716,8 +1741,16 @@ describe('rui-form with an injected store', () => {
 			await settle();
 			expect(second).toHaveBeenCalledTimes(2);
 
+			const ownStore = () =>
+				(form as unknown as { formProvider: { getContext(): FormContextValue } }).formProvider.getContext()
+					.store;
+			expect(ownStore()).toBe(store);
 			disconnectSecond();
+			expect(ownStore()).toBeInstanceOf(FormStore);
+			expect(listeners()).toBe(0);
+			const own = ownStore();
 			disconnectSecond();
+			expect(ownStore()).toBe(own);
 		});
 
 		it('applies the formatError property to the own store only', async () => {
@@ -1730,9 +1763,16 @@ describe('rui-form with an injected store', () => {
 			expect(findFieldError(emailField)?.textContent).toBe('from connect');
 
 			disconnect();
-			form.formatError = () => 'from property';
+			const own = (
+				form as unknown as { formProvider: { getContext(): FormContextValue } }
+			).formProvider.getContext().store;
+			expect(own).toBeInstanceOf(FormStore);
+			if (own instanceof FormStore) {
+				own.isSubmitted = true;
+				own.setErrors('server', { email: { type: 'x' } });
+			}
 			await settle();
-			expect(form.formatError).toBeDefined();
+			expect(findFieldError(emailField)?.textContent).toBe('from property');
 		});
 
 		it('presents a warning without invalidating the field or blocking submit', async () => {

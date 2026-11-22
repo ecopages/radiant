@@ -120,9 +120,12 @@ const initialFormActions: FormContextActions = {
  * @fires rui-invalid - Emitted when validation fails on submit; `detail.errors` maps field names to error messages. `detail.error` is set when a validator threw.
  *
  * @remarks
- * `defaultValues` and `resolver` are object props — they only reach the element via
- * `prop:` bindings from the `RuiForm` view, not plain attributes. The host queries
- * `[data-ref="form"]`.
+ * `defaultValues`, `resolver` and `formatError` are object props — property-only
+ * (`attribute: false`), so they reach the element only via `prop:` bindings from the
+ * `RuiForm` view, never as attributes. The host queries `[data-ref="form"]`.
+ *
+ * `readNativeValidity()` returns the native validity of every bridged control, `null`
+ * for a valid one; with an injected store it first writes the controls the user changed.
  *
  * Two channels: `onSubmit` / `rui-submit` receive the store; native `FormData` and
  * `action` / `method` navigation receive listed controls only. `onSubmit` skips
@@ -136,10 +139,11 @@ const initialFormActions: FormContextActions = {
  * registration, native validity, error presentation, submit and `FormData`, and
  * the store owns validation timing, touched and dirty state, defaults and which
  * errors show. `mode`, `revalidate-mode`, `defaultValues`, field `defaultValue`,
- * `resolver` and field `rules` are ignored. Calling `connect` again re-registers every
- * control: the new store's values are written into the controls, and the disposer
- * `connect` returns brings back the form's own store in the state it left,
- * including its earlier errors, touched fields and submitted flag.
+ * `resolver` and field `rules` are ignored. Calling `connect` with another store
+ * re-registers every control and writes the new store's values into the controls
+ * (the same store only replaces the handlers), and the disposer `connect` returns
+ * brings back the form's own store in the state it left, including its earlier
+ * errors, touched fields and submitted flag.
  */
 @customElement('rui-form')
 export class RuiForm extends RadiantElement {
@@ -520,9 +524,9 @@ export class RuiForm extends RadiantElement {
 	 *
 	 * @remarks The element builds a {@link StoreBinding} that holds the store and the
 	 * handlers together, so an issue goes from the store's snapshot to `formatError`
-	 * with its type intact. Calling `connect` again replaces the binding, for the same
-	 * store or another one: every control is registered into the new store and takes
-	 * its values.
+	 * with its type intact. Calling `connect` again replaces the binding: for the same
+	 * store only the handlers change, and for another store every control is registered
+	 * into it and takes its values.
 	 *
 	 * @returns A disposer that returns the form to its own store, in the state that
 	 * store was left in: its values, errors, touched fields and submitted flag, or a

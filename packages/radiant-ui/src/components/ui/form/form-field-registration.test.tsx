@@ -343,8 +343,16 @@ describe('object-valued props on form elements', () => {
 		expect(form.hasAttribute('resolver')).toBe(false);
 		expect(form.hasAttribute('format-error')).toBe(false);
 		field.setAttribute('rules', '{"required":"From attribute"}');
+		field.setAttribute('default-value', '{"other":true}');
+		form.setAttribute('default-values', '{"a":"x"}');
+		form.setAttribute('resolver', 'nope');
+		form.setAttribute('format-error', 'nope');
 		await settle();
 		expect(field.rules).toEqual({ required: 'Required' });
+		expect(field.defaultValue).toEqual({ nested: true });
+		expect(form.defaultValues).toEqual({ a: { nested: true } });
+		expect(typeof form.resolver).toBe('function');
+		expect(form.formatError ?? undefined).toBeUndefined();
 	});
 });
 

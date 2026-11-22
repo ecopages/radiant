@@ -87,6 +87,7 @@ export type RuiFieldProps = {
  * - `[data-rui-field-label]` — visible label. Host sets `htmlFor`.
  * - `[data-rui-field-description]` — helper text. Host sets `id` and wires `aria-describedby`.
  * - `[data-rui-field-error]` — error region. Host sets `id`, `textContent`, and `hidden`.
+ * - `[data-rui-field-warning]` — warning region. Host sets `textContent` and `hidden`.
  * - `[data-ref="field"]` — column wrapping children; used to locate error regions.
  *
  * On each ARIA target the host writes `id` (when missing), `data-rui-field-managed`,

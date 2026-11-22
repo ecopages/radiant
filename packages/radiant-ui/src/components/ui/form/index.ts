@@ -3,6 +3,7 @@ export {
 	RuiForm as RuiFormElement,
 	type RuiFormProps,
 	type RuiFormFormatError,
+	type RuiFormHandlers,
 	type RuiFormResetContext,
 	type RuiFormResetHandler,
 	type RuiFormSubmitContext,
@@ -36,5 +37,6 @@ export {
 	RUI_FIELD_DESCRIPTION_ATTR,
 	RUI_FIELD_ERROR_ATTR,
 	RUI_FIELD_MANAGED_ATTR,
+	RUI_FIELD_WARNING_ATTR,
 } from '@/lib/form/control-protocol';
 export type { FieldControlAdapter } from '@/lib/form/control-protocol';

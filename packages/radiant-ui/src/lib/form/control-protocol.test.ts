@@ -4,8 +4,10 @@ import {
 	findFieldControl,
 	isPrimaryFieldControlEvent,
 	readControlValidity,
+	readControlValue,
 	registerFieldControl,
 	wireFieldControlName,
+	writeControlValue,
 } from './control-protocol';
 
 /**
@@ -80,6 +82,42 @@ describe('field control protocol in the browser', () => {
 
 		expect(host.getAttribute('name')).toBe('quantity');
 		expect(input.hasAttribute('name')).toBe(false);
+	});
+
+	describe('native select', () => {
+		function select(multiple: boolean) {
+			const element = document.createElement('select');
+			element.multiple = multiple;
+			element.innerHTML = '<option value="a">A</option><option value="b">B</option><option value="c">C</option>';
+			document.body.append(element);
+			return element;
+		}
+
+		it('reads and writes a single select by value', () => {
+			const element = select(false);
+
+			writeControlValue(element, 'b');
+			expect(element.value).toBe('b');
+			expect(readControlValue(element)).toBe('b');
+
+			writeControlValue(element, undefined);
+			expect(readControlValue(element)).not.toBe('b');
+			element.remove();
+		});
+
+		it('reads and writes a multiple select as a list of values', () => {
+			const element = select(true);
+
+			writeControlValue(element, ['a', 'c']);
+			expect(Array.from(element.selectedOptions, (option) => option.value)).toEqual(['a', 'c']);
+			expect(readControlValue(element)).toEqual(['a', 'c']);
+
+			writeControlValue(element, []);
+			expect(readControlValue(element)).toEqual([]);
+			writeControlValue(element, 'b');
+			expect(readControlValue(element)).toEqual(['b']);
+			element.remove();
+		});
 	});
 
 	describe('control validity', () => {

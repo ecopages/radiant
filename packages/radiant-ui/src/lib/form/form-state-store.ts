@@ -86,7 +86,8 @@ export type FormStateBlurOptions = FormStateNativeOptions & {
  * - `blur` reports that a control lost focus, with its value when the user changed
  *   it, so the store can run its own touched and validation-on-blur policy in one call.
  * - `getSnapshot` and `subscribe` publish presentation and the submit values.
- * - `reportNative` reports a control's validity on its own, after a store write changed it.
+ * - `reportNative` reports a control's validity on its own when it is seeded or renamed and
+ *   whenever the store's value at its path changes.
  * - `reset` backs the native `reset` event when no `resetHandler` is set; the form
  *   then rewrites controls from the store.
  * - `validate` runs on submit when no `submitHandler` is set and decides whether
@@ -132,8 +133,9 @@ export interface FormStateStore<TIssue extends FieldError = FieldError> {
 	validate(paths?: string[], options?: { native?: Record<string, NativeValidity | null> }): Promise<boolean>;
 	/**
 	 * Report the native validity of a control on its own, with no value or event: the
-	 * form calls it after the store wrote a value into the control, because the
-	 * control now says something new about the value the store holds.
+	 * form calls it when a control is seeded or renamed and whenever the store's value
+	 * at the control's path changes, because the control now says something about the
+	 * value the store holds that no user event reported.
 	 *
 	 * @remarks The store binds the fact to the value it holds at `path`, re-validates
 	 * the path only if it was already validated or failed (so a report never counts

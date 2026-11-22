@@ -59,8 +59,8 @@ export type ResolverOptions<_T extends FieldValues> = {
 	names?: string[];
 };
 
-export type FormState<T extends FieldValues = FieldValues> = {
-	values: T;
+export type FormState<_T extends FieldValues = FieldValues> = {
+	values: FieldValues;
 	errors: Partial<Record<string, FieldError>>;
 	touched: Partial<Record<string, boolean>>;
 	dirty: Partial<Record<string, boolean>>;
@@ -104,7 +104,7 @@ export type FieldRegistration = RegisterOptions & {
 	getValue: () => unknown;
 	setValue: (value: unknown) => void;
 	getRules?: () => FieldRules | undefined;
-	/** Read at validation time; an invalid result adds a `native` error when no rule or resolver error exists. */
+	/** Read at validation time; an invalid result adds an error whose `type` is the failing flag when no rule or resolver error exists. */
 	getValidity?: () => FieldControlValidity | undefined;
 	/** Move focus to this field's control. */
 	focus?: () => void;

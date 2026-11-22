@@ -79,6 +79,7 @@ type BoundField = {
 export class InjectedFormDriver implements FormDriver {
 	private readonly fields = new Map<string, BoundField>();
 	private readonly pendingFactReports = new Map<BoundField, string>();
+	private reportQueued = false;
 	private readonly listeners = new Set<() => void>();
 	private revision = 0;
 	private unsubscribeStore: (() => void) | undefined;
@@ -126,6 +127,8 @@ export class InjectedFormDriver implements FormDriver {
 	/**
 	 * Write a path's store value into its control, but only when the store value
 	 * changed since this driver last saw it (or `force` is set, as on reset).
+	 * A forced pass reports every control's fact again, because a reset clears the
+	 * facts the store holds.
 	 *
 	 * @remarks Comparing with the last seen store value, not only with the control,
 	 * keeps an unrelated store notification, such as a `setErrors` call or another
@@ -142,16 +145,17 @@ export class InjectedFormDriver implements FormDriver {
 				continue;
 			}
 			const held = entry.registration.getValue();
+			let unreported = force;
 			if (isSameValue(next, held)) {
-				const unreported = !isSameValue(held, entry.baseline);
+				unreported ||= !isSameValue(held, entry.baseline);
 				entry.baseline = held;
-				if (!unreported) {
-					continue;
-				}
 			} else {
 				this.writeToControl(entry, next);
+				unreported = true;
 			}
-			this.scheduleFactReport(entry);
+			if (unreported) {
+				this.scheduleFactReport(entry);
+			}
 		}
 	}
 
@@ -171,10 +175,12 @@ export class InjectedFormDriver implements FormDriver {
 	 */
 	private scheduleFactReport(entry: BoundField): void {
 		this.pendingFactReports.set(entry, entry.name);
-		if (this.pendingFactReports.size > 1) {
+		if (this.reportQueued) {
 			return;
 		}
+		this.reportQueued = true;
 		queueMicrotask(() => {
+			this.reportQueued = false;
 			const pending = [...this.pendingFactReports];
 			this.pendingFactReports.clear();
 			for (const [reported, name] of pending) {

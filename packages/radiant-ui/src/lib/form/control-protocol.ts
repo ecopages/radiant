@@ -57,6 +57,10 @@ function isNativeTextarea(node: Element): node is HTMLTextAreaElement {
 	return node.localName === 'textarea';
 }
 
+function isNativeSelect(node: Element): node is HTMLSelectElement {
+	return node.localName === 'select';
+}
+
 /** True when the constructor opted into the form-associated custom element lifecycle. */
 export function isFormAssociatedHost(host: HTMLElement): boolean {
 	return Reflect.get(host.constructor, 'formAssociated') === true;
@@ -341,6 +345,10 @@ export function readControlValue(control: HTMLElement): unknown {
 		return control.value;
 	}
 
+	if (isNativeSelect(control)) {
+		return control.multiple ? Array.from(control.selectedOptions, (option) => option.value) : control.value;
+	}
+
 	const host = resolveControlHost(control);
 	return CONTROL_VALUE_ADAPTERS.get(host.localName)?.read(host) ?? host.getAttribute('value') ?? '';
 }
@@ -447,6 +455,20 @@ export function focusFieldControl(control: HTMLElement): void {
 	(focusable ?? target).focus();
 }
 
+/** A multiple select takes a list of values, or one value as a list of one; a single select takes one. */
+function writeSelectValue(control: HTMLSelectElement, value: unknown): void {
+	if (!control.multiple) {
+		control.value = value == null ? '' : String(value);
+		return;
+	}
+	const chosen = new Set(
+		Array.isArray(value) ? value.map(String) : value == null || value === '' ? [] : [String(value)],
+	);
+	for (const option of control.options) {
+		option.selected = chosen.has(option.value);
+	}
+}
+
 export function writeControlValue(control: HTMLElement, value: unknown): void {
 	if (isNativeInput(control)) {
 		const host = resolveControlHost(control);
@@ -473,6 +495,11 @@ export function writeControlValue(control: HTMLElement, value: unknown): void {
 
 	if (isNativeTextarea(control)) {
 		control.value = value == null ? '' : String(value);
+		return;
+	}
+
+	if (isNativeSelect(control)) {
+		writeSelectValue(control, value);
 		return;
 	}
 

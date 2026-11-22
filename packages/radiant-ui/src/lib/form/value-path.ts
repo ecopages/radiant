@@ -1,5 +1,9 @@
 const INDEX = /^(0|[1-9]\d*)$/;
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 function isBranch(value: unknown): value is Record<string, unknown> | unknown[] {
 	return typeof value === 'object' && value !== null;
 }
@@ -23,8 +27,9 @@ export function getPath(tree: unknown, path: string): unknown {
  * array when the next segment is a non-negative integer, otherwise an object, so
  * `rows.0.name` addresses `{ rows: [{ name }] }`.
  */
-export function setPath<R extends object>(tree: R, path: string, value: unknown): R {
-	return write(tree, path.split('.'), value) as R;
+export function setPath(tree: Record<string, unknown>, path: string, value: unknown): Record<string, unknown> {
+	const written = write(tree, path.split('.'), value);
+	return isRecord(written) ? written : tree;
 }
 
 function write(node: unknown, keys: string[], value: unknown): unknown {
@@ -44,8 +49,9 @@ function write(node: unknown, keys: string[], value: unknown): unknown {
 }
 
 /** Return a copy of `tree` without the leaf at a dotted path, or `tree` itself when the path is absent. */
-export function deletePath<R extends object>(tree: R, path: string): R {
-	return remove(tree, path.split('.')) as R;
+export function deletePath(tree: Record<string, unknown>, path: string): Record<string, unknown> {
+	const removed = remove(tree, path.split('.'));
+	return isRecord(removed) ? removed : tree;
 }
 
 function remove(node: unknown, keys: string[]): unknown {

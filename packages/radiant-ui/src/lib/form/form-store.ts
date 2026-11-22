@@ -22,7 +22,7 @@ import type {
 export type FormStoreOptions<T extends FieldValues> = {
 	defaultValues?: Partial<T>;
 	values?: Partial<T>;
-	resolver?: Resolver<T>;
+	resolver?: Resolver;
 	mode?: ValidationMode;
 	reValidateMode?: ValidationMode;
 };
@@ -37,11 +37,8 @@ type InternalField = FieldRegistration & {
 	carried?: FieldState;
 };
 
-function normalizeResolver<T extends FieldValues>(resolver: unknown): Resolver<T> {
-	if (typeof resolver === 'function') {
-		return resolver as Resolver<T>;
-	}
-	return createRulesResolver<T>();
+function normalizeResolver(resolver: Resolver | undefined): Resolver {
+	return typeof resolver === 'function' ? resolver : createRulesResolver();
 }
 
 /** A field default counts only when it is neither `undefined` nor `null` (a bare `rui-field` reports `null`). */
@@ -51,15 +48,15 @@ export function hasDefault(value: unknown): boolean {
 
 type FieldState = { touched?: boolean; dirty?: boolean; error?: FieldError };
 
-function withKey<R extends Partial<Record<string, unknown>>>(record: R, key: string, value: unknown): R {
+function withKey<V>(record: Record<string, V>, key: string, value: V | undefined): Record<string, V> {
 	if (value === undefined) {
 		if (!Object.hasOwn(record, key)) {
 			return record;
 		}
 		const { [key]: _removed, ...rest } = record;
-		return rest as R;
+		return rest;
 	}
-	return { ...record, [key]: value } as R;
+	return { ...record, [key]: value };
 }
 
 const NO_WARNINGS: Readonly<Record<string, FieldError>> = Object.freeze({});
@@ -71,23 +68,23 @@ const NO_WARNINGS: Readonly<Record<string, FieldError>> = Object.freeze({});
 export class FormStore<T extends FieldValues = FieldValues> implements FormStateStore {
 	mode: ValidationMode;
 	reValidateMode: ValidationMode;
-	private resolver: Resolver<T>;
+	private resolver: Resolver;
 	private readonly fields = new Map<string, InternalField>();
 	private listeners = new Set<() => void>();
 	private revision = 0;
-	private defaultValues: Partial<T>;
+	private defaultValues: FieldValues;
 
-	values: T;
-	private ownErrors: Partial<Record<string, FieldError>> = {};
-	private mergedErrors: Partial<Record<string, FieldError>> = this.ownErrors;
+	values: FieldValues;
+	private ownErrors: Record<string, FieldError> = {};
+	private mergedErrors: Record<string, FieldError> = this.ownErrors;
 	private readonly sourceErrors = new Map<string, Record<string, FieldError>>();
 	private reportedNative: Record<string, NativeValidity> = {};
 	/** Paths whose validation has run since the last reset, whether it passed or failed. */
 	private readonly validatedPaths = new Set<string>();
 	private snapshot:
-		{ values: T; errors: Partial<Record<string, FieldError>>; value: FormStateStoreSnapshot } | undefined;
-	touched: Partial<Record<string, boolean>> = {};
-	dirty: Partial<Record<string, boolean>> = {};
+		{ values: FieldValues; errors: Record<string, FieldError>; value: FormStateStoreSnapshot } | undefined;
+	touched: Record<string, boolean> = {};
+	dirty: Record<string, boolean> = {};
 	isSubmitting = false;
 	isSubmitted = false;
 
@@ -95,8 +92,8 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		this.mode = options.mode ?? 'onSubmit';
 		this.reValidateMode = options.reValidateMode ?? 'onChange';
 		this.resolver = normalizeResolver(options.resolver);
-		this.defaultValues = { ...(options.defaultValues ?? {}) } as Partial<T>;
-		this.values = { ...this.defaultValues, ...(options.values ?? {}) } as T;
+		this.defaultValues = { ...options.defaultValues };
+		this.values = { ...this.defaultValues, ...options.values };
 	}
 
 	/**
@@ -105,11 +102,11 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	 * @remarks A source error replaces a resolver or rule error on the same field.
 	 * Assigning replaces the resolver and rule errors only.
 	 */
-	get errors(): Partial<Record<string, FieldError>> {
+	get errors(): Record<string, FieldError> {
 		return this.mergedErrors;
 	}
 
-	set errors(next: Partial<Record<string, FieldError>>) {
+	set errors(next: Record<string, FieldError>) {
 		this.ownErrors = next;
 		this.mergeErrors();
 	}
@@ -124,7 +121,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 			this.mergedErrors = this.ownErrors;
 			return;
 		}
-		const merged: Record<string, FieldError> = { ...this.ownErrors } as Record<string, FieldError>;
+		const merged: Record<string, FieldError> = { ...this.ownErrors };
 		for (const errors of this.sourceErrors.values()) {
 			Object.assign(merged, errors);
 		}
@@ -165,7 +162,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 				errors: this.mergedErrors,
 				value: {
 					values: this.values,
-					errors: this.mergedErrors as Record<string, FieldError>,
+					errors: this.mergedErrors,
 					warnings: NO_WARNINGS,
 				},
 			};
@@ -218,7 +215,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 			this.resolver = normalizeResolver(options.resolver);
 		}
 		if (options.defaultValues !== undefined) {
-			this.defaultValues = { ...(options.defaultValues as Partial<T>) };
+			this.defaultValues = { ...options.defaultValues };
 		}
 	}
 
@@ -356,7 +353,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		}
 	}
 
-	getValues(): T {
+	getValues(): FieldValues {
 		let next = this.values;
 		for (const [name, field] of this.fields) {
 			next = setPath(next, name, field.getValue());
@@ -465,10 +462,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		const values = this.getValues();
 		const result = await this.resolver(values, { fields: this.buildResolverFields() }, { names: [name] });
 		const next = { ...this.ownErrors };
-		const resolverError: FieldError | undefined = this.ownRead(
-			result.errors as Partial<Record<string, FieldError>>,
-			name,
-		);
+		const resolverError: FieldError | undefined = this.ownRead(result.errors, name);
 		const nativeError = resolverError?.message ? undefined : this.readNativeError(name);
 		const error = nativeError ?? resolverError;
 		if (error) {
@@ -487,7 +481,12 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		}
 		const values = this.getValues();
 		const result = await this.resolver(values, { fields: this.buildResolverFields() }, {});
-		const errors = { ...result.errors } as Partial<Record<string, FieldError>>;
+		const errors: Record<string, FieldError> = {};
+		for (const [path, error] of Object.entries(result.errors)) {
+			if (error) {
+				errors[path] = error;
+			}
+		}
 		for (const name of new Set([...this.fields.keys(), ...Object.keys(this.reportedNative)])) {
 			const resolverError = this.ownRead(errors, name);
 			const native = resolverError?.message ? undefined : this.readNativeError(name);
@@ -634,7 +633,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	 * `onValid` clears `isSubmitting` and rejects.
 	 */
 	async handleSubmit(
-		onValid: (values: T) => void | Promise<void>,
+		onValid: (values: FieldValues) => void | Promise<void>,
 		onInvalid?: (errors: Partial<Record<string, FieldError>>, error?: unknown) => void,
 	): Promise<void> {
 		this.isSubmitting = true;
@@ -665,7 +664,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	}
 
 	reset(values?: Partial<T>): void {
-		this.values = values ? ({ ...values } as T) : this.withFieldDefaults({ ...this.defaultValues } as T);
+		this.values = values ? { ...values } : this.withFieldDefaults({ ...this.defaultValues });
 		this.sourceErrors.clear();
 		this.reportedNative = {};
 		this.validatedPaths.clear();
@@ -685,7 +684,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	 * default of `rui-field`). Only a non-null default overrides the form's
 	 * `defaultValues`, so a bare field never wipes them on reset.
 	 */
-	private withFieldDefaults(tree: T): T {
+	private withFieldDefaults(tree: FieldValues): FieldValues {
 		let next = tree;
 		for (const [name, field] of this.fields) {
 			if (hasDefault(field.defaultValue)) {
