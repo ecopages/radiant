@@ -755,4 +755,22 @@ describe('FormStore', () => {
 		expect(await store.validateField('__proto__')).toBe(false);
 		expect(Object.hasOwn(store.errors, '__proto__')).toBe(true);
 	});
+
+	it('rewrites the other controls on an overlapping path when a field changes', async () => {
+		const store = new FormStore({ defaultValues: { profile: { name: 'Ada' } } });
+		let leaf: unknown = 'Ada';
+		let parent: unknown = { name: 'Ada' };
+		const parentSet = vi.fn((next: unknown) => {
+			parent = next;
+		});
+		store.register({ name: 'profile.name', getValue: () => leaf, setValue: () => {} });
+		store.register({ name: 'profile', getValue: () => parent, setValue: parentSet });
+		parentSet.mockClear();
+
+		leaf = 'Grace';
+		await store.handleFieldChange('profile.name');
+
+		expect(parentSet).toHaveBeenLastCalledWith({ name: 'Grace' });
+		expect(store.getValues()).toEqual({ profile: { name: 'Grace' } });
+	});
 });

@@ -314,8 +314,11 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	 * it or above it, so replacing a branch reaches the controls inside it and writing
 	 * inside a control that holds an object reaches that control.
 	 */
-	private rewriteRelatedControls(path: string): void {
+	private rewriteRelatedControls(path: string, except?: string): void {
 		for (const [name, field] of this.fields) {
+			if (name === except) {
+				continue;
+			}
 			if (name === path || name.startsWith(`${path}.`) || path.startsWith(`${name}.`)) {
 				field.setValue(getPath(this.values, name));
 			}
@@ -571,6 +574,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 			return;
 		}
 		this.values = setPath(this.values, name, field.getValue());
+		this.rewriteRelatedControls(name, name);
 		await this.afterChange(name);
 	}
 

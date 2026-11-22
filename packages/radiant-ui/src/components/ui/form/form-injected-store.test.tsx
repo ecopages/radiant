@@ -1082,6 +1082,44 @@ describe('rui-form with an injected store', () => {
 		});
 	});
 
+	describe('failures are reported, not left uncaught', () => {
+		it('reports a store that throws while submit flushes for a submit handler', async () => {
+			const { store } = createTestStore({ title: '', profile: { name: '' } });
+			const boom = new Error('write failed');
+			const { form, title, host } = await mountInputs(store);
+			const handler = vi.fn();
+			form.connect(store, { submitHandler: handler });
+			const reportError = vi.spyOn(globalThis, 'reportError').mockImplementation(() => {});
+			cleanup.push(() => reportError.mockRestore());
+			vi.spyOn(store, 'setValue').mockImplementation(() => {
+				throw boom;
+			});
+			title.value = 'changed';
+
+			host.querySelector('form')?.requestSubmit();
+			await settle();
+
+			expect(reportError).toHaveBeenCalledWith(boom);
+			expect(handler).not.toHaveBeenCalled();
+		});
+
+		it('reports a store that throws on reset when no handler is set', async () => {
+			const { store } = createTestStore({ title: '', profile: { name: '' } });
+			const boom = new Error('reset failed');
+			const { host } = await mountInputs(store);
+			const reportError = vi.spyOn(globalThis, 'reportError').mockImplementation(() => {});
+			cleanup.push(() => reportError.mockRestore());
+			vi.spyOn(store, 'reset').mockImplementation(() => {
+				throw boom;
+			});
+
+			host.querySelector('form')?.reset();
+			await settle();
+
+			expect(reportError).toHaveBeenCalledWith(boom);
+		});
+	});
+
 	describe('resetHandler', () => {
 		it('hands the native reset to the host instead of resetting the store', async () => {
 			const { store } = createTestStore({ title: 'Initial', profile: { name: '' } });

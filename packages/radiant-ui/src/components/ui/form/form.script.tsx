@@ -280,7 +280,6 @@ export class RuiForm extends RadiantElement {
 		const driver = this.ensureDriver();
 		const binding = this.binding();
 		if (driver instanceof InjectedFormDriver && binding?.hasSubmitHandler) {
-			driver.flush();
 			const helpers: SubmitHelpers = {
 				focus: (path) => driver.focus(path),
 				validate: (paths) => driver.validate(paths),
@@ -292,7 +291,10 @@ export class RuiForm extends RadiantElement {
 				},
 			};
 			Promise.resolve()
-				.then(() => binding.submit(helpers))
+				.then(() => {
+					driver.flush();
+					return binding.submit(helpers);
+				})
 				.catch((error: unknown) => reportError(error));
 			return;
 		}
@@ -587,7 +589,11 @@ export class RuiForm extends RadiantElement {
 			driver.resetThrough(() => binding.reset()).catch((error: unknown) => reportError(error));
 			return;
 		}
-		driver?.reset();
+		try {
+			driver?.reset();
+		} catch (error) {
+			reportError(error);
+		}
 	}
 }
 
