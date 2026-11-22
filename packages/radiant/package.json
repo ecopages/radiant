@@ -210,6 +210,18 @@
 			"types": "./dist/helpers/create-event.d.ts",
 			"import": "./dist/helpers/create-event.js"
 		},
+		"./helpers/create-agent-tool": {
+			"types": "./dist/helpers/create-agent-tool.d.ts",
+			"import": "./dist/helpers/create-agent-tool.js"
+		},
+		"./helpers/register-agent-tool": {
+			"types": "./dist/helpers/register-agent-tool.d.ts",
+			"import": "./dist/helpers/register-agent-tool.js"
+		},
+		"./decorators/agent-tool": {
+			"types": "./dist/decorators/agent-tool.d.ts",
+			"import": "./dist/decorators/agent-tool.js"
+		},
 		"./helpers/create-event-listener": {
 			"types": "./dist/helpers/create-event-listener.d.ts",
 			"import": "./dist/helpers/create-event-listener.js"

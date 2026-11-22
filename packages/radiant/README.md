@@ -279,6 +279,51 @@ Selector- and ref-based `@onEvent(...)` handlers, and `subscribeEvent(...)` / `s
 
 Each `subscribeEvent(...)` registration is independent, including duplicate `type` and `selector` pairs. Unsubscribing one listener does not remove another, and disconnect removes every remaining registration.
 
+### Agent tools (experimental)
+
+The decorator and its helpers are imported from their own subpaths and are not part of the root entry, so a page that does not use them pays nothing. Browsers that implement [WebMCP](https://developer.chrome.com/docs/ai/webmcp) let a page register tools an agent calls directly, through `document.modelContext`. Radiant ties a tool to a component's lifecycle: it is registered while the host is connected and enabled and removed when the host disconnects. Where the browser has no `document.modelContext`, and on the server, nothing happens. The API is an origin trial and may change.
+
+```ts
+import { RadiantElement, customElement } from '@ecopages/radiant';
+import { agentTool } from '@ecopages/radiant/decorators/agent-tool';
+
+@customElement('rad-cart')
+class RadCart extends RadiantElement {
+	items: { sku: string }[] = [];
+
+	@agentTool({
+		name: (host: RadCart) => `add-item-${host.id}`,
+		description: 'Adds a product to the cart',
+		inputSchema: { type: 'object', properties: { sku: { type: 'string' } }, required: ['sku'] },
+		parse: (input) => parseAddItem(input),
+	})
+	addItem(item: { sku: string }) {
+		this.items = [...this.items, item];
+		return { count: this.items.length };
+	}
+}
+```
+
+| Use this                        | When you want                                                                                                                             |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `@agentTool(config)`            | A method that is both a normal method the UI calls and a tool the agent calls. The method is `execute`; the decorator leaves it callable. |
+| `createAgentTool(host, config)` | The same lifecycle for a tool that is not one method, such as a controller or a field. Returns a function that stops managing the tool.   |
+| `registerAgentTool(config)`     | A tool outside any host, such as a store or a page script. Returns its unregister function.                                               |
+
+The config is the WebMCP tool dictionary passed through (`name`, `description`, `title`, `inputSchema`, `outputSchema`, `annotations`, `exposedTo`), so fields the spec adds need no Radiant release, plus:
+
+- `parse(input: unknown)`: validates the agent's input before the method runs and throws to reject the call. Pass a schema library's `schema.parse`. Under standard decorators it also types the method's argument. Without it the input arrives unchecked, so its type is a promise the browser does not enforce. `inputSchema` is plain JSON Schema and is advisory; Radiant ships no schema library.
+- `getEnabled(host)`: registers the tool only while it returns `true`. `name` may also be a function of the host. Both are read after the host's attributes have caught up and again when a signal they read changes, which registers the tool again; the host's native `id` is not a signal, so a later change of it does not. Annotate the host parameter (`(host: RadCart) => ...`), because the decorator's config is written before TypeScript knows the class.
+
+Rules worth knowing:
+
+- Tool names are unique per page. Two elements that use one name make the second registration reject, and Radiant reports it with `console.error` naming the tool and the element. Give each instance its own name, or register a shared capability once from whoever owns the state.
+- A tool is removed only by aborting the signal it was registered with, so every connect registers with a new `AbortController`. `execute` receives `{ signal }`, which a decorated method can take as a second argument.
+- Return from a method only once the UI shows the change, and set `annotations.consequentialHint` on an irreversible action and `untrustedContentHint` on output that carries user-generated content.
+- A server-rendered element that waits for its children registers only after it hydrates.
+- Like `@onEvent`, `@agentTool` binds the method it decorates, so a subclass override is not what the agent calls.
+- In development, a tool with an empty name or description, or text over the budgets Chrome recommends (30 characters per name, 500 per description, 150 per parameter description), logs a warning once.
+
 ### `@event(...)`
 
 Outgoing component events use `@event(...)`, which gives the class a typed `EventEmitter`. Calling `.emit(detail)` dispatches a real `CustomEvent` from the host element.
@@ -338,6 +383,8 @@ These are the documented public import paths exposed by the package.
 | `@ecopages/radiant/helpers/create-query`          | `createQuery(...)`, `createQueryAll(...)`: low-level query helpers for component fields                                                                                             |
 | `@ecopages/radiant/helpers/create-event`          | Low-level typed custom-event helper                                                                                                                                                 |
 | `@ecopages/radiant/helpers/create-event-listener` | Low-level DOM event-listener helper                                                                                                                                                 |
+| `@ecopages/radiant/helpers/create-agent-tool`     | `createAgentTool(host, ...)`: a WebMCP tool that follows a host's lifecycle (experimental)                                                                                          |
+| `@ecopages/radiant/helpers/register-agent-tool`   | `registerAgentTool(...)`: registers a WebMCP tool and returns its unregister function, without a host (experimental)                                                                |
 | `@ecopages/radiant/helpers/debounce`              | Debounce helper without the decorator surface                                                                                                                                       |
 | `@ecopages/radiant/is-server`                     | Boolean flag (`isServer`) for branching between server and browser environments                                                                                                     |
 | `@ecopages/radiant/client/hydrator`               | Explicit client hydrator installer and status helpers for SSR pages                                                                                                                 |
@@ -351,6 +398,7 @@ These are the documented public import paths exposed by the package.
 | `@ecopages/radiant/server/render-component`       | Canonical component SSR helpers; default hydrate mode                                                                                                                               |
 | `@ecopages/radiant/server/render-controller`      | Controller-host SSR helpers and controller-specific host option types                                                                                                               |
 | `@ecopages/radiant/server/project-root`           | Project-root resolution helper for server adapters                                                                                                                                  |
+| `@ecopages/radiant/decorators/agent-tool`         | `@agentTool(...)` (experimental)                                                                                                                                                    |
 | `@ecopages/radiant/decorators/attr`               | `@attr(...)`                                                                                                                                                                        |
 | `@ecopages/radiant/decorators/bind-to`            | `@bindTo(...)`                                                                                                                                                                      |
 | `@ecopages/radiant/decorators/bound`              | `@bound`                                                                                                                                                                            |

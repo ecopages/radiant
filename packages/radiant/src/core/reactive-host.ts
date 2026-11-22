@@ -62,6 +62,13 @@ export interface ReactiveHostInternals {
 	 * name cannot be replaced by a read-only member.
 	 */
 	defineReadonlyReactiveAccessor(propertyName: string): void;
+	/**
+	 * Whether the host has connected and run its post-sync pass, so its attributes have caught up.
+	 *
+	 * @remarks An element that upgrades in place is already `isConnected` inside its constructor, before this is
+	 * true, so work that needs the settled host checks this instead of `isConnected`.
+	 */
+	readonly connectSettled: boolean;
 	registerPostSync(callback: () => void): void;
 	registerConnectSync(callback: () => void): void;
 	registerUpdatedCallback(keys: readonly string[], callback: UpdatedCallback): () => void;
@@ -139,6 +146,7 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	private observationEpoch = 0;
 	/** Whether the host is connected on the client; server lifecycles observe members without it. */
 	private clientConnected = false;
+	private settled = false;
 	private onConnectedCallbacks: (() => void)[] = [];
 	private onDisconnectedCallback: (() => void)[] = [];
 	private postSyncCallbacks: (() => void)[] = [];
@@ -178,6 +186,7 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	 */
 	public connectHost(client = true): boolean {
 		this.clientConnected = client;
+		this.settled = false;
 		const epoch = this.startObservation();
 
 		for (const callback of this.onConnectedCallbacks) {
@@ -196,6 +205,7 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	 */
 	public disconnectHost(): void {
 		this.clientConnected = false;
+		this.settled = false;
 
 		for (const cleanup of this.onDisconnectedCallback) {
 			cleanup();
@@ -320,6 +330,11 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 		for (const callback of this.postSyncCallbacks) {
 			callback();
 		}
+		this.settled = true;
+	}
+
+	public get connectSettled(): boolean {
+		return this.settled;
 	}
 
 	public flushConnectSync(): void {
