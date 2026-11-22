@@ -1,7 +1,9 @@
-import { RuiField, RuiFieldDescription, RuiFieldError } from '@ecopages/radiant-ui/field';
+import { RuiField, RuiFieldDescription, RuiFieldError, RuiFieldWarning } from '@ecopages/radiant-ui/field';
 import { RuiInput } from '@ecopages/radiant-ui/input';
 import { RuiLabel } from '@ecopages/radiant-ui/label';
+import { RuiForm } from '@ecopages/radiant-ui/form';
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
+import { createDemoStore } from './demo-form-store';
 
 export type FieldArgs = {
 	name: string;
@@ -36,3 +38,33 @@ export const meta = {
 type Story = DocsStory<FieldArgs>;
 
 export const Default: Story = docsStory(meta, { parameters: { docs: { id: 'field/default' } } });
+
+export type FieldWarningArgs = Record<string, never>;
+
+/** A warning from an injected store: advice that shows beside the control and never blocks. */
+export const warningMeta = {
+	args: {},
+	render: () => {
+		const store = createDemoStore({
+			initial: { password: 'letmein' },
+			warnings: {
+				password: (value) =>
+					String(value ?? '').length < 12 ? 'Longer passwords are harder to guess' : undefined,
+			},
+		});
+		return (
+			<RuiForm ref={(form) => (form && typeof form.connect === 'function' ? form.connect(store) : undefined)}>
+				<RuiField name="password">
+					<RuiLabel>Password</RuiLabel>
+					<RuiInput type="password" />
+					<RuiFieldError />
+					<RuiFieldWarning />
+				</RuiField>
+			</RuiForm>
+		);
+	},
+} satisfies DocsMeta<FieldWarningArgs>;
+
+export const WithWarning: DocsStory<FieldWarningArgs> = docsStory(warningMeta, {
+	parameters: { docs: { id: 'field/with-warning' } },
+});

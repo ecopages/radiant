@@ -44,11 +44,11 @@ With server rendering, a view rendered on the server does not register its eleme
 
 Read only the modules relevant to the task. Each file is one level deep from this entry.
 
-| Module                                               | Read when                                                                                                          |
-| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| [reference/composition.md](reference/composition.md) | Views vs hosts, named regions, childless views, light-DOM targets, attribute forwarding, ARIA                      |
-| [reference/forms.md](reference/forms.md)             | `RuiField` / `RuiForm`, `rui-change`, multi-value `value`, form-associated controls                                |
-| [reference/theming.md](reference/theming.md)         | Radiant Default and Radiant Themes, dark mode, token packs, semantic roles vs palette steps, selective stylesheets |
+| Module                                               | Read when                                                                                                                                         |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [reference/composition.md](reference/composition.md) | Views vs hosts, named regions, childless views, light-DOM targets, attribute forwarding, ARIA                                                     |
+| [reference/forms.md](reference/forms.md)             | `RuiField` / `RuiForm`, `rui-change`, nested values, native validity, `connect`, `RuiFieldWarning`, multi-value `value`, form-associated controls |
+| [reference/theming.md](reference/theming.md)         | Radiant Default and Radiant Themes, dark mode, token packs, semantic roles vs palette steps, selective stylesheets                                |
 
 ## Critical rules
 
