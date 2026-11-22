@@ -38,7 +38,7 @@ Use the form's own store (`FormStore`) when rules on `RuiField` are enough. Writ
 | `getSnapshot()` | The values, `errors` and `warnings` to show. The same object until state changes. |
 | `subscribe(listener)` | Notify the form when state changed. |
 | `reset()` | A native reset, unless you pass a `resetHandler`. Clear values, errors, field state and every native fact. |
-| `validate(paths?)` | Submit. Resolve `false` while the store holds any error at those paths. |
+| `validate()` | Submit. Resolve `false` while the store holds any error. |
 | `reportNative(facts)` | The validity of controls, keyed by path, whenever a control's value or presence changes. |
 
 Paths are the dotted `name` of each `RuiField`, so `profile.name` is `values.profile.name` and `rows.0.title` is `values.rows[0].title`.
@@ -134,8 +134,8 @@ export function createDemoStore({ initial, rules = {}, warnings = {} }: DemoStor
 			checked.clear();
 			publish();
 		},
-		async validate(paths) {
-			const scope = paths ?? [...new Set([...Object.keys(rules), ...Object.keys(facts)])];
+		async validate() {
+			const scope = [...new Set([...Object.keys(rules), ...Object.keys(facts)])];
 			for (const path of scope) checked.add(path);
 			publish();
 			return scope.every((path) => !problems(path));
@@ -165,4 +165,4 @@ export function createDemoStore({ initial, rules = {}, warnings = {} }: DemoStor
 
 ## Handlers
 
-`connect(store, { formatError, submitHandler, resetHandler })` types each handler by your store's own entry type, and returns a disposer that returns the form to its own store. A `submitHandler` takes over submit (the form writes the changed controls, then calls it with `{ store, focus, submitNatively }`), and a `resetHandler` takes over the native reset. See [Inject a form state store](/docs/forms/form#inject-a-form-state-store).
+`connect(store, { formatError, submitHandler, resetHandler })` types `formatError` by your store's own entry type, and returns a disposer that returns the form to its own store. A `submitHandler` takes over submit (the form writes the changed controls and reports their facts, then calls it with `{ submitNatively }`; you hold the store, so validate it and move focus with `form.focusField(paths)`), and a `resetHandler` takes over the native reset; it takes no argument. See [Inject a form state store](/docs/forms/form#inject-a-form-state-store).

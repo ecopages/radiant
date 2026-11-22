@@ -1,9 +1,6 @@
 import type { FormStateStore } from './form-state-store';
-import type { RuiFormHandlers, RuiFormResetContext, RuiFormSubmitContext } from './form-handlers';
+import type { RuiFormHandlers, RuiFormSubmitContext } from './form-handlers';
 import type { FieldError } from './types';
-
-/** The parts of a submit context the form supplies; the binding adds the typed `store`. */
-export type SubmitHelpers = Omit<RuiFormSubmitContext, 'store'>;
 
 /**
  * What the form needs from a store and its handlers, without naming the store's issue
@@ -15,18 +12,16 @@ export interface BoundStore {
 	readonly hasResetHandler: boolean;
 	/** The text for the error or warning at `path`, or `undefined` when there is none or it has no text. */
 	text(kind: 'errors' | 'warnings', path: string): string | undefined;
-	submit(helpers: SubmitHelpers): void | Promise<void>;
+	submit(context: RuiFormSubmitContext): void | Promise<void>;
 	reset(): void | Promise<void>;
 }
 
 /**
- * Holds a store and the handlers written for its own issue type together, so an
- * issue goes from `getSnapshot()` straight to `formatError` with its type intact and
- * nothing is cast.
+ * Holds a store and its `formatError` together, so an issue goes from `getSnapshot()`
+ * straight to `formatError` with its type intact and nothing is cast.
  *
  * @remarks `TIssue` appears only inside the binding. `BoundStore`, which the element
- * holds, names no issue type, and the methods that touch one take only paths and
- * non-generic helpers.
+ * holds, names no issue type.
  */
 export class StoreBinding<TIssue extends FieldError = FieldError> implements BoundStore {
 	readonly hasSubmitHandler: boolean;
@@ -53,12 +48,11 @@ export class StoreBinding<TIssue extends FieldError = FieldError> implements Bou
 		return formatted || issue.message || undefined;
 	}
 
-	submit(helpers: SubmitHelpers): void | Promise<void> {
-		return this.handlers.submitHandler?.({ store: this.store, ...helpers });
+	submit(context: RuiFormSubmitContext): void | Promise<void> {
+		return this.handlers.submitHandler?.(context);
 	}
 
 	reset(): void | Promise<void> {
-		const context: RuiFormResetContext<TIssue> = { store: this.store };
-		return this.handlers.resetHandler?.(context);
+		return this.handlers.resetHandler?.();
 	}
 }

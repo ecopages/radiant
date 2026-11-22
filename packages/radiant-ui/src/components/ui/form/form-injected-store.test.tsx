@@ -207,14 +207,11 @@ function createTestStore(initial: Record<string, unknown>, options: TestStoreOpt
 			allShown = false;
 			publish();
 		},
-		async validate(paths) {
+		async validate() {
 			calls.push({ kind: 'validate' });
-			for (const path of paths ?? []) {
-				shown.add(path);
-			}
-			allShown ||= !paths;
+			allShown = true;
 			publish();
-			return Object.keys(allErrors()).filter((path) => !paths || paths.includes(path)).length === 0;
+			return Object.keys(allErrors()).length === 0;
 		},
 		reportNative(facts) {
 			calls.push({ kind: 'reportNative', facts });
@@ -870,10 +867,10 @@ describe('rui-form with an injected store', () => {
 			form.connect(store, {
 				submitHandler: (context) => {
 					seen.push(
-						context.store.getValue('title'),
+						store.getValue('title'),
 						calls.some((call) => call.kind === 'setValue'),
 					);
-					expect(context.store).toBe(store);
+					expect(Object.keys(context)).toEqual(['submitNatively']);
 				},
 			});
 			const onSubmit = vi.fn();
@@ -1108,8 +1105,8 @@ describe('rui-form with an injected store', () => {
 			const { store } = createTestStore({ title: 'Initial', profile: { name: '' } });
 			const reset = vi.spyOn(store, 'reset');
 			const { form, title, host } = await mountInputs(store);
-			const handler = vi.fn(({ store: given }: { store: FormStateStore }) => {
-				given.setValue('title', 'From host');
+			const handler = vi.fn(() => {
+				store.setValue('title', 'From host');
 			});
 			form.connect(store, { resetHandler: handler });
 			type(title, 'Typed');
@@ -1119,7 +1116,6 @@ describe('rui-form with an injected store', () => {
 			await settle();
 
 			expect(handler).toHaveBeenCalledTimes(1);
-			expect(handler.mock.calls[0]?.[0].store).toBe(store);
 			expect(reset).not.toHaveBeenCalled();
 			expect(title.value).toBe('From host');
 		});
@@ -1128,9 +1124,9 @@ describe('rui-form with an injected store', () => {
 			const { store } = createTestStore({ title: 'Initial', profile: { name: '' } });
 			const { form, title, host } = await mountInputs(store);
 			form.connect(store, {
-				resetHandler: async ({ store: given }) => {
+				resetHandler: async () => {
 					await Promise.resolve();
-					given.setValue('title', 'Later');
+					store.setValue('title', 'Later');
 				},
 			});
 
@@ -1201,16 +1197,7 @@ describe('rui-form with an injected store', () => {
 			await customElements.whenDefined('rui-field');
 			await flushRender();
 			const form = host.querySelector('rui-form') as RuiFormElement;
-			let focus: (path: string) => void = () => {};
-			form.connect(store, {
-				submitHandler: (context) => {
-					focus = context.focus;
-				},
-			});
-			host.querySelector('form')?.requestSubmit();
-			await settle();
-
-			focus('agree');
+			form.focusField(['agree']);
 
 			expect(document.activeElement).toBe(host.querySelector('input[type="checkbox"]'));
 		});
@@ -1239,39 +1226,9 @@ describe('rui-form with an injected store', () => {
 			await customElements.whenDefined('rui-field');
 			await flushRender();
 			const form = host.querySelector('rui-form') as RuiFormElement;
-			let focus: (path: string) => void = () => {};
-			form.connect(store, {
-				submitHandler: (context) => {
-					focus = context.focus;
-				},
-			});
-			host.querySelector('form')?.requestSubmit();
-			await settle();
-
-			focus('topics');
+			form.focusField(['topics']);
 
 			expect(document.activeElement).toBe(host.querySelector('input[type="checkbox"]:not([disabled])'));
-		});
-	});
-
-	describe('submitHandler focus', () => {
-		it('focuses the control registered for a path and ignores an unknown path', async () => {
-			const { store } = createTestStore({ title: '', profile: { name: '' } });
-			const { form, name, host } = await mountInputs(store);
-			let focus: (path: string) => void = () => {};
-			form.connect(store, {
-				submitHandler: (context) => {
-					focus = context.focus;
-				},
-			});
-
-			host.querySelector('form')?.requestSubmit();
-			await settle();
-			focus('profile.name');
-			expect(document.activeElement).toBe(name);
-
-			expect(() => focus('nope')).not.toThrow();
-			expect(document.activeElement).toBe(name);
 		});
 	});
 
@@ -1345,6 +1302,64 @@ describe('rui-form with an injected store', () => {
 			['an injected store', () => createTestStore({ late: '', sub: '' }).store],
 		];
 
+		const pairStores: Array<[string, () => FormStateStore | undefined]> = [
+			['the built-in store', () => undefined],
+			['an injected store', () => createTestStore({ a: '', z: '' }).store],
+		];
+
+		describe.each(pairStores)('with %s and a shared or renamed name', (_label, makeStore) => {
+			async function mountPair() {
+				const store = makeStore();
+				const host = document.createElement('div');
+				document.body.append(host);
+				const root = createRoot(host);
+				root.render(
+					<RuiForm ref={(form) => (form && store ? form.connect(store) : undefined)}>
+						<RuiField name="a">
+							<RuiInput />
+						</RuiField>
+						<RuiField name="a">
+							<RuiInput />
+						</RuiField>
+					</RuiForm>,
+				);
+				cleanup.push(() => {
+					root.unmount();
+					host.remove();
+				});
+				await customElements.whenDefined('rui-field');
+				await flushRender();
+				await settle();
+				return {
+					form: host.querySelector('rui-form') as RuiFormElement,
+					fields: Array.from(host.querySelectorAll('rui-field')) as Array<HTMLElement & { name: string }>,
+					inputs: Array.from(host.querySelectorAll('input')),
+				};
+			}
+
+			it('picks the earlier of two fields that share a name', async () => {
+				const { form, inputs } = await mountPair();
+
+				form.focusField(['a']);
+
+				expect(document.activeElement).toBe(inputs[0]);
+			});
+
+			it('follows a rename: the new name finds the field and the old one no longer does', async () => {
+				const { form, fields, inputs } = await mountPair();
+				fields[1]!.name = 'z';
+				await settle();
+				inputs[0]?.focus();
+
+				form.focusField(['z']);
+				expect(document.activeElement).toBe(inputs[1]);
+
+				inputs[0]?.focus();
+				form.focusField(['z', 'a']);
+				expect(document.activeElement).toBe(inputs[0]);
+			});
+		});
+
 		describe.each(subStores)('with %s and a field element of another tag', (_label, makeStore) => {
 			it('focuses a RuiField subclass registered under its own tag, in document order', async () => {
 				if (!customElements.get('x-sub-field')) {
@@ -1372,23 +1387,6 @@ describe('rui-form with an injected store', () => {
 				form.focusField(['sub', 'late']);
 				expect(document.activeElement).toBe(late);
 			});
-		});
-
-		it('is the focus the submit context hands a handler', async () => {
-			const { store } = createTestStore({ first: '', rows: [{ x: '' }], last: '' });
-			const { form, inputs } = await mountRows(store);
-			let focus: (path: string) => void = () => {};
-			form.connect(store, {
-				submitHandler: (context) => {
-					focus = context.focus;
-				},
-			});
-
-			form.querySelector('form')?.requestSubmit();
-			await settle();
-			focus('last');
-
-			expect(document.activeElement).toBe(inputs[2]);
 		});
 	});
 
@@ -1520,7 +1518,7 @@ describe('rui-form with an injected store', () => {
 		it('reports the facts again after a resetHandler cleared them', async () => {
 			const { store, facts } = createTestStore({ email: '', extra: '' });
 			const { host, form } = await mountEmail(store);
-			form.connect(store, { resetHandler: ({ store: given }) => given.reset() });
+			form.connect(store, { resetHandler: () => store.reset() });
 			await settle();
 
 			host.querySelector('form')?.reset();
@@ -1585,7 +1583,7 @@ describe('rui-form with an injected store', () => {
 			});
 		});
 
-		it('hands the submit handler the store, focus and submitNatively only', async () => {
+		it('hands the submit handler submitNatively only', async () => {
 			const { store } = createTestStore({ email: '', extra: '' });
 			const { form, host } = await mountEmail(store);
 			let given: string[] = [];
@@ -1598,7 +1596,7 @@ describe('rui-form with an injected store', () => {
 			host.querySelector('form')?.requestSubmit();
 			await settle();
 
-			expect(given).toEqual(['focus', 'store', 'submitNatively']);
+			expect(given).toEqual(['submitNatively']);
 		});
 
 		it('reports the fact on its own after a store write reaches a control', async () => {

@@ -45,12 +45,10 @@ describe('typed connect', () => {
 				expectTypeOf(field).toEqualTypeOf<{ path: string }>();
 				return `${issue.ruleId ?? issue.source}:${field.path}`;
 			},
-			submitHandler: ({ store: given }) => {
-				expectTypeOf(given).toEqualTypeOf<FormStateStore<EngineIssue>>();
+			submitHandler: (context) => {
+				expectTypeOf(context).toEqualTypeOf<{ submitNatively: () => void }>();
 			},
-			resetHandler: ({ store: given }) => {
-				expectTypeOf(given).toEqualTypeOf<FormStateStore<EngineIssue>>();
-			},
+			resetHandler: () => {},
 		});
 
 		expect(form).toBeDefined();
@@ -102,7 +100,7 @@ describe('typed connect', () => {
 
 	it('keys the invalid-event errors by dotted path', () => {
 		expectTypeOf<RuiFormInvalidDetail<{ profile: { name: string } }>['errors']['profile.name']>().toEqualTypeOf<
-			{ message?: string } | undefined
+			FieldError | undefined
 		>();
 	});
 
@@ -125,10 +123,6 @@ describe('typed connect', () => {
 
 		// @ts-expect-error the formatter takes OtherIssue, which the store's issues are not
 		form.connect(engineStore(), { formatError: (issue: OtherIssue) => String(issue.code) });
-		// @ts-expect-error a handler for another store's issue type does not connect either
-		form.connect(engineStore(), {
-			submitHandler: ({ store }: { store: FormStateStore<OtherIssue> }) => void store,
-		});
 
 		expect(form).toBeDefined();
 	});

@@ -15,7 +15,8 @@ import type { FormStateStore } from '@/lib/form/form-state-store';
 import type { RuiFormFormatError, RuiFormHandlers } from '@/lib/form/form-handlers';
 
 import { InjectedFormDriver } from '@/lib/form/injected-form-driver';
-import { StoreBinding, type BoundStore, type SubmitHelpers } from '@/lib/form/store-binding';
+import { OwnFormDriver } from '@/lib/form/own-form-driver';
+import { StoreBinding, type BoundStore } from '@/lib/form/store-binding';
 import type {
 	FieldError,
 	FieldRegistration,
@@ -31,7 +32,6 @@ import { uniqueId } from '@/lib/unique-id';
 export type {
 	RuiFormFormatError,
 	RuiFormHandlers,
-	RuiFormResetContext,
 	RuiFormResetHandler,
 	RuiFormSubmitContext,
 	RuiFormSubmitHandler,
@@ -63,7 +63,7 @@ export type RuiFormSubmitDetail<T extends FieldValues = FieldValues> = {
 };
 
 export type RuiFormInvalidDetail<_T extends FieldValues = FieldValues> = {
-	errors: Partial<Record<string, { message?: string }>>;
+	errors: Partial<Record<string, FieldError>>;
 	/** Set when validation threw instead of reporting errors; the submission is invalid. */
 	error?: unknown;
 };
@@ -192,6 +192,7 @@ export class RuiForm extends RadiantElement {
 
 	private driver: FormDriver | undefined;
 	private ownStore: FormStore | undefined;
+	private ownDriver: OwnFormDriver | undefined;
 	private drivenStore: FormStateStore | undefined;
 	/** The binding `connect` made for the injected store, or `undefined` while the form uses its own. */
 	private injected: BoundStore | undefined;
@@ -277,27 +278,21 @@ export class RuiForm extends RadiantElement {
 	 * are ignored and nothing happens when none has a field.
 	 *
 	 * @remarks Fields come from the form's own registrations, never from a tag name, so
-	 * a `RuiField` subclass under another tag is found. A field registered without an
-	 * element has no document position and is not matched.
-	 *
-	 * @remarks Named `focusField`, not `focus`, so the element keeps `HTMLElement.focus`.
-	 * The submit context's `focus(path)` calls this, so there is one focus path.
+	 * a `RuiField` subclass under another tag is found. Named `focusField`, not
+	 * `focus`, so the element keeps `HTMLElement.focus`.
 	 */
 	focusField(paths: readonly string[]): void {
-		const driver = this.ensureDriver();
-		let first: { path: string; element: Element } | undefined;
-		for (const path of paths) {
-			const element = driver.getFieldElement(path);
+		let first: FieldRegistration | undefined;
+		for (const { registration } of this.registrations) {
 			if (
-				element &&
-				(!first || first.element.compareDocumentPosition(element) & Node.DOCUMENT_POSITION_PRECEDING)
+				paths.includes(registration.name) &&
+				(!first ||
+					first.element.compareDocumentPosition(registration.element) & Node.DOCUMENT_POSITION_PRECEDING)
 			) {
-				first = { path, element };
+				first = registration;
 			}
 		}
-		if (first) {
-			driver.focus(first.path);
-		}
+		first?.focus?.();
 	}
 
 	/** Submit the native `<form>` to its `action` and `method`; does nothing when neither is set. */
@@ -339,14 +334,10 @@ export class RuiForm extends RadiantElement {
 		const driver = this.ensureDriver();
 		const binding = this.binding();
 		if (driver instanceof InjectedFormDriver && binding?.hasSubmitHandler) {
-			const helpers: SubmitHelpers = {
-				focus: (path) => this.focusField([path]),
-				submitNatively: () => this.submitNatively(),
-			};
 			Promise.resolve()
 				.then(() => {
 					driver.sync();
-					return binding.submit(helpers);
+					return binding.submit({ submitNatively: () => this.submitNatively() });
 				})
 				.catch((error: unknown) => reportError(error));
 			return;
@@ -456,7 +447,8 @@ export class RuiForm extends RadiantElement {
 					reValidateMode: this.resolveReValidateMode(),
 				});
 			}
-			this.driver = this.ownStore;
+			this.ownDriver ??= new OwnFormDriver(this.ownStore);
+			this.driver = this.ownDriver;
 			if (this.ownBinding?.store !== this.ownStore) {
 				this.refreshOwnBinding();
 			}
@@ -568,9 +560,9 @@ export class RuiForm extends RadiantElement {
 
 	/**
 	 * Hand the form a store it does not own, with the handlers that work with the
-	 * store's own issue type: the formatter's `issue` and each handler's
-	 * `context.store` are typed from `store`, so a store whose entries carry more than
-	 * `FieldError` needs no cast. This is the only way to inject a store.
+	 * store's own issue type: the formatter's `issue` is typed from `store`, so a store
+	 * whose entries carry more than `FieldError` needs no cast. This is the only way to
+	 * inject a store.
 	 *
 	 * @remarks The element builds a {@link StoreBinding} that holds the store and the
 	 * handlers together, so an issue goes from the store's snapshot to `formatError`

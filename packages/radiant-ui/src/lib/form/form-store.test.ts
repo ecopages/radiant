@@ -7,6 +7,7 @@ describe('FormStore', () => {
 	it('validates required rules for registered fields', async () => {
 		const store = new FormStore({ mode: 'onSubmit', defaultValues: { email: '' } });
 		store.register({
+			element: document.createElement('div'),
 			name: 'email',
 			rules: { required: 'Email is required' },
 			getValue: () => '',
@@ -25,6 +26,7 @@ describe('FormStore', () => {
 		it('adds a native error from an invalid control', async () => {
 			const store = new FormStore<{ code: string }>();
 			store.register({
+				element: document.createElement('div'),
 				name: 'code',
 				getValue: () => 'ab',
 				setValue: () => {},
@@ -38,6 +40,7 @@ describe('FormStore', () => {
 		it('reports an invalid control without inventing a message', async () => {
 			const store = new FormStore<{ code: string }>();
 			store.register({
+				element: document.createElement('div'),
 				name: 'code',
 				getValue: () => 'ab',
 				setValue: () => {},
@@ -52,6 +55,7 @@ describe('FormStore', () => {
 		it('lets a rule message win over the control message', async () => {
 			const store = new FormStore<{ code: string }>();
 			store.register({
+				element: document.createElement('div'),
 				name: 'code',
 				rules: { required: 'Code is required' },
 				getValue: () => '',
@@ -66,6 +70,7 @@ describe('FormStore', () => {
 		it('is not disabled by a custom resolver', async () => {
 			const store = new FormStore<{ code: string }>({ resolver: async () => ({ values: {}, errors: {} }) });
 			store.register({
+				element: document.createElement('div'),
 				name: 'code',
 				getValue: () => 'ab',
 				setValue: () => {},
@@ -82,6 +87,7 @@ describe('FormStore', () => {
 				resolver: async () => ({ values: {}, errors: { code: { type: 'custom' } } }),
 			});
 			store.register({
+				element: document.createElement('div'),
 				name: 'code',
 				getValue: () => 'ab',
 				setValue: () => {},
@@ -97,7 +103,13 @@ describe('FormStore', () => {
 		it('clears the error once the control is valid', async () => {
 			const store = new FormStore<{ code: string }>();
 			let validity: { valid: boolean; message?: string } = { valid: false, message: 'Too short' };
-			store.register({ name: 'code', getValue: () => 'ab', setValue: () => {}, getValidity: () => validity });
+			store.register({
+				element: document.createElement('div'),
+				name: 'code',
+				getValue: () => 'ab',
+				setValue: () => {},
+				getValidity: () => validity,
+			});
 			await store.validateAll();
 			validity = { valid: true };
 
@@ -107,7 +119,13 @@ describe('FormStore', () => {
 
 		it('ignores a control that reports no validity', async () => {
 			const store = new FormStore<{ code: string }>();
-			store.register({ name: 'code', getValue: () => 'ab', setValue: () => {}, getValidity: () => undefined });
+			store.register({
+				element: document.createElement('div'),
+				name: 'code',
+				getValue: () => 'ab',
+				setValue: () => {},
+				getValidity: () => undefined,
+			});
 
 			expect(await store.validateAll()).toBe(true);
 		});
@@ -119,7 +137,7 @@ describe('FormStore', () => {
 			const setValue = vi.fn((next: unknown) => {
 				current = next;
 			});
-			store.register({ name: 'qty', getValue: () => current, setValue });
+			store.register({ element: document.createElement('div'), name: 'qty', getValue: () => current, setValue });
 			store.updateFieldOptions('qty', { defaultValue });
 			return setValue;
 		}
@@ -161,7 +179,12 @@ describe('FormStore', () => {
 	describe('register', () => {
 		function makeField(name: string) {
 			let current: unknown;
-			return { name, getValue: () => current, setValue: vi.fn((next: unknown) => (current = next)) };
+			return {
+				element: document.createElement('div'),
+				name,
+				getValue: () => current,
+				setValue: vi.fn((next: unknown) => (current = next)),
+			};
 		}
 
 		it('keeps the form default when the field registers with a null default', () => {
@@ -225,7 +248,13 @@ describe('FormStore', () => {
 
 		it('blur marks the field touched and validates per mode', async () => {
 			const store = new FormStore<{ a: string }>({ mode: 'onBlur' });
-			store.register({ name: 'a', rules: { required: 'Req' }, getValue: () => '', setValue: () => {} });
+			store.register({
+				element: document.createElement('div'),
+				name: 'a',
+				rules: { required: 'Req' },
+				getValue: () => '',
+				setValue: () => {},
+			});
 
 			store.blur('a');
 			await vi.waitFor(() => expect(store.getFieldError('a')).toBe('Req'));
@@ -236,7 +265,13 @@ describe('FormStore', () => {
 			const store = new FormStore<{ title: string }>();
 			expect(store.getSnapshot().values).toEqual({});
 
-			store.register({ name: 'title', defaultValue: 'Seeded', getValue: () => 'Seeded', setValue: () => {} });
+			store.register({
+				element: document.createElement('div'),
+				name: 'title',
+				defaultValue: 'Seeded',
+				getValue: () => 'Seeded',
+				setValue: () => {},
+			});
 
 			expect(store.getSnapshot().values).toEqual({ title: 'Seeded' });
 		});
@@ -245,6 +280,7 @@ describe('FormStore', () => {
 			const store = new FormStore<{ a: string; b: string }>();
 			for (const name of ['a', 'b']) {
 				store.register({
+					element: document.createElement('div'),
 					name,
 					rules: { required: `${name} required` },
 					getValue: () => '',
@@ -261,7 +297,12 @@ describe('FormStore', () => {
 
 		it('merges source errors, keeps them through validation, and clears them by source', async () => {
 			const store = new FormStore<{ a: string }>();
-			store.register({ name: 'a', getValue: () => 'ok', setValue: () => {} });
+			store.register({
+				element: document.createElement('div'),
+				name: 'a',
+				getValue: () => 'ok',
+				setValue: () => {},
+			});
 			const listener = vi.fn();
 			store.subscribe(listener);
 
@@ -280,7 +321,13 @@ describe('FormStore', () => {
 
 		it('lets a source message win over a rule message and clears sources on reset', async () => {
 			const store = new FormStore<{ a: string }>();
-			store.register({ name: 'a', rules: { required: 'Rule' }, getValue: () => '', setValue: () => {} });
+			store.register({
+				element: document.createElement('div'),
+				name: 'a',
+				rules: { required: 'Rule' },
+				getValue: () => '',
+				setValue: () => {},
+			});
 			store.setErrors('server', { a: { message: 'Server' } });
 			await store.validate(['a']);
 
@@ -296,6 +343,7 @@ describe('FormStore', () => {
 		function field(name: string, initial: unknown = undefined, extra: object = {}) {
 			let current = initial;
 			return {
+				element: document.createElement('div'),
 				name,
 				getValue: () => current,
 				setValue: vi.fn((next: unknown) => {
@@ -368,7 +416,12 @@ describe('FormStore', () => {
 	describe('FieldError contract', () => {
 		it('treats an entry without a message as an invalid field that shows no text', async () => {
 			const store = new FormStore<{ a: string }>();
-			store.register({ name: 'a', getValue: () => 'ok', setValue: () => {} });
+			store.register({
+				element: document.createElement('div'),
+				name: 'a',
+				getValue: () => 'ok',
+				setValue: () => {},
+			});
 			store.isSubmitted = true;
 
 			store.setErrors('server', { a: {} });
@@ -380,7 +433,12 @@ describe('FormStore', () => {
 
 		it('treats an empty message like a missing one', async () => {
 			const store = new FormStore<{ a: string }>();
-			store.register({ name: 'a', getValue: () => 'ok', setValue: () => {} });
+			store.register({
+				element: document.createElement('div'),
+				name: 'a',
+				getValue: () => 'ok',
+				setValue: () => {},
+			});
 
 			store.setErrors('server', { a: { message: '' } });
 
@@ -391,6 +449,7 @@ describe('FormStore', () => {
 		it('lets a host source replace its own validation and the later source win', async () => {
 			const store = new FormStore<{ a: string }>();
 			store.register({
+				element: document.createElement('div'),
 				name: 'a',
 				rules: { required: 'Rule' },
 				getValue: () => '',
@@ -412,6 +471,7 @@ describe('FormStore', () => {
 		function field(name: string, initial: unknown) {
 			let current = initial;
 			return {
+				element: document.createElement('div'),
 				name,
 				getValue: () => current,
 				setValue: vi.fn((next: unknown) => {
@@ -479,6 +539,7 @@ describe('FormStore', () => {
 		function field(name: string, initial: unknown = '') {
 			let current = initial;
 			return {
+				element: document.createElement('div'),
 				name,
 				getValue: () => current,
 				setValue: (next: unknown) => {
@@ -544,7 +605,12 @@ describe('FormStore', () => {
 					throw new Error('resolver down');
 				},
 			});
-			store.register({ name: 'title', getValue: () => 'x', setValue: () => {} });
+			store.register({
+				element: document.createElement('div'),
+				name: 'title',
+				getValue: () => 'x',
+				setValue: () => {},
+			});
 			const listener = vi.fn();
 			store.subscribe(listener);
 			const reported = vi.fn();
@@ -612,26 +678,14 @@ describe('FormStore', () => {
 			expect(store.touched.a).toBe(true);
 		});
 
-		it('does nothing to flush on sync, since it reads registered controls directly', async () => {
-			const store = new FormStore<{ a: string; b: string }>();
-			store.register({
-				name: 'a',
-				getValue: () => '',
-				setValue: () => {},
-				getValidity: () => ({ valid: false, type: 'valueMissing', message: 'Fill' }),
-			});
-			store.register({ name: 'b', getValue: () => '', setValue: () => {}, getValidity: () => ({ valid: true }) });
-
-			store.sync();
-
-			expect(await store.validate()).toBe(false);
-			expect(store.errors.a).toEqual({ type: 'valueMissing', params: undefined, message: 'Fill' });
-			expect(store.errors.b).toBeUndefined();
-		});
-
 		it('does not read through Object.prototype for a field named constructor', () => {
 			const store = new FormStore<Record<string, string>>();
-			store.register({ name: 'constructor', getValue: () => 'x', setValue: () => {} });
+			store.register({
+				element: document.createElement('div'),
+				name: 'constructor',
+				getValue: () => 'x',
+				setValue: () => {},
+			});
 
 			expect(store.shouldDisplayFieldError('constructor')).toBe(false);
 			expect(store.getFieldError('toString')).toBeUndefined();
@@ -652,7 +706,12 @@ describe('FormStore', () => {
 				mode: 'onChange',
 				resolver: async () => ({ values: {}, errors: { age: { type: 'min', params: { min: 18 } } } }),
 			});
-			store.register({ name: 'age', getValue: () => 3, setValue: () => {} });
+			store.register({
+				element: document.createElement('div'),
+				name: 'age',
+				getValue: () => 3,
+				setValue: () => {},
+			});
 
 			await store.validateField('age');
 
@@ -693,6 +752,7 @@ describe('FormStore', () => {
 			let invalid = false;
 			const store = new FormStore<{ a: string }>({ defaultValues: { a: 'x' } });
 			store.register({
+				element: document.createElement('div'),
 				name: 'a',
 				getValue: () => 'x',
 				setValue: () => {},
@@ -709,6 +769,7 @@ describe('FormStore', () => {
 		it('does not validate a path that was never checked when a fact is reported', async () => {
 			const store = new FormStore<{ a: string }>({ defaultValues: { a: 'x' } });
 			store.register({
+				element: document.createElement('div'),
 				name: 'a',
 				getValue: () => 'x',
 				setValue: () => {},
@@ -724,6 +785,7 @@ describe('FormStore', () => {
 		it('forgets which paths were checked on reset', async () => {
 			const store = new FormStore<{ a: string }>({ defaultValues: { a: 'x' } });
 			store.register({
+				element: document.createElement('div'),
 				name: 'a',
 				getValue: () => 'x',
 				setValue: () => {},
@@ -746,6 +808,7 @@ describe('FormStore', () => {
 	it('keeps an error for a field named __proto__ as an own entry', async () => {
 		const store = new FormStore();
 		store.register({
+			element: document.createElement('div'),
 			name: '__proto__',
 			rules: { required: 'Required' },
 			getValue: () => '',
@@ -766,8 +829,18 @@ describe('FormStore', () => {
 		const parentSet = vi.fn((next: unknown) => {
 			parent = next;
 		});
-		store.register({ name: 'profile.name', getValue: () => leaf, setValue: () => {} });
-		store.register({ name: 'profile', getValue: () => parent, setValue: parentSet });
+		store.register({
+			element: document.createElement('div'),
+			name: 'profile.name',
+			getValue: () => leaf,
+			setValue: () => {},
+		});
+		store.register({
+			element: document.createElement('div'),
+			name: 'profile',
+			getValue: () => parent,
+			setValue: parentSet,
+		});
 		parentSet.mockClear();
 
 		leaf = 'Grace';

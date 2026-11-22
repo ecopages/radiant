@@ -119,12 +119,11 @@ export interface FormStateStore<TIssue extends FieldError = FieldError> {
 	 */
 	reset(): void;
 	/**
-	 * Validate `paths`, or the whole tree when omitted, and resolve with whether that
-	 * scope is valid: `false` when the store holds any error at the validated paths,
-	 * whether or not it shows it. Warnings do not count.
+	 * Validate the whole tree and resolve with whether it is valid: `false` when the
+	 * store holds any error, whether or not it shows it. Warnings do not count.
 	 *
-	 * @remarks The form calls it without paths on submit, after `sync()` reported every
-	 * control's fact.
+	 * @remarks The form calls it on submit when no `submitHandler` is set, after `sync()`
+	 * reported every control's fact.
 	 */
-	validate(paths?: string[]): Promise<boolean>;
+	validate(): Promise<boolean>;
 }

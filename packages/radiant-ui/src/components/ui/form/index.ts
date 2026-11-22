@@ -4,7 +4,6 @@ export {
 	type RuiFormProps,
 	type RuiFormFormatError,
 	type RuiFormHandlers,
-	type RuiFormResetContext,
 	type RuiFormResetHandler,
 	type RuiFormSubmitContext,
 	type RuiFormSubmitHandler,
@@ -18,7 +17,7 @@ export {
 export { FormStore } from '@/lib/form/form-store';
 export type { FormStateStore, FormStateStoreSnapshot, NativeValidity } from '@/lib/form/form-state-store';
 export { createRulesResolver, runRulesResolver } from '@/lib/form/resolvers';
-export type { FieldRegistrationHandle } from '@/lib/form/types';
+export type { FieldRegistration, FieldRegistrationHandle } from '@/lib/form/types';
 export type { FieldRules, FieldValues, Resolver, ValidationMode, FormState, FieldError } from '@/lib/form/types';
 export {
 	findFieldControl,

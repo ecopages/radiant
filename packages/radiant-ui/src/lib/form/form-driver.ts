@@ -14,8 +14,6 @@ export interface FormDriver {
 	register(registration: FieldRegistration): FieldRegistrationHandle;
 	updateFieldOptions(name: string, options: RegisterOptions): void;
 	getRegisteredFieldNames(): string[];
-	/** The element of the field registered for `path`, when it supplied one. */
-	getFieldElement(path: string): Element | undefined;
 	shouldDisplayFieldError(name: string): boolean;
 	handleFieldChange(name: string): Promise<void>;
 	handleFieldBlur(name: string): Promise<void>;
@@ -29,8 +27,6 @@ export interface FormDriver {
 		onValid: (values: FieldValues) => void | Promise<void>,
 		onInvalid?: (errors: Partial<Record<string, FieldError>>, error?: unknown) => void,
 	): Promise<void>;
-	/** Focus the control registered for `path`; nothing happens for a path with no control. */
-	focus(path: string): void;
 	reset(): void;
 	/**
 	 * Write the controls the user changed into the store and report every control's

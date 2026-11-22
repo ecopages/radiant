@@ -3,12 +3,14 @@ import type { FormDriver } from './form-driver';
 import type { FormStateStoreSnapshot, FormStateStore } from './form-state-store';
 import { FormStore } from './form-store';
 import { InjectedFormDriver } from './injected-form-driver';
+import { OwnFormDriver } from './own-form-driver';
 import type { FieldRegistration } from './types';
 import { getPath, setPath } from './value-path';
 
 function control(name: string, initial: unknown, validity?: ReturnType<NonNullable<FieldRegistration['getValidity']>>) {
 	let value = initial;
 	return {
+		element: document.createElement('div'),
 		name,
 		getValidity: () => validity,
 		getValue: () => value,
@@ -54,7 +56,11 @@ const drivers: Array<[string, () => Harness]> = [
 		'built-in store',
 		() => {
 			const store = new FormStore({ defaultValues: { c: [{ e: 'A' }, { e: 'B' }] } });
-			return { driver: store, read: () => store.getValues(), changed: (name) => store.handleFieldChange(name) };
+			return {
+				driver: new OwnFormDriver(store),
+				read: () => store.getValues(),
+				changed: (name) => store.handleFieldChange(name),
+			};
 		},
 	],
 	[

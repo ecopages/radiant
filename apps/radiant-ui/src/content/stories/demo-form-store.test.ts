@@ -20,11 +20,11 @@ describe('createDemoStore', () => {
 		const store = createDemoStore({ initial: { rows: [{ x: 'a' }] } });
 
 		store.reportNative({ 'rows.3.x': { type: 'valueMissing' }, 'rows.0.x': { type: 'tooShort' } });
-		expect(await store.validate(['rows.3.x'])).toBe(true);
-		expect(await store.validate(['rows.0.x'])).toBe(false);
+		expect(await store.validate()).toBe(false);
+		expect(Object.keys(store.getSnapshot().errors)).toEqual(['rows.0.x']);
 
 		store.reportNative({ 'rows.0.x': null });
-		expect(await store.validate(['rows.0.x'])).toBe(true);
+		expect(await store.validate()).toBe(true);
 	});
 
 	it('shows an error only for a path the user changed or left', () => {

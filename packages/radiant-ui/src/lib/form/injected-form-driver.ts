@@ -229,10 +229,6 @@ export class InjectedFormDriver implements FormDriver {
 		return Array.from(this.fields.keys());
 	}
 
-	getFieldElement(path: string): Element | undefined {
-		return this.fields.get(path)?.registration.element;
-	}
-
 	register(registration: FieldRegistration): FieldRegistrationHandle {
 		const entry: BoundField = { registration, name: registration.name, live: true };
 		this.fields.set(entry.name, entry);
@@ -452,11 +448,6 @@ export class InjectedFormDriver implements FormDriver {
 		clearTimeout(this.resetTimer);
 		this.pendingFactReports.clear();
 		this.withdrawnPaths.clear();
-	}
-
-	/** Focus the control registered for `path`; nothing happens for a path with no control. */
-	focus(path: string): void {
-		this.fields.get(path)?.registration.focus?.();
 	}
 
 	/**

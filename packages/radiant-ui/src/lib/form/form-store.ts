@@ -121,22 +121,6 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		]);
 	}
 
-	/** Focus the control registered for `path`; nothing happens for a path with no control. */
-	focus(path: string): void {
-		this.fields.get(path)?.focus?.();
-	}
-
-	/**
-	 * Nothing to flush: the store reads its registered controls directly whenever it
-	 * validates.
-	 */
-	sync(): void {}
-
-	/** The built-in store has no source of warnings. */
-	get warnings(): Partial<Record<string, FieldError>> {
-		return NO_WARNINGS;
-	}
-
 	/** Reads a map by name without reaching `Object.prototype`, so a field named `constructor` is not an error. */
 	private ownRead<V>(map: Partial<Record<string, V>>, name: string): V | undefined {
 		return Object.hasOwn(map, name) ? map[name] : undefined;
@@ -224,10 +208,6 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 
 	getRegisteredFieldNames(): string[] {
 		return Array.from(this.fields.keys());
-	}
-
-	getFieldElement(path: string): Element | undefined {
-		return this.fields.get(path)?.element;
 	}
 
 	register(registration: FieldRegistration): FieldRegistrationHandle {

@@ -90,8 +90,8 @@ export function createDemoStore({ initial, rules = {}, warnings = {} }: DemoStor
 			checked.clear();
 			publish();
 		},
-		async validate(paths) {
-			const scope = paths ?? [...new Set([...Object.keys(rules), ...Object.keys(facts)])];
+		async validate() {
+			const scope = [...new Set([...Object.keys(rules), ...Object.keys(facts)])];
 			for (const path of scope) checked.add(path);
 			publish();
 			return scope.every((path) => !problems(path));
