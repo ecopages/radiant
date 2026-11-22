@@ -739,4 +739,20 @@ describe('FormStore', () => {
 			expect(new FormStore().getSnapshot().warnings).toEqual({});
 		});
 	});
+
+	it('keeps an error for a field named __proto__ as an own entry', async () => {
+		const store = new FormStore();
+		store.register({
+			name: '__proto__',
+			rules: { required: 'Required' },
+			getValue: () => '',
+			setValue: () => {},
+		});
+
+		expect(await store.validateAll()).toBe(false);
+		expect(Object.hasOwn(store.errors, '__proto__')).toBe(true);
+		expect(store.getFieldError('__proto__')).toBe('Required');
+		expect(await store.validateField('__proto__')).toBe(false);
+		expect(Object.hasOwn(store.errors, '__proto__')).toBe(true);
+	});
 });

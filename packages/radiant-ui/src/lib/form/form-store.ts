@@ -121,11 +121,10 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 			this.mergedErrors = this.ownErrors;
 			return;
 		}
-		const merged: Record<string, FieldError> = { ...this.ownErrors };
-		for (const errors of this.sourceErrors.values()) {
-			Object.assign(merged, errors);
-		}
-		this.mergedErrors = merged;
+		this.mergedErrors = Object.fromEntries([
+			...Object.entries(this.ownErrors),
+			...[...this.sourceErrors.values()].flatMap((errors) => Object.entries(errors)),
+		]);
 	}
 
 	/** The current native validity of every registered control, `null` for a valid one. */
@@ -462,16 +461,10 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		this.validatedPaths.add(name);
 		const values = this.getValues();
 		const result = await this.resolver(values, { fields: this.buildResolverFields() }, { names: [name] });
-		const next = { ...this.ownErrors };
 		const resolverError: FieldError | undefined = this.ownRead(result.errors, name);
 		const nativeError = resolverError?.message ? undefined : this.readNativeError(name);
 		const error = nativeError ?? resolverError;
-		if (error) {
-			next[name] = nativeError ?? resolverError ?? {};
-		} else {
-			delete next[name];
-		}
-		this.errors = next;
+		this.errors = withKey(this.ownErrors, name, error ? (nativeError ?? resolverError ?? {}) : undefined);
 		this.notify();
 		return !error;
 	}
@@ -482,20 +475,19 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		}
 		const values = this.getValues();
 		const result = await this.resolver(values, { fields: this.buildResolverFields() }, {});
-		const errors: Record<string, FieldError> = {};
+		const found = new Map<string, FieldError>();
 		for (const [path, error] of Object.entries(result.errors)) {
 			if (error) {
-				errors[path] = error;
+				found.set(path, error);
 			}
 		}
 		for (const name of new Set([...this.fields.keys(), ...Object.keys(this.reportedNative)])) {
-			const resolverError = this.ownRead(errors, name);
-			const native = resolverError?.message ? undefined : this.readNativeError(name);
+			const native = found.get(name)?.message ? undefined : this.readNativeError(name);
 			if (native) {
-				errors[name] = native;
+				found.set(name, native);
 			}
 		}
-		this.errors = errors;
+		this.errors = Object.fromEntries(found);
 		this.notify();
 		return Object.keys(this.mergedErrors).length === 0;
 	}

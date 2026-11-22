@@ -92,18 +92,18 @@ export async function runRulesResolver<T extends FieldValues>(
 	names?: string[],
 ): Promise<ResolverResult<T>> {
 	const targetNames = names ?? Object.keys(context.fields);
-	const errors: Partial<Record<keyof T, { type: string; message: string }>> = {};
+	const found = new Map<string, { type: string; message: string }>();
 
 	for (const name of targetNames) {
-		const rules = context.fields[name]?.rules;
+		const rules = Object.hasOwn(context.fields, name) ? context.fields[name]?.rules : undefined;
 		const message = await validateFieldRules(name, getPath(values, name), rules, values);
 		if (message) {
-			errors[name as keyof T] = { type: 'validation', message };
+			found.set(name, { type: 'validation', message });
 		}
 	}
 
-	if (Object.keys(errors).length > 0) {
-		return { values: {} as Record<string, never>, errors };
+	if (found.size > 0) {
+		return { values: {} as Record<string, never>, errors: Object.fromEntries(found) };
 	}
 
 	return { values, errors: {} as Record<string, never> };
