@@ -12,6 +12,7 @@ import {
 } from '@/lib/intl-number';
 import { uniqueId } from '@/lib/unique-id';
 import { syncFieldLabel } from '../shared/field-label';
+import { announceControlConnect } from '@/lib/form/control-protocol';
 
 export type RuiNumberFieldCommitBehavior = 'snap' | 'validate';
 
@@ -321,6 +322,7 @@ export class RuiNumberField extends FormAssociatedElement {
 
 	protected override onConnected(): void {
 		this.initialize();
+		announceControlConnect(this);
 	}
 
 	@onUpdated([

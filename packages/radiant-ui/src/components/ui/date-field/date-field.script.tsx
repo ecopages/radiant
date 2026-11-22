@@ -13,6 +13,7 @@ import {
 	type RuiPortalContainer,
 } from '../shared/portal-container';
 import { syncFieldLabel } from '../shared/field-label';
+import { announceControlConnect } from '@/lib/form/control-protocol';
 
 export type RuiDateFieldProps = {
 	value?: string;
@@ -241,6 +242,7 @@ export class RuiDateField extends RadiantElement {
 
 	protected override onConnected(): void {
 		this.initialize();
+		announceControlConnect(this);
 	}
 
 	@onUpdated(['value', 'min', 'max', 'label', 'disabled', 'readOnly', 'locale', 'visibleMonths', 'portal'])

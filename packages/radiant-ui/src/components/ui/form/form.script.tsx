@@ -77,7 +77,7 @@ type RegistrationEntry = {
 
 const noopUnregister = () => {};
 
-const noopHandle: FieldRegistrationHandle = { rename: () => {}, unregister: noopUnregister };
+const noopHandle: FieldRegistrationHandle = { rename: () => {}, unregister: noopUnregister, refresh: () => {} };
 
 const initialFormActions: FormContextActions = {
 	register: () => noopHandle,
@@ -210,6 +210,7 @@ export class RuiForm extends RadiantElement {
 					entry.handle.unregister();
 					this.publishFormContext({ force: true });
 				},
+				refresh: () => entry.handle.refresh(),
 			};
 		},
 		updateFieldOptions: (name, options) => {

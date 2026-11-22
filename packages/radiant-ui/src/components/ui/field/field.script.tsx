@@ -25,9 +25,8 @@ import {
 	paintsOwnFieldAria,
 	readControlValue,
 	readControlValidity,
+	RUI_CONTROL_CONNECT_EVENT,
 	RUI_FIELD_DEFAULT_VALUE_ATTR,
-	RUI_FIELD_ERROR_ATTR,
-	RUI_FIELD_WARNING_ATTR,
 	RUI_FIELD_MANAGED_ATTR,
 	writeControlValue,
 	wireFieldControlName,
@@ -37,7 +36,6 @@ import { fieldContext, type FieldContextValue } from './field-context';
 import type { FieldRegistration, FieldRegistrationHandle, FieldRules } from '@/lib/form/types';
 import { bindVisibleLabel } from '../shared/field-label';
 import { uniqueId } from '@/lib/unique-id';
-import { MutationController } from '../../../controllers/mutation-controller';
 
 /**
  * The JSON-safe subset of `FieldRules` for SSR hydration — a `validate` function can't
@@ -83,7 +81,11 @@ export type RuiFieldProps = {
  *   writes values through the control protocol; see each host's contract for inner targets.
  *   An embedded `rui-listbox` is an option surface, not a field control.
  *   Third-party hosts: register a value adapter with `registerFieldControl` before
- *   connection, stamp `data-rui-control`, and fire bubbling `rui-change`.
+ *   connection, stamp `data-rui-control`, fire bubbling `rui-change` after committing a value,
+ *   and call `announceControlConnect` (a bubbling `rui-control-connect`) when connecting so
+ *   a field that registered earlier can seed it. A native `<input>`, `<select>` or
+ *   `<textarea>` marked `data-rui-control` announces nothing: it must be inside the field
+ *   when the field connects, and one inserted later is picked up on the next sync.
  *
  * Optional:
  * - `[data-rui-field-label]` — visible label. Host sets `htmlFor`.
@@ -178,35 +180,11 @@ export class RuiField extends RadiantElement {
 	private registeredWithForm = false;
 	private registeredName: string | undefined;
 	/**
-	 * Last form write that landed before `findFieldControl` could see a host.
-	 * JSX can add the control later without reconnecting this field.
+	 * Last form write that landed before `findFieldControl` could see a host. A custom control
+	 * that connects later announces itself with `rui-control-connect` and is seeded then; a
+	 * native control inserted later is written on the field's next sync.
 	 */
 	private pendingControlWrite?: { value: unknown };
-	/**
-	 * @remarks JSX can insert the control after `register()` without reconnecting
-	 * the field. Attached while a write is pending: `syncField` applies `pendingControlWrite` once the host exists.
-	 */
-	private readonly controlObserver = new MutationController({
-		getTarget: () => this,
-		options: { childList: true, subtree: true },
-		onMutate: (records) => {
-			if (!records.every((record) => this.isOwnPresentationRegion(record.target))) {
-				this.syncField();
-			}
-		},
-	});
-
-	/**
-	 * Whether a mutation happened inside a region this field writes its own error or
-	 * warning text into.
-	 *
-	 * @remarks The field must not react to its own presentation: writing the text is a
-	 * mutation, and reacting to it would write again, forever.
-	 */
-	private isOwnPresentationRegion(node: Node): boolean {
-		const element = node instanceof Element ? node : node.parentElement;
-		return element?.closest(`[${RUI_FIELD_ERROR_ATTR}], [${RUI_FIELD_WARNING_ATTR}]`) != null;
-	}
 
 	/**
 	 * @remarks Registers SSR-prep rules on `fieldProvider` so hydrated fields recover them after a
@@ -328,7 +306,6 @@ export class RuiField extends RadiantElement {
 					return;
 				}
 				this.pendingControlWrite = { value };
-				this.controlObserver.attach();
 			},
 		};
 	}
@@ -417,6 +394,19 @@ export class RuiField extends RadiantElement {
 			return;
 		}
 		this.syncControlToForm();
+	}
+
+	/**
+	 * A control host announces itself when it connects, so a control inserted after the
+	 * field registered is seeded from the form and reports its validity.
+	 */
+	@onEvent({ selector: '*', type: RUI_CONTROL_CONNECT_EVENT })
+	onControlConnect(event: Event): void {
+		if (!isPrimaryFieldControlEvent(this, event)) {
+			return;
+		}
+		this.syncField();
+		this.registration?.refresh();
 	}
 
 	@onEvent({
@@ -518,7 +508,6 @@ export class RuiField extends RadiantElement {
 
 	private clearPendingControlWrite(): void {
 		this.pendingControlWrite = undefined;
-		this.controlObserver.destroy();
 	}
 
 	private syncDescriptions(descriptionId: string, errorId: string, errorMessage: string | undefined): string[] {

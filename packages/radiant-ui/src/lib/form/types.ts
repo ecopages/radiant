@@ -96,6 +96,11 @@ export type FieldRegistrationHandle = {
 	rename(name: string): void;
 	/** Remove this registration; a no-op once removed. */
 	unregister(): void;
+	/**
+	 * Write the form's value for this registration into its control again and report the
+	 * control's validity. Call it when the control appeared after the registration.
+	 */
+	refresh(): void;
 };
 
 export type FieldRegistration = RegisterOptions & {

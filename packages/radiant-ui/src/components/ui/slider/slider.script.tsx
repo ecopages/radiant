@@ -12,6 +12,7 @@ import {
 	valueFromSliderKey,
 	valuesAlignOnStep,
 } from '@/lib/numeric-range';
+import { announceControlConnect } from '@/lib/form/control-protocol';
 
 export type RuiSliderVariant = 'single' | 'range';
 export type RuiSliderOrientation = 'horizontal' | 'vertical';
@@ -359,6 +360,7 @@ export class RuiSlider extends FormAssociatedElement {
 		this.adoptLegacyRangeAttributes();
 		this.syncChrome();
 		this.syncValues(this.committedValues());
+		announceControlConnect(this);
 	}
 
 	protected override formValue(): FormValue {

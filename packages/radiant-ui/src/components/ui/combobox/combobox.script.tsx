@@ -16,6 +16,7 @@ import {
 	resolvePortalContainer,
 	type RuiPortalContainer,
 } from '../shared/portal-container';
+import { announceControlConnect } from '@/lib/form/control-protocol';
 
 export type RuiComboboxSelectionMode = 'single' | 'multiple';
 export type RuiComboboxTriggerKind = 'input' | 'focus' | 'manual';
@@ -451,6 +452,7 @@ export class RuiCombobox extends RadiantElement {
 
 	protected override onConnected(): void {
 		this.initialize();
+		announceControlConnect(this);
 	}
 
 	@onUpdated([

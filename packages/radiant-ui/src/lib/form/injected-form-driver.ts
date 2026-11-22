@@ -206,6 +206,7 @@ export class InjectedFormDriver implements FormDriver {
 		return {
 			rename: (name) => this.renameEntry(entry, name),
 			unregister: () => this.removeEntry(entry),
+			refresh: () => this.refreshEntry(entry),
 		};
 	}
 
@@ -232,6 +233,13 @@ export class InjectedFormDriver implements FormDriver {
 			entry.writing = false;
 		}
 		entry.baseline = entry.registration.getValue();
+	}
+
+	/** Seed a control that appeared after its registration, and report its fact. */
+	private refreshEntry(entry: BoundField): void {
+		if (entry.live) {
+			this.seed(entry);
+		}
 	}
 
 	private removeEntry(entry: BoundField): void {

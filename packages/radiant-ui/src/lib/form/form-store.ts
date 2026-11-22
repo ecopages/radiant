@@ -259,6 +259,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		return {
 			rename: (name) => this.renameEntry(entry, name),
 			unregister: () => this.removeEntry(entry),
+			refresh: () => entry.setValue(getPath(this.values, entry.name)),
 		};
 	}
 

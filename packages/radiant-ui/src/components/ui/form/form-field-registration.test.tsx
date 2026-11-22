@@ -158,6 +158,7 @@ describe('rui-field registration', () => {
 						unregisters(registration.name);
 						handle.unregister();
 					},
+					refresh: () => handle.refresh(),
 				};
 			};
 			await customElements.whenDefined('rui-field');

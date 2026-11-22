@@ -13,6 +13,7 @@ import {
 	resolvePortalContainer,
 	type RuiPortalContainer,
 } from '../shared/portal-container';
+import { announceControlConnect } from '@/lib/form/control-protocol';
 
 export type RuiSelectSelectionMode = 'single' | 'multiple';
 export type RuiSelectTriggerKind = 'focus' | 'manual';
@@ -554,6 +555,7 @@ export class RuiSelect extends RadiantElement {
 
 	protected override onConnected(): void {
 		this.initialize();
+		announceControlConnect(this);
 	}
 
 	@onUpdated([

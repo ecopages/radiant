@@ -8,6 +8,24 @@ export const RUI_FIELD_LABEL_ATTR = 'data-rui-field-label';
 export const RUI_FIELD_DESCRIPTION_ATTR = 'data-rui-field-description';
 export const RUI_FIELD_ERROR_ATTR = 'data-rui-field-error';
 export const RUI_FIELD_WARNING_ATTR = 'data-rui-field-warning';
+
+/**
+ * Bubbling, composed event a control host dispatches on itself when it connects.
+ *
+ * @remarks A `rui-field` listens for it to seed a control that appeared after the field
+ * registered, from the value the form holds, and to report its validity. Every Radiant
+ * control host dispatches it from `onConnected`, and a third-party host registered with
+ * `registerFieldControl` must dispatch it too (call {@link announceControlConnect}). A
+ * native `<input>`, `<select>` or `<textarea>` marked `data-rui-control` announces nothing,
+ * so it must already be inside its field when the field connects; one inserted later is
+ * picked up on the field's next sync.
+ */
+export const RUI_CONTROL_CONNECT_EVENT = 'rui-control-connect';
+
+/** Dispatch {@link RUI_CONTROL_CONNECT_EVENT} from a control host that just connected. */
+export function announceControlConnect(host: HTMLElement): void {
+	host.dispatchEvent(new CustomEvent(RUI_CONTROL_CONNECT_EVENT, { bubbles: true, composed: true }));
+}
 export const RUI_FIELD_ERROR_CONTROLLED_ATTR = 'data-rui-field-error-controlled';
 export const RUI_FIELD_DEFAULT_VALUE_ATTR = 'data-default-value';
 export const RUI_FORM_DEFAULT_VALUES_ATTR = 'data-default-values';

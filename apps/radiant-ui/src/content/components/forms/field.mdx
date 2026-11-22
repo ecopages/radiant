@@ -116,6 +116,10 @@ A field writes a native control (`<input>`, `<textarea>`, `<select>`) to its for
 </RuiField>
 ```
 
+## Controls that arrive late
+
+A field finds its control when it connects. A Radiant control host, or a custom host that calls `announceControlConnect`, can appear later: it announces itself with a bubbling `rui-control-connect` event and the field seeds it from the form and reads its validity. A native `<input>`, `<select>` or `<textarea>` marked `data-rui-control` announces nothing, so it must already be inside its `rui-field` when the field connects. One inserted later is picked up on the field's next sync, that is, on the next store notification or re-render.
+
 ## Disabled fields
 
 <p>Set `disabled` on the field to dim the label and prevent interaction with nested controls.</p>
