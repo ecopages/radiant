@@ -524,8 +524,9 @@ describe('FormStore', () => {
 	describe('reported native validity and failing validation', () => {
 		it('blocks whole-form validation on a path whose control is not registered here', async () => {
 			const store = new FormStore<{ a: string }>();
-			await store.validate(undefined, {
-				native: { elsewhere: { type: 'valueMissing', params: { required: true }, message: 'Fill this in' } },
+			store.setValue('elsewhere', 'x');
+			store.reportNative({
+				elsewhere: { type: 'valueMissing', params: { required: true }, message: 'Fill this in' },
 			});
 
 			expect(await store.validateAll()).toBe(false);
@@ -563,54 +564,55 @@ describe('FormStore', () => {
 	});
 
 	describe('native facts', () => {
-		it('does not reuse a fact after a write that carries none', async () => {
+		it('keeps a reported fact through a write and replaces or clears it on the next report', async () => {
 			const store = new FormStore<{ a: string }>();
-			store.setValue('elsewhere', 'x', { native: { type: 'valueMissing' } });
-			expect(await store.validate(['elsewhere'])).toBe(false);
-
-			store.setValue('elsewhere', 'y');
-
-			expect(await store.validate(['elsewhere'])).toBe(true);
-		});
-
-		it('replaces the fact when the same write sends a new one and clears it with null', async () => {
-			const store = new FormStore<{ a: string }>();
-			store.setValue('elsewhere', 'x', { native: { type: 'tooShort', params: { minLength: 8 } } });
+			store.setValue('elsewhere', 'x');
+			store.reportNative({ elsewhere: { type: 'tooShort', params: { minLength: 8 } } });
 			expect(store.errors.elsewhere).toBeUndefined();
 			await store.validate(['elsewhere']);
 			expect(store.errors.elsewhere).toEqual({ type: 'tooShort', params: { minLength: 8 }, message: undefined });
 
-			store.setValue('elsewhere', 'y', { native: null });
+			store.reportNative({ elsewhere: { type: 'valueMissing' } });
+			await vi.waitFor(() => expect(store.errors.elsewhere?.type).toBe('valueMissing'));
+
+			store.reportNative({ elsewhere: null });
 			expect(await store.validate(['elsewhere'])).toBe(true);
 		});
 
-		it('treats the facts a validate call brings as authoritative', async () => {
+		it('reports several facts in one call and clears the one a null withdraws', async () => {
 			const store = new FormStore<{ a: string }>();
-			await store.validate(undefined, {
-				native: { first: { type: 'valueMissing' }, second: { type: 'valueMissing' } },
-			});
+			store.setValue('first', 'x');
+			store.setValue('second', 'x');
+			store.reportNative({ first: { type: 'valueMissing' }, second: { type: 'valueMissing' } });
 			expect(await store.validate(['first'])).toBe(false);
 
-			await store.validate(undefined, { native: { second: { type: 'valueMissing' }, first: null } });
+			store.reportNative({ first: null });
 
 			expect(await store.validate(['first'])).toBe(true);
 			expect(await store.validate(['second'])).toBe(false);
-			await store.validate(undefined, { native: {} });
-			expect(await store.validate(['second'])).toBe(true);
 		});
 
-		it('writes the value and the fact of a blur in one call', () => {
+		it('drops the fact of a path that left when it is reported null', async () => {
 			const store = new FormStore<{ a: string }>();
-			const listener = vi.fn();
-			store.subscribe(listener);
+			store.setValue('row', 'x');
+			store.reportNative({ row: { type: 'valueMissing' } });
+			expect(await store.validate(['row'])).toBe(false);
+			store.setValue('row', undefined);
 
-			store.blur('a', { value: 'typed', native: null });
+			store.reportNative({ row: null });
 
-			expect(store.getValue('a')).toBe('typed');
+			expect(await store.validate(['row'])).toBe(true);
+		});
+
+		it('touches a path on blur', () => {
+			const store = new FormStore<{ a: string }>();
+
+			store.blur('a');
+
 			expect(store.touched.a).toBe(true);
 		});
 
-		it('reads the native validity of every registered control', () => {
+		it('does nothing to flush on sync, since it reads registered controls directly', async () => {
 			const store = new FormStore<{ a: string; b: string }>();
 			store.register({
 				name: 'a',
@@ -620,10 +622,11 @@ describe('FormStore', () => {
 			});
 			store.register({ name: 'b', getValue: () => '', setValue: () => {}, getValidity: () => ({ valid: true }) });
 
-			expect(store.readNativeValidity()).toEqual({
-				a: { type: 'valueMissing', params: undefined, message: 'Fill' },
-				b: null,
-			});
+			store.sync();
+
+			expect(await store.validate()).toBe(false);
+			expect(store.errors.a).toEqual({ type: 'valueMissing', params: undefined, message: 'Fill' });
+			expect(store.errors.b).toBeUndefined();
 		});
 
 		it('does not read through Object.prototype for a field named constructor', () => {
@@ -637,7 +640,7 @@ describe('FormStore', () => {
 
 		it('clears reported facts on reset', async () => {
 			const store = new FormStore<{ a: string }>({ defaultValues: { a: 'a@b.co' } });
-			store.setValue('a', 'x', { native: { type: 'typeMismatch' } });
+			store.reportNative({ a: { type: 'typeMismatch' } });
 
 			store.reset();
 
@@ -661,7 +664,7 @@ describe('FormStore', () => {
 			const listener = vi.fn();
 			store.subscribe(listener);
 
-			store.reportNative('a', { type: 'typeMismatch' });
+			store.reportNative({ a: { type: 'typeMismatch' } });
 
 			expect(listener).not.toHaveBeenCalled();
 			expect(store.dirty.a).toBeUndefined();
@@ -671,7 +674,7 @@ describe('FormStore', () => {
 		it('ignores a reported fact for a path it does not hold', async () => {
 			const store = new FormStore<{ a: string }>();
 
-			store.reportNative('nowhere', { type: 'valueMissing' });
+			store.reportNative({ nowhere: { type: 'valueMissing' } });
 
 			expect(await store.validate(['nowhere'])).toBe(true);
 		});
@@ -680,7 +683,7 @@ describe('FormStore', () => {
 			const store = new FormStore<{ a: string }>({ defaultValues: { a: 'x' } });
 			store.setErrors('server', { a: { message: 'Taken' } });
 
-			store.reportNative('a', null);
+			store.reportNative({ a: null });
 			await Promise.resolve();
 
 			expect(store.errors.a?.message).toBe('Taken');
@@ -698,7 +701,7 @@ describe('FormStore', () => {
 			expect(await store.validate(['a'])).toBe(true);
 
 			invalid = true;
-			store.reportNative('a', { type: 'typeMismatch' });
+			store.reportNative({ a: { type: 'typeMismatch' } });
 
 			await vi.waitFor(() => expect(store.errors.a?.type).toBe('typeMismatch'));
 		});
@@ -712,7 +715,7 @@ describe('FormStore', () => {
 				getValidity: () => ({ valid: false, type: 'typeMismatch' }),
 			});
 
-			store.reportNative('a', { type: 'typeMismatch' });
+			store.reportNative({ a: { type: 'typeMismatch' } });
 			await new Promise((resolve) => setTimeout(resolve, 10));
 
 			expect(store.errors.a).toBeUndefined();
@@ -729,7 +732,7 @@ describe('FormStore', () => {
 			await store.validate(['a']);
 			store.reset();
 
-			store.reportNative('a', { type: 'typeMismatch' });
+			store.reportNative({ a: { type: 'typeMismatch' } });
 			await new Promise((resolve) => setTimeout(resolve, 10));
 
 			expect(store.errors.a).toBeUndefined();

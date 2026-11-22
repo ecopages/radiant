@@ -71,14 +71,15 @@ type BoundField = {
  * state and which errors show.
  *
  * @remarks Field `rules`, `resolver`, `defaultValue`, `defaultValues`, `mode` and
- * `revalidate-mode` are ignored here. Native validity is re-read from the controls
- * on every change, blur and submit, never replayed from an earlier read. The
- * store subscription lives only while the driver has a listener, so a
- * disconnected form does not keep the host store alive.
+ * `revalidate-mode` are ignored here. Native validity is pushed to the store with
+ * `reportNative` whenever a control's value or presence changes. The store
+ * subscription lives only while the driver has a listener, so a disconnected form
+ * does not keep the host store alive.
  */
 export class InjectedFormDriver implements FormDriver {
 	private readonly fields = new Map<string, BoundField>();
-	private readonly pendingFactReports = new Map<BoundField, string>();
+	private readonly pendingFactReports = new Set<BoundField>();
+	private readonly withdrawnPaths = new Set<string>();
 	private reportQueued = false;
 	private readonly listeners = new Set<() => void>();
 	private revision = 0;
@@ -160,37 +161,61 @@ export class InjectedFormDriver implements FormDriver {
 	}
 
 	/**
-	 * Report a control's fact on its own when it is seeded and whenever the store's
-	 * value at its path changes, whether or not the control had to be written.
+	 * Report a control's fact when it is seeded and whenever the store's value at its
+	 * path changes, whether or not the control had to be written.
 	 *
 	 * @remarks A store write is not a user change, and an untouched control has never
 	 * reported, so nothing else tells the store what the control says about the value
-	 * it holds, and a check after mount would see no fact: `setValue('email', 'not-an-email')`
-	 * would otherwise leave `typeMismatch` unreported. The report runs after the
-	 * notification that wrote the control, not inside it, and goes through
-	 * `reportNative`, which the store binds to the value it holds without counting a
-	 * change. A control that was removed or renamed in the meantime is skipped, and a
-	 * report the store rejects, such as a path it cannot address, is reported with
-	 * `reportError` without stopping the others.
+	 * it holds: `setValue('email', 'not-an-email')` would otherwise leave
+	 * `typeMismatch` unreported. The report runs after the notification that wrote
+	 * the control, not inside it, and one call carries every fact queued meanwhile. A
+	 * control that was removed or renamed in the meantime is skipped.
 	 */
 	private scheduleFactReport(entry: BoundField): void {
-		this.pendingFactReports.set(entry, entry.name);
+		this.pendingFactReports.add(entry);
+		this.queueReport();
+	}
+
+	/**
+	 * Withdraw the fact at a path whose control left it, unless another live control
+	 * is bound there when the report runs.
+	 *
+	 * @remarks The check runs at flush time so a row that moves, which leaves one
+	 * path and arrives at another in the same task, does not withdraw the fact of the
+	 * control that took its place.
+	 */
+	private scheduleWithdrawal(path: string): void {
+		this.withdrawnPaths.add(path);
+		this.queueReport();
+	}
+
+	private queueReport(): void {
 		if (this.reportQueued) {
 			return;
 		}
 		this.reportQueued = true;
 		queueMicrotask(() => {
 			this.reportQueued = false;
-			const pending = [...this.pendingFactReports];
-			this.pendingFactReports.clear();
-			for (const [reported, name] of pending) {
-				if (reported.live && reported.name === name && this.fields.get(name) === reported) {
-					try {
-						this.state.reportNative(name, this.factOf(reported));
-					} catch (error) {
-						reportError(error);
-					}
+			const facts: Record<string, NativeValidity | null> = {};
+			for (const path of this.withdrawnPaths) {
+				if (!this.fields.has(path)) {
+					facts[path] = null;
 				}
+			}
+			for (const entry of this.pendingFactReports) {
+				if (entry.live && this.fields.get(entry.name) === entry) {
+					facts[entry.name] = this.factOf(entry);
+				}
+			}
+			this.withdrawnPaths.clear();
+			this.pendingFactReports.clear();
+			if (Object.keys(facts).length === 0) {
+				return;
+			}
+			try {
+				this.state.reportNative(facts);
+			} catch (error) {
+				reportError(error);
 			}
 		});
 	}
@@ -250,6 +275,7 @@ export class InjectedFormDriver implements FormDriver {
 		if (this.fields.get(entry.name) === entry) {
 			this.fields.delete(entry.name);
 		}
+		this.scheduleWithdrawal(entry.name);
 		this.bump();
 	}
 
@@ -268,6 +294,7 @@ export class InjectedFormDriver implements FormDriver {
 		}
 		entry.name = to;
 		this.fields.set(to, entry);
+		this.scheduleWithdrawal(from);
 		this.seed(entry);
 		this.bump();
 	}
@@ -311,51 +338,41 @@ export class InjectedFormDriver implements FormDriver {
 		return !entry.writing && !isSameValue(entry.registration.getValue(), entry.baseline);
 	}
 
-	/**
-	 * Write a control's value into the store, with the fact it describes, and take it
-	 * as the new baseline.
-	 */
+	/** Write a control's value into the store and take it as the new baseline. */
 	private writeControlValue(name: string, entry: BoundField): void {
 		const value = entry.registration.getValue();
 		const previous = entry.baseline;
 		entry.baseline = value;
 		try {
-			this.state.setValue(name, value, { native: this.factOf(entry) });
+			this.state.setValue(name, value);
 		} catch (error) {
 			entry.baseline = previous;
 			throw error;
 		}
 	}
 
+	/** Write a control the user changed, then report its fact for the value it holds. */
+	private pushUserChange(name: string, entry: BoundField): void {
+		this.writeControlValue(name, entry);
+		this.state.reportNative({ [name]: this.factOf(entry) });
+	}
+
 	/**
-	 * Write every control the user changed into the store, as submit needs.
+	 * Write every control the user changed into the store, then report every
+	 * control's fact, as submit needs.
 	 *
 	 * @remarks The comparison is with the control's own baseline, not with the
-	 * store, so a flush writes only what the user changed. Comparing with the store
+	 * store, so a sync writes only what the user changed. Comparing with the store
 	 * would write an untouched empty text input, which reads `''`, over a store
 	 * value of `undefined`, marking it dirty and dropping its server error.
 	 */
-	flush(): void {
+	sync(): void {
 		for (const [name, entry] of this.fields) {
 			if (this.isChanged(entry)) {
 				this.writeControlValue(name, entry);
 			}
 		}
-	}
-
-	/**
-	 * The current fact of every registered control, `null` for a valid one, after
-	 * writing the controls the user changed, so a check outside submit never binds a
-	 * fact to a value the control does not hold.
-	 */
-	readNativeValidity(): Record<string, NativeValidity | null> {
-		this.flush();
-		return this.factsOfAll();
-	}
-
-	/** Validate through the store, handing it the current fact of every control. */
-	validate(paths?: string[]): Promise<boolean> {
-		return this.state.validate(paths, { native: this.readNativeValidity() });
+		this.state.reportNative(this.factsOfAll());
 	}
 
 	async handleFieldChange(name: string): Promise<void> {
@@ -363,7 +380,7 @@ export class InjectedFormDriver implements FormDriver {
 		if (!entry || entry.writing) {
 			return;
 		}
-		this.writeControlValue(name, entry);
+		this.pushUserChange(name, entry);
 		this.bump();
 	}
 
@@ -372,31 +389,21 @@ export class InjectedFormDriver implements FormDriver {
 		if (!entry) {
 			return;
 		}
-		const native = this.factOf(entry);
 		if (this.isChanged(entry)) {
-			const value = entry.registration.getValue();
-			const previous = entry.baseline;
-			entry.baseline = value;
-			try {
-				this.state.blur(name, { value, native });
-			} catch (error) {
-				entry.baseline = previous;
-				throw error;
-			}
-		} else {
-			this.state.blur(name, { native });
+			this.pushUserChange(name, entry);
 		}
+		this.state.blur(name);
 		this.bump();
 	}
 
+	/** Validate through the store; the form calls {@link InjectedFormDriver.sync} first. */
 	async handleSubmit(
 		onValid: (values: FieldValues) => void | Promise<void>,
 		onInvalid?: (errors: Partial<Record<string, FieldError>>, error?: unknown) => void,
 	): Promise<void> {
-		this.flush();
 		let valid: boolean;
 		try {
-			valid = await this.validate();
+			valid = await this.state.validate();
 		} catch (error) {
 			this.bump();
 			onInvalid?.(this.state.getSnapshot().errors, error);
@@ -417,6 +424,7 @@ export class InjectedFormDriver implements FormDriver {
 	dispose(): void {
 		clearTimeout(this.resetTimer);
 		this.pendingFactReports.clear();
+		this.withdrawnPaths.clear();
 	}
 
 	/** Focus the control registered for `path`; nothing happens for a path with no control. */

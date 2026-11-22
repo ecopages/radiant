@@ -6,7 +6,7 @@ The element side stays in [`src/components/ui/form`](../../components/ui/form) (
 
 | Module                                      | What it is                                                                                                                                                                                 |
 | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `form-state-store.ts`                       | The `FormStateStore<TIssue>` contract a host implements, with its snapshot, `NativeValidity` and write options. Imports nothing outside the package.                                       |
+| `form-state-store.ts`                       | The `FormStateStore<TIssue>` contract a host implements, with its snapshot and `NativeValidity`. Imports nothing outside the package.                                                      |
 | `form-store.ts`                             | `FormStore`, the built-in store the form creates when none is injected: nested values, validation modes, host errors, native facts. Implements the contract and owns control registration. |
 | `form-driver.ts`, `injected-form-driver.ts` | The driver `rui-form` talks to. `FormStore` is one; `InjectedFormDriver` bridges a host store to the registered controls (baselines, facts, rename, reset, flush).                         |
 | `store-binding.ts`, `form-handlers.ts`      | `StoreBinding<TIssue>` holds a store with the `formatError`, `submitHandler` and `resetHandler` written for its issue type, and the handler and context types.                             |

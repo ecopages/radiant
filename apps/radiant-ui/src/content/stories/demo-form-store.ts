@@ -59,21 +59,18 @@ export function createDemoStore({ initial, rules = {}, warnings = {} }: DemoStor
 		snapshot = build();
 		for (const listener of [...listeners]) listener();
 	};
-	const keep = (path: string, fact: NativeValidity | null | undefined) => {
+	const keep = (path: string, fact: NativeValidity | null) => {
 		const { [path]: _old, ...rest } = facts;
 		facts = fact ? { ...rest, [path]: fact } : rest;
 	};
 	return {
 		getValue: (path) => getPath(values, path),
-		setValue(path, value, options) {
+		setValue(path, value) {
 			values = setPath(values, path, value);
-			keep(path, options?.native);
 			checked.add(path);
 			publish();
 		},
-		blur(path, options) {
-			if (options && 'value' in options) values = setPath(values, path, options.value);
-			if (options?.native !== undefined) keep(path, options.native);
+		blur(path) {
 			checked.add(path);
 			publish();
 		},
@@ -88,23 +85,20 @@ export function createDemoStore({ initial, rules = {}, warnings = {} }: DemoStor
 			checked.clear();
 			publish();
 		},
-		async validate(paths, options) {
-			if (options?.native) {
-				facts = Object.fromEntries(
-					Object.entries(options.native).filter(
-						(entry): entry is [string, NativeValidity] => entry[1] !== null,
-					),
-				);
-			}
+		async validate(paths) {
 			const scope = paths ?? [...new Set([...Object.keys(rules), ...Object.keys(facts)])];
 			for (const path of scope) checked.add(path);
 			publish();
 			return scope.every((path) => !problems(path));
 		},
-		reportNative(path, fact) {
-			if (getPath(values, path) === undefined) return;
-			keep(path, fact);
-			if (checked.has(path)) publish();
+		reportNative(reported) {
+			let shown = false;
+			for (const [path, fact] of Object.entries(reported)) {
+				if (fact !== null && getPath(values, path) === undefined) continue;
+				keep(path, fact);
+				shown ||= checked.has(path);
+			}
+			if (shown) publish();
 		},
 	};
 }

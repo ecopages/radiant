@@ -6,10 +6,11 @@ import { InjectedFormDriver } from './injected-form-driver';
 import type { FieldRegistration } from './types';
 import { getPath, setPath } from './value-path';
 
-function control(name: string, initial: unknown) {
+function control(name: string, initial: unknown, validity?: ReturnType<NonNullable<FieldRegistration['getValidity']>>) {
 	let value = initial;
 	return {
 		name,
+		getValidity: () => validity,
 		getValue: () => value,
 		setValue: vi.fn((next: unknown) => {
 			value = next;
@@ -173,7 +174,7 @@ describe('InjectedFormDriver rename', () => {
 });
 
 describe('InjectedFormDriver fact reports', () => {
-	it('reports nothing for a control renamed or removed before the report runs', async () => {
+	it('sends one report with the renamed control at its new path and a withdrawal for each path left', async () => {
 		const state = createHostStore({ a: 'x', b: 'y' });
 		const reportNative = vi.spyOn(state, 'reportNative');
 		const driver = new InjectedFormDriver(state);
@@ -189,6 +190,38 @@ describe('InjectedFormDriver fact reports', () => {
 		removed.unregister();
 		await Promise.resolve();
 
-		expect(reportNative.mock.calls.map(([path]) => path)).toEqual(['c']);
+		expect(reportNative.mock.calls).toEqual([[{ a: null, b: null, c: null }]]);
+	});
+
+	it('keeps the fact at a path another live control took when rows move', async () => {
+		const state = createHostStore({ a: 'x', b: 'y' });
+		const reportNative = vi.spyOn(state, 'reportNative');
+		const driver = new InjectedFormDriver(state);
+		driver.subscribe(() => {});
+		const first = driver.register(control('a', '', { valid: false, type: 'valueMissing' }));
+		const second = driver.register(control('b', '', { valid: false, type: 'tooShort' }));
+		await Promise.resolve();
+		reportNative.mockClear();
+
+		first.rename('b');
+		second.rename('a');
+		await Promise.resolve();
+
+		expect(reportNative.mock.calls).toEqual([[{ b: { type: 'valueMissing' }, a: { type: 'tooShort' } }]]);
+	});
+
+	it('withdraws a path nobody holds after the move settles', async () => {
+		const state = createHostStore({ a: 'x' });
+		const reportNative = vi.spyOn(state, 'reportNative');
+		const driver = new InjectedFormDriver(state);
+		driver.subscribe(() => {});
+		const handle = driver.register(control('a', ''));
+		await Promise.resolve();
+		reportNative.mockClear();
+
+		handle.unregister();
+		await Promise.resolve();
+
+		expect(reportNative.mock.calls).toEqual([[{ a: null }]]);
 	});
 });

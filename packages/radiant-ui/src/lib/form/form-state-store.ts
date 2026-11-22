@@ -35,21 +35,6 @@ export type NativeValidity = {
 	message?: string;
 };
 
-/** Options on a call that carries the native validity of the control it describes. */
-export type FormStateNativeOptions = {
-	/**
-	 * The control's validity at the time of the call: a fact, or `null` when the
-	 * control reports valid. Absent when the form did not read the control.
-	 */
-	native?: NativeValidity | null;
-};
-
-/** Options on `blur`: the control's fact, and its value when the user changed it since the last synchronisation. */
-export type FormStateBlurOptions = FormStateNativeOptions & {
-	/** Present only when the user changed the control; the store writes it as `setValue` would, in the same call. */
-	value?: unknown;
-};
-
 /**
  * The state `<rui-form>` drives when a host owns form state. Hand an instance to
  * `form.connect`; without one the form creates its own `FormStore`, which satisfies
@@ -71,25 +56,26 @@ export type FormStateBlurOptions = FormStateNativeOptions & {
  * gives them, and ignores its own `mode` and `revalidate-mode`, field
  * `defaultValue`, `defaultValues`, `resolver` and field `rules`.
  *
- * Native validity always travels in the same call as the value or event it
- * describes, so a store never holds a fact older than the value it validates: a
- * `setValue` without `native` carries no fact, and a store must not reuse the one
- * it held for that path. On `validate`, the `native` record is authoritative: it
- * holds the fact of every control the form bridges, `null` for a valid one, and a
- * store drops any fact it held for a path the record does not list.
+ * Native validity is pushed, never pulled. `<rui-form>` calls `reportNative` with
+ * the fact of each control whenever its value or presence changes, from either
+ * side, after the change has settled: right after `setValue` for a user change
+ * (so before `blur`), and through a microtask for a store write, a reset, a
+ * rename, a control that connects, and a control that disconnects (`null`, unless
+ * another live control is bound to that path, as when rows move). A fact is
+ * `null` for a valid control. A store binds each fact to the value it holds at
+ * that path and drops it when the path is reported `null` or removed.
  *
  * Each member is here because `<rui-form>` calls it:
  * - `getValue` seeds a control when it registers and compares controls with the
  *   store on every notification.
  * - `setValue` receives a control's value on change and on submit for a control
  *   the user changed, replacing the branch at `path`.
- * - `blur` reports that a control lost focus, with its value when the user changed
- *   it, so the store can run its own touched and validation-on-blur policy in one call.
+ * - `blur` reports that a control lost focus, so the store can run its own
+ *   touched and validation-on-blur policy.
+ * - `reportNative` receives control facts, keyed by path.
  * - `getSnapshot` and `subscribe` publish presentation and the submit values.
- * - `reportNative` reports a control's validity on its own when it is seeded or renamed and
- *   whenever the store's value at its path changes.
  * - `reset` backs the native `reset` event when no `resetHandler` is set; the form
- *   then rewrites controls from the store.
+ *   then rewrites controls from the store and reports their facts again.
  * - `validate` runs on submit when no `submitHandler` is set and decides whether
  *   `rui-submit` or `rui-invalid` follows.
  *
@@ -103,12 +89,23 @@ export interface FormStateStore<TIssue extends FieldError = FieldError> {
 	 * Replace the branch at a dotted path with `value`, creating parents as needed,
 	 * and notify when state changed.
 	 */
-	setValue(path: string, value: unknown, options?: FormStateNativeOptions): void;
+	setValue(path: string, value: unknown): void;
 	/**
 	 * Mark `path` touched and run any validation the store ties to blur. Notifies
 	 * when state changed.
 	 */
-	blur(path: string, options?: FormStateBlurOptions): void;
+	blur(path: string): void;
+	/**
+	 * Report the native validity of controls, keyed by dotted path: a fact, or `null`
+	 * for a valid control or one that left the form.
+	 *
+	 * @remarks The store binds each fact to the value it holds at its path and keeps
+	 * it until the path is reported again. A report never counts as a user change:
+	 * re-validate a path only if it was already validated or failed, so a reset is
+	 * not shown as an error. Ignore a fact for a path the store does not hold, such
+	 * as a row that was removed.
+	 */
+	reportNative(facts: Record<string, NativeValidity | null>): void;
 	/** Stable snapshot; the same object until state changes. */
 	getSnapshot(): FormStateStoreSnapshot<TIssue>;
 	/** Register a change listener; returns its unsubscribe. */
@@ -117,7 +114,8 @@ export interface FormStateStore<TIssue extends FieldError = FieldError> {
 	 * Restore initial values and clear errors, warnings and field state, including
 	 * every native fact. Notifies when state changed.
 	 *
-	 * @remarks `<rui-form>` calls it without arguments, then rewrites every control from the store.
+	 * @remarks `<rui-form>` calls it without arguments, then rewrites every control
+	 * from the store and reports their facts again.
 	 */
 	reset(): void;
 	/**
@@ -125,22 +123,8 @@ export interface FormStateStore<TIssue extends FieldError = FieldError> {
 	 * scope is valid: `false` when the store holds any error at the validated paths,
 	 * whether or not it shows it. Warnings do not count.
 	 *
-	 * @remarks The form calls it without paths on submit. `options.native` holds the
-	 * current validity of every control it registers, `null` for a valid one, and is
-	 * authoritative: the store drops any fact it held for a path the record omits,
-	 * such as a control that was removed.
+	 * @remarks The form calls it without paths on submit, after `sync()` reported every
+	 * control's fact.
 	 */
-	validate(paths?: string[], options?: { native?: Record<string, NativeValidity | null> }): Promise<boolean>;
-	/**
-	 * Report the native validity of a control on its own, with no value or event: the
-	 * form calls it when a control is seeded or renamed and whenever the store's value
-	 * at the control's path changes, because the control now says something about the
-	 * value the store holds that no user event reported.
-	 *
-	 * @remarks The store binds the fact to the value it holds at `path`, re-validates
-	 * the path only if it was already validated or failed (so a report never counts
-	 * as a user change, and a reset is not shown as an error), and ignores a path it
-	 * does not hold, such as a row that was removed.
-	 */
-	reportNative(path: string, native: NativeValidity | null): void;
+	validate(paths?: string[]): Promise<boolean>;
 }

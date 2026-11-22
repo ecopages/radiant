@@ -33,13 +33,13 @@ Use the form's own store (`FormStore`) when rules on `RuiField` are enough. Writ
 | Member | Why the form calls it |
 | --- | --- |
 | `getValue(path)` | Seed a control when it registers, and compare controls with the store on every notification. |
-| `setValue(path, value, { native })` | A control changed, with the control's own validity in the same call. |
-| `blur(path, { value, native })` | A control lost focus; `value` is present only if the user changed it. |
+| `setValue(path, value)` | A control changed. |
+| `blur(path)` | A control lost focus. |
 | `getSnapshot()` | The values, `errors` and `warnings` to show. The same object until state changes. |
 | `subscribe(listener)` | Notify the form when state changed. |
 | `reset()` | A native reset, unless you pass a `resetHandler`. Clear values, errors, field state and every native fact. |
-| `validate(paths?, { native })` | Submit. Resolve `false` while the store holds any error at those paths. |
-| `reportNative(path, native)` | A control's validity on its own, with no value or event. |
+| `validate(paths?)` | Submit. Resolve `false` while the store holds any error at those paths. |
+| `reportNative(facts)` | The validity of controls, keyed by path, whenever a control's value or presence changes. |
 
 Paths are the dotted `name` of each `RuiField`, so `profile.name` is `values.profile.name` and `rows.0.title` is `values.rows[0].title`.
 
@@ -103,21 +103,18 @@ export function createDemoStore({ initial, rules = {}, warnings = {} }: DemoStor
 		snapshot = build();
 		for (const listener of [...listeners]) listener();
 	};
-	const keep = (path: string, fact: NativeValidity | null | undefined) => {
+	const keep = (path: string, fact: NativeValidity | null) => {
 		const { [path]: _old, ...rest } = facts;
 		facts = fact ? { ...rest, [path]: fact } : rest;
 	};
 	return {
 		getValue: (path) => getPath(values, path),
-		setValue(path, value, options) {
+		setValue(path, value) {
 			values = setPath(values, path, value);
-			keep(path, options?.native);
 			checked.add(path);
 			publish();
 		},
-		blur(path, options) {
-			if (options && 'value' in options) values = setPath(values, path, options.value);
-			if (options?.native !== undefined) keep(path, options.native);
+		blur(path) {
 			checked.add(path);
 			publish();
 		},
@@ -132,19 +129,20 @@ export function createDemoStore({ initial, rules = {}, warnings = {} }: DemoStor
 			checked.clear();
 			publish();
 		},
-		async validate(paths, options) {
-			if (options?.native) {
-				facts = Object.fromEntries(Object.entries(options.native).filter((entry): entry is [string, NativeValidity] => entry[1] !== null));
-			}
+		async validate(paths) {
 			const scope = paths ?? [...new Set([...Object.keys(rules), ...Object.keys(facts)])];
 			for (const path of scope) checked.add(path);
 			publish();
 			return scope.every((path) => !problems(path));
 		},
-		reportNative(path, fact) {
-			if (getPath(values, path) === undefined) return;
-			keep(path, fact);
-			if (checked.has(path)) publish();
+		reportNative(reported) {
+			let shown = false;
+			for (const [path, fact] of Object.entries(reported)) {
+				if (fact !== null && getPath(values, path) === undefined) continue;
+				keep(path, fact);
+				shown ||= checked.has(path);
+			}
+			if (shown) publish();
 		},
 	};
 }
@@ -153,9 +151,8 @@ export function createDemoStore({ initial, rules = {}, warnings = {} }: DemoStor
 ## The rules a store keeps
 
 - **Nested values by path.** `setValue('profile.name', 'Ada')` replaces that branch and creates its parents. Return a new snapshot object only when something changed.
-- **A fact travels with the call it describes.** `setValue(path, value, { native })` carries the control's validity for the value it just wrote: a `NativeValidity` (`{ type, params?, message? }`, `type` being the failing `ValidityState` flag) or `null` for valid. A call without `native` carries no fact, so drop the one you held for that path: it described an older value. `blur` only replaces the fact when `native` is present.
-- **`validate`'s native record is authoritative.** It lists every control the form bridges, `null` for a valid one. Replace your facts with it, so a removed or moved row leaves nothing behind, and count a native problem like any other error.
-- **`reportNative` never counts as a change.** Bind the fact to the value you hold, show it only if the path was already validated, and ignore a path you do not hold. The form calls it when a control is seeded or renamed and whenever your value at its path changes, and again for every control after a reset.
+- **Facts are pushed.** `reportNative(facts)` maps a path to a `NativeValidity` (`{ type, params?, message? }`, `type` being the failing `ValidityState` flag), or to `null` for a valid control or one that left the form. The form calls it whenever a control's value or presence changes, from either side: right after `setValue` for a user change (before `blur`), and after a store write, a reset, a rename, a connect or a disconnect. Keep a fact until its path is reported again, and count a native problem like any other error.
+- **`reportNative` never counts as a change.** Bind the fact to the value you hold, show it only if the path was already validated, and ignore a non-`null` fact for a path you do not hold. A `null` always clears.
 - **`reset` clears the facts.** The form reports each control's fact again afterwards.
 - **Native validity is evidence, not an error.** You decide when it shows, with the same timing as your own rules. See [Native validity](/docs/forms/form#native-validity).
 - **`errors` are what you show.** An entry makes its field invalid even without a message. Keys with no control, such as a form-level `__root__`, are ignored by the form. Entries may carry more than `type` and `message`, and `formatError` receives the whole entry.
@@ -163,4 +160,4 @@ export function createDemoStore({ initial, rules = {}, warnings = {} }: DemoStor
 
 ## Handlers
 
-`connect(store, { formatError, submitHandler, resetHandler })` types each handler by your store's own entry type, and returns a disposer that returns the form to its own store. A `submitHandler` takes over submit (the form writes the changed controls, then calls it with `{ store, validate, readNativeValidity, focus, submitNatively }`), and a `resetHandler` takes over the native reset. See [Inject a form state store](/docs/forms/form#inject-a-form-state-store).
+`connect(store, { formatError, submitHandler, resetHandler })` types each handler by your store's own entry type, and returns a disposer that returns the form to its own store. A `submitHandler` takes over submit (the form writes the changed controls, then calls it with `{ store, focus, submitNatively }`), and a `resetHandler` takes over the native reset. See [Inject a form state store](/docs/forms/form#inject-a-form-state-store).

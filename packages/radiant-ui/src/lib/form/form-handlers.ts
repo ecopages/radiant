@@ -1,24 +1,12 @@
-import type { FormStateStore, NativeValidity } from './form-state-store';
+import type { FormStateStore } from './form-state-store';
 import type { FieldError } from './types';
 
 /** What `RuiForm` hands a {@link RuiFormSubmitHandler}. */
 export type RuiFormSubmitContext<TIssue extends FieldError = FieldError> = {
-	/** The injected store, with the controls' values already flushed into it. */
+	/** The injected store, with the controls' values flushed into it and their facts reported. */
 	store: FormStateStore<TIssue>;
 	/** Focuses the control registered for a path, for the host to move focus to the first invalid field. */
 	focus: (path: string) => void;
-	/**
-	 * Validates through the store with the current native validity of every control.
-	 * It is sugar for a host with no submission protocol of its own; a host runtime
-	 * that does, such as one holding a submission token, calls its container's
-	 * `validate` itself with `readNativeValidity()`.
-	 */
-	validate: (paths?: string[]) => Promise<boolean>;
-	/**
-	 * The current native validity of every bridged control, `null` for a valid one,
-	 * to pass as `validate`'s `native` option when the host validates itself.
-	 */
-	readNativeValidity: () => Record<string, NativeValidity | null>;
 	/** Submits the native `<form>` to its `action` and `method`; does nothing when neither is set. */
 	submitNatively: () => void;
 };

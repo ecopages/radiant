@@ -11,7 +11,7 @@ import {
 } from '@/lib/form/form-context';
 import { FormStore } from '@/lib/form/form-store';
 import type { FormDriver } from '@/lib/form/form-driver';
-import type { FormStateStore, NativeValidity } from '@/lib/form/form-state-store';
+import type { FormStateStore } from '@/lib/form/form-state-store';
 import type { RuiFormFormatError, RuiFormHandlers } from '@/lib/form/form-handlers';
 
 import { InjectedFormDriver } from '@/lib/form/injected-form-driver';
@@ -124,8 +124,8 @@ const initialFormActions: FormContextActions = {
  * (`attribute: false`), so they reach the element only via `prop:` bindings from the
  * `RuiForm` view, never as attributes. The host queries `[data-ref="form"]`.
  *
- * `readNativeValidity()` returns the native validity of every bridged control, `null`
- * for a valid one; with an injected store it first writes the controls the user changed.
+ * `sync()` writes the controls the user changed into the injected store and reports
+ * the native validity of every bridged control; submit calls it first.
  *
  * Two channels: `onSubmit` / `rui-submit` receive the store; native `FormData` and
  * `action` / `method` navigation receive listed controls only. `onSubmit` skips
@@ -282,8 +282,6 @@ export class RuiForm extends RadiantElement {
 		if (driver instanceof InjectedFormDriver && binding?.hasSubmitHandler) {
 			const helpers: SubmitHelpers = {
 				focus: (path) => driver.focus(path),
-				validate: (paths) => driver.validate(paths),
-				readNativeValidity: () => driver.readNativeValidity(),
 				submitNatively: () => {
 					if (this.getAttribute('action') !== null || this.getAttribute('method') !== null) {
 						this.queryNativeForm()?.submit();
@@ -292,29 +290,32 @@ export class RuiForm extends RadiantElement {
 			};
 			Promise.resolve()
 				.then(() => {
-					driver.flush();
+					driver.sync();
 					return binding.submit(helpers);
 				})
 				.catch((error: unknown) => reportError(error));
 			return;
 		}
-		driver
-			.handleSubmit(
-				async (values) => {
-					this.submitEvent.emit({ values });
-					if (typeof this.onSubmit === 'function') {
-						await this.onSubmit(values);
-						return;
-					}
-					if (this.hasNativeSubmission()) {
-						this.queryNativeForm()?.submit();
-					}
-				},
-				(errors, error) => {
-					this.invalidEvent.emit(error === undefined ? { errors } : { errors, error });
-				},
-			)
-			.catch((error: unknown) => reportError(error));
+		this.submitOwnPath(driver).catch((error: unknown) => reportError(error));
+	}
+
+	private async submitOwnPath(driver: FormDriver): Promise<void> {
+		driver.sync();
+		await driver.handleSubmit(
+			async (values) => {
+				this.submitEvent.emit({ values });
+				if (typeof this.onSubmit === 'function') {
+					await this.onSubmit(values);
+					return;
+				}
+				if (this.hasNativeSubmission()) {
+					this.queryNativeForm()?.submit();
+				}
+			},
+			(errors, error) => {
+				this.invalidEvent.emit(error === undefined ? { errors } : { errors, error });
+			},
+		);
 	}
 
 	private hasNativeSubmission(): boolean {
@@ -555,11 +556,12 @@ export class RuiForm extends RadiantElement {
 	}
 
 	/**
-	 * The current native validity of every control the form bridges, `null` for a
-	 * valid one. Hosts that validate on their own pass it to the store's `validate`.
+	 * Write the controls the user changed into the store and report every control's
+	 * native validity. The form calls it before the submit handler and before its own
+	 * validation; call it before validating through the store yourself.
 	 */
-	readNativeValidity(): Record<string, NativeValidity | null> {
-		return this.ensureDriver().readNativeValidity();
+	sync(): void {
+		this.ensureDriver().sync();
 	}
 
 	@onUpdated(['formatError'])

@@ -131,7 +131,7 @@ describe('control connect event', () => {
 		await settle();
 
 		expect(late.value).toBe('stored');
-		expect(reportNative).toHaveBeenCalledWith('x', null);
+		expect(reportNative).toHaveBeenCalledWith({ x: null });
 	});
 
 	it('picks a late native input up on the next sync, not before', async () => {

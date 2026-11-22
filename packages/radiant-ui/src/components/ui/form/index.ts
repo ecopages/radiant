@@ -16,13 +16,7 @@ export {
 	type FormContextActions,
 } from '@/lib/form/form-context';
 export { FormStore } from '@/lib/form/form-store';
-export type {
-	FormStateBlurOptions,
-	FormStateNativeOptions,
-	FormStateStore,
-	FormStateStoreSnapshot,
-	NativeValidity,
-} from '@/lib/form/form-state-store';
+export type { FormStateStore, FormStateStoreSnapshot, NativeValidity } from '@/lib/form/form-state-store';
 export { createRulesResolver, runRulesResolver } from '@/lib/form/resolvers';
 export type { FieldRegistrationHandle } from '@/lib/form/types';
 export type { FieldRules, FieldValues, Resolver, ValidationMode, FormState, FieldError } from '@/lib/form/types';

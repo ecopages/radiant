@@ -1,11 +1,5 @@
 import { createRulesResolver } from './resolvers';
-import type {
-	FormStateBlurOptions,
-	FormStateNativeOptions,
-	FormStateStore,
-	FormStateStoreSnapshot,
-	NativeValidity,
-} from './form-state-store';
+import type { FormStateStore, FormStateStoreSnapshot, NativeValidity } from './form-state-store';
 import { deletePath, getPath, setPath } from './value-path';
 import type {
 	FieldError,
@@ -127,17 +121,11 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		]);
 	}
 
-	/** The current native validity of every registered control, `null` for a valid one. */
-	readNativeValidity(): Record<string, NativeValidity | null> {
-		const facts: Record<string, NativeValidity | null> = {};
-		for (const name of this.fields.keys()) {
-			const error = this.readNativeError(name);
-			facts[name] = error
-				? { type: error.type ?? 'customError', params: error.params, message: error.message }
-				: null;
-		}
-		return facts;
-	}
+	/**
+	 * Nothing to flush: the store reads its registered controls directly whenever it
+	 * validates.
+	 */
+	sync(): void {}
 
 	/** The built-in store has no source of warnings. */
 	get warnings(): Partial<Record<string, FieldError>> {
@@ -169,12 +157,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		return this.snapshot.value;
 	}
 
-	async validate(paths?: string[], options?: { native?: Record<string, NativeValidity | null> }): Promise<boolean> {
-		if (options?.native) {
-			this.reportedNative = Object.fromEntries(
-				Object.entries(options.native).filter((entry): entry is [string, NativeValidity] => entry[1] !== null),
-			);
-		}
+	async validate(paths?: string[]): Promise<boolean> {
 		let valid = true;
 		if (paths) {
 			for (const path of paths) {
@@ -369,9 +352,8 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	 * field becomes dirty, validation runs per `mode`, and an error a host set at the
 	 * path with `setErrors` is cleared, since the user has now edited that field.
 	 */
-	setValue(name: string, value: unknown, options?: FormStateNativeOptions & { shouldTouch?: boolean }): void {
+	setValue(name: string, value: unknown, options?: { shouldTouch?: boolean }): void {
 		this.values = setPath(this.values, name, value);
-		this.recordNative(name, options?.native);
 		this.rewriteRelatedControls(name);
 		if (options?.shouldTouch) {
 			this.touched = { ...this.touched, [name]: true };
@@ -496,19 +478,23 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	}
 
 	/**
-	 * Bind a control's reported validity to the value held at `path`.
+	 * Bind each control's reported validity to the value held at its path.
 	 *
 	 * @remarks Never a user change: nothing is marked dirty and no validation runs
 	 * unless the path was already validated, whether it passed or failed, or is in a
-	 * failed scope, in which case it is validated again so its error follows the fact. A path the store does not hold is ignored.
+	 * failed scope, in which case it is validated again so its error follows the
+	 * fact. A fact for a path the store does not hold is ignored; `null` is always
+	 * recorded, so a removed row leaves no fact behind.
 	 */
-	reportNative(path: string, native: NativeValidity | null): void {
-		if (!this.fields.has(path) && getPath(this.values, path) === undefined) {
-			return;
-		}
-		this.recordNative(path, native);
-		if (this.validatedPaths.has(path) || this.ownRead(this.errors, path)) {
-			this.validateField(path).catch((error: unknown) => reportError(error));
+	reportNative(facts: Record<string, NativeValidity | null>): void {
+		for (const [path, native] of Object.entries(facts)) {
+			if (native && !this.fields.has(path) && getPath(this.values, path) === undefined) {
+				continue;
+			}
+			this.recordNative(path, native);
+			if (this.validatedPaths.has(path) || this.ownRead(this.errors, path)) {
+				this.validateField(path).catch((error: unknown) => reportError(error));
+			}
 		}
 	}
 
@@ -519,7 +505,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	 * fresher, so a fact only fills in for a path with no registered control. `null`
 	 * clears it.
 	 */
-	private recordNative(path: string, fact: NativeValidity | null | undefined): void {
+	private recordNative(path: string, fact: NativeValidity | null): void {
 		if (fact) {
 			this.reportedNative = { ...this.reportedNative, [path]: fact };
 		} else if (Object.hasOwn(this.reportedNative, path)) {
@@ -579,12 +565,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	}
 
 	/** Interface form of {@link FormStore.handleFieldBlur}; validation runs per `mode`. */
-	blur(path: string, options?: FormStateBlurOptions): void {
-		if (options && 'value' in options) {
-			this.setValue(path, options.value, { native: options.native });
-		} else if (options?.native !== undefined) {
-			this.recordNative(path, options.native);
-		}
+	blur(path: string): void {
 		this.handleFieldBlur(path).catch((error: unknown) => reportError(error));
 	}
 
