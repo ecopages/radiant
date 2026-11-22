@@ -153,10 +153,10 @@ For other hosts, `submission` is `native` by default (name the native ARIA targe
 
 ## Inject a form state store
 
-A host that already owns form state, such as a schema-driven forms layer, passes it to the form with the `store` property. The form then becomes a control bridge, and the store owns validation timing, touched and dirty state, defaults and which errors show. Without `store` the form creates its own `FormStore` and behaves as before.
+A host that already owns form state, such as a schema-driven forms layer, hands it to the form with `form.connect(store, handlers)`, the only way to inject a store. The form then becomes a control bridge, and the store owns validation timing, touched and dirty state, defaults and which errors show. Without `store` the form creates its own `FormStore` and behaves as before.
 
 ```tsx
-<RuiForm store={store}>
+<RuiForm ref={(form) => form?.connect(store)}>
 	<RuiField name="profile.name">
 		<RuiInput />
 		<RuiFieldError />
@@ -182,9 +182,9 @@ With an injected store the form ignores `mode`, `revalidate-mode`, field `defaul
 
 The form compares a control with what the control read right after the form last synchronised it, not with the store, so a submit writes only what the user changed: an untouched empty text input reads `''`, and is not written over a store value of `undefined`.
 
-Set `submitHandler` to take over submit. The form writes the changed control values into the store, then calls `submitHandler({ store, validate, readNativeValidity, focus, submitNatively })`: the host counts attempts and submits, `validate(paths?)` is sugar for a host with no submission protocol of its own: it validates through the store with the current validity of every control. A host runtime with a submission token calls its container's `validate` itself with `readNativeValidity()`, which writes the controls the user changed first, so a check outside submit never binds a fact to a value the control does not hold (the form element has the same `readNativeValidity()` method), `focus(path)` moves focus to the interactive element of the control registered for a path, and `submitNatively()` submits the native `<form>` to its `action` and `method`. The form then emits neither `rui-submit` nor `rui-invalid`, and a rejection is reported with `reportError`. Without a handler the form validates and emits as above. Set `resetHandler` to take over the native `reset` event the same way: it is called with `{ store }` instead of `reset()`, may be async, and the form rewrites the controls from the store when it settles and again after the browser's own reset. Both handlers apply only with an injected store.
+Pass `submitHandler` to `connect` to take over submit. The form writes the changed control values into the store, then calls `submitHandler({ store, validate, readNativeValidity, focus, submitNatively })`: the host counts attempts and submits, `validate(paths?)` is sugar for a host with no submission protocol of its own: it validates through the store with the current validity of every control. A host runtime with a submission token calls its container's `validate` itself with `readNativeValidity()`, which writes the controls the user changed first, so a check outside submit never binds a fact to a value the control does not hold (the form element has the same `readNativeValidity()` method), `focus(path)` moves focus to the interactive element of the control registered for a path, and `submitNatively()` submits the native `<form>` to its `action` and `method`. The form then emits neither `rui-submit` nor `rui-invalid`, and a rejection is reported with `reportError`. Without a handler the form validates and emits as above. Pass `resetHandler` to take over the native `reset` event the same way: it is called with `{ store }` instead of `reset()`, may be async, and the form rewrites the controls from the store when it settles and again after the browser's own reset. Both handlers apply only with an injected store.
 
-A store write updates the matching control, and only when that path's value changed: an unrelated store notification leaves input a control holds but has not committed alone. Setting, replacing or clearing `store` re-registers every control: the new store's values are written into the controls, and clearing it returns to the form's own store in the state it left: its earlier values, errors, touched fields and submitted flag, or a fresh store built from `defaultValues` if it never existed. A form that is disconnected holds no subscription to the host store. The built-in store does not rewrite controls after a native `reset`; only the injected path does.
+A store write updates the matching control, and only when that path's value changed: an unrelated store notification leaves input a control holds but has not committed alone. `connect` returns a disposer. Calling `connect` again replaces the binding, for the same store or another one, and re-registers every control so the new store's values are written into the controls. The disposer returns the form to its own store in the state it left: its earlier values, errors, touched fields and submitted flag, or a fresh store built from `defaultValues` if it never existed; it does nothing once another `connect` replaced its binding. The `formatError` property applies to the form's own store only. A form that is disconnected holds no subscription to the host store. The built-in store does not rewrite controls after a native `reset`; only the injected path does.
 
 ## Theming
 
@@ -216,10 +216,7 @@ The form itself carries no color roles; fields, labels, and controls inside keep
 | --------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | `defaultValues` | `Partial<FieldValues>`                 | Initial values; fields read their state from the form store.                                                                   |
 | `resolver`      | `Resolver<T>`                          | Custom validation resolver (e.g. from `createRulesResolver`).                                                                  |
-| `submitHandler` | `(context: { store, validate, readNativeValidity, focus, submitNatively }) => void \| Promise<void>` | With an injected store, takes over submit after the form writes changed control values. |
-| `resetHandler` | `(context: { store }) => void \| Promise<void>` | With an injected store, takes over the native `reset` event. |
-| `formatError` | `(issue, { path }) => string` | Text for errors and warnings; an empty result falls back to `message`. |
-| `store`         | `FormStateStore`                       | A host-owned form state store that owns validation timing, field state, defaults and errors; see Inject a form state store.    |
+| `formatError` | `(issue, { path }) => string` | Text for the errors and warnings of the form's own store; an empty result falls back to `message`. A connected store takes its formatter from `connect`. |
 | `onSubmit`      | `(values: T) => void \| Promise<void>` | Receives the store. Skips native navigation. When omitted, `action` or `method` POSTs listed controls after validation passes. |
 
 ### Light-DOM contract
@@ -235,6 +232,13 @@ Nested hosts: `rui-field` and each field's control host.
 ### Context
 
 `formContext` exposes `ready`, `revision`, `fields`, `errors`, `actions`, and the live `store` once the form is ready (the injected `FormStateStore`, or the form's own `FormStore`). Scoped consumers resolve the nearest provider (`@consumeContext` / `ContextSubscriptionRequestEvent`) and use `context.store` for `getValue` / `setValue`, `reset`, `subscribe`, and `validate`; narrow with `instanceof FormStore` for the rest of `FormStore`. Nested forms still resolve the nearest provider. Without a `submitHandler`, every submission ends in `rui-submit` or `rui-invalid`. With the built-in store, `FormStore.isSubmitting` stays true until the submission settles, including an awaited `onSubmit`, and is always cleared. A validator that throws ends the submission with `rui-invalid` and `detail.error` set. A rejection from `onSubmit` clears `isSubmitting` and is reported with `reportError`, so `window` sees an `error` event and there is no unhandled rejection. An injected store has no submission state of its own in the form; the driver applies the same two outcomes. A `RuiField` registers once and keeps that registration while its `name` is unchanged. `actions.register` returns a handle, `{ rename(name), unregister() }`, that identifies the registration rather than its name. Changing `name` calls `handle.rename`, which moves the field's value, errors, touched and dirty state to the new name with one notification and no moment where the value is missing, and two keyed rows can swap names in two calls without either registration being lost. With an injected store a rename never writes a value: the control is rebound to the new path and seeded from the store there, even when the store holds nothing, and deleting the old path is the host's decision. A form that is disconnected withdraws the native errors it sent to an injected store. Hydration payloads contain presentation only (`ready`, `revision`, `fields`, `errors`); they never include the store or its actions. `RuiField` reads the matching field state and applies it to its control as `aria-invalid`; use `fieldContext` for a control's local `error` and `invalid` values.
+
+### Methods
+
+| Method | Description |
+| --- | --- |
+| `connect(store, handlers?)` | Injects a `FormStateStore` with its `formatError`, `submitHandler` and `resetHandler`, typed by the store's own issue type. Returns a disposer. |
+| `readNativeValidity()` | Writes the controls the user changed and returns the native validity of every bridged control, `null` for a valid one. |
 
 ### Events
 

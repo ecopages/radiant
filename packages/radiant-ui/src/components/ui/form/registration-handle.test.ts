@@ -171,3 +171,24 @@ describe('InjectedFormDriver rename', () => {
 		expect(vi.mocked(state.setValue).mock.calls.length).toBe(writes);
 	});
 });
+
+describe('InjectedFormDriver fact reports', () => {
+	it('reports nothing for a control renamed or removed before the report runs', async () => {
+		const state = createHostStore({ a: 'x', b: 'y' });
+		const reportNative = vi.spyOn(state, 'reportNative');
+		const driver = new InjectedFormDriver(state);
+		driver.subscribe(() => {});
+		const moved = driver.register(control('a', ''));
+		const removed = driver.register(control('b', ''));
+		await Promise.resolve();
+		reportNative.mockClear();
+
+		state.setValue('a', 'x2');
+		state.setValue('b', 'y2');
+		moved.rename('c');
+		removed.unregister();
+		await Promise.resolve();
+
+		expect(reportNative.mock.calls.map(([path]) => path)).toEqual(['c']);
+	});
+});

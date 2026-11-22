@@ -74,7 +74,10 @@ function renderForm(store: FormStateStore | undefined) {
 	document.body.append(host);
 	const root = createRoot(host);
 	root.render(
-		<RuiForm store={store} defaultValues={{ n: '', accepted: false, tags: [] }}>
+		<RuiForm
+			ref={(form) => (form && store ? form.connect(store) : undefined)}
+			defaultValues={{ n: '', accepted: false, tags: [] }}
+		>
 			<RuiField name="n" rules={{ required: 'Required' }}>
 				<RuiInput />
 				<RuiFieldError />
@@ -322,7 +325,7 @@ async function mountRenamable(store: FormStateStore | undefined) {
 	document.body.append(host);
 	const form = document.createElement('rui-form') as RuiFormElement;
 	if (store) {
-		form.store = store;
+		form.connect(store);
 	}
 	const nativeForm = document.createElement('form');
 	nativeForm.setAttribute('data-ref', 'form');

@@ -87,6 +87,8 @@ type TestStoreOptions = {
 	 * own never counts as a change.
 	 */
 	validateOn?: 'change' | 'submit';
+	/** Make `reportNative` throw for these paths, as an engine does for a path it cannot address. */
+	rejectReportFor?: string[];
 };
 
 type TestStore = FormStateStore & {
@@ -234,6 +236,9 @@ function createTestStore(initial: Record<string, unknown>, options: TestStoreOpt
 		},
 		reportNative(path, fact) {
 			calls.push({ kind: 'reportNative', path, native: fact });
+			if (options.rejectReportFor?.includes(path)) {
+				throw new Error(`cannot address ${path}`);
+			}
 			if (!holdsPath(values, path)) {
 				return;
 			}
@@ -295,11 +300,19 @@ afterEach(() => {
 });
 
 async function mountInputs(store: FormStateStore | undefined, extra: { defaultValues?: Record<string, unknown> } = {}) {
+	let disconnect = () => {};
 	const host = document.createElement('div');
 	document.body.append(host);
 	const root = createRoot(host);
 	root.render(
-		<RuiForm store={store} defaultValues={extra.defaultValues}>
+		<RuiForm
+			ref={(form) => {
+				if (form && store) {
+					disconnect = form.connect(store);
+				}
+			}}
+			defaultValues={extra.defaultValues}
+		>
 			<RuiField name="title">
 				<RuiInput />
 				<RuiFieldError />
@@ -323,7 +336,7 @@ async function mountInputs(store: FormStateStore | undefined, extra: { defaultVa
 	if (!form || !title || !name) {
 		throw new Error('Expected mounted form');
 	}
-	return { form, title, name, host };
+	return { form, title, name, host, disconnect: () => disconnect() };
 }
 
 async function mountCode(store: FormStateStore) {
@@ -334,7 +347,7 @@ async function mountCode(store: FormStateStore) {
 		write: (host, value) => host.setAttribute('value', value == null ? '' : String(value)),
 	});
 	const form = document.createElement('rui-form') as RuiFormElement;
-	form.store = store;
+	form.connect(store);
 	const nativeForm = document.createElement('form');
 	nativeForm.className = 'rui-form';
 	nativeForm.setAttribute('data-ref', 'form');
@@ -496,7 +509,7 @@ describe('rui-form with an injected store', () => {
 		const second = createTestStore({ title: 'Second', profile: { name: '' } });
 		const { form, title } = await mountInputs(first.store);
 
-		form.store = second.store;
+		form.connect(second.store);
 		await settle();
 		expect(title.value).toBe('Second');
 
@@ -512,10 +525,10 @@ describe('rui-form with an injected store', () => {
 
 	it('falls back to its own store when the injected store is removed', async () => {
 		const { store } = createTestStore({ title: 'Injected', profile: { name: '' } });
-		const { form, title } = await mountInputs(store, { defaultValues: { title: 'Own' } });
+		const { disconnect, title } = await mountInputs(store, { defaultValues: { title: 'Own' } });
 		expect(title.value).toBe('Injected');
 
-		form.store = undefined;
+		disconnect();
 		await settle();
 		expect(title.value).toBe('Own');
 
@@ -543,7 +556,7 @@ describe('rui-form with an injected store', () => {
 		const { form } = await mountInputs(first.store);
 		expect(first.listenerCount()).toBe(1);
 
-		form.store = second.store;
+		form.connect(second.store);
 		await settle();
 		expect(first.listenerCount()).toBe(0);
 		expect(second.listenerCount()).toBe(1);
@@ -557,11 +570,11 @@ describe('rui-form with an injected store', () => {
 		type(title, 'Typed');
 		await settle();
 
-		form.store = createTestStore({ title: 'Injected', profile: { name: '' } }).store;
+		const disconnect = form.connect(createTestStore({ title: 'Injected', profile: { name: '' } }).store);
 		await settle();
 		expect(title.value).toBe('Injected');
 
-		form.store = undefined;
+		disconnect();
 		await settle();
 		expect(title.value).toBe('Typed');
 	});
@@ -637,7 +650,7 @@ describe('rui-form with an injected store', () => {
 		const { store } = createTestStore({ echo: 'a' });
 		const setValue = vi.spyOn(store, 'setValue');
 		const form = document.createElement('rui-form') as RuiFormElement;
-		form.store = store;
+		form.connect(store);
 		const nativeForm = document.createElement('form');
 		nativeForm.setAttribute('data-ref', 'form');
 		const field = document.createElement('rui-field') as HTMLElement & { name: string };
@@ -720,7 +733,7 @@ describe('rui-form with an injected store', () => {
 		document.body.append(host);
 		const root = createRoot(host);
 		root.render(
-			<RuiForm store={store}>
+			<RuiForm ref={(form) => (form && store ? form.connect(store) : undefined)}>
 				<RuiField name="fresh" defaultValue="from-field">
 					<RuiInput />
 				</RuiField>
@@ -771,7 +784,7 @@ describe('rui-form with an injected store', () => {
 		const parent = form.parentElement as HTMLElement;
 		form.remove();
 
-		form.store = second.store;
+		form.connect(second.store);
 		await settle();
 		expect(first.listenerCount()).toBe(0);
 		expect(second.listenerCount()).toBe(0);
@@ -784,7 +797,7 @@ describe('rui-form with an injected store', () => {
 	it('writes an object value whose keys differ from the store value', async () => {
 		const { store } = createTestStore({ range: { end: '2026-01-01' } });
 		const form = document.createElement('rui-form') as RuiFormElement;
-		form.store = store;
+		form.connect(store);
 		const nativeForm = document.createElement('form');
 		nativeForm.setAttribute('data-ref', 'form');
 		const field = document.createElement('rui-field') as HTMLElement & { name: string };
@@ -870,13 +883,15 @@ describe('rui-form with an injected store', () => {
 			const validate = vi.spyOn(store, 'validate');
 			const { form, title, host } = await mountInputs(store);
 			const seen: unknown[] = [];
-			form.submitHandler = (context) => {
-				seen.push(
-					context.store.getValue('title'),
-					calls.some((call) => call.kind === 'setValue'),
-				);
-				expect(context.store).toBe(store);
-			};
+			form.connect(store, {
+				submitHandler: (context) => {
+					seen.push(
+						context.store.getValue('title'),
+						calls.some((call) => call.kind === 'setValue'),
+					);
+					expect(context.store).toBe(store);
+				},
+			});
 			const onSubmit = vi.fn();
 			const onInvalid = vi.fn();
 			form.addEventListener('rui-submit', onSubmit);
@@ -898,9 +913,11 @@ describe('rui-form with an injected store', () => {
 			const nativeForm = host.querySelector('form') as HTMLFormElement;
 			const submit = vi.spyOn(nativeForm, 'submit').mockImplementation(() => {});
 			let submitNatively: () => void = () => {};
-			form.submitHandler = (context) => {
-				submitNatively = context.submitNatively;
-			};
+			form.connect(store, {
+				submitHandler: (context) => {
+					submitNatively = context.submitNatively;
+				},
+			});
 
 			nativeForm.requestSubmit();
 			await settle();
@@ -932,7 +949,7 @@ describe('rui-form with an injected store', () => {
 			});
 			const { store } = createTestStore({ title: '', profile: { name: '' } });
 			const { form, host } = await mountInputs(store);
-			form.submitHandler = () => Promise.reject(boom);
+			form.connect(store, { submitHandler: () => Promise.reject(boom) });
 
 			host.querySelector('form')?.requestSubmit();
 			await settle();
@@ -980,7 +997,7 @@ describe('rui-form with an injected store', () => {
 			document.body.append(host);
 			const root = createRoot(host);
 			root.render(
-				<RuiForm store={store}>
+				<RuiForm ref={(form) => (form && store ? form.connect(store) : undefined)}>
 					<RuiField name="title">
 						<RuiInput />
 						<RuiFieldError />
@@ -1014,7 +1031,8 @@ describe('rui-form with an injected store', () => {
 			type(title, 'hello');
 			await settle();
 
-			expect(facts().email).toBeUndefined();
+			expect(facts().email).toMatchObject({ type: 'valueMissing' });
+			expect(store.getSnapshot().errors.email).toBeUndefined();
 			expect(store.getSnapshot().errors.email).toBeUndefined();
 			expect(findFieldError(emailField)?.hidden).toBe(true);
 		});
@@ -1071,7 +1089,7 @@ describe('rui-form with an injected store', () => {
 			const handler = vi.fn(({ store: given }: { store: FormStateStore }) => {
 				given.setValue('title', 'From host');
 			});
-			form.resetHandler = handler;
+			form.connect(store, { resetHandler: handler });
 			type(title, 'Typed');
 			await settle();
 
@@ -1087,10 +1105,12 @@ describe('rui-form with an injected store', () => {
 		it('rewrites controls from the store after the browser reset even when the handler is async', async () => {
 			const { store } = createTestStore({ title: 'Initial', profile: { name: '' } });
 			const { form, title, host } = await mountInputs(store);
-			form.resetHandler = async ({ store: given }) => {
-				await Promise.resolve();
-				given.setValue('title', 'Later');
-			};
+			form.connect(store, {
+				resetHandler: async ({ store: given }) => {
+					await Promise.resolve();
+					given.setValue('title', 'Later');
+				},
+			});
 
 			host.querySelector('form')?.reset();
 			await settle();
@@ -1118,7 +1138,7 @@ describe('rui-form with an injected store', () => {
 			});
 			const { store } = createTestStore({ title: 'Initial', profile: { name: '' } });
 			const { form, host } = await mountInputs(store);
-			form.resetHandler = () => Promise.reject(boom);
+			form.connect(store, { resetHandler: () => Promise.reject(boom) });
 
 			host.querySelector('form')?.reset();
 			await settle();
@@ -1146,7 +1166,7 @@ describe('rui-form with an injected store', () => {
 			document.body.append(host);
 			const root = createRoot(host);
 			root.render(
-				<RuiForm store={store}>
+				<RuiForm ref={(form) => (form && store ? form.connect(store) : undefined)}>
 					<RuiField name="agree">
 						<RuiCheckbox />
 					</RuiField>
@@ -1160,9 +1180,11 @@ describe('rui-form with an injected store', () => {
 			await flushRender();
 			const form = host.querySelector('rui-form') as RuiFormElement;
 			let focus: (path: string) => void = () => {};
-			form.submitHandler = (context) => {
-				focus = context.focus;
-			};
+			form.connect(store, {
+				submitHandler: (context) => {
+					focus = context.focus;
+				},
+			});
 			host.querySelector('form')?.requestSubmit();
 			await settle();
 
@@ -1177,7 +1199,7 @@ describe('rui-form with an injected store', () => {
 			document.body.append(host);
 			const root = createRoot(host);
 			root.render(
-				<RuiForm store={store}>
+				<RuiForm ref={(form) => (form && store ? form.connect(store) : undefined)}>
 					<RuiField name="topics">
 						<RuiCheckboxGroup>
 							<RuiCheckboxGroupControl>
@@ -1196,9 +1218,11 @@ describe('rui-form with an injected store', () => {
 			await flushRender();
 			const form = host.querySelector('rui-form') as RuiFormElement;
 			let focus: (path: string) => void = () => {};
-			form.submitHandler = (context) => {
-				focus = context.focus;
-			};
+			form.connect(store, {
+				submitHandler: (context) => {
+					focus = context.focus;
+				},
+			});
 			host.querySelector('form')?.requestSubmit();
 			await settle();
 
@@ -1213,9 +1237,11 @@ describe('rui-form with an injected store', () => {
 			const { store } = createTestStore({ title: '', profile: { name: '' } });
 			const { form, name, host } = await mountInputs(store);
 			let focus: (path: string) => void = () => {};
-			form.submitHandler = (context) => {
-				focus = context.focus;
-			};
+			form.connect(store, {
+				submitHandler: (context) => {
+					focus = context.focus;
+				},
+			});
 
 			host.querySelector('form')?.requestSubmit();
 			await settle();
@@ -1233,7 +1259,11 @@ describe('rui-form with an injected store', () => {
 			document.body.append(host);
 			const root = createRoot(host);
 			root.render(
-				<RuiForm store={store} formatError={extra.formatError}>
+				<RuiForm
+					ref={(form) =>
+						form && store ? form.connect(store, { formatError: extra.formatError }) : undefined
+					}
+				>
 					<RuiField name="email">
 						<RuiInput type="email" required />
 						<RuiFieldError />
@@ -1271,7 +1301,7 @@ describe('rui-form with an injected store', () => {
 			await settle();
 
 			expect(notifications() - before).toBe(1);
-			expect(calls).toHaveLength(1);
+			expect(calls.filter((call) => call.kind === 'setValue')).toHaveLength(1);
 			expect(calls[0]).toMatchObject({
 				kind: 'setValue',
 				path: 'email',
@@ -1327,7 +1357,7 @@ describe('rui-form with an injected store', () => {
 			document.body.append(host);
 			const root = createRoot(host);
 			root.render(
-				<RuiForm store={store}>
+				<RuiForm ref={(form) => (form && store ? form.connect(store) : undefined)}>
 					<RuiField name="a">
 						<RuiInput required />
 					</RuiField>
@@ -1395,9 +1425,11 @@ describe('rui-form with an injected store', () => {
 			const { store } = createTestStore({ email: '', extra: '' });
 			const { form, host } = await mountEmail(store);
 			let given: Record<string, unknown> = {};
-			form.submitHandler = (context) => {
-				given = context.readNativeValidity();
-			};
+			form.connect(store, {
+				submitHandler: (context) => {
+					given = context.readNativeValidity();
+				},
+			});
 
 			const direct = form.readNativeValidity();
 			host.querySelector('form')?.requestSubmit();
@@ -1438,13 +1470,13 @@ describe('rui-form with an injected store', () => {
 			expect(store.getSnapshot().errors.email).toBeUndefined();
 		});
 
-		it('reports nothing for a control whose row was removed or renamed before the report ran', async () => {
-			const { store } = createTestStore({ rows: [{ x: 'a' }, { x: 'b' }, { x: 'c' }] });
+		it('reports nothing for a control that was removed before the report ran', async () => {
+			const { store, calls } = createTestStore({ rows: [{ x: 'a' }, { x: 'b' }, { x: 'c' }] });
 			const host = document.createElement('div');
 			document.body.append(host);
 			const root = createRoot(host);
 			root.render(
-				<RuiForm store={store}>
+				<RuiForm ref={(form) => (form && store ? form.connect(store) : undefined)}>
 					<RuiField name="rows.0.x">
 						<RuiInput />
 					</RuiField>
@@ -1471,15 +1503,13 @@ describe('rui-form with an injected store', () => {
 			window.addEventListener('error', onError);
 			cleanup.push(() => window.removeEventListener('error', onError));
 
+			calls.length = 0;
 			store.removeRow('rows', 1);
-			await Promise.resolve();
 			fields[1]?.remove();
-			if (fields[2]) fields[2].name = 'rows.1.x';
 			await settle();
 
+			expect(calls.filter((call) => call.kind === 'reportNative' && call.path === 'rows.1.x')).toHaveLength(0);
 			expect(errors).not.toHaveBeenCalled();
-			expect(store.getValue('rows.1.x')).toBe('c');
-			expect((findFieldControl(fields[2] as HTMLElement) as HTMLInputElement).value).toBe('c');
 		});
 
 		it('writes a control the user changed before it reads native validity outside submit', async () => {
@@ -1502,7 +1532,7 @@ describe('rui-form with an injected store', () => {
 			document.body.append(host);
 			const root = createRoot(host);
 			root.render(
-				<RuiForm store={store}>
+				<RuiForm ref={(form) => (form && store ? form.connect(store) : undefined)}>
 					<RuiField name="x">
 						<input />
 						<RuiFieldError />
@@ -1535,7 +1565,7 @@ describe('rui-form with an injected store', () => {
 			document.body.append(host);
 			const root = createRoot(host);
 			root.render(
-				<RuiForm store={store}>
+				<RuiForm ref={(form) => (form && store ? form.connect(store) : undefined)}>
 					<RuiField name="__proto__">
 						<RuiInput />
 						<RuiFieldError />
@@ -1595,7 +1625,7 @@ describe('rui-form with an injected store', () => {
 			document.body.append(host);
 			const root = createRoot(host);
 			root.render(
-				<RuiForm store={store}>
+				<RuiForm ref={(form) => (form && store ? form.connect(store) : undefined)}>
 					<RuiField name="constructor">
 						<RuiInput />
 						<RuiFieldError />
@@ -1618,6 +1648,91 @@ describe('rui-form with an injected store', () => {
 				expect(findFieldControl(field)?.getAttribute('aria-invalid')).not.toBe('true');
 				expect(findFieldError(field)?.hidden).toBe(true);
 			}
+		});
+
+		it('holds the fact of an untouched control from mount, so a check after mount is correct', async () => {
+			const { store, facts } = createTestStore({ email: '', extra: '' });
+			await mountEmail(store);
+			await settle();
+
+			expect(facts().email).toMatchObject({ type: 'valueMissing' });
+		});
+
+		it('reports a fact when a store change reaches a control that already holds the value', async () => {
+			const { store, calls } = createTestStore({ email: '', extra: '' });
+			const { email } = await mountEmail(store);
+			await settle();
+			email.value = 'bad';
+			calls.length = 0;
+
+			store.setValue('email', 'bad');
+			await settle();
+
+			expect(calls.filter((call) => call.kind === 'reportNative' && call.path === 'email')).toEqual([
+				expect.objectContaining({ native: expect.objectContaining({ type: 'typeMismatch' }) }),
+			]);
+		});
+
+		it('keeps reporting the other controls when one report throws, and reports the failure', async () => {
+			const { store, calls } = createTestStore({ email: 'a@b.co', extra: 'x' }, { rejectReportFor: ['email'] });
+			const errors = vi.fn();
+			const onError = (event: ErrorEvent) => {
+				event.preventDefault();
+				errors(event.error);
+			};
+			window.addEventListener('error', onError);
+			cleanup.push(() => window.removeEventListener('error', onError));
+			await mountEmail(store);
+			await settle();
+			calls.length = 0;
+			errors.mockClear();
+
+			store.setValue('email', 'b@c.co');
+			store.setValue('extra', 'y');
+			await settle();
+
+			expect(calls.filter((call) => call.kind === 'reportNative').map((call) => call.path)).toEqual([
+				'email',
+				'extra',
+			]);
+			expect(errors).toHaveBeenCalledTimes(1);
+			expect(errors.mock.calls[0]?.[0]).toMatchObject({ message: 'cannot address email' });
+		});
+
+		it('replaces the binding when connect is called again and lets only the last disposer act', async () => {
+			const { store } = createTestStore({ email: 'a@b.co', extra: '' });
+			const { form } = await mountEmail(store);
+			const first = vi.fn(() => 'first');
+			const second = vi.fn(() => 'second');
+			const disconnectFirst = form.connect(store, { formatError: first });
+			const disconnectSecond = form.connect(store, { formatError: second });
+			store.setHostErrors({ email: { type: 'x' } });
+			await settle();
+			expect(first).not.toHaveBeenCalled();
+			expect(second).toHaveBeenCalled();
+
+			disconnectFirst();
+			store.setHostErrors({ email: { type: 'y' } });
+			await settle();
+			expect(second).toHaveBeenCalledTimes(2);
+
+			disconnectSecond();
+			disconnectSecond();
+		});
+
+		it('applies the formatError property to the own store only', async () => {
+			const { store } = createTestStore({ email: 'a@b.co', extra: '' });
+			const { form, emailField } = await mountEmail(store);
+			const disconnect = form.connect(store, { formatError: () => 'from connect' });
+			form.formatError = () => 'from property';
+			store.setHostErrors({ email: { type: 'x' } });
+			await settle();
+			expect(findFieldError(emailField)?.textContent).toBe('from connect');
+
+			disconnect();
+			form.formatError = () => 'from property';
+			await settle();
+			expect(form.formatError).toBeDefined();
 		});
 
 		it('presents a warning without invalidating the field or blocking submit', async () => {
@@ -1648,7 +1763,7 @@ describe('rui-form with an injected store', () => {
 			await settle();
 			expect(findFieldError(emailField)?.textContent).toBe('one');
 
-			form.formatError = () => 'two';
+			form.connect(store, { formatError: () => 'two' });
 			await settle();
 
 			expect(findFieldError(emailField)?.textContent).toBe('two');

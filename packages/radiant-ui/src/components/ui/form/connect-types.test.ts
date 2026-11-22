@@ -53,7 +53,7 @@ describe('typed connect', () => {
 			},
 		});
 
-		expect(form.store).toBe(store);
+		expect(form).toBeDefined();
 	});
 
 	it('formats an issue through the binding with the own issue type of the store', async () => {
@@ -88,16 +88,29 @@ describe('typed connect', () => {
 		form.remove();
 	});
 
-	it('accepts an engine store for the plain store property and a formatter of the minimal shape', () => {
+	it('connects an engine store with a formatter of the minimal shape and returns a disposer', () => {
 		const form = document.createElement('rui-form') as RuiForm;
 		const format: RuiFormFormatError = vi.fn(() => '');
 
-		form.store = engineStore();
-		form.formatError = format;
+		const disconnect = form.connect(engineStore(), { formatError: format });
 
+		expectTypeOf(disconnect).toEqualTypeOf<() => void>();
 		expectTypeOf(engineStore()).toExtend<FormStateStore>();
 		expectTypeOf<EngineIssue>().toExtend<FieldError>();
-		expect(form.formatError).toBe(format);
+		disconnect();
+	});
+
+	it('has no plain properties for a store or its handlers', () => {
+		const form = document.createElement('rui-form') as RuiForm;
+
+		// @ts-expect-error a store is injected through connect only
+		form.store = engineStore();
+		// @ts-expect-error a submit handler is passed to connect
+		form.submitHandler = () => {};
+		// @ts-expect-error a reset handler is passed to connect
+		form.resetHandler = () => {};
+
+		expect(form).toBeDefined();
 	});
 
 	it('rejects a formatter for a different issue type, so there is no cast path', () => {
@@ -111,6 +124,6 @@ describe('typed connect', () => {
 			submitHandler: ({ store }: { store: FormStateStore<OtherIssue> }) => void store,
 		});
 
-		expect(form.store).toBeDefined();
+		expect(form).toBeDefined();
 	});
 });

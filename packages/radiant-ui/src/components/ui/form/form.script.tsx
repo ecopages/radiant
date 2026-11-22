@@ -40,15 +40,10 @@ export type RuiFormProps<T extends FieldValues = FieldValues> = {
 	/** Native form HTTP method, used when `onSubmit` is not provided. */
 	method?: HTMLFormElement['method'];
 	/**
-	 * A form state store the host owns. Without it the form creates its own
-	 * {@link FormStore}. See {@link FormStateStore}.
+	 * Text for the errors and warnings of the form's own {@link FormStore}; see
+	 * {@link RuiFormFormatError}. A store injected with `connect` takes its formatter
+	 * from `connect`'s handlers instead.
 	 */
-	store?: FormStateStore;
-	/** Takes over submit when `store` is injected; see {@link RuiFormSubmitHandler}. */
-	submitHandler?: RuiFormSubmitHandler;
-	/** Takes over the native `reset` event when `store` is injected; see {@link RuiFormResetHandler}. */
-	resetHandler?: RuiFormResetHandler;
-	/** Text for errors and warnings; see {@link RuiFormFormatError}. */
 	formatError?: RuiFormFormatError;
 };
 
@@ -191,16 +186,16 @@ const initialFormActions: FormContextActions = {
  * native navigation.
  *
  * `formContext.store` exposes the live store to scoped consumers once ready: the
- * injected store when `store` is set, otherwise the form's own {@link FormStore}.
+ * store given to `connect`, otherwise the form's own {@link FormStore}.
  * Hydration payloads contain presentation only, never the store or its actions.
  *
  * With an injected store the form is a control bridge: it keeps control
  * registration, native validity, error presentation, submit and `FormData`, and
  * the store owns validation timing, touched and dirty state, defaults and which
  * errors show. `mode`, `revalidate-mode`, `defaultValues`, field `defaultValue`,
- * `resolver` and field `rules` are ignored. Setting, replacing or clearing `store`
- * re-registers every control: the new store's values are written into the
- * controls, and clearing it returns to the form's own store in the state it left,
+ * `resolver` and field `rules` are ignored. Calling `connect` again re-registers every
+ * control: the new store's values are written into the controls, and the disposer
+ * `connect` returns brings back the form's own store in the state it left,
  * including its earlier errors, touched fields and submitted flag.
  */
 @customElement('rui-form')
@@ -236,16 +231,16 @@ export class RuiForm extends RadiantElement {
 	reValidateMode: ValidationMode;
 	@prop({ type: String, reflect: true }) action?: string;
 	@prop({ type: String, reflect: true }) method?: HTMLFormElement['method'];
-	@prop({ type: Object }) store?: FormStateStore;
-	@prop({ type: Object }) submitHandler?: RuiFormSubmitHandler;
-	@prop({ type: Object }) resetHandler?: RuiFormResetHandler;
 	@prop({ type: Object }) formatError?: RuiFormFormatError;
 	onSubmit?: (values: FieldValues) => void | Promise<void>;
 
 	private driver: FormDriver | undefined;
 	private ownStore: FormStore | undefined;
 	private drivenStore: FormStateStore | undefined;
-	private explicitBinding: BoundStore | undefined;
+	/** The binding `connect` made for the injected store, or `undefined` while the form uses its own. */
+	private injected: BoundStore | undefined;
+	/** The binding of the form's own store with the plain `formatError` property. */
+	private ownBinding: BoundStore | undefined;
 	private unsubscribeDriver?: () => void;
 	private readonly registrations = new Set<RegistrationEntry>();
 	private readonly nativeFormId = uniqueId('rui-form');
@@ -420,17 +415,13 @@ export class RuiForm extends RadiantElement {
 		}
 	}
 
-	private resolveInjectedStore(): FormStateStore | undefined {
-		return typeof this.store === 'object' && this.store !== null ? this.store : undefined;
-	}
-
 	/** The store `formContext` exposes: the injected one, else the form's own. */
 	private resolveStateStore(): FormStateStore | undefined {
 		return this.drivenStore ?? this.ownStore;
 	}
 
 	/**
-	 * Returns the driver for the current `store` property, switching drivers when it changed.
+	 * Returns the driver for the connected store, switching drivers when it changed.
 	 *
 	 * @remarks A switch unregisters every control from the old driver and registers it
 	 * into the new one, which writes the new store's values into the controls. The
@@ -439,7 +430,7 @@ export class RuiForm extends RadiantElement {
 	 * flag. A disconnected form binds no driver, so it holds no store subscription.
 	 */
 	private ensureDriver(): FormDriver {
-		const injected = this.resolveInjectedStore();
+		const injected = this.injected?.store;
 		if (this.driver && this.drivenStore === injected) {
 			this.bindDriver(this.driver);
 			return this.driver;
@@ -469,6 +460,9 @@ export class RuiForm extends RadiantElement {
 				});
 			}
 			this.driver = this.ownStore;
+			if (this.ownBinding?.store !== this.ownStore) {
+				this.refreshOwnBinding();
+			}
 		}
 		this.bindDriver(this.driver);
 		if (switching) {
@@ -502,24 +496,15 @@ export class RuiForm extends RadiantElement {
 		}
 	}
 
-	/**
-	 * The binding of the current store with its handlers: the one `connect` made for
-	 * it, else one built from the plain `formatError`, `submitHandler` and
-	 * `resetHandler` properties, which are typed for `FieldError`.
-	 */
+	/** The binding in use: the connected store's, else the form's own store with `formatError`. */
 	private binding(): BoundStore | undefined {
-		const store = this.resolveStateStore();
-		if (!store) {
-			return undefined;
-		}
-		if (this.explicitBinding?.store === store) {
-			return this.explicitBinding;
-		}
-		return new StoreBinding<FieldError>(store, {
-			formatError: this.formatError,
-			submitHandler: this.submitHandler,
-			resetHandler: this.resetHandler,
-		});
+		return this.injected ?? this.ownBinding;
+	}
+
+	private refreshOwnBinding(): void {
+		this.ownBinding = this.ownStore
+			? new StoreBinding<FieldError>(this.ownStore, { formatError: this.formatError })
+			: undefined;
 	}
 
 	/**
@@ -585,21 +570,38 @@ export class RuiForm extends RadiantElement {
 	}
 
 	/**
-	 * Connect a store and the handlers that work with its own issue type: the
-	 * formatter's `issue` and each handler's `context.store` are typed from `store`,
-	 * so a store whose entries carry more than `FieldError` needs no cast.
+	 * Hand the form a store it does not own, with the handlers that work with the
+	 * store's own issue type: the formatter's `issue` and each handler's
+	 * `context.store` are typed from `store`, so a store whose entries carry more than
+	 * `FieldError` needs no cast. This is the only way to inject a store.
 	 *
 	 * @remarks The element builds a {@link StoreBinding} that holds the store and the
 	 * handlers together, so an issue goes from the store's snapshot to `formatError`
-	 * with its type intact. The binding stands in for the plain `formatError`,
-	 * `submitHandler` and `resetHandler` properties as long as `store` is the one it
-	 * was made for; assign those properties instead when the store's entries are the
-	 * minimal `FieldError`.
+	 * with its type intact. Calling `connect` again replaces the binding, for the same
+	 * store or another one: every control is registered into the new store and takes
+	 * its values.
+	 *
+	 * @returns A disposer that returns the form to its own store, in the state that
+	 * store was left in: its values, errors, touched fields and submitted flag, or a
+	 * fresh store built from `defaultValues` if the form never had one. It does
+	 * nothing once another `connect` replaced this one.
 	 */
-	connect<TIssue extends FieldError>(store: FormStateStore<TIssue>, handlers: RuiFormHandlers<TIssue> = {}): void {
-		this.explicitBinding = new StoreBinding(store, handlers);
-		this.store = store;
+	connect<TIssue extends FieldError>(
+		store: FormStateStore<TIssue>,
+		handlers: RuiFormHandlers<TIssue> = {},
+	): () => void {
+		const binding = new StoreBinding(store, handlers);
+		this.injected = binding;
+		this.ensureDriver();
 		this.publishFormContext({ force: true });
+		return () => {
+			if (this.injected !== binding) {
+				return;
+			}
+			this.injected = undefined;
+			this.ensureDriver();
+			this.publishFormContext({ force: true });
+		};
 	}
 
 	/**
@@ -612,12 +614,7 @@ export class RuiForm extends RadiantElement {
 
 	@onUpdated(['formatError'])
 	syncFormatError(): void {
-		this.publishFormContext({ force: true });
-	}
-
-	@onUpdated(['store'])
-	syncInjectedStore(): void {
-		this.ensureDriver();
+		this.refreshOwnBinding();
 		this.publishFormContext({ force: true });
 	}
 

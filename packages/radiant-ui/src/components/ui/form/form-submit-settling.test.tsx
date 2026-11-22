@@ -49,7 +49,7 @@ function createThrowingStore(error: Error): FormStateStore {
 async function mount(options: { store?: FormStateStore; rules?: Record<string, unknown> } = {}) {
 	const form = document.createElement('rui-form') as RuiFormElement;
 	if (options.store) {
-		form.store = options.store;
+		form.connect(options.store);
 	}
 	const nativeForm = document.createElement('form');
 	nativeForm.setAttribute('data-ref', 'form');

@@ -141,24 +141,33 @@ export class InjectedFormDriver implements FormDriver {
 			if (!force && !changed) {
 				continue;
 			}
-			if (isSameValue(next, entry.registration.getValue())) {
-				entry.baseline = entry.registration.getValue();
+			const held = entry.registration.getValue();
+			if (isSameValue(next, held)) {
+				const unreported = !isSameValue(held, entry.baseline);
+				entry.baseline = held;
+				if (!unreported) {
+					continue;
+				}
 			} else {
 				this.writeToControl(entry, next);
-				this.scheduleFactReport(entry);
 			}
+			this.scheduleFactReport(entry);
 		}
 	}
 
 	/**
-	 * Report a control's fact on its own after the store wrote a value into it.
+	 * Report a control's fact on its own when it is seeded and whenever the store's
+	 * value at its path changes, whether or not the control had to be written.
 	 *
-	 * @remarks A store write is not a user change, so nothing else tells the store
-	 * what the control now says about its new value: `setValue('email', 'not-an-email')`
+	 * @remarks A store write is not a user change, and an untouched control has never
+	 * reported, so nothing else tells the store what the control says about the value
+	 * it holds, and a check after mount would see no fact: `setValue('email', 'not-an-email')`
 	 * would otherwise leave `typeMismatch` unreported. The report runs after the
 	 * notification that wrote the control, not inside it, and goes through
 	 * `reportNative`, which the store binds to the value it holds without counting a
-	 * change. A control that was removed or renamed in the meantime is skipped.
+	 * change. A control that was removed or renamed in the meantime is skipped, and a
+	 * report the store rejects, such as a path it cannot address, is reported with
+	 * `reportError` without stopping the others.
 	 */
 	private scheduleFactReport(entry: BoundField): void {
 		this.pendingFactReports.set(entry, entry.name);
@@ -170,7 +179,11 @@ export class InjectedFormDriver implements FormDriver {
 			this.pendingFactReports.clear();
 			for (const [reported, name] of pending) {
 				if (reported.live && reported.name === name && this.fields.get(name) === reported) {
-					this.state.reportNative(name, this.factOf(reported));
+					try {
+						this.state.reportNative(name, this.factOf(reported));
+					} catch (error) {
+						reportError(error);
+					}
 				}
 			}
 		});
@@ -195,6 +208,7 @@ export class InjectedFormDriver implements FormDriver {
 		const value = this.state.getValue(entry.name);
 		entry.lastSeen = value;
 		this.writeToControl(entry, value);
+		this.scheduleFactReport(entry);
 	}
 
 	/**

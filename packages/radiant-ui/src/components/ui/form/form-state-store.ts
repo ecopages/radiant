@@ -51,9 +51,9 @@ export type FormStateBlurOptions = FormStateNativeOptions & {
 };
 
 /**
- * The state `<rui-form>` drives when a host owns form state. Assign an instance to
- * the form's `store` property; without one the form creates its own `FormStore`,
- * which satisfies the type and nests values the same way.
+ * The state `<rui-form>` drives when a host owns form state. Hand an instance to
+ * `form.connect`; without one the form creates its own `FormStore`, which satisfies
+ * the type and nests values the same way.
  *
  * Paths are dotted field names (`address.street`), the same string a `rui-field`
  * carries as its `name`.
