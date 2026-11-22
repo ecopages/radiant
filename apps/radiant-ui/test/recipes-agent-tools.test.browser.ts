@@ -33,6 +33,7 @@ describe('recipes', () => {
 
 			expect(result).toEqual({ count: 2 });
 			expect([...root.querySelectorAll('li')].map((item) => item.textContent)).toEqual(['apple', 'pear']);
+			expect(root.querySelector('[data-status]')!.textContent).toBe('2 in cart');
 		});
 
 		test('rejects an input that fails the schema', async () => {
@@ -52,17 +53,24 @@ describe('recipes', () => {
 			try {
 				const baseline = tracker.live(document, window);
 				const root = await mountForm('agent-tools', form);
+				const submitForm = root.querySelector('form')!;
 				await until(() => expect(standIn.tools.has('add_to_cart')).toBe(true));
 
 				root.remove();
 				syncExamples();
 				await until(() => expect(standIn.tools.size).toBe(0));
 				expect(tracker.live(document, window)).toEqual(baseline);
+				expect(tracker.live(root, submitForm)).toEqual([]);
 
 				const fresh = await mountForm('agent-tools', form);
 				await until(() => expect(standIn.tools.has('add_to_cart')).toBe(true));
 				fresh.querySelector('form')!.requestSubmit();
-				expect(fresh.querySelectorAll('li')).toHaveLength(1);
+				const result = await standIn.tools
+					.get('add_to_cart')!
+					.execute({ sku: 'pear' }, { signal: new AbortController().signal });
+
+				expect(result).toEqual({ count: 2 });
+				expect([...fresh.querySelectorAll('li')].map((item) => item.textContent)).toEqual(['apple', 'pear']);
 			} finally {
 				tracker.stop();
 			}

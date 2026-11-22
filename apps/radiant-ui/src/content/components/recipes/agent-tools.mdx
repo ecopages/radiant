@@ -26,22 +26,22 @@ export const config = {
 
 ## Goal
 
-A page that lets an agent do what a person does: add a product to the cart, close a dialog, filter a list. The agent calls a tool the page registered, instead of finding and clicking the DOM. The tool belongs to the component that owns the state, so it appears when the component connects and goes when it is removed, and the button and the tool run the same code.
+A page that lets an agent do what a person does: add a product to the cart, close a dialog, filter a list. The agent calls a tool the page registered, instead of finding and clicking the DOM. The tool belongs to the component that owns the state, so it appears when the component connects and goes when it is removed, and the form and the tool call the same method.
 
 ## Primitives
 
-- [`@agentTool`](https://github.com/ecopages/radiant/blob/main/packages/radiant/README.md#agent-tools-experimental) turns a method into a tool. The method stays an ordinary method, so the form submit calls `addItem` with a typed argument and the agent calls the same method.
+- [`@agentTool`](https://github.com/ecopages/radiant/blob/main/packages/radiant/README.md#agent-tools-experimental) turns a method into a tool. The method stays an ordinary method, so the form submit calls `addItem` with a typed argument and the agent calls the same method. The schema guards only the agent's path, since the form passes a typed value straight in, so the field carries `required`.
 - `registerAgentTool` registers a tool without a host and returns the function that removes it. The plain form uses it, and the decorator is built from it through `createAgentTool(host, config)`, which ties a tool to an element's connect and disconnect.
 - A schema library describes the input once. This recipe uses [Zod](https://zod.dev): `z.toJSONSchema(schema)` gives the `inputSchema` the browser shows the agent, and `schema.parse` goes in `parse`, which checks what the agent sent before the method runs. Radiant takes plain JSON Schema and a `parse` function, so Valibot, ArkType or hand-written code work the same way.
 
-Left to the recipe: the schema, what the method does, and what it returns. The tool name is unique on the page, so a component that can appear twice builds the name from an instance value, and types the host parameter because the decorator is written before TypeScript knows the class:
+Left to the recipe: the schema, what the method does, and what it returns. The tool name is unique on the page, so a component that can appear twice builds the name from an instance value such as its `id`. Type the host parameter, because the decorator is written before TypeScript knows the class:
 
 ```ts
 @agentTool({
 	name: (host: AgentToolsElement) => `add_to_cart_${host.id}`,
 	description: 'Adds a product to the cart by its SKU.',
 })
-addItem(item: Item) {}
+addItem(item: { sku: string }) {}
 ```
 
 ## Example
@@ -86,13 +86,17 @@ A `mount` function registers the tool and returns the cleanup that removes it.
 	<p data-result aria-live="polite"></p>
 </tool-inspector>
 
+### Styles
+
+The stylesheet is the `agent-tools.css` tab in the files above, with the example's selectors scoped to this site. The inspector is docs-only and is not part of the recipe.
+
 ## What to watch for
 
 - **Unique names.** A second registration with the same name is rejected by the browser, and Radiant reports it with the tool and the element. Two UIs that do the same thing use two names, or one owner registers the tool once.
 - **Validate in code.** `inputSchema` is advisory, so an agent can send anything. `parse` is where the input is checked, and a method that skips it receives the input as sent.
 - **Return when the page is true.** Update the UI before the method returns, and return a value that says what happened, because the agent reads it.
-- **Embedded pages.** A tool registered inside an iframe needs `allow="tools"` on the frame.
-- **Server-rendered elements.** A host that waits for its children registers its tool only after it hydrates.
+- **Embedded pages.** A tool registered inside a cross-origin iframe needs `allow="tools"` on the frame.
+- **Server-rendered elements.** An element whose children come from its parent's view registers its tool only after it hydrates, and never when the parent does not render on the client.
 
 ## Keeping data safe
 
@@ -104,7 +108,3 @@ A tool runs page code for an agent, and what it returns can leave the device. Ra
 - **Confirm in your own UI.** The current WebMCP spec has no confirmation API. A consequential tool awaits the app's own dialog inside `execute` and closes it when the `signal` aborts.
 - **Authorize on the server.** The agent can skip the checks the UI does, so a real cart checks permission on the server and binds a consequential call to an id or version.
 - **Keep it on this origin.** Tools are visible only to the page's own origin. `exposedTo` lets other origins call them with arguments you cannot trust, and logs a warning in development.
-
-### Styles
-
-The stylesheet is the `agent-tools.css` tab in the files above, with the example's selectors scoped to this site. The inspector is docs-only and is not part of the recipe.
