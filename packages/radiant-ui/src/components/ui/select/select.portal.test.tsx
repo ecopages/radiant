@@ -62,7 +62,7 @@ describe.each([false, true])('RuiSelect with portal %s', (portal) => {
 	it('selects an option by click, keeps the value and label wiring, and closes', async () => {
 		const { select, trigger, popup } = await mountSelect(portal);
 		const changes: string[][] = [];
-		select.addEventListener('rui-change', (event) => changes.push((event as CustomEvent).detail.value));
+		select.addEventListener('change', () => changes.push(select.value));
 
 		trigger.click();
 		await settled();

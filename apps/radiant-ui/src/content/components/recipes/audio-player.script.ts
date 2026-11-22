@@ -1,6 +1,6 @@
 import '@ecopages/radiant-ui/slider';
 import '@ecopages/radiant-ui/toolbar';
-import type { RuiSliderChangeDetail, RuiSliderElement } from '@ecopages/radiant-ui/slider';
+import type { RuiSliderElement } from '@ecopages/radiant-ui/slider';
 import {
 	AudioVisualizerController,
 	MediaController,
@@ -175,11 +175,7 @@ export function mount(root: HTMLElement): () => void {
 		status.textContent = shuffleAnnouncement(order.shuffle);
 	}
 
-	seek.addEventListener(
-		'rui-change',
-		(event) => media.scrub((event as CustomEvent<RuiSliderChangeDetail>).detail.value[0]),
-		{ signal },
-	);
+	seek.addEventListener('input', () => media.scrub(seek.value[0]), { signal });
 	seek.addEventListener(
 		'keydown',
 		(event) => {
@@ -192,9 +188,9 @@ export function mount(root: HTMLElement): () => void {
 		{ signal, capture: true },
 	);
 	volume.addEventListener(
-		'rui-change',
-		(event) => {
-			const level = (event as CustomEvent<RuiSliderChangeDetail>).detail.value[0];
+		'input',
+		() => {
+			const level = volume.value[0];
 			media.setVolume(level);
 			volumeText.set(volumeValueText(level));
 		},

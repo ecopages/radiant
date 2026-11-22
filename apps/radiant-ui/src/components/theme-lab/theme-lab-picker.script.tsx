@@ -1,6 +1,6 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, onEvent } from '@ecopages/radiant';
-import type { RuiListboxElement } from '@ecopages/radiant-ui/listbox';
+import { RuiListboxElement } from '@ecopages/radiant-ui/listbox';
 import { DOCS_DEFAULT_THEME_TUNING, DOCS_TUNING_CHANGE_EVENT } from '@/lib/docs-default-theme-tuning';
 import {
 	applySavedTheme,
@@ -53,9 +53,11 @@ export class ThemeLabPickerElement extends RadiantElement {
 		super.disconnectedCallback();
 	}
 
-	@onEvent({ selector: 'rui-listbox[data-theme-list]', type: 'rui-change' })
+	@onEvent({ selector: 'rui-listbox[data-theme-list]', type: 'change' })
 	onChooseBuiltIn(event: Event): void {
-		const [value] = (event as CustomEvent<{ value?: string[] }>).detail?.value ?? [];
+		const listbox = event.target;
+		if (!(listbox instanceof RuiListboxElement)) return;
+		const [value] = listbox.value;
 		if (!isDocsThemeColor(value)) return;
 		applySavedTheme({ colors: value, tuning: DOCS_DEFAULT_THEME_TUNING, fonts: {} });
 	}

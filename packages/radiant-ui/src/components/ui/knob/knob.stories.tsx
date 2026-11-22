@@ -26,11 +26,9 @@ export const Default: Story = {
 			await expect(canvasElement.querySelector('.rui-knob__value')).toHaveTextContent('50');
 		});
 
-		await step('arrow keys update the value and emit rui-change', async () => {
+		await step('arrow keys update the value and dispatch change', async () => {
 			const emissions: number[] = [];
-			host.addEventListener('rui-change', (event) =>
-				emissions.push((event as CustomEvent<{ value: number }>).detail.value),
-			);
+			host.addEventListener('change', () => emissions.push(Reflect.get(host, 'value')));
 			control.focus();
 			await userEvent.keyboard('{ArrowRight}{PageUp}');
 			await expect(host).toHaveAttribute('value', '61');

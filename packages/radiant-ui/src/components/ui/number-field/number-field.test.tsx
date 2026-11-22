@@ -88,9 +88,7 @@ describe('RuiNumberField commit', () => {
 		const host = document.querySelector('rui-number-field') as RuiNumberFieldElement;
 		const input = host.querySelector<HTMLInputElement>('[data-number-field-input]') as HTMLInputElement;
 		const changes: number[] = [];
-		host.addEventListener('rui-change', (event) =>
-			changes.push((event as CustomEvent<{ value: number }>).detail.value),
-		);
+		host.addEventListener('change', () => changes.push(host.value as number));
 		return { host, input, changes };
 	}
 

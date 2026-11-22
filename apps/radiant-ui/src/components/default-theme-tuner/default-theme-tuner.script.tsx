@@ -3,7 +3,7 @@ import { RadiantElement, customElement, onEvent, prop, state } from '@ecopages/r
 import { RuiButton } from '@ecopages/radiant-ui/button';
 import { RuiField, RuiFieldDescription } from '@ecopages/radiant-ui/field';
 import { RuiLabel } from '@ecopages/radiant-ui/label';
-import { RuiSlider, type RuiSliderChangeDetail } from '@ecopages/radiant-ui/slider';
+import { RuiSlider, RuiSliderElement } from '@ecopages/radiant-ui/slider';
 import {
 	applyDefaultThemeTuning,
 	createDocsDefaultThemeTuningCss,
@@ -78,12 +78,12 @@ export class DefaultThemeTunerElement extends RadiantElement {
 		}, 150);
 	}
 
-	@onEvent({ selector: 'rui-slider[data-default-tuning]', type: 'rui-change' })
-	onTuningChange(event: CustomEvent<RuiSliderChangeDetail>): void {
+	@onEvent({ selector: 'rui-slider[data-default-tuning]', type: 'input' })
+	onTuningChange(event: Event): void {
 		const slider = event.target;
-		if (!(slider instanceof HTMLElement)) return;
+		if (!(slider instanceof RuiSliderElement)) return;
 		const key = slider.dataset.defaultTuning as keyof DocsDefaultThemeTuning | undefined;
-		const [value] = event.detail.value;
+		const [value] = slider.value;
 		if (!key || !tuningControls.some((control) => control.key === key) || !Number.isFinite(value)) return;
 
 		this.tuning = parseDocsDefaultThemeTuning({ ...this.tuning, [key]: value });

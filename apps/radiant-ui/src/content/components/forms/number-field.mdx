@@ -131,7 +131,10 @@ Nested hosts: none.
 
 | Event | Detail | Description |
 | --- | --- | --- |
-| `rui-change` | `{ value: number }` | Emitted when a value is committed (blur, stepper, or keyboard). |
+| `input` | none | Fired when a value is committed (blur, Enter, stepper, arrow keys or wheel). Typing a draft fires nothing on the host. |
+| `change` | none | Fired right after `input` on the same commit. |
+
+Read the value from the control (`host.value`); the events carry no `detail`. Both fire on the host after `value` is updated, and a programmatic write (property, attribute, store, reset) dispatches nothing. Act only when `event.target` is the host: a nested part's events can reach a listener above the host. The inner text box's own `input` and `change` are stopped at the host.
 
 ### View helpers
 

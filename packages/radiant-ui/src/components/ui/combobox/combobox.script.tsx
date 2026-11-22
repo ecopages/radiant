@@ -1,7 +1,6 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
 import { isResetBy } from '../shared/form-owner';
-import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop, ref } from '@ecopages/radiant';
-import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
+import { RadiantElement, bindTo, customElement, onEvent, onUpdated, prop, ref } from '@ecopages/radiant';
 import { textContains } from '@/lib/text-filter';
 import { uniqueId } from '@/lib/unique-id';
 import type { RuiAutocomplete } from '../autocomplete/autocomplete.script';
@@ -17,6 +16,7 @@ import {
 	type RuiPortalContainer,
 } from '../shared/portal-container';
 import { announceControlConnect } from '@/lib/form/control-protocol';
+import { emitValueEvents, stopInnerValueEvents } from '@/lib/form/value-events';
 
 export type RuiComboboxSelectionMode = 'single' | 'multiple';
 export type RuiComboboxTriggerKind = 'input' | 'focus' | 'manual';
@@ -41,8 +41,6 @@ export type RuiComboboxProps = {
 	/** CSS selector of the element a portaled popup goes to, resolved when the popup opens. */
 	portalContainer?: string;
 };
-
-export type RuiComboboxChangeDetail = { value: string[] };
 
 /**
  * `<rui-combobox>` — a combobox with a filterable listbox popup.
@@ -98,7 +96,6 @@ export type RuiComboboxChangeDetail = { value: string[] };
  * @attr {('input'|'focus'|'manual')} trigger-kind - Controls what opens the listbox. Default: `input`.
  * @attr {boolean} portal - Render the popup in `document.body`, or in `portal-container`, while it is open. Default: `false`.
  * @attr {string} portal-container - CSS selector of the element a portaled popup goes to, resolved each time it opens. The `portalContainer` property also takes an element or a function that returns one.
- * @fires rui-change - Emitted when an option is selected; `detail.value` is `string[]`.
  *
  * @remarks
  * Minimum tree: `[data-ref="root"]` > `[data-combobox-input]` + `[data-combobox-listbox]`
@@ -111,6 +108,11 @@ export type RuiComboboxChangeDetail = { value: string[] };
 @customElement('rui-combobox')
 export class RuiCombobox extends RadiantElement {
 	declare readonly [JSX_PROPS]?: RuiComboboxProps;
+
+	constructor() {
+		super();
+		stopInnerValueEvents(this, () => this.querySelector('[data-combobox-value]'));
+	}
 
 	@prop({ ...multiValuePropOptions, defaultValue: [] })
 	value: string[];
@@ -126,9 +128,6 @@ export class RuiCombobox extends RadiantElement {
 	triggerKind: RuiComboboxTriggerKind;
 	@prop({ type: Boolean, defaultValue: false }) portal: boolean;
 	@prop(portalContainerPropOptions) portalContainer: RuiPortalContainer | null;
-
-	@event({ name: 'rui-change', bubbles: true, composed: true })
-	changeEvent: EventEmitter<RuiComboboxChangeDetail>;
 
 	private open = false;
 	private readonly uid = uniqueId('rui-combobox');
@@ -389,7 +388,7 @@ export class RuiCombobox extends RadiantElement {
 		this.collection.syncTagGroup();
 		this.syncInput();
 		this.collection.syncOptionSelection();
-		this.changeEvent.emit({ value: this.value });
+		emitValueEvents(this, { commit: true });
 		if (this.closesOnSelect()) {
 			this.setOpen(false);
 		}
@@ -416,7 +415,7 @@ export class RuiCombobox extends RadiantElement {
 		this.collection.syncTagGroup();
 		this.syncInput();
 		this.collection.syncOptionSelection();
-		this.changeEvent.emit({ value: this.value });
+		emitValueEvents(this, { commit: true });
 		this.getInput()?.focus();
 	}
 
@@ -430,7 +429,7 @@ export class RuiCombobox extends RadiantElement {
 		this.syncInput();
 		this.collection.syncTagGroup();
 		this.collection.syncOptionSelection();
-		if (hadValue) this.changeEvent.emit({ value: [] });
+		if (hadValue) emitValueEvents(this, { commit: true });
 		if (hadInput || hadValue) input?.focus();
 	}
 
@@ -607,7 +606,7 @@ export class RuiCombobox extends RadiantElement {
 				}
 				input.value = '';
 				this.value = [];
-				this.changeEvent.emit({ value: [] });
+				emitValueEvents(this, { commit: true });
 				this.syncFilter();
 				return true;
 			},

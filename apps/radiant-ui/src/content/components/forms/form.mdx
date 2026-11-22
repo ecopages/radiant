@@ -125,10 +125,11 @@ class ToneControl extends FormAssociatedElement {
 		announceControlConnect(this);
 	}
 
-	/** Commit a choice, then announce it so the field writes the new value. */
+	/** Commit a choice, then dispatch `input` and `change` on the host so the field writes the new value. */
 	choose(value: string): void {
 		this.value = value;
-		this.dispatchEvent(new CustomEvent('rui-change', { bubbles: true, composed: true, detail: { value } }));
+		this.dispatchEvent(new InputEvent('input', { bubbles: true, composed: true }));
+		this.dispatchEvent(new Event('change', { bubbles: true }));
 	}
 
 	protected override formValue(): FormValue {
@@ -149,7 +150,7 @@ registerFieldControl('x-tone', {
 });
 ```
 
-A field writes a native control (`<input>`, `<textarea>`, `<select>`) on its native `input` and `change` events. It writes any other control, including a host like this one, only on its bubbling `rui-change`, because the native event reaches the field before a composite control has updated its own value. A custom host must therefore emit `rui-change` after it commits a value, and announce itself with `announceControlConnect(this)` (a bubbling, composed `rui-control-connect` event) when it connects, so a field that registered before the control existed seeds it from the form's value and reads its validity. Every Radiant control host does. A native `<input>`, `<select>` or `<textarea>` marked `data-rui-control` announces nothing: it must already be inside its field when the field connects, and one inserted later is picked up on the field's next sync (a store notification or a re-render).
+A field writes a native control (`<input>`, `<textarea>`, `<select>`) on its native `input` and `change` events. It writes any other control, including a host like this one, on the same two events, but only when the event target is the control host (or a member native input of a wrapper or group), because a nested part's events also reach the field. A custom host must therefore dispatch `input` (and `change` on commit) on itself after it updates `value`, with no `detail`, and announce itself with `announceControlConnect(this)` (a bubbling, composed `rui-control-connect` event) when it connects, so a field that registered before the control existed seeds it from the form's value and reads its validity. Every Radiant control host does. A native `<input>`, `<select>` or `<textarea>` marked `data-rui-control` announces nothing: it must already be inside its field when the field connects, and one inserted later is picked up on the field's next sync (a store notification or a re-render).
 
 `FormAssociatedElement` extends `RadiantElement`. Each concrete subclass has its own constructor, so several controls can inherit the base and register under different tags. The base owns the single `ElementInternals`, `name`, `disabled`, effective fieldset disability, submission syncing, reset, and restore after back/forward or autofill (`formStateRestoreCallback` writes the saved state back with `restoreFormState()`). Its inherited static `formAssociated` getter is read when the concrete class is registered. Keep `super.updated(changed)` if you override `updated()`; that call syncs the form value after reactive writes. Likewise, call `super.formDisabledCallback(disabled)`, `super.formResetCallback()` or `super.formStateRestoreCallback(state, mode)` when overriding those browser callbacks. In `autocomplete` mode the browser passes the autofilled string, not a saved state; override the callback when your `formState()` is not parseable from the submission string, as `RuiSlider` does for a range.
 
@@ -167,7 +168,7 @@ For other hosts, `submission` is `native` by default (name the native ARIA targe
 
 Native validity is evidence, not configuration. The browser computes `element.validity` from the element's attributes and its value, and `rui-form` reads it and forwards the result: the failing `ValidityState` flag as the error `type`, the constraint behind it as `params`, and the control's own `validationMessage` as a fallback `message`. Nobody edits a native verdict and there is no switch for it; a control with no constraint attributes contributes nothing.
 
-Sources: native `input`, `textarea` and `select` controls (`required`, `type="email"`, `minlength`, `maxlength`, `min`, `max`, `step`, `pattern`), and form-associated hosts. A form-associated host that calls `this.internals?.setValidity(flags, message)` reports the same way, and a host that does not extend `FormAssociatedElement` passes a `validity: (host) => ({ valid, type?, params?, message? })` function to `registerFieldControl`. Call `setValidity` before emitting `rui-change`, so change-time validation sees the new state. A control barred from constraint validation (disabled, for one) reports valid, and a control without validity (or without `ElementInternals`, as on the server) contributes nothing. Only controls marked `data-rui-control`, and Radiant's own controls, are bridged; a bare `<input>` inside a `RuiField` is neither read nor written.
+Sources: native `input`, `textarea` and `select` controls (`required`, `type="email"`, `minlength`, `maxlength`, `min`, `max`, `step`, `pattern`), and form-associated hosts. A form-associated host that calls `this.internals?.setValidity(flags, message)` reports the same way, and a host that does not extend `FormAssociatedElement` passes a `validity: (host) => ({ valid, type?, params?, message? })` function to `registerFieldControl`. Call `setValidity` before dispatching `input`, so change-time validation sees the new state. A control barred from constraint validation (disabled, for one) reports valid, and a control without validity (or without `ElementInternals`, as on the server) contributes nothing. Only controls marked `data-rui-control`, and Radiant's own controls, are bridged; a bare `<input>` inside a `RuiField` is neither read nor written.
 
 | Flag | `params` | Constraint attribute |
 | --- | --- | --- |

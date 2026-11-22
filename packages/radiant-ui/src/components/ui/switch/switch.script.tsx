@@ -1,6 +1,6 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
-import { RadiantElement, bindTo, customElement, event, onEvent, prop } from '@ecopages/radiant';
-import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
+import { RadiantElement, bindTo, customElement, prop } from '@ecopages/radiant';
+import { createEventListenerController } from '../../../controllers/event-listener-controller';
 import { nonEmpty } from '@/lib/non-empty';
 import { announceControlConnect } from '@/lib/form/control-protocol';
 
@@ -11,10 +11,6 @@ export type RuiSwitchProps = {
 	disabled?: boolean;
 	/** Associates the control with a form field name. */
 	name?: string;
-};
-
-export type RuiSwitchChangeDetail = {
-	checked: boolean;
 };
 
 /**
@@ -57,7 +53,10 @@ export type RuiSwitchChangeDetail = {
  * @attr {boolean} checked - Whether the switch is on. Default: `false`.
  * @attr {boolean} disabled - Disable the switch. Default: `false`.
  * @attr {string} name - Form field name on the inner input. Default: `''`.
- * @fires rui-change - Emitted after the checked state changes; `detail.checked` holds the new state.
+ *
+ * The host dispatches no event. The inner input's native `input` and `change` bubble through it, and the host
+ * syncs `checked` in a capture listener on itself, so a bubble listener reads fresh state. Act on an event only
+ * when `event.target` is that input.
  *
  * @cssprop --rui-switch-width - Track width. Default: `2.5rem`.
  * @cssprop --rui-switch-height - Track height. Default: `1.5rem`.
@@ -93,14 +92,20 @@ export class RuiSwitch extends RadiantElement {
 	})
 	name: string;
 
-	@event({ name: 'rui-change', bubbles: true, composed: true })
-	changeEvent: EventEmitter<RuiSwitchChangeDetail>;
-
-	@onEvent({ ref: 'input', type: 'change' })
-	onInputChange(event: Event): void {
-		const input = event.target as HTMLInputElement;
-		this.checked = input.checked;
-		this.changeEvent.emit({ checked: this.checked });
+	/** Syncs the host from its input before any bubble listener runs. */
+	constructor() {
+		super();
+		createEventListenerController(this, {
+			getTarget: () => this,
+			type: ['input', 'change'],
+			options: { capture: true },
+			listener: (event) => {
+				const input = event.target;
+				if (input instanceof HTMLInputElement && this.contains(input)) {
+					this.checked = input.checked;
+				}
+			},
+		});
 	}
 
 	protected override onConnected(): void {

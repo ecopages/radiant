@@ -61,11 +61,9 @@ export const Default: Story = {
 			await expect(host).toHaveAttribute('value', 'security');
 		});
 
-		await step('a rui-change event carries the selected values', async () => {
+		await step('one toggle is one change event, and the group already holds the new values', async () => {
 			const emissions: string[][] = [];
-			host.addEventListener('rui-change', (event) =>
-				emissions.push((event as CustomEvent<{ value: string[] }>).detail.value),
-			);
+			host.addEventListener('change', () => emissions.push(Reflect.get(host, 'value')));
 			await userEvent.click(checkboxes[2]);
 			await expect(emissions).toEqual([['security', 'marketing']]);
 		});

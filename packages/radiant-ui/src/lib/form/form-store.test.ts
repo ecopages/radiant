@@ -560,15 +560,30 @@ describe('FormStore', () => {
 
 		it('clears a host error at the path when the user edits that field', async () => {
 			const store = new FormStore<{ a: string; b: string }>();
-			store.register(field('a', 'x'));
+			const a = field('a', 'x');
+			store.register(a);
 			store.register(field('b', 'y'));
 			store.setErrors('server', { a: { message: 'Taken' }, b: { message: 'Other' } });
+			a.setValue('typed');
 
 			await store.handleFieldChange('a');
 
 			expect(store.errors.a).toBeUndefined();
 			expect(store.errors.b?.message).toBe('Other');
 			expect(await store.validate(['a'])).toBe(true);
+		});
+
+		it('drops a change event for a value the store already holds', async () => {
+			const store = new FormStore<{ a: string }>({ defaultValues: { a: 'x' } });
+			store.register(field('a', 'x'));
+			store.setErrors('server', { a: { message: 'Taken' } });
+			const listener = vi.fn();
+			store.subscribe(listener);
+
+			await store.handleFieldChange('a');
+
+			expect(store.errors.a?.message).toBe('Taken');
+			expect(listener).not.toHaveBeenCalled();
 		});
 
 		it('clears a host error at the path when a value is written through setValue', () => {

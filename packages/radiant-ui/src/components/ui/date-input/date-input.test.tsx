@@ -36,8 +36,8 @@ function segment(host: HTMLElement, type: 'month' | 'day' | 'year'): HTMLElement
 
 function listenChanges(host: HTMLElement): string[] {
 	const values: string[] = [];
-	host.addEventListener('rui-change', (event) => {
-		values.push((event as CustomEvent<{ value: string }>).detail.value);
+	host.addEventListener('change', (event) => {
+		if (event.target === host) values.push(Reflect.get(host, 'value'));
 	});
 	return values;
 }

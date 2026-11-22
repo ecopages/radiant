@@ -1,10 +1,9 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
-import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop, state } from '@ecopages/radiant';
-import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
+import { RadiantElement, bindTo, customElement, onEvent, onUpdated, prop, state } from '@ecopages/radiant';
 import { effectiveVisibleMonths } from '@/lib/viewport/mobile-layout';
 import { uniqueId } from '@/lib/unique-id';
 import type { RuiCalendarChangeDetail } from '../calendar/calendar.script';
-import type { RuiDateInputChangeDetail } from '../date-input/date-input.script';
+import { emitValueEvents, stopInnerValueEvents } from '@/lib/form/value-events';
 import { createCalendarPopoverController } from '../shared/calendar-popover-controller';
 import { createEventListenerController } from '../../../controllers/event-listener-controller';
 import {
@@ -33,8 +32,6 @@ export type RuiDateFieldProps = {
 	portalContainer?: string;
 };
 
-export type RuiDateFieldChangeDetail = { value: string };
-
 /**
  * `<rui-date-field>` — locale-aware date segments with an optional calendar popup.
  *
@@ -58,7 +55,7 @@ export type RuiDateFieldChangeDetail = { value: string };
  *
  * Nested hosts:
  * - `rui-date-input` at `[data-date-field-input]` — segment editor; listen for
- *   `rui-change` and `rui-form-reset` to keep the parent value aligned.
+ *   `change` (in the capture phase, since the field stops its events) and `rui-form-reset` to keep the parent value aligned.
  * - `rui-calendar` at `[data-date-field-calendar]` — parent queries day targets when the popup opens.
  *
  * Do not set `aria-expanded` on the trigger — the host owns it.
@@ -76,7 +73,8 @@ export type RuiDateFieldChangeDetail = { value: string };
  * @attr {number} visible-months - Month grids in the popover (adapts to 1 on screens under 640px when greater than 1). Default: `1`.
  * @attr {boolean} portal - Render the calendar popup in `document.body`, or in `portal-container`, while it is open. Default: `false`.
  * @attr {string} portal-container - CSS selector of the element a portaled popup goes to, resolved each time it opens. The `portalContainer` property also takes an element or a function that returns one.
- * @fires rui-change - Emitted when a valid date is committed (typing or calendar pick).
+ * @fires input - Dispatched on the host, then `change`, when a valid date is committed (typing or calendar pick),
+ *   after `value` holds it. The nested date input's own events stop at it.
  *
  * @remarks
  * BEM classes live on the view helpers; the host never queries them.
@@ -118,12 +116,14 @@ export class RuiDateField extends RadiantElement {
 	@prop({ type: Boolean, defaultValue: false }) portal: boolean;
 	@prop(portalContainerPropOptions) portalContainer: RuiPortalContainer | null;
 
-	@event({ name: 'rui-change', bubbles: true, composed: true })
-	changeEvent: EventEmitter<RuiDateFieldChangeDetail>;
-
 	@state
 	@bindTo({ selector: '[data-date-field-trigger]', attr: 'aria-expanded' })
 	open = false;
+
+	constructor() {
+		super();
+		stopInnerValueEvents(this, () => this.getDateInput());
+	}
 
 	private readonly uid = uniqueId('rui-date-field');
 	private readonly calendarPopover = createCalendarPopoverController(this, {
@@ -210,7 +210,7 @@ export class RuiDateField extends RadiantElement {
 		}
 
 		this.value = iso;
-		this.changeEvent.emit({ value: iso });
+		emitValueEvents(this, { commit: true });
 	}
 
 	private syncCalendar(): void {
@@ -263,14 +263,15 @@ export class RuiDateField extends RadiantElement {
 		this.calendarPopover.syncPopover();
 	}
 
-	@onEvent({ selector: '[data-date-field-input]', type: 'rui-change' })
+	/** Capture, because the date input's events are stopped at the input before they bubble to the host. */
+	@onEvent({ selector: '[data-date-field-input]', type: 'change', options: { capture: true } })
 	onDateInputChange(event: Event): void {
 		const target = event.target;
 		if (!(target instanceof HTMLElement) || !target.matches('[data-date-field-input]')) {
 			return;
 		}
-		const detail = (event as CustomEvent<RuiDateInputChangeDetail>).detail;
-		this.commitValue(detail?.value ?? '');
+		const value = Reflect.get(target, 'value');
+		this.commitValue(typeof value === 'string' ? value : '');
 	}
 
 	@onEvent({ selector: '[data-date-field-input]', type: 'rui-form-reset' })

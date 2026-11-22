@@ -41,10 +41,10 @@ const playing = async (root: HTMLElement) => {
 	await until(() => expect(video(root).paused).toBe(false));
 };
 
-/** Moves a slider the way a pointer does: it takes the new position and reports it with `rui-change`. */
+/** Moves a slider the way a pointer does: it takes the new position and dispatches `input`. */
 function drag(slider: Slider, value: number): void {
 	slider.value = [value];
-	slider.dispatchEvent(new CustomEvent('rui-change', { bubbles: true, composed: true, detail: { value: [value] } }));
+	slider.dispatchEvent(new InputEvent('input', { bubbles: true, composed: true }));
 }
 
 /** Replaces `fetch` for the urls containing `match`; a handler that returns nothing lets the request through. */

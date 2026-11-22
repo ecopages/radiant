@@ -56,9 +56,7 @@ export const Default: Story = {
 			const endX = rect.left + rect.width * 0.9;
 			const emissions: number[][] = [];
 
-			host.addEventListener('rui-change', (event) =>
-				emissions.push((event as CustomEvent<{ value: number[] }>).detail.value),
-			);
+			host.addEventListener('input', () => emissions.push([...Reflect.get(host, 'value')]));
 
 			thumb.focus();
 			await expect(thumb).toHaveFocus();

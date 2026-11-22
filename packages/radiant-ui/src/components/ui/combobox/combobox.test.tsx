@@ -151,7 +151,9 @@ describe('RuiCombobox', () => {
 		const popup = host.querySelector('[data-combobox-listbox]') as HTMLElement;
 		const combobox = host.querySelector('rui-combobox') as RuiComboboxElement;
 		const changes: unknown[] = [];
-		combobox.addEventListener('rui-change', (event) => changes.push((event as CustomEvent).detail));
+		combobox.addEventListener('change', (event) => {
+			if (event.target === combobox) changes.push(combobox.value);
+		});
 
 		await userEvent.click(input);
 		await userEvent.clear(input);
@@ -167,7 +169,7 @@ describe('RuiCombobox', () => {
 		await userEvent.keyboard('{Escape}');
 		await settled();
 		expect(combobox.value).toEqual([]);
-		expect(changes.at(-1)).toEqual({ value: [] });
+		expect(changes.at(-1)).toEqual([]);
 		cleanup();
 	});
 

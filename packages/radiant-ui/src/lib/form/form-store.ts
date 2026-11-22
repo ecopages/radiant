@@ -1,4 +1,5 @@
 import { createRulesResolver } from './resolvers';
+import { isSameValue } from './same-value';
 import type { FormStateStore, FormStateStoreSnapshot, NativeValidity } from './form-state-store';
 import { deletePath, getPath, setPath } from './value-path';
 import type {
@@ -548,7 +549,11 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		if (!field) {
 			return;
 		}
-		this.values = setPath(this.values, name, field.getValue());
+		const value = field.getValue();
+		if (isSameValue(value, getPath(this.values, name))) {
+			return;
+		}
+		this.values = setPath(this.values, name, value);
 		this.rewriteRelatedControls(name, name);
 		await this.afterChange(name);
 	}

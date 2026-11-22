@@ -1,7 +1,6 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
-import { bindTo, customElement, event, onEvent, onUpdated, prop, state } from '@ecopages/radiant';
+import { bindTo, customElement, onEvent, onUpdated, prop, state } from '@ecopages/radiant';
 import { FormAssociatedElement, type FormValue } from '@ecopages/radiant/form-associated-element';
-import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import {
 	formatNumber,
 	parseFormatOptions,
@@ -13,6 +12,8 @@ import {
 import { uniqueId } from '@/lib/unique-id';
 import { syncFieldLabel } from '../shared/field-label';
 import { announceControlConnect } from '@/lib/form/control-protocol';
+import { emitValueEvents, stopInnerValueEvents } from '@/lib/form/value-events';
+import { forwardHostLabels } from '@/lib/form/host-labels';
 
 export type RuiNumberFieldCommitBehavior = 'snap' | 'validate';
 
@@ -39,8 +40,6 @@ export type RuiNumberFieldProps = {
 	/** Disables scroll-wheel value changes. */
 	wheelDisabled?: boolean;
 };
-
-export type RuiNumberFieldChangeDetail = { value: number };
 
 /**
  * `<rui-number-field>` — a locale-aware number input with optional stepper buttons.
@@ -90,8 +89,9 @@ export type RuiNumberFieldChangeDetail = { value: number };
  * @attr {string} decrement-aria-label - Accessible name for the decrement stepper. Default: `Decrement`.
  * @attr {boolean} wheel-disabled - Disables scroll-wheel value changes. Default: `false`.
  *
- * @fires rui-change - Emitted when a value is committed (blur, stepper, or keyboard);
- *   `detail.value` holds the new number.
+ * @fires input - Dispatched on the host, then `change`, when a committed value differs from the current one (blur,
+ *   Enter, stepper, arrow keys, wheel), after `value` holds it. Typing a draft dispatches nothing on the host: the
+ *   text box's own `input` and `change` stop at the text box.
  *
  * @remarks
  * Minimum tree: `[data-number-field-input]` with optional `[data-number-field-action]` buttons. BEM classes live on the view; the host
@@ -136,11 +136,13 @@ export class RuiNumberField extends FormAssociatedElement {
 	@prop({ type: String, attribute: 'decrement-aria-label', defaultValue: '' }) decrementAriaLabel: string;
 	@prop({ type: Boolean, attribute: 'wheel-disabled', defaultValue: false }) wheelDisabled: boolean;
 
-	@event({ name: 'rui-change', bubbles: true, composed: true })
-	changeEvent: EventEmitter<RuiNumberFieldChangeDetail>;
-
 	@state decreaseDisabled = false;
 	@state increaseDisabled = false;
+
+	constructor() {
+		super();
+		stopInnerValueEvents(this, () => this.querySelector('[data-number-field-input]'));
+	}
 
 	private editing = false;
 	private draftValue = '';
@@ -261,10 +263,10 @@ export class RuiNumberField extends FormAssociatedElement {
 		}
 
 		this.value = resolved;
-		this.changeEvent.emit({ value: resolved });
 		this.editing = false;
 		this.syncInput();
 		this.updateStepperState();
+		emitValueEvents(this, { commit: true });
 	}
 
 	private commitDraft(): void {
@@ -322,7 +324,15 @@ export class RuiNumberField extends FormAssociatedElement {
 
 	protected override onConnected(): void {
 		this.initialize();
+		this.syncHostLabels();
 		announceControlConnect(this);
+	}
+
+	/** A `<label for>` outside the field names the text box; it may arrive after connect, so focus syncs it again. */
+	@onEvent({ selector: '[data-number-field-input]', type: 'focusin' })
+	syncHostLabels(): void {
+		const input = this.querySelector<HTMLElement>('[data-number-field-input]');
+		forwardHostLabels(this, input ? [input] : []);
 	}
 
 	@onUpdated([
@@ -385,7 +395,8 @@ export class RuiNumberField extends FormAssociatedElement {
 		this.commitDraft();
 	}
 
-	@onEvent({ selector: '[data-number-field-input]', type: 'input' })
+	/** Capture, because the text box's own listener ends its `input` before the host's bubble phase. */
+	@onEvent({ selector: '[data-number-field-input]', type: 'input', options: { capture: true } })
 	onInput(event: Event): void {
 		if (this.effectiveDisabled || this.readOnly) {
 			return;

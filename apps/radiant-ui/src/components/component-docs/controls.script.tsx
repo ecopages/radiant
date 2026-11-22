@@ -4,11 +4,11 @@ import { type ContextProvider, consumeContext } from '@ecopages/radiant/context'
 import '@ecopages/radiant-ui/button';
 import '@ecopages/radiant-ui/cycle-toggle';
 import '@ecopages/radiant-ui/input';
-import '@ecopages/radiant-ui/number-field';
-import '@ecopages/radiant-ui/radio-group';
-import '@ecopages/radiant-ui/select';
+import { RuiNumberFieldElement } from '@ecopages/radiant-ui/number-field';
+import { RuiRadioGroupElement } from '@ecopages/radiant-ui/radio-group';
+import { RuiSelectElement } from '@ecopages/radiant-ui/select';
 import '@ecopages/radiant-ui/sidebar';
-import '@ecopages/radiant-ui/switch';
+import { RuiSwitchElement } from '@ecopages/radiant-ui/switch';
 import '@ecopages/radiant-ui/toolbar';
 import '@/content/stories';
 import { docsStoryContext } from '@/lib/docs-stories/story-context';
@@ -33,45 +33,42 @@ export class DocsControlsElement extends RadiantElement {
 		this.setArg(propName, value);
 	}
 
-	@onEvent({ selector: 'rui-select[data-docs-arg]', type: 'rui-change' })
+	@onEvent({ selector: 'rui-select[data-docs-arg]', type: 'change' })
 	onSelectChange(event: Event): void {
-		const target = this.resolveControl(event, 'rui-select[data-docs-arg]');
-		const detail = (event as CustomEvent<{ value?: unknown }>).detail;
-		const value = Array.isArray(detail?.value) ? detail.value[0] : undefined;
-		if (!target || typeof value !== 'string') return;
+		const target = event.target;
+		if (!(target instanceof RuiSelectElement)) return;
+		const [value] = target.value;
 		const propName = target.dataset.docsArg;
-		if (!propName) return;
+		if (!propName || typeof value !== 'string') return;
 		this.setArg(propName, value);
 	}
 
-	@onEvent({ selector: 'rui-radio-group[data-docs-arg]', type: 'rui-change' })
+	@onEvent({ selector: 'rui-radio-group[data-docs-arg]', type: 'change' })
 	onRadioGroupChange(event: Event): void {
 		const target = this.resolveControl(event, 'rui-radio-group[data-docs-arg]');
-		const detail = (event as CustomEvent<{ value?: unknown }>).detail;
-		if (!target || typeof detail?.value !== 'string') return;
+		if (!(target instanceof RuiRadioGroupElement)) return;
 		const propName = target.dataset.docsArg;
-		if (!propName) return;
-		this.setArg(propName, detail.value);
+		if (!propName || typeof target.value !== 'string') return;
+		this.setArg(propName, target.value);
 	}
 
-	@onEvent({ selector: 'rui-switch[data-docs-arg]', type: 'rui-change' })
+	@onEvent({ selector: 'rui-switch[data-docs-arg]', type: 'change' })
 	onSwitchChange(event: Event): void {
 		const target = this.resolveControl(event, 'rui-switch[data-docs-arg]');
-		const detail = (event as CustomEvent<{ checked?: unknown }>).detail;
-		if (!target || typeof detail?.checked !== 'boolean') return;
+		if (!(target instanceof RuiSwitchElement)) return;
 		const propName = target.dataset.docsArg;
 		if (!propName) return;
-		this.setArg(propName, detail.checked);
+		this.setArg(propName, target.checked);
 	}
 
-	@onEvent({ selector: 'rui-number-field[data-docs-arg]', type: 'rui-change' })
+	@onEvent({ selector: 'rui-number-field[data-docs-arg]', type: 'change' })
 	onNumberChange(event: Event): void {
-		const target = this.resolveControl(event, 'rui-number-field[data-docs-arg]');
-		const detail = (event as CustomEvent<{ value?: unknown }>).detail;
-		if (!target || typeof detail?.value !== 'number' || !Number.isFinite(detail.value)) return;
+		const target = event.target;
+		if (!(target instanceof RuiNumberFieldElement)) return;
+		const value = target.value;
 		const propName = target.dataset.docsArg;
-		if (!propName) return;
-		this.setArg(propName, detail.value);
+		if (!propName || typeof value !== 'number' || !Number.isFinite(value)) return;
+		this.setArg(propName, value);
 	}
 
 	@onEvent({ selector: 'input[data-docs-arg]', type: 'input' })

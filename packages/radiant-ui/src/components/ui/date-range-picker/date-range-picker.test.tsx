@@ -66,18 +66,16 @@ describe('RuiDateRangePicker draft range', () => {
 
 		const picker = host.querySelector('rui-date-range-picker') as HTMLElement;
 		const start = host.querySelector('[data-range-start]') as HTMLElement & { value: string };
-		const details: Array<{ value: string; start: string; end: string }> = [];
-		picker.addEventListener('rui-change', (event) => {
-			if (event.target === picker) details.push((event as CustomEvent).detail);
+		const values: string[] = [];
+		picker.addEventListener('change', (event) => {
+			if (event.target === picker) values.push(Reflect.get(picker, 'value'));
 		});
 
 		start.value = '2026-09-01';
-		start.dispatchEvent(
-			new CustomEvent('rui-change', { bubbles: true, composed: true, detail: { value: '2026-09-01' } }),
-		);
+		start.dispatchEvent(new Event('change', { bubbles: true }));
 		await flushRender();
 
-		expect(details).toEqual([{ value: '2026-08-14/2026-09-01', start: '2026-08-14', end: '2026-09-01' }]);
+		expect(values).toEqual(['2026-08-14/2026-09-01']);
 		host.remove();
 	});
 
@@ -96,18 +94,14 @@ describe('RuiDateRangePicker draft range', () => {
 		const end = host.querySelector('[data-range-end]') as HTMLElement & { value: string };
 
 		start.value = '2026-08-07';
-		start.dispatchEvent(
-			new CustomEvent('rui-change', { bubbles: true, composed: true, detail: { value: '2026-08-07' } }),
-		);
+		start.dispatchEvent(new Event('change', { bubbles: true }));
 		await flushRender();
 
 		expect(start.value).toBe('2026-08-07');
 		expect(picker.getAttribute('value') ?? '').toBe('');
 
 		end.value = '2026-08-14';
-		end.dispatchEvent(
-			new CustomEvent('rui-change', { bubbles: true, composed: true, detail: { value: '2026-08-14' } }),
-		);
+		end.dispatchEvent(new Event('change', { bubbles: true }));
 		await flushRender();
 
 		expect(picker.getAttribute('value')).toBe('2026-08-07/2026-08-14');
@@ -133,7 +127,7 @@ describe('RuiDateRangePicker draft range', () => {
 		const end = host.querySelector('[data-range-end]') as HTMLElement & { value: string };
 
 		end.value = '';
-		end.dispatchEvent(new CustomEvent('rui-change', { bubbles: true, composed: true, detail: { value: '' } }));
+		end.dispatchEvent(new Event('change', { bubbles: true }));
 		await flushRender();
 
 		expect(picker.getAttribute('value') ?? '').toBe('');

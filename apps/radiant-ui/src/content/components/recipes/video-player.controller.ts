@@ -6,7 +6,7 @@ import {
 	type MediaState,
 } from '@ecopages/radiant-ui/controllers';
 import '@ecopages/radiant-ui/slider';
-import type { RuiSliderChangeDetail, RuiSliderElement } from '@ecopages/radiant-ui/slider';
+import type { RuiSliderElement } from '@ecopages/radiant-ui/slider';
 import { cycleValue, formatMediaTime } from '@ecopages/radiant-ui/helpers';
 import {
 	Announcer,
@@ -338,15 +338,15 @@ export class VideoPlayerController extends RadiantController {
 		this.fullscreenOn = document.fullscreenElement === this.stage;
 	}
 
-	/** The slider works in seconds and reports `rui-change` only for the reader, never for a position written to it. */
-	@onEvent({ selector: '[data-seek]', type: 'rui-change' })
-	scrub(event: Event): void {
-		this.media.scrub((event as CustomEvent<RuiSliderChangeDetail>).detail.value[0]);
+	/** The slider works in seconds and dispatches `input` only for the reader, never for a position written to it. */
+	@onEvent({ selector: '[data-seek]', type: 'input' })
+	scrub(): void {
+		this.media.scrub(this.seek.value[0]);
 	}
 
-	@onEvent({ selector: '[data-volume-input]', type: 'rui-change' })
-	setVolume(event: Event): void {
-		const level = (event as CustomEvent<RuiSliderChangeDetail>).detail.value[0];
+	@onEvent({ selector: '[data-volume-input]', type: 'input' })
+	setVolume(): void {
+		const level = this.volume.value[0];
 		this.media.setVolume(level);
 		if (level > 0) this.media.setMuted(false);
 	}

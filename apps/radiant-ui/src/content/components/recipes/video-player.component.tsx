@@ -8,7 +8,7 @@ import {
 import { RuiButton } from '@ecopages/radiant-ui/button';
 import { cycleValue, formatMediaTime } from '@ecopages/radiant-ui/helpers';
 import { RuiSlider } from '@ecopages/radiant-ui/slider';
-import type { RuiSliderChangeDetail, RuiSliderElement } from '@ecopages/radiant-ui/slider';
+import type { RuiSliderElement } from '@ecopages/radiant-ui/slider';
 
 import {
 	Announcer,
@@ -320,13 +320,13 @@ export class VideoPlayerApp extends RadiantElement<{ status: string; elapsed: st
 		this.status = `Speed ${this.media.getState().rate}x`;
 	}
 
-	/** The slider works in seconds and reports `rui-change` only for the reader, never for the position written to it. */
-	private onSeek(event: Event): void {
-		this.media.scrub((event as CustomEvent<RuiSliderChangeDetail>).detail.value[0]);
+	/** The slider works in seconds and dispatches `input` only for the reader, never for the position written to it. */
+	private onSeek(): void {
+		this.media.scrub(this.seek.value[0]);
 	}
 
-	private onVolume(event: Event): void {
-		const level = (event as CustomEvent<RuiSliderChangeDetail>).detail.value[0];
+	private onVolume(): void {
+		const level = this.volume.value[0];
 		this.media.setVolume(level);
 		if (level > 0) this.media.setMuted(false);
 	}
@@ -416,7 +416,7 @@ export class VideoPlayerApp extends RadiantElement<{ status: string; elapsed: st
 								step={0.01}
 								value={this.position}
 								disabled={!this.ready}
-								on:rui-change={(event: Event) => this.onSeek(event)}
+								on:input={() => this.onSeek()}
 							/>
 							<span data-duration>{this.$.total}</span>
 						</div>
@@ -473,7 +473,7 @@ export class VideoPlayerApp extends RadiantElement<{ status: string; elapsed: st
 								max={1}
 								step={0.05}
 								value={this.level}
-								on:rui-change={(event: Event) => this.onVolume(event)}
+								on:input={() => this.onVolume()}
 							/>
 						</div>
 						<RuiButton

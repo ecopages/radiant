@@ -1,16 +1,7 @@
 import type { WithoutChildren } from '../../../lib/without-children';
 import type { JSX_PROPS } from '@ecopages/jsx';
-import {
-	customElement,
-	event,
-	onEvent,
-	onUpdated,
-	prop,
-	registerSsrPreparationCallback,
-	state,
-} from '@ecopages/radiant';
+import { customElement, onEvent, onUpdated, prop, registerSsrPreparationCallback, state } from '@ecopages/radiant';
 import { FormAssociatedElement, type FormValue } from '@ecopages/radiant/form-associated-element';
-import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import {
 	applyBackspaceToSegment,
 	applyDigitToSegment,
@@ -28,6 +19,8 @@ import { resolveLocale } from '@/lib/intl/locale';
 import { uniqueId } from '@/lib/unique-id';
 import { getSegmentDomProps } from './date-input-segment-dom';
 import { announceControlConnect } from '@/lib/form/control-protocol';
+import { emitValueEvents, stopInnerValueEvents } from '@/lib/form/value-events';
+import { forwardHostLabels } from '@/lib/form/host-labels';
 
 export type RuiDateInputProps = {
 	value?: string;
@@ -39,8 +32,6 @@ export type RuiDateInputProps = {
 	label?: string;
 	locale?: string;
 };
-
-export type RuiDateInputChangeDetail = { value: string };
 
 /** A keystroke on the focused part, focus moving to another part, or focus leaving the control. */
 type CommitTrigger = 'edit' | 'leave' | 'blur';
@@ -76,7 +67,8 @@ function isIosDevice(): boolean {
  * @attr {string} name - Form field name on this host. An empty value submits `''`. Default: `''`.
  * @attr {string} label - Accessible name when there is no associated label. Default: `''`.
  * @attr {string} locale - BCP 47 locale tag, or comma-separated fallback list. Default: `''`.
- * @fires rui-change - Emitted when a complete valid date is committed, or when all segments are cleared.
+ * @fires input - Dispatched on the host, then `change`, when a complete valid date is committed or all segments are
+ *   cleared, after `value` holds it. The segments' own `input` events stop at the segments' container.
  * @fires rui-form-reset - Emitted after a native form reset so a composite parent can restore its value.
  *
  * @cssclass rui-date-input - Root around the segment row.
@@ -106,9 +98,6 @@ export class RuiDateInput extends FormAssociatedElement {
 
 	@prop({ type: String, defaultValue: '' }) label: string;
 	@prop({ type: String, defaultValue: '' }) locale: string;
-
-	@event({ name: 'rui-change', bubbles: true, composed: true })
-	changeEvent: EventEmitter<RuiDateInputChangeDetail>;
 
 	@state segments: DateSegmentModel[] = [];
 	@state focusedPart: DatePartType | null = null;
@@ -153,6 +142,7 @@ export class RuiDateInput extends FormAssociatedElement {
 	constructor() {
 		super();
 		registerSsrPreparationCallback(this, () => this.syncSegmentsFromValue());
+		stopInnerValueEvents(this, () => this.querySelector('[data-ref="root"]'));
 	}
 
 	private getSegmentElement(type: DatePartType): HTMLElement | null {
@@ -251,7 +241,7 @@ export class RuiDateInput extends FormAssociatedElement {
 			return;
 		}
 		this.value = iso;
-		this.changeEvent.emit({ value: iso });
+		emitValueEvents(this, { commit: true });
 	}
 
 	private partFromTarget(target: EventTarget | null): DatePartType | null {
@@ -302,7 +292,15 @@ export class RuiDateInput extends FormAssociatedElement {
 	protected override onConnected(): void {
 		this.syncSegmentsFromValue();
 		this.syncGroupLabel();
+		this.syncHostLabels();
 		announceControlConnect(this);
+	}
+
+	/** A `<label for>` outside the field names the group; it may arrive after connect, so focus syncs it again. */
+	@onEvent({ selector: '[data-date-segment]', type: 'focusin' })
+	syncHostLabels(): void {
+		const root = this.querySelector<HTMLElement>('[data-ref="root"]');
+		forwardHostLabels(this, root ? [root] : []);
 	}
 
 	protected override formValue(): FormValue {

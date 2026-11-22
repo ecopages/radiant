@@ -162,13 +162,13 @@ describe('RuiSlider single thumb keyboard and pointer', () => {
 		},
 	);
 
-	it('drags the thumb along the track and emits rui-change', async () => {
+	it('drags the thumb along the track and emits input', async () => {
 		const { host, slider, thumb, cleanup } = await mountSingle(10);
 		const track = host.querySelector('[data-ref="rangeTrack"]') as HTMLElement;
 		const rect = track.getBoundingClientRect();
 		const y = rect.top + rect.height / 2;
 		const emissions: unknown[] = [];
-		slider.addEventListener('rui-change', (event) => emissions.push((event as CustomEvent).detail));
+		slider.addEventListener('input', () => emissions.push([...slider.value]));
 
 		await userEvent.pointer([
 			{ keys: '[MouseLeft>]', target: thumb, coords: { clientX: rect.left + rect.width * 0.1, clientY: y } },
@@ -187,7 +187,7 @@ describe('RuiSlider single thumb keyboard and pointer', () => {
 		const rect = track.getBoundingClientRect();
 		const y = rect.top + rect.height / 2;
 		const duringDrag: boolean[] = [];
-		slider.addEventListener('rui-change', () => duringDrag.push(track.hasAttribute('data-dragging')));
+		slider.addEventListener('input', () => duringDrag.push(track.hasAttribute('data-dragging')));
 		expect(track.hasAttribute('data-dragging')).toBe(false);
 
 		await userEvent.pointer([

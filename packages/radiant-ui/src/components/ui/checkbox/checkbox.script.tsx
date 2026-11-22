@@ -1,6 +1,6 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
-import { RadiantElement, bindTo, customElement, event, onEvent, prop } from '@ecopages/radiant';
-import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
+import { RadiantElement, bindTo, customElement, prop } from '@ecopages/radiant';
+import { createEventListenerController } from '../../../controllers/event-listener-controller';
 import { nonEmpty } from '@/lib/non-empty';
 import { announceControlConnect } from '@/lib/form/control-protocol';
 
@@ -24,11 +24,6 @@ export type RuiCheckboxProps = {
 	value?: string;
 	/** Associates the control with a form field name. */
 	name?: string;
-};
-
-export type RuiCheckboxChangeDetail = {
-	checked: boolean;
-	indeterminate: boolean;
 };
 
 /**
@@ -77,8 +72,11 @@ export const CHECKBOX_DEFAULT_VALUE = 'on';
  * @attr {boolean} disabled - Disable the checkbox. Default: `false`.
  * @attr {string} value - Value submitted with forms when checked. Default: `on`.
  * @attr {string} name - Form field name on the inner input. Default: `''`.
- * @fires rui-change - Emitted after the checked/indeterminate state changes;
- *   `detail.checked` and `detail.indeterminate`.
+ *
+ * The host dispatches no event. The inner input's native `input` and `change` bubble through
+ * it, and the host syncs `checked` and `indeterminate` in a capture listener on itself, so a
+ * bubble listener on the host or an ancestor reads fresh state. Act on an event only when
+ * `event.target` is that input.
  *
  * @remarks
  * Minimum tree: `<input type="checkbox" data-ref="input" data-rui-control>`.
@@ -119,15 +117,21 @@ export class RuiCheckbox extends RadiantElement {
 	})
 	name: string;
 
-	@event({ name: 'rui-change', bubbles: true, composed: true })
-	changeEvent: EventEmitter<RuiCheckboxChangeDetail>;
-
-	@onEvent({ ref: 'input', type: 'change' })
-	onInputChange(event: Event): void {
-		const input = event.target as HTMLInputElement;
-		this.checked = input.checked;
-		input.indeterminate = this.indeterminate;
-		this.changeEvent.emit({ checked: this.checked, indeterminate: this.indeterminate });
+	/** Syncs the host from its input before any bubble listener runs. */
+	constructor() {
+		super();
+		createEventListenerController(this, {
+			getTarget: () => this,
+			type: ['input', 'change'],
+			options: { capture: true },
+			listener: (event) => {
+				const input = event.target;
+				if (input instanceof HTMLInputElement && input.type === 'checkbox' && this.contains(input)) {
+					this.checked = input.checked;
+					input.indeterminate = this.indeterminate;
+				}
+			},
+		});
 	}
 
 	protected override onConnected(): void {

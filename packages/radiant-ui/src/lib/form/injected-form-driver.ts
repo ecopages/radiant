@@ -1,55 +1,7 @@
 import type { FormDriver } from './form-driver';
 import type { FormStateStore, NativeValidity } from './form-state-store';
+import { isSameValue } from './same-value';
 import type { FieldError, FieldRegistration, FieldRegistrationHandle, FieldValues, RegisterOptions } from './types';
-
-/**
- * Structural equality for control values; at the top level `null` and `undefined`
- * both mean "no value".
- *
- * @remarks Inside arrays and objects the two differ and a missing key differs from
- * a key holding `null`. Dates compare by time. Any other non-plain object compares
- * by identity, so it is rewritten rather than wrongly treated as equal.
- */
-function isSameValue(a: unknown, b: unknown): boolean {
-	return (a == null && b == null) || isSameNested(a, b);
-}
-
-function isSameNested(a: unknown, b: unknown): boolean {
-	if (Object.is(a, b)) {
-		return true;
-	}
-	if (Array.isArray(a) || Array.isArray(b)) {
-		return (
-			Array.isArray(a) &&
-			Array.isArray(b) &&
-			a.length === b.length &&
-			a.every((item, i) => isSameNested(item, b[i]))
-		);
-	}
-	if (a instanceof Date || b instanceof Date) {
-		return a instanceof Date && b instanceof Date && a.getTime() === b.getTime();
-	}
-	return isSameRecord(a, b);
-}
-
-function isSameRecord(a: unknown, b: unknown): boolean {
-	if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) {
-		return false;
-	}
-	if (!isPlainObject(a) || !isPlainObject(b)) {
-		return false;
-	}
-	const keys = Object.keys(a);
-	return (
-		keys.length === Object.keys(b).length &&
-		keys.every((key) => Object.hasOwn(b, key) && isSameNested(Reflect.get(a, key), Reflect.get(b, key)))
-	);
-}
-
-function isPlainObject(value: object): boolean {
-	const prototype = Object.getPrototypeOf(value);
-	return prototype === Object.prototype || prototype === null;
-}
 
 type BoundField = {
 	registration: FieldRegistration;
@@ -62,6 +14,8 @@ type BoundField = {
 	baseline?: unknown;
 	/** True while this driver writes the control, so events that write raises are not user changes. */
 	writing?: boolean;
+	/** The fact last reported for this control, serialised, so a repeated event reports nothing new. */
+	lastFact?: string;
 };
 
 /**
@@ -210,7 +164,7 @@ export class InjectedFormDriver implements FormDriver {
 				for (const entry of entries) {
 					if (entry.live && this.fields.get(entry.name) === entry) {
 						try {
-							facts[entry.name] = this.factOf(entry);
+							facts[entry.name] = this.remembered(entry);
 						} catch (error) {
 							reportError(error);
 						}
@@ -339,7 +293,7 @@ export class InjectedFormDriver implements FormDriver {
 		const facts: Record<string, NativeValidity | null> = {};
 		for (const [name, entry] of this.fields) {
 			try {
-				facts[name] = this.factOf(entry);
+				facts[name] = this.remembered(entry);
 			} catch (error) {
 				reportError(error);
 			}
@@ -373,8 +327,20 @@ export class InjectedFormDriver implements FormDriver {
 	 */
 	private pushUserChange(name: string, entry: BoundField): void {
 		this.writeControlValue(name, entry);
+		this.reportFactSafely(name, entry);
+	}
+
+	/** Read a control's fact and note it as the one the store holds. */
+	private remembered(entry: BoundField): NativeValidity | null {
+		const fact = this.factOf(entry);
+		entry.lastFact = JSON.stringify(fact);
+		return fact;
+	}
+
+	/** Report one control's fact; a report the store rejects goes to `reportError`. */
+	private reportFactSafely(name: string, entry: BoundField): void {
 		try {
-			this.state.reportNative({ [name]: this.factOf(entry) });
+			this.state.reportNative({ [name]: this.remembered(entry) });
 		} catch (error) {
 			reportError(error);
 		}
@@ -398,13 +364,23 @@ export class InjectedFormDriver implements FormDriver {
 		this.state.reportNative(this.factsOfAll());
 	}
 
+	/**
+	 * @remarks A change event for a value the store already holds writes nothing, so one
+	 * toggle that fires `input` and `change` is one write and one validation. It still
+	 * reports the control's fact when that changed, because a control can become valid or
+	 * invalid without its value moving.
+	 */
 	async handleFieldChange(name: string): Promise<void> {
 		const entry = this.fields.get(name);
 		if (!entry || entry.writing) {
 			return;
 		}
-		this.pushUserChange(name, entry);
-		this.bump();
+		if (this.isChanged(entry)) {
+			this.pushUserChange(name, entry);
+			this.bump();
+		} else if (JSON.stringify(this.factOf(entry)) !== entry.lastFact) {
+			this.reportFactSafely(name, entry);
+		}
 	}
 
 	async handleFieldBlur(name: string): Promise<void> {

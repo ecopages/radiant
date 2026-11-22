@@ -103,7 +103,7 @@ import { RuiField, RuiFieldError, RuiFieldWarning } from '@ecopages/radiant-ui/f
 </RuiField>;
 ```
 
-A field writes a native control (`<input>`, `<textarea>`, `<select>`) to its form on the native `input` and `change` events, and any other control, such as a checkbox group or a multi-select, only on its bubbling `rui-change`. See [Form](/docs/forms/form#inject-a-form-state-store) for how to inject a store that reports warnings.
+A field writes a native control (`<input>`, `<textarea>`, `<select>`) to its form on the native `input` and `change` events, and any other control, such as a checkbox group or a multi-select, on the same two events, but only when the event target is the control host or a member native input of a wrapper or group. See [Form](/docs/forms/form#inject-a-form-state-store) for how to inject a store that reports warnings.
 
 ## Required fields
 

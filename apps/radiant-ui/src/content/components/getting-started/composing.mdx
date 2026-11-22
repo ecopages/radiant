@@ -139,14 +139,14 @@ The slider still positions the thumb, writes `aria-valuenow`, `aria-valuemin` an
 | ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | `Root` and parts such as `Trigger` and `Content`        | The component and its composition helpers or named props (`RuiDialog`, `RuiDialogTitle`, `trigger`)       |
 | `asChild` or a `render` prop to change a part's element | Author the part's element with the data attributes and role the component looks for (Custom markup)       |
-| Controlled and uncontrolled state                       | Props and properties in, bubbling events such as `rui-change` out, with `detail` documented per component |
+| Controlled and uncontrolled state                       | Props and properties in, bubbling events out: native `input` and `change` for form controls (read the value from the control), `rui-change` with `detail` for the rest |
 | `data-state` (Radix) or `data-open`, `data-checked` (Base UI) to style a part | The `aria-*` and `data-*` attributes the component writes on its parts, and the theme tokens it reads |
 
 The difference to plan for: there is no merging of props onto your element. If you replace a part, you also provide what the component would have put on it (here the thumb's `role` and `data-*` hooks); the component adds the state.
 
 ### Listen to events
 
-Children report to the outside with events that bubble, so your host or any ancestor listens once for several children. `RuiSlider` fires `rui-change` with `detail.value` as a `number[]`, and `RuiTable` fires `rui-row-action` and `rui-sort-change`. Each component page lists its events and their `detail`.
+Children report to the outside with events that bubble, so your host or any ancestor listens once for several children. `RuiSlider` fires native `input` and `change` and you read `slider.value` as a `number[]`, `RuiTabs` fires `rui-change` with the selection in `detail`, and `RuiTable` fires `rui-row-action` and `rui-sort-change`. Each component page lists its events and their `detail`.
 
 ## Compose behavior with controllers
 

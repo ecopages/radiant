@@ -1,6 +1,5 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
-import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop, ref } from '@ecopages/radiant';
-import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
+import { RadiantElement, bindTo, customElement, onEvent, onUpdated, prop, ref } from '@ecopages/radiant';
 import { uniqueId } from '@/lib/unique-id';
 import { findAssociatedLabel, syncFieldLabel } from '../shared/field-label';
 import { ListboxHost } from '../shared/listbox-host';
@@ -14,6 +13,7 @@ import {
 	type RuiPortalContainer,
 } from '../shared/portal-container';
 import { announceControlConnect } from '@/lib/form/control-protocol';
+import { emitValueEvents, stopInnerValueEvents } from '@/lib/form/value-events';
 
 export type RuiSelectSelectionMode = 'single' | 'multiple';
 export type RuiSelectTriggerKind = 'focus' | 'manual';
@@ -40,8 +40,6 @@ export type RuiSelectProps = {
 	/** CSS selector of the element a portaled popup goes to, resolved when the popup opens. */
 	portalContainer?: string;
 };
-
-export type RuiSelectChangeDetail = { value: string[] };
 
 /**
  * `<rui-select>` — a select-only combobox with a button trigger and listbox popup.
@@ -99,7 +97,6 @@ export type RuiSelectChangeDetail = { value: string[] };
  * @attr {('focus'|'manual')} trigger-kind - Controls what opens the listbox. Default: `manual`.
  * @attr {boolean} portal - Render the popup in `document.body`, or in `portal-container`, while it is open. Default: `false`.
  * @attr {string} portal-container - CSS selector of the element a portaled popup goes to, resolved each time it opens. The `portalContainer` property also takes an element or a function that returns one.
- * @fires rui-change - Emitted when the selected `value` changes; `detail.value` is `string[]`.
  *
  * @remarks
  * Minimum tree: `[data-ref="root"]` > `[data-select-trigger]` > `[data-select-value]`,
@@ -113,6 +110,11 @@ export type RuiSelectChangeDetail = { value: string[] };
 @customElement('rui-select')
 export class RuiSelect extends RadiantElement {
 	declare readonly [JSX_PROPS]?: RuiSelectProps;
+
+	constructor() {
+		super();
+		stopInnerValueEvents(this, () => this.querySelector('[data-select-value]'));
+	}
 
 	@prop({ ...multiValuePropOptions, defaultValue: [] })
 	@bindTo({ selector: '[data-select-clear]', bool: 'hidden', map: (value) => value.length === 0 })
@@ -139,9 +141,6 @@ export class RuiSelect extends RadiantElement {
 	triggerKind: RuiSelectTriggerKind;
 	@prop({ type: Boolean, defaultValue: false }) portal: boolean;
 	@prop(portalContainerPropOptions) portalContainer: RuiPortalContainer | null;
-
-	@event({ name: 'rui-change', bubbles: true, composed: true })
-	changeEvent: EventEmitter<RuiSelectChangeDetail>;
 
 	private open = false;
 	private readonly uid = uniqueId('rui-select');
@@ -318,7 +317,7 @@ export class RuiSelect extends RadiantElement {
 		this.syncValueDisplay();
 		this.collection.syncOptionSelection();
 		this.syncTagGroup();
-		this.changeEvent.emit({ value: this.value });
+		emitValueEvents(this, { commit: true });
 	}
 
 	private clearSelection(): void {
@@ -326,7 +325,7 @@ export class RuiSelect extends RadiantElement {
 		this.syncValueDisplay();
 		this.collection.syncOptionSelection();
 		this.syncTagGroup();
-		this.changeEvent.emit({ value: [] });
+		emitValueEvents(this, { commit: true });
 		this.getTrigger()?.focus();
 	}
 
@@ -502,7 +501,7 @@ export class RuiSelect extends RadiantElement {
 		this.collection.toggleValue(getListboxOptionValue(option));
 		this.syncValueDisplay();
 		this.collection.syncOptionSelection();
-		this.changeEvent.emit({ value: this.value });
+		emitValueEvents(this, { commit: true });
 
 		if (this.closesOnSelect()) {
 			this.resetSearchFilter();

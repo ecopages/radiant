@@ -1,8 +1,4 @@
-export {
-	RuiDateField as RuiDateFieldElement,
-	type RuiDateFieldProps,
-	type RuiDateFieldChangeDetail,
-} from './date-field.script';
+export { RuiDateField as RuiDateFieldElement, type RuiDateFieldProps } from './date-field.script';
 export {
 	RuiDateField,
 	RuiDateFieldCalendar,

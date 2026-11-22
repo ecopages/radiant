@@ -160,7 +160,10 @@ Nested host: `rui-calendar` at `[data-range-calendar]` — parent queries `[data
 
 | Event | Detail | Description |
 | --- | --- | --- |
-| `rui-change` | `{ value, start, end }` | Fired when a valid range is committed, or when a committed range is cleared. |
+| `input` | none | Fired when a valid range is committed, or when a committed range is cleared. |
+| `change` | none | Fired right after `input` on the same commit. |
+
+Read the value from the control (`host.value`); the events carry no `detail`. Both fire on the host after `value` is updated, and a programmatic write (property, attribute, store, reset) dispatches nothing. Act only when `event.target` is the host: a nested part's events can reach a listener above the host. The nested `rui-date-input` events are stopped, so only the picker's own are seen.
 
 ### JSX view props
 

@@ -2,7 +2,7 @@ import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, event, onEvent, onUpdated, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { multiValuePropOptions, type ViewMultiValue } from '@/lib/multi-value';
-import type { RuiCheckbox, RuiCheckboxChangeDetail } from '../checkbox/checkbox.script';
+import type { RuiCheckbox } from '../checkbox/checkbox.script';
 import { createMutationController } from '../../../controllers/mutation-controller';
 import { createRovingController } from '../../../controllers/roving-controller';
 
@@ -256,7 +256,7 @@ export class RuiTable extends RadiantElement {
 	 * `rui-checkbox` paints a visible control that is not an `input`. Clicks on
 	 * that control still bubble to the cell; treating the nested host as
 	 * interactive keeps the cell handler from toggling the row again after
-	 * `rui-change`.
+	 * the checkbox's `change`.
 	 */
 	private isInteractiveTarget(target: HTMLElement): boolean {
 		return Boolean(
@@ -391,15 +391,16 @@ export class RuiTable extends RadiantElement {
 		}
 	}
 
-	@onEvent({ selector: 'rui-checkbox[data-table-select-row]', type: 'rui-change' })
-	onRowSelectionChange(event: CustomEvent<RuiCheckboxChangeDetail>): void {
-		const checkbox = event.target as RuiCheckbox;
-		const row = checkbox.closest<HTMLElement>('[data-table-row]');
-		if (!row || !this.contains(row)) {
+	/** The row checkbox's native `change` bubbles from its input; the host already holds the new `checked`. */
+	@onEvent({ selector: 'rui-checkbox[data-table-select-row]', type: 'change' })
+	onRowSelectionChange(event: Event): void {
+		const checkbox = event.target instanceof Element ? event.target.closest<RuiCheckbox>('rui-checkbox') : null;
+		const row = checkbox?.closest<HTMLElement>('[data-table-row]');
+		if (!checkbox || !row || !this.contains(row)) {
 			return;
 		}
 		const rowId = row.getAttribute('data-table-row') ?? '';
-		if (!event.detail.checked) {
+		if (!checkbox.checked) {
 			const selected = new Set(this.selectedIds());
 			selected.delete(rowId);
 			this.setSelectedIds([...selected]);
@@ -408,13 +409,14 @@ export class RuiTable extends RadiantElement {
 		this.selectRow(row);
 	}
 
-	@onEvent({ selector: 'rui-checkbox[data-table-select-all]', type: 'rui-change' })
-	onSelectAllChange(event: CustomEvent<RuiCheckboxChangeDetail>): void {
-		if (this.selectionMode !== 'multiple') {
+	@onEvent({ selector: 'rui-checkbox[data-table-select-all]', type: 'change' })
+	onSelectAllChange(event: Event): void {
+		const checkbox = event.target instanceof Element ? event.target.closest<RuiCheckbox>('rui-checkbox') : null;
+		if (!checkbox || this.selectionMode !== 'multiple') {
 			return;
 		}
 		this.setSelectedIds(
-			event.detail.checked ? this.getSelectableRows().map((row) => row.getAttribute('data-table-row') ?? '') : [],
+			checkbox.checked ? this.getSelectableRows().map((row) => row.getAttribute('data-table-row') ?? '') : [],
 		);
 	}
 

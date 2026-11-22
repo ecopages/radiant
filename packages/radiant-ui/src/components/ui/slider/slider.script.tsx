@@ -1,11 +1,10 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
-import { bindTo, customElement, event, onEvent, onUpdated, prop, ref } from '@ecopages/radiant';
+import { bindTo, customElement, onEvent, onUpdated, prop, ref } from '@ecopages/radiant';
 import {
 	FormAssociatedElement,
 	type FormStateRestoreMode,
 	type FormValue,
 } from '@ecopages/radiant/form-associated-element';
-import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { createPointerDragController } from '../../../controllers/pointer-drag-controller';
 import { numberArrayTransform, type ViewNumericValue } from '@/lib/multi-value';
 import {
@@ -17,6 +16,8 @@ import {
 	valuesAlignOnStep,
 } from '@/lib/numeric-range';
 import { announceControlConnect } from '@/lib/form/control-protocol';
+import { emitChange, emitInput } from '@/lib/form/value-events';
+import { forwardHostLabels } from '@/lib/form/host-labels';
 
 export type RuiSliderVariant = 'single' | 'range';
 export type RuiSliderOrientation = 'horizontal' | 'vertical';
@@ -44,8 +45,6 @@ export type RuiSliderProps = {
 	/** Mirrors the live value in the control `title` for hover tooltips. */
 	valueTitle?: boolean;
 };
-
-export type RuiSliderChangeDetail = { value: number[] };
 
 /**
  * Host `@prop` defaults. The view reuses these so SSR readout and track
@@ -298,8 +297,10 @@ export function sliderTrackCssVars(values: number[], range: NumericRange): Recor
  * @cssprop --rui-slider-focus-ring - Focus ring color. Default: `--focus-ring`.
  * @cssprop --rui-slider-focus-ring-width - Focus ring width. Default: `2px`.
  *
- * @fires rui-change - Emitted on each value change, after `value` holds the new value; `detail.value` is `number[]`
- *   (`[50]` single, `[25, 75]` range). Pointer drags emit on each distinct snap.
+ * @fires input - Dispatched on the host on each distinct snap of a drag or key, after `value` holds the new value
+ *   (`number[]`: `[50]` single, `[25, 75]` range).
+ * @fires change - Dispatched on the host when the user commits: on pointer release if `value` changed since the
+ *   press, and right after `input` for a key. A cancelled drag restores `value` and fires `input` only.
  *
  * @remarks
  * `valuePrecision` formats the readout only. Committed values stay on the stepped model;
@@ -332,9 +333,6 @@ export class RuiSlider extends FormAssociatedElement {
 	showValue: boolean;
 	@prop({ type: Boolean, attribute: 'value-title', defaultValue: false }) valueTitle: boolean;
 
-	@event({ name: 'rui-change', bubbles: true, composed: true })
-	changeEvent: EventEmitter<RuiSliderChangeDetail>;
-
 	@ref('root') rootTarget: HTMLElement | null;
 	@ref('header') headerTarget: HTMLElement | null;
 	@ref('label') labelTarget: HTMLElement | null;
@@ -347,7 +345,6 @@ export class RuiSlider extends FormAssociatedElement {
 	private activeThumb: RuiSliderThumb | null = null;
 	/** The value when the drag started, restored if the drag is cancelled. */
 	private pressValues: number[] | null = null;
-	private lastEmitted = '';
 
 	constructor() {
 		super();
@@ -357,7 +354,10 @@ export class RuiSlider extends FormAssociatedElement {
 			canStart: () => !this.effectiveDisabled && !this.readOnly,
 			onStart: ({ event }) => this.startDrag(event),
 			onMove: ({ event }) => this.dragTo(event),
-			onEnd: ({ reason }) => (reason === 'release' ? this.commit() : this.revert()),
+			onEnd: ({ reason }) =>
+				reason === 'release'
+					? this.commit({ changed: this.pressValues?.join(',') !== this.currentValues().join(',') })
+					: this.revert(),
 		});
 	}
 
@@ -365,7 +365,14 @@ export class RuiSlider extends FormAssociatedElement {
 		this.adoptLegacyRangeAttributes();
 		this.syncChrome();
 		this.syncValues(this.currentValues());
+		this.syncHostLabels();
 		announceControlConnect(this);
+	}
+
+	/** A `<label for>` outside the field names each thumb; it may arrive after connect, so focus syncs it again. */
+	@onEvent({ selector: '[data-thumb]', type: 'focusin' })
+	syncHostLabels(): void {
+		forwardHostLabels(this, this.querySelectorAll<HTMLElement>('[data-thumb]'));
 	}
 
 	protected override formValue(): FormValue {
@@ -504,19 +511,6 @@ export class RuiSlider extends FormAssociatedElement {
 			step: this.step,
 			minDistance: this.minDistance,
 		});
-	}
-
-	private changeDetail(values: number[]): RuiSliderChangeDetail {
-		return { value: values };
-	}
-
-	private emitIfChanged(values: number[]): void {
-		const key = values.join(',');
-		if (key === this.lastEmitted) {
-			return;
-		}
-		this.lastEmitted = key;
-		this.changeEvent.emit(this.changeDetail(values));
 	}
 
 	private reflectValues(values: number[]): void {
@@ -665,7 +659,8 @@ export class RuiSlider extends FormAssociatedElement {
 		return Math.abs(next - low) <= Math.abs(next - high) ? 'min' : 'max';
 	}
 
-	private moveThumb(thumb: RuiSliderThumb, next: number): number[] {
+	/** Write the dragged or stepped value, then dispatch `input` if it moved. */
+	private moveThumb(thumb: RuiSliderThumb, next: number): void {
 		this.activeThumb = thumb;
 		const current = this.currentValues();
 		const values = this.isRange
@@ -673,25 +668,34 @@ export class RuiSlider extends FormAssociatedElement {
 			: [this.numericRange.clamp(next)];
 		this.reflectValues(values);
 		this.paint(values);
-		this.emitIfChanged(values);
-		return values;
+		if (values.join(',') !== current.join(',')) {
+			emitInput(this);
+		}
 	}
 
-	private commit(): void {
+	/** End a gesture: dispatch `change` when the user changed `value` during it. */
+	private commit(options: { changed: boolean }): void {
 		const values = this.currentValues();
 		this.rangeTrack?.removeAttribute('data-dragging');
 		this.pressValues = null;
 		this.activeThumb = null;
 		this.syncValues(values);
+		if (options.changed) {
+			emitChange(this);
+		}
 	}
 
+	/** Cancel a drag: restore the value from the press and dispatch `input` without `change`. */
 	private revert(): void {
-		const values = this.pressValues ?? this.currentValues();
+		const restored = this.pressValues ?? this.currentValues();
+		const dragged = this.currentValues().join(',');
 		this.rangeTrack?.removeAttribute('data-dragging');
 		this.pressValues = null;
 		this.activeThumb = null;
-		this.syncValues(values);
-		this.emitIfChanged(values);
+		this.syncValues(restored);
+		if (restored.join(',') !== dragged) {
+			emitInput(this);
+		}
 	}
 
 	private startDrag(event: PointerEvent): void {
@@ -700,7 +704,6 @@ export class RuiSlider extends FormAssociatedElement {
 		const next = this.valueFromPointer(event);
 		const thumb = fromThumb ?? this.nearestThumb(next);
 		this.pressValues = this.currentValues();
-		this.lastEmitted = this.pressValues.join(',');
 		this.activeThumb = thumb;
 		this.thumbFor(thumb)?.focus();
 		if (fromThumb) {
@@ -740,9 +743,8 @@ export class RuiSlider extends FormAssociatedElement {
 		}
 
 		event.preventDefault();
-		this.lastEmitted = values.join(',');
 		this.moveThumb(thumb, next);
-		this.commit();
+		this.commit({ changed: this.currentValues().join(',') !== values.join(',') });
 	}
 }
 
