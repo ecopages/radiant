@@ -14,8 +14,8 @@ type BoundField = {
 	baseline?: unknown;
 	/** True while this driver writes the control, so events that write raises are not user changes. */
 	writing?: boolean;
-	/** The fact last reported for this control, serialised, so a repeated event reports nothing new. */
-	lastFact?: string;
+	/** The fact last reported for this control, so a repeated event reports nothing new. `undefined` until reported. */
+	lastFact?: NativeValidity | null;
 };
 
 /**
@@ -96,6 +96,9 @@ export class InjectedFormDriver implements FormDriver {
 			const next = this.state.getValue(name);
 			const changed = !isSameValue(next, entry.lastSeen);
 			entry.lastSeen = next;
+			if (force) {
+				entry.lastFact = undefined;
+			}
 			if (!force && !changed) {
 				continue;
 			}
@@ -252,6 +255,7 @@ export class InjectedFormDriver implements FormDriver {
 			this.fields.delete(from);
 		}
 		entry.name = to;
+		entry.lastFact = undefined;
 		this.fields.set(to, entry);
 		this.scheduleWithdrawal(from);
 		this.seed(entry);
@@ -333,7 +337,7 @@ export class InjectedFormDriver implements FormDriver {
 	/** Read a control's fact and note it as the one the store holds. */
 	private remembered(entry: BoundField): NativeValidity | null {
 		const fact = this.factOf(entry);
-		entry.lastFact = JSON.stringify(fact);
+		entry.lastFact = fact;
 		return fact;
 	}
 
@@ -378,7 +382,7 @@ export class InjectedFormDriver implements FormDriver {
 		if (this.isChanged(entry)) {
 			this.pushUserChange(name, entry);
 			this.bump();
-		} else if (JSON.stringify(this.factOf(entry)) !== entry.lastFact) {
+		} else if (entry.lastFact === undefined || !isSameValue(this.factOf(entry), entry.lastFact)) {
 			this.reportFactSafely(name, entry);
 		}
 	}

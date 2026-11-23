@@ -551,11 +551,26 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		}
 		const value = field.getValue();
 		if (isSameValue(value, getPath(this.values, name))) {
+			await this.revalidateUnchanged(name);
 			return;
 		}
 		this.values = setPath(this.values, name, value);
 		this.rewriteRelatedControls(name, name);
 		await this.afterChange(name);
+	}
+
+	/**
+	 * A change event whose value the store already holds writes nothing and marks nothing dirty, but a
+	 * control can turn valid or invalid without its value moving, so the field is validated again when the
+	 * mode asks for validation on change and the control's native problem differs from the shown one.
+	 */
+	private async revalidateUnchanged(name: string): Promise<void> {
+		if (!this.shouldValidate(name, 'change')) {
+			return;
+		}
+		if (this.readNativeError(name)?.type !== this.ownRead(this.errors, name)?.type) {
+			await this.validateField(name);
+		}
 	}
 
 	/** Interface form of {@link FormStore.handleFieldBlur}; validation runs per `mode`. */

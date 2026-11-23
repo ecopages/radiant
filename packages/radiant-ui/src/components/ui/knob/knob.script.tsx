@@ -1,12 +1,12 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
 import { bindTo, customElement, onEvent, onUpdated, prop, ref } from '@ecopages/radiant';
 import { FormAssociatedElement, type FormValue } from '@ecopages/radiant/form-associated-element';
-import { createPointerDragController } from '../../../controllers/pointer-drag-controller';
+import { createPointerDragController, type PointerDragEndReason } from '../../../controllers/pointer-drag-controller';
 import { createNumericRange, valueFromSliderKey, valuesAlignOnStep } from '@/lib/numeric-range';
 import { createKnobRing, knobValueFromPointer } from './knob-geometry';
 import { announceControlConnect } from '@/lib/form/control-protocol';
 import { emitChange, emitInput, emitValueEvents } from '@/lib/form/value-events';
-import { forwardHostLabels } from '@/lib/form/host-labels';
+import { forwardHostLabels } from '../shared/field-label';
 
 export type RuiKnobValuePosition = 'center' | 'below';
 
@@ -160,7 +160,7 @@ export class RuiKnob extends FormAssociatedElement {
 				event.preventDefault();
 			},
 			onMove: ({ event }) => this.commitFromPointer(event),
-			onEnd: ({ reason }) => this.endDrag(reason === 'release'),
+			onEnd: ({ reason }) => this.endDrag(reason),
 		});
 	}
 
@@ -319,14 +319,14 @@ export class RuiKnob extends FormAssociatedElement {
 		emitValueEvents(this, options);
 	}
 
-	private endDrag(released: boolean): void {
+	private endDrag(reason: PointerDragEndReason): void {
 		this.controlTarget?.removeAttribute('data-dragging');
 		const start = this.pressValue;
 		this.pressValue = null;
-		if (start === null || valuesAlignOnStep(start, this.value, this.step)) {
+		if (reason === 'destroy' || start === null || valuesAlignOnStep(start, this.value, this.step)) {
 			return;
 		}
-		if (released) {
+		if (reason === 'release') {
 			emitChange(this);
 			return;
 		}

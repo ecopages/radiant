@@ -148,7 +148,7 @@ Do not set control `tabindex`. Nested hosts: none. The `RuiKnob` view seeds read
 | Event | Detail | Description |
 | --- | --- | --- |
 | `input` | none | Fired on each pointer move. A key press fires `input` then `change`. |
-| `change` | none | Fired once on release. |
+| `change` | none | Fired once on release if the value changed since the press, and right after `input` for a key. A cancelled drag restores `value` and fires `input` only. |
 
 Read the value from the control (`host.value`); the events carry no `detail`. Both fire on the host after `value` is updated, and a programmatic write (property, attribute, store, reset) dispatches nothing. Act only when `event.target` is the host: a nested part's events can reach a listener above the host.
 

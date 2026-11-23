@@ -13,7 +13,6 @@ import { uniqueId } from '@/lib/unique-id';
 import { syncFieldLabel } from '../shared/field-label';
 import { announceControlConnect } from '@/lib/form/control-protocol';
 import { emitValueEvents, stopInnerValueEvents } from '@/lib/form/value-events';
-import { forwardHostLabels } from '@/lib/form/host-labels';
 
 export type RuiNumberFieldCommitBehavior = 'snap' | 'validate';
 
@@ -91,7 +90,7 @@ export type RuiNumberFieldProps = {
  *
  * @fires input - Dispatched on the host, then `change`, when a committed value differs from the current one (blur,
  *   Enter, stepper, arrow keys, wheel), after `value` holds it. Typing a draft dispatches nothing on the host: the
- *   text box's own `input` and `change` stop at the text box.
+ *   text box's own `input` and `change` are stopped at the host.
  *
  * @remarks
  * Minimum tree: `[data-number-field-input]` with optional `[data-number-field-action]` buttons. BEM classes live on the view; the host
@@ -141,7 +140,7 @@ export class RuiNumberField extends FormAssociatedElement {
 
 	constructor() {
 		super();
-		stopInnerValueEvents(this, () => this.querySelector('[data-number-field-input]'));
+		stopInnerValueEvents(this);
 	}
 
 	private editing = false;
@@ -324,15 +323,13 @@ export class RuiNumberField extends FormAssociatedElement {
 
 	protected override onConnected(): void {
 		this.initialize();
-		this.syncHostLabels();
 		announceControlConnect(this);
 	}
 
-	/** A `<label for>` outside the field names the text box; it may arrive after connect, so focus syncs it again. */
+	/** A `<label for>` outside the field may arrive after connect, so focus resolves the label again. */
 	@onEvent({ selector: '[data-number-field-input]', type: 'focusin' })
-	syncHostLabels(): void {
-		const input = this.querySelector<HTMLElement>('[data-number-field-input]');
-		forwardHostLabels(this, input ? [input] : []);
+	onInputFocusLabel(): void {
+		this.syncLabel();
 	}
 
 	@onUpdated([
@@ -395,8 +392,7 @@ export class RuiNumberField extends FormAssociatedElement {
 		this.commitDraft();
 	}
 
-	/** Capture, because the text box's own listener ends its `input` before the host's bubble phase. */
-	@onEvent({ selector: '[data-number-field-input]', type: 'input', options: { capture: true } })
+	@onEvent({ selector: '[data-number-field-input]', type: 'input' })
 	onInput(event: Event): void {
 		if (this.effectiveDisabled || this.readOnly) {
 			return;

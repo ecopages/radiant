@@ -17,7 +17,7 @@ import {
 } from '@/lib/numeric-range';
 import { announceControlConnect } from '@/lib/form/control-protocol';
 import { emitChange, emitInput } from '@/lib/form/value-events';
-import { forwardHostLabels } from '@/lib/form/host-labels';
+import { forwardHostLabels } from '../shared/field-label';
 
 export type RuiSliderVariant = 'single' | 'range';
 export type RuiSliderOrientation = 'horizontal' | 'vertical';
@@ -354,10 +354,15 @@ export class RuiSlider extends FormAssociatedElement {
 			canStart: () => !this.effectiveDisabled && !this.readOnly,
 			onStart: ({ event }) => this.startDrag(event),
 			onMove: ({ event }) => this.dragTo(event),
-			onEnd: ({ reason }) =>
-				reason === 'release'
-					? this.commit({ changed: this.pressValues?.join(',') !== this.currentValues().join(',') })
-					: this.revert(),
+			onEnd: ({ reason }) => {
+				if (reason === 'release') {
+					this.commit({ changed: this.pressValues?.join(',') !== this.currentValues().join(',') });
+				} else if (reason === 'cancel') {
+					this.revert();
+				} else {
+					this.clearDrag();
+				}
+			},
 		});
 	}
 
@@ -683,6 +688,13 @@ export class RuiSlider extends FormAssociatedElement {
 		if (options.changed) {
 			emitChange(this);
 		}
+	}
+
+	/** Teardown mid-drag (the host disconnected): drop the drag state and tell nobody. */
+	private clearDrag(): void {
+		this.rangeTrack?.removeAttribute('data-dragging');
+		this.pressValues = null;
+		this.activeThumb = null;
 	}
 
 	/** Cancel a drag: restore the value from the press and dispatch `input` without `change`. */

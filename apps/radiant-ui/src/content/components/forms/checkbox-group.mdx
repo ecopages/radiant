@@ -109,7 +109,7 @@ Do not set `checked`, `disabled`, or `name` on checkboxes. Nested hosts: `rui-ch
 | `input` | none | The native inner checkbox `<input>` event, bubbling through the host. Read `host.value`. |
 | `change` | none | The native inner checkbox `<input>` event on commit, bubbling through the host. Read `host.value`. |
 
-``rui-checkbox-group`` dispatches no event of its own: the `input` and `change` of its native inner `<input>` bubble through the host, which syncs its state in a capture listener first, so a listener on the host or an ancestor reads fresh `host.value`. Act only when `event.target` is the control's member input. A programmatic write dispatches nothing.
+`rui-checkbox-group` dispatches no event of its own: the `input` and `change` of its native inner `<input>` bubble through the host, which syncs its state in a capture listener first, so a listener on the host or an ancestor reads fresh `host.value`. Act only when `event.target` is the control's member input. A programmatic write dispatches nothing.
 
 ### Props
 

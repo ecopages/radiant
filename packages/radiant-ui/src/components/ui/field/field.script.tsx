@@ -189,19 +189,15 @@ export class RuiField extends RadiantElement {
 	private pendingControlWrite?: { value: unknown };
 
 	/**
-	 * @remarks Registers SSR-prep rules on `fieldProvider` so hydrated fields recover them after a
-	 * real SSR round-trip (`prop:rules` does not survive that boundary; `connectedCallback` never
-	 * runs during SSR).
-	 */
-
-	/**
-	 * The one listener for the control's value events: `input` and `change`, in the bubble
-	 * phase, so a wrapper's own capture listener has already synced its state.
+	 * Registers SSR-prep rules on `fieldProvider` so hydrated fields recover them after a real SSR
+	 * round-trip (`prop:rules` does not survive that boundary; `connectedCallback` never runs during
+	 * SSR), and starts the one listener for the control's value events.
 	 *
-	 * @remarks Light DOM cannot hide an inner part's event, nor a nested host's, from this
-	 * listener, so {@link isFieldValueEvent} decides: the event counts only when its target
-	 * is the control host, or a member native input of a wrapper or group. Both event types
-	 * write the form; the form drops a write whose value equals the store's.
+	 * @remarks The listener takes `input` and `change` in the bubble phase, so a wrapper's own
+	 * capture listener has already synced its state. Light DOM cannot hide an inner part's event, nor
+	 * a nested host's, so {@link isFieldValueEvent} decides: the event counts only when its target is
+	 * the control host, or a member native input of a wrapper or group. Both event types write the
+	 * form; the form drops a write whose value equals the store's.
 	 */
 	constructor() {
 		super();

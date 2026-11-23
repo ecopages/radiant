@@ -28,17 +28,32 @@ export function emitChange(host: HTMLElement): void {
 }
 
 /**
- * Stop the `input` and `change` events of an inner part that stands for the host's value,
- * so only the host's own events reach its ancestors.
+ * Stop the `input` and `change` events that start inside a host, so only the host's own
+ * events leave it.
  *
- * @remarks The listener sits on the part, so it ends the bubble. A capture listener on an
- * ancestor still sees the event, which is why a consumer acts only when `event.target`
- * is the control host (or, for a wrapper or group, one of its member native inputs).
+ * @remarks One bubble listener on the host ends the event when its `target` is not the host
+ * itself, so a part that is re-rendered or added later is covered too. `except` names query
+ * inputs, such as a combobox text box, whose events are not the value and stay visible to the
+ * page. A capture listener on an ancestor still sees the inner event, which is why a consumer
+ * acts only when `event.target` is the control host (or, for a wrapper or group, one of its
+ * member native inputs).
  */
-export function stopInnerValueEvents(host: ControllerHost, getPart: () => EventTarget | null) {
+export function stopInnerValueEvents<T extends HTMLElement & ControllerHost>(
+	host: T,
+	options: { except?: string } = {},
+) {
 	return createEventListenerController(host, {
-		getTarget: getPart,
+		getTarget: () => host,
 		type: ['input', 'change'],
-		listener: (event) => event.stopPropagation(),
+		listener: (event) => {
+			const target = event.target;
+			if (target === host || !(target instanceof Element) || !host.contains(target)) {
+				return;
+			}
+			if (options.except && target.closest(options.except)) {
+				return;
+			}
+			event.stopPropagation();
+		},
 	});
 }

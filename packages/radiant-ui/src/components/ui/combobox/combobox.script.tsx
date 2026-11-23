@@ -111,7 +111,7 @@ export class RuiCombobox extends RadiantElement {
 
 	constructor() {
 		super();
-		stopInnerValueEvents(this, () => this.querySelector('[data-combobox-value]'));
+		stopInnerValueEvents(this, { except: '[data-combobox-input]' });
 	}
 
 	@prop({ ...multiValuePropOptions, defaultValue: [] })
@@ -604,9 +604,12 @@ export class RuiCombobox extends RadiantElement {
 				if (!input || !(input.value || (!this.isMultiple() && this.value.length > 0))) {
 					return false;
 				}
+				const hadValue = this.value.length > 0;
 				input.value = '';
 				this.value = [];
-				emitValueEvents(this, { commit: true });
+				if (hadValue) {
+					emitValueEvents(this, { commit: true });
+				}
 				this.syncFilter();
 				return true;
 			},

@@ -586,6 +586,32 @@ describe('FormStore', () => {
 			expect(listener).not.toHaveBeenCalled();
 		});
 
+		it('revalidates an unchanged value when the control became invalid, as mode onChange asks', async () => {
+			let invalid = false;
+			const store = new FormStore<{ a: string }>({ defaultValues: { a: 'x' }, mode: 'onChange' });
+			store.register({
+				...field('a', 'x'),
+				getValidity: () => (invalid ? { valid: false, type: 'badInput' } : { valid: true }),
+			});
+			await store.handleFieldChange('a');
+			expect(store.errors.a).toBeUndefined();
+
+			invalid = true;
+			await store.handleFieldChange('a');
+
+			expect(store.errors.a?.type).toBe('badInput');
+			expect(store.dirty.a).toBeUndefined();
+		});
+
+		it('leaves an unchanged valid value alone in mode onSubmit', async () => {
+			const store = new FormStore<{ a: string }>({ defaultValues: { a: 'x' } });
+			store.register({ ...field('a', 'x'), getValidity: () => ({ valid: false, type: 'badInput' }) });
+
+			await store.handleFieldChange('a');
+
+			expect(store.errors.a).toBeUndefined();
+		});
+
 		it('clears a host error at the path when a value is written through setValue', () => {
 			const store = new FormStore<{ a: string }>();
 			store.register(field('a'));

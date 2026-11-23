@@ -55,7 +55,7 @@ export type RuiDateFieldProps = {
  *
  * Nested hosts:
  * - `rui-date-input` at `[data-date-field-input]` — segment editor; listen for
- *   `change` (in the capture phase, since the field stops its events) and `rui-form-reset` to keep the parent value aligned.
+ *   `change` and `rui-form-reset` to keep the parent value aligned; the field stops the input's own events at the host.
  * - `rui-calendar` at `[data-date-field-calendar]` — parent queries day targets when the popup opens.
  *
  * Do not set `aria-expanded` on the trigger — the host owns it.
@@ -74,7 +74,7 @@ export type RuiDateFieldProps = {
  * @attr {boolean} portal - Render the calendar popup in `document.body`, or in `portal-container`, while it is open. Default: `false`.
  * @attr {string} portal-container - CSS selector of the element a portaled popup goes to, resolved each time it opens. The `portalContainer` property also takes an element or a function that returns one.
  * @fires input - Dispatched on the host, then `change`, when a valid date is committed (typing or calendar pick),
- *   after `value` holds it. The nested date input's own events stop at it.
+ *   after `value` holds it. The nested date input's own events are stopped at the host.
  *
  * @remarks
  * BEM classes live on the view helpers; the host never queries them.
@@ -122,7 +122,7 @@ export class RuiDateField extends RadiantElement {
 
 	constructor() {
 		super();
-		stopInnerValueEvents(this, () => this.getDateInput());
+		stopInnerValueEvents(this);
 	}
 
 	private readonly uid = uniqueId('rui-date-field');
@@ -263,8 +263,7 @@ export class RuiDateField extends RadiantElement {
 		this.calendarPopover.syncPopover();
 	}
 
-	/** Capture, because the date input's events are stopped at the input before they bubble to the host. */
-	@onEvent({ selector: '[data-date-field-input]', type: 'change', options: { capture: true } })
+	@onEvent({ selector: '[data-date-field-input]', type: 'change' })
 	onDateInputChange(event: Event): void {
 		const target = event.target;
 		if (!(target instanceof HTMLElement) || !target.matches('[data-date-field-input]')) {

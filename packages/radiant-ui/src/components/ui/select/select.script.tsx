@@ -113,7 +113,7 @@ export class RuiSelect extends RadiantElement {
 
 	constructor() {
 		super();
-		stopInnerValueEvents(this, () => this.querySelector('[data-select-value]'));
+		stopInnerValueEvents(this, { except: '[data-autocomplete-input]' });
 	}
 
 	@prop({ ...multiValuePropOptions, defaultValue: [] })

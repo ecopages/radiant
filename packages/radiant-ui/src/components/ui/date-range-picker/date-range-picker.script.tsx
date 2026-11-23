@@ -56,8 +56,8 @@ export type RuiDateRangePickerProps = {
  *   and `disabled`.
  *
  * Nested hosts:
- * - `rui-date-input` at start/end — listen for `change` (in the capture phase, since the picker stops their events)
- *   and `rui-form-reset`.
+ * - `rui-date-input` at start/end — listen for `change` and `rui-form-reset`; the picker stops the inputs' own events
+ *   at the host.
  *   Nested inputs own in-progress segment state until both sides are a valid ISO date.
  * - `rui-calendar` at `[data-range-calendar]` — parent queries day targets when the popup opens.
  *
@@ -80,7 +80,7 @@ export type RuiDateRangePickerProps = {
  * @attr {boolean} portal - Render the calendar popup in `document.body`, or in `portal-container`, while it is open. Default: `false`.
  * @attr {string} portal-container - CSS selector of the element a portaled popup goes to, resolved each time it opens. The `portalContainer` property also takes an element or a function that returns one.
  * @fires input - Dispatched on the host, then `change`, when a valid range is committed, or when a committed range is
- *   cleared, after `value` holds it (`start/end`, start never after end). The nested date inputs' own events stop at them.
+ *   cleared, after `value` holds it (`start/end`, start never after end). The nested date inputs' own events are stopped at the host.
  */
 @customElement('rui-date-range-picker')
 export class RuiDateRangePicker extends RadiantElement {
@@ -140,8 +140,7 @@ export class RuiDateRangePicker extends RadiantElement {
 
 	constructor() {
 		super();
-		stopInnerValueEvents(this, () => this.getStartInput());
-		stopInnerValueEvents(this, () => this.getEndInput());
+		stopInnerValueEvents(this);
 	}
 
 	private readonly calendarPopover = createCalendarPopoverController(this, {
@@ -306,8 +305,7 @@ export class RuiDateRangePicker extends RadiantElement {
 		this.calendarPopover.syncPopover();
 	}
 
-	/** Capture, because the date inputs' events are stopped at each input before they bubble to the host. */
-	@onEvent({ selector: '[data-range-start], [data-range-end]', type: 'change', options: { capture: true } })
+	@onEvent({ selector: '[data-range-start], [data-range-end]', type: 'change' })
 	onDateInputChange(event: Event): void {
 		const target = event.target;
 		if (!(target instanceof HTMLElement)) {

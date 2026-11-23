@@ -20,7 +20,7 @@ import { uniqueId } from '@/lib/unique-id';
 import { getSegmentDomProps } from './date-input-segment-dom';
 import { announceControlConnect } from '@/lib/form/control-protocol';
 import { emitValueEvents, stopInnerValueEvents } from '@/lib/form/value-events';
-import { forwardHostLabels } from '@/lib/form/host-labels';
+import { forwardHostLabels } from '../shared/field-label';
 
 export type RuiDateInputProps = {
 	value?: string;
@@ -68,7 +68,7 @@ function isIosDevice(): boolean {
  * @attr {string} label - Accessible name when there is no associated label. Default: `''`.
  * @attr {string} locale - BCP 47 locale tag, or comma-separated fallback list. Default: `''`.
  * @fires input - Dispatched on the host, then `change`, when a complete valid date is committed or all segments are
- *   cleared, after `value` holds it. The segments' own `input` events stop at the segments' container.
+ *   cleared, after `value` holds it. The segments' own events are stopped at the host.
  * @fires rui-form-reset - Emitted after a native form reset so a composite parent can restore its value.
  *
  * @cssclass rui-date-input - Root around the segment row.
@@ -142,7 +142,7 @@ export class RuiDateInput extends FormAssociatedElement {
 	constructor() {
 		super();
 		registerSsrPreparationCallback(this, () => this.syncSegmentsFromValue());
-		stopInnerValueEvents(this, () => this.querySelector('[data-ref="root"]'));
+		stopInnerValueEvents(this);
 	}
 
 	private getSegmentElement(type: DatePartType): HTMLElement | null {

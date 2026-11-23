@@ -21,6 +21,12 @@ import { RuiNumberField as RuiNumberFieldElement } from './number-field/number-f
 import { RuiDateInput } from './date-input';
 import { RuiDateInput as RuiDateInputElement } from './date-input/date-input.script';
 import { RuiDateField } from './date-field';
+import { RuiSelect } from './select';
+import { RuiCombobox } from './combobox';
+import { RuiListbox } from './listbox';
+import { RuiTag, RuiTagGroup, RuiTagList } from './tag-group';
+import { RuiDateRangePicker } from './date-range-picker';
+import { FormStore } from '@/lib/form/form-store';
 import { RuiDateField as RuiDateFieldElement } from './date-field/date-field.script';
 import type { FormStateStore } from '@/lib/form/form-state-store';
 import { registerFieldControl } from '@/lib/form/control-protocol';
@@ -73,6 +79,42 @@ function query<T extends Element>(root: ParentNode, selector: string): T {
 		throw new Error(`missing ${selector}`);
 	}
 	return element;
+}
+
+function recordingStore(initial: Record<string, unknown>) {
+	let values = initial;
+	let snapshot = { values, errors: {}, warnings: {} };
+	const listeners = new Set<() => void>();
+	const writes: Array<[string, unknown]> = [];
+	const store: FormStateStore = {
+		getValue: (path) => values[path],
+		setValue(path, value) {
+			writes.push([path, value]);
+			values = { ...values, [path]: value };
+			snapshot = { values, errors: {}, warnings: {} };
+			for (const listener of [...listeners]) listener();
+		},
+		blur() {},
+		reportNative() {},
+		getSnapshot: () => snapshot,
+		subscribe(listener) {
+			listeners.add(listener);
+			return () => listeners.delete(listener);
+		},
+		reset() {},
+		async validate() {
+			return true;
+		},
+	};
+	return { store, writes };
+}
+
+async function mountInField(content: JsxRenderable, store: FormStateStore, name: string) {
+	return mount(
+		<RuiForm ref={(form) => (form ? form.connect(store) : undefined)}>
+			<RuiField name={name}>{content}</RuiField>
+		</RuiForm>,
+	);
 }
 
 describe('form value events: the native input and change, in one sequence per interaction', () => {
@@ -325,42 +367,6 @@ describe('programmatic writes dispatch nothing', () => {
 });
 
 describe('rui-field acts only on the control host events', () => {
-	function recordingStore(initial: Record<string, unknown>) {
-		let values = initial;
-		let snapshot = { values, errors: {}, warnings: {} };
-		const listeners = new Set<() => void>();
-		const writes: Array<[string, unknown]> = [];
-		const store: FormStateStore = {
-			getValue: (path) => values[path],
-			setValue(path, value) {
-				writes.push([path, value]);
-				values = { ...values, [path]: value };
-				snapshot = { values, errors: {}, warnings: {} };
-				for (const listener of [...listeners]) listener();
-			},
-			blur() {},
-			reportNative() {},
-			getSnapshot: () => snapshot,
-			subscribe(listener) {
-				listeners.add(listener);
-				return () => listeners.delete(listener);
-			},
-			reset() {},
-			async validate() {
-				return true;
-			},
-		};
-		return { store, writes };
-	}
-
-	async function mountInField(content: JsxRenderable, store: FormStateStore, name: string) {
-		return mount(
-			<RuiForm ref={(form) => (form ? form.connect(store) : undefined)}>
-				<RuiField name={name}>{content}</RuiField>
-			</RuiForm>,
-		);
-	}
-
 	it('writes one value for one native checkbox toggle, though it fires input then change', async () => {
 		const { store, writes } = recordingStore({ agree: false });
 		const container = await mountInField(<RuiCheckbox>Agree</RuiCheckbox>, store, 'agree');
@@ -453,17 +459,217 @@ describe('rui-field acts only on the control host events', () => {
 		expect(writes).toEqual([['custom', 'typed']]);
 	});
 
-	it('does not run the store validation twice for one native toggle', async () => {
+	it('writes the store exactly once for one native toggle that fires input then change', async () => {
 		const { store } = recordingStore({ agree: false });
-		const validate = vi.spyOn(store, 'reportNative');
+		const setValue = vi.spyOn(store, 'setValue');
 		const container = await mountInField(<RuiCheckbox>Agree</RuiCheckbox>, store, 'agree');
+		await settle();
+		setValue.mockClear();
+
+		await userEvent.click(query<HTMLInputElement>(container, 'input[type="checkbox"]'));
+		await settle();
+
+		expect(setValue).toHaveBeenCalledTimes(1);
+	});
+
+	it('validates the built-in store once for one native toggle', async () => {
+		const validate = vi.spyOn(FormStore.prototype, 'validateField');
+		const container = await mount(
+			<RuiForm mode="onChange">
+				<RuiField name="agree">
+					<RuiCheckbox>Agree</RuiCheckbox>
+				</RuiField>
+			</RuiForm>,
+		);
 		await settle();
 		validate.mockClear();
 
 		await userEvent.click(query<HTMLInputElement>(container, 'input[type="checkbox"]'));
 		await settle();
 
-		expect(validate.mock.calls.length).toBeLessThanOrEqual(1);
+		expect(validate).toHaveBeenCalledTimes(1);
+		validate.mockRestore();
+	});
+
+	it('writes nothing when the combobox query is typed, and one value when a select chip is removed', async () => {
+		const { store, writes } = recordingStore({ pets: [], tags: ['cat', 'dog'] });
+		const container = await mount(
+			<RuiForm ref={(form) => (form ? form.connect(store) : undefined)}>
+				<RuiField name="pets">
+					<RuiCombobox options={PET_OPTIONS} label="Pets" />
+				</RuiField>
+				<RuiField name="tags">
+					<RuiSelect options={PET_OPTIONS} label="Tags" selectionMode="multiple" value={['cat', 'dog']} />
+				</RuiField>
+			</RuiForm>,
+		);
+		await settle();
+		writes.length = 0;
+		const input = query<HTMLInputElement>(container, '[data-combobox-input]');
+		input.focus();
+		input.value = 'ca';
+		input.dispatchEvent(new InputEvent('input', { bubbles: true }));
+		await settle();
+		expect(writes).toEqual([]);
+
+		const select = query<HTMLElement>(container, 'rui-select');
+		const seen = listen(container, () => Reflect.get(select, 'value'));
+		await userEvent.click(query<HTMLElement>(select, '[data-tag-remove]'));
+		await settle();
+
+		const changes = seen.filter((entry) => entry.type === 'change');
+		expect(changes).toHaveLength(1);
+		expect(changes[0]?.target).toBe(select);
+		expect(writes).toEqual([['tags', ['dog']]]);
+	});
+});
+
+const PET_OPTIONS = [
+	{ value: 'cat', label: 'Cat' },
+	{ value: 'dog', label: 'Dog' },
+];
+
+describe('every value host stays silent for programmatic changes', () => {
+	const hosts: Array<[string, () => JsxRenderable, string, string, unknown]> = [
+		['select', () => <RuiSelect options={PET_OPTIONS} label="Pet" />, 'rui-select', 'value', ['dog']],
+		['combobox', () => <RuiCombobox options={PET_OPTIONS} label="Pet" />, 'rui-combobox', 'value', ['dog']],
+		['listbox', () => <RuiListbox options={PET_OPTIONS} label="Pet" />, 'rui-listbox', 'value', ['dog']],
+		[
+			'tag group',
+			() => (
+				<RuiTagGroup value={['cat']}>
+					<RuiTagList>
+						<RuiTag value="cat" label="Cat">
+							Cat
+						</RuiTag>
+						<RuiTag value="dog" label="Dog">
+							Dog
+						</RuiTag>
+					</RuiTagList>
+				</RuiTagGroup>
+			),
+			'rui-tag-group',
+			'value',
+			['dog'],
+		],
+		[
+			'date range picker',
+			() => <RuiDateRangePicker value="2026-08-01/2026-08-14" locale="en-US" />,
+			'rui-date-range-picker',
+			'value',
+			'2026-09-01/2026-09-09',
+		],
+		[
+			'radio group',
+			() => (
+				<RuiRadioGroup name="plan" value="a">
+					<RuiRadioGroupControl>
+						<RuiRadio value="a">A</RuiRadio>
+						<RuiRadio value="b">B</RuiRadio>
+					</RuiRadioGroupControl>
+				</RuiRadioGroup>
+			),
+			'rui-radio-group',
+			'value',
+			'b',
+		],
+		[
+			'checkbox group',
+			() => (
+				<RuiCheckboxGroup name="topics" value="news">
+					<RuiCheckboxGroupControl>
+						<RuiCheckbox value="news">News</RuiCheckbox>
+						<RuiCheckbox value="travel">Travel</RuiCheckbox>
+					</RuiCheckboxGroupControl>
+				</RuiCheckboxGroup>
+			),
+			'rui-checkbox-group',
+			'value',
+			['travel'],
+		],
+	];
+
+	it.each(hosts)('%s: a property write fires no input or change', async (_name, view, tag, prop, next) => {
+		const container = await mount(view());
+		const host = query<HTMLElement>(container, tag);
+		const seen = listen(document.body, () => undefined);
+
+		Reflect.set(host, prop, next);
+		await settle();
+
+		expect(seen).toEqual([]);
+	});
+
+	it('a store write, a form reset and a restore dispatch nothing from any host', async () => {
+		const { store, writes } = recordingStore({
+			pet: ['cat'],
+			tags: ['cat'],
+			level: [20],
+			gain: 40,
+			qty: 3,
+			when: '2026-08-20',
+			agree: false,
+			plan: 'a',
+		});
+		const container = await mount(
+			<RuiForm ref={(form) => (form ? form.connect(store) : undefined)}>
+				<RuiField name="pet">
+					<RuiCombobox options={PET_OPTIONS} label="Pet" value={['cat']} />
+				</RuiField>
+				<RuiField name="tags">
+					<RuiSelect options={PET_OPTIONS} label="Tags" value={['cat']} />
+				</RuiField>
+				<RuiField name="level">
+					<RuiSlider value={20} min={0} max={100} />
+				</RuiField>
+				<RuiField name="gain">
+					<RuiKnob value={40} min={0} max={100} />
+				</RuiField>
+				<RuiField name="qty">
+					<RuiNumberField value={3} />
+				</RuiField>
+				<RuiField name="when">
+					<RuiDateInput value="2026-08-20" locale="en-US" />
+				</RuiField>
+				<RuiField name="agree">
+					<RuiSwitch>Agree</RuiSwitch>
+				</RuiField>
+				<RuiField name="plan">
+					<RuiRadioGroup name="plan" value="a">
+						<RuiRadioGroupControl>
+							<RuiRadio value="a">A</RuiRadio>
+							<RuiRadio value="b">B</RuiRadio>
+						</RuiRadioGroupControl>
+					</RuiRadioGroup>
+				</RuiField>
+			</RuiForm>,
+		);
+		await settle();
+		const seen = listen(document.body, () => undefined);
+
+		store.setValue('pet', ['dog']);
+		store.setValue('tags', ['dog']);
+		store.setValue('level', [60]);
+		store.setValue('gain', 70);
+		store.setValue('qty', 9);
+		store.setValue('when', '2026-09-09');
+		store.setValue('agree', true);
+		store.setValue('plan', 'b');
+		await settle();
+		query<HTMLFormElement>(container, 'form').reset();
+		await settle();
+		for (const host of container.querySelectorAll<HTMLElement>(
+			'rui-slider, rui-knob, rui-number-field, rui-date-input',
+		)) {
+			const restore = Reflect.get(host, 'formStateRestoreCallback');
+			if (typeof restore === 'function') {
+				restore.call(host, '1', 'restore');
+			}
+		}
+		await settle();
+
+		expect(writes.length).toBeGreaterThan(0);
+		expect(seen).toEqual([]);
 	});
 });
 
@@ -486,5 +692,67 @@ describe('labels outside a field', () => {
 		const part = query<HTMLElement>(container, partSelector);
 
 		expect(part.getAttribute('aria-labelledby')).toContain('outside');
+	});
+
+	it('number field: the outside label survives a value change', async () => {
+		const container = await mount(
+			<form>
+				<label id="outside" for="host">
+					Outside label
+				</label>
+				<RuiNumberField id="host" name="n" value={3} />
+			</form>,
+		);
+		const host = query<RuiNumberFieldElement>(container, 'rui-number-field');
+		const input = query<HTMLElement>(host, '[data-number-field-input]');
+		expect(input.getAttribute('aria-labelledby')).toContain('outside');
+
+		host.value = 8;
+		await settle();
+
+		expect(input.getAttribute('aria-labelledby')).toContain('outside');
+	});
+
+	it('range slider: each thumb keeps its own name next to the outside label', async () => {
+		const container = await mount(
+			<form>
+				<label id="outside" for="host">
+					Price
+				</label>
+				<RuiSlider id="host" name="price" variant="range" value={[10, 30]} min={0} max={100} />
+			</form>,
+		);
+		const [low, high] = Array.from(
+			container.querySelectorAll<HTMLElement>('[data-thumb="min"], [data-thumb="max"]'),
+		);
+
+		for (const thumb of [low, high]) {
+			const names = (thumb?.getAttribute('aria-labelledby') ?? '').split(' ');
+			expect(names).toContain('outside');
+			expect(names).toContain(thumb?.id);
+			expect(thumb?.id).not.toBe('');
+		}
+		expect(low?.id).not.toBe(high?.id);
+		expect(low?.getAttribute('aria-label')).not.toBe(high?.getAttribute('aria-label'));
+	});
+
+	it('a label inserted after connect is picked up on the next focus', async () => {
+		const container = await mount(
+			<form>
+				<RuiKnob id="host" name="k" value={20} min={0} max={100} />
+			</form>,
+		);
+		const control = query<HTMLElement>(container, '[data-ref="control"]');
+		expect(control.getAttribute('aria-labelledby')).toBeNull();
+		const label = document.createElement('label');
+		label.id = 'late';
+		label.htmlFor = 'host';
+		label.textContent = 'Late label';
+		query<HTMLFormElement>(container, 'form').prepend(label);
+
+		control.focus();
+		await settle();
+
+		expect(control.getAttribute('aria-labelledby')).toContain('late');
 	});
 });
