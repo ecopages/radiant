@@ -13,6 +13,10 @@ export type RuiFormSubmitContext = {
  * @remarks Only with an injected store. The host validates, counts attempts and
  * submits, and moves focus with `rui-form.focusField(paths)`; the form emits neither
  * `rui-submit` nor `rui-invalid`. A rejection is reported with `reportError`.
+ *
+ * The handler owns submission, so the form does not run it one at a time: it is
+ * called for every submit, including one while an earlier call is pending, and
+ * decides what that means, such as ignoring it while busy.
  */
 export type RuiFormSubmitHandler = (context: RuiFormSubmitContext) => void | Promise<void>;
 

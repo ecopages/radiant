@@ -28,7 +28,7 @@ function engineStore(): FormStateStore<EngineIssue> {
 		subscribe: () => () => {},
 		reset() {},
 		async validate() {
-			return true;
+			return { outcome: 'passed' };
 		},
 		reportNative() {},
 	};
@@ -125,5 +125,15 @@ describe('typed connect', () => {
 		form.connect(engineStore(), { formatError: (issue: OtherIssue) => String(issue.code) });
 
 		expect(form).toBeDefined();
+	});
+
+	it('rejects a store whose validate resolves a boolean', () => {
+		const store: FormStateStore = {
+			...engineStore(),
+			// @ts-expect-error validate resolves an outcome object, not a boolean
+			validate: async () => true,
+		};
+
+		expect(store).toBeDefined();
 	});
 });

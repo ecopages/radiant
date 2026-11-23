@@ -42,7 +42,7 @@ function createHostStore(initial: Record<string, unknown>) {
 		},
 		reset() {},
 		async validate() {
-			return true;
+			return { outcome: 'passed' };
 		},
 		reportNative() {},
 	};

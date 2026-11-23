@@ -1,5 +1,5 @@
 import type { FormDriver } from './form-driver';
-import type { FormStateStore, NativeValidity } from './form-state-store';
+import type { FormStateStore, FormStateValidateResult, NativeValidity } from './form-state-store';
 import { isSameValue } from './same-value';
 import type { FieldError, FieldRegistration, FieldRegistrationHandle, FieldValues, RegisterOptions } from './types';
 
@@ -41,6 +41,10 @@ export class InjectedFormDriver implements FormDriver {
 	private resetTimer: ReturnType<typeof setTimeout> | undefined;
 
 	constructor(private readonly state: FormStateStore) {}
+
+	get store(): FormStateStore {
+		return this.state;
+	}
 
 	get errors(): Partial<Record<string, FieldError>> {
 		return this.state.getSnapshot().errors;
@@ -422,14 +426,20 @@ export class InjectedFormDriver implements FormDriver {
 		this.bump();
 	}
 
-	/** Validate through the store; the form calls {@link InjectedFormDriver.sync} first. */
+	/**
+	 * Validate through the store; the form calls {@link InjectedFormDriver.sync} first.
+	 *
+	 * @remarks The store's outcome decides: `passed` calls `onValid`, `invalid` calls
+	 * `onInvalid` with the snapshot's errors, and `overtaken` ends the submission without
+	 * either, since a newer write superseded the check and the user submits again.
+	 */
 	async handleSubmit(
 		onValid: (values: FieldValues) => void | Promise<void>,
 		onInvalid?: (errors: Partial<Record<string, FieldError>>, error?: unknown) => void,
 	): Promise<void> {
-		let valid: boolean;
+		let result: FormStateValidateResult;
 		try {
-			valid = await this.state.validate();
+			result = await this.state.validate();
 		} catch (error) {
 			this.bump();
 			onInvalid?.(this.state.getSnapshot().errors, error);
@@ -437,11 +447,11 @@ export class InjectedFormDriver implements FormDriver {
 		}
 		this.bump();
 		const snapshot = this.state.getSnapshot();
-		if (valid) {
+		if (result.outcome === 'passed') {
 			await onValid(snapshot.values);
-			return;
+		} else if (result.outcome === 'invalid') {
+			onInvalid?.(snapshot.errors);
 		}
-		onInvalid?.(snapshot.errors);
 	}
 
 	/**

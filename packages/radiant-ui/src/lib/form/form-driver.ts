@@ -1,3 +1,4 @@
+import type { FormStateStore } from './form-state-store';
 import type { FieldError, FieldRegistration, FieldRegistrationHandle, FieldValues, RegisterOptions } from './types';
 
 /**
@@ -6,6 +7,8 @@ import type { FieldError, FieldRegistration, FieldRegistrationHandle, FieldValue
  * host {@link FormStateStore}.
  */
 export interface FormDriver {
+	/** The store this driver drives. */
+	readonly store: FormStateStore;
 	subscribe(listener: () => void): () => void;
 	getRevision(): number;
 	readonly errors: Partial<Record<string, FieldError>>;
@@ -22,6 +25,8 @@ export interface FormDriver {
 	 *
 	 * @remarks A validation that throws calls `onInvalid` with the current errors and
 	 * the thrown value as `error`, and resolves. A rejection from `onValid` rejects.
+	 * An `overtaken` outcome ends without calling either; `invalid` always calls
+	 * `onInvalid` with the store's errors.
 	 */
 	handleSubmit(
 		onValid: (values: FieldValues) => void | Promise<void>,

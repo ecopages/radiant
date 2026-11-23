@@ -1,32 +1,42 @@
 import { RadiantElement, customElement, onEvent, query } from '@ecopages/radiant';
 import { installStandIn } from './agent-tools.stand-in';
+import { resolveToolSource, type ToolSource } from './agent-tools.tool-source';
 
-const standIn = installStandIn();
+installStandIn();
 
 /**
  * Lists the tools the page has registered and calls one the way an agent would. Docs-only: it is not part of the
- * recipe, and it can list tools only on the stand-in, because a browser's own `document.modelContext` does not
- * let a page read its tools back.
+ * recipe. It reads tools from the stand-in, or from the browser's WebMCP testing surface where the browser has its
+ * own `document.modelContext`.
  */
 @customElement('tool-inspector')
 export class ToolInspector extends RadiantElement {
 	@query('ul') private list!: HTMLElement;
 	@query('[data-result]') private result!: HTMLElement;
 	@query('textarea') private input!: HTMLTextAreaElement;
+	private source: ToolSource | undefined;
 
 	override onConnected(): void {
-		if (!standIn) {
-			this.result.textContent = 'This browser has WebMCP. Open DevTools, Application, WebMCP to see the tools.';
+		this.source = resolveToolSource();
+		if (!this.source) {
+			this.list.replaceChildren(
+				this.note(
+					'This browser has WebMCP but does not let a page read its tools back. Open DevTools, Application, WebMCP to see them.',
+				),
+			);
 			return;
 		}
 		const show = () => this.show();
-		standIn.addEventListener('toolchange', show);
-		this.registerCleanupCallback(() => standIn.removeEventListener('toolchange', show));
+		this.registerCleanupCallback(this.source.subscribe(show));
 		this.show();
 	}
 
+	private note(text: string): HTMLElement {
+		return Object.assign(document.createElement('li'), { textContent: text, className: 'empty' });
+	}
+
 	private show(): void {
-		const names = [...(standIn?.tools.keys() ?? [])];
+		const names = this.source?.names() ?? [];
 		this.list.replaceChildren(
 			...(names.length > 0
 				? names.map((name) => {
@@ -38,12 +48,7 @@ export class ToolInspector extends RadiantElement {
 						item.append(button);
 						return item;
 					})
-				: [
-						Object.assign(document.createElement('li'), {
-							textContent: 'No tools registered',
-							className: 'empty',
-						}),
-					]),
+				: [this.note('No tools registered')]),
 		);
 	}
 
@@ -51,9 +56,7 @@ export class ToolInspector extends RadiantElement {
 	async call(event: Event): Promise<void> {
 		const name = (event.target as HTMLElement).dataset.call!;
 		try {
-			const result = await standIn!.tools
-				.get(name)!
-				.execute(JSON.parse(this.input.value), { signal: new AbortController().signal });
+			const result = await this.source!.call(name, JSON.parse(this.input.value));
 			this.result.textContent = JSON.stringify(result);
 		} catch (error) {
 			this.result.textContent = `${error instanceof Error ? error.name : 'Error'}: ${error instanceof Error ? error.message : String(error)}`;

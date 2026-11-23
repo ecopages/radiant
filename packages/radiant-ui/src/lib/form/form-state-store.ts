@@ -36,6 +36,20 @@ export type NativeValidity = {
 };
 
 /**
+ * What a validation concluded.
+ *
+ * @remarks `passed` means no error, so the form emits `rui-submit`. `invalid` means the
+ * store holds an error, so the form emits `rui-invalid` with the snapshot's errors.
+ * `overtaken` means a newer write or validation superseded the check before it concluded, so it says
+ * nothing about the values: the form ends the submission without an event and the user
+ * submits again.
+ *
+ * The outcome is an object so a store's validate and submit read the same way: switch on
+ * `.outcome`.
+ */
+export type FormStateValidateResult = { outcome: 'passed' } | { outcome: 'invalid' } | { outcome: 'overtaken' };
+
+/**
  * The state `<rui-form>` drives when a host owns form state. Hand an instance to
  * `form.connect`; without one the form creates its own `FormStore`, which satisfies
  * the type and nests values the same way.
@@ -119,11 +133,11 @@ export interface FormStateStore<TIssue extends FieldError = FieldError> {
 	 */
 	reset(): void;
 	/**
-	 * Validate the whole tree and resolve with whether it is valid: `false` when the
-	 * store holds any error, whether or not it shows it. Warnings do not count.
+	 * Validate the whole tree and resolve with the outcome: `invalid` when the store
+	 * holds any error, whether or not it shows it. Warnings do not count.
 	 *
 	 * @remarks The form calls it on submit when no `submitHandler` is set, after `sync()`
 	 * reported every control's fact.
 	 */
-	validate(): Promise<boolean>;
+	validate(): Promise<FormStateValidateResult>;
 }

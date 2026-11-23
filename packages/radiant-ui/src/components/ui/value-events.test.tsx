@@ -26,7 +26,6 @@ import { RuiCombobox } from './combobox';
 import { RuiListbox } from './listbox';
 import { RuiTag, RuiTagGroup, RuiTagList } from './tag-group';
 import { RuiDateRangePicker } from './date-range-picker';
-import { FormStore } from '@/lib/form/form-store';
 import { RuiDateField as RuiDateFieldElement } from './date-field/date-field.script';
 import type { FormStateStore } from '@/lib/form/form-state-store';
 import { registerFieldControl } from '@/lib/form/control-protocol';
@@ -103,7 +102,7 @@ function recordingStore(initial: Record<string, unknown>) {
 		},
 		reset() {},
 		async validate() {
-			return true;
+			return { outcome: 'passed' };
 		},
 	};
 	return { store, writes };
@@ -473,9 +472,9 @@ describe('rui-field acts only on the control host events', () => {
 	});
 
 	it('validates the built-in store once for one native toggle', async () => {
-		const validate = vi.spyOn(FormStore.prototype, 'validateField');
+		const validate = vi.fn(async () => ({ values: {}, errors: {} }));
 		const container = await mount(
-			<RuiForm mode="onChange">
+			<RuiForm mode="onChange" resolver={validate}>
 				<RuiField name="agree">
 					<RuiCheckbox>Agree</RuiCheckbox>
 				</RuiField>
@@ -488,7 +487,6 @@ describe('rui-field acts only on the control host events', () => {
 		await settle();
 
 		expect(validate).toHaveBeenCalledTimes(1);
-		validate.mockRestore();
 	});
 
 	it('writes nothing when the combobox query is typed, and one value when a select chip is removed', async () => {

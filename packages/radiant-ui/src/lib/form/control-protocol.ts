@@ -430,10 +430,14 @@ export function readControlValidity(control: HTMLElement): FieldControlValidity 
 /**
  * The constraint a native control failed, so a message can say "at least 8 characters"
  * without parsing the browser's own text.
+ *
+ * @remarks `min`, `max` and `step` are numbers on number and range inputs and the attribute
+ * text on other types, such as dates, whose bounds are not numbers. `step="any"` cannot
+ * produce `stepMismatch`, so it never reaches a fact.
  */
 function constraintParams(host: HTMLElement, flag: string): Record<string, unknown> | undefined {
 	const read = (key: string): unknown => Reflect.get(host, key);
-	const bound = (key: 'min' | 'max'): unknown => {
+	const constraint = (key: 'min' | 'max' | 'step'): unknown => {
 		const value = read(key);
 		const numeric = read('type') === 'number' || read('type') === 'range';
 		return numeric && typeof value === 'string' && value !== '' ? Number(value) : value;
@@ -444,13 +448,13 @@ function constraintParams(host: HTMLElement, flag: string): Record<string, unkno
 		case 'tooLong':
 			return { maxLength: read('maxLength') };
 		case 'rangeUnderflow':
-			return { min: bound('min') };
+			return { min: constraint('min') };
 		case 'rangeOverflow':
-			return { max: bound('max') };
+			return { max: constraint('max') };
 		case 'patternMismatch':
 			return { pattern: read('pattern') };
 		case 'stepMismatch':
-			return { step: read('step') };
+			return { step: constraint('step') };
 		case 'typeMismatch':
 			return { inputType: read('type') };
 		default:

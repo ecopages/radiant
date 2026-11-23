@@ -83,7 +83,7 @@ function hostStore(initial: Record<string, unknown>) {
 		subscribe: () => () => {},
 		reset() {},
 		async validate() {
-			return true;
+			return { outcome: 'passed' };
 		},
 		reportNative,
 	};

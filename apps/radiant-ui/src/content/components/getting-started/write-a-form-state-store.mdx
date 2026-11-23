@@ -38,10 +38,12 @@ Use the form's own store (`FormStore`) when rules on `RuiField` are enough. Writ
 | `getSnapshot()` | The values, `errors` and `warnings` to show. The same object until state changes. |
 | `subscribe(listener)` | Notify the form when state changed. |
 | `reset()` | A native reset, unless you pass a `resetHandler`. Clear values, errors, field state and every native fact. |
-| `validate()` | Submit. Resolve `false` while the store holds any error. |
+| `validate()` | Submit. Resolve `{ outcome }`: `'passed'` emits `rui-submit`, `'invalid'` while the store holds any error emits `rui-invalid` with the snapshot's errors, and `'overtaken'` (a newer write superseded the check) ends the submission without an event, so the user submits again. |
 | `reportNative(facts)` | The validity of controls, keyed by path, whenever a control's value or presence changes. |
 
 Paths are the dotted `name` of each `RuiField`, so `profile.name` is `values.profile.name` and `rows.0.title` is `values.rows[0].title`.
+
+Form controls dispatch the platform's `input` and `change` events, which is how the form learns a value changed and calls `setValue`; `rui-change` remains only for non-form components (tabs, tree, menus, table, calendar, cycle-toggle).
 
 ## A minimal store
 
@@ -138,7 +140,7 @@ export function createDemoStore({ initial, rules = {}, warnings = {} }: DemoStor
 			const scope = [...new Set([...Object.keys(rules), ...Object.keys(facts)])];
 			for (const path of scope) checked.add(path);
 			publish();
-			return scope.every((path) => !problems(path));
+			return { outcome: scope.every((path) => !problems(path)) ? 'passed' : 'invalid' };
 		},
 		reportNative(reported) {
 			let shown = false;

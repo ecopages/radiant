@@ -1,6 +1,11 @@
 import { createRulesResolver } from './resolvers';
 import { isSameValue } from './same-value';
-import type { FormStateStore, FormStateStoreSnapshot, NativeValidity } from './form-state-store';
+import type {
+	FormStateStore,
+	FormStateStoreSnapshot,
+	FormStateValidateResult,
+	NativeValidity,
+} from './form-state-store';
 import { deletePath, getPath, setPath } from './value-path';
 import type {
 	FieldError,
@@ -76,7 +81,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	private reportedNative: Record<string, NativeValidity> = {};
 	/** Paths whose validation has run since the last reset, whether it passed or failed. */
 	private readonly validatedPaths = new Set<string>();
-	private readonly validationRuns = new Map<string, { id: number; promise: Promise<boolean> }>();
+	private readonly validationRuns = new Map<string, { id: number; promise: Promise<FormStateValidateResult> }>();
 	private lastValidationId = 0;
 	/** The native fact type, or `null` for none, that the last validation of each path read. */
 	private readonly validatedNative = new Map<string, string | null>();
@@ -99,13 +104,16 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	 * Resolver and rule errors merged with errors contributed through `setErrors`.
 	 *
 	 * @remarks A source error replaces a resolver or rule error on the same field.
-	 * Assigning replaces the resolver and rule errors only.
+	 * Read-only: the getter returns the merged view, so writing it back would turn
+	 * source errors into own errors that outlive `setErrors(source, {})`. Write host
+	 * errors with `setErrors` and remove them with `clearErrors`.
 	 */
 	get errors(): Record<string, FieldError> {
 		return this.mergedErrors;
 	}
 
-	set errors(next: Record<string, FieldError>) {
+	/** Replace the resolver, rule and native errors and re-merge the `setErrors` sources over them. */
+	private setOwnErrors(next: Record<string, FieldError>): void {
 		this.ownErrors = next;
 		this.mergeErrors();
 	}
@@ -151,17 +159,30 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		return this.snapshot.value;
 	}
 
-	async validate(paths?: string[]): Promise<boolean> {
-		let valid = true;
+	/**
+	 * Validate `paths`, or the whole tree when none are given.
+	 *
+	 * @remarks With `paths`, a run that a newer validation of the same path superseded
+	 * while its resolver was pending resolves `overtaken` instead of its stale verdict,
+	 * and the newer run resolves the real one. Without `paths` the whole tree is
+	 * validated in one run that nothing supersedes, so it resolves `passed` or `invalid`.
+	 */
+	async validate(paths?: string[]): Promise<FormStateValidateResult> {
+		const outcomes: Array<FormStateValidateResult['outcome']> = [];
 		if (paths) {
 			for (const path of paths) {
-				valid = (await this.validateField(path)) && valid;
+				outcomes.push((await this.validatePath(path)).outcome);
 			}
 		} else {
-			valid = await this.validateAll();
+			outcomes.push((await this.validateAll()) ? 'passed' : 'invalid');
+		}
+		if (outcomes.includes('overtaken')) {
+			return { outcome: 'overtaken' };
 		}
 		const scope = paths ?? Object.keys(this.mergedErrors);
-		return valid && scope.every((path) => !this.ownRead(this.mergedErrors, path));
+		return outcomes.includes('invalid') || scope.some((path) => this.ownRead(this.mergedErrors, path))
+			? { outcome: 'invalid' }
+			: { outcome: 'passed' };
 	}
 
 	/**
@@ -313,7 +334,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	private writeFieldState(name: string, state: FieldState): void {
 		this.touched = withKey(this.touched, name, state.touched);
 		this.dirty = withKey(this.dirty, name, state.dirty);
-		this.errors = withKey(this.ownErrors, name, state.error);
+		this.setOwnErrors(withKey(this.ownErrors, name, state.error));
 	}
 
 	/**
@@ -363,7 +384,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 			return;
 		}
 		try {
-			await this.validateField(name);
+			await this.validatePath(name);
 		} catch (error) {
 			this.notify();
 			throw error;
@@ -408,12 +429,12 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 					Object.fromEntries(Object.entries(errors).filter(([path]) => path !== name)),
 				);
 			}
-			this.errors = next;
+			this.setOwnErrors(next);
 			this.notify();
 			return;
 		}
 		this.sourceErrors.clear();
-		this.errors = {};
+		this.setOwnErrors({});
 		this.notify();
 	}
 
@@ -437,7 +458,8 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	}
 
 	/**
-	 * Validate one path and write its error.
+	 * Validate one path and write its error. Resolves `overtaken` for a run that a newer
+	 * run for the same path superseded.
 	 *
 	 * @remarks The latest run for a path wins: a run that another run for the same path
 	 * superseded while its resolver was pending writes no error and notifies nobody, so an
@@ -445,7 +467,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	 * reachable in `validationRuns` until it settles, which lets a caller wait for it
 	 * instead of starting another.
 	 */
-	validateField(name: string): Promise<boolean> {
+	private validatePath(name: string): Promise<FormStateValidateResult> {
 		const id = ++this.lastValidationId;
 		const promise = this.runFieldValidation(name, id);
 		this.validationRuns.set(name, { id, promise });
@@ -458,7 +480,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		return promise;
 	}
 
-	private async runFieldValidation(name: string, id: number): Promise<boolean> {
+	private async runFieldValidation(name: string, id: number): Promise<FormStateValidateResult> {
 		this.validatedPaths.add(name);
 		const values = this.getValues();
 		const result = await this.resolver(values, { fields: this.buildResolverFields() }, { names: [name] });
@@ -466,12 +488,12 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		const nativeError = resolverError?.message ? undefined : this.readNativeError(name);
 		const error = nativeError ?? resolverError;
 		if (this.validationRuns.get(name)?.id !== id) {
-			return !error;
+			return { outcome: 'overtaken' };
 		}
 		this.validatedNative.set(name, nativeError?.type ?? null);
-		this.errors = withKey(this.ownErrors, name, error ? (nativeError ?? resolverError ?? {}) : undefined);
+		this.setOwnErrors(withKey(this.ownErrors, name, error ? (nativeError ?? resolverError ?? {}) : undefined));
 		this.notify();
-		return !error;
+		return { outcome: error ? 'invalid' : 'passed' };
 	}
 
 	async validateAll(): Promise<boolean> {
@@ -493,7 +515,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 				found.set(name, native);
 			}
 		}
-		this.errors = Object.fromEntries(found);
+		this.setOwnErrors(Object.fromEntries(found));
 		this.notify();
 		return Object.keys(this.mergedErrors).length === 0;
 	}
@@ -514,7 +536,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 			}
 			this.recordNative(path, native);
 			if (this.validatedPaths.has(path) || this.ownRead(this.errors, path)) {
-				this.validateField(path).catch((error: unknown) => reportError(error));
+				this.validatePath(path).catch((error: unknown) => reportError(error));
 			}
 		}
 	}
@@ -612,7 +634,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		}
 		const current = this.readNativeError(name)?.type ?? null;
 		if (current !== (this.validatedNative.get(name) ?? null)) {
-			await this.validateField(name);
+			await this.validatePath(name);
 		}
 	}
 
@@ -624,7 +646,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	async handleFieldBlur(name: string): Promise<void> {
 		this.markTouched(name);
 		if (this.shouldValidate(name, 'blur')) {
-			await this.validateField(name);
+			await this.validatePath(name);
 		} else {
 			this.notify();
 		}
@@ -699,7 +721,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		this.reportedNative = {};
 		this.validatedPaths.clear();
 		this.validatedNative.clear();
-		this.errors = {};
+		this.setOwnErrors({});
 		this.touched = {};
 		this.dirty = {};
 		this.isSubmitted = false;

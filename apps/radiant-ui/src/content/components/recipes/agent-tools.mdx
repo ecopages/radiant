@@ -48,7 +48,7 @@ addItem(item: { sku: string }) {}
 
 ## Example
 
-Add a product with the form, or call the tool from the inspector below the example, which stands in for an agent. The inspector lists the page's tools and calls one with the JSON in its box. A call that fails the schema is rejected before the method runs, so the cart does not change and the agent receives an error. This page uses a small stand-in for `document.modelContext` where the browser has none; the recipe code never touches it.
+Add a product with the form, or call the tool from the inspector below the example, which stands in for an agent. The inspector lists the page's tools and calls one with the JSON in its box. A call that fails the schema is rejected before the method runs, so the cart does not change and the agent receives an error. This page uses a small stand-in for `document.modelContext` where the browser has none, and reads the tools back from the browser's WebMCP testing surface where it has its own and offers one; the recipe code never touches either.
 
 Pick an authoring pattern below; they behave the same, and the one you pick is remembered on the other recipes.
 
@@ -58,7 +58,7 @@ Pick an authoring pattern below; they behave the same, and the one you pick is r
 
 The same behavior as a `RadiantElement`. The markup is authored inside the element, and `@agentTool` on `addItem` registers the tool when the element connects and removes it when the element disconnects.
 
-<RecipeExample recipe="agent-tools" pattern="element" layout="stack" />
+<RecipeExample recipe="agent-tools" pattern="element" />
 
 <RecipeCode recipe="agent-tools" pattern="element" />
 
@@ -70,7 +70,7 @@ Remove the element and the tool is gone, move it and the tool is registered agai
 
 A `mount` function registers the tool and returns the cleanup that removes it.
 
-<RecipeExample recipe="agent-tools" pattern="plain" layout="stack" />
+<RecipeExample recipe="agent-tools" pattern="plain" />
 
 <RecipeCode recipe="agent-tools" pattern="plain" />
 
