@@ -1,5 +1,22 @@
 # @ecopages/radiant
 
+## 0.12.0
+
+### Minor Changes
+
+- [#787](https://github.com/ecopages/radiant/pull/787) [`3bd6c7c`](https://github.com/ecopages/radiant/commit/3bd6c7c8453c04fa3ab60ea3b5ca9ffe12f52d69) Thanks [@andeeplus](https://github.com/andeeplus)! - `FormAssociatedElement` exposes `labels`, the `<label>` elements associated with the host through `ElementInternals.labels` (a `<label for="host-id">` or a `<label>` ancestor), or `undefined` on the server. A host whose accessible role lives on an inner part can forward them to that part's `aria-labelledby`.
+
+### Patch Changes
+
+- [#783](https://github.com/ecopages/radiant/pull/783) [`2a33a2c`](https://github.com/ecopages/radiant/commit/2a33a2c20614c8fd247bb7b4b410cf5a834600b3) Thanks [@andeeplus](https://github.com/andeeplus)! - Add experimental WebMCP agent tools: `registerAgentTool` registers a tool and returns its unregister function, `createAgentTool(host, config)` ties one to a host's connect and disconnect, and `@agentTool` turns a method into a tool while keeping it callable from the UI. The tool is passed through to `document.modelContext` and registered again after every reconnect or change of `name` or `getEnabled`.
+
+- [#779](https://github.com/ecopages/radiant/pull/779) [`d99d166`](https://github.com/ecopages/radiant/commit/d99d166c2ba4158b7b941656d4b54843f1cfdc64) Thanks [@andeeplus](https://github.com/andeeplus)! - `FormAssociatedElement` now implements `formStateRestoreCallback(state, mode)`. Back/forward navigation, session restore and autofill write the state the host saved with `setFormValue(value, state)` back through `restoreFormState()` and sync the submission value again, as form reset already does; a `null` state is ignored. Before, a custom control came back empty after the browser restored its form. A subclass that overrides the callback must call `super.formStateRestoreCallback(state, mode)`, and one whose `formState()` cannot be parsed from an autofilled string overrides it for the `'autocomplete'` mode. The new `FormStateRestoreMode` type names the two modes.
+
+- [#781](https://github.com/ecopages/radiant/pull/781) [`86c93e6`](https://github.com/ecopages/radiant/commit/86c93e6287d1dd103bdd22baf9e3d4dec3e14be5) Thanks [@andeeplus](https://github.com/andeeplus)! - Add the `@ecopages/jsx/raw-text-element-names` entry, which exports `RAW_TEXT_ELEMENT_NAMES` without the server renderer, and import it from Radiant's server HTML parser. The minimal DOM shim no longer loads the whole jsx server graph for one constant. `@ecopages/jsx/server` still exports it.
+- Updated dependencies [[`86c93e6`](https://github.com/ecopages/radiant/commit/86c93e6287d1dd103bdd22baf9e3d4dec3e14be5)]:
+    - @ecopages/jsx@0.12.0
+    - @ecopages/signals@0.12.0
+
 ## 0.11.2
 
 ### Patch Changes
