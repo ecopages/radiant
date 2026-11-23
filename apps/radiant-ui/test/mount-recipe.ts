@@ -1,4 +1,5 @@
 import { startControllers, stopControllers } from '@ecopages/radiant/controller-registry';
+import { frameAttributes, type FrameOptions } from '../src/components/primitive-example/frame';
 import { syncExamples } from '../src/components/primitive-example/mount-example';
 
 const markup = import.meta.glob('../src/content/components/recipes/*.html', {
@@ -112,4 +113,14 @@ export function trackListeners(): ListenerTracker {
 			EventTarget.prototype.removeEventListener = remove;
 		},
 	};
+}
+
+/** An example frame element built from the same attributes the page renders, holding `markup`. */
+export function createFrame(options: FrameOptions, markup: string): HTMLElement {
+	const frame = document.createElement('div');
+	for (const [attribute, value] of Object.entries(frameAttributes(options))) {
+		frame.setAttribute(attribute, value);
+	}
+	frame.innerHTML = markup;
+	return frame;
 }

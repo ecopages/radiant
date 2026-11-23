@@ -1,6 +1,9 @@
-.primitive-example:is(
-	[data-example='video-player'],
-	:has(> video-player-element, > [data-controller='video-player'], > video-player-app, > video-player-store-app)
+.primitive-example:has(
+	> video-player-element,
+	> [data-controller='video-player'],
+	> video-player-app,
+	> video-player-store-app,
+	> [data-example='video-player']
 ) {
 	display: block;
 	width: min(100%, 44rem);

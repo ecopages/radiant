@@ -1,5 +1,9 @@
-.primitive-example[data-example='popover-menu'],
-.primitive-example:has(> popover-menu-element, > popover-menu-app, > [data-controller='popover-menu']) {
+.primitive-example:has(
+	> popover-menu-element,
+	> popover-menu-app,
+	> [data-controller='popover-menu'],
+	> [data-example='popover-menu']
+) {
 	flex-direction: column;
 	align-items: flex-start;
 	min-height: 13rem;

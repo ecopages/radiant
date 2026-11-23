@@ -1,6 +1,8 @@
-.primitive-example:is(
-	[data-example='voice-memo'],
-	:has(> voice-memo-element, > [data-controller='voice-memo'], > voice-memo-app)
+.primitive-example:has(
+	> voice-memo-element,
+	> [data-controller='voice-memo'],
+	> voice-memo-app,
+	> [data-example='voice-memo']
 ) {
 	display: flex;
 	flex-direction: column;

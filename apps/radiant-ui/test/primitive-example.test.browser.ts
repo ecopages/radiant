@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, test } from 'vitest';
+import { exampleFrameOptions } from '../src/components/recipe-patterns/example-frame';
 import { syncExamples } from '../src/components/primitive-example/mount-example';
+import { createFrame } from './mount-recipe';
 import '@ecopages/radiant-ui/themes/default';
 import '../src/components/primitive-example/primitive-example.css';
 
@@ -16,17 +18,24 @@ const recipeMarkup = import.meta.glob('../src/content/components/recipes/*.plain
 const scripts = import.meta.glob('../src/content/components/{controllers,recipes}/*.script.ts');
 
 /**
- * Mounts a page's example inside the frame class the `PrimitiveExample` component renders, followed by the kind of
- * positioned block a code fence is, tall enough for a popup to overlap it.
+ * Mounts a page's example the way its page renders it, followed by the kind of positioned block a code fence is,
+ * tall enough for a popup to overlap it. A recipe's file is one root the frame holds; a controller page's markup is
+ * itself the frame.
  */
 async function mountFramed(section: 'controllers' | 'recipes', slug: string): Promise<HTMLElement> {
-	const markup =
-		section === 'recipes'
-			? recipeMarkup[`../src/content/components/recipes/${slug}.plain.html`]!
-			: pages[`../src/content/components/${section}/${slug}.mdx`]!.match(/```html\n([\s\S]*?)\n```/)![1];
-	document.body.innerHTML = `${markup}<pre style="position: relative; height: 20rem">code</pre>`;
+	const code = '<pre style="position: relative; height: 20rem">code</pre>';
+	if (section === 'recipes') {
+		const frame = createFrame(
+			exampleFrameOptions(),
+			recipeMarkup[`../src/content/components/recipes/${slug}.plain.html`]!,
+		);
+		document.body.innerHTML = code;
+		document.body.prepend(frame);
+	} else {
+		document.body.innerHTML = `${pages[`../src/content/components/${section}/${slug}.mdx`]!.match(/```html\n([\s\S]*?)\n```/)![1]}${code}`;
+		document.body.querySelector(`[data-example="${slug}"]`)!.classList.add('primitive-example', 'unstyled');
+	}
 	const root = document.querySelector<HTMLElement>(`[data-example="${slug}"]`)!;
-	root.classList.add('primitive-example', 'unstyled');
 	await scripts[`../src/content/components/${section}/${slug}.script.ts`]!();
 	syncExamples();
 	return root;

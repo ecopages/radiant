@@ -1,5 +1,4 @@
-[data-example='board'].primitive-example,
-.primitive-example:has(> board-element, > board-app, > [data-controller='board']) {
+.primitive-example:has(> board-element, > board-app, > [data-controller='board'], > [data-example='board']) {
 	flex-direction: column;
 	flex-wrap: nowrap;
 	align-items: stretch;

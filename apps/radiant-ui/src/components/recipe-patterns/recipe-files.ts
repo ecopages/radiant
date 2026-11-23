@@ -81,13 +81,9 @@ export function recipeFiles(recipe: string, pattern: RecipePatternId): RecipeFil
 }
 
 /**
- * The markup the live example renders for a pattern, read from the same file the markup tab shows.
- *
- * @remarks
- * The plain form's file is the example element itself (`<div data-example>`), which the example frame already is, so
- * only its children are returned; the element and controller forms' files are the host element and are returned whole.
+ * The markup the live example renders for a pattern, read from the same file the markup tab shows. Each file is one
+ * root element: the host of the element and controller patterns, or the plain pattern's `<div data-example>`.
  */
 export function recipeMarkup(recipe: string, pattern: Exclude<RecipePatternId, 'component'>): string {
-	const markup = readFileSync(path.join(RECIPES_DIRECTORY, `${recipe}.${pattern}.html`), 'utf8').trim();
-	return pattern === 'plain' ? markup.slice(markup.indexOf('>') + 1, markup.lastIndexOf('</div>')).trim() : markup;
+	return readFileSync(path.join(RECIPES_DIRECTORY, `${recipe}.${pattern}.html`), 'utf8').trim();
 }

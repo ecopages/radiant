@@ -101,11 +101,11 @@ function restoreDocument(): void {
 
 /**
  * Puts the `primitive-example` frame class, which the docs page's `PrimitiveExample` gives, on what the stylesheet
- * scopes to: the plain root itself, or the parent of the element, component or controller root.
+ * scopes to: the parent of the plain, element, component or controller root.
  */
 function frame(root: HTMLElement): HTMLElement {
 	document.body.classList.remove('primitive-example');
-	(root.matches('[data-example]') ? root : root.parentElement!).classList.add('primitive-example');
+	root.parentElement!.classList.add('primitive-example');
 	return root;
 }
 

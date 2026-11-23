@@ -1,16 +1,8 @@
 import { eco } from '@ecopages/core';
 import type { JsxRenderable } from '@ecopages/jsx';
+import { frameAttributes, type FrameOptions } from './frame';
 
-export type PrimitiveExampleProps = {
-	/** Names the example for the page script, which finds its elements under `[data-example="<name>"]`. */
-	name?: string;
-	/**
-	 * Marks the frame as holding one custom element, a Radiant form that runs itself on connect, so it needs no
-	 * `name` and no mount. The element takes no box of its own: its children lay out in the frame.
-	 */
-	host?: boolean;
-	/** `stack` lays the children out as one full-width column instead of a wrapping row. */
-	layout?: 'stack';
+export type PrimitiveExampleProps = FrameOptions & {
 	children?: JsxRenderable;
 };
 
@@ -23,14 +15,5 @@ export type PrimitiveExampleProps = {
  */
 export const PrimitiveExample = eco.component<PrimitiveExampleProps, JsxRenderable>({
 	dependencies: { stylesheets: ['./primitive-example.css'] },
-	render: ({ name, host, layout, children }) => (
-		<div
-			class="primitive-example unstyled"
-			data-example={name}
-			data-layout={layout}
-			data-host={host ? '' : undefined}
-		>
-			{children}
-		</div>
-	),
+	render: ({ children, ...options }) => <div {...frameAttributes(options)}>{children}</div>,
 });
