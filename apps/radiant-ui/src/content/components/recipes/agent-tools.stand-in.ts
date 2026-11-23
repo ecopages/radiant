@@ -42,7 +42,7 @@ type ModelContextDocument = Document & { modelContext?: EventTarget };
 
 /**
  * Installs the stand-in when the browser has no `document.modelContext`, and returns it, or `undefined` when the
- * browser has its own, which this page cannot list.
+ * browser has its own. The inspector then lists the tools through the browser's testing surface, when it offers one.
  */
 export function installStandIn(): StandInModelContext | undefined {
 	const target = document as ModelContextDocument;

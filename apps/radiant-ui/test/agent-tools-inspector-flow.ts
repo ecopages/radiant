@@ -1,10 +1,12 @@
 import { expect } from 'vitest';
+import { syncExamples } from '../src/components/primitive-example/mount-example';
 import { mountRecipe } from './mount-recipe';
 import { until } from './until';
 
 /**
  * Mounts the plain agent tools example and the docs inspector under it, as the page does, then checks that the
- * inspector offers the registered tool and that calling it from there changes the cart. The caller sets up
+ * inspector offers the registered tool, that calling it from there changes the cart, and that the list follows the
+ * tool leaving when the example does. The caller sets up
  * `document.modelContext` and imports the inspector first, so both exist when the example registers its tool.
  */
 export async function expectInspectorCallsTheCart(): Promise<void> {
@@ -28,4 +30,10 @@ export async function expectInspectorCallsTheCart(): Promise<void> {
 	await until(() => expect(inspector.querySelector('[data-result]')!.textContent).toBe('{"count":1}'));
 	expect([...root.querySelectorAll('li')].map((item) => item.textContent)).toEqual(['pear']);
 	expect(root.querySelector('[data-status]')!.textContent).toBe('1 in cart');
+
+	root.remove();
+	syncExamples();
+	await until(() =>
+		expect([...inspector.querySelectorAll('li')].map((item) => item.textContent)).toEqual(['No tools registered']),
+	);
 }
