@@ -1,1 +1,1 @@
-node scripts/test-staged-packages.mjs && pnpm run build:all && pnpm run typecheck && pnpm run format && pnpm lint
+pnpm run build:all && node scripts/test-staged-packages.mjs && pnpm run typecheck && pnpm run format && pnpm lint
