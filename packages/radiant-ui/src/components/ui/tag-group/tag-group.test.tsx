@@ -194,7 +194,7 @@ describe('RuiTagGroup', () => {
 			const group = mounted.host.querySelector('rui-tag-group') as RuiTagGroupElement;
 			const events: string[] = [];
 			group.addEventListener('rui-remove', () => events.push('rui-remove'));
-			group.addEventListener('rui-change', () => events.push('rui-change'));
+			group.addEventListener('change', () => events.push('change'));
 			return { ...mounted, group, events };
 		}
 

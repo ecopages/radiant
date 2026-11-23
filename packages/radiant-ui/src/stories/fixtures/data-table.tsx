@@ -4,7 +4,7 @@ import { isServer } from '@ecopages/radiant/is-server';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { RuiButton } from '../../components/ui/button';
 import { RuiCheckbox } from '../../components/ui/checkbox';
-import type { RuiCheckboxChangeDetail } from '../../components/ui/checkbox/checkbox.script';
+import type { RuiCheckbox as RuiCheckboxElement } from '../../components/ui/checkbox/checkbox.script';
 import { RuiDialog, RuiDialogBody, RuiDialogClose, RuiDialogTitle } from '../../components/ui/dialog';
 import { RuiField } from '../../components/ui/field';
 import { RuiForm } from '../../components/ui/form';
@@ -20,6 +20,7 @@ import {
 import { RuiPopover, RuiPopoverContent, RuiPopoverTrigger } from '../../components/ui/popover';
 import { RuiPagination } from '../../components/ui/pagination';
 import { RuiSelect } from '../../components/ui/select';
+import type { RuiSelect as RuiSelectElement } from '../../components/ui/select/select.script';
 import { RuiSpinner } from '../../components/ui/spinner';
 import {
 	RuiTable,
@@ -562,13 +563,14 @@ export class RuiDataTable extends RadiantElement {
 		this.clearFilters();
 	}
 
-	@onEvent({ selector: 'rui-checkbox[data-filter]', type: 'rui-change' })
-	onFilterChange(event: CustomEvent<RuiCheckboxChangeDetail>): void {
-		const checkbox = event.target as HTMLElement;
-		const filter = checkbox.getAttribute('data-filter');
-		const value = checkbox.getAttribute('data-filter-value') ?? '';
-		if (filter === 'milk' || filter === 'texture' || filter === 'origin') {
-			this.setFilter(filter, value, event.detail.checked);
+	@onEvent({ selector: 'rui-checkbox[data-filter]', type: 'change' })
+	onFilterChange(event: Event): void {
+		const checkbox =
+			event.target instanceof Element ? event.target.closest<RuiCheckboxElement>('rui-checkbox') : null;
+		const filter = checkbox?.getAttribute('data-filter');
+		const value = checkbox?.getAttribute('data-filter-value') ?? '';
+		if (checkbox && (filter === 'milk' || filter === 'texture' || filter === 'origin')) {
+			this.setFilter(filter, value, checkbox.checked);
 		}
 	}
 
@@ -601,9 +603,10 @@ export class RuiDataTable extends RadiantElement {
 		this.updateFilters({ page: event.detail.page });
 	}
 
-	@onEvent({ selector: 'rui-select[data-page-size]', type: 'rui-change' })
-	onPageSizeChange(event: CustomEvent<{ value: string[] }>): void {
-		const pageSize = Number(event.detail.value[0]);
+	@onEvent({ selector: 'rui-select[data-page-size]', type: 'change' })
+	onPageSizeChange(event: Event): void {
+		const select = event.target instanceof Element ? event.target.closest<RuiSelectElement>('rui-select') : null;
+		const pageSize = Number(select?.value[0]);
 		if (pageSize === 5 || pageSize === 10 || pageSize === 20) {
 			this.updateFilters({ pageSize }, true);
 		}

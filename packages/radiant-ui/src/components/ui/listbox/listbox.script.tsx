@@ -1,12 +1,12 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
-import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop } from '@ecopages/radiant';
-import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
+import { RadiantElement, bindTo, customElement, onEvent, onUpdated, prop } from '@ecopages/radiant';
 import { uniqueId } from '@/lib/unique-id';
 import { createRovingController } from '../../../controllers/roving-controller';
 import { syncFieldLabel } from '../shared/field-label';
 import { getListboxOptionValue } from '../shared/listbox-option';
 import { multiValuePropOptions, type ViewMultiValue } from '@/lib/multi-value';
 import { announceControlConnect } from '@/lib/form/control-protocol';
+import { emitValueEvents } from '@/lib/form/value-events';
 
 export type RuiListboxSelectionMode = 'single' | 'multiple';
 
@@ -24,8 +24,6 @@ export type RuiListboxProps = {
 	/** When set, overrides the default border (`true` when standalone, `false` when embedded). */
 	bordered?: boolean;
 };
-
-export type RuiListboxChangeDetail = { value: string[] };
 
 /**
  * `<rui-listbox>` — listbox selection behavior host.
@@ -66,7 +64,6 @@ export type RuiListboxChangeDetail = { value: string[] };
  * @attr {boolean} embedded - Parent-owned listbox: selection handled by the parent. Default: `false`.
  * @attr {boolean} bordered - Override the border (`true` standalone, `false` embedded). Default: follows `embedded`.
  *
- * @fires rui-change - Emitted when an option is selected; `detail.value` is `string[]`.
  *
  * @remarks
  * Minimum headless tree:
@@ -102,9 +99,6 @@ export class RuiListbox extends RadiantElement {
 
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) embedded: boolean;
 	@prop({ type: Boolean, reflect: true }) bordered: boolean | undefined;
-
-	@event({ name: 'rui-change', bubbles: true, composed: true })
-	changeEvent: EventEmitter<RuiListboxChangeDetail>;
 
 	private readonly uid = uniqueId('rui-listbox');
 	private readonly roving = createRovingController(this, {
@@ -180,7 +174,7 @@ export class RuiListbox extends RadiantElement {
 			this.setSelectedValues([value]);
 		}
 		this.sync();
-		this.changeEvent.emit({ value: this.value });
+		emitValueEvents(this, { commit: true });
 		option.focus();
 	}
 

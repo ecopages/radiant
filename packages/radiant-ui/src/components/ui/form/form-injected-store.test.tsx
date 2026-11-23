@@ -439,7 +439,7 @@ describe('rui-form with an injected store', () => {
 
 		face.setAttribute('value', '123456');
 		face.internals.setValidity({});
-		face.dispatchEvent(new CustomEvent('rui-change', { bubbles: true, composed: true }));
+		face.dispatchEvent(new InputEvent('input', { bubbles: true, composed: true }));
 		await settle();
 
 		expect(facts()).toEqual({});
@@ -609,7 +609,7 @@ describe('rui-form with an injected store', () => {
 		expect(written.length).toBeGreaterThan(0);
 	});
 
-	it('does not echo a store write back when a control emits rui-change for programmatic writes', async () => {
+	it('does not echo a store write back when a control dispatches input for programmatic writes', async () => {
 		if (!customElements.get('x-echo')) {
 			customElements.define(
 				'x-echo',
@@ -625,7 +625,7 @@ describe('rui-form with an injected store', () => {
 			read: (host) => host.getAttribute('value') ?? '',
 			write: (host, value) => {
 				host.setAttribute('value', value == null ? '' : String(value));
-				host.dispatchEvent(new CustomEvent('rui-change', { bubbles: true, composed: true }));
+				host.dispatchEvent(new InputEvent('input', { bubbles: true, composed: true }));
 			},
 		});
 		const { store } = createTestStore({ echo: 'a' });
@@ -734,12 +734,12 @@ describe('rui-form with an injected store', () => {
 		const { store, facts } = createTestStore({ code: '' });
 		const { face } = await mountCode(store);
 		face.internals.setValidity({ valueMissing: true }, 'Enter the code');
-		face.dispatchEvent(new CustomEvent('rui-change', { bubbles: true, composed: true }));
+		face.dispatchEvent(new InputEvent('input', { bubbles: true, composed: true }));
 		await settle();
 		expect(facts()).toEqual({ code: { type: 'valueMissing', message: 'Enter the code' } });
 		store.reset();
 		face.internals.setValidity({});
-		face.dispatchEvent(new CustomEvent('rui-change', { bubbles: true, composed: true }));
+		face.dispatchEvent(new InputEvent('input', { bubbles: true, composed: true }));
 		await settle();
 
 		expect(facts()).toEqual({});

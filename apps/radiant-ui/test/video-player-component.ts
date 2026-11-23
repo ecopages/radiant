@@ -35,7 +35,7 @@ const play = async (root: HTMLElement) => {
 	await (root as PlayerHost).updateComplete;
 };
 
-const jsxTypes = new Set(['click', 'keydown', 'pointerdown', 'pointermove', 'pointerleave', 'dblclick', 'rui-change']);
+const jsxTypes = new Set(['click', 'keydown', 'pointerdown', 'pointermove', 'pointerleave', 'dblclick', 'input']);
 
 function expectBudget(actual: number, budget: number): void {
 	if (budget === 0) {

@@ -1,5 +1,5 @@
 import '@ecopages/radiant-ui/slider';
-import type { RuiSliderChangeDetail, RuiSliderElement } from '@ecopages/radiant-ui/slider';
+import type { RuiSliderElement } from '@ecopages/radiant-ui/slider';
 import {
 	CaptionsController,
 	HotkeyController,
@@ -213,16 +213,12 @@ export function mount(root: HTMLElement): () => void {
 	fullscreen.addEventListener('click', toggleFullscreen, { signal });
 	part('[data-retry]').addEventListener('click', () => void media.retry(), { signal });
 
-	seek.addEventListener(
-		'rui-change',
-		(event) => media.scrub((event as CustomEvent<RuiSliderChangeDetail>).detail.value[0]),
-		{ signal },
-	);
+	seek.addEventListener('input', () => media.scrub(seek.value[0]), { signal });
 
 	volume.addEventListener(
-		'rui-change',
-		(event) => {
-			const level = (event as CustomEvent<RuiSliderChangeDetail>).detail.value[0];
+		'input',
+		() => {
+			const level = volume.value[0];
 			media.setVolume(level);
 			if (level > 0) media.setMuted(false);
 		},

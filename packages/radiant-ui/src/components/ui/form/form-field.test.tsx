@@ -821,7 +821,7 @@ describe('rui-field composed content discovery', () => {
 			form.remove();
 		});
 
-		it('clears the error when the control becomes valid and emits rui-change', async () => {
+		it('clears the error when the control becomes valid and dispatches input', async () => {
 			const { form, nativeForm, field, face } = await mountCodeField();
 			face.internals.setValidity({ customError: true }, 'Enter all 6 characters');
 			await submit(nativeForm);
@@ -829,7 +829,7 @@ describe('rui-field composed content discovery', () => {
 
 			face.setAttribute('value', '123456');
 			face.internals.setValidity({});
-			face.dispatchEvent(new CustomEvent('rui-change', { bubbles: true, composed: true }));
+			face.dispatchEvent(new InputEvent('input', { bubbles: true, composed: true }));
 			await flushRender();
 			await new Promise((resolve) => setTimeout(resolve, 0));
 

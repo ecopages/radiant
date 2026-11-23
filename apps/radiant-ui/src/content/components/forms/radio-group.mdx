@@ -116,7 +116,10 @@ Do not set `name`, `checked`, or `disabled` on radios. Nested hosts: none.
 
 | Event | Detail | Description |
 | --- | --- | --- |
-| `rui-change` | `{ value: string }` | Emitted after the selected value changes. |
+| `input` | none | The native inner radio `<input>` event, bubbling through the host. Read `host.value`. |
+| `change` | none | The native inner radio `<input>` event on commit, bubbling through the host. Read `host.value`. |
+
+``rui-radio-group`` dispatches no event of its own: the `input` and `change` of its native inner `<input>` bubble through the host, which syncs its state in a capture listener first, so a listener on the host or an ancestor reads fresh `host.value`. Act only when `event.target` is the control's member input. A programmatic write dispatches nothing.
 
 ### Props
 

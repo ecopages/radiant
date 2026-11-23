@@ -172,7 +172,10 @@ Do not set thumb `tabindex`. Nested hosts: none. The `RuiSlider` view seeds read
 
 | Event | Detail | Description |
 | --- | --- | --- |
-| `rui-change` | `{ value: number[] }` | Emitted as the value moves; `[50]` in single mode, `[25, 75]` in range mode. |
+| `input` | none | Fired on each move, with `host.value` already live: `[50]` in single mode, `[25, 75]` in range mode. A key press fires `input` then `change`. A cancelled drag restores the value and fires `input` only. |
+| `change` | none | Fired once on release, only if the value changed since the press. |
+
+Read the value from the control (`host.value`); the events carry no `detail`. Both fire on the host after `value` is updated, and a programmatic write (property, attribute, store, reset) dispatches nothing. Act only when `event.target` is the host: a nested part's events can reach a listener above the host. `value` is a `number[]`.
 
 ### View helpers
 

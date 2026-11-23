@@ -124,7 +124,10 @@ Do not fight host-owned input state. Nested hosts: none.
 
 | Event | Detail | Description |
 | --- | --- | --- |
-| `rui-change` | `{ checked: boolean, indeterminate: boolean }` | Emitted after the state changes. |
+| `input` | none | The native inner `<input>` event, bubbling through the host. Read `host.checked`. |
+| `change` | none | The native inner `<input>` event on commit, bubbling through the host. Read `host.checked`. |
+
+``rui-checkbox`` dispatches no event of its own: the `input` and `change` of its native inner `<input>` bubble through the host, which syncs its state in a capture listener first, so a listener on the host or an ancestor reads fresh `host.checked`. Act only when `event.target` is the control's member input. A programmatic write dispatches nothing. A checkbox in a `rui-checkbox-group` bubbles to the group the same way.
 
 ### View helpers
 

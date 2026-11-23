@@ -89,6 +89,15 @@ export abstract class FormAssociatedElement extends RadiantElement {
 		return this.internals?.validity;
 	}
 
+	/**
+	 * The `<label>` elements associated with the host, as `ElementInternals.labels` reports them:
+	 * a `<label for="host-id">` anywhere in the document or a `<label>` ancestor. `undefined` on
+	 * the server.
+	 */
+	get labels(): NodeList | undefined {
+		return this.internals?.labels;
+	}
+
 	/** The message passed to `setValidity`, or `undefined` on the server. */
 	get validationMessage(): string | undefined {
 		return this.internals?.validationMessage;

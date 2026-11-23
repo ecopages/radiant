@@ -3,7 +3,6 @@ export {
 	type RuiComboboxProps,
 	type RuiComboboxSelectionMode,
 	type RuiComboboxTriggerKind,
-	type RuiComboboxChangeDetail,
 } from './combobox.script';
 export {
 	RuiCombobox,

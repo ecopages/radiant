@@ -1,6 +1,6 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
-import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop, queryAll } from '@ecopages/radiant';
-import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
+import { RadiantElement, bindTo, customElement, onUpdated, prop, queryAll } from '@ecopages/radiant';
+import { createEventListenerController } from '../../../controllers/event-listener-controller';
 import { nonEmpty } from '@/lib/non-empty';
 import { announceControlConnect } from '@/lib/form/control-protocol';
 
@@ -13,10 +13,6 @@ export type RuiRadioGroupProps = {
 	label?: string;
 	/** Disable every radio in the group. Default: `false`. */
 	disabled?: boolean;
-};
-
-export type RuiRadioGroupChangeDetail = {
-	value: string;
 };
 
 /**
@@ -53,7 +49,10 @@ export type RuiRadioGroupChangeDetail = {
  * @attr {string} label - Accessible name when no visible legend is composed. Default: `''`.
  * @attr {boolean} disabled - Disables every radio in the group. Default: `false`.
  *
- * @fires rui-change - Emitted after the selected value changes; `detail.value` holds the new value.
+ *
+ * The host dispatches no event. The checked radio's native `input` and `change` bubble through it, and the host
+ * syncs `value` in a capture listener on itself, so a bubble listener reads the new value. Act on an event only
+ * when `event.target` is that radio.
  *
  * @remarks
  * Minimum headless tree:
@@ -94,8 +93,25 @@ export class RuiRadioGroup extends RadiantElement {
 
 	@queryAll('input[type="radio"]') radioTargets: HTMLInputElement[];
 
-	@event({ name: 'rui-change', bubbles: true, composed: true })
-	changeEvent: EventEmitter<RuiRadioGroupChangeDetail>;
+	constructor() {
+		super();
+		createEventListenerController(this, {
+			getTarget: () => this,
+			type: ['input', 'change'],
+			options: { capture: true },
+			listener: (event) => {
+				const input = event.target;
+				if (
+					input instanceof HTMLInputElement &&
+					input.type === 'radio' &&
+					input.checked &&
+					this.contains(input)
+				) {
+					this.value = input.value;
+				}
+			},
+		});
+	}
 
 	protected override onConnected(): void {
 		this.syncRadios();
@@ -111,14 +127,6 @@ export class RuiRadioGroup extends RadiantElement {
 			radio.disabled = this.disabled || radio.hasAttribute('data-disabled');
 			radio.checked = this.value !== '' && radio.value === this.value;
 		}
-	}
-
-	@onEvent({ selector: 'input[type="radio"]', type: 'change' })
-	onRadioChange(event: Event): void {
-		const input = event.target as HTMLInputElement;
-		if (!input.checked) return;
-		this.value = input.value;
-		this.changeEvent.emit({ value: this.value });
 	}
 }
 

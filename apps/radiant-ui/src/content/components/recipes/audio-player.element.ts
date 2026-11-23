@@ -8,7 +8,7 @@ import {
 } from '@ecopages/radiant-ui/controllers';
 import '@ecopages/radiant-ui/slider';
 import '@ecopages/radiant-ui/toolbar';
-import type { RuiSliderChangeDetail, RuiSliderElement } from '@ecopages/radiant-ui/slider';
+import type { RuiSliderElement } from '@ecopages/radiant-ui/slider';
 import { formatMediaTime, reorder } from '@ecopages/radiant-ui/helpers';
 import {
 	PLAYLIST_HINT,
@@ -46,6 +46,7 @@ export class AudioPlayerElement extends RadiantElement {
 	@query('[data-cover]') private cover!: HTMLElement;
 	@query('[data-tracks]') private list!: HTMLElement;
 	@query('[data-seek]') private seek!: RuiSliderElement;
+	@query('[data-volume-input]') private volume!: RuiSliderElement;
 	@query('[data-seek] [role="slider"]') private seekThumb!: HTMLElement;
 	@query('[data-volume-input] [role="slider"]') private volumeThumb!: HTMLElement;
 	@queryAll('[data-track]') private rows!: HTMLElement[];
@@ -203,10 +204,10 @@ export class AudioPlayerElement extends RadiantElement {
 		this.seekText.set(seekValueText(this.elapsed, this.total));
 	}
 
-	/** The slider works in seconds and reports `rui-change` only for the reader, never for a position written to it. */
-	@onEvent({ selector: '[data-seek]', type: 'rui-change' })
-	scrub(event: Event): void {
-		this.media.scrub((event as CustomEvent<RuiSliderChangeDetail>).detail.value[0]);
+	/** The slider works in seconds and dispatches `input` only for the reader, never for a position written to it. */
+	@onEvent({ selector: '[data-seek]', type: 'input' })
+	scrub(): void {
+		this.media.scrub(this.seek.value[0]);
 	}
 
 	/**
@@ -223,9 +224,9 @@ export class AudioPlayerElement extends RadiantElement {
 		this.media.skip(distance);
 	}
 
-	@onEvent({ selector: '[data-volume-input]', type: 'rui-change' })
-	setVolume(event: Event): void {
-		const level = (event as CustomEvent<RuiSliderChangeDetail>).detail.value[0];
+	@onEvent({ selector: '[data-volume-input]', type: 'input' })
+	setVolume(): void {
+		const level = this.volume.value[0];
 		this.media.setVolume(level);
 		this.volumeText.set(volumeValueText(level));
 	}

@@ -60,8 +60,8 @@ describe.each([false, true])('RuiDateRangePicker with portal %s', (portal) => {
 	it('commits the range a user picks, closes and returns focus to the toggle', async () => {
 		const { picker, toggle, popup } = await mountField(portal);
 		const changes: string[] = [];
-		picker.addEventListener('rui-change', (event) => {
-			if (event.target === picker) changes.push((event as CustomEvent).detail.value);
+		picker.addEventListener('change', (event) => {
+			if (event.target === picker) changes.push(Reflect.get(picker, 'value'));
 		});
 
 		toggle.click();

@@ -29,7 +29,7 @@ export const config = {
 
 ## Usage
 
-The live `value` property is always a `string[]` (`[]` when nothing is selected). The HTML attribute is those tokens as a comma-separated string. JSX may pass a string or an array; a string is parsed as CSV. `rui-change` emits `{ value: string[] }`. Pass `tags` for the simple API, or compose `RuiTagList` and `RuiTag`. `RuiTag` already includes the remove control.
+The live `value` property is always a `string[]` (`[]` when nothing is selected). The HTML attribute is those tokens as a comma-separated string. JSX may pass a string or an array; a string is parsed as CSV. `input` and `change` fire on the host and carry no `detail`; read `host.value`. Pass `tags` for the simple API, or compose `RuiTagList` and `RuiTag`. `RuiTag` already includes the remove control.
 
 Not form-associated. Wrap in `RuiField` and read the value from `RuiForm` `onSubmit`. It does not appear in `new FormData(form)`.
 
@@ -120,8 +120,9 @@ Do not set `role`, `aria-selected`, or `tabIndex` on tags. Nested hosts: none.
 
 | Event | Detail | Description |
 | --- | --- | --- |
-| `rui-change` | `{ value: string[] }` | Emitted when selection changes. |
-| `rui-remove` | `{ value: string }` | Emitted when a tag is removed; `value` is the removed tag's value. Also followed by `rui-change`. |
+| `input` | none | Fired on each toggle, remove or clear, after `value` is updated. |
+| `change` | none | Fired right after `input` on the same interaction. |
+| `rui-remove` | `{ value: string }` | Emitted when a tag is removed; `value` is the removed tag's value. Also followed by `input` and `change`. |
 | `rui-reorder` | `{ value: string; from: number; to: number }` | Emitted after a reorder is applied: the moved tag's value and its old and new index among the tags that take part in keyboard movement (not `hidden`, not `aria-disabled`). |
 
 ### Methods

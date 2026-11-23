@@ -47,11 +47,9 @@ export const Default: Story = {
 			await expect(radios[1]).not.toBeChecked();
 		});
 
-		await step('a rui-change event carries the new value', async () => {
+		await step('a change event bubbles from the radio and the group already holds the new value', async () => {
 			const emissions: string[] = [];
-			host.addEventListener('rui-change', (event) =>
-				emissions.push((event as CustomEvent<{ value: string }>).detail.value),
-			);
+			host.addEventListener('change', () => emissions.push(Reflect.get(host, 'value')));
 			await userEvent.click(radios[2]);
 			await expect(emissions).toEqual(['push']);
 		});

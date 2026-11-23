@@ -96,7 +96,10 @@ When Date Input is nested in Date Field or Date Range Picker, the parent owns th
 
 | Event | Detail | Description |
 | --- | --- | --- |
-| `rui-change` | `{ value: string }` | Emitted when a complete valid date is committed, or when all segments are cleared. |
+| `input` | none | Fired when a complete valid date is committed, or when all segments are cleared. |
+| `change` | none | Fired right after `input` on the same commit. |
+
+Read the value from the control (`host.value`); the events carry no `detail`. Both fire on the host after `value` is updated, and a programmatic write (property, attribute, store, reset) dispatches nothing. Act only when `event.target` is the host: a nested part's events can reach a listener above the host. The segments' own events are stopped at the host.
 | `rui-form-reset` | — | Emitted after native reset so a parent Date Field or Date Range Picker can restore its value. |
 
 ### View helpers

@@ -45,11 +45,9 @@ export const Default: Story = {
 			await expect(host).toHaveAttribute('checked');
 		});
 
-		await step('a rui-change event carries the new state', async () => {
+		await step('a change event bubbles from the input and the host already holds the new state', async () => {
 			const emissions: boolean[] = [];
-			host.addEventListener('rui-change', (event) =>
-				emissions.push((event as CustomEvent<{ checked: boolean }>).detail.checked),
-			);
+			host.addEventListener('change', () => emissions.push(Reflect.get(host, 'checked')));
 			await userEvent.click(input);
 			await expect(emissions).toEqual([false]);
 		});

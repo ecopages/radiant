@@ -2,7 +2,7 @@ import { userEvent } from 'vitest/browser';
 import { describe, expect, it, vi } from 'vitest';
 import {
 	findFieldControl,
-	isPrimaryFieldControlEvent,
+	isFieldValueEvent,
 	readControlValidity,
 	readControlValue,
 	registerFieldControl,
@@ -28,36 +28,76 @@ describe('field control protocol in the browser', () => {
 		expect((control as HTMLInputElement).value).toBe('marked');
 	});
 
-	it('treats a standalone listbox change as the field control event', () => {
+	/** Dispatch `type` on `target` and return the event as the field's bubble listener sees it. */
+	function seenAtField(field: HTMLElement, target: Element, type = 'change'): Event {
+		let seen: Event | undefined;
+		field.addEventListener(type, (event) => (seen = event), { once: true });
+		target.dispatchEvent(new Event(type, { bubbles: true }));
+		if (!seen) {
+			throw new Error('the event did not reach the field');
+		}
+		return seen;
+	}
+
+	it('counts an event dispatched on a standalone host control', () => {
 		const field = document.createElement('div');
 		field.innerHTML = `<rui-listbox></rui-listbox>`;
-		const listbox = field.querySelector('rui-listbox')!;
-		let seen: Event | undefined;
-		field.addEventListener('rui-change', (event) => {
-			seen = event;
-		});
-		listbox.dispatchEvent(new Event('rui-change', { bubbles: true }));
 
-		expect(seen).toBeDefined();
-		expect(isPrimaryFieldControlEvent(field, seen!)).toBe(true);
+		expect(isFieldValueEvent(field, seenAtField(field, field.querySelector('rui-listbox')!))).toBe(true);
 	});
 
-	it('ignores rui-change from an embedded listbox inside select', () => {
+	it('counts an event dispatched on a marked native input and ignores a bare one', () => {
+		const field = document.createElement('div');
+		field.innerHTML = `<input type="text" /><input data-rui-control type="email" />`;
+		const [bare, marked] = Array.from(field.querySelectorAll('input'));
+
+		expect(isFieldValueEvent(field, seenAtField(field, marked!))).toBe(true);
+		expect(isFieldValueEvent(field, seenAtField(field, bare!))).toBe(false);
+	});
+
+	it('ignores an event from an embedded listbox, a query input or a nested host inside a select', () => {
 		const field = document.createElement('div');
 		field.innerHTML = `
 			<rui-select>
 				<rui-listbox embedded></rui-listbox>
+				<input data-autocomplete-input />
+				<rui-tag-group></rui-tag-group>
 			</rui-select>
 		`;
-		const listbox = field.querySelector('rui-listbox')!;
-		let seen: Event | undefined;
-		field.addEventListener('rui-change', (event) => {
-			seen = event;
-		});
-		listbox.dispatchEvent(new Event('rui-change', { bubbles: true }));
 
-		expect(seen).toBeDefined();
-		expect(isPrimaryFieldControlEvent(field, seen!)).toBe(false);
+		for (const inner of ['rui-listbox', 'input', 'rui-tag-group']) {
+			expect(isFieldValueEvent(field, seenAtField(field, field.querySelector(inner)!, 'input'))).toBe(false);
+		}
+		expect(isFieldValueEvent(field, seenAtField(field, field.querySelector('rui-select')!))).toBe(true);
+	});
+
+	it('counts a member input of a wrapper or group, and not a host nested in the group', () => {
+		const field = document.createElement('div');
+		field.innerHTML = `
+			<rui-checkbox-group>
+				<rui-checkbox><input type="checkbox" /></rui-checkbox>
+				<rui-select></rui-select>
+			</rui-checkbox-group>
+		`;
+
+		expect(isFieldValueEvent(field, seenAtField(field, field.querySelector('input')!))).toBe(true);
+		expect(isFieldValueEvent(field, seenAtField(field, field.querySelector('rui-select')!))).toBe(false);
+		expect(isFieldValueEvent(field, seenAtField(field, field.querySelector('rui-checkbox-group')!))).toBe(false);
+	});
+
+	it('counts the events of a registered host and ignores a non-target input bubbling through it', () => {
+		if (!customElements.get('x-value-host')) {
+			customElements.define('x-value-host', class extends HTMLElement {});
+		}
+		registerFieldControl('x-value-host', {
+			read: () => '',
+			write: () => {},
+		});
+		const field = document.createElement('div');
+		field.innerHTML = `<x-value-host><input /></x-value-host>`;
+
+		expect(isFieldValueEvent(field, seenAtField(field, field.querySelector('x-value-host')!, 'input'))).toBe(true);
+		expect(isFieldValueEvent(field, seenAtField(field, field.querySelector('input')!, 'input'))).toBe(false);
 	});
 
 	it('does not name the inner input of a form-associated host', () => {

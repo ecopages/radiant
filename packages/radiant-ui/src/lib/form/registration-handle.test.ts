@@ -278,4 +278,46 @@ describe('InjectedFormDriver fact reports', () => {
 		expect(reportError).toHaveBeenCalledTimes(1);
 		reportError.mockRestore();
 	});
+
+	it('reports nothing and sends the error to reportError when the validity read throws on an unchanged change', async () => {
+		const state = createHostStore({ a: 'x' });
+		const reportNative = vi.spyOn(state, 'reportNative');
+		const reportError = vi.spyOn(globalThis, 'reportError').mockImplementation(() => {});
+		const driver = new InjectedFormDriver(state);
+		driver.subscribe(() => {});
+		const field = control('a', 'x');
+		driver.register(field);
+		await Promise.resolve();
+		await driver.handleFieldChange('a');
+		field.getValidity = () => {
+			throw new Error('validity broke');
+		};
+		reportNative.mockClear();
+		reportError.mockClear();
+
+		await expect(driver.handleFieldChange('a')).resolves.toBeUndefined();
+
+		expect(reportNative).not.toHaveBeenCalled();
+		expect(reportError).toHaveBeenCalledTimes(1);
+		reportError.mockRestore();
+	});
+
+	it('writes once and reports at most once for an input then change on one control', async () => {
+		const state = createHostStore({ a: false });
+		const reportNative = vi.spyOn(state, 'reportNative');
+		const driver = new InjectedFormDriver(state);
+		driver.subscribe(() => {});
+		const field = control('a', false, { valid: false, type: 'valueMissing' });
+		driver.register(field);
+		await Promise.resolve();
+		reportNative.mockClear();
+
+		field.type(true);
+		await driver.handleFieldChange('a');
+		await driver.handleFieldChange('a');
+		await Promise.resolve();
+
+		expect(state.setValue).toHaveBeenCalledTimes(1);
+		expect(reportNative).toHaveBeenCalledTimes(1);
+	});
 });

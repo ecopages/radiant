@@ -107,10 +107,10 @@ describe.each(modes)('rui-slider in a rui-field with %s', (_label, injected) => 
 		expect(stored()).toEqual(slider.value);
 	});
 
-	it('already holds the new value inside the rui-change listener', async () => {
+	it('already holds the new value inside the input listener', async () => {
 		const { slider } = await mountSlider(injected);
 		const seen: number[][] = [];
-		slider.addEventListener('rui-change', () => seen.push([...slider.value]));
+		slider.addEventListener('input', () => seen.push([...slider.value]));
 		const thumb = slider.querySelector('[data-thumb]') as HTMLElement;
 
 		thumb.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
@@ -121,7 +121,7 @@ describe.each(modes)('rui-slider in a rui-field with %s', (_label, injected) => 
 	it('restores the value and the store when a drag is cancelled', async () => {
 		const { slider, stored } = await mountSlider(injected);
 		const seen: number[][] = [];
-		slider.addEventListener('rui-change', () => seen.push([...slider.value]));
+		slider.addEventListener('input', () => seen.push([...slider.value]));
 		const track = slider.querySelector('[data-ref="rangeTrack"]') as HTMLElement;
 		const rect = track.getBoundingClientRect();
 		const init = { bubbles: true, pointerId: 1, button: 0, clientY: rect.top + rect.height / 2 };

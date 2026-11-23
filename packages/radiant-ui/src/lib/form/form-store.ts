@@ -1,4 +1,5 @@
 import { createRulesResolver } from './resolvers';
+import { isSameValue } from './same-value';
 import type { FormStateStore, FormStateStoreSnapshot, NativeValidity } from './form-state-store';
 import { deletePath, getPath, setPath } from './value-path';
 import type {
@@ -75,6 +76,10 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	private reportedNative: Record<string, NativeValidity> = {};
 	/** Paths whose validation has run since the last reset, whether it passed or failed. */
 	private readonly validatedPaths = new Set<string>();
+	private readonly validationRuns = new Map<string, { id: number; promise: Promise<boolean> }>();
+	private lastValidationId = 0;
+	/** The native fact type, or `null` for none, that the last validation of each path read. */
+	private readonly validatedNative = new Map<string, string | null>();
 	private snapshot:
 		{ values: FieldValues; errors: Record<string, FieldError>; value: FormStateStoreSnapshot } | undefined;
 	touched: Record<string, boolean> = {};
@@ -431,13 +436,39 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		};
 	}
 
-	async validateField(name: string): Promise<boolean> {
+	/**
+	 * Validate one path and write its error.
+	 *
+	 * @remarks The latest run for a path wins: a run that another run for the same path
+	 * superseded while its resolver was pending writes no error and notifies nobody, so an
+	 * out-of-order resolver result never leaves a stale error. The run in flight stays
+	 * reachable in `validationRuns` until it settles, which lets a caller wait for it
+	 * instead of starting another.
+	 */
+	validateField(name: string): Promise<boolean> {
+		const id = ++this.lastValidationId;
+		const promise = this.runFieldValidation(name, id);
+		this.validationRuns.set(name, { id, promise });
+		const clear = () => {
+			if (this.validationRuns.get(name)?.id === id) {
+				this.validationRuns.delete(name);
+			}
+		};
+		promise.then(clear, clear);
+		return promise;
+	}
+
+	private async runFieldValidation(name: string, id: number): Promise<boolean> {
 		this.validatedPaths.add(name);
 		const values = this.getValues();
 		const result = await this.resolver(values, { fields: this.buildResolverFields() }, { names: [name] });
 		const resolverError: FieldError | undefined = this.ownRead(result.errors, name);
 		const nativeError = resolverError?.message ? undefined : this.readNativeError(name);
 		const error = nativeError ?? resolverError;
+		if (this.validationRuns.get(name)?.id !== id) {
+			return !error;
+		}
+		this.validatedNative.set(name, nativeError?.type ?? null);
 		this.errors = withKey(this.ownErrors, name, error ? (nativeError ?? resolverError ?? {}) : undefined);
 		this.notify();
 		return !error;
@@ -457,6 +488,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		}
 		for (const name of new Set([...this.fields.keys(), ...Object.keys(this.reportedNative)])) {
 			const native = found.get(name)?.message ? undefined : this.readNativeError(name);
+			this.validatedNative.set(name, native?.type ?? null);
 			if (native) {
 				found.set(name, native);
 			}
@@ -548,9 +580,40 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		if (!field) {
 			return;
 		}
-		this.values = setPath(this.values, name, field.getValue());
+		const value = field.getValue();
+		if (isSameValue(value, getPath(this.values, name))) {
+			await this.revalidateUnchanged(name);
+			return;
+		}
+		this.values = setPath(this.values, name, value);
 		this.rewriteRelatedControls(name, name);
 		await this.afterChange(name);
+	}
+
+	/**
+	 * A change event whose value the store already holds writes nothing and marks nothing dirty. A control
+	 * can still turn valid or invalid without its value moving, so the field is validated again when the
+	 * mode asks for validation on change and the control's native fact differs from the one the last
+	 * validation of the path read.
+	 *
+	 * @remarks The comparison is with what validation saw, not with the error shown: a shown rule or
+	 * resolver error would never match a control with no native problem, and every change would validate
+	 * again. A validation already running for the path reads the control's fact after its resolver
+	 * settles, so the change waits for it instead of starting a second run.
+	 */
+	private async revalidateUnchanged(name: string): Promise<void> {
+		if (!this.shouldValidate(name, 'change')) {
+			return;
+		}
+		const running = this.validationRuns.get(name);
+		if (running) {
+			await running.promise;
+			return;
+		}
+		const current = this.readNativeError(name)?.type ?? null;
+		if (current !== (this.validatedNative.get(name) ?? null)) {
+			await this.validateField(name);
+		}
 	}
 
 	/** Interface form of {@link FormStore.handleFieldBlur}; validation runs per `mode`. */
@@ -635,6 +698,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		this.sourceErrors.clear();
 		this.reportedNative = {};
 		this.validatedPaths.clear();
+		this.validatedNative.clear();
 		this.errors = {};
 		this.touched = {};
 		this.dirty = {};

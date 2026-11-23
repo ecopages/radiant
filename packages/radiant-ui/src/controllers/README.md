@@ -18,7 +18,7 @@ Contract, `Controller`, `bindController`, compose-or-extend and the protected ho
 1. Name the behaviors: open and close, keyboard movement, dragging, filtering, date math, positioning.
 2. Pick one primitive per behavior from the tables below. Controllers own the DOM wiring; helpers own the decisions and formatting.
 3. Hold the controllers in fields of the custom element with `createX(this, config)`. Config is getters (`getItems`, `getTarget`) and callbacks (`onChange`), so the element keeps its own state and the controller never reaches into it.
-4. Keep what is specific to the component (state, markup, `rui-change` events) in the component. Use a helper, not a controller, for anything that only maps input to output.
+4. Keep what is specific to the component (state, markup, events) in the component. Use a helper, not a controller, for anything that only maps input to output.
 5. If a decision needs to differ, use a config callback first, a documented `protected` hook by subclassing second, a new controller last.
 
 Example, "a calendar with draggable events and a filter":

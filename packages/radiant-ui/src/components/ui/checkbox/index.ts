@@ -1,6 +1,2 @@
-export {
-	RuiCheckbox as RuiCheckboxElement,
-	type RuiCheckboxProps,
-	type RuiCheckboxChangeDetail,
-} from './checkbox.script';
+export { RuiCheckbox as RuiCheckboxElement, type RuiCheckboxProps } from './checkbox.script';
 export { RuiCheckbox } from './checkbox';

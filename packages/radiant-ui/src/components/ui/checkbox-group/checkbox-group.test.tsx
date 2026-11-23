@@ -36,7 +36,7 @@ describe('RuiCheckboxGroup programmatic writes', () => {
 		const group = host.querySelector('rui-checkbox-group') as RuiCheckboxGroupElement;
 		const [news, travel] = [...host.querySelectorAll('rui-checkbox')] as RuiCheckboxElement[];
 		const changes: unknown[] = [];
-		group.addEventListener('rui-change', (event) => changes.push((event as CustomEvent).detail));
+		group.addEventListener('change', () => changes.push(group.value));
 
 		travel.checked = true;
 		await settled();

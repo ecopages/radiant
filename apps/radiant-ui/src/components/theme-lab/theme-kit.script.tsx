@@ -1,7 +1,8 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, customElement, onEvent } from '@ecopages/radiant';
 import type { RadiantCodeTabs } from '@/components/code-tabs/code-tabs.script';
-import type { RuiComboboxElement } from '@ecopages/radiant-ui/combobox';
+import { RuiCheckboxElement } from '@ecopages/radiant-ui/checkbox';
+import { RuiComboboxElement } from '@ecopages/radiant-ui/combobox';
 import {
 	DOCS_DEFAULT_THEME_TUNING,
 	DOCS_TUNING_CHANGE_EVENT,
@@ -129,12 +130,13 @@ export class ThemeKitElement extends RadiantElement {
 		void this.ensureCatalog().then(() => (role ? this.populate(role) : undefined));
 	}
 
-	@onEvent({ selector: 'rui-combobox[data-font-role]', type: 'rui-change' })
+	@onEvent({ selector: 'rui-combobox[data-font-role]', type: 'change' })
 	onFontChange(event: Event): void {
-		const combobox = event.target as HTMLElement;
+		const combobox = event.target;
+		if (!(combobox instanceof RuiComboboxElement)) return;
 		const role = combobox.dataset.fontRole as DocsFontRole | undefined;
 		if (!role || !DOCS_FONT_ROLES.includes(role)) return;
-		const [id] = (event as CustomEvent<{ value?: string[] }>).detail?.value ?? [];
+		const [id] = combobox.value;
 		this.chooseFont(role, id ? this.findFont(role, id) : undefined);
 	}
 
@@ -159,9 +161,10 @@ export class ThemeKitElement extends RadiantElement {
 		if (Number.isFinite(hue)) this.setHue(hue);
 	}
 
-	@onEvent({ selector: 'rui-checkbox[data-kit-tint]', type: 'rui-change' })
+	@onEvent({ selector: 'rui-checkbox[data-kit-tint]', type: 'change' })
 	onTint(event: Event): void {
-		const checked = (event as CustomEvent<{ checked?: boolean }>).detail?.checked === true;
+		const checkbox = event.target instanceof Element ? event.target.closest('rui-checkbox') : null;
+		const checked = checkbox instanceof RuiCheckboxElement && checkbox.checked;
 		this.tuning = updateDocsDefaultThemeTuning({
 			neutralHue: checked ? this.tuning.primaryHue : DOCS_DEFAULT_THEME_TUNING.neutralHue,
 		});

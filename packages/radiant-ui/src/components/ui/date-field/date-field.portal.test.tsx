@@ -60,8 +60,8 @@ describe.each([false, true])('RuiDateField with portal %s', (portal) => {
 	it('commits the day a user picks, closes and returns focus to the toggle', async () => {
 		const { field, toggle, popup } = await mountField(portal);
 		const changes: string[] = [];
-		field.addEventListener('rui-change', (event) => {
-			if (event.target === field) changes.push((event as CustomEvent).detail.value);
+		field.addEventListener('change', (event) => {
+			if (event.target === field) changes.push(field.value);
 		});
 
 		toggle.click();

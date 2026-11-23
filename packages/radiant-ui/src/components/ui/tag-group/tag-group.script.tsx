@@ -7,6 +7,7 @@ import { createRovingController } from '../../../controllers/roving-controller';
 import { createSortableController, type SortableChange } from '../../../controllers/sortable-controller';
 import { multiValuePropOptions, type ViewMultiValue } from '@/lib/multi-value';
 import { announceControlConnect } from '@/lib/form/control-protocol';
+import { emitValueEvents } from '@/lib/form/value-events';
 
 export type RuiTagGroupSelectionMode = 'single' | 'multiple';
 export type RuiTagGroupItem = { value: string; label: string };
@@ -22,7 +23,6 @@ export type RuiTagGroupProps = {
 	reorderable?: boolean;
 };
 
-export type RuiTagGroupChangeDetail = { value: string[] };
 export type RuiTagGroupRemoveDetail = { value: string };
 /** `from` and `to` are indexes among the tags that take part in keyboard movement (not `hidden`, not `aria-disabled`). */
 export type RuiTagGroupReorderDetail = { value: string; from: number; to: number };
@@ -69,7 +69,6 @@ export type RuiTagGroupReorderDetail = { value: string; from: number; to: number
  * @attr {('single'|'multiple')} selection-mode - Allow one or many selected tags. Default: `multiple`.
  * @attr {boolean} embedded - Disables selection when the parent component owns the selected values. Default: `false`.
  * @attr {boolean} reorderable - Lets tags be reordered. Default: `false`.
- * @fires rui-change - Emitted when the selected `value` changes; `detail.value` is `string[]`.
  * @fires rui-remove - Emitted when a tag is removed; `detail.value` is the removed tag's value.
  * @fires rui-reorder - Emitted after a reorder is applied; `detail` is `{ value, from, to }`: the moved tag's value and its
  * old and new index among the tags that take part in keyboard movement.
@@ -100,9 +99,6 @@ export class RuiTagGroup extends RadiantElement {
 	@prop({ type: String, attribute: 'selection-mode', defaultValue: 'multiple' })
 	selectionMode: RuiTagGroupSelectionMode;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) embedded: boolean;
-
-	@event({ name: 'rui-change', bubbles: true, composed: true })
-	changeEvent: EventEmitter<RuiTagGroupChangeDetail>;
 
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) reorderable: boolean;
 
@@ -308,7 +304,7 @@ export class RuiTagGroup extends RadiantElement {
 		}
 
 		this.syncTags();
-		this.changeEvent.emit({ value: this.value });
+		emitValueEvents(this, { commit: true });
 	}
 
 	private isTagDisabled(tag: HTMLElement): boolean {
@@ -325,7 +321,7 @@ export class RuiTagGroup extends RadiantElement {
 		this.setSelectedValues([...selected]);
 		this.syncTags();
 		this.removeEvent.emit({ value: tagValue });
-		this.changeEvent.emit({ value: this.value });
+		emitValueEvents(this, { commit: true });
 	}
 
 	private initialize(): void {

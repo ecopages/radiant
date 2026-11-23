@@ -1,11 +1,12 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
-import { bindTo, customElement, event, onEvent, onUpdated, prop, ref } from '@ecopages/radiant';
+import { bindTo, customElement, onEvent, onUpdated, prop, ref } from '@ecopages/radiant';
 import { FormAssociatedElement, type FormValue } from '@ecopages/radiant/form-associated-element';
-import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
-import { createPointerDragController } from '../../../controllers/pointer-drag-controller';
+import { createPointerDragController, type PointerDragEndReason } from '../../../controllers/pointer-drag-controller';
 import { createNumericRange, valueFromSliderKey, valuesAlignOnStep } from '@/lib/numeric-range';
 import { createKnobRing, knobValueFromPointer } from './knob-geometry';
 import { announceControlConnect } from '@/lib/form/control-protocol';
+import { emitChange, emitInput, emitValueEvents } from '@/lib/form/value-events';
+import { forwardHostLabels } from '../shared/field-label';
 
 export type RuiKnobValuePosition = 'center' | 'below';
 
@@ -29,8 +30,6 @@ export type RuiKnobProps = {
 	valuePosition?: RuiKnobValuePosition;
 	valueTemplate?: string;
 };
-
-export type RuiKnobChangeDetail = { value: number };
 
 /**
  * Default selected value.
@@ -92,7 +91,9 @@ export const KNOB_DEFAULT_VALUE = 50;
  * @attr {('center'|'below')} value-position - Readout placement. Default: `center`.
  * @attr {string} value-template - Readout template; `{value}` is replaced by the formatted value. Default: `'{value}'`.
  *
- * @fires rui-change - Emitted as the pointer or keyboard changes the value; `detail.value` holds the new number.
+ * @fires input - Dispatched on the host on each pointer move or key that changes the value, after `value` holds it.
+ * @fires change - Dispatched on the host when the user commits: on pointer release if the value changed since the
+ *   press, and right after `input` for a key. A cancelled drag restores `value` and fires `input` only.
  *
  * @cssprop --rui-track-mix - Unfilled ring mix against `--on-background`. Inherited. Default: `45%`.
  * @cssprop --rui-track-fill - Unfilled ring color from that mix. Inherited.
@@ -134,9 +135,6 @@ export class RuiKnob extends FormAssociatedElement {
 	@prop({ type: String, attribute: 'value-position', defaultValue: 'center' }) valuePosition: RuiKnobValuePosition;
 	@prop({ type: String, attribute: 'value-template', defaultValue: '{value}' }) valueTemplate: string;
 
-	@event({ name: 'rui-change', bubbles: true, composed: true })
-	changeEvent: EventEmitter<RuiKnobChangeDetail>;
-
 	@ref('root') rootTarget: HTMLElement | null;
 	@ref('label') labelTarget: HTMLElement | null;
 	@ref('control') controlTarget: HTMLButtonElement | null;
@@ -145,7 +143,8 @@ export class RuiKnob extends FormAssociatedElement {
 	@ref('centerValue') centerValueTarget: HTMLElement | null;
 	@ref('belowValue') belowValueTarget: HTMLElement | null;
 
-	private lastEmitted: number | null = null;
+	/** The value when the drag started, to commit a change on release and to restore on cancel. */
+	private pressValue: number | null = null;
 	private rangeCommitQueued = false;
 
 	constructor() {
@@ -155,19 +154,26 @@ export class RuiKnob extends FormAssociatedElement {
 			getHandle: () => this.controlTarget,
 			canStart: () => !this.effectiveDisabled && !this.readOnly,
 			onStart: ({ event }) => {
-				this.lastEmitted = this.value;
+				this.pressValue = this.value;
 				this.controlTarget?.setAttribute('data-dragging', '');
 				this.commitFromPointer(event);
 				event.preventDefault();
 			},
 			onMove: ({ event }) => this.commitFromPointer(event),
-			onEnd: () => this.controlTarget?.removeAttribute('data-dragging'),
+			onEnd: ({ reason }) => this.endDrag(reason),
 		});
 	}
 
 	protected override onConnected(): void {
 		this.syncPresentation();
+		this.syncHostLabels();
 		announceControlConnect(this);
+	}
+
+	/** A `<label for>` outside the field names the control; it may arrive after connect, so focus syncs it again. */
+	@onEvent({ ref: 'control', type: 'focusin' })
+	syncHostLabels(): void {
+		forwardHostLabels(this, this.controlTarget ? [this.controlTarget] : []);
 	}
 
 	protected override formValue(): FormValue {
@@ -297,7 +303,8 @@ export class RuiKnob extends FormAssociatedElement {
 		});
 	}
 
-	private commitValue(next: number): void {
+	/** Write the value, then tell listeners: `input` always, and `change` too when `commit` is set. */
+	private commitValue(next: number, options: { commit: boolean }): void {
 		if (this.effectiveDisabled || this.readOnly) {
 			return;
 		}
@@ -309,10 +316,23 @@ export class RuiKnob extends FormAssociatedElement {
 		}
 
 		this.value = value;
-		if (this.lastEmitted !== value) {
-			this.lastEmitted = value;
-			this.changeEvent.emit({ value });
+		emitValueEvents(this, options);
+	}
+
+	private endDrag(reason: PointerDragEndReason): void {
+		this.controlTarget?.removeAttribute('data-dragging');
+		const start = this.pressValue;
+		this.pressValue = null;
+		if (reason === 'destroy' || start === null || valuesAlignOnStep(start, this.value, this.step)) {
+			return;
 		}
+		if (reason === 'release') {
+			emitChange(this);
+			return;
+		}
+		this.value = start;
+		this.paint(start);
+		emitInput(this);
 	}
 
 	private commitFromPointer(event: PointerEvent): void {
@@ -323,7 +343,7 @@ export class RuiKnob extends FormAssociatedElement {
 			this.numericRange,
 		);
 		if (value != null) {
-			this.commitValue(value);
+			this.commitValue(value, { commit: false });
 		}
 	}
 
@@ -339,8 +359,7 @@ export class RuiKnob extends FormAssociatedElement {
 		}
 
 		event.preventDefault();
-		this.lastEmitted = this.value;
-		this.commitValue(next);
+		this.commitValue(next, { commit: true });
 	}
 }
 

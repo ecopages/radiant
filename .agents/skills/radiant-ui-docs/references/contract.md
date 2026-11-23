@@ -38,7 +38,8 @@ Place this on the `@customElement` class. Keep CEM tags (`@element`, `@attr`, `@
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/…  (or the real reference)
  * @element rui-foo
  * @attr {string} value - …
- * @fires rui-change - …
+ * @fires input / change - … (form value controls: native events on the host, no detail)
+ * @fires rui-change - … (non-form components: selection changed, value in `detail`)
  *
  * @remarks
  * Minimum tree / `setItems` / `resync` / helper-always-injects-chrome.

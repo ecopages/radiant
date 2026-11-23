@@ -69,7 +69,9 @@ describe.each([false, true])('RuiCombobox with portal %s', (portal) => {
 	it('selects an option by click, fills the input and keeps the label and aria wiring', async () => {
 		const { combobox, input, trigger, popup } = await mountCombobox(portal);
 		const changes: string[][] = [];
-		combobox.addEventListener('rui-change', (event) => changes.push((event as CustomEvent).detail.value));
+		combobox.addEventListener('change', (event) => {
+			if (event.target === combobox) changes.push(combobox.value);
+		});
 
 		trigger.click();
 		await settled();

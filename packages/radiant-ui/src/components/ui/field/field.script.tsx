@@ -20,7 +20,7 @@ import {
 	focusFieldControl,
 	getAriaControlTargets,
 	isNativeTextControl,
-	isPrimaryFieldControlEvent,
+	isFieldValueEvent,
 	isFormAssociatedHost,
 	paintsOwnFieldAria,
 	readControlValue,
@@ -36,6 +36,7 @@ import { fieldContext, type FieldContextValue } from './field-context';
 import type { FieldRegistration, FieldRegistrationHandle, FieldRules } from '@/lib/form/types';
 import { bindVisibleLabel } from '../shared/field-label';
 import { uniqueId } from '@/lib/unique-id';
+import { createEventListenerController } from '../../../controllers/event-listener-controller';
 
 /**
  * The JSON-safe subset of `FieldRules` for SSR hydration — a `validate` function can't
@@ -81,7 +82,8 @@ export type RuiFieldProps = {
  *   writes values through the control protocol; see each host's contract for inner targets.
  *   An embedded `rui-listbox` is an option surface, not a field control.
  *   Third-party hosts: register a value adapter with `registerFieldControl` before
- *   connection, stamp `data-rui-control`, fire bubbling `rui-change` after committing a value,
+ *   connection, stamp `data-rui-control`, dispatch `input` (and `change` on commit) on the host itself after
+ *   updating `value`,
  *   and call `announceControlConnect` (a bubbling `rui-control-connect`) when connecting so
  *   a field that registered earlier can seed it. A native `<input>`, `<select>` or
  *   `<textarea>` marked `data-rui-control` announces nothing: it must be inside the field
@@ -187,13 +189,28 @@ export class RuiField extends RadiantElement {
 	private pendingControlWrite?: { value: unknown };
 
 	/**
-	 * @remarks Registers SSR-prep rules on `fieldProvider` so hydrated fields recover them after a
-	 * real SSR round-trip (`prop:rules` does not survive that boundary; `connectedCallback` never
-	 * runs during SSR).
+	 * Registers SSR-prep rules on `fieldProvider` so hydrated fields recover them after a real SSR
+	 * round-trip (`prop:rules` does not survive that boundary; `connectedCallback` never runs during
+	 * SSR), and starts the one listener for the control's value events.
+	 *
+	 * @remarks The listener takes `input` and `change` in the bubble phase, so a wrapper's own
+	 * capture listener has already synced its state. Light DOM cannot hide an inner part's event, nor
+	 * a nested host's, so {@link isFieldValueEvent} decides: the event counts only when its target is
+	 * the control host, or a member native input of a wrapper or group. Both event types write the
+	 * form; the form drops a write whose value equals the store's.
 	 */
 	constructor() {
 		super();
 		registerSsrPreparationCallback(this, () => this.fieldProvider.setContext({ rules: this.readFieldRules() }));
+		createEventListenerController(this, {
+			getTarget: () => this,
+			type: ['input', 'change'],
+			listener: (event) => {
+				if (isFieldValueEvent(this, event)) {
+					this.syncControlToForm();
+				}
+			},
+		});
 	}
 
 	protected override onConnected(): void {
@@ -383,67 +400,16 @@ export class RuiField extends RadiantElement {
 	}
 
 	/**
-	 * @remarks `selector: '*'` because `rui-change` can originate on a host tag
-	 * that is not `[data-rui-control]`. `isPrimaryFieldControlEvent` drops nested hosts.
-	 */
-	@onEvent({
-		selector: '*',
-		type: 'rui-change',
-	})
-	onControlChange(event: Event): void {
-		if (!isPrimaryFieldControlEvent(this, event)) {
-			return;
-		}
-		this.syncControlToForm();
-	}
-
-	/**
 	 * A control host announces itself when it connects, so a control inserted after the
 	 * field registered is seeded from the form and reports its validity.
 	 */
 	@onEvent({ selector: '*', type: RUI_CONTROL_CONNECT_EVENT })
 	onControlConnect(event: Event): void {
-		if (!isPrimaryFieldControlEvent(this, event)) {
+		if (event.target !== findFieldControl(this)) {
 			return;
 		}
 		this.syncField();
 		this.registration?.refresh();
-	}
-
-	@onEvent({
-		selector: '[data-rui-control]',
-		type: 'input',
-		options: { capture: true },
-	})
-	onControlInput(event: Event): void {
-		if (this.isNativeControlEvent(event)) {
-			this.syncControlToForm();
-		}
-	}
-
-	@onEvent({
-		selector: '[data-rui-control]',
-		type: 'change',
-		options: { capture: true },
-	})
-	onControlNativeChange(event: Event): void {
-		if (this.isNativeControlEvent(event)) {
-			this.syncControlToForm();
-		}
-	}
-
-	/**
-	 * Whether a native `input` or `change` event came from the field's control itself.
-	 *
-	 * @remarks A native control (`<input>`, `<textarea>`, `<select>`) has committed its
-	 * value when the event fires. A composite control (a checkbox group, a multi-select)
-	 * receives the native event from a part inside it, in the capture phase, before it
-	 * has updated its own value, so reading it then writes the old value. A composite
-	 * announces its committed value with `rui-change`, which the field already handles,
-	 * so one toggle is one write.
-	 */
-	private isNativeControlEvent(event: Event): boolean {
-		return event.target === findFieldControl(this);
 	}
 
 	@onEvent({ selector: '[data-rui-control], rui-knob, rui-slider', type: 'focusout' })

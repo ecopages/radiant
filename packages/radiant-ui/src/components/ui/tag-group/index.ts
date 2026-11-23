@@ -1,7 +1,6 @@
 export {
 	RuiTagGroup as RuiTagGroupElement,
 	type RuiTagGroupProps,
-	type RuiTagGroupChangeDetail,
 	type RuiTagGroupRemoveDetail,
 	type RuiTagGroupReorderDetail,
 	type RuiTagGroupSelectionMode,

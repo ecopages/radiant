@@ -1,2 +1,2 @@
-export { RuiSwitch as RuiSwitchElement, type RuiSwitchProps, type RuiSwitchChangeDetail } from './switch.script';
+export { RuiSwitch as RuiSwitchElement, type RuiSwitchProps } from './switch.script';
 export { RuiSwitch } from './switch';

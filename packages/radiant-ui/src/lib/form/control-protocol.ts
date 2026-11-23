@@ -99,6 +99,12 @@ export type FieldControlAdapter = ControlValueAdapter & {
 	validity?: (host: HTMLElement) => FieldControlValidity | undefined;
 	/** Where a native text target gets its submission name. Defaults to `native`. */
 	submission?: 'host' | 'native' | 'none';
+	/**
+	 * Which element dispatches the value events the field listens to. `host` (the default) is a
+	 * control that dispatches `input` and `change` on itself after updating `value`. `members` is a
+	 * wrapper or group whose own native inputs dispatch them, as `rui-checkbox` does.
+	 */
+	events?: 'host' | 'members';
 };
 
 const stringValueAdapter: ControlValueAdapter = {
@@ -173,15 +179,15 @@ const sliderValueAdapter: ControlValueAdapter = {
 };
 
 const CONTROL_VALUE_ADAPTERS = new Map<string, FieldControlAdapter>([
-	['rui-checkbox', booleanValueAdapter],
-	['rui-switch', booleanValueAdapter],
+	['rui-checkbox', { ...booleanValueAdapter, events: 'members' }],
+	['rui-switch', { ...booleanValueAdapter, events: 'members' }],
 	['rui-combobox', { ...stringArrayValueAdapter, submission: 'none' }],
 	['rui-date-field', stringValueAdapter],
 	['rui-date-input', { ...stringValueAdapter, submission: 'host' }],
 	['rui-date-range-picker', stringValueAdapter],
 	['rui-select', { ...stringArrayValueAdapter, submission: 'none' }],
-	['rui-radio-group', stringValueAdapter],
-	['rui-checkbox-group', stringArrayValueAdapter],
+	['rui-radio-group', { ...stringValueAdapter, events: 'members' }],
+	['rui-checkbox-group', { ...stringArrayValueAdapter, events: 'members' }],
 	['rui-listbox', stringArrayValueAdapter],
 	['rui-tag-group', stringArrayValueAdapter],
 	['rui-slider', { ...sliderValueAdapter, submission: 'host' }],
@@ -294,7 +300,7 @@ const REGISTERED_CONTROL_TAGS = new Set<string>();
 /**
  * Register a custom host for `RuiField` discovery, value access, and name wiring.
  *
- * @remarks Call `setValidity` before emitting `rui-change`, so change-time validation sees the new state.
+ * @remarks Call `setValidity` before dispatching `input` and `change`, so change-time validation sees the new state.
  * `submission` chooses where a native text target gets its name. A host
  * with `submission: 'host'` must implement FACE itself; registration only connects
  * it to the `RuiForm` store.
@@ -328,19 +334,33 @@ export function getDeclaredAriaTargets(control: HTMLElement): HTMLElement[] {
 }
 
 /**
- * Whether a bubbling `rui-change` belongs to this field's primary control, not a
- * nested host inside it.
+ * Whether a bubbling `input` or `change` event is the value event of this field's control.
+ *
+ * @remarks A host control (the default) dispatches the events on itself, so only an event
+ * whose `target` is the host counts. A wrapper or group (`events: 'members'`, such as
+ * `rui-checkbox`) leaves them to its member native inputs, so a native input inside it
+ * counts. Anything else is an inner part or a nested host, such as a date segment, a
+ * combobox query input or a tag group inside a select. Light DOM cannot hide inner events
+ * from a capture listener, so this check, not propagation, is the rule every consumer applies.
  */
-export function isPrimaryFieldControlEvent(root: HTMLElement, event: Event): boolean {
+export function isFieldValueEvent(root: HTMLElement, event: Event): boolean {
 	const control = findFieldControl(root);
-	if (!control || !(event.target instanceof Element)) {
+	const target = event.target;
+	if (!control || !(target instanceof Element)) {
 		return false;
 	}
-	if (event.target !== control && !control.contains(event.target)) {
+	if (CONTROL_VALUE_ADAPTERS.get(control.localName)?.events !== 'members') {
+		return target === control;
+	}
+	if (!control.contains(target) || !isNativeFormMember(target)) {
 		return false;
 	}
-	const nestedHost = event.target.closest(hostControlSelector());
-	return nestedHost === control || nestedHost == null;
+	const nestedHost = target.closest(hostControlSelector());
+	return nestedHost === null || CONTROL_VALUE_ADAPTERS.get(nestedHost.localName)?.events === 'members';
+}
+
+function isNativeFormMember(node: Element): boolean {
+	return isNativeInput(node) || isNativeTextarea(node) || isNativeSelect(node);
 }
 
 export function readControlValue(control: HTMLElement): unknown {

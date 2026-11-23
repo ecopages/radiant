@@ -1,7 +1,6 @@
 export {
 	RuiSelect as RuiSelectElement,
 	type RuiSelectProps,
-	type RuiSelectChangeDetail,
 	type RuiSelectSelectionMode,
 	type RuiSelectTriggerKind,
 } from './select.script';

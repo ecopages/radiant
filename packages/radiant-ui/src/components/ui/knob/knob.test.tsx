@@ -34,7 +34,7 @@ describe('rui-knob pointer drag', () => {
 	it('follows the pointer while dragging, flags data-dragging and stops on release', async () => {
 		const { knob, control, center, radius } = await mountKnob();
 		const changes: number[] = [];
-		knob.addEventListener('rui-change', (event) => changes.push((event as CustomEvent).detail.value));
+		knob.addEventListener('input', () => changes.push(knob.value));
 
 		pointer(control, 'pointerdown', center.x - radius, center.y + radius);
 		const afterPress = knob.value;
@@ -50,6 +50,7 @@ describe('rui-knob pointer drag', () => {
 		pointer(document, 'pointermove', center.x, center.y - radius);
 		expect(knob.value).toBe(released);
 		expect(changes.length).toBeGreaterThan(0);
+		expect(changes.at(-1)).toBe(released);
 	});
 
 	it('follows a control that arrives after the host connected', async () => {

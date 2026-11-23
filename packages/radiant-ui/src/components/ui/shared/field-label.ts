@@ -1,3 +1,5 @@
+import { uniqueId } from '@/lib/unique-id';
+
 export type FieldLabelSyncOptions = {
 	controlId: string;
 	label: string;
@@ -14,11 +16,58 @@ export function findAssociatedLabel(owner: HTMLElement): HTMLLabelElement | null
 	return owner.parentElement?.querySelector<HTMLLabelElement>('[data-rui-field-label]') ?? null;
 }
 
+/** A host that may expose `ElementInternals.labels`, as `FormAssociatedElement.labels` does. */
+export type LabelledHost = HTMLElement & { readonly labels?: NodeList };
+
+/**
+ * The ids of the `<label>` elements associated with a form-associated host through
+ * `ElementInternals.labels` (`<label for="host-id">`, or a `<label>` ancestor), giving each
+ * label without an id one. Empty for a host that is not form-associated, and during server
+ * rendering, where `labels` is `undefined`.
+ *
+ * @remarks The one place a host's own labels are read, so every sync that writes
+ * `aria-labelledby` includes them and none wipes them. It reads no DOM global, so it runs on the
+ * server. `ElementInternals.labels` holds only `<label>` elements, which the cast states.
+ */
+export function hostLabelIds(owner: LabelledHost): string[] {
+	const labels = owner.labels as NodeListOf<HTMLLabelElement> | undefined;
+	if (!labels) {
+		return [];
+	}
+	return Array.from(labels, (label) => {
+		if (!label.id) {
+			label.id = uniqueId('rui-host-label');
+		}
+		return label.id;
+	});
+}
+
+/**
+ * Names inner parts with a host's own labels, for a host with no composed control to hand to
+ * {@link syncFieldLabel}: a slider thumb, a knob, a date group.
+ *
+ * @remarks A part that carries its own `aria-label` (a range thumb's minimum or maximum) keeps
+ * naming itself by listing its own id after the labels, so the labels add to its name instead of
+ * replacing it. Hosts add no role or ARIA state of their own, which would duplicate the part's.
+ */
+export function forwardHostLabels(owner: LabelledHost, targets: Iterable<HTMLElement>): void {
+	const ids = hostLabelIds(owner);
+	if (ids.length === 0) {
+		return;
+	}
+	for (const target of targets) {
+		const names = target.hasAttribute('aria-label')
+			? [...ids, target.id || (target.id = uniqueId('rui-label-target'))]
+			: ids;
+		target.setAttribute('aria-labelledby', names.join(' '));
+	}
+}
+
 /** Points a visible label at a composed control and prefers it over `aria-label`. */
 export function bindVisibleLabel(
 	label: HTMLLabelElement,
 	control: HTMLElement,
-	options: { controlId: string; labelId: string },
+	options: { controlId: string; labelId: string; extraLabelIds?: readonly string[] },
 ): void {
 	if (!label.id) {
 		label.id = options.labelId;
@@ -26,19 +75,33 @@ export function bindVisibleLabel(
 	if (!label.htmlFor) {
 		label.htmlFor = options.controlId;
 	}
-	control.setAttribute('aria-labelledby', label.id);
+	control.setAttribute('aria-labelledby', [label.id, ...(options.extraLabelIds ?? [])].join(' '));
 	control.removeAttribute('aria-label');
 }
 
-/** Applies the shared label-to-control ARIA contract for an unmanaged control. */
-export function syncFieldLabel(owner: HTMLElement, control: HTMLElement | null, options: FieldLabelSyncOptions): void {
+/**
+ * Applies the shared label-to-control ARIA contract for an unmanaged control.
+ *
+ * @remarks The associated label can also be one of the host's own labels (`<label for="host-id">`
+ * directly before the host), so its id is left out of the extra host ids to name the control by
+ * each label once.
+ */
+export function syncFieldLabel(owner: LabelledHost, control: HTMLElement | null, options: FieldLabelSyncOptions): void {
 	if (!control || control.hasAttribute('data-rui-field-managed')) {
 		return;
 	}
 
+	const hostIds = hostLabelIds(owner);
 	const labelElement = findAssociatedLabel(owner);
 	if (labelElement) {
-		bindVisibleLabel(labelElement, control, options);
+		const extraLabelIds = hostIds.filter((id) => id !== labelElement.id);
+		bindVisibleLabel(labelElement, control, { ...options, extraLabelIds });
+		return;
+	}
+
+	if (hostIds.length > 0) {
+		control.setAttribute('aria-labelledby', hostIds.join(' '));
+		control.removeAttribute('aria-label');
 		return;
 	}
 

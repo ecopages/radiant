@@ -1,6 +1,6 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
-import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop, state } from '@ecopages/radiant';
-import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
+import { RadiantElement, bindTo, customElement, onEvent, onUpdated, prop, state } from '@ecopages/radiant';
+import { emitValueEvents, stopInnerValueEvents } from '@/lib/form/value-events';
 import { isIsoInRange, normalizeRange, parseIsoRange, serializeIsoRange } from '@/lib/intl-date';
 import type { RuiCalendarChangeDetail } from '../calendar/calendar.script';
 import { createCalendarPopoverController } from '../shared/calendar-popover-controller';
@@ -30,12 +30,6 @@ export type RuiDateRangePickerProps = {
 	portalContainer?: string;
 };
 
-export type RuiDateRangePickerChangeDetail = {
-	value: string;
-	start: string;
-	end: string;
-};
-
 /**
  * `<rui-date-range-picker>` — start/end date segments with a range calendar popover.
  *
@@ -62,7 +56,8 @@ export type RuiDateRangePickerChangeDetail = {
  *   and `disabled`.
  *
  * Nested hosts:
- * - `rui-date-input` at start/end — listen for `rui-change` and `rui-form-reset`.
+ * - `rui-date-input` at start/end — listen for `change` and `rui-form-reset`; the picker stops the inputs' own events
+ *   at the host.
  *   Nested inputs own in-progress segment state until both sides are a valid ISO date.
  * - `rui-calendar` at `[data-range-calendar]` — parent queries day targets when the popup opens.
  *
@@ -84,7 +79,8 @@ export type RuiDateRangePickerChangeDetail = {
  * @attr {number} visible-months - Month grids shown in the range calendar popover (adapts to 1 on screens under 640px). Default: `2`.
  * @attr {boolean} portal - Render the calendar popup in `document.body`, or in `portal-container`, while it is open. Default: `false`.
  * @attr {string} portal-container - CSS selector of the element a portaled popup goes to, resolved each time it opens. The `portalContainer` property also takes an element or a function that returns one.
- * @fires rui-change - Emitted when a valid range is committed, or when a committed range is cleared; detail carries `value` and the sorted `start` and `end` (start is never after end).
+ * @fires input - Dispatched on the host, then `change`, when a valid range is committed, or when a committed range is
+ *   cleared, after `value` holds it (`start/end`, start never after end). The nested date inputs' own events are stopped at the host.
  */
 @customElement('rui-date-range-picker')
 export class RuiDateRangePicker extends RadiantElement {
@@ -138,12 +134,14 @@ export class RuiDateRangePicker extends RadiantElement {
 	@prop({ type: Boolean, defaultValue: false }) portal: boolean;
 	@prop(portalContainerPropOptions) portalContainer: RuiPortalContainer | null;
 
-	@event({ name: 'rui-change', bubbles: true, composed: true })
-	changeEvent: EventEmitter<RuiDateRangePickerChangeDetail>;
-
 	@state
 	@bindTo({ selector: '[data-range-trigger]', attr: 'aria-expanded' })
 	open = false;
+
+	constructor() {
+		super();
+		stopInnerValueEvents(this);
+	}
 
 	private readonly calendarPopover = createCalendarPopoverController(this, {
 		getHost: () => this,
@@ -237,7 +235,7 @@ export class RuiDateRangePicker extends RadiantElement {
 		}
 
 		this.value = serialized;
-		this.changeEvent.emit({ value: serialized, start: sorted?.start ?? start, end: sorted?.end ?? end });
+		emitValueEvents(this, { commit: true });
 	}
 
 	private commitFromInputs(): void {
@@ -307,7 +305,7 @@ export class RuiDateRangePicker extends RadiantElement {
 		this.calendarPopover.syncPopover();
 	}
 
-	@onEvent({ selector: '[data-range-start], [data-range-end]', type: 'rui-change' })
+	@onEvent({ selector: '[data-range-start], [data-range-end]', type: 'change' })
 	onDateInputChange(event: Event): void {
 		const target = event.target;
 		if (!(target instanceof HTMLElement)) {

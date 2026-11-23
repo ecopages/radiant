@@ -5,6 +5,7 @@ import { RuiLabel } from '@ecopages/radiant-ui/label';
 import { RuiListbox, RuiListboxOption, RuiListboxOptionIndicator } from '@ecopages/radiant-ui/listbox';
 import {
 	RuiSelect,
+	RuiSelectElement,
 	RuiSelectControl,
 	RuiSelectListbox,
 	RuiSelectToggle,
@@ -56,9 +57,11 @@ export class DesignTokenPanelElement extends RadiantElement {
 		super.disconnectedCallback();
 	}
 
-	@onEvent({ selector: 'rui-select[data-token]', type: 'rui-change' })
+	@onEvent({ selector: 'rui-select[data-token]', type: 'change' })
 	onThemeChange(event: Event): void {
-		const [value] = (event as CustomEvent<{ value?: unknown[] }>).detail?.value ?? [];
+		const select = event.target;
+		if (!(select instanceof RuiSelectElement)) return;
+		const [value] = select.value;
 		if (!isDocsThemeColor(value)) return;
 
 		applySavedTheme({ colors: value, tuning: DOCS_DEFAULT_THEME_TUNING, fonts: {} });

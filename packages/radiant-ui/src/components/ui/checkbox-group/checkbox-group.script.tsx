@@ -1,6 +1,6 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
-import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop } from '@ecopages/radiant';
-import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
+import { RadiantElement, bindTo, customElement, onUpdated, prop } from '@ecopages/radiant';
+import { createEventListenerController } from '../../../controllers/event-listener-controller';
 import { nonEmpty } from '@/lib/non-empty';
 import { RuiCheckbox } from '../checkbox/checkbox.script';
 import { multiValuePropOptions, type ViewMultiValue } from '@/lib/multi-value';
@@ -19,10 +19,6 @@ export type RuiCheckboxGroupProps = {
 	disabled?: boolean;
 	/** Layout axis for checkbox items. Default: `vertical`. */
 	orientation?: RuiCheckboxGroupOrientation;
-};
-
-export type RuiCheckboxGroupChangeDetail = {
-	value: string[];
 };
 
 /**
@@ -46,9 +42,13 @@ export type RuiCheckboxGroupChangeDetail = {
  *
  * Do not set `checked`, `disabled`, or `name` on `rui-checkbox` children — the host owns those.
  * After connect, group `value` wins over per-item `checked`.
- * Group `value` follows user toggles (`rui-change`) only: a programmatic `checked` write on a child does not update it or emit `rui-change`, and the next sync overwrites that write; set the group `value` instead.
+ * Group `value` follows user toggles only: a programmatic `checked` write on a child does not update it, and the next sync overwrites that write; set the group `value` instead.
  *
- * Nested hosts: `rui-checkbox` (listens for `rui-change`; stops propagation and re-emits group-shaped detail).
+ * Nested hosts: `rui-checkbox`, which dispatches nothing itself.
+ *
+ * The group dispatches no event either. A toggle is the toggled input's own `input` and `change`, which bubble through
+ * the group, so one toggle is one `change`. The group syncs `value` from the inputs in a capture listener on itself,
+ * so a bubble listener reads the new value. Act on an event only when `event.target` is a member input.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/checkbox/
  *
@@ -59,8 +59,6 @@ export type RuiCheckboxGroupChangeDetail = {
  * @attr {string} label - Accessible name when no visible legend is composed. Default: `''`.
  * @attr {boolean} disabled - Disables every checkbox in the group. Default: `false`.
  * @attr {('horizontal'|'vertical')} orientation - Layout axis for checkbox items. Default: `vertical`.
- *
- * @fires rui-change - Emitted after the selected values change; `detail.value` is `string[]`.
  *
  * @remarks
  * Minimum headless tree:
@@ -104,8 +102,21 @@ export class RuiCheckboxGroup extends RadiantElement {
 	@bindTo({ selector: '[data-checkbox-group-root]', attr: 'data-orientation' })
 	orientation: RuiCheckboxGroupOrientation;
 
-	@event({ name: 'rui-change', bubbles: true, composed: true })
-	changeEvent: EventEmitter<RuiCheckboxGroupChangeDetail>;
+	constructor() {
+		super();
+		createEventListenerController(this, {
+			getTarget: () => this,
+			type: ['input', 'change'],
+			options: { capture: true },
+			listener: (event) => {
+				if (event.target instanceof HTMLInputElement && this.contains(event.target)) {
+					this.value = this.getCheckboxes()
+						.filter((checkbox) => checkbox.querySelector('input')?.checked)
+						.map((checkbox) => checkbox.value);
+				}
+			},
+		});
+	}
 
 	protected override onConnected(): void {
 		this.syncCheckboxes();
@@ -124,16 +135,6 @@ export class RuiCheckboxGroup extends RadiantElement {
 				checkbox.name = groupName;
 			}
 		}
-	}
-
-	@onEvent({ selector: 'rui-checkbox', type: 'rui-change' })
-	onCheckboxChange(event: Event): void {
-		event.stopImmediatePropagation();
-		const values = this.getCheckboxes()
-			.filter((checkbox) => checkbox.checked)
-			.map((checkbox) => checkbox.value);
-		this.value = values;
-		this.changeEvent.emit({ value: this.value });
 	}
 
 	private getCheckboxes(): RuiCheckbox[] {
