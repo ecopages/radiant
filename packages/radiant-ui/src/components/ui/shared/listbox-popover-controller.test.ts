@@ -95,7 +95,7 @@ describe('ListboxPopoverController', () => {
 		behavior.handleKeydown(event, {
 			isOpen: true,
 			canUseSpace: true,
-			closesOnTab: false,
+			tabSelectsActive: false,
 			enterWhenClosed: 'open',
 			enterWithoutActive: 'ignore',
 			onOpen: vi.fn(),
@@ -105,6 +105,31 @@ describe('ListboxPopoverController', () => {
 
 		expect(preventDefault).toHaveBeenCalled();
 		expect(onSelectActive).toHaveBeenCalled();
+	});
+
+	it.each([
+		{ tabSelectsActive: true, picks: 1 },
+		{ tabSelectsActive: false, picks: 0 },
+	])('on Tab picks the active option $picks time(s) and always closes (tabSelectsActive: $tabSelectsActive)', ({ tabSelectsActive, picks }) => {
+		const { behavior, setOpen } = createBehavior([createOption('a', 'One')]);
+		setOpen(true);
+		behavior.setActiveOption(0);
+
+		const onSelectActive = vi.fn();
+		const onClose = vi.fn();
+		behavior.handleKeydown(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }), {
+			isOpen: true,
+			canUseSpace: true,
+			tabSelectsActive,
+			enterWhenClosed: 'open',
+			enterWithoutActive: 'ignore',
+			onOpen: vi.fn(),
+			onClose,
+			onSelectActive,
+		});
+
+		expect(onSelectActive).toHaveBeenCalledTimes(picks);
+		expect(onClose).toHaveBeenCalledWith('tab');
 	});
 
 	it('reports focus and pointer interactions outside the popover tree while open', () => {

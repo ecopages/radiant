@@ -330,4 +330,66 @@ describe('RuiSelect', () => {
 
 		expect(select.value).toEqual(['dog']);
 	});
+
+	describe('Tab in an open popup with an active option', () => {
+		async function openWithKeyboard(element: JsxRenderable) {
+			const mounted = mount(
+				<>
+					{element}
+					<button type="button" data-after>
+						After
+					</button>
+				</>,
+			);
+			await settled();
+			const trigger = mounted.host.querySelector('[data-select-trigger]') as HTMLElement;
+			const popup = mounted.host.querySelector('[data-select-listbox]') as HTMLElement;
+			const select = mounted.host.querySelector('rui-select') as RuiSelectElement;
+			trigger.focus();
+			await browserUserEvent.keyboard('{ArrowDown}');
+			await settled();
+			expect(popup.hidden).toBe(false);
+			return { ...mounted, popup, select, after: mounted.host.querySelector('[data-after]') };
+		}
+
+		it('keeps every pick in a multiple select that closes on select', async () => {
+			const { select, popup, cleanup } = await openWithKeyboard(
+				<RuiSelect selectionMode="multiple" shouldCloseOnSelect value="cat,dog" options={OPTIONS} />,
+			);
+
+			await browserUserEvent.tab();
+			await settled();
+
+			expect(select.value).toEqual(['cat', 'dog']);
+			expect(popup.hidden).toBe(true);
+			expect(document.activeElement?.closest('[data-tag]')).not.toBeNull();
+			cleanup();
+		});
+
+		it('picks the active option in a single select that stays open on select, then closes', async () => {
+			const { select, popup, after, cleanup } = await openWithKeyboard(
+				<RuiSelect shouldCloseOnSelect={false} options={OPTIONS} />,
+			);
+
+			await browserUserEvent.tab();
+			await settled();
+
+			expect(select.value).toEqual(['cat']);
+			expect(popup.hidden).toBe(true);
+			expect(document.activeElement).toBe(after);
+			cleanup();
+		});
+
+		it('picks the active option in a single select', async () => {
+			const { select, popup, after, cleanup } = await openWithKeyboard(<RuiSelect options={OPTIONS} />);
+
+			await browserUserEvent.tab();
+			await settled();
+
+			expect(select.value).toEqual(['cat']);
+			expect(popup.hidden).toBe(true);
+			expect(document.activeElement).toBe(after);
+			cleanup();
+		});
+	});
 });

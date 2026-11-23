@@ -514,7 +514,7 @@ export class RuiSelect extends RadiantElement {
 		this.listboxPopover.handleKeydown(event, {
 			isOpen: this.open,
 			canUseSpace: !this.hasSearchInput(),
-			closesOnTab: this.closesOnSelect(),
+			tabSelectsActive: !this.isMultiple(),
 			enterWhenClosed: 'open',
 			enterWithoutActive: 'ignore',
 			onOpen: (activation = 'none') => this.setOpen(true, { activate: activation }),
