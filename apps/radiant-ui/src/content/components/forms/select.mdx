@@ -33,6 +33,8 @@ export const config = {
 
 The live `value` property is always a `string[]` (`[]` when nothing is selected). The HTML attribute is those tokens as a comma-separated string (`value="draft,published"`). JSX may pass a string or an array; a string is parsed as CSV. `input` and `change` fire on the host and carry no `detail`; read `host.value`. Commas in the attribute are delimiters, not characters inside a token.
 
+Tab in an open popup with an active option picks that option in a single select, whatever `should-close-on-select` says, and closes the popup as focus moves on. In `selection-mode="multiple"` Tab only closes the popup and keeps the selection; Enter, Space or a click toggles an option.
+
 Not form-associated. Wrap in `RuiField` and read the value from `RuiForm` `onSubmit`. It does not appear in `new FormData(form)`.
 
 ## Usage

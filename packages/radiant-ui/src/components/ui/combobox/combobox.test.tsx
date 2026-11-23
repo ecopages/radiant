@@ -190,6 +190,63 @@ describe('RuiCombobox', () => {
 		cleanup();
 	});
 
+	it('keeps every pick when Tab leaves an open multiple-mode combobox with an active option', async () => {
+		const { host, cleanup } = mount(
+			<>
+				<RuiCombobox selectionMode="multiple" value="de,it" options={OPTIONS} placeholder="Countries" />
+				<button type="button" data-after>
+					After
+				</button>
+			</>,
+		);
+		await settled();
+
+		const input = host.querySelector('[data-combobox-input]') as HTMLInputElement;
+		const popup = host.querySelector('[data-combobox-listbox]') as HTMLElement;
+		const combobox = host.querySelector('rui-combobox') as RuiComboboxElement;
+		input.focus();
+		await userEvent.keyboard('{ArrowDown}');
+		await settled();
+		expect(popup.hidden).toBe(false);
+		expect(input.getAttribute('aria-activedescendant')).toBeTruthy();
+
+		await userEvent.tab();
+		await settled();
+
+		expect(combobox.value).toEqual(['de', 'it']);
+		expect(popup.hidden).toBe(true);
+		expect(document.activeElement).toBe(host.querySelector('[data-after]'));
+		cleanup();
+	});
+
+	it('picks the active option when Tab leaves an open single-mode combobox', async () => {
+		const { host, cleanup } = mount(
+			<>
+				<RuiCombobox options={OPTIONS} placeholder="Country" />
+				<button type="button" data-after>
+					After
+				</button>
+			</>,
+		);
+		await settled();
+
+		const input = host.querySelector('[data-combobox-input]') as HTMLInputElement;
+		const popup = host.querySelector('[data-combobox-listbox]') as HTMLElement;
+		const combobox = host.querySelector('rui-combobox') as RuiComboboxElement;
+		input.focus();
+		await userEvent.keyboard('{ArrowDown}');
+		await settled();
+		expect(popup.hidden).toBe(false);
+
+		await userEvent.tab();
+		await settled();
+
+		expect(combobox.value).toEqual(['de']);
+		expect(popup.hidden).toBe(true);
+		expect(document.activeElement).toBe(host.querySelector('[data-after]'));
+		cleanup();
+	});
+
 	it('wires the popup when its children are added after the element connects', async () => {
 		const { host: source, cleanup: cleanupSource } = mount(<RuiCombobox options={OPTIONS} placeholder="Country" />);
 		await settled();

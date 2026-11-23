@@ -585,7 +585,7 @@ export class RuiCombobox extends RadiantElement {
 		this.listboxPopover.handleKeydown(event, {
 			isOpen: this.open,
 			canUseSpace: false,
-			closesOnTab: true,
+			tabSelectsActive: !this.isMultiple(),
 			enterWhenClosed: 'ignore',
 			enterWithoutActive: 'close',
 			onOpen: (activation = 'none') => {

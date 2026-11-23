@@ -107,7 +107,9 @@ export type RuiFieldProps = {
  * the field writes no `id`, `data-rui-field-managed` or ARIA for it, because its target usually renders after
  * the field connected. The field publishes that state on {@link fieldContext} (`controlId`, `labelId`, `describedBy`,
  * `invalid`, `required`, `disabled`) and the host binds it onto its target: `{...fieldAria(this.field)}` in a `render()`
- * tree, or `@bindTo(fieldAriaBindings(selector))` on the field holding the context for authored DOM. If the host
+ * tree, or `@bindTo(fieldAriaBindings(selector))` on the field holding the context for authored DOM. Both also set
+ * `data-rui-field-managed` on the target, so a Radiant UI control nested in the host leaves the painted labelling
+ * alone. If the host
  * declares its target only when it connects, the next sync removes what the field wrote on it before (an authored
  * `id` stays).
  *

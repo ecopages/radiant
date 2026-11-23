@@ -31,7 +31,13 @@ export type ListboxPopoverControllerConfig = {
 export type ListboxKeydownConfig = {
 	isOpen: boolean;
 	canUseSpace: boolean;
-	closesOnTab: boolean;
+	/**
+	 * Whether Tab picks the active option; Tab always leaves, and the popup closes.
+	 *
+	 * @remarks A toggling owner (a multiple-selection control) must pass `false`: `onSelectActive` would
+	 * toggle the active option, dropping a pick the user already made.
+	 */
+	tabSelectsActive: boolean;
 	enterWhenClosed: 'open' | 'ignore';
 	enterWithoutActive: 'close' | 'ignore';
 	onOpen: (activation?: ListboxActivation) => void;
@@ -221,8 +227,8 @@ export class ListboxPopoverController implements Controller {
 
 	private handleTabKey(_event: KeyboardEvent, options: ListboxKeydownConfig): void {
 		if (!options.isOpen) return;
-		if (this.hasActiveOption() && options.closesOnTab) options.onSelectActive();
-		else options.onClose('tab');
+		if (this.hasActiveOption() && options.tabSelectsActive) options.onSelectActive();
+		options.onClose('tab');
 	}
 
 	private hasActiveOption(): boolean {

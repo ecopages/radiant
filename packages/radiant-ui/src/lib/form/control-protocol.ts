@@ -307,6 +307,8 @@ const REGISTERED_CONTROL_TAGS = new Set<string>();
  *
  * A registered host that declares `data-rui-aria-target` or `data-rui-aria-targets` paints the field's ARIA
  * state onto its own target (`fieldAria` in a `render()` tree, `fieldAriaBindings` with `@bindTo`); the field no longer writes it (see {@link paintsOwnFieldAria}).
+ * Both helpers also set {@link RUI_FIELD_MANAGED_ATTR} on the target, so a catalog control nested in the host never
+ * relabels it.
  */
 export function registerFieldControl(tagName: string, adapter: FieldControlAdapter): void {
 	const tag = tagName.toLowerCase();
