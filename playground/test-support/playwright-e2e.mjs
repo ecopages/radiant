@@ -32,7 +32,31 @@ export async function runCommand(command, args, cwd) {
 	});
 }
 
+async function answers(url) {
+	try {
+		const response = await fetch(url);
+		await response.arrayBuffer();
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+/**
+ * Starts a server for an e2e run and resolves once its health check passes.
+ *
+ * @remarks
+ * Refuses to start when something already answers at the health check URL. A server left over from an
+ * interrupted run would otherwise pass the health check in place of the new one and serve the previous
+ * build, so the tests would fail on assets that no longer exist.
+ */
 export async function startServer({ command, args, cwd, env, origin, healthCheckUrl = origin }) {
+	if (await answers(healthCheckUrl)) {
+		throw new Error(
+			`Something already answers at ${healthCheckUrl}. A server left running by an earlier test run would serve a stale build: stop it and run the test again.`,
+		);
+	}
+
 	const serverLogs = { stdout: '', stderr: '' };
 	const server = spawn(command, args, {
 		cwd,
