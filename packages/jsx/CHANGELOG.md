@@ -1,5 +1,13 @@
 # @ecopages/jsx
 
+## 0.12.0
+
+### Patch Changes
+
+- [#781](https://github.com/ecopages/radiant/pull/781) [`86c93e6`](https://github.com/ecopages/radiant/commit/86c93e6287d1dd103bdd22baf9e3d4dec3e14be5) Thanks [@andeeplus](https://github.com/andeeplus)! - Add the `@ecopages/jsx/raw-text-element-names` entry, which exports `RAW_TEXT_ELEMENT_NAMES` without the server renderer, and import it from Radiant's server HTML parser. The minimal DOM shim no longer loads the whole jsx server graph for one constant. `@ecopages/jsx/server` still exports it.
+- Updated dependencies []:
+    - @ecopages/signals@0.12.0
+
 ## 0.11.2
 
 ### Patch Changes

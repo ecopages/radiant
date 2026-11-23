@@ -1,5 +1,15 @@
 # @ecopages/storybook-radiant-vite
 
+## 0.2.5
+
+### Patch Changes
+
+- Updated dependencies [[`2a33a2c`](https://github.com/ecopages/radiant/commit/2a33a2c20614c8fd247bb7b4b410cf5a834600b3), [`3bd6c7c`](https://github.com/ecopages/radiant/commit/3bd6c7c8453c04fa3ab60ea3b5ca9ffe12f52d69), [`d99d166`](https://github.com/ecopages/radiant/commit/d99d166c2ba4158b7b941656d4b54843f1cfdc64), [`86c93e6`](https://github.com/ecopages/radiant/commit/86c93e6287d1dd103bdd22baf9e3d4dec3e14be5), [`47b99de`](https://github.com/ecopages/radiant/commit/47b99de48a52470f6dbc6d2231da2dd4e4ecf6b9)]:
+    - @ecopages/radiant@0.12.0
+    - @ecopages/jsx@0.12.0
+    - @ecopages/vite-plugin-radiant@0.2.5
+    - @ecopages/signals@0.12.0
+
 ## 0.2.4
 
 ### Patch Changes
