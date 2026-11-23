@@ -159,8 +159,7 @@ describe('recipe pages', () => {
 			expect(recipeMarkup(slug, 'controller')).toMatch(new RegExp(`^<[a-z]+[^>]* data-controller="${slug}"`));
 		}
 		if (recipeFiles.includes(`${slug}.plain.html`)) {
-			expect(recipeMarkup(slug, 'plain')).not.toContain('data-example');
-			expect(recipeMarkup(slug, 'plain').length).toBeGreaterThan(0);
+			expect(recipeMarkup(slug, 'plain')).toMatch(new RegExp(`^<div[^>]* data-example="${slug}"`));
 		}
 	});
 });

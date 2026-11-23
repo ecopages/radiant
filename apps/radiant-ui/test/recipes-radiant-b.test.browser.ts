@@ -2,7 +2,8 @@ import { userEvent } from 'vitest/browser';
 import { afterEach, describe, expect, test } from 'vitest';
 import '../src/components/primitive-example/primitive-example.css';
 import '../src/content/components/recipes/popover-menu.css';
-import { mountForm, trackListeners, type Form } from './mount-recipe';
+import { exampleFrameOptions } from '../src/components/recipe-patterns/example-frame';
+import { createFrame, mountForm, trackListeners, type Form } from './mount-recipe';
 import { until, untilFrame } from './until';
 
 function pointer(target: Element, type: string, x: number, y: number, timeStamp?: number): void {
@@ -182,14 +183,9 @@ describe.each<Form>(['plain', 'radiant'])('popover menu (%s form)', (form) => {
 
 	test('the open menu stays inside the example frame, so it covers nothing after it', async () => {
 		const { root, trigger, menu } = await mount();
-		let frame = root;
-		if (form === 'radiant') {
-			frame = document.createElement('div');
-			frame.dataset.host = '';
-			root.replaceWith(frame);
-			frame.append(root);
-		}
-		frame.classList.add('primitive-example');
+		const frame = createFrame(exampleFrameOptions(), '');
+		root.replaceWith(frame);
+		frame.append(root);
 		await userEvent.click(trigger);
 
 		await untilFrame(() =>

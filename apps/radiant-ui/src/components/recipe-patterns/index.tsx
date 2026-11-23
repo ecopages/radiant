@@ -5,6 +5,7 @@ import { RuiToolbar } from '@ecopages/radiant-ui/toolbar';
 import { CodeTabs } from '@/components/code-tabs';
 import { PrimitiveExample } from '@/components/primitive-example';
 import './recipe-patterns.script';
+import { exampleFrameOptions } from './example-frame';
 import { recipeMarkup, recipeTabs, type RecipePatternId } from './recipe-sources';
 
 /** The authoring patterns a recipe can show, in tab order, and the label of the button that selects each. */
@@ -113,12 +114,13 @@ export type RecipeExampleProps = {
  * @remarks
  * MDX serializes a known custom element such as `rui-slider` from its reactive properties and drops the attributes
  * written on it, which a hand-written light-DOM contract depends on. Passing the file as markup keeps every
- * attribute, and keeps the example and the code under it from drifting apart.
+ * attribute, and keeps the example and the code under it from drifting apart. The file is one root and the frame
+ * holds it as described in {@link exampleFrameOptions}.
  */
 export const RecipeExample = eco.component<RecipeExampleProps, JsxRenderable>({
 	dependencies: { components: [PrimitiveExample] },
 	render: ({ recipe, pattern, layout }) => (
-		<PrimitiveExample name={pattern === 'plain' ? recipe : undefined} host={pattern !== 'plain'} layout={layout}>
+		<PrimitiveExample {...exampleFrameOptions(layout)}>
 			{unsafeHtml(recipeMarkup(recipe, pattern))}
 		</PrimitiveExample>
 	),

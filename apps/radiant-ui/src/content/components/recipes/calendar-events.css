@@ -1,5 +1,9 @@
-[data-example='calendar-events'].primitive-example,
-.primitive-example:has(> calendar-events-element, > calendar-events-app, > [data-controller='calendar-events']) {
+.primitive-example:has(
+	> calendar-events-element,
+	> calendar-events-app,
+	> [data-controller='calendar-events'],
+	> [data-example='calendar-events']
+) {
 	flex-direction: column;
 	flex-wrap: nowrap;
 	align-items: stretch;

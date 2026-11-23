@@ -1,5 +1,9 @@
-.primitive-example:has(> swipe-card-element, > [data-controller='swipe-card'], > swipe-card-app),
-.primitive-example[data-example='swipe-card'] {
+.primitive-example:has(
+	> swipe-card-element,
+	> [data-controller='swipe-card'],
+	> swipe-card-app,
+	> [data-example='swipe-card']
+) {
 	flex-direction: column;
 	align-items: stretch;
 	overflow-x: clip;

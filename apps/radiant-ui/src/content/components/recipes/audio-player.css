@@ -1,6 +1,8 @@
-.primitive-example:is(
-	[data-example='audio-player'],
-	:has(> audio-player-element, > [data-controller='audio-player'], > audio-player-app)
+.primitive-example:has(
+	> audio-player-element,
+	> [data-controller='audio-player'],
+	> audio-player-app,
+	> [data-example='audio-player']
 ) {
 	display: flex;
 	flex-direction: column;

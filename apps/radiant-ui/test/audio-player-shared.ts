@@ -96,7 +96,7 @@ const seekTo = async (root: HTMLElement, seconds: number) => {
 /** The `primitive-example` frame the docs page gives, on what the stylesheet scopes to. */
 function frame(root: HTMLElement): HTMLElement {
 	document.body.classList.remove('primitive-example');
-	(root.matches('[data-example]') ? root : root.parentElement!).classList.add('primitive-example');
+	root.parentElement!.classList.add('primitive-example');
 	return root;
 }
 

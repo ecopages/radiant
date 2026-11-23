@@ -1,5 +1,4 @@
-.primitive-example[data-example='modal'],
-.primitive-example:has(> modal-element, > modal-app, > [data-controller='modal']) {
+.primitive-example:has(> modal-element, > modal-app, > [data-controller='modal'], > [data-example='modal']) {
 	min-height: 18rem;
 	align-content: flex-start;
 	align-items: flex-start;
