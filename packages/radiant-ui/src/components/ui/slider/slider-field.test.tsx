@@ -40,7 +40,7 @@ function recordingStore(): { store: FormStateStore; written: () => unknown } {
 		},
 		reset() {},
 		async validate() {
-			return true;
+			return { outcome: 'passed' };
 		},
 	};
 	return { store, written: () => values.level };

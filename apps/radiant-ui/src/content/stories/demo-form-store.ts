@@ -94,7 +94,7 @@ export function createDemoStore({ initial, rules = {}, warnings = {} }: DemoStor
 			const scope = [...new Set([...Object.keys(rules), ...Object.keys(facts)])];
 			for (const path of scope) checked.add(path);
 			publish();
-			return scope.every((path) => !problems(path));
+			return { outcome: scope.every((path) => !problems(path)) ? 'passed' : 'invalid' };
 		},
 		reportNative(reported) {
 			let shown = false;

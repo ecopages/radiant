@@ -3,7 +3,7 @@ import { RuiForm as RuiFormElement } from './form.script';
 import { RuiField as RuiFieldElement } from '../field/field.script';
 import type { FormContextValue } from '@/lib/form/form-context';
 import type { FormStore } from '@/lib/form/form-store';
-import type { FormStateStoreSnapshot, FormStateStore } from '@/lib/form/form-state-store';
+import type { FormStateStoreSnapshot, FormStateStore, FormStateValidateResult } from '@/lib/form/form-state-store';
 import type { FieldError } from '@/lib/form/types';
 
 void RuiFormElement;
@@ -171,7 +171,7 @@ describe('submission settling', () => {
 		const boom = new Error('server');
 		const watch = watchUnhandled();
 		const { form, nativeForm } = await mount({
-			store: { ...createThrowingStore(boom), validate: async () => true },
+			store: { ...createThrowingStore(boom), validate: async () => ({ outcome: 'passed' }) },
 		});
 		form.onSubmit = () => Promise.reject(boom);
 
@@ -199,11 +199,11 @@ describe('submission settling', () => {
 		 * `errors`, which the form reports when `validate` resolves `false`.
 		 */
 		function createSlowStore(
-			pending: Array<ReturnType<typeof deferred<boolean>>>,
+			pending: Array<ReturnType<typeof deferred<FormStateValidateResult>>>,
 			errors: Record<string, FieldError> = {},
 		) {
 			const validate = vi.fn(() => {
-				const next = deferred<boolean>();
+				const next = deferred<FormStateValidateResult>();
 				pending.push(next);
 				return next.promise;
 			});
@@ -263,7 +263,7 @@ describe('submission settling', () => {
 		});
 
 		it('ignores a second submit while an injected store validates', async () => {
-			const pending: Array<ReturnType<typeof deferred<boolean>>> = [];
+			const pending: Array<ReturnType<typeof deferred<FormStateValidateResult>>> = [];
 			const { store, validate } = createSlowStore(pending);
 			const { form, nativeForm } = await mount({ store });
 			const { onSubmit } = listen(form);
@@ -272,7 +272,7 @@ describe('submission settling', () => {
 			nativeForm.requestSubmit();
 			await settle();
 			expect(validate).toHaveBeenCalledTimes(1);
-			pending[0]?.resolve(true);
+			pending[0]?.resolve({ outcome: 'passed' });
 			await settle();
 
 			expect(validate).toHaveBeenCalledTimes(1);
@@ -280,18 +280,18 @@ describe('submission settling', () => {
 		});
 
 		it('accepts a new submit once the first settles', async () => {
-			const pending: Array<ReturnType<typeof deferred<boolean>>> = [];
+			const pending: Array<ReturnType<typeof deferred<FormStateValidateResult>>> = [];
 			const { store, validate } = createSlowStore(pending, { title: { type: 'required' } });
 			const { form, nativeForm } = await mount({ store });
 			const { onSubmit, onInvalid } = listen(form);
 
 			nativeForm.requestSubmit();
 			await settle();
-			pending[0]?.resolve(false);
+			pending[0]?.resolve({ outcome: 'invalid' });
 			await settle();
 			nativeForm.requestSubmit();
 			await settle();
-			pending[1]?.resolve(true);
+			pending[1]?.resolve({ outcome: 'passed' });
 			await settle();
 
 			expect(validate).toHaveBeenCalledTimes(2);
@@ -314,8 +314,24 @@ describe('submission settling', () => {
 			expect(watch.errors).toHaveBeenCalledTimes(2);
 		});
 
-		it('ends without an event when the store resolves false and holds no error', async () => {
-			const pending: Array<ReturnType<typeof deferred<boolean>>> = [];
+		it('emits rui-invalid with the snapshot errors when the store resolves invalid, even with none', async () => {
+			const pending: Array<ReturnType<typeof deferred<FormStateValidateResult>>> = [];
+			const { store } = createSlowStore(pending);
+			const { form, nativeForm } = await mount({ store });
+			const { onSubmit, onInvalid } = listen(form);
+
+			nativeForm.requestSubmit();
+			await settle();
+			pending[0]?.resolve({ outcome: 'invalid' });
+			await settle();
+
+			expect(onSubmit).not.toHaveBeenCalled();
+			expect(onInvalid).toHaveBeenCalledTimes(1);
+			expect(onInvalid.mock.calls[0]?.[0].detail).toEqual({ errors: {} });
+		});
+
+		it('ends without an event when the store resolves overtaken, and takes a new submit', async () => {
+			const pending: Array<ReturnType<typeof deferred<FormStateValidateResult>>> = [];
 			const { store, validate } = createSlowStore(pending);
 			const { form, nativeForm } = await mount({ store });
 			const { onSubmit, onInvalid } = listen(form);
@@ -324,7 +340,7 @@ describe('submission settling', () => {
 
 			nativeForm.requestSubmit();
 			await settle();
-			pending[0]?.resolve(false);
+			pending[0]?.resolve({ outcome: 'overtaken' });
 			await settle();
 
 			expect(onSubmit).not.toHaveBeenCalled();
@@ -333,14 +349,14 @@ describe('submission settling', () => {
 
 			nativeForm.requestSubmit();
 			await settle();
-			pending[1]?.resolve(true);
+			pending[1]?.resolve({ outcome: 'passed' });
 			await settle();
 			expect(validate).toHaveBeenCalledTimes(2);
 			expect(onSubmit).toHaveBeenCalledTimes(1);
 		});
 
 		it('accepts a new submit after validation throws', async () => {
-			const pending: Array<ReturnType<typeof deferred<boolean>>> = [];
+			const pending: Array<ReturnType<typeof deferred<FormStateValidateResult>>> = [];
 			const { store, validate } = createSlowStore(pending);
 			const { form, nativeForm } = await mount({ store });
 			const { onInvalid } = listen(form);
@@ -357,7 +373,7 @@ describe('submission settling', () => {
 		});
 
 		it('ends a submission without events when connect replaced its store before validation settled', async () => {
-			const pending: Array<ReturnType<typeof deferred<boolean>>> = [];
+			const pending: Array<ReturnType<typeof deferred<FormStateValidateResult>>> = [];
 			const { store } = createSlowStore(pending);
 			const other = createSlowStore(pending).store;
 			const { form, nativeForm } = await mount({ store });
@@ -369,7 +385,7 @@ describe('submission settling', () => {
 			await settle();
 			form.connect(other);
 			await settle();
-			pending[0]?.resolve(true);
+			pending[0]?.resolve({ outcome: 'passed' });
 			await settle();
 
 			expect(onSubmit).not.toHaveBeenCalled();
@@ -378,7 +394,7 @@ describe('submission settling', () => {
 		});
 
 		it('ends a submission without events when its disposer brought back the own store', async () => {
-			const pending: Array<ReturnType<typeof deferred<boolean>>> = [];
+			const pending: Array<ReturnType<typeof deferred<FormStateValidateResult>>> = [];
 			const { store } = createSlowStore(pending);
 			const { form, nativeForm } = await mount();
 			const disconnect = form.connect(store);
@@ -391,7 +407,7 @@ describe('submission settling', () => {
 			await settle();
 			disconnect();
 			await settle();
-			pending[0]?.resolve(true);
+			pending[0]?.resolve({ outcome: 'passed' });
 			await settle();
 
 			expect(onSubmit).not.toHaveBeenCalled();
@@ -419,7 +435,7 @@ describe('submission settling', () => {
 		});
 
 		it('accepts a submit on the new store while the replaced one is still validating', async () => {
-			const pending: Array<ReturnType<typeof deferred<boolean>>> = [];
+			const pending: Array<ReturnType<typeof deferred<FormStateValidateResult>>> = [];
 			const { store } = createSlowStore(pending);
 			const other = createSlowStore(pending);
 			const { form, nativeForm } = await mount({ store });
@@ -431,8 +447,8 @@ describe('submission settling', () => {
 			await settle();
 			nativeForm.requestSubmit();
 			await settle();
-			pending[0]?.resolve(true);
-			pending[1]?.resolve(true);
+			pending[0]?.resolve({ outcome: 'passed' });
+			pending[1]?.resolve({ outcome: 'passed' });
 			await settle();
 
 			expect(other.validate).toHaveBeenCalledTimes(1);

@@ -211,7 +211,7 @@ function createTestStore(initial: Record<string, unknown>, options: TestStoreOpt
 			calls.push({ kind: 'validate' });
 			allShown = true;
 			publish();
-			return Object.keys(allErrors()).length === 0;
+			return { outcome: Object.keys(allErrors()).length === 0 ? 'passed' : 'invalid' };
 		},
 		reportNative(facts) {
 			calls.push({ kind: 'reportNative', facts });

@@ -1,6 +1,11 @@
 import { createRulesResolver } from './resolvers';
 import { isSameValue } from './same-value';
-import type { FormStateStore, FormStateStoreSnapshot, NativeValidity } from './form-state-store';
+import type {
+	FormStateStore,
+	FormStateStoreSnapshot,
+	FormStateValidateResult,
+	NativeValidity,
+} from './form-state-store';
 import { deletePath, getPath, setPath } from './value-path';
 import type {
 	FieldError,
@@ -154,7 +159,13 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		return this.snapshot.value;
 	}
 
-	async validate(paths?: string[]): Promise<boolean> {
+	/**
+	 * Validate `paths`, or the whole tree when none are given.
+	 *
+	 * @remarks Resolves `passed` or `invalid`, never `overtaken`: the caller awaits the
+	 * run, and the outcome is read from the errors the store holds when it ends.
+	 */
+	async validate(paths?: string[]): Promise<FormStateValidateResult> {
 		let valid = true;
 		if (paths) {
 			for (const path of paths) {
@@ -164,7 +175,9 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 			valid = await this.validateAll();
 		}
 		const scope = paths ?? Object.keys(this.mergedErrors);
-		return valid && scope.every((path) => !this.ownRead(this.mergedErrors, path));
+		return valid && scope.every((path) => !this.ownRead(this.mergedErrors, path))
+			? { outcome: 'passed' }
+			: { outcome: 'invalid' };
 	}
 
 	/**

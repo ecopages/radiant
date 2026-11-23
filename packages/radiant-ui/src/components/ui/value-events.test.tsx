@@ -103,7 +103,7 @@ function recordingStore(initial: Record<string, unknown>) {
 		},
 		reset() {},
 		async validate() {
-			return true;
+			return { outcome: 'passed' };
 		},
 	};
 	return { store, writes };

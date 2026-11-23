@@ -1,5 +1,5 @@
 import { describe, expect, expectTypeOf, it, vi } from 'vitest';
-import type { FormStateStore, FormStateStoreSnapshot } from '@/lib/form/form-state-store';
+import type { FormStateStore, FormStateStoreSnapshot, FormStateValidateResult } from '@/lib/form/form-state-store';
 import { RuiForm } from './form.script';
 import { RuiField } from '../field/field.script';
 import type { RuiFormFormatError, RuiFormInvalidDetail } from './form.script';
@@ -28,7 +28,7 @@ function engineStore(): FormStateStore<EngineIssue> {
 		subscribe: () => () => {},
 		reset() {},
 		async validate() {
-			return true;
+			return { outcome: 'passed' };
 		},
 		reportNative() {},
 	};
@@ -125,5 +125,11 @@ describe('typed connect', () => {
 		form.connect(engineStore(), { formatError: (issue: OtherIssue) => String(issue.code) });
 
 		expect(form).toBeDefined();
+	});
+
+	it('types validate as one of three outcomes, never a boolean', () => {
+		expectTypeOf<ReturnType<FormStateStore['validate']>>().toEqualTypeOf<Promise<FormStateValidateResult>>();
+		expectTypeOf<FormStateValidateResult['outcome']>().toEqualTypeOf<'passed' | 'invalid' | 'overtaken'>();
+		expectTypeOf<boolean>().not.toExtend<FormStateValidateResult>();
 	});
 });

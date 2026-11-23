@@ -289,10 +289,10 @@ describe('FormStore', () => {
 				});
 			}
 
-			expect(await store.validate(['a'])).toBe(false);
+			expect(await store.validate(['a'])).toEqual({ outcome: 'invalid' });
 			expect(store.getFieldError('a')).toBe('a required');
 			expect(store.getFieldError('b')).toBeUndefined();
-			expect(await store.validate()).toBe(false);
+			expect(await store.validate()).toEqual({ outcome: 'invalid' });
 			expect(store.getFieldError('b')).toBe('b required');
 		});
 
@@ -311,13 +311,13 @@ describe('FormStore', () => {
 
 			expect(listener).toHaveBeenCalledTimes(1);
 			expect(store.getFieldError('a')).toBe('Taken');
-			expect(await store.validate(['a'])).toBe(false);
+			expect(await store.validate(['a'])).toEqual({ outcome: 'invalid' });
 			expect(store.getFieldError('a')).toBe('Taken');
 
 			store.setErrors('server', {});
 
 			expect(store.getFieldError('a')).toBeUndefined();
-			expect(await store.validate(['a'])).toBe(true);
+			expect(await store.validate(['a'])).toEqual({ outcome: 'passed' });
 		});
 
 		it('exposes errors as read-only, so source errors cannot become permanent', () => {
@@ -418,11 +418,11 @@ describe('FormStore', () => {
 				}),
 			);
 
-			expect(await store.validate()).toBe(false);
+			expect(await store.validate()).toEqual({ outcome: 'invalid' });
 			expect(store.errors['profile.name']?.message).toBe('Name required');
 
 			store.setValue('profile.name', 'Ada');
-			expect(await store.validate()).toBe(true);
+			expect(await store.validate()).toEqual({ outcome: 'passed' });
 			expect(seen.at(-1)).toEqual({ profile: { name: 'Ada' } });
 		});
 	});
@@ -440,7 +440,7 @@ describe('FormStore', () => {
 
 			store.setErrors('server', { a: {} });
 
-			expect(await store.validate(['a'])).toBe(false);
+			expect(await store.validate(['a'])).toEqual({ outcome: 'invalid' });
 			expect(store.getFieldError('a')).toBeUndefined();
 			expect(store.shouldDisplayFieldError('a')).toBe(true);
 		});
@@ -456,7 +456,7 @@ describe('FormStore', () => {
 
 			store.setErrors('server', { a: { message: '' } });
 
-			expect(await store.validate(['a'])).toBe(false);
+			expect(await store.validate(['a'])).toEqual({ outcome: 'invalid' });
 			expect(store.getFieldError('a')).toBeUndefined();
 		});
 
@@ -584,7 +584,7 @@ describe('FormStore', () => {
 
 			expect(store.errors.a).toBeUndefined();
 			expect(store.errors.b?.message).toBe('Other');
-			expect(await store.validate(['a'])).toBe(true);
+			expect(await store.validate(['a'])).toEqual({ outcome: 'passed' });
 		});
 
 		it('drops a change event for a value the store already holds', async () => {
@@ -697,7 +697,7 @@ describe('FormStore', () => {
 			await vi.waitFor(() => expect(store.errors.elsewhere?.type).toBe('valueMissing'));
 
 			store.reportNative({ elsewhere: null });
-			expect(await store.validate(['elsewhere'])).toBe(true);
+			expect(await store.validate(['elsewhere'])).toEqual({ outcome: 'passed' });
 		});
 
 		it('reports several facts in one call and clears the one a null withdraws', async () => {
@@ -705,24 +705,24 @@ describe('FormStore', () => {
 			store.setValue('first', 'x');
 			store.setValue('second', 'x');
 			store.reportNative({ first: { type: 'valueMissing' }, second: { type: 'valueMissing' } });
-			expect(await store.validate(['first'])).toBe(false);
+			expect(await store.validate(['first'])).toEqual({ outcome: 'invalid' });
 
 			store.reportNative({ first: null });
 
-			expect(await store.validate(['first'])).toBe(true);
-			expect(await store.validate(['second'])).toBe(false);
+			expect(await store.validate(['first'])).toEqual({ outcome: 'passed' });
+			expect(await store.validate(['second'])).toEqual({ outcome: 'invalid' });
 		});
 
 		it('drops the fact of a path that left when it is reported null', async () => {
 			const store = new FormStore<{ a: string }>();
 			store.setValue('row', 'x');
 			store.reportNative({ row: { type: 'valueMissing' } });
-			expect(await store.validate(['row'])).toBe(false);
+			expect(await store.validate(['row'])).toEqual({ outcome: 'invalid' });
 			store.setValue('row', undefined);
 
 			store.reportNative({ row: null });
 
-			expect(await store.validate(['row'])).toBe(true);
+			expect(await store.validate(['row'])).toEqual({ outcome: 'passed' });
 		});
 
 		it('touches a path on blur', () => {
@@ -753,7 +753,7 @@ describe('FormStore', () => {
 
 			store.reset();
 
-			expect(await store.validate(['a'])).toBe(true);
+			expect(await store.validate(['a'])).toEqual({ outcome: 'passed' });
 		});
 
 		it('keeps a resolver issue whole, params and type, for formatError', async () => {
@@ -782,7 +782,7 @@ describe('FormStore', () => {
 
 			expect(listener).not.toHaveBeenCalled();
 			expect(store.dirty.a).toBeUndefined();
-			expect(await store.validate(['a'])).toBe(false);
+			expect(await store.validate(['a'])).toEqual({ outcome: 'invalid' });
 		});
 
 		it('ignores a reported fact for a path it does not hold', async () => {
@@ -790,7 +790,7 @@ describe('FormStore', () => {
 
 			store.reportNative({ nowhere: { type: 'valueMissing' } });
 
-			expect(await store.validate(['nowhere'])).toBe(true);
+			expect(await store.validate(['nowhere'])).toEqual({ outcome: 'passed' });
 		});
 
 		it('re-validates a path that already failed when a fact is reported', async () => {
@@ -813,7 +813,7 @@ describe('FormStore', () => {
 				setValue: () => {},
 				getValidity: () => (invalid ? { valid: false, type: 'typeMismatch' } : { valid: true }),
 			});
-			expect(await store.validate(['a'])).toBe(true);
+			expect(await store.validate(['a'])).toEqual({ outcome: 'passed' });
 
 			invalid = true;
 			store.reportNative({ a: { type: 'typeMismatch' } });
