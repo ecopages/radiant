@@ -201,7 +201,11 @@ describe('submission settling', () => {
 				return next.promise;
 			});
 			const snapshot: FormStateStoreSnapshot = { values: { title: 'host' }, errors: {}, warnings: {} };
-			const store: FormStateStore = { ...createThrowingStore(new Error('unused')), getSnapshot: () => snapshot, validate };
+			const store: FormStateStore = {
+				...createThrowingStore(new Error('unused')),
+				getSnapshot: () => snapshot,
+				validate,
+			};
 			return { store, validate };
 		}
 

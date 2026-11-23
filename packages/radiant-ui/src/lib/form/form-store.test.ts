@@ -236,11 +236,11 @@ describe('FormStore', () => {
 			expect(first.values).toEqual({ title: 'A' });
 		});
 
-		it('keeps the snapshot in step with direct assignment to values and errors', () => {
+		it('keeps the snapshot in step with direct assignment to values and with setErrors', () => {
 			const store = new FormStore<{ a: string }>();
 			const first = store.getSnapshot();
 
-			store.errors = { a: { message: 'x' } };
+			store.setErrors('server', { a: { message: 'x' } });
 			expect(store.getSnapshot().errors).toEqual({ a: { message: 'x' } });
 			store.values = { a: 'y' };
 			expect(store.getSnapshot().values).toEqual({ a: 'y' });
@@ -318,6 +318,19 @@ describe('FormStore', () => {
 
 			expect(store.getFieldError('a')).toBeUndefined();
 			expect(await store.validate(['a'])).toBe(true);
+		});
+
+		it('exposes errors as read-only, so source errors cannot become permanent', () => {
+			const store = new FormStore<{ a: string }>();
+			store.setErrors('server', { a: { type: 'server', message: 'Taken' } });
+
+			expect(() => {
+				// @ts-expect-error `errors` has no setter
+				store.errors = { ...store.errors };
+			}).toThrow(TypeError);
+
+			store.setErrors('server', {});
+			expect(store.errors).toEqual({});
 		});
 
 		it('lets a source message win over a rule message and clears sources on reset', async () => {

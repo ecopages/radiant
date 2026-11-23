@@ -99,13 +99,16 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	 * Resolver and rule errors merged with errors contributed through `setErrors`.
 	 *
 	 * @remarks A source error replaces a resolver or rule error on the same field.
-	 * Assigning replaces the resolver and rule errors only.
+	 * Read-only: the getter returns the merged view, so writing it back would turn
+	 * source errors into own errors that outlive `setErrors(source, {})`. Write host
+	 * errors with `setErrors` and remove them with `clearErrors`.
 	 */
 	get errors(): Record<string, FieldError> {
 		return this.mergedErrors;
 	}
 
-	set errors(next: Record<string, FieldError>) {
+	/** Replace the resolver, rule and native errors and re-merge the `setErrors` sources over them. */
+	private setOwnErrors(next: Record<string, FieldError>): void {
 		this.ownErrors = next;
 		this.mergeErrors();
 	}
@@ -313,7 +316,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	private writeFieldState(name: string, state: FieldState): void {
 		this.touched = withKey(this.touched, name, state.touched);
 		this.dirty = withKey(this.dirty, name, state.dirty);
-		this.errors = withKey(this.ownErrors, name, state.error);
+		this.setOwnErrors(withKey(this.ownErrors, name, state.error));
 	}
 
 	/**
@@ -408,12 +411,12 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 					Object.fromEntries(Object.entries(errors).filter(([path]) => path !== name)),
 				);
 			}
-			this.errors = next;
+			this.setOwnErrors(next);
 			this.notify();
 			return;
 		}
 		this.sourceErrors.clear();
-		this.errors = {};
+		this.setOwnErrors({});
 		this.notify();
 	}
 
@@ -469,7 +472,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 			return !error;
 		}
 		this.validatedNative.set(name, nativeError?.type ?? null);
-		this.errors = withKey(this.ownErrors, name, error ? (nativeError ?? resolverError ?? {}) : undefined);
+		this.setOwnErrors(withKey(this.ownErrors, name, error ? (nativeError ?? resolverError ?? {}) : undefined));
 		this.notify();
 		return !error;
 	}
@@ -493,7 +496,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 				found.set(name, native);
 			}
 		}
-		this.errors = Object.fromEntries(found);
+		this.setOwnErrors(Object.fromEntries(found));
 		this.notify();
 		return Object.keys(this.mergedErrors).length === 0;
 	}
@@ -699,7 +702,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		this.reportedNative = {};
 		this.validatedPaths.clear();
 		this.validatedNative.clear();
-		this.errors = {};
+		this.setOwnErrors({});
 		this.touched = {};
 		this.dirty = {};
 		this.isSubmitted = false;
