@@ -180,4 +180,244 @@ describe('submission settling', () => {
 		expect(watch.unhandled).not.toHaveBeenCalled();
 		expect(watch.errors).toHaveBeenCalledWith(boom);
 	});
+
+	describe('one submission at a time', () => {
+		/** A promise a test settles itself, as a slow server-side validator would. */
+		function deferred<T>() {
+			let resolve: (value: T) => void = () => {};
+			let reject: (error: unknown) => void = () => {};
+			const promise = new Promise<T>((res, rej) => {
+				resolve = res;
+				reject = rej;
+			});
+			return { promise, resolve, reject };
+		}
+
+		/** A store whose `validate` waits for the test, and counts how often it ran. */
+		function createSlowStore(pending: Array<ReturnType<typeof deferred<boolean>>>) {
+			const validate = vi.fn(() => {
+				const next = deferred<boolean>();
+				pending.push(next);
+				return next.promise;
+			});
+			const snapshot: FormStateStoreSnapshot = { values: { title: 'host' }, errors: {}, warnings: {} };
+			const store: FormStateStore = { ...createThrowingStore(new Error('unused')), getSnapshot: () => snapshot, validate };
+			return { store, validate };
+		}
+
+		function listen(form: RuiFormElement) {
+			const onSubmit = vi.fn();
+			const onInvalid = vi.fn();
+			form.addEventListener('rui-submit', onSubmit);
+			form.addEventListener('rui-invalid', onInvalid);
+			return { onSubmit, onInvalid };
+		}
+
+		it('ignores a second submit while the built-in store validates', async () => {
+			const gate = deferred<boolean>();
+			const validator = vi.fn(() => gate.promise);
+			const { form, nativeForm } = await mount({ rules: { validate: validator } });
+			const { onSubmit } = listen(form);
+			const onSubmitProp = vi.fn();
+			form.onSubmit = onSubmitProp;
+
+			nativeForm.requestSubmit();
+			nativeForm.requestSubmit();
+			await settle();
+			gate.resolve(true);
+			await settle();
+
+			expect(validator).toHaveBeenCalledTimes(1);
+			expect(onSubmit).toHaveBeenCalledTimes(1);
+			expect(onSubmitProp).toHaveBeenCalledTimes(1);
+		});
+
+		it('ignores a second submit while onSubmit is still running', async () => {
+			const { form, nativeForm } = await mount();
+			const { onSubmit } = listen(form);
+			const gate = deferred<void>();
+			form.onSubmit = () => gate.promise;
+
+			nativeForm.requestSubmit();
+			await settle();
+			nativeForm.requestSubmit();
+			await settle();
+			expect(onSubmit).toHaveBeenCalledTimes(1);
+
+			gate.resolve();
+			await settle();
+			nativeForm.requestSubmit();
+			await settle();
+			expect(onSubmit).toHaveBeenCalledTimes(2);
+		});
+
+		it('ignores a second submit while an injected store validates', async () => {
+			const pending: Array<ReturnType<typeof deferred<boolean>>> = [];
+			const { store, validate } = createSlowStore(pending);
+			const { form, nativeForm } = await mount({ store });
+			const { onSubmit } = listen(form);
+
+			nativeForm.requestSubmit();
+			nativeForm.requestSubmit();
+			await settle();
+			expect(validate).toHaveBeenCalledTimes(1);
+			pending[0]?.resolve(true);
+			await settle();
+
+			expect(validate).toHaveBeenCalledTimes(1);
+			expect(onSubmit).toHaveBeenCalledTimes(1);
+		});
+
+		it('accepts a new submit once the first settles', async () => {
+			const pending: Array<ReturnType<typeof deferred<boolean>>> = [];
+			const { store, validate } = createSlowStore(pending);
+			const { form, nativeForm } = await mount({ store });
+			const { onSubmit, onInvalid } = listen(form);
+
+			nativeForm.requestSubmit();
+			await settle();
+			pending[0]?.resolve(false);
+			await settle();
+			nativeForm.requestSubmit();
+			await settle();
+			pending[1]?.resolve(true);
+			await settle();
+
+			expect(validate).toHaveBeenCalledTimes(2);
+			expect(onInvalid).toHaveBeenCalledTimes(1);
+			expect(onSubmit).toHaveBeenCalledTimes(1);
+		});
+
+		it('accepts a new submit after onSubmit throws', async () => {
+			const watch = watchUnhandled();
+			const { form, nativeForm } = await mount();
+			const { onSubmit } = listen(form);
+			form.onSubmit = () => Promise.reject(new Error('server'));
+
+			nativeForm.requestSubmit();
+			await settle();
+			nativeForm.requestSubmit();
+			await settle();
+
+			expect(onSubmit).toHaveBeenCalledTimes(2);
+			expect(watch.errors).toHaveBeenCalledTimes(2);
+		});
+
+		it('accepts a new submit after validation throws', async () => {
+			const pending: Array<ReturnType<typeof deferred<boolean>>> = [];
+			const { store, validate } = createSlowStore(pending);
+			const { form, nativeForm } = await mount({ store });
+			const { onInvalid } = listen(form);
+
+			nativeForm.requestSubmit();
+			await settle();
+			pending[0]?.reject(new Error('network'));
+			await settle();
+			nativeForm.requestSubmit();
+			await settle();
+
+			expect(validate).toHaveBeenCalledTimes(2);
+			expect(onInvalid).toHaveBeenCalledTimes(1);
+		});
+
+		it('ends a submission without events when connect replaced its store before validation settled', async () => {
+			const pending: Array<ReturnType<typeof deferred<boolean>>> = [];
+			const { store } = createSlowStore(pending);
+			const other = createSlowStore(pending).store;
+			const { form, nativeForm } = await mount({ store });
+			const { onSubmit, onInvalid } = listen(form);
+			const onSubmitProp = vi.fn();
+			form.onSubmit = onSubmitProp;
+
+			nativeForm.requestSubmit();
+			await settle();
+			form.connect(other);
+			await settle();
+			pending[0]?.resolve(true);
+			await settle();
+
+			expect(onSubmit).not.toHaveBeenCalled();
+			expect(onInvalid).not.toHaveBeenCalled();
+			expect(onSubmitProp).not.toHaveBeenCalled();
+		});
+
+		it('ends a submission without events when its disposer brought back the own store', async () => {
+			const pending: Array<ReturnType<typeof deferred<boolean>>> = [];
+			const { store } = createSlowStore(pending);
+			const { form, nativeForm } = await mount();
+			const disconnect = form.connect(store);
+			await settle();
+			const { onSubmit, onInvalid } = listen(form);
+			const onSubmitProp = vi.fn();
+			form.onSubmit = onSubmitProp;
+
+			nativeForm.requestSubmit();
+			await settle();
+			disconnect();
+			await settle();
+			pending[0]?.resolve(true);
+			await settle();
+
+			expect(onSubmit).not.toHaveBeenCalled();
+			expect(onInvalid).not.toHaveBeenCalled();
+			expect(onSubmitProp).not.toHaveBeenCalled();
+		});
+
+		it('ends an own-store submission without events when connect replaced the own store', async () => {
+			const gate = deferred<boolean>();
+			const { form, nativeForm } = await mount({ rules: { validate: () => gate.promise } });
+			const { onSubmit, onInvalid } = listen(form);
+			const onSubmitProp = vi.fn();
+			form.onSubmit = onSubmitProp;
+
+			nativeForm.requestSubmit();
+			await settle();
+			form.connect(createSlowStore([]).store);
+			await settle();
+			gate.resolve(true);
+			await settle();
+
+			expect(onSubmit).not.toHaveBeenCalled();
+			expect(onInvalid).not.toHaveBeenCalled();
+			expect(onSubmitProp).not.toHaveBeenCalled();
+		});
+
+		it('accepts a submit on the new store while the replaced one is still validating', async () => {
+			const pending: Array<ReturnType<typeof deferred<boolean>>> = [];
+			const { store } = createSlowStore(pending);
+			const other = createSlowStore(pending);
+			const { form, nativeForm } = await mount({ store });
+			const { onSubmit } = listen(form);
+
+			nativeForm.requestSubmit();
+			await settle();
+			form.connect(other.store);
+			await settle();
+			nativeForm.requestSubmit();
+			await settle();
+			pending[0]?.resolve(true);
+			pending[1]?.resolve(true);
+			await settle();
+
+			expect(other.validate).toHaveBeenCalledTimes(1);
+			expect(onSubmit).toHaveBeenCalledTimes(1);
+			expect(onSubmit.mock.calls[0]?.[0].detail).toEqual({ values: { title: 'host' } });
+		});
+
+		it('hands every submit to a submitHandler, which owns submission', async () => {
+			const { store } = createSlowStore([]);
+			const { form, nativeForm } = await mount();
+			const gate = deferred<void>();
+			const submitHandler = vi.fn(() => gate.promise);
+			form.connect(store, { submitHandler });
+			await settle();
+
+			nativeForm.requestSubmit();
+			nativeForm.requestSubmit();
+			await settle();
+
+			expect(submitHandler).toHaveBeenCalledTimes(2);
+			gate.resolve();
+		});
+	});
 });
