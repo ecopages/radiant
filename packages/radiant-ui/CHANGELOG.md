@@ -1,5 +1,13 @@
 # @ecopages/radiant-ui
 
+## 0.6.1
+
+### Patch Changes
+
+- [#796](https://github.com/ecopages/radiant/pull/796) [`81314a8`](https://github.com/ecopages/radiant/commit/81314a8bac19b1456945c45d475c2f0b0d99e897) Thanks [@andeeplus](https://github.com/andeeplus)! - A Radiant UI control wrapped by a custom field host keeps the host's labelling. A host registered with `registerFieldControl` that paints the field's ARIA onto a nested `rui-select`, `rui-combobox`, `rui-listbox`, `rui-number-field` or `rui-date-field` target no longer loses `aria-labelledby`: `fieldAria` and `fieldAriaBindings` now also set `data-rui-field-managed` on the target they paint, and Radiant UI controls never relabel a field-managed target (a stale `aria-label` beside the painted `aria-labelledby` is dropped). A control whose target no field or field host paints keeps labelling itself.
+
+    Pressing Tab in an open `rui-combobox` or `rui-select` with `selection-mode="multiple"` no longer toggles the active option off: Tab closes the popup and keeps the selection. In a single `rui-select`, Tab now picks the active option even with `should-close-on-select` set to false, as a single `rui-combobox` already did, and the popup closes as focus moves on.
+
 ## 0.6.0
 
 ### Minor Changes
