@@ -1,3 +1,4 @@
+import type { FormStateStore } from './form-state-store';
 import type { FieldError, FieldRegistration, FieldRegistrationHandle, FieldValues, RegisterOptions } from './types';
 
 /**
@@ -6,6 +7,8 @@ import type { FieldError, FieldRegistration, FieldRegistrationHandle, FieldValue
  * host {@link FormStateStore}.
  */
 export interface FormDriver {
+	/** The store this driver drives. */
+	readonly store: FormStateStore;
 	subscribe(listener: () => void): () => void;
 	getRevision(): number;
 	readonly errors: Partial<Record<string, FieldError>>;

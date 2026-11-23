@@ -42,6 +42,10 @@ export class InjectedFormDriver implements FormDriver {
 
 	constructor(private readonly state: FormStateStore) {}
 
+	get store(): FormStateStore {
+		return this.state;
+	}
+
 	get errors(): Partial<Record<string, FieldError>> {
 		return this.state.getSnapshot().errors;
 	}

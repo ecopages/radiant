@@ -32,7 +32,7 @@ function fromStandIn(standIn: NonNullable<ReturnType<typeof installStandIn>>): T
 /**
  * @remarks `registerToolsChangedCallback` holds one callback, so subscribing replaces whichever callback was
  * there and unsubscribing replaces this one with a no-op, which can displace another subscriber. The surface
- * offers nothing better, and only the inspector subscribes on this page. Docs only.
+ * offers nothing better, and only the inspector subscribes on this page.
  */
 function fromModelContextTesting(testing: ModelContextTesting): ToolSource {
 	return {

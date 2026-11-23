@@ -2,11 +2,12 @@
 '@ecopages/radiant-ui': minor
 ---
 
-`rui-form` runs one submission at a time, `FormStore.errors` is read-only, and `validate()` resolves an outcome.
+`rui-form` runs one submission at a time per store when it owns submission, `FormStore.errors` is read-only, and `validate()` resolves an outcome.
 
 **Breaking changes**
 
 - `FormStateStore.validate()` and the built-in `FormStore.validate(paths?)` resolve `{ outcome: 'passed' | 'invalid' | 'overtaken' }` (the exported `FormStateValidateResult`) instead of a boolean. `passed` emits `rui-submit`, `invalid` emits `rui-invalid` with the store's errors, and `overtaken`, a check a newer write superseded, ends the submission without an event so the user submits again. Callers migrate `if (await store.validate())`, which is now always truthy, to `(await store.validate()).outcome === 'passed'`. Implementers return `{ outcome: valid ? 'passed' : 'invalid' }`. A `FormStore.validate(paths)` run that a newer validation of the same path superseded resolves `overtaken`.
+- `FormStore.validateField(name)` is removed. Use `validate([name])`, which resolves `{ outcome }`.
 - `FormStore.errors` is read-only. Assigning it replaced only the form's own errors, so `store.errors = { ...store.errors }` turned errors added with `setErrors` into permanent ones that survived `setErrors(source, {})`. Write errors with `store.setErrors(source, errors)` and remove them with `setErrors(source, {})` or `clearErrors(path?)`.
 
 **Fixes**

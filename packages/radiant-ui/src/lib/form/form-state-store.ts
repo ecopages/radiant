@@ -36,11 +36,11 @@ export type NativeValidity = {
 };
 
 /**
- * What a validation of the whole tree concluded.
+ * What a validation concluded.
  *
  * @remarks `passed` means no error, so the form emits `rui-submit`. `invalid` means the
  * store holds an error, so the form emits `rui-invalid` with the snapshot's errors.
- * `overtaken` means a newer write superseded the check before it concluded, so it says
+ * `overtaken` means a newer write or validation superseded the check before it concluded, so it says
  * nothing about the values: the form ends the submission without an event and the user
  * submits again.
  *

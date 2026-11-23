@@ -360,11 +360,10 @@ export class RuiForm extends RadiantElement {
 				.catch((error: unknown) => reportError(error));
 			return;
 		}
-		const store = this.resolveStateStore();
-		if (!store || this.submitting.has(store)) {
+		if (this.submitting.has(driver.store)) {
 			return;
 		}
-		this.submitOwnPath(driver, store).catch((error: unknown) => reportError(error));
+		this.submitOwnPath(driver).catch((error: unknown) => reportError(error));
 	}
 
 	/**
@@ -375,7 +374,8 @@ export class RuiForm extends RadiantElement {
 	 * when validation settles, so its submission completes. One that already reached
 	 * `onSubmit` is not interrupted.
 	 */
-	private async submitOwnPath(driver: FormDriver, store: FormStateStore): Promise<void> {
+	private async submitOwnPath(driver: FormDriver): Promise<void> {
+		const { store } = driver;
 		this.submitting.add(store);
 		const epoch = this.driverEpoch;
 		const abandoned = () => this.driverEpoch !== epoch || !this.isConnected;
