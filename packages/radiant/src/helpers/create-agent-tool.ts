@@ -50,7 +50,7 @@ function describeHost(host: AgentToolHost): string | undefined {
  * element, the post-sync pass of a controller, or the connected callback of any other host. A host that
  * has already settled registers at once, so a tool created in `onConnected()` does not wait for the next
  * connect. An element that upgrades in place is connected inside its constructor but has not settled, so a
- * tool created there waits for the connect-sync pass. A server-rendered element that waits for its children registers only after it hydrates, and
+ * tool created there waits for the connect-sync pass. A server-rendered element whose children come from its parent's view registers only after it hydrates, and
  * never when its parent does not render on the client.
  *
  * Every connect registers again with a new `AbortController`, because a moved element disconnects and

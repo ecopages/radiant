@@ -321,7 +321,7 @@ Rules worth knowing:
 - Tool names are unique per page. Two elements that use one name make the second registration reject, and Radiant reports it with `console.error` naming the tool and the element. Give each instance its own name, or register a shared capability once from whoever owns the state.
 - A tool is removed only by aborting the signal it was registered with, so every connect registers with a new `AbortController`. `execute` receives `{ signal }`, which a decorated method can take as a second argument.
 - Return from a method only once the UI shows the change, and set `annotations.consequentialHint` on an irreversible action and `untrustedContentHint` on output that carries user-generated content.
-- A server-rendered element that waits for its children registers only after it hydrates.
+- A server-rendered element whose children come from its parent's view registers its tool only after it hydrates, and never when the parent does not render on the client.
 - Like `@onEvent`, `@agentTool` binds the method it decorates, so a subclass override is not what the agent calls.
 - In development, a tool with an empty name or description, or text over the budgets Chrome recommends (30 characters per name, 500 per description, 150 per parameter description), logs a warning once.
 
