@@ -27,6 +27,19 @@ const CLASS_STYLE_DEPENDENCIES = [{ pattern: /rui-button/, component: 'button' }
 type PackageJson = Record<string, unknown> & { exports?: Record<string, unknown> };
 type StyleDependencyManifest = Record<string, { direct: string[]; styles: string[] }>;
 
+/**
+ * Writes `content` to `file` only when it differs from what is there.
+ *
+ * @remarks
+ * A dev server that links this package restarts when any of its files changes, and a rewrite with identical content
+ * still changes the modification time. Skipping the write keeps `pnpm dev` from restarting a server that is
+ * already running.
+ */
+function writeIfChanged(file: string, content: string): void {
+	if (existsSync(file) && readFileSync(file, 'utf8') === content) return;
+	writeFileSync(file, content);
+}
+
 function listComponents(): string[] {
 	return readdirSync(UI_DIR, { withFileTypes: true })
 		.filter((entry) => entry.isDirectory() && existsSync(path.join(UI_DIR, entry.name, 'index.ts')))
@@ -269,12 +282,12 @@ const packageJson = JSON.parse(readFileSync(PACKAGE_JSON_PATH, 'utf8')) as Packa
 packageJson.exports = buildExportsMap(components);
 /* Tabs, matching the repo's Prettier config — two spaces reformatted all ~490 lines on
    every build, so each release commit carried a whole-file whitespace diff. */
-writeFileSync(PACKAGE_JSON_PATH, `${JSON.stringify(packageJson, null, '\t')}\n`);
+writeIfChanged(PACKAGE_JSON_PATH, `${JSON.stringify(packageJson, null, '\t')}\n`);
 
-writeFileSync(BARREL_PATH, buildBarrel(components));
-writeFileSync(STYLES_CSS_PATH, buildStylesEntry(components));
-writeFileSync(SEMANTIC_CSS_PATH, buildSemanticAliasBlock(readFileSync(SEMANTIC_CSS_PATH, 'utf8')));
-writeFileSync(
+writeIfChanged(BARREL_PATH, buildBarrel(components));
+writeIfChanged(STYLES_CSS_PATH, buildStylesEntry(components));
+writeIfChanged(SEMANTIC_CSS_PATH, buildSemanticAliasBlock(readFileSync(SEMANTIC_CSS_PATH, 'utf8')));
+writeIfChanged(
 	STYLE_DEPENDENCIES_PATH,
 	`${JSON.stringify({ components: buildStyleDependencyManifest(components) }, null, '\t')}\n`,
 );
