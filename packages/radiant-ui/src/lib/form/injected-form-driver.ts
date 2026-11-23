@@ -341,10 +341,30 @@ export class InjectedFormDriver implements FormDriver {
 		return fact;
 	}
 
-	/** Report one control's fact; a report the store rejects goes to `reportError`. */
-	private reportFactSafely(name: string, entry: BoundField): void {
+	/**
+	 * Read a control's fact without letting a throwing validity read escape.
+	 *
+	 * @remarks The one guarded read behind every report that is not a batch: a throw goes to
+	 * `reportError` and yields `undefined`, so nothing is reported for that control. The fact
+	 * is wrapped because `null` is a valid fact.
+	 */
+	private readFactSafely(entry: BoundField): { fact: NativeValidity | null } | undefined {
 		try {
-			this.state.reportNative({ [name]: this.remembered(entry) });
+			return { fact: this.factOf(entry) };
+		} catch (error) {
+			reportError(error);
+			return undefined;
+		}
+	}
+
+	/** Report one control's fact; a read or a report that throws goes to `reportError`. */
+	private reportFactSafely(name: string, entry: BoundField, read = this.readFactSafely(entry)): void {
+		if (!read) {
+			return;
+		}
+		entry.lastFact = read.fact;
+		try {
+			this.state.reportNative({ [name]: read.fact });
 		} catch (error) {
 			reportError(error);
 		}
@@ -382,8 +402,11 @@ export class InjectedFormDriver implements FormDriver {
 		if (this.isChanged(entry)) {
 			this.pushUserChange(name, entry);
 			this.bump();
-		} else if (entry.lastFact === undefined || !isSameValue(this.factOf(entry), entry.lastFact)) {
-			this.reportFactSafely(name, entry);
+		} else {
+			const read = this.readFactSafely(entry);
+			if (read && (entry.lastFact === undefined || !isSameValue(read.fact, entry.lastFact))) {
+				this.reportFactSafely(name, entry, read);
+			}
 		}
 	}
 

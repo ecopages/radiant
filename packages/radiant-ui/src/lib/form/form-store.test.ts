@@ -2,6 +2,7 @@ import { describe, expect, expectTypeOf, it, vi } from 'vitest';
 import type { FormContextValue } from './form-context';
 import type { FormStateStore } from './form-state-store';
 import { FormStore } from './form-store';
+import type { Resolver } from './types';
 
 describe('FormStore', () => {
 	it('validates required rules for registered fields', async () => {
@@ -889,5 +890,86 @@ describe('FormStore', () => {
 
 		expect(parentSet).toHaveBeenLastCalledWith({ name: 'Grace' });
 		expect(store.getValues()).toEqual({ profile: { name: 'Grace' } });
+	});
+
+	describe('one validation per path at a time', () => {
+		function toggle(resolver: Resolver, getValidity?: () => { valid: boolean; type?: string }) {
+			const store = new FormStore<{ on: boolean }>({ mode: 'onChange', resolver });
+			let checked = false;
+			store.register({
+				element: document.createElement('div'),
+				name: 'on',
+				getValue: () => checked,
+				setValue: () => {},
+				getValidity,
+			});
+			checked = true;
+			return store;
+		}
+
+		it('runs the resolver once when the change lands while the input run is pending', async () => {
+			const resolver = vi.fn(async () => ({ values: {}, errors: {} }));
+			const store = toggle(resolver);
+
+			await Promise.all([store.handleFieldChange('on'), store.handleFieldChange('on')]);
+
+			expect(resolver).toHaveBeenCalledTimes(1);
+		});
+
+		it('runs the resolver once when the change lands after the input run settled', async () => {
+			const resolver = vi.fn(async () => ({ values: {}, errors: {} }));
+			const store = toggle(resolver);
+
+			await store.handleFieldChange('on');
+			await store.handleFieldChange('on');
+
+			expect(resolver).toHaveBeenCalledTimes(1);
+		});
+
+		it('runs the resolver once for an unchanged value while a rule error is shown', async () => {
+			const resolver = vi.fn(async () => ({ values: {}, errors: { on: { type: 'min', message: 'Too low' } } }));
+			const store = toggle(resolver);
+
+			await store.handleFieldChange('on');
+			await store.handleFieldChange('on');
+
+			expect(store.errors.on?.type).toBe('min');
+			expect(resolver).toHaveBeenCalledTimes(1);
+		});
+
+		it('validates an unchanged value once when its native validity flips', async () => {
+			const resolver = vi.fn(async () => ({ values: {}, errors: {} }));
+			let validity: { valid: boolean; type?: string } = { valid: true };
+			const store = toggle(resolver, () => validity);
+			await store.handleFieldChange('on');
+			resolver.mockClear();
+
+			validity = { valid: false, type: 'customError' };
+			await store.handleFieldChange('on');
+			await store.handleFieldChange('on');
+
+			expect(resolver).toHaveBeenCalledTimes(1);
+			expect(store.errors.on?.type).toBe('customError');
+		});
+
+		it('keeps the later validation result when the earlier one resolves last', async () => {
+			const releases: Array<() => void> = [];
+			const messages = ['first', 'second'];
+			const resolver = vi.fn(async () => {
+				const message = messages.shift() ?? 'extra';
+				await new Promise<void>((resolve) => releases.push(resolve));
+				return { values: {}, errors: { a: { type: 'custom', message } } };
+			});
+			const store = new FormStore<{ a: string }>({ resolver });
+
+			const first = store.validateField('a');
+			const second = store.validateField('a');
+			releases[1]?.();
+			await second;
+			releases[0]?.();
+			await first;
+
+			expect(store.errors.a?.message).toBe('second');
+		});
 	});
 });

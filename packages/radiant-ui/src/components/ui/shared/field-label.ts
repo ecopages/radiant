@@ -79,7 +79,13 @@ export function bindVisibleLabel(
 	control.removeAttribute('aria-label');
 }
 
-/** Applies the shared label-to-control ARIA contract for an unmanaged control. */
+/**
+ * Applies the shared label-to-control ARIA contract for an unmanaged control.
+ *
+ * @remarks The associated label can also be one of the host's own labels (`<label for="host-id">`
+ * directly before the host), so its id is left out of the extra host ids to name the control by
+ * each label once.
+ */
 export function syncFieldLabel(owner: LabelledHost, control: HTMLElement | null, options: FieldLabelSyncOptions): void {
 	if (!control || control.hasAttribute('data-rui-field-managed')) {
 		return;
@@ -88,7 +94,8 @@ export function syncFieldLabel(owner: LabelledHost, control: HTMLElement | null,
 	const hostIds = hostLabelIds(owner);
 	const labelElement = findAssociatedLabel(owner);
 	if (labelElement) {
-		bindVisibleLabel(labelElement, control, { ...options, extraLabelIds: hostIds });
+		const extraLabelIds = hostIds.filter((id) => id !== labelElement.id);
+		bindVisibleLabel(labelElement, control, { ...options, extraLabelIds });
 		return;
 	}
 

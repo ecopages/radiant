@@ -694,6 +694,20 @@ describe('labels outside a field', () => {
 		expect(part.getAttribute('aria-labelledby')).toContain('outside');
 	});
 
+	it('number field: a label that is both previous sibling and host label names the input once', async () => {
+		const container = await mount(
+			<form>
+				<label id="outside" for="host">
+					Age
+				</label>
+				<RuiNumberField id="host" name="n" value={3} />
+			</form>,
+		);
+		const input = query<HTMLElement>(container, '[data-number-field-input]');
+
+		expect(input.getAttribute('aria-labelledby')?.split(' ')).toEqual(['outside']);
+	});
+
 	it('number field: the outside label survives a value change', async () => {
 		const container = await mount(
 			<form>
