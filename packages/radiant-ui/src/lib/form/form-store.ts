@@ -19,6 +19,9 @@ import type {
 	ValidationMode,
 } from './types';
 
+/** What one validation of a path concluded; `overtaken` when a newer run for the path superseded it. */
+type FieldValidationRun = { valid: boolean; overtaken: boolean };
+
 export type FormStoreOptions<T extends FieldValues> = {
 	defaultValues?: Partial<T>;
 	values?: Partial<T>;
@@ -81,7 +84,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	private reportedNative: Record<string, NativeValidity> = {};
 	/** Paths whose validation has run since the last reset, whether it passed or failed. */
 	private readonly validatedPaths = new Set<string>();
-	private readonly validationRuns = new Map<string, { id: number; promise: Promise<boolean> }>();
+	private readonly validationRuns = new Map<string, { id: number; promise: Promise<FieldValidationRun> }>();
 	private lastValidationId = 0;
 	/** The native fact type, or `null` for none, that the last validation of each path read. */
 	private readonly validatedNative = new Map<string, string | null>();
@@ -162,14 +165,22 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	/**
 	 * Validate `paths`, or the whole tree when none are given.
 	 *
-	 * @remarks Resolves `passed` or `invalid`, never `overtaken`: the caller awaits the
-	 * run, and the outcome is read from the errors the store holds when it ends.
+	 * @remarks With `paths`, a run that a newer validation of the same path superseded
+	 * while its resolver was pending resolves `overtaken` instead of its stale verdict,
+	 * and the newer run resolves the real one. Without `paths` the whole tree is
+	 * validated in one run that nothing supersedes, so it resolves `passed` or `invalid`.
 	 */
 	async validate(paths?: string[]): Promise<FormStateValidateResult> {
 		let valid = true;
 		if (paths) {
+			let overtaken = false;
 			for (const path of paths) {
-				valid = (await this.validateField(path)) && valid;
+				const run = await this.validateFieldRun(path);
+				valid = run.valid && valid;
+				overtaken ||= run.overtaken;
+			}
+			if (overtaken) {
+				return { outcome: 'overtaken' };
 			}
 		} else {
 			valid = await this.validateAll();
@@ -462,6 +473,10 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 	 * instead of starting another.
 	 */
 	validateField(name: string): Promise<boolean> {
+		return this.validateFieldRun(name).then((run) => run.valid);
+	}
+
+	private validateFieldRun(name: string): Promise<FieldValidationRun> {
 		const id = ++this.lastValidationId;
 		const promise = this.runFieldValidation(name, id);
 		this.validationRuns.set(name, { id, promise });
@@ -474,7 +489,7 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		return promise;
 	}
 
-	private async runFieldValidation(name: string, id: number): Promise<boolean> {
+	private async runFieldValidation(name: string, id: number): Promise<FieldValidationRun> {
 		this.validatedPaths.add(name);
 		const values = this.getValues();
 		const result = await this.resolver(values, { fields: this.buildResolverFields() }, { names: [name] });
@@ -482,12 +497,12 @@ export class FormStore<T extends FieldValues = FieldValues> implements FormState
 		const nativeError = resolverError?.message ? undefined : this.readNativeError(name);
 		const error = nativeError ?? resolverError;
 		if (this.validationRuns.get(name)?.id !== id) {
-			return !error;
+			return { valid: !error, overtaken: true };
 		}
 		this.validatedNative.set(name, nativeError?.type ?? null);
 		this.setOwnErrors(withKey(this.ownErrors, name, error ? (nativeError ?? resolverError ?? {}) : undefined));
 		this.notify();
-		return !error;
+		return { valid: !error, overtaken: false };
 	}
 
 	async validateAll(): Promise<boolean> {

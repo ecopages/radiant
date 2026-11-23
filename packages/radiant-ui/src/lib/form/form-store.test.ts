@@ -2,7 +2,7 @@ import { describe, expect, expectTypeOf, it, vi } from 'vitest';
 import type { FormContextValue } from './form-context';
 import type { FormStateStore } from './form-state-store';
 import { FormStore } from './form-store';
-import type { Resolver } from './types';
+import type { FieldError, Resolver } from './types';
 
 describe('FormStore', () => {
 	it('validates required rules for registered fields', async () => {
@@ -331,6 +331,31 @@ describe('FormStore', () => {
 
 			store.setErrors('server', {});
 			expect(store.errors).toEqual({});
+		});
+
+		it('resolves overtaken for a validation a newer one for the same path superseded', async () => {
+			const releases: Array<(errors: Record<string, FieldError>) => void> = [];
+			const store = new FormStore<{ a: string }>({
+				resolver: () =>
+					new Promise((resolve) => {
+						releases.push((errors) => resolve({ values: {}, errors }));
+					}),
+			});
+			store.register({
+				element: document.createElement('div'),
+				name: 'a',
+				getValue: () => 'x',
+				setValue: () => {},
+			});
+
+			const first = store.validate(['a']);
+			const second = store.validate(['a']);
+			releases[1]?.({ a: { message: 'Taken' } });
+			expect(await second).toEqual({ outcome: 'invalid' });
+			releases[0]?.({});
+
+			expect(await first).toEqual({ outcome: 'overtaken' });
+			expect(store.getFieldError('a')).toBe('Taken');
 		});
 
 		it('lets a source message win over a rule message and clears sources on reset', async () => {

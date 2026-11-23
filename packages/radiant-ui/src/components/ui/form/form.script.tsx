@@ -200,12 +200,15 @@ export class RuiForm extends RadiantElement {
 	private ownBinding: BoundStore | undefined;
 	private unsubscribeDriver?: () => void;
 	/**
-	 * The submission the form is running on its own path, or `undefined` when idle.
-	 * The object is the submission's identity: it is replaced when the submission
-	 * ends and dropped when the driver it started on is replaced or disposed, which
-	 * is how the submission learns it was abandoned.
+	 * The stores with a submission in flight on the form's own path. Keyed by store, not
+	 * by element, so a store swapped away and back never runs two submissions at once.
 	 */
-	private submission: object | undefined;
+	private readonly submitting = new WeakSet<FormStateStore>();
+	/**
+	 * Counts driver switches. A submission that started under another count was
+	 * abandoned: its store was replaced, and its result is not the form's to report.
+	 */
+	private driverEpoch = 0;
 	private readonly registrations = new Set<RegistrationEntry>();
 	private readonly nativeFormId = uniqueId('rui-form');
 	private lastPublishedRevision = -1;
@@ -332,16 +335,18 @@ export class RuiForm extends RadiantElement {
 
 	/**
 	 * @remarks A validation that throws emits `rui-invalid` with the thrown value as
-	 * `detail.error`, so every submission ends in `rui-submit` or `rui-invalid`. A
-	 * rejection from `onSubmit` has no event of its own; it is reported with
-	 * `reportError` so it is not an unhandled rejection and `window` sees an `error`
-	 * event.
+	 * `detail.error`. A submission ends in `rui-submit` or `rui-invalid` unless the store
+	 * resolves `overtaken`, the store was replaced, or the form is no longer connected
+	 * when validation settles. A rejection from `onSubmit` has no event of its own; it is
+	 * reported with `reportError` so it is not an unhandled rejection and `window` sees an
+	 * `error` event.
 	 *
-	 * The form runs one submission at a time on the path it owns, the built-in store
-	 * or an injected store without a `submitHandler`. A submit while one is pending,
-	 * through validation and an awaited `onSubmit`, is ignored: it does not sync,
-	 * validate or emit. With a `submitHandler` the handler owns submission, so every
-	 * submit reaches it, including those the host counts as attempts while it is busy.
+	 * The form runs one submission at a time per store on the path it owns, the built-in
+	 * store or an injected store without a `submitHandler`. A submit while one is
+	 * pending, through validation and an awaited `onSubmit`, is ignored: it does not
+	 * sync, validate or emit. With a `submitHandler` the handler owns submission, so
+	 * every submit reaches it, including those the host counts as attempts while it is
+	 * busy.
 	 */
 	private runFormSubmit(): void {
 		const driver = this.ensureDriver();
@@ -355,26 +360,30 @@ export class RuiForm extends RadiantElement {
 				.catch((error: unknown) => reportError(error));
 			return;
 		}
-		if (this.submission) {
+		const store = this.resolveStateStore();
+		if (!store || this.submitting.has(store)) {
 			return;
 		}
-		this.submitOwnPath(driver).catch((error: unknown) => reportError(error));
+		this.submitOwnPath(driver, store).catch((error: unknown) => reportError(error));
 	}
 
 	/**
-	 * @remarks A submission whose driver was replaced by `connect` or its disposer, or
-	 * disposed on disconnect, before validation settled ends without `rui-submit`,
-	 * `rui-invalid` or `onSubmit`: its result describes a store the form no longer
-	 * shows. One that already reached `onSubmit` is not interrupted.
+	 * @remarks A submission whose store was replaced by `connect` or its disposer, or
+	 * whose form is not connected when validation settles, ends without `rui-submit`,
+	 * `rui-invalid` or `onSubmit`, as a native form that left the document does not
+	 * submit. A form that is removed and inserted again in the same task is connected
+	 * when validation settles, so its submission completes. One that already reached
+	 * `onSubmit` is not interrupted.
 	 */
-	private async submitOwnPath(driver: FormDriver): Promise<void> {
-		const submission = {};
-		this.submission = submission;
+	private async submitOwnPath(driver: FormDriver, store: FormStateStore): Promise<void> {
+		this.submitting.add(store);
+		const epoch = this.driverEpoch;
+		const abandoned = () => this.driverEpoch !== epoch || !this.isConnected;
 		try {
 			driver.sync();
 			await driver.handleSubmit(
 				async (values) => {
-					if (this.submission !== submission) {
+					if (abandoned()) {
 						return;
 					}
 					this.submitEvent.emit({ values });
@@ -385,16 +394,14 @@ export class RuiForm extends RadiantElement {
 					this.submitNatively();
 				},
 				(errors, error) => {
-					if (this.submission !== submission) {
+					if (abandoned()) {
 						return;
 					}
 					this.invalidEvent.emit(error === undefined ? { errors } : { errors, error });
 				},
 			);
 		} finally {
-			if (this.submission === submission) {
-				this.submission = undefined;
-			}
+			this.submitting.delete(store);
 		}
 	}
 
@@ -403,7 +410,6 @@ export class RuiForm extends RadiantElement {
 		this.unsubscribeDriver = undefined;
 		if (this.driver instanceof InjectedFormDriver) {
 			this.driver.dispose();
-			this.submission = undefined;
 		}
 		super.disconnectedCallback();
 	}
@@ -463,7 +469,7 @@ export class RuiForm extends RadiantElement {
 		const switching = this.driver !== undefined;
 		this.unsubscribeDriver?.();
 		this.unsubscribeDriver = undefined;
-		this.submission = undefined;
+		this.driverEpoch += 1;
 		if (this.driver instanceof InjectedFormDriver) {
 			this.driver.dispose();
 		}

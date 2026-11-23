@@ -43,6 +43,9 @@ export type NativeValidity = {
  * `overtaken` means a newer write superseded the check before it concluded, so it says
  * nothing about the values: the form ends the submission without an event and the user
  * submits again.
+ *
+ * The outcome is an object so a store's validate and submit read the same way: switch on
+ * `.outcome`.
  */
 export type FormStateValidateResult = { outcome: 'passed' } | { outcome: 'invalid' } | { outcome: 'overtaken' };
 
@@ -134,7 +137,7 @@ export interface FormStateStore<TIssue extends FieldError = FieldError> {
 	 * holds any error, whether or not it shows it. Warnings do not count.
 	 *
 	 * @remarks The form calls it on submit when no `submitHandler` is set, after `sync()`
-	 * reported every control's fact. A boolean is not an outcome: resolve the object.
+	 * reported every control's fact.
 	 */
 	validate(): Promise<FormStateValidateResult>;
 }

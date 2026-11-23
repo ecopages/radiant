@@ -196,18 +196,19 @@ describe('submission settling', () => {
 
 		/**
 		 * A store whose `validate` waits for the test, and counts how often it ran. Its snapshot holds
-		 * `errors`, which the form reports when `validate` resolves `false`.
+		 * `errors`, which the form reports when `validate` resolves `{ outcome: 'invalid' }`.
 		 */
 		function createSlowStore(
 			pending: Array<ReturnType<typeof deferred<FormStateValidateResult>>>,
 			errors: Record<string, FieldError> = {},
+			values: Record<string, unknown> = { title: 'host' },
 		) {
 			const validate = vi.fn(() => {
 				const next = deferred<FormStateValidateResult>();
 				pending.push(next);
 				return next.promise;
 			});
-			const snapshot: FormStateStoreSnapshot = { values: { title: 'host' }, errors, warnings: {} };
+			const snapshot: FormStateStoreSnapshot = { values, errors, warnings: {} };
 			const store: FormStateStore = {
 				...createThrowingStore(new Error('unused')),
 				getSnapshot: () => snapshot,
@@ -437,7 +438,7 @@ describe('submission settling', () => {
 		it('accepts a submit on the new store while the replaced one is still validating', async () => {
 			const pending: Array<ReturnType<typeof deferred<FormStateValidateResult>>> = [];
 			const { store } = createSlowStore(pending);
-			const other = createSlowStore(pending);
+			const other = createSlowStore(pending, {}, { title: 'other' });
 			const { form, nativeForm } = await mount({ store });
 			const { onSubmit } = listen(form);
 
@@ -453,7 +454,78 @@ describe('submission settling', () => {
 
 			expect(other.validate).toHaveBeenCalledTimes(1);
 			expect(onSubmit).toHaveBeenCalledTimes(1);
-			expect(onSubmit.mock.calls[0]?.[0].detail).toEqual({ values: { title: 'host' } });
+			expect(onSubmit.mock.calls[0]?.[0].detail).toEqual({ values: { title: 'other' } });
+		});
+
+		it('runs one submission per store when the own store is swapped away and back', async () => {
+			const gate = deferred<boolean>();
+			const validator = vi.fn(() => gate.promise);
+			const { form, nativeForm } = await mount({ rules: { validate: validator } });
+			const { onSubmit } = listen(form);
+
+			nativeForm.requestSubmit();
+			await settle();
+			const disconnect = form.connect(createSlowStore([]).store);
+			await settle();
+			disconnect();
+			await settle();
+			nativeForm.requestSubmit();
+			await settle();
+			gate.resolve(true);
+			await settle();
+
+			expect(validator).toHaveBeenCalledTimes(1);
+			expect(onSubmit).not.toHaveBeenCalled();
+
+			nativeForm.requestSubmit();
+			await settle();
+			expect(validator).toHaveBeenCalledTimes(2);
+			expect(onSubmit).toHaveBeenCalledTimes(1);
+		});
+
+		describe.each(['own', 'injected'] as const)('a form that leaves the document while validating (%s store)', (kind) => {
+			async function startPending() {
+				const pending: Array<ReturnType<typeof deferred<FormStateValidateResult>>> = [];
+				const gate = deferred<boolean>();
+				const mounted =
+					kind === 'injected'
+						? await mount({ store: createSlowStore(pending).store })
+						: await mount({ rules: { validate: () => gate.promise } });
+				const events = listen(mounted.form);
+				const onSubmitProp = vi.fn();
+				mounted.form.onSubmit = onSubmitProp;
+				mounted.nativeForm.requestSubmit();
+				await settle();
+				const settleValidation = () => {
+					pending[0]?.resolve({ outcome: 'passed' });
+					gate.resolve(true);
+				};
+				return { ...mounted, ...events, onSubmitProp, settleValidation };
+			}
+
+			it('ends without events or onSubmit when it is removed', async () => {
+				const { form, onSubmit, onInvalid, onSubmitProp, settleValidation } = await startPending();
+
+				form.remove();
+				settleValidation();
+				await settle();
+
+				expect(onSubmit).not.toHaveBeenCalled();
+				expect(onInvalid).not.toHaveBeenCalled();
+				expect(onSubmitProp).not.toHaveBeenCalled();
+			});
+
+			it('completes when it is removed and inserted again in the same task', async () => {
+				const { form, onSubmit, onSubmitProp, settleValidation } = await startPending();
+
+				form.remove();
+				document.body.append(form);
+				settleValidation();
+				await settle();
+
+				expect(onSubmit).toHaveBeenCalledTimes(1);
+				expect(onSubmitProp).toHaveBeenCalledTimes(1);
+			});
 		});
 
 		it('hands every submit to a submitHandler, which owns submission', async () => {

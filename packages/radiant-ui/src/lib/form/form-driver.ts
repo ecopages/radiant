@@ -22,8 +22,8 @@ export interface FormDriver {
 	 *
 	 * @remarks A validation that throws calls `onInvalid` with the current errors and
 	 * the thrown value as `error`, and resolves. A rejection from `onValid` rejects.
-	 * A driver whose store reports invalid while holding no error ends without calling
-	 * either, since there is no error to report.
+	 * An `overtaken` outcome ends without calling either; `invalid` always calls
+	 * `onInvalid` with the store's errors.
 	 */
 	handleSubmit(
 		onValid: (values: FieldValues) => void | Promise<void>,
