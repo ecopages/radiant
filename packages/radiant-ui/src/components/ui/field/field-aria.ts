@@ -1,8 +1,10 @@
 import type { BindToTarget } from '@ecopages/radiant';
+import { RUI_FIELD_MANAGED_ATTR } from '@/lib/form/control-protocol';
 import type { FieldContextValue } from './field-context';
 
 /** The ARIA attributes a field publishes for a custom control's target. */
 export type FieldAria = {
+	[RUI_FIELD_MANAGED_ATTR]?: '';
 	id?: string;
 	'aria-labelledby'?: string;
 	'aria-describedby'?: string;
@@ -20,12 +22,16 @@ export type FieldAria = {
  * field has no value for is absent from the map.
  *
  * @remarks Returns an empty map until the field has published its first state.
+ *
+ * The map also carries `data-rui-field-managed`, which marks the target as painted by the field so a Radiant UI
+ * control nested in the host never relabels it (see the Field docs).
  */
 export function fieldAria(field: FieldContextValue | undefined): FieldAria {
 	if (!field?.controlId) {
 		return {};
 	}
 	return {
+		[RUI_FIELD_MANAGED_ATTR]: '',
 		id: field.controlId,
 		...(field.labelId ? { 'aria-labelledby': field.labelId } : {}),
 		...(field.describedBy ? { 'aria-describedby': field.describedBy } : {}),
@@ -40,9 +46,12 @@ export function fieldAria(field: FieldContextValue | undefined): FieldAria {
  *
  * For a host that keeps authored DOM (no `render()`): decorate the `@state` field that holds the
  * `fieldContext` value with `@bindTo(fieldAriaBindings('input'))`. An attribute without a value is removed.
+ *
+ * @remarks Binds `data-rui-field-managed` too, like {@link fieldAria}.
  */
 export function fieldAriaBindings(selector: string): BindToTarget<FieldContextValue | undefined>[] {
 	const attributes = [
+		RUI_FIELD_MANAGED_ATTR,
 		'id',
 		'aria-labelledby',
 		'aria-describedby',

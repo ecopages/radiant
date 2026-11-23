@@ -1,3 +1,4 @@
+import { RUI_FIELD_MANAGED_ATTR } from '@/lib/form/control-protocol';
 import { uniqueId } from '@/lib/unique-id';
 
 export type FieldLabelSyncOptions = {
@@ -80,14 +81,27 @@ export function bindVisibleLabel(
 }
 
 /**
- * Applies the shared label-to-control ARIA contract for an unmanaged control.
+ * Applies the shared label-to-control ARIA contract: binds the visible or host label to an unmanaged control, and on
+ * a field-managed control only drops its own `aria-label` fallback once the target has `aria-labelledby`.
  *
- * @remarks The associated label can also be one of the host's own labels (`<label for="host-id">`
+ * @remarks A control marked field-managed is not relabelled: whoever painted its ARIA (the field, or a registered
+ * host through `fieldAria` / `fieldAriaBindings`) owns its labelling. The lookup below searches beside `owner`, so
+ * for a control nested in a host it cannot find the field's label and would strip the painted `aria-labelledby`.
+ * Dropping the `aria-label` (a `label` prop fallback) matches the field's own paint, so no stale name stays beside
+ * the painted one.
+ *
+ * The associated label can also be one of the host's own labels (`<label for="host-id">`
  * directly before the host), so its id is left out of the extra host ids to name the control by
  * each label once.
  */
 export function syncFieldLabel(owner: LabelledHost, control: HTMLElement | null, options: FieldLabelSyncOptions): void {
-	if (!control || control.hasAttribute('data-rui-field-managed')) {
+	if (!control) {
+		return;
+	}
+	if (control.hasAttribute(RUI_FIELD_MANAGED_ATTR)) {
+		if (control.hasAttribute('aria-labelledby')) {
+			control.removeAttribute('aria-label');
+		}
 		return;
 	}
 
