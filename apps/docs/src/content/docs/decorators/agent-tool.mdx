@@ -1,0 +1,88 @@
+---
+title: "@agentTool"
+description: "Offer a method to a browser agent as a WebMCP tool while its host is connected."
+order: 16
+---
+
+import { RuiAlert, RuiAlertDescription, RuiAlertTitle } from '@ecopages/radiant-ui/alert';
+
+# @agentTool
+
+<RuiAlert variant="warning" layout="banner" class="unstyled">
+  <RuiAlertTitle>Experimental</RuiAlertTitle>
+  <RuiAlertDescription>
+    <p>
+      <a href="https://developer.chrome.com/docs/ai/webmcp">WebMCP</a> is an origin trial and may change, and
+      so may this API.
+    </p>
+  </RuiAlertDescription>
+</RuiAlert>
+
+`@agentTool(config)` turns a method into a WebMCP tool. Browsers that implement WebMCP let a page register tools an agent calls directly, through `document.modelContext`, so the agent does not have to find and click the DOM. The tool is registered while the host is connected and enabled and removed when it disconnects. Where the browser has no `document.modelContext`, and on the server, nothing happens.
+
+The method stays an ordinary method. The UI calls it with typed arguments and the agent calls the same method, so the two cannot drift apart.
+
+## Usage
+
+The decorator is imported from its own subpath, not the root entry, so a page that does not use it pays nothing.
+
+```ts
+import { RadiantElement, customElement } from '@ecopages/radiant';
+import { agentTool } from '@ecopages/radiant/decorators/agent-tool';
+
+@customElement('rad-cart')
+class RadCart extends RadiantElement {
+	items: { sku: string }[] = [];
+
+	@agentTool({
+		name: (host: RadCart) => `add-item-${host.id}`,
+		description: 'Adds a product to the cart',
+		annotations: { consequentialHint: false },
+		inputSchema: { type: 'object', properties: { sku: { type: 'string' } }, required: ['sku'] },
+		parse: (input) => parseAddItem(input),
+	})
+	addItem(item: { sku: string }) {
+		this.items = [...this.items, item];
+		return { count: this.items.length };
+	}
+}
+```
+
+## Three layers
+
+| Use this                        | When you want                                                                                                                             |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `@agentTool(config)`            | A method that is both a normal method the UI calls and a tool the agent calls. The method is `execute`; the decorator leaves it callable. |
+| `createAgentTool(host, config)` | The same lifecycle for a tool that is not one method, such as a controller or a field. Returns a function that stops managing the tool.   |
+| `registerAgentTool(config)`     | A tool outside any host, such as a store or a page script. Returns its unregister function.                                               |
+
+The helpers come from `@ecopages/radiant/helpers/create-agent-tool` and `@ecopages/radiant/helpers/register-agent-tool`.
+
+## Config
+
+The config is the WebMCP tool dictionary passed through (`name`, `description`, `title`, `inputSchema`, `outputSchema`, `annotations`, `exposedTo`), so fields the spec adds need no Radiant release, plus:
+
+- `parse(input: unknown)` validates the agent's input before the method runs and throws to reject the call. Pass a schema library's `schema.parse`. Under standard decorators it also types the method's argument. Without it the input arrives unchecked. `inputSchema` is plain JSON Schema and is advisory, and Radiant ships no schema library.
+- `getEnabled(host)` registers the tool only while it returns `true`.
+- `name` may be a function of the host. Both it and `getEnabled` are read after the host's attributes have caught up and again when a signal they read changes, which registers the tool again. Annotate the host parameter (`(host: RadCart) => ...`), because the decorator's config is written before TypeScript knows the class.
+
+## Rules
+
+- Tool names are unique per page. A second registration under the same name rejects, and Radiant reports it with `console.error` naming the tool and the element. Give each instance its own name, or register a shared capability once from whoever owns the state.
+- Every connect registers with a new `AbortController`, because a tool is removed only by aborting its signal. A decorated method receives `{ signal }` as a second argument.
+- Return from a method only once the UI shows the change.
+- A server-rendered element whose children come from its parent's view registers only after it hydrates.
+
+## Security
+
+A tool runs page code on behalf of an agent, with the page's cookies and DOM, and what it returns can leave the device. Decide these per tool:
+
+- **Return the least.** Never return tokens, secrets or the contents of password, card or one-time-code fields. A read-only tool can still leak.
+- **Ask for the least.** A schema that asks for age, location or history lets an agent pull personal context out of the person.
+- **Say what it changes.** Set `readOnlyHint` for a tool that changes nothing, `consequentialHint` for a high-stakes or irreversible one, and `untrustedContentHint` when the output carries text another user or site wrote.
+- **Validate in code, authorize on the server.** `inputSchema` is advisory and the agent can skip the checks the UI does.
+- **Keep `exposedTo` closed.** A tool is visible only to the page's own origin unless `exposedTo` lists secure origins.
+
+In development, a tool with a missing annotation, text over the sizes Chrome recommends, an `exposedTo` list, or output over 1,500 characters logs a warning once. Nothing the agent sends or the tool returns is ever logged by Radiant.
+
+See the [Agent tools recipe](https://radiant-ui.ecopages.app/docs/recipes/agent-tools) for a cart that the form and the agent both add to, with validation through Zod.
