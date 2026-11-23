@@ -14,6 +14,7 @@ export type DocsNavItem = {
 	href: string;
 	section: string;
 	slug: string;
+	status?: 'experimental';
 };
 
 export type DocsNavSection = {
@@ -66,6 +67,7 @@ for (const entry of [...entries].sort(compareDocsEntries)) {
 		href: `${DOCS_ROOT}/${sectionId}/${pageSlug}`,
 		section: sectionId,
 		slug: pageSlug,
+		status: entry.status,
 	});
 	itemsBySection.set(sectionId, items);
 }

@@ -20,6 +20,7 @@ import '@ecopages/radiant-ui/toc';
 import { RuiToc } from '@ecopages/radiant-ui/toc';
 import { docsNav } from '@/lib/content-nav';
 import { CodeTabs } from '@/components/code-tabs';
+import { ExperimentalBadge } from '@/components/experimental-badge';
 import { Logo } from '@/components/logo/logo';
 import { ThemeToggle } from '@/components/theme-toggle/theme-toggle';
 import { BaseLayout } from '@/layouts/base-layout';
@@ -51,7 +52,14 @@ const DocsNavigation = () => (
 						{section.items.map((item) => (
 							<RuiSidebarMenuItem>
 								<RuiSidebarMenuButton as="a" href={item.href}>
-									{item.title}
+									{item.status ? (
+										<span class="docs-nav-label">
+											{item.title}
+											<ExperimentalBadge />
+										</span>
+									) : (
+										item.title
+									)}
 								</RuiSidebarMenuButton>
 							</RuiSidebarMenuItem>
 						))}

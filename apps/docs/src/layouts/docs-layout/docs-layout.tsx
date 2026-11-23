@@ -1,6 +1,7 @@
 import { eco, type LayoutProps } from '@ecopages/core';
 import type { JsxRenderable } from '@ecopages/jsx';
 import { RuiButton } from '@ecopages/radiant-ui/button';
+import { ExperimentalBadge } from '@/components/experimental-badge';
 import { RuiChip } from '@ecopages/radiant-ui/chip';
 import '@ecopages/radiant-ui/sidebar';
 import {
@@ -52,7 +53,14 @@ const DocsNavigation = () => (
 						{section.items.map((item) => (
 							<RuiSidebarMenuItem>
 								<RuiSidebarMenuButton as="a" href={item.href}>
-									{item.title}
+									{item.status ? (
+										<span class="docs-nav-label">
+											{item.title}
+											<ExperimentalBadge />
+										</span>
+									) : (
+										item.title
+									)}
 								</RuiSidebarMenuButton>
 							</RuiSidebarMenuItem>
 						))}
