@@ -4,7 +4,11 @@ import { syncExamples } from '../src/components/primitive-example/mount-example'
 import { mountForm, trackListeners, type Form } from './mount-recipe';
 import { until } from './until';
 
-const standIn = installStandIn()!;
+/**
+ * The stand-in is undefined where the browser has its own `document.modelContext`, which these tests cannot
+ * inspect, so the suite is skipped there and `standIn` is read only inside it.
+ */
+const installed = installStandIn();
 
 afterEach(() => {
 	document.body.innerHTML = '';
@@ -12,7 +16,9 @@ afterEach(() => {
 });
 
 describe('recipes', () => {
-	describe.each<Form>(['plain', 'radiant'])('agent tools, %s form', (form) => {
+	describe.skipIf(!installed).each<Form>(['plain', 'radiant'])('agent tools, %s form', (form) => {
+		const standIn = installed!;
+
 		test('registers the tool while the example is on the page and removes it with it', async () => {
 			const root = await mountForm('agent-tools', form);
 			await until(() => expect([...standIn.tools.keys()]).toEqual(['add_to_cart']));

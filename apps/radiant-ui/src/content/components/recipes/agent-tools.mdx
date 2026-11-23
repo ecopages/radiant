@@ -31,7 +31,8 @@ A page that lets an agent do what a person does: add a product to the cart, clos
 ## Primitives
 
 - [`@agentTool`](https://github.com/ecopages/radiant/blob/main/packages/radiant/README.md#agent-tools-experimental) turns a method into a tool. The method stays an ordinary method, so the form submit calls `addItem` with a typed argument and the agent calls the same method. The schema guards only the agent's path, since the form passes a typed value straight in, so the field carries `required`.
-- `registerAgentTool` registers a tool without a host and returns the function that removes it. The plain form uses it, and the decorator is built from it through `createAgentTool(host, config)`, which ties a tool to an element's connect and disconnect.
+- [`registerAgentTool`](https://github.com/ecopages/radiant/blob/main/packages/radiant/README.md#agent-tools-experimental), from `@ecopages/radiant/helpers/register-agent-tool`, registers a tool without a host and returns the function that removes it. The plain form uses it.
+- [`createAgentTool(host, config)`](https://github.com/ecopages/radiant/blob/main/packages/radiant/README.md#agent-tools-experimental), from `@ecopages/radiant/helpers/create-agent-tool`, ties a tool to an element's connect and disconnect. The decorator is built from it.
 - A schema library describes the input once. This recipe uses [Zod](https://zod.dev): `z.toJSONSchema(schema)` gives the `inputSchema` the browser shows the agent, and `schema.parse` goes in `parse`, which checks what the agent sent before the method runs. Radiant takes plain JSON Schema and a `parse` function, so Valibot, ArkType or hand-written code work the same way.
 
 Left to the recipe: the schema, what the method does, and what it returns. The tool name is unique on the page, so a component that can appear twice builds the name from an instance value such as its `id`. Type the host parameter, because the decorator is written before TypeScript knows the class:
@@ -106,5 +107,5 @@ A tool runs page code for an agent, and what it returns can leave the device. Ra
 - **Return the least.** `{ count }` is all the agent needs. Never return tokens, secrets or the contents of password, card or one-time-code fields, and set `untrustedContentHint: true` on output that carries text a user or another site wrote, because an agent may treat tool output as trusted.
 - **Ask for the least.** The schema asks for a SKU and nothing about the person.
 - **Confirm in your own UI.** The current WebMCP spec has no confirmation API. A consequential tool awaits the app's own dialog inside `execute` and closes it when the `signal` aborts.
-- **Authorize on the server.** The agent can skip the checks the UI does, so a real cart checks permission on the server and binds a consequential call to an id or version.
+- **Authorize on the server.** The agent can skip the checks the UI does, so a real cart checks permission on the server and binds a consequential call to an id or version, such as a cart revision that the server rejects when it is out of date.
 - **Keep it on this origin.** Tools are visible only to the page's own origin. `exposedTo` lets other origins call them with arguments you cannot trust, and logs a warning in development.
