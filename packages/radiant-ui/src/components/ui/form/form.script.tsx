@@ -97,7 +97,7 @@ function setOptionalAttribute(element: Element, name: string, value: string | un
 }
 
 /**
- * `<rui-form>` — form coordinator with RHF-like validation and field registration.
+ * `<rui-form>` — form coordinator: it registers `rui-field` controls with a form store, validates on submit and per `mode`, and emits `rui-submit` or `rui-invalid`.
  *
  * The custom element is a behavior host: it does not render field markup. It owns
  * the {@link FormStore} unless a {@link FormStateStore} is injected, publishes field presentation via {@link formContext}, and

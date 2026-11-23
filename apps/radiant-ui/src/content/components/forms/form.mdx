@@ -295,6 +295,8 @@ Nested hosts: `rui-field` and each field's control host.
 | `rui-submit`  | `{ values: T }`                                                     | Emitted when validation passes.                                                                                                               |
 | `rui-invalid` | `{ errors: Partial<Record<string, FieldError>>; error?: unknown }` | Emitted when validation fails on submit. `error` is set when a validator threw instead of reporting errors: the submission counts as invalid. |
 
+These are the form's own events. The controls inside it dispatch the platform's `input` and `change`; `rui-change` remains only for non-form components (tabs, tree, menus, table, calendar, cycle-toggle).
+
 ### View helpers
 
 | Component | Target stamped                         | Notes                                                                |

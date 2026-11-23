@@ -43,6 +43,8 @@ Use the form's own store (`FormStore`) when rules on `RuiField` are enough. Writ
 
 Paths are the dotted `name` of each `RuiField`, so `profile.name` is `values.profile.name` and `rows.0.title` is `values.rows[0].title`.
 
+Form controls dispatch the platform's `input` and `change` events, which is how the form learns a value changed and calls `setValue`; `rui-change` remains only for non-form components (tabs, tree, menus, table, calendar, cycle-toggle).
+
 ## A minimal store
 
 This is the store the examples use. It keeps nested values by path, holds the native facts, shows an error only for a path the user changed or left (or after a validate), and shows warnings always.
