@@ -178,8 +178,8 @@ Sources: native `input`, `textarea` and `select` controls (`required`, `type="em
 | `tooShort` | `{ minLength }` | `minlength` (only after the user edits the value) |
 | `tooLong` | `{ maxLength }` | `maxlength` |
 | `rangeUnderflow` | `{ min }` | `min` (a number for `type="number"` and `"range"`) |
-| `rangeOverflow` | `{ max }` | `max` |
-| `stepMismatch` | `{ step }` | `step` |
+| `rangeOverflow` | `{ max }` | `max` (a number likewise) |
+| `stepMismatch` | `{ step }` | `step` (a number likewise; the attribute text on other types) |
 | `badInput`, `customError` | none | the browser, or `setValidity` |
 
 With the built-in store a native problem is an input to its validation, with the timing of its own rules: it blocks submit and shows with `aria-invalid` and `rui-invalid` like any other error, and a rule or resolver message replaces its text but still blocks. A `resolver` cannot disable it; remove the attribute instead. With an injected store, the store decides when it shows, with the same timing as its own rules; see [Inject a form state store](#inject-a-form-state-store).

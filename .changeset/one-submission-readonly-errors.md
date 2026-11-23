@@ -13,3 +13,4 @@
 
 - Without a `submitHandler` (the built-in store, or an injected store without one), the form runs one submission at a time per store. A submit while one is validating or awaiting `onSubmit` is ignored, so a double click no longer validates twice or emits `rui-submit` twice. With a `submitHandler`, every submit still calls the handler, which owns its own busy state.
 - A submission ends without `rui-submit`, `rui-invalid` or `onSubmit` when the store resolves `overtaken`, when its store was replaced by `connect` or its disposer before validation settled (it no longer submits the replaced store's values), and when the form is no longer connected when validation settles. A form removed and inserted again in the same task keeps its submission.
+- A native `stepMismatch` fact carries `params.step` as a number on number and range inputs, like `min` and `max`, instead of the attribute text. Other input types keep the text.

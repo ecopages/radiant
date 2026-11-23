@@ -246,9 +246,23 @@ describe('field control protocol in the browser', () => {
 			input.value = '30';
 			expect(readControlValidity(input)).toMatchObject({ type: 'rangeOverflow', params: { max: 10 } });
 
+			input.min = '0';
+			input.max = '100';
+			input.step = '2';
+			input.value = '3';
+			expect(readControlValidity(input)).toMatchObject({ type: 'stepMismatch', params: { step: 2 } });
+
+			input.type = 'date';
+			input.min = '1970-01-01';
+			input.max = '2100-01-01';
+			input.step = '2';
+			input.value = '1970-01-02';
+			expect(readControlValidity(input)).toMatchObject({ type: 'stepMismatch', params: { step: '2' } });
+
 			input.type = 'text';
 			input.removeAttribute('min');
 			input.removeAttribute('max');
+			input.removeAttribute('step');
 			input.pattern = '[a-z]+';
 			input.value = '123';
 			expect(readControlValidity(input)).toMatchObject({
