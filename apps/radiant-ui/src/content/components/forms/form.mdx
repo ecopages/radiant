@@ -209,7 +209,7 @@ The store implements `FormStateStore`. Paths are the dotted `name` of each `RuiF
 | --- | --- |
 | Value change | `setValue(path, value)`, then `reportNative({ [path]: fact })` straight away. |
 | Blur | Writes and reports the control first if the user changed it since the last synchronisation, then `blur(path)`. |
-| Submit | Calls `sync()`, then either calls `submitHandler` or awaits `validate()` and emits `rui-submit` with the snapshot `values` or `rui-invalid` with the snapshot `errors`. |
+| Submit | Calls `sync()`, then either calls `submitHandler` or awaits `validate()` and emits `rui-submit` with the snapshot `values` or `rui-invalid` with the snapshot `errors`. A `validate()` that resolves `false` while the snapshot holds no error, such as a check a newer write overtook, ends the submission with neither event. |
 | Native `reset` | Calls `resetHandler` when it is set, otherwise `reset()`, then rewrites every control from the store, again after the browser's own reset, and reports every control's fact again. |
 | Store notification | Writes a path's value into its control when that value changed since the form last saw it, and reports the control's fact after the notification. |
 | Seed, rename, connect | A control is seeded from the store when it registers or connects (`rui-control-connect`), and a rename (a row that moved) rebinds the control to its new path and seeds it from the store there; it never writes a value. Each reports the control's fact after the change, and a rename withdraws the old path. |

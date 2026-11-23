@@ -4,6 +4,7 @@ import { RuiField as RuiFieldElement } from '../field/field.script';
 import type { FormContextValue } from '@/lib/form/form-context';
 import type { FormStore } from '@/lib/form/form-store';
 import type { FormStateStoreSnapshot, FormStateStore } from '@/lib/form/form-state-store';
+import type { FieldError } from '@/lib/form/types';
 
 void RuiFormElement;
 void RuiFieldElement;
@@ -193,14 +194,20 @@ describe('submission settling', () => {
 			return { promise, resolve, reject };
 		}
 
-		/** A store whose `validate` waits for the test, and counts how often it ran. */
-		function createSlowStore(pending: Array<ReturnType<typeof deferred<boolean>>>) {
+		/**
+		 * A store whose `validate` waits for the test, and counts how often it ran. Its snapshot holds
+		 * `errors`, which the form reports when `validate` resolves `false`.
+		 */
+		function createSlowStore(
+			pending: Array<ReturnType<typeof deferred<boolean>>>,
+			errors: Record<string, FieldError> = {},
+		) {
 			const validate = vi.fn(() => {
 				const next = deferred<boolean>();
 				pending.push(next);
 				return next.promise;
 			});
-			const snapshot: FormStateStoreSnapshot = { values: { title: 'host' }, errors: {}, warnings: {} };
+			const snapshot: FormStateStoreSnapshot = { values: { title: 'host' }, errors, warnings: {} };
 			const store: FormStateStore = {
 				...createThrowingStore(new Error('unused')),
 				getSnapshot: () => snapshot,
@@ -274,7 +281,7 @@ describe('submission settling', () => {
 
 		it('accepts a new submit once the first settles', async () => {
 			const pending: Array<ReturnType<typeof deferred<boolean>>> = [];
-			const { store, validate } = createSlowStore(pending);
+			const { store, validate } = createSlowStore(pending, { title: { type: 'required' } });
 			const { form, nativeForm } = await mount({ store });
 			const { onSubmit, onInvalid } = listen(form);
 
@@ -305,6 +312,31 @@ describe('submission settling', () => {
 
 			expect(onSubmit).toHaveBeenCalledTimes(2);
 			expect(watch.errors).toHaveBeenCalledTimes(2);
+		});
+
+		it('ends without an event when the store resolves false and holds no error', async () => {
+			const pending: Array<ReturnType<typeof deferred<boolean>>> = [];
+			const { store, validate } = createSlowStore(pending);
+			const { form, nativeForm } = await mount({ store });
+			const { onSubmit, onInvalid } = listen(form);
+			const onSubmitProp = vi.fn();
+			form.onSubmit = onSubmitProp;
+
+			nativeForm.requestSubmit();
+			await settle();
+			pending[0]?.resolve(false);
+			await settle();
+
+			expect(onSubmit).not.toHaveBeenCalled();
+			expect(onInvalid).not.toHaveBeenCalled();
+			expect(onSubmitProp).not.toHaveBeenCalled();
+
+			nativeForm.requestSubmit();
+			await settle();
+			pending[1]?.resolve(true);
+			await settle();
+			expect(validate).toHaveBeenCalledTimes(2);
+			expect(onSubmit).toHaveBeenCalledTimes(1);
 		});
 
 		it('accepts a new submit after validation throws', async () => {

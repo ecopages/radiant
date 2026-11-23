@@ -422,7 +422,13 @@ export class InjectedFormDriver implements FormDriver {
 		this.bump();
 	}
 
-	/** Validate through the store; the form calls {@link InjectedFormDriver.sync} first. */
+	/**
+	 * Validate through the store; the form calls {@link InjectedFormDriver.sync} first.
+	 *
+	 * @remarks A store may resolve `false` while its snapshot holds no error, such as a
+	 * check that a newer write overtook. That is no verdict on the values, so it ends
+	 * the submission without `onValid` or `onInvalid`, and the user submits again.
+	 */
 	async handleSubmit(
 		onValid: (values: FieldValues) => void | Promise<void>,
 		onInvalid?: (errors: Partial<Record<string, FieldError>>, error?: unknown) => void,
@@ -441,7 +447,9 @@ export class InjectedFormDriver implements FormDriver {
 			await onValid(snapshot.values);
 			return;
 		}
-		onInvalid?.(snapshot.errors);
+		if (Object.keys(snapshot.errors).length > 0) {
+			onInvalid?.(snapshot.errors);
+		}
 	}
 
 	/**
