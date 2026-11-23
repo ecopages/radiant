@@ -30,6 +30,10 @@ Example, "a calendar with draggable events and a filter":
 - Event details in a popup: `createPopoverController` (`controller`).
 - Re-render when events are added: `createMutationController` (`controller`).
 
+## Agent tools
+
+Exposing an action to a browser agent through WebMCP is not a controller. `createAgentTool(host, config)` and `@agentTool` live in `@ecopages/radiant` (see its README, "Agent tools (experimental)"). They take a host the way the controllers do, and a tool exists while the host is connected. `registerAgentTool(config)` registers a tool without a host. The Agent tools recipe in the docs app composes them with a schema library. The API is experimental.
+
 ## Controllers
 
 Each class has a `createX(host, config)` factory that attaches on connect and destroys on disconnect. `host` is a `RadiantElement` or anything with `registerConnectedCallback` and `registerCleanupCallback`. Without a host, construct the class and call `attach()` and `destroy()`.

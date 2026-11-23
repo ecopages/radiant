@@ -1,0 +1,100 @@
+:is(agent-tools-element, div[data-example='agent-tools']:not(.primitive-example)) {
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	gap: var(--space-stack);
+	box-sizing: border-box;
+	width: min(100%, 24rem);
+	padding: var(--space-inset);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-container);
+	background: var(--surface);
+	color: var(--on-surface);
+	box-shadow: var(--shadow-overlay);
+}
+
+:is(agent-tools-element, div[data-example='agent-tools']:not(.primitive-example)) form {
+	display: grid;
+	gap: var(--space-stack);
+}
+
+:is(agent-tools-element, div[data-example='agent-tools']:not(.primitive-example)) :where(label) {
+	font-size: 0.75rem;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	opacity: 0.7;
+}
+
+:is(agent-tools-element, div[data-example='agent-tools']:not(.primitive-example)) input {
+	box-sizing: border-box;
+	width: 100%;
+	min-height: var(--size-control-lg);
+	padding: var(--space-control-y) var(--space-control-x);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-control);
+	background: var(--surface-container-low);
+	color: inherit;
+	font: inherit;
+}
+
+:is(agent-tools-element, div[data-example='agent-tools']:not(.primitive-example)) button {
+	min-height: var(--size-control-lg);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-control);
+	background: var(--surface-container);
+	color: inherit;
+	font: inherit;
+	cursor: pointer;
+}
+
+:is(agent-tools-element, div[data-example='agent-tools']:not(.primitive-example)) ul {
+	margin: 0;
+	padding-inline-start: 1.25rem;
+}
+
+:is(agent-tools-element, div[data-example='agent-tools']:not(.primitive-example)) [data-status] {
+	margin: 0;
+	font-size: 0.875rem;
+	opacity: 0.8;
+}
+
+tool-inspector {
+	display: grid;
+	gap: var(--space-stack);
+	box-sizing: border-box;
+	width: min(100%, 24rem);
+	margin-block-start: var(--space-stack);
+	padding: var(--space-inset);
+	border: 1px dashed var(--border);
+	border-radius: var(--radius-container);
+}
+
+tool-inspector :where(textarea) {
+	box-sizing: border-box;
+	width: 100%;
+	font: inherit;
+	font-family: var(--font-mono, monospace);
+	color: inherit;
+	background: var(--surface-container-low);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-control);
+}
+
+tool-inspector :where(ul) {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+tool-inspector :where(button) {
+	font: inherit;
+	cursor: pointer;
+}
+
+tool-inspector [data-result] {
+	margin: 0;
+	font-family: var(--font-mono, monospace);
+	font-size: 0.8125rem;
+	overflow-wrap: anywhere;
+}
