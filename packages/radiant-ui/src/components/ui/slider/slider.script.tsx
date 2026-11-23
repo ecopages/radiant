@@ -298,7 +298,7 @@ export function sliderTrackCssVars(values: number[], range: NumericRange): Recor
  * @cssprop --rui-slider-focus-ring - Focus ring color. Default: `--focus-ring`.
  * @cssprop --rui-slider-focus-ring-width - Focus ring width. Default: `2px`.
  *
- * @fires rui-change - Emitted when the committed value changes; `detail.value` is `number[]`
+ * @fires rui-change - Emitted on each value change, after `value` holds the new value; `detail.value` is `number[]`
  *   (`[50]` single, `[25, 75]` range). Pointer drags emit on each distinct snap.
  *
  * @remarks
@@ -345,7 +345,8 @@ export class RuiSlider extends FormAssociatedElement {
 	@ref('rangeMaxThumb') rangeMaxThumb: HTMLButtonElement | null;
 
 	private activeThumb: RuiSliderThumb | null = null;
-	private pending: number[] | null = null;
+	/** The value when the drag started, restored if the drag is cancelled. */
+	private pressValues: number[] | null = null;
 	private lastEmitted = '';
 
 	constructor() {
@@ -363,7 +364,7 @@ export class RuiSlider extends FormAssociatedElement {
 	protected override onConnected(): void {
 		this.adoptLegacyRangeAttributes();
 		this.syncChrome();
-		this.syncValues(this.committedValues());
+		this.syncValues(this.currentValues());
 		announceControlConnect(this);
 	}
 
@@ -371,7 +372,7 @@ export class RuiSlider extends FormAssociatedElement {
 		if (!this.name) {
 			return null;
 		}
-		const values = this.liveValues();
+		const values = this.currentValues();
 		if (values.length === 2) {
 			const data = new FormData();
 			data.append(this.name, String(values[0]));
@@ -382,7 +383,7 @@ export class RuiSlider extends FormAssociatedElement {
 	}
 
 	protected override formState(): FormValue {
-		return this.committedValues().join(',');
+		return this.currentValues().join(',');
 	}
 
 	/**
@@ -390,7 +391,7 @@ export class RuiSlider extends FormAssociatedElement {
 	 * is ignored; a saved state restores both.
 	 */
 	override formStateRestoreCallback(state: FormValue, mode: FormStateRestoreMode): void {
-		if (mode === 'autocomplete' && this.liveValues().length === 2) {
+		if (mode === 'autocomplete' && this.currentValues().length === 2) {
 			return;
 		}
 		super.formStateRestoreCallback(state, mode);
@@ -401,7 +402,7 @@ export class RuiSlider extends FormAssociatedElement {
 			.split(',')
 			.map(Number)
 			.filter((entry) => Number.isFinite(entry));
-		this.syncValues(this.committedValues());
+		this.syncValues(this.currentValues());
 	}
 
 	/** Reads authored `range-min` / `range-max` once when `value` is absent. */
@@ -444,11 +445,11 @@ export class RuiSlider extends FormAssociatedElement {
 		}
 
 		this.syncChrome();
-		this.syncValues(this.committedValues());
+		this.syncValues(this.currentValues());
 	}
 
 	private get isRange(): boolean {
-		return this.liveValues().length === 2;
+		return this.currentValues().length === 2;
 	}
 
 	private get isVertical(): boolean {
@@ -493,7 +494,8 @@ export class RuiSlider extends FormAssociatedElement {
 		return constrainSliderPair(this.numericRange, low, high, this.minDistance, active);
 	}
 
-	private committedValues(): number[] {
+	/** The value as the host holds it: moves write it before any event fires. */
+	private currentValues(): number[] {
 		return resolveSliderValues({
 			variant: this.variant,
 			values: this.value,
@@ -502,10 +504,6 @@ export class RuiSlider extends FormAssociatedElement {
 			step: this.step,
 			minDistance: this.minDistance,
 		});
-	}
-
-	private liveValues(): number[] {
-		return this.pending ?? this.committedValues();
 	}
 
 	private changeDetail(values: number[]): RuiSliderChangeDetail {
@@ -663,43 +661,37 @@ export class RuiSlider extends FormAssociatedElement {
 		if (!this.isRange) {
 			return 'value';
 		}
-		const [low, high] = this.liveValues();
+		const [low, high] = this.currentValues();
 		return Math.abs(next - low) <= Math.abs(next - high) ? 'min' : 'max';
 	}
 
 	private moveThumb(thumb: RuiSliderThumb, next: number): number[] {
 		this.activeThumb = thumb;
-		if (this.isRange) {
-			const current = this.pending ?? this.committedValues();
-			this.pending = this.constrainPair(
-				thumb === 'min' ? next : current[0],
-				thumb === 'max' ? next : current[1],
-				thumb,
-			);
-		} else {
-			this.pending = [this.numericRange.clamp(next)];
-		}
-
-		const values = this.pending;
+		const current = this.currentValues();
+		const values = this.isRange
+			? this.constrainPair(thumb === 'min' ? next : current[0], thumb === 'max' ? next : current[1], thumb)
+			: [this.numericRange.clamp(next)];
+		this.reflectValues(values);
 		this.paint(values);
 		this.emitIfChanged(values);
 		return values;
 	}
 
 	private commit(): void {
-		const values = this.liveValues();
+		const values = this.currentValues();
 		this.rangeTrack?.removeAttribute('data-dragging');
-		this.pending = null;
+		this.pressValues = null;
 		this.activeThumb = null;
 		this.syncValues(values);
 	}
 
 	private revert(): void {
+		const values = this.pressValues ?? this.currentValues();
 		this.rangeTrack?.removeAttribute('data-dragging');
-		this.pending = null;
+		this.pressValues = null;
 		this.activeThumb = null;
-		this.lastEmitted = this.committedValues().join(',');
-		this.paint(this.committedValues());
+		this.syncValues(values);
+		this.emitIfChanged(values);
 	}
 
 	private startDrag(event: PointerEvent): void {
@@ -707,8 +699,8 @@ export class RuiSlider extends FormAssociatedElement {
 		const fromThumb = this.parseThumb(thumbElement?.getAttribute('data-thumb') ?? null);
 		const next = this.valueFromPointer(event);
 		const thumb = fromThumb ?? this.nearestThumb(next);
-		this.pending = this.committedValues();
-		this.lastEmitted = this.pending.join(',');
+		this.pressValues = this.currentValues();
+		this.lastEmitted = this.pressValues.join(',');
 		this.activeThumb = thumb;
 		this.thumbFor(thumb)?.focus();
 		if (fromThumb) {
@@ -740,7 +732,7 @@ export class RuiSlider extends FormAssociatedElement {
 			return;
 		}
 
-		const values = this.committedValues();
+		const values = this.currentValues();
 		const current = thumb === 'max' ? values[values.length - 1] : values[0];
 		const next = valueFromSliderKey(this.numericRange, current, event.key);
 		if (next == null) {
