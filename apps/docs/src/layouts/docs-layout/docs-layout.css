@@ -30,6 +30,18 @@
 		@apply min-w-0 flex-1 basis-full sm:basis-auto;
 	}
 
+	.docs-status-badge {
+		@apply ml-2 inline-flex shrink-0 items-center px-1.5;
+	}
+
+	.docs-nav-label {
+		@apply flex items-center;
+	}
+
+	.docs-nav-label .docs-status-badge {
+		@apply ml-auto;
+	}
+
 	.docs-layout__toc {
 		@apply hidden w-62 shrink-0 overflow-y-auto border-l border-border/60 px-6 py-8 xl:block;
 	}

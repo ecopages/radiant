@@ -67,6 +67,8 @@ export const componentDocsFrontmatterSchema = z.object({
 	title: z.string(),
 	description: z.string(),
 	order: z.coerce.number().optional(),
+	/** Marks a page about an API that may still change. It adds a badge to the sidebar and the page and a note in `llms.txt`. */
+	status: z.literal('experimental').optional(),
 	/** Set to `false` to leave the page out of `llms.txt` and the Markdown exports. */
 	llms: z.boolean().optional(),
 });

@@ -152,7 +152,7 @@ export async function generateLlmDocs(outputRoot = publicRoot, options: Generate
 				await writeFile(legacyPath, body, 'utf8');
 
 				const url = absoluteUrl(`/docs-llm/${sectionId}/${pageSlug}.md`, origin);
-				lines.push(`- [${page.title}](${url})`);
+				lines.push(`- [${page.title}](${url})${page.status === 'experimental' ? ' (experimental)' : ''}`);
 			}
 
 			lines.push('');
