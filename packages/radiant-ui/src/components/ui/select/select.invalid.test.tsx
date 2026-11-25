@@ -1,44 +1,77 @@
 import { afterEach, describe, expect, it } from 'vitest';
+import { createRoot } from '@ecopages/jsx';
 import '../../../styles/radiant-ui.css';
 import '../../../styles/themes/default.css';
 import './select.css';
+import { RuiField } from '../field';
+import { RuiField as RuiFieldElement } from '../field/field.script';
+import { RuiSelect } from './select';
+import { RuiSelect as RuiSelectElement } from './select.script';
+void RuiFieldElement;
+void RuiSelectElement;
 
-function mount(invalid: boolean): { control: HTMLElement; reference: HTMLElement } {
-	document.body.innerHTML = `
-		<div class="rui-select__control" data-testid="control">
-			<div class="rui-select__trigger" role="combobox"${invalid ? ' aria-invalid="true"' : ''}></div>
-		</div>
-		<i data-testid="reference" style="border: 1px solid var(--color-error)"></i>`;
-	return {
-		control: document.querySelector<HTMLElement>('[data-testid="control"]')!,
-		reference: document.querySelector<HTMLElement>('[data-testid="reference"]')!,
-	};
+const OPTIONS = [
+	{ value: 'a', label: 'Alpha' },
+	{ value: 'b', label: 'Beta' },
+];
+
+async function flush(): Promise<void> {
+	await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+	await new Promise((resolve) => setTimeout(resolve, 0));
 }
 
-function borderColor(element: HTMLElement): string {
-	element.style.transition = 'none';
+function borderColor(element: Element): string {
+	(element as HTMLElement).style.transition = 'none';
 	return getComputedStyle(element).borderTopColor;
 }
 
-afterEach(() => {
-	document.body.innerHTML = '';
-});
+async function mount() {
+	const host = document.createElement('div');
+	document.body.append(host);
+	createRoot(host).render(
+		<RuiField name="choice">
+			<RuiSelect options={OPTIONS} placeholder="Choice" />
+		</RuiField>,
+	);
+	await customElements.whenDefined('rui-field');
+	await customElements.whenDefined('rui-select');
+	await flush();
+	const reference = document.createElement('i');
+	reference.style.border = '1px solid var(--color-error)';
+	document.body.append(reference);
+	return {
+		field: host.querySelector('rui-field')!,
+		control: host.querySelector('.rui-select__control')!,
+		target: host.querySelector('[data-rui-control]')!,
+		error: borderColor(reference),
+	};
+}
 
-describe('RuiSelect invalid border', () => {
-	it('paints the control border with the error colour when its trigger is aria-invalid', () => {
-		const { control, reference } = mount(true);
-		expect(borderColor(control)).toBe(borderColor(reference));
+afterEach(() => document.body.replaceChildren());
+
+describe('RuiSelect in an invalid field', () => {
+	it('keeps the normal border while the field is valid', async () => {
+		const { control, target, error } = await mount();
+		expect(target.getAttribute('aria-invalid')).not.toBe('true');
+		expect(borderColor(control)).not.toBe(error);
 	});
 
-	it('keeps the normal border when the trigger is not invalid', () => {
-		const { control, reference } = mount(false);
-		expect(borderColor(control)).not.toBe(borderColor(reference));
+	it('paints the control border with the error colour once the field reports an error', async () => {
+		const { field, control, target, error } = await mount();
+		field.setAttribute('error', 'Pick one');
+		await flush();
+		expect(target.getAttribute('aria-invalid')).toBe('true');
+		expect(borderColor(control)).toBe(error);
 	});
 
-	it('keeps the normal border when aria-invalid is false', () => {
-		const { control: valid } = mount(false);
-		const normal = borderColor(valid);
-		document.body.querySelector('[role="combobox"]')!.setAttribute('aria-invalid', 'false');
-		expect(borderColor(valid)).toBe(normal);
+	it('returns to the normal border when the error clears', async () => {
+		const { field, control, error } = await mount();
+		const normal = borderColor(control);
+		field.setAttribute('error', 'Pick one');
+		await flush();
+		field.removeAttribute('error');
+		await flush();
+		expect(borderColor(control)).toBe(normal);
+		expect(normal).not.toBe(error);
 	});
 });

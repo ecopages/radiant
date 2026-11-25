@@ -22,6 +22,10 @@ rui-combobox {
 		@apply ring-2 ring-focus-ring;
 	}
 
+	:root .rui-combobox__control:has([aria-invalid='true']) {
+		@apply border-error;
+	}
+
 	.rui-combobox__input {
 		@apply min-w-0 flex-1 border-0 bg-transparent text-on-background outline-none;
 		padding-inline: var(--space-control-x);
