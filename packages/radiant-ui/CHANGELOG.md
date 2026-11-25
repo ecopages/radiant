@@ -1,5 +1,11 @@
 # @ecopages/radiant-ui
 
+## 0.6.2
+
+### Patch Changes
+
+- [#801](https://github.com/ecopages/radiant/pull/801) [`ac33075`](https://github.com/ecopages/radiant/commit/ac3307564e51368043973b8f9b6da22ce7a66ee2) Thanks [@andeeplus](https://github.com/andeeplus)! - A select or combobox inside an invalid field now shows the error border, like the input and textarea. `RuiSidebarProvider` with `layout="docs"` also reads its header and body max width from a new `--rui-sidebar-container` variable (default `--container-7xl`), so you can widen the layout without overriding Tailwind's global container token.
+
 ## 0.6.1
 
 ### Patch Changes
