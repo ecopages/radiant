@@ -32,6 +32,7 @@ export type RuiSidebarProviderProps = JsxElementProps<HTMLDivElement> & {
  * @cssclass rui-sidebar-provider - Shell wrapping sidebar + inset.
  * @cssclass rui-sidebar-provider__site-header - Full-width chrome (`layout="docs"`).
  * @cssclass rui-sidebar-provider__body - Sidebar + inset row.
+ * @cssprop --rui-sidebar-container - Max width of the `layout="docs"` site header row and body row. Set it on the provider or an ancestor. Default: `--container-7xl`.
  */
 export function RuiSidebarProvider({
 	layout = 'default',

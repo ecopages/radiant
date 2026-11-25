@@ -18,6 +18,10 @@ rui-select {
 		@apply ring-2 ring-focus-ring;
 	}
 
+	:root .rui-select__control:has([aria-invalid='true']) {
+		@apply border-error;
+	}
+
 	.rui-select__trigger {
 		@apply inline-flex min-w-0 flex-1 cursor-pointer items-center gap-inline border-0 bg-transparent px-control-x py-0 text-start text-on-background outline-none;
 		min-height: calc(var(--size-control-md) - 2px);
