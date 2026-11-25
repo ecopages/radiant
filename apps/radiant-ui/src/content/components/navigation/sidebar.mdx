@@ -109,6 +109,8 @@ Sidebar surfaces map to **semantic surface roles**, never Tailwind palette steps
 
 Rounded corners use `rounded-container`; the docs site header uses `surface`, matching the main site header, and the collapsible pane sits on `background`. Overrides go at the theme layer, not in component CSS.
 
+The `layout="docs"` site header row and body row are capped at `--rui-sidebar-container` (default `--container-7xl`). Set it on `RuiSidebarProvider` or an ancestor to widen the layout without overriding Tailwind's global `--container-7xl`.
+
 ## Accessibility
 
 - The sidebar renders as a `complementary` landmark with `label` as its accessible name, in server output too. A `role` you author on `<rui-sidebar>` is kept.
