@@ -8,8 +8,9 @@ description: >-
     bindings, @bindTo paint onto existing DOM, or when to use plain reactive
     reads versus this.$ / this.bindings / this.bind(...). Also use when updating
     docs, examples, or playground code so the output follows Radiant's shared
-    reactive host model, and when rendering @ecopages/jsx without a host using
-    signals.
+    reactive host model, when rendering @ecopages/jsx without a host using
+    signals, and when offering page actions to browser agents as WebMCP tools
+    with @agentTool, createAgentTool or registerAgentTool.
 ---
 
 # Radiant Reactive Host Author
@@ -30,19 +31,22 @@ Use `llms.txt` for a compact map, then the full docs for API details.
 - Wiring SSR, hydration, host rendering, or slotted content
 - Reviewing docs or examples so they teach the Radiant model, not React habits
 - Rendering `@ecopages/jsx` with `createRoot(...)` and signals, without a host
+- Offering a host method or page action to a browser agent as a WebMCP tool (`@agentTool`, `createAgentTool`, `registerAgentTool`)
 
 ## Import paths
 
-| Surface                                                                                       | From                                        |
-| --------------------------------------------------------------------------------------------- | ------------------------------------------- |
-| Hosts, `@customElement`, `@controller`, common host decorators                                | `@ecopages/radiant`                         |
-| `createContext`, `@provideContext`, `@consumeContext`, `@contextSelector`, `@onContextUpdate` | `@ecopages/radiant/context`                 |
-| SSR helpers                                                                                   | `@ecopages/radiant/server/*`                |
-| `renderToString`, `withServerCustomElementRenderHook`, SSR scope helpers                      | `@ecopages/jsx/server`                      |
-| Client hydrator for SSR pages                                                                 | `@ecopages/radiant/client/install-hydrator` |
-| `isServer`                                                                                    | `@ecopages/radiant/is-server`               |
-| `JSX_PROPS`, `JsxRenderable` (types)                                                          | `@ecopages/jsx`                             |
-| `setDevWarningsEnabled`                                                                       | `@ecopages/jsx/jsx-dev-runtime`             |
+| Surface                                                                                       | From                                                                                           |
+| --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Hosts, `@customElement`, `@controller`, common host decorators                                | `@ecopages/radiant`                                                                            |
+| `createContext`, `@provideContext`, `@consumeContext`, `@contextSelector`, `@onContextUpdate` | `@ecopages/radiant/context`                                                                    |
+| SSR helpers                                                                                   | `@ecopages/radiant/server/*`                                                                   |
+| `renderToString`, `withServerCustomElementRenderHook`, SSR scope helpers                      | `@ecopages/jsx/server`                                                                         |
+| Client hydrator for SSR pages                                                                 | `@ecopages/radiant/client/install-hydrator`                                                    |
+| `isServer`                                                                                    | `@ecopages/radiant/is-server`                                                                  |
+| `JSX_PROPS`, `JsxRenderable` (types)                                                          | `@ecopages/jsx`                                                                                |
+| `setDevWarningsEnabled`                                                                       | `@ecopages/jsx/jsx-dev-runtime`                                                                |
+| `@agentTool` (experimental)                                                                   | `@ecopages/radiant/decorators/agent-tool`                                                      |
+| `createAgentTool`, `registerAgentTool` (experimental)                                         | `@ecopages/radiant/helpers/create-agent-tool`, `@ecopages/radiant/helpers/register-agent-tool` |
 
 ## Host choice
 
@@ -90,6 +94,7 @@ Read only the modules relevant to the task. Each file is one level deep from thi
 | [reference/ssr.md](reference/ssr.md)                       | Server entrypoints, hydrate modes, nested and page-level hydration, render scope                                                                   |
 | [reference/authoring.md](reference/authoring.md)           | Authoring rules, development warnings, review checklist, output shape                                                                              |
 | [reference/jsx-signals.md](reference/jsx-signals.md)       | `@ecopages/jsx` with `createRoot` and signals, no host: render once, computed keyed lists, signals in attributes, `ref` callbacks, external stores |
+| [reference/agent-tools.md](reference/agent-tools.md)       | Experimental WebMCP tools: `@agentTool`, `createAgentTool`, `registerAgentTool`, unique names, `parse`, annotations, security                      |
 
 ## Critical rules
 
