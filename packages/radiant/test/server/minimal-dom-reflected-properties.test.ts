@@ -216,4 +216,24 @@ describe('minimal DOM reflected properties', () => {
 		expect(input.value).toBe('typed');
 		expect(input.hasAttribute('value')).toBe(false);
 	});
+
+	test('an input value that was never assigned reads the value attribute, like an input that is not dirty', () => {
+		const input = el('input') as unknown as { value: string } & MinimalHTMLElement;
+		expect(input.value).toBe('');
+		input.setAttribute('value', 'm');
+		expect(input.value).toBe('m');
+		input.value = 'typed';
+		expect(input.value).toBe('typed');
+		expect(input.getAttribute('value')).toBe('m');
+	});
+
+	test('a radio or checkbox without a value attribute reads on', () => {
+		for (const type of ['radio', 'checkbox']) {
+			const input = el('input') as unknown as { value: string } & MinimalHTMLElement;
+			input.setAttribute('type', type);
+			expect(input.value).toBe('on');
+			input.setAttribute('value', 'm');
+			expect(input.value).toBe('m');
+		}
+	});
 });

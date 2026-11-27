@@ -720,12 +720,22 @@ export class MinimalElement extends MinimalNode {
 
 	/**
 	 * @remarks Reflected only on `button` and `option`. An `option` without a `value` attribute reads its text with whitespace collapsed.
-	 * `input.value` is not reflected in browsers either and stays a plain value, as does every other tag.
+	 * An assigned `input.value` is a plain value, as on every other tag. An `input` that was never assigned reads its
+	 * `value` attribute, as a text input does before the user edits it, and a `radio` or `checkbox` reads that attribute
+	 * or `on`. A browser also writes the attribute when a `radio` or `checkbox` value is assigned; the shim does not.
 	 */
 	get value(): string {
 		const tag = this.localName;
-		if (!VALUE_TAGS.has(tag)) return this.#plainProps.get('value') as string;
+		if (!VALUE_TAGS.has(tag)) {
+			if (tag === 'input' && !this.#plainProps.has('value')) return this.inputDefaultValue();
+			return this.#plainProps.get('value') as string;
+		}
 		return this.getAttribute('value') ?? (tag === 'option' ? collapseAsciiWhitespace(this.textContent) : '');
+	}
+
+	private inputDefaultValue(): string {
+		const type = this.getAttribute('type')?.toLowerCase();
+		return this.getAttribute('value') ?? (type === 'radio' || type === 'checkbox' ? 'on' : '');
 	}
 
 	set value(value: string) {

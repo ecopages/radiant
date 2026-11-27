@@ -1,5 +1,13 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
-import { RadiantElement, bindTo, customElement, onUpdated, prop, queryAll } from '@ecopages/radiant';
+import {
+	RadiantElement,
+	bindTo,
+	customElement,
+	onUpdated,
+	prop,
+	queryAll,
+	registerSsrPreparationCallback,
+} from '@ecopages/radiant';
 import { createEventListenerController } from '../../../controllers/event-listener-controller';
 import { nonEmpty } from '@/lib/non-empty';
 import { announceControlConnect } from '@/lib/form/control-protocol';
@@ -95,6 +103,7 @@ export class RuiRadioGroup extends RadiantElement {
 
 	constructor() {
 		super();
+		registerSsrPreparationCallback(this, () => this.reflectCheckedForServer());
 		createEventListenerController(this, {
 			getTarget: () => this,
 			type: ['input', 'change'],
@@ -116,6 +125,24 @@ export class RuiRadioGroup extends RadiantElement {
 	protected override onConnected(): void {
 		this.syncRadios();
 		announceControlConnect(this);
+	}
+
+	/**
+	 * Writes the `checked` attribute of the radio that matches `value`, so the server markup of a form that is posted
+	 * before this host connects submits the group's value.
+	 *
+	 * @remarks
+	 * The `checked` property does not reflect to an attribute, so `syncRadios` alone leaves the server HTML unchecked.
+	 * It syncs first because the `@onUpdated` pass runs only for a prop that was written, and a group with none leaves
+	 * every radio's `checked` unset.
+	 * Runs only when serializing on the server: in a browser the attribute is the radio's default state, which a form
+	 * reset restores, and the property is the live one.
+	 */
+	private reflectCheckedForServer(): void {
+		this.syncRadios();
+		for (const radio of this.radioTargets) {
+			radio.toggleAttribute('checked', radio.checked);
+		}
 	}
 
 	@onUpdated(['value', 'name', 'disabled'])
