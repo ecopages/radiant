@@ -289,12 +289,74 @@ describe('RuiCombobox', () => {
 			await settled();
 			expect(popup.hidden).toBe(true);
 
-			addOptions(host, ['Chair', 'Armchair']);
+			addOptions(host, ['Chair', 'Table', 'Armchair']);
 			await settled();
 
 			expect(popup.hidden).toBe(false);
 			expect(input.getAttribute('aria-expanded')).toBe('true');
-			expect(host.querySelectorAll('[role="option"]:not([hidden])')).toHaveLength(2);
+			const visible = Array.from(host.querySelectorAll<HTMLElement>('[role="option"]')).filter(
+				(option) => !option.hidden,
+			);
+			expect(visible.map((option) => option.textContent)).toEqual(['Chair', 'Armchair']);
+			cleanup();
+		});
+
+		it('stays closed while none of the arriving options matches the typed text', async () => {
+			const { host, cleanup } = mount(<RuiCombobox options={[]} placeholder="Search" />);
+			await settled();
+
+			const input = host.querySelector('[data-combobox-input]') as HTMLInputElement;
+			const popup = host.querySelector('[data-combobox-listbox]') as HTMLElement;
+
+			await userEvent.type(input, 'chair');
+			addOptions(host, ['Table']);
+			await settled();
+			expect(popup.hidden).toBe(true);
+
+			addOptions(host, ['Chair']);
+			await settled();
+			expect(popup.hidden).toBe(false);
+			cleanup();
+		});
+
+		it('keeps the listbox closed after the visitor dismissed it', async () => {
+			const { host, cleanup } = mount(<RuiCombobox options={[]} placeholder="Search" />);
+			await settled();
+
+			const input = host.querySelector('[data-combobox-input]') as HTMLInputElement;
+			const popup = host.querySelector('[data-combobox-listbox]') as HTMLElement;
+
+			await userEvent.type(input, 'chair');
+			addOptions(host, ['Chair']);
+			await settled();
+			expect(popup.hidden).toBe(false);
+
+			await userEvent.keyboard('{Escape}');
+			addOptions(host, ['Armchair']);
+			await settled();
+
+			expect(popup.hidden).toBe(true);
+			cleanup();
+		});
+
+		it('keeps the listbox closed for options that arrive after a selection', async () => {
+			const { host, cleanup } = mount(<RuiCombobox options={OPTIONS} placeholder="Search" />);
+			await settled();
+
+			const input = host.querySelector('[data-combobox-input]') as HTMLInputElement;
+			const popup = host.querySelector('[data-combobox-listbox]') as HTMLElement;
+
+			await userEvent.type(input, 'ita');
+			await settled();
+			expect(popup.hidden).toBe(false);
+			await userEvent.click(host.querySelector('[role="option"][data-value="it"]') as HTMLElement);
+			await settled();
+			expect(popup.hidden).toBe(true);
+
+			addOptions(host, ['Italian']);
+			await settled();
+
+			expect(popup.hidden).toBe(true);
 			cleanup();
 		});
 
@@ -358,6 +420,65 @@ describe('RuiCombobox', () => {
 
 			expect(popup.hidden).toBe(false);
 			cleanup();
+		});
+	});
+
+	describe('text typed before the script loads', () => {
+		it('opens the filtered listbox for a focused input when the script loads after the visitor typed', async () => {
+			const { host: source, cleanup: cleanupSource } = mount(
+				<RuiCombobox options={[...OPTIONS, { value: 'oak', label: 'Oak table' }]} placeholder="Search" />,
+			);
+			await settled();
+			const markup = (source.querySelector('rui-combobox') as RuiComboboxElement).innerHTML;
+			cleanupSource();
+
+			const tag = 'rui-combobox-late';
+			const stage = document.createElement('div');
+			document.body.append(stage);
+			stage.innerHTML = `<${tag}>${markup}</${tag}>`;
+			const input = stage.querySelector('[data-combobox-input]') as HTMLInputElement;
+			input.focus();
+			input.value = 'oak';
+			expect(stage.querySelector(tag)).not.toBeInstanceOf(RuiComboboxElement);
+
+			customElements.define(tag, class extends RuiComboboxElement {});
+			await settled();
+
+			const popup = stage.querySelector('[data-combobox-listbox]') as HTMLElement;
+			expect(stage.querySelector(tag)).toBeInstanceOf(RuiComboboxElement);
+			expect(stage.querySelector('[data-combobox-input]')).toBe(input);
+			expect(document.activeElement).toBe(input);
+			expect(input.value).toBe('oak');
+			expect(popup.hidden).toBe(false);
+			const visible = Array.from(stage.querySelectorAll<HTMLElement>('[role="option"]')).filter(
+				(option) => !option.hidden,
+			);
+			expect(visible.map((option) => option.textContent?.trim())).toEqual(['Oak table']);
+		});
+
+		it('opens for suggestions that arrive after a late upgrade kept the typed text', async () => {
+			const tag = 'rui-combobox-late-empty';
+			const stage = document.createElement('div');
+			document.body.append(stage);
+			stage.innerHTML = `<${tag}><div data-ref="root"><input data-combobox-input /><div data-combobox-listbox hidden><rui-listbox embedded><div role="listbox"></div></rui-listbox></div></div></${tag}>`;
+			const input = stage.querySelector('[data-combobox-input]') as HTMLInputElement;
+			input.focus();
+			input.value = 'chair';
+
+			customElements.define(tag, class extends RuiComboboxElement {});
+			await settled();
+			const popup = stage.querySelector('[data-combobox-listbox]') as HTMLElement;
+			expect(popup.hidden).toBe(true);
+
+			const option = document.createElement('div');
+			option.setAttribute('role', 'option');
+			option.setAttribute('data-value', 'chair');
+			option.textContent = 'Chair';
+			(stage.querySelector('[role="listbox"]') as HTMLElement).append(option);
+			await settled();
+
+			expect(input.value).toBe('chair');
+			expect(popup.hidden).toBe(false);
 		});
 	});
 });

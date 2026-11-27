@@ -134,9 +134,13 @@ For composed layouts, place `RuiComboboxValue` (with a `RuiTagGroup`) before `Ru
 
 <Canvas of={TriggerKindManual} meta={ComboboxMeta} />
 
+## Lazy script
+
+When the script loads after the page, for example on first interaction, the element keeps the input and the text the visitor typed. It applies the filter for that text and, when the input has focus, an option matches and `triggerKind` is not `manual`, opens the listbox. In single mode a selected `value` still replaces the text with its label.
+
 ## Suggestions that load later
 
-A typeahead renders its options after the `input` event that opens the listbox. Options added to the popup while the input has focus and text open the listbox, unless `triggerKind` is `manual`, and the filter runs again for the typed text. A list that is cleared and refilled does not close in between. When the options change outside the popup, for example a replaced listbox, call `refreshOptions()` on the host: it applies the same check.
+A typeahead renders its options after the `input` event that opens the listbox. When typing left a query with nothing to show, options added to the popup open the listbox once one of them matches the typed text, while the input has focus and unless `triggerKind` is `manual`. The filter runs again for every option that arrives. A list the visitor selected from or dismissed with Escape stays closed, and a list that is cleared and refilled does not close in between. Call `refreshOptions()` on the host to open it for the current options regardless, or after the popup itself was replaced.
 
 ## Portal
 
@@ -194,7 +198,7 @@ Nested hosts: `rui-listbox` (`embedded`), `rui-tag-group` in `[data-combobox-val
 
 | Method | Description |
 | --- | --- |
-| `refreshOptions()` | Wires new options, applies the filter for the typed text, and opens the listbox when the input has focus and text and an option matches. It never closes the listbox, and `manual` stays closed. |
+| `refreshOptions()` | Gives the options their ids and selection state, applies the filter for the typed text, and opens the listbox when the input has focus and text and an option matches. It attaches the host to a replaced popup and never closes the listbox, and `manual` stays closed. |
 
 ### Events
 

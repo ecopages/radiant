@@ -103,6 +103,8 @@ export type RuiComboboxProps = {
  * > `rui-listbox[embedded]` > `[role="option"]`. BEM classes live on the view helpers.
  * With `portal` the popup leaves the host while it is open, so the host reads it from its popover controller, which finds it while it is portaled, and listens on it
  * directly instead of through the host.
+ * Options added to the popup after the visitor typed, such as typeahead suggestions that arrive from a fetch, open the listbox when typing had left nothing to show; `refreshOptions()` re-evaluates it on demand.
+ * Text typed before the script loads stays in the input, and the host filters and opens the listbox for it when the input has focus.
  * Not form-associated: wrap in `rui-field` and read `RuiForm` `onSubmit`.
  * Typed filter text is not a form value and is not listed in native `FormData`.
  */
@@ -131,6 +133,12 @@ export class RuiCombobox extends RadiantElement {
 	@prop(portalContainerPropOptions) portalContainer: RuiPortalContainer | null;
 
 	private open = false;
+	private initialized = false;
+	/**
+	 * Set when typing left a query that no option matches and nothing is showing, so options that arrive next open
+	 * the listbox. Any opening or closing clears it, so a list the visitor dismissed stays closed.
+	 */
+	private awaitingOptions = false;
 	private readonly uid = uniqueId('rui-combobox');
 	private readonly collection = new ListboxHost({
 		getRoot: () => this,
@@ -174,18 +182,20 @@ export class RuiCombobox extends RadiantElement {
 	});
 
 	/**
-	 * Re-evaluates the listbox when options are added to the popup, so suggestions that load after the visitor typed
-	 * open it.
+	 * Wires options added to the popup and, while `awaitingOptions`, opens the listbox for them, so suggestions that
+	 * load after the visitor typed open it.
 	 *
-	 * @remarks It attaches as the element connects and again on each opening, like `popupListener`, to find a popup
-	 * that exists only now.
+	 * @remarks It attaches as the element connects and again each time `setOpen` runs, to find a popup that exists
+	 * only now.
 	 */
 	private readonly optionsObserver = createMutationController(this, {
 		getTarget: () => this.popupTarget,
 		options: { childList: true, subtree: true },
 		onMutate: (records) => {
 			if (records.some((record) => Array.from(record.addedNodes).some(containsOption))) {
-				this.refreshOptions();
+				this.ensureOptionIds();
+				this.collection.syncOptionSelection();
+				this.openForTypedText(this.awaitingOptions);
 			}
 		},
 	});
@@ -317,6 +327,7 @@ export class RuiCombobox extends RadiantElement {
 
 	private setOpen(next: boolean, options: { activate?: 'first' | 'last' | 'none' } = {}): void {
 		const activate = options.activate ?? 'none';
+		this.awaitingOptions = false;
 		this.open = next;
 		const input = this.getInput();
 		const popup = this.getListboxPopup();
@@ -415,9 +426,18 @@ export class RuiCombobox extends RadiantElement {
 		input?.focus();
 	}
 
+	/**
+	 * @remarks Until the host has initialized, text the visitor typed before its script loaded is kept: only a
+	 * selected value in single mode replaces it, with its label.
+	 */
 	private syncFromValue(): void {
 		const input = this.getInput();
 		if (!input) {
+			return;
+		}
+
+		const selected = this.collection.getSelectedValues()[0] ?? '';
+		if (!this.initialized && (this.isMultiple() || !selected)) {
 			return;
 		}
 
@@ -425,7 +445,6 @@ export class RuiCombobox extends RadiantElement {
 			input.value = '';
 			return;
 		}
-		const selected = this.collection.getSelectedValues()[0] ?? '';
 		input.value = selected ? this.collection.labelForValue(selected) : '';
 	}
 
@@ -466,13 +485,16 @@ export class RuiCombobox extends RadiantElement {
 		this.collection.syncOptionSelection();
 		this.collection.syncTagGroup();
 		this.setOpen(false);
+		this.openForTypedText(true);
+		this.awaitingOptions = Boolean(this.getInput()?.value.trim()) && !this.open && this.triggerKind !== 'manual';
+		this.initialized = true;
 	}
 
 	/**
-	 * Applies the filter for the text in the input and opens the listbox for it, the way typing does, when the input
-	 * has focus. It never closes the listbox.
+	 * Applies the filter for the text in the input and, when `allowOpen`, opens the listbox for it, the way typing
+	 * does, if the input has focus. It never closes the listbox.
 	 */
-	private openForTypedText(): void {
+	private openForTypedText(allowOpen: boolean): void {
 		const input = this.getInput();
 		if (!input || input.value.trim() === '') {
 			return;
@@ -480,7 +502,13 @@ export class RuiCombobox extends RadiantElement {
 
 		this.syncFilter();
 		const hasVisibleOptions = this.listboxPopover.getVisibleOptions().length > 0;
-		if (hasVisibleOptions && !this.open && this.triggerKind !== 'manual' && document.activeElement === input) {
+		if (
+			allowOpen &&
+			hasVisibleOptions &&
+			!this.open &&
+			this.triggerKind !== 'manual' &&
+			document.activeElement === input
+		) {
 			this.setOpen(true);
 			this.setVisualFocusCombobox();
 		}
@@ -491,15 +519,18 @@ export class RuiCombobox extends RadiantElement {
 	 * text, and opens the listbox when the input has focus and text and an option matches.
 	 *
 	 * @remarks
-	 * Options added to the popup call this themselves, so a typeahead that renders its suggestions after the `input`
-	 * event opens the listbox without a call. Call it when options change outside the popup's subtree, such as a
-	 * replaced listbox. It never closes the listbox, so a list that is cleared and refilled does not flicker, and
+	 * Options added to the popup are wired and filtered by the host itself, and open the listbox only when typing
+	 * had left nothing to show, so a list the visitor selected from or dismissed stays closed. This method opens it
+	 * regardless, for a consumer that knows its results are current, and attaches the host to a popup that was
+	 * replaced. It never closes the listbox, so a list that is cleared and refilled does not flicker, and
 	 * `trigger-kind="manual"` still waits for the trigger button or an arrow key.
 	 */
 	refreshOptions(): void {
+		this.popupListener.attach();
+		this.optionsObserver.attach();
 		this.ensureOptionIds();
 		this.collection.syncOptionSelection();
-		this.openForTypedText();
+		this.openForTypedText(true);
 	}
 
 	protected override onConnected(): void {
@@ -592,6 +623,7 @@ export class RuiCombobox extends RadiantElement {
 			this.setOpen(false);
 		}
 
+		this.awaitingOptions = hasQuery && !hasVisibleOptions && this.triggerKind !== 'manual';
 		this.setVisualFocusCombobox();
 	}
 
