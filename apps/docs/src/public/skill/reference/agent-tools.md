@@ -76,6 +76,24 @@ The config is the WebMCP tool dictionary passed through (`name`, `description`, 
 - `parse(input: unknown)` validates the agent's input before the method runs: it returns the typed value or throws to reject the call. Pass Zod's `schema.parse`, `(input) => v.parse(Schema, input)` for Valibot, ArkType's `schema.assert`, or hand-written code. `parse` fixes the input type, and the decorated method's parameter must accept it. Without it the input arrives unchecked. `inputSchema` is plain JSON Schema and advisory only; Radiant ships no schema library.
 - `getEnabled(host)` registers the tool only while it returns `true` (`@agentTool` and `createAgentTool`).
 - `name` may be a function of the host. `name` and `getEnabled` are read after the host's attributes have caught up and again when a signal they read changes, which registers the tool again. Annotate the host parameter (`(host: ShopCart) => ...`): the decorator config is written before TypeScript knows the class.
+- Everything but `name` and `getEnabled` is read each time the tool is registered, never at construction, and not at all where there is no `document.modelContext`. To defer building a schema until a tool registers, give `inputSchema` or `outputSchema` a function and `parse` a getter (a function there is the parser itself):
+
+    ```ts
+    let addItem: ReturnType<typeof createAddItem> | undefined;
+    const getAddItem = () => (addItem ??= createAddItem()); // builds the Zod schema on first use
+
+    @agentTool({
+    	name: 'add_to_cart',
+    	description: 'Adds a product to the cart by its SKU.',
+    	annotations: { consequentialHint: false },
+    	inputSchema: () => z.toJSONSchema(getAddItem()),
+    	get parse() {
+    		return getAddItem().parse;
+    	},
+    })
+    ```
+
+    Each runs once per registration. Plain objects and a plain `parse` still work. Both forms are synchronous, so they defer building the schema, not loading the library that builds it.
 
 ## Rules
 

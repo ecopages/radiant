@@ -188,4 +188,72 @@ describe('registerAgentTool', () => {
 		expect(warn.mock.calls[0]?.[0]).toContain('over 1500 characters');
 		expect(warn.mock.calls[0]?.[0]).not.toContain('xxxx');
 	});
+
+	describe('a config read when the tool is registered', () => {
+		const schema = { type: 'object', properties: { sku: { type: 'string' } } };
+		const output = { type: 'object', properties: { added: { type: 'string' } } };
+
+		it('calls a schema function once, when it registers, and hands the browser the schema', () => {
+			const inputSchema = vi.fn(() => schema);
+			const outputSchema = vi.fn(() => output);
+
+			registerAgentTool({
+				name: 'add-item',
+				description: 'Adds an item',
+				inputSchema,
+				outputSchema,
+				execute: noop,
+			});
+
+			expect(inputSchema).toHaveBeenCalledTimes(1);
+			expect(outputSchema).toHaveBeenCalledTimes(1);
+			expect(modelContext.registrations[0]).toMatchObject({ inputSchema: schema, outputSchema: output });
+		});
+
+		it('reads a getter once, even when the development warnings run', () => {
+			const reads = vi.fn();
+
+			registerAgentTool({
+				name: 'add-item',
+				description: 'Adds one item through a getter, read once',
+				get inputSchema() {
+					reads();
+					return schema;
+				},
+				execute: noop,
+			});
+
+			expect(reads).toHaveBeenCalledTimes(1);
+		});
+
+		it('reads neither a getter nor a schema function without document.modelContext', () => {
+			uninstallFakeModelContext();
+			const reads = vi.fn();
+			const inputSchema = vi.fn(() => schema);
+
+			registerAgentTool({
+				name: 'add-item',
+				description: 'Adds an item',
+				inputSchema,
+				get outputSchema() {
+					reads();
+					return output;
+				},
+				get parse() {
+					reads();
+					return (input: unknown) => input;
+				},
+				execute: noop,
+			});
+
+			expect(inputSchema).not.toHaveBeenCalled();
+			expect(reads).not.toHaveBeenCalled();
+		});
+
+		it('leaves inputSchema off the registered tool when there is none', () => {
+			registerAgentTool({ name: 'add-item', description: 'Adds an item', execute: noop });
+
+			expect(Object.keys(modelContext.registrations[0] ?? {})).not.toContain('inputSchema');
+		});
+	});
 });

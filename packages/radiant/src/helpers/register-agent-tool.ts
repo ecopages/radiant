@@ -48,8 +48,26 @@ export type AgentTool<Input = unknown> = {
 	execute(input: Input, options: AgentToolExecuteOptions): unknown;
 };
 
-/** Configuration for `registerAgentTool`. */
-export type RegisterAgentToolConfig<Input = unknown> = AgentTool<Input> & {
+/**
+ * A schema, or a function that builds it. The function is called when the tool is registered, so the schema is
+ * built only in a browser that can use it.
+ */
+export type AgentToolSchemaSource = AgentToolSchema | (() => AgentToolSchema);
+
+/**
+ * Configuration for `registerAgentTool`.
+ *
+ * @remarks
+ * `registerAgentTool` reads the config when it registers, after it has found `document.modelContext`, so a
+ * property can be a getter that builds a value only then. A getter on `parse` and a function for `inputSchema`
+ * or `outputSchema` both defer the work of building a schema. `parse` takes a getter rather than a function
+ * because a function already is the parser.
+ */
+export type RegisterAgentToolConfig<Input = unknown> = Omit<AgentTool<Input>, 'inputSchema' | 'outputSchema'> & {
+	/** Plain JSON Schema, or a function that returns it when the tool is registered. It is advisory: the agent's input is not checked against it unless `parse` does so. */
+	inputSchema?: AgentToolSchemaSource;
+	/** Plain JSON Schema, or a function that returns it when the tool is registered. */
+	outputSchema?: AgentToolSchemaSource;
 	/** Origins other than this page's that may see the tool. Secure origins only. */
 	exposedTo?: readonly string[];
 	/**
@@ -80,6 +98,10 @@ const DESCRIPTION_BUDGET = 500;
 const PARAMETER_DESCRIPTION_BUDGET = 150;
 const OUTPUT_BUDGET = 1500;
 
+function resolveSchema(source: AgentToolSchemaSource): AgentToolSchema {
+	return typeof source === 'function' ? source() : source;
+}
+
 function longestParameterDescription(schema: unknown): number {
 	if (typeof schema !== 'object' || schema === null) return 0;
 
@@ -105,7 +127,7 @@ function longestParameterDescription(schema: unknown): number {
  * The browser rejects an empty name or description and a name over 128 characters. The shorter
  * limits are the budgets Chrome recommends so that agents read the tool reliably.
  */
-function describeToolIssues(tool: AgentTool): string | undefined {
+function describeToolIssues(tool: Omit<AgentTool, 'execute'>): string | undefined {
 	const issues: string[] = [];
 	if (tool.name === '') issues.push('the name is empty');
 	if (tool.description === '') issues.push('the description is empty');
@@ -131,7 +153,8 @@ function describeToolIssues(tool: AgentTool): string | undefined {
  * @returns A function that unregisters the tool. Calling it again does nothing.
  *
  * @remarks
- * Does nothing on the server and where the browser has no `document.modelContext`. WebMCP removes a
+ * Does nothing on the server and where the browser has no `document.modelContext`, and does not read the config
+ * there, so a getter or a schema function runs only for a tool that is registered. WebMCP removes a
  * tool only by aborting the signal it was registered with, so every call uses a new `AbortController`.
  * The browser rejects a duplicate name, an invalid tool, or a page where the `tools` permission policy is
  * denied, and does so after the call has returned: the rejection is reported with `console.error` naming
@@ -149,8 +172,13 @@ export function registerAgentTool<Input = unknown>(
 	const modelContext = (document as Document & { modelContext?: ModelContext }).modelContext;
 	if (!modelContext) return () => {};
 
-	const { parse, exposedTo, execute, ...tool } = config;
-	warnOnceInDevelopment(`agent-tool:${tool.description}`, () => describeToolIssues(config));
+	const { parse, exposedTo, execute, inputSchema, outputSchema, ...rest } = config;
+	const tool: Omit<AgentTool, 'execute'> = {
+		...rest,
+		...(inputSchema && { inputSchema: resolveSchema(inputSchema) }),
+		...(outputSchema && { outputSchema: resolveSchema(outputSchema) }),
+	};
+	warnOnceInDevelopment(`agent-tool:${tool.description}`, () => describeToolIssues(tool));
 
 	warnOnceInDevelopment(`agent-tool-exposed:${tool.description}`, () =>
 		exposedTo?.length

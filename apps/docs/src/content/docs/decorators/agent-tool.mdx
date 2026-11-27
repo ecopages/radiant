@@ -66,6 +66,7 @@ The config is the WebMCP tool dictionary passed through (`name`, `description`, 
 - `parse(input: unknown)` validates the agent's input before the method runs and throws to reject the call. Pass a schema library's `schema.parse`. Under standard decorators it also types the method's argument. Without it the input arrives unchecked. `inputSchema` is plain JSON Schema and is advisory, and Radiant ships no schema library.
 - `getEnabled(host)` registers the tool only while it returns `true`.
 - `name` may be a function of the host. Both it and `getEnabled` are read after the host's attributes have caught up and again when a signal they read changes, which registers the tool again. Annotate the host parameter (`(host: RadCart) => ...`), because the decorator's config is written before TypeScript knows the class.
+- Everything but `name` and `getEnabled` is read each time the tool is registered, not when the element is constructed, and not at all in a browser without `document.modelContext`. Defer the work of building a schema with a function for `inputSchema` or `outputSchema`, and a getter for `parse` (a function there is the parser itself): `inputSchema: () => buildAddItemSchema()` and `get parse() { return buildAddItemParser(); }` run once per registration, and only for a browser that registers the tool. A plain object and a plain `parse` keep working. Both forms are synchronous, so they defer building the schema, not loading the library that builds it.
 
 ## Rules
 

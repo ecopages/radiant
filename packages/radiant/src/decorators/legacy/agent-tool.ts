@@ -1,4 +1,5 @@
 import { createAgentTool, type AgentToolConfig, type AgentToolHost } from '../../helpers/create-agent-tool';
+import { withConfig } from '../../helpers/agent-tool-config';
 import type { AgentToolExecuteOptions } from '../../helpers/register-agent-tool';
 import type { Method } from '../../types';
 import { registerLegacyInstanceInitializer } from './instance-initializers';
@@ -12,10 +13,13 @@ export function agentTool<Host extends AgentToolHost, Input>(config: Omit<AgentT
 		const originalMethod: Method = descriptor.value ?? descriptor.get?.call(proto);
 
 		registerLegacyInstanceInitializer(proto, (host) => {
-			createAgentTool(host, {
-				...config,
-				execute: (input: Input, options: AgentToolExecuteOptions) => originalMethod.call(host, input, options),
-			});
+			createAgentTool(
+				host,
+				withConfig(config, {
+					execute: (input: Input, options: AgentToolExecuteOptions) =>
+						originalMethod.call(host, input, options),
+				}),
+			);
 		});
 
 		return descriptor;
