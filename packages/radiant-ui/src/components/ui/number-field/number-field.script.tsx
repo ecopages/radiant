@@ -1,5 +1,13 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
-import { bindTo, customElement, onEvent, onUpdated, prop, state } from '@ecopages/radiant';
+import {
+	bindTo,
+	customElement,
+	onEvent,
+	onUpdated,
+	prop,
+	registerSsrPreparationCallback,
+	state,
+} from '@ecopages/radiant';
 import { FormAssociatedElement, type FormValue } from '@ecopages/radiant/form-associated-element';
 import {
 	formatNumber,
@@ -141,11 +149,13 @@ export class RuiNumberField extends FormAssociatedElement {
 	constructor() {
 		super();
 		stopInnerValueEvents(this);
+		registerSsrPreparationCallback(this, () => this.prepareServerInput());
 	}
 
 	private editing = false;
 	private draftValue = '';
 	private initialized = false;
+	private defaultSeeded = false;
 	private readonly uid = uniqueId('rui-number-field');
 
 	private get resolvedLocale(): string | string[] | undefined {
@@ -287,16 +297,68 @@ export class RuiNumberField extends FormAssociatedElement {
 		this.commitValue(parsed);
 	}
 
+	/** @remarks Seeds once, so a value cleared before the host is serialized again stays empty. */
+	private seedDefaultValue(): void {
+		if (this.defaultSeeded) {
+			return;
+		}
+		this.defaultSeeded = true;
+		if (this.value == null && this.defaultValue != null) {
+			this.value = this.defaultValue;
+		}
+	}
+
+	/**
+	 * Gives the inner input the `name`, raw `value`, `min`, `max` and `step` of the field in the server markup, so a
+	 * form posted before the script loads, or with JavaScript off, submits the number.
+	 *
+	 * @remarks
+	 * The value is the raw number, not the locale display, which a server cannot post back as a number. The host
+	 * connects with the display and `releaseServerInput` removes these attributes, so the form-associated host is the
+	 * only entry in `FormData` and nothing goes stale. `min`, `max` and `step` have no effect on a text input: only
+	 * `name` and `value` decide what a no-JavaScript form posts.
+	 */
+	private prepareServerInput(): void {
+		this.seedDefaultValue();
+		const input = this.getInput();
+		if (!input) {
+			return;
+		}
+
+		const attributes: [string, string | undefined][] = [
+			['name', this.name || undefined],
+			['value', this.hasCommittedValue() ? String(this.value) : undefined],
+			['min', Number.isFinite(this.minValue) ? String(this.minValue) : undefined],
+			['max', Number.isFinite(this.maxValue) ? String(this.maxValue) : undefined],
+			['step', String(this.step)],
+		];
+		for (const [attribute, value] of attributes) {
+			if (value === undefined) {
+				input.removeAttribute(attribute);
+			} else {
+				input.setAttribute(attribute, value);
+			}
+		}
+	}
+
+	/** Takes the host over from `prepareServerInput`: the host submits the value, so the attributes it wrote go. */
+	private releaseServerInput(): void {
+		const input = this.getInput();
+		if (input && this.name && input.getAttribute('name') === this.name) {
+			for (const attribute of ['name', 'value', 'min', 'max', 'step']) {
+				input.removeAttribute(attribute);
+			}
+		}
+	}
+
 	private initialize(): void {
 		if (this.initialized) {
 			return;
 		}
 		this.initialized = true;
 
-		if (this.value == null && this.defaultValue != null) {
-			this.value = this.defaultValue;
-		}
-
+		this.seedDefaultValue();
+		this.releaseServerInput();
 		this.syncLabel();
 		this.syncInput();
 		this.updateStepperState();

@@ -168,3 +168,42 @@ describe('RuiNumberField commit', () => {
 		expect(new FormData(form).get('quantity')).toBe('');
 	});
 });
+
+describe('RuiNumberField taking over server markup', () => {
+	it('submits the number once, from the host, after the script connects a named server input', async () => {
+		document.body.innerHTML = `
+			<form>
+				<rui-number-field name="quantity" value="2" min-value="1" max-value="9" step="1">
+					<input data-number-field-input name="quantity" value="2" min="1" max="9" step="1" type="text" />
+				</rui-number-field>
+			</form>
+		`;
+
+		await customElements.whenDefined('rui-number-field');
+		await settled();
+
+		const form = document.querySelector('form') as HTMLFormElement;
+		const input = form.querySelector<HTMLInputElement>('[data-number-field-input]') as HTMLInputElement;
+
+		expect(new FormData(form).getAll('quantity')).toEqual(['2']);
+		expect(['name', 'min', 'max', 'step'].filter((attribute) => input.hasAttribute(attribute))).toEqual([]);
+		expect(input.hasAttribute('value')).toBe(false);
+		expect(input.value).toBe('2');
+	});
+
+	it('keeps a name the consumer authored on the inner input only', async () => {
+		document.body.innerHTML = `
+			<form>
+				<rui-number-field name="quantity" value="2">
+					<input data-number-field-input name="display" />
+				</rui-number-field>
+			</form>
+		`;
+
+		await customElements.whenDefined('rui-number-field');
+		await settled();
+
+		const input = document.querySelector<HTMLInputElement>('[data-number-field-input]') as HTMLInputElement;
+		expect(input.getAttribute('name')).toBe('display');
+	});
+});

@@ -68,7 +68,7 @@ import '@ecopages/radiant-ui/number-field';
 </rui-number-field>
 ```
 
-BEM classes are presentation-only. The host owns formatted input `value` and spinbutton `aria-*`. Set `name` on the host to submit the raw number with a native form (not the formatted display string).
+BEM classes are presentation-only. The host owns formatted input `value` and spinbutton `aria-*`. Set `name` on the host to submit the raw number with a native form (not the formatted display string). The server markup also names the inner input and gives it the raw `value`, so a form posted before the script loads, or with JavaScript off, still submits the number. Set `name` on the number field itself for that: a name that only a surrounding `RuiField` supplies reaches the field when the script connects. The server also writes `min`, `max` and `step` on the input, where a text input ignores them. The host removes all of these when it connects, so the form holds the value once.
 
 ## Step and commit behavior
 
@@ -120,7 +120,7 @@ Geometry shares control tokens (`--size-control-sm`, `--space-control-*`, `--rad
 
 | Target | Required | Host writes | Author owns |
 | --- | --- | --- | --- |
-| `[data-number-field-input]` | yes | `id`, `role`, `inputmode`, `data-disabled`, `data-readonly`, `aria-valuemin`, `aria-valuemax`, `aria-valuenow`, formatted `value` | text input; stamp `data-rui-control` for field wiring |
+| `[data-number-field-input]` | yes | `id`, `role`, `inputmode`, `data-disabled`, `data-readonly`, `aria-valuemin`, `aria-valuemax`, `aria-valuenow`, formatted `value`; on the server only, `name`, raw `value`, `min`, `max`, `step` (removed on connect) | text input; stamp `data-rui-control` for field wiring |
 | `[data-number-field-action="decrement"]` | no | `disabled`, `aria-label` | decrement button |
 | `[data-number-field-action="increment"]` | no | `disabled`, `aria-label` | increment button |
 | `[data-number-field-group]` | no | — | presentation wrapper only |
