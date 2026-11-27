@@ -236,4 +236,52 @@ describe('minimal DOM reflected properties', () => {
 			expect(input.value).toBe('m');
 		}
 	});
+
+	test.each(['radio', 'checkbox', 'hidden', 'submit', 'reset', 'button', 'image'])(
+		'assigning the value of an input of type %s writes the value attribute',
+		(type) => {
+			const input = el('input') as unknown as { value: string } & MinimalHTMLElement;
+			input.setAttribute('type', type);
+			input.value = 'm';
+			expect(input.getAttribute('value')).toBe('m');
+			expect(input.value).toBe('m');
+		},
+	);
+
+	test.each(['text', 'email', 'number', 'search'])(
+		'assigning the value of an input of type %s stays a plain value',
+		(type) => {
+			const input = el('input') as unknown as { value: string } & MinimalHTMLElement;
+			input.setAttribute('type', type);
+			input.value = 'typed';
+			expect(input.hasAttribute('value')).toBe(false);
+			expect(input.value).toBe('typed');
+		},
+	);
+
+	test('an assigned value moves to the value attribute when the input becomes a radio', () => {
+		const input = el('input') as unknown as { value: string; type: string } & MinimalHTMLElement;
+		input.setAttribute('value', 'old');
+		input.value = 'new';
+		input.type = 'radio';
+		expect(input.getAttribute('value')).toBe('new');
+		expect(input.value).toBe('new');
+	});
+
+	test('an assigned value survives the type attribute being set to a checkbox', () => {
+		const input = el('input') as unknown as { value: string } & MinimalHTMLElement;
+		input.value = 'new';
+		input.setAttribute('type', 'checkbox');
+		expect(input.value).toBe('new');
+		expect(input.getAttribute('value')).toBe('new');
+	});
+
+	test('a value assigned after the type became a checkbox is not replaced by an earlier one', () => {
+		const input = el('input') as unknown as { value: string } & MinimalHTMLElement;
+		input.value = 'first';
+		input.setAttribute('type', 'checkbox');
+		input.value = 'second';
+		expect(input.value).toBe('second');
+		expect(input.getAttribute('value')).toBe('second');
+	});
 });

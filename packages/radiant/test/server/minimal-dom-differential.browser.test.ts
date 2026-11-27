@@ -370,6 +370,20 @@ describe('minimal DOM property setters match Chromium', () => {
 		if (property !== 'href') expect(minimal[property]).toEqual(expected[property]);
 	});
 
+	test.each(['radio', 'checkbox', 'hidden', 'submit', 'reset', 'button', 'image', 'text', 'email', 'number'])(
+		'input value on type %s matches before and after assignment',
+		(type) => {
+			const minimal = new MinimalHTMLElement('input', null) as unknown as DomElement & { value: string };
+			const expected = document.createElement('input') as unknown as DomElement & { value: string };
+			minimal.setAttribute('type', type);
+			expected.setAttribute('type', type);
+			expect(minimal.value).toBe(expected.value);
+			minimal.value = expected.value = type === 'number' ? '4' : 'v';
+			expect(attributesOf(minimal)).toEqual(attributesOf(expected));
+			expect(minimal.value).toBe(expected.value);
+		},
+	);
+
 	test('option value falls back to its text', () => {
 		const minimal = new MinimalHTMLElement('option', null) as unknown as { value: string; textContent: string };
 		const expected = document.createElement('option');

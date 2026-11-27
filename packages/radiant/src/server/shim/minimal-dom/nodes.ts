@@ -349,6 +349,8 @@ const NAME_TAGS = new Set([
 const HREF_TAGS = new Set(['a', 'area', 'base', 'link']);
 /** Tags whose `value` property reflects the `value` attribute (`input` does not, as in a browser). */
 const VALUE_TAGS = new Set(['button', 'option']);
+/** `input` types whose `value` property reads and writes the `value` attribute. */
+const INPUT_VALUE_ATTRIBUTE_TYPES = new Set(['radio', 'checkbox', 'hidden', 'submit', 'reset', 'button', 'image']);
 /** `ARIAMixin` properties that reflect a string attribute; the element-reference ones (`ariaControlsElements`, ...) do not. */
 type AriaStringProperty = {
 	[K in keyof ARIAMixin]: ARIAMixin[K] extends string | null ? K : never;
@@ -658,6 +660,7 @@ export class MinimalElement extends MinimalNode {
 			return;
 		}
 		this.setAttribute('type', value);
+		this.adoptAssignedInputValue();
 	}
 
 	/**
@@ -720,17 +723,38 @@ export class MinimalElement extends MinimalNode {
 
 	/**
 	 * @remarks Reflected only on `button` and `option`. An `option` without a `value` attribute reads its text with whitespace collapsed.
-	 * An assigned `input.value` is a plain value, as on every other tag. An `input` that was never assigned reads its
-	 * `value` attribute, as a text input does before the user edits it, and a `radio` or `checkbox` reads that attribute
-	 * or `on`. A browser also writes the attribute when a `radio` or `checkbox` value is assigned; the shim does not.
+	 * An `input` of type `radio`, `checkbox`, `hidden`, `submit`, `reset`, `button` or `image` reads and writes its `value`
+	 * attribute, and a `radio` or `checkbox` without one reads `on`. Any other `input` keeps an assigned value as a
+	 * plain value, as on every other tag, and reads its `value` attribute until then, as before the user edits it.
 	 */
 	get value(): string {
 		const tag = this.localName;
 		if (!VALUE_TAGS.has(tag)) {
-			if (tag === 'input' && !this.#plainProps.has('value')) return this.inputDefaultValue();
+			this.adoptAssignedInputValue();
+			if (tag === 'input' && (this.reflectsInputValue() || !this.#plainProps.has('value'))) {
+				return this.inputDefaultValue();
+			}
 			return this.#plainProps.get('value') as string;
 		}
 		return this.getAttribute('value') ?? (tag === 'option' ? collapseAsciiWhitespace(this.textContent) : '');
+	}
+
+	/**
+	 * Moves a value assigned while the input was a text input to the `value` attribute once its type reflects it, as a
+	 * browser does when the type changes. `setAttribute('type')` does not call this, so a read does.
+	 */
+	private adoptAssignedInputValue(): void {
+		if (this.reflectsInputValue() && this.#plainProps.has('value')) {
+			this.setAttribute('value', this.#plainProps.get('value') as string);
+			this.#plainProps.delete('value');
+		}
+	}
+
+	private reflectsInputValue(): boolean {
+		return (
+			this.localName === 'input' &&
+			INPUT_VALUE_ATTRIBUTE_TYPES.has(this.getAttribute('type')?.toLowerCase() ?? '')
+		);
 	}
 
 	private inputDefaultValue(): string {
@@ -739,6 +763,11 @@ export class MinimalElement extends MinimalNode {
 	}
 
 	set value(value: string) {
+		if (this.reflectsInputValue()) {
+			this.#plainProps.delete('value');
+			this.setAttribute('value', value);
+			return;
+		}
 		if (!VALUE_TAGS.has(this.localName)) {
 			this.#plainProps.set('value', value);
 			return;
