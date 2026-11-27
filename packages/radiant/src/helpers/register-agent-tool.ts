@@ -49,10 +49,13 @@ export type AgentTool<Input = unknown> = {
 };
 
 /**
- * A schema, or a function that builds it. The function is called when the tool is registered, so the schema is
- * built only in a browser that can use it.
+ * A schema, or a function that returns it, or a promise of it. The function is called when the tool is registered,
+ * so the schema is built, and its library loaded, only in a browser that can use it.
  */
-export type AgentToolSchemaSource = AgentToolSchema | (() => AgentToolSchema);
+export type AgentToolSchemaSource = AgentToolSchema | (() => AgentToolSchema | PromiseLike<AgentToolSchema>);
+
+/** A function that turns the agent's input into `Input` and throws to reject it. */
+export type AgentToolParse<Input = unknown> = (input: unknown) => Input;
 
 /**
  * Configuration for `registerAgentTool`.
@@ -62,6 +65,12 @@ export type AgentToolSchemaSource = AgentToolSchema | (() => AgentToolSchema);
  * property can be a getter that builds a value only then. A getter on `parse` and a function for `inputSchema`
  * or `outputSchema` both defer the work of building a schema. `parse` takes a getter rather than a function
  * because a function already is the parser.
+ *
+ * Each of them may also produce a promise, such as `() => import('./schema').then(...)` or
+ * `get parse() { return import('./schema').then(...) }`, so the library that builds the schema loads only where the
+ * tool registers. The browser is then given the tool once every promise has settled. A tool that is unregistered
+ * first is never registered, and a promise that rejects is reported with `console.error`. A config with no promise
+ * registers at once.
  */
 export type RegisterAgentToolConfig<Input = unknown> = Omit<AgentTool<Input>, 'inputSchema' | 'outputSchema'> & {
 	/** Plain JSON Schema, or a function that returns it when the tool is registered. It is advisory: the agent's input is not checked against it unless `parse` does so. */
@@ -74,7 +83,7 @@ export type RegisterAgentToolConfig<Input = unknown> = Omit<AgentTool<Input>, 'i
 	 * Turns the agent's input into `Input` before `execute` runs, and throws to reject the call. Pass a
 	 * schema library's `parse`, such as `schema.parse`. Without it `execute` receives the input unchecked.
 	 */
-	parse?: (input: unknown) => Input;
+	parse?: AgentToolParse<Input> | PromiseLike<AgentToolParse<Input>>;
 };
 
 /** Options for `registerAgentTool` beyond the tool itself. */
@@ -98,8 +107,18 @@ const DESCRIPTION_BUDGET = 500;
 const PARAMETER_DESCRIPTION_BUDGET = 150;
 const OUTPUT_BUDGET = 1500;
 
-function resolveSchema(source: AgentToolSchemaSource): AgentToolSchema {
-	return typeof source === 'function' ? source() : source;
+function isThenable(value: unknown): value is PromiseLike<unknown> {
+	return typeof value === 'object' && value !== null && typeof Reflect.get(value, 'then') === 'function';
+}
+
+/** Calls a schema function, turning a throw into a rejection so it is reported like a failed load. */
+function resolveSchema(source: AgentToolSchemaSource): AgentToolSchema | PromiseLike<AgentToolSchema> {
+	if (typeof source !== 'function') return source;
+	try {
+		return source();
+	} catch (error) {
+		return Promise.reject(error);
+	}
 }
 
 function longestParameterDescription(schema: unknown): number {
@@ -173,42 +192,74 @@ export function registerAgentTool<Input = unknown>(
 	if (!modelContext) return () => {};
 
 	const { parse, exposedTo, execute, inputSchema, outputSchema, ...rest } = config;
-	const tool: Omit<AgentTool, 'execute'> = {
-		...rest,
-		...(inputSchema && { inputSchema: resolveSchema(inputSchema) }),
-		...(outputSchema && { outputSchema: resolveSchema(outputSchema) }),
-	};
-	warnOnceInDevelopment(`agent-tool:${tool.description}`, () => describeToolIssues(tool));
-
-	warnOnceInDevelopment(`agent-tool-exposed:${tool.description}`, () =>
-		exposedTo?.length
-			? `[@ecopages/radiant] Agent tool "${tool.name}" is exposed to ${exposedTo.join(', ')}. Those origins can call it with their own arguments, so treat its input as untrusted and return nothing you would not give them.`
-			: undefined,
-	);
-
 	const controller = new AbortController();
-	modelContext
-		.registerTool(
-			{
-				...tool,
-				execute: async (input, executeOptions) => {
-					const result = await execute(parse ? parse(input) : (input as Input), executeOptions);
-					warnOnceInDevelopment(`agent-tool-output:${tool.description}`, () => {
-						const text = JSON.stringify(result);
-						return text !== undefined && text.length > OUTPUT_BUDGET
-							? `[@ecopages/radiant] Agent tool "${tool.name}" returned over ${OUTPUT_BUDGET} characters. Return only what the agent needs: output can leave the device.`
-							: undefined;
-					});
-					return result;
+	const sources = [
+		inputSchema && resolveSchema(inputSchema),
+		outputSchema && resolveSchema(outputSchema),
+		parse,
+	] as const;
+
+	const register = (
+		input: AgentToolSchema | undefined,
+		output: AgentToolSchema | undefined,
+		parser: AgentToolParse<Input> | undefined,
+	) => {
+		const tool: Omit<AgentTool, 'execute'> = {
+			...rest,
+			...(input && { inputSchema: input }),
+			...(output && { outputSchema: output }),
+		};
+		warnOnceInDevelopment(`agent-tool:${tool.description}`, () => describeToolIssues(tool));
+
+		warnOnceInDevelopment(`agent-tool-exposed:${tool.description}`, () =>
+			exposedTo?.length
+				? `[@ecopages/radiant] Agent tool "${tool.name}" is exposed to ${exposedTo.join(', ')}. Those origins can call it with their own arguments, so treat its input as untrusted and return nothing you would not give them.`
+				: undefined,
+		);
+
+		modelContext
+			.registerTool(
+				{
+					...tool,
+					execute: async (agentInput, executeOptions) => {
+						const result = await execute(
+							parser ? parser(agentInput) : (agentInput as Input),
+							executeOptions,
+						);
+						warnOnceInDevelopment(`agent-tool-output:${tool.description}`, () => {
+							const text = JSON.stringify(result);
+							return text !== undefined && text.length > OUTPUT_BUDGET
+								? `[@ecopages/radiant] Agent tool "${tool.name}" returned over ${OUTPUT_BUDGET} characters. Return only what the agent needs: output can leave the device.`
+								: undefined;
+						});
+						return result;
+					},
 				},
+				{ signal: controller.signal, exposedTo },
+			)
+			.catch((error: unknown) => report(error, 'register'));
+	};
+
+	const report = (error: unknown, action: 'register' | 'load the schema of') => {
+		if (controller.signal.aborted) return;
+		const owner = options.label ? ` on ${options.label}` : '';
+		console.error(`[@ecopages/radiant] Could not ${action} agent tool "${rest.name}"${owner}.`, error);
+	};
+
+	if (sources.some(isThenable)) {
+		Promise.all(sources).then(
+			([input, output, parser]) => {
+				if (!controller.signal.aborted) register(input, output, parser);
 			},
-			{ signal: controller.signal, exposedTo },
-		)
-		.catch((error: unknown) => {
-			if (controller.signal.aborted) return;
-			const owner = options.label ? ` on ${options.label}` : '';
-			console.error(`[@ecopages/radiant] Could not register agent tool "${tool.name}"${owner}.`, error);
-		});
+			(error: unknown) => report(error, 'load the schema of'),
+		);
+	} else {
+		register(
+			sources[0] as AgentToolSchema | undefined,
+			sources[1] as AgentToolSchema | undefined,
+			sources[2] as AgentToolParse<Input> | undefined,
+		);
+	}
 
 	return () => controller.abort();
 }

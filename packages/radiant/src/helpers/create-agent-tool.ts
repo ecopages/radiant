@@ -19,7 +19,8 @@ export type AgentToolHost = {
  * Everything but `name` and `getEnabled` is read each time the tool is registered, never at construction, and not at
  * all in a browser without `document.modelContext`. A getter, or a function for `inputSchema` or `outputSchema`,
  * therefore builds a schema only for a tool that is registered, once per registration. Use a getter for `parse`,
- * because a function there is the parser itself.
+ * because a function there is the parser itself. Each may return a promise, so the library that builds the schema
+ * is imported only where the tool registers; see `RegisterAgentToolConfig`.
  *
  * `name` and `getEnabled` are read on connect and again whenever a signal they read changes, which
  * unregisters the old tool and registers the new one. Use a function of the host for a name that

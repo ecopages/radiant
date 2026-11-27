@@ -434,6 +434,53 @@ describe('agent tools on a RadiantElement', () => {
 			expect(registeredSchema('add-fn-item')).toEqual(schema);
 		});
 
+		it('registers a decorated method after an asynchronous schema resolves, and not when the host left first', async () => {
+			let resolve!: (value: typeof schema) => void;
+			const loading = new Promise<typeof schema>((resolvePromise) => {
+				resolve = resolvePromise;
+			});
+
+			@customElement('agent-tool-async-schema')
+			class Cart extends RadiantElement {
+				@agentTool({ name: 'add-async-item', description: 'Adds an item', inputSchema: () => loading })
+				addItem() {}
+			}
+
+			const cart = document.createElement('agent-tool-async-schema') as Cart;
+			document.body.appendChild(cart);
+			await settle();
+			expect(modelContext.names).toEqual([]);
+
+			resolve(schema);
+			await vi.waitFor(() => expect(modelContext.names).toEqual(['add-async-item']));
+			expect(registeredSchema('add-async-item')).toEqual(schema);
+
+			cart.remove();
+			expect(modelContext.names).toEqual([]);
+		});
+
+		it('registers nothing for a host that disconnects before its asynchronous schema arrives', async () => {
+			let resolve!: (value: typeof schema) => void;
+			const loading = new Promise<typeof schema>((resolvePromise) => {
+				resolve = resolvePromise;
+			});
+
+			@customElement('agent-tool-async-gone')
+			class Cart extends RadiantElement {
+				@agentTool({ name: 'add-gone-item', description: 'Adds an item', inputSchema: () => loading })
+				addItem() {}
+			}
+
+			const cart = document.createElement('agent-tool-async-gone') as Cart;
+			document.body.appendChild(cart);
+			await settle();
+			cart.remove();
+			resolve(schema);
+			await settle();
+
+			expect(modelContext.registrations).toEqual([]);
+		});
+
 		it('registers a frozen config', async () => {
 			const frozen = Object.freeze({
 				name: 'add-frozen-item',
