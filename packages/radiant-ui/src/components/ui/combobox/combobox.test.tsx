@@ -265,4 +265,99 @@ describe('RuiCombobox', () => {
 
 		expect(combobox.value).toEqual(['it']);
 	});
+
+	describe('options that arrive after the input event', () => {
+		function addOptions(host: HTMLElement, labels: string[]): void {
+			const listbox = host.querySelector('[role="listbox"]') as HTMLElement;
+			for (const label of labels) {
+				const option = document.createElement('div');
+				option.setAttribute('role', 'option');
+				option.setAttribute('data-value', label.toLowerCase());
+				option.textContent = label;
+				listbox.append(option);
+			}
+		}
+
+		it('opens the listbox when suggestions load after the visitor typed', async () => {
+			const { host, cleanup } = mount(<RuiCombobox options={[]} placeholder="Search" />);
+			await settled();
+
+			const input = host.querySelector('[data-combobox-input]') as HTMLInputElement;
+			const popup = host.querySelector('[data-combobox-listbox]') as HTMLElement;
+
+			await userEvent.type(input, 'chair');
+			await settled();
+			expect(popup.hidden).toBe(true);
+
+			addOptions(host, ['Chair', 'Armchair']);
+			await settled();
+
+			expect(popup.hidden).toBe(false);
+			expect(input.getAttribute('aria-expanded')).toBe('true');
+			expect(host.querySelectorAll('[role="option"]:not([hidden])')).toHaveLength(2);
+			cleanup();
+		});
+
+		it('does not open for options added while the input is empty', async () => {
+			const { host, cleanup } = mount(<RuiCombobox options={[]} placeholder="Search" />);
+			await settled();
+
+			const input = host.querySelector('[data-combobox-input]') as HTMLInputElement;
+			const popup = host.querySelector('[data-combobox-listbox]') as HTMLElement;
+
+			input.focus();
+			addOptions(host, ['Chair']);
+			await settled();
+
+			expect(popup.hidden).toBe(true);
+			cleanup();
+		});
+
+		it('does not open for options added while the input is not focused', async () => {
+			const { host, cleanup } = mount(<RuiCombobox options={[]} placeholder="Search" />);
+			await settled();
+
+			const input = host.querySelector('[data-combobox-input]') as HTMLInputElement;
+			const popup = host.querySelector('[data-combobox-listbox]') as HTMLElement;
+
+			await userEvent.type(input, 'chair');
+			input.blur();
+			addOptions(host, ['Chair']);
+			await settled();
+
+			expect(popup.hidden).toBe(true);
+			cleanup();
+		});
+
+		it('stays closed for a manual trigger kind', async () => {
+			const { host, cleanup } = mount(<RuiCombobox options={[]} triggerKind="manual" placeholder="Search" />);
+			await settled();
+
+			const input = host.querySelector('[data-combobox-input]') as HTMLInputElement;
+			const popup = host.querySelector('[data-combobox-listbox]') as HTMLElement;
+
+			await userEvent.type(input, 'chair');
+			addOptions(host, ['Chair']);
+			await settled();
+
+			expect(popup.hidden).toBe(true);
+			cleanup();
+		});
+
+		it('re-evaluates the open state on refreshOptions()', async () => {
+			const { host, cleanup } = mount(<RuiCombobox options={[]} placeholder="Search" />);
+			await settled();
+
+			const combobox = host.querySelector('rui-combobox') as RuiComboboxElement;
+			const input = host.querySelector('[data-combobox-input]') as HTMLInputElement;
+			const popup = host.querySelector('[data-combobox-listbox]') as HTMLElement;
+
+			await userEvent.type(input, 'chair');
+			addOptions(host, ['Chair']);
+			combobox.refreshOptions();
+
+			expect(popup.hidden).toBe(false);
+			cleanup();
+		});
+	});
 });
