@@ -1,5 +1,25 @@
 # @ecopages/radiant-ui
 
+## 0.7.0
+
+### Minor Changes
+
+- [#811](https://github.com/ecopages/radiant/pull/811) [`45fad77`](https://github.com/ecopages/radiant/commit/45fad7722167e309fd3c4fca4bbca2b7e97fbcd7) Thanks [@andeeplus](https://github.com/andeeplus)! - Add `getHref` to `RuiPagination` and `RuiPaginationNav`. Each available page control then renders as an `<a>` to `getHref(page)`, with `aria-current="page"` on the current page, so a listing that pages by URL works without JavaScript. The browser handles a click on a link and `rui-page-change` is not emitted for it, in custom markup too when the control is an `<a href>`; an unavailable previous or next control stays a disabled button.
+
+### Patch Changes
+
+- [#811](https://github.com/ecopages/radiant/pull/811) [`27755c2`](https://github.com/ecopages/radiant/commit/27755c2ec920da4d77d00b4de485fe7f3c1f6016) Thanks [@andeeplus](https://github.com/andeeplus)! - Keep the text typed into a `RuiCombobox` input before its script loads. The host filters for that text and, when the input has focus and an option matches, opens the listbox. In single mode a selected `value` still replaces it with its label.
+
+- [#811](https://github.com/ecopages/radiant/pull/811) [`883c0de`](https://github.com/ecopages/radiant/commit/883c0deb7584ede4c879e4a14b17735f45653474) Thanks [@andeeplus](https://github.com/andeeplus)! - Open a `RuiCombobox` listbox when options that match the typed text are added to its popup after typing left nothing to show, so a typeahead that renders its suggestions after the `input` event opens it. A list the visitor selected from or dismissed stays closed. Add `refreshOptions()` to open it for the current options on demand.
+
+- [#811](https://github.com/ecopages/radiant/pull/811) [`aa7221e`](https://github.com/ecopages/radiant/commit/aa7221eb271caaf248dcc3c821a1672c1333cadf) Thanks [@andeeplus](https://github.com/andeeplus)! - Render the inner input of `RuiNumberField` with the field's `name`, raw `value`, `min`, `max` and `step` in the server markup, so a form posted without JavaScript submits the number when the field, or a surrounding `RuiField`, has a `name`. The host removes those attributes when it connects, so the number is submitted once. `min`, `max` and `step` have no effect on a text input.
+
+- [#811](https://github.com/ecopages/radiant/pull/811) [`9cf7186`](https://github.com/ecopages/radiant/commit/9cf718630efb33b311e7a28c7294b90ff151fb37) Thanks [@andeeplus](https://github.com/andeeplus)! - Render `checked` on the radio that matches a `RuiRadioGroup` value in the server markup, so a form posted without JavaScript submits the selected value when the group, or a surrounding `RuiField`, has a `name`. `RuiField` now names a radio group's radios and a number field's input in the server markup. The server shim now reads an `input` value from its `value` attribute until it is assigned, and a `radio` or `checkbox` without one reads `on`. Assigning `input.value` on a `radio`, `checkbox`, `hidden`, `submit`, `reset`, `button` or `image` input writes the `value` attribute, as in a browser.
+- Updated dependencies [[`39b5191`](https://github.com/ecopages/radiant/commit/39b5191155d345f86dc7d99c89785d12134b12cd), [`9cf7186`](https://github.com/ecopages/radiant/commit/9cf718630efb33b311e7a28c7294b90ff151fb37)]:
+    - @ecopages/radiant@0.13.0
+    - @ecopages/jsx@0.13.0
+    - @ecopages/signals@0.13.0
+
 ## 0.6.2
 
 ### Patch Changes
