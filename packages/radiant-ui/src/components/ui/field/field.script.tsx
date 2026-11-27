@@ -29,6 +29,7 @@ import {
 	RUI_FIELD_DEFAULT_VALUE_ATTR,
 	RUI_FIELD_MANAGED_ATTR,
 	writeControlValue,
+	nameControlMembersForServer,
 	wireFieldControlName,
 } from '@/lib/form/control-protocol';
 import { formContext, type FormContextValue } from '@/lib/form/form-context';
@@ -175,6 +176,23 @@ export class RuiField extends RadiantElement {
 	/** The `id` this field assigned to each target, as opposed to an authored one. */
 	private readonly assignedIds = new WeakMap<HTMLElement, string>();
 	/** Resolved field name from property or `name` attribute (Storybook can hydrate props after connect). */
+	/**
+	 * Gives the control the field's name in the server markup, as `syncField` does on the client, so a form posted
+	 * before hydration submits it under that name and two field-named groups do not share a fallback name.
+	 *
+	 * @remarks
+	 * A control host nested in the field is already serialized markup by now, so its own server preparation cannot
+	 * see the name: the field writes it onto the host and onto the members the host would have named.
+	 */
+	private nameControlForServer(): void {
+		const controlHost = findFieldControl(this);
+		const fieldName = this.resolveFieldName();
+		if (controlHost && fieldName) {
+			wireFieldControlName(controlHost, getAriaControlTargets(controlHost)[0] ?? null, fieldName);
+			nameControlMembersForServer(controlHost, fieldName);
+		}
+	}
+
 	private resolveFieldName(): string {
 		return (this.name || this.getAttribute('name') || '').trim();
 	}
@@ -203,7 +221,10 @@ export class RuiField extends RadiantElement {
 	 */
 	constructor() {
 		super();
-		registerSsrPreparationCallback(this, () => this.fieldProvider.setContext({ rules: this.readFieldRules() }));
+		registerSsrPreparationCallback(this, () => {
+			this.fieldProvider.setContext({ rules: this.readFieldRules() });
+			this.nameControlForServer();
+		});
 		createEventListenerController(this, {
 			getTarget: () => this,
 			type: ['input', 'change'],

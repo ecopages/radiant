@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
+import { RuiField as RuiFieldElement } from '../field/field.script';
 import { RuiNumberField as RuiNumberFieldElement } from './number-field.script';
+void RuiFieldElement;
 
 function tick(): Promise<void> {
 	return new Promise((resolve) => setTimeout(resolve, 0));
@@ -205,5 +207,25 @@ describe('RuiNumberField taking over server markup', () => {
 
 		const input = document.querySelector<HTMLInputElement>('[data-number-field-input]') as HTMLInputElement;
 		expect(input.getAttribute('name')).toBe('display');
+	});
+
+	it('submits the number once when a field supplied the name in the server markup', async () => {
+		document.body.innerHTML = `
+			<form>
+				<rui-field name="quantity">
+					<rui-number-field name="quantity" value="2">
+						<input data-number-field-input name="quantity" value="2" type="text" />
+					</rui-number-field>
+				</rui-field>
+			</form>
+		`;
+
+		await customElements.whenDefined('rui-number-field');
+		await customElements.whenDefined('rui-field');
+		await settled();
+		await settled();
+
+		const form = document.querySelector('form') as HTMLFormElement;
+		expect(new FormData(form).getAll('quantity')).toEqual(['2']);
 	});
 });
