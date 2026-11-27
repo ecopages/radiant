@@ -44,3 +44,52 @@ describe('RuiPagination narrow chrome', () => {
 		expect(chrome(mount('rui-pagination--compact'))).toEqual(narrowChrome);
 	});
 });
+
+describe('RuiPagination links', () => {
+	afterEach(() => {
+		document.body.innerHTML = '';
+	});
+
+	it('leaves a click on a page link to the browser and emits no page change', async () => {
+		const container = document.createElement('div');
+		document.body.append(container);
+		createRoot(container).render(
+			<RuiPagination page={2} pageCount={5} getHref={(target) => `/list/page/${target}`} />,
+		);
+		await customElements.whenDefined('rui-pagination');
+		await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined)));
+
+		const host = container.querySelector('rui-pagination') as HTMLElement;
+		const changes: unknown[] = [];
+		host.addEventListener('rui-page-change', (event) => changes.push(event));
+		let prevented: boolean | undefined;
+		container.addEventListener('click', (event) => {
+			prevented = event.defaultPrevented;
+			event.preventDefault();
+		});
+
+		(container.querySelector('a[data-pagination-page="4"]') as HTMLAnchorElement).click();
+
+		expect(prevented).toBe(false);
+		expect(changes).toEqual([]);
+	});
+
+	it('still emits a page change for an anchor without an href', async () => {
+		const container = document.createElement('div');
+		document.body.append(container);
+		container.innerHTML =
+			'<rui-pagination page="2" page-count="5"><nav><a data-pagination-page="3">3</a></nav></rui-pagination>';
+		await customElements.whenDefined('rui-pagination');
+		await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined)));
+
+		const host = container.querySelector('rui-pagination') as HTMLElement;
+		const changes: number[] = [];
+		host.addEventListener('rui-page-change', (event) =>
+			changes.push((event as CustomEvent<{ page: number }>).detail.page),
+		);
+
+		(container.querySelector('a') as HTMLAnchorElement).click();
+
+		expect(changes).toEqual([3]);
+	});
+});

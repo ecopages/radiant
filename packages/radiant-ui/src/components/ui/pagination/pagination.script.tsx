@@ -36,6 +36,8 @@ export function clampPage(page: number, pageCount: number): number {
  * Required (at least one):
  * - `[data-pagination-page]` — page control. Host reads `data-pagination-page` (one-based page number) on click.
  *
+ * A control that is an `<a href>` navigates on its own: the host leaves its click alone and emits no `rui-page-change`.
+ *
  * Do not rely on BEM class names for behavior.
  *
  * Nested hosts: none.
@@ -86,6 +88,7 @@ export class RuiPagination extends RadiantElement {
 	@onEvent({ selector: '[data-pagination-page]', type: 'click' })
 	onPageClick(event: Event): void {
 		const button = (event.target as HTMLElement).closest<HTMLElement>('[data-pagination-page]');
+		if (button?.matches('a[href]')) return;
 		const page = Number(button?.getAttribute('data-pagination-page'));
 		if (Number.isInteger(page)) this.changePage(page);
 	}

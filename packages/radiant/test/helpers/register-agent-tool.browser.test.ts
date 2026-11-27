@@ -188,4 +188,190 @@ describe('registerAgentTool', () => {
 		expect(warn.mock.calls[0]?.[0]).toContain('over 1500 characters');
 		expect(warn.mock.calls[0]?.[0]).not.toContain('xxxx');
 	});
+
+	describe('a config read when the tool is registered', () => {
+		const schema = { type: 'object', properties: { sku: { type: 'string' } } };
+		const output = { type: 'object', properties: { added: { type: 'string' } } };
+
+		it('calls a schema function once, when it registers, and hands the browser the schema', () => {
+			const inputSchema = vi.fn(() => schema);
+			const outputSchema = vi.fn(() => output);
+
+			registerAgentTool({
+				name: 'add-item',
+				description: 'Adds an item',
+				inputSchema,
+				outputSchema,
+				execute: noop,
+			});
+
+			expect(inputSchema).toHaveBeenCalledTimes(1);
+			expect(outputSchema).toHaveBeenCalledTimes(1);
+			expect(modelContext.registrations[0]).toMatchObject({ inputSchema: schema, outputSchema: output });
+		});
+
+		it('reads a getter once, even when the development warnings run', () => {
+			const reads = vi.fn();
+
+			registerAgentTool({
+				name: 'add-item',
+				description: 'Adds one item through a getter, read once',
+				get inputSchema() {
+					reads();
+					return schema;
+				},
+				execute: noop,
+			});
+
+			expect(reads).toHaveBeenCalledTimes(1);
+		});
+
+		it('reads neither a getter nor a schema function without document.modelContext', () => {
+			uninstallFakeModelContext();
+			const reads = vi.fn();
+			const inputSchema = vi.fn(() => schema);
+
+			registerAgentTool({
+				name: 'add-item',
+				description: 'Adds an item',
+				inputSchema,
+				get outputSchema() {
+					reads();
+					return output;
+				},
+				get parse() {
+					reads();
+					return (input: unknown) => input;
+				},
+				execute: noop,
+			});
+
+			expect(inputSchema).not.toHaveBeenCalled();
+			expect(reads).not.toHaveBeenCalled();
+		});
+
+		it('leaves inputSchema off the registered tool when there is none', () => {
+			registerAgentTool({ name: 'add-item', description: 'Adds an item', execute: noop });
+
+			expect(Object.keys(modelContext.registrations[0] ?? {})).not.toContain('inputSchema');
+		});
+	});
+
+	describe('a config that loads asynchronously', () => {
+		const schema = { type: 'object', properties: { sku: { type: 'string' } } };
+		const deferred = <Value>() => {
+			let resolve!: (value: Value) => void;
+			let reject!: (reason: unknown) => void;
+			const promise = new Promise<Value>((resolvePromise, rejectPromise) => {
+				resolve = resolvePromise;
+				reject = rejectPromise;
+			});
+			return { promise, resolve, reject };
+		};
+
+		it('registers once the schema function has resolved, and not before', async () => {
+			const loading = deferred<typeof schema>();
+
+			registerAgentTool({
+				name: 'add-item',
+				description: 'Adds an item',
+				inputSchema: () => loading.promise,
+				execute: noop,
+			});
+			await Promise.resolve();
+			expect(modelContext.names).toEqual([]);
+
+			loading.resolve(schema);
+			await vi.waitFor(() => expect(modelContext.names).toEqual(['add-item']));
+			expect(modelContext.registrations[0]).toMatchObject({ inputSchema: schema });
+		});
+
+		it('validates with a parse that arrives from a promise', async () => {
+			const execute = vi.fn((input: { sku: string }) => input);
+
+			registerAgentTool({
+				name: 'add-item',
+				description: 'Adds an item',
+				get parse() {
+					return Promise.resolve((input: unknown) => ({ sku: String((input as { sku: unknown }).sku) }));
+				},
+				execute,
+			});
+			await vi.waitFor(() => expect(modelContext.names).toEqual(['add-item']));
+			await modelContext.tools.get('add-item')?.execute({ sku: 7 }, { signal: new AbortController().signal });
+
+			expect(execute.mock.calls[0]?.[0]).toEqual({ sku: '7' });
+		});
+
+		it('registers nothing when it is unregistered before the schema arrives', async () => {
+			const loading = deferred<typeof schema>();
+
+			const unregister = registerAgentTool({
+				name: 'add-item',
+				description: 'Adds an item',
+				inputSchema: () => loading.promise,
+				execute: noop,
+			});
+			unregister();
+			loading.resolve(schema);
+			await new Promise((resolve) => setTimeout(resolve));
+
+			expect(modelContext.registrations).toEqual([]);
+		});
+
+		it('reports a schema that fails to load with the tool name and registers nothing', async () => {
+			const error = vi.spyOn(console, 'error').mockImplementation(noop);
+
+			registerAgentTool(
+				{
+					name: 'add-item',
+					description: 'Adds an item',
+					inputSchema: () => Promise.reject(new Error('chunk failed')),
+					execute: noop,
+				},
+				{ label: '<rad-cart>' },
+			);
+			await vi.waitFor(() => expect(error).toHaveBeenCalled());
+
+			expect(String(error.mock.calls[0]?.[0])).toContain('add-item');
+			expect(String(error.mock.calls[0]?.[0])).toContain('<rad-cart>');
+			expect(modelContext.registrations).toEqual([]);
+		});
+
+		it('reports a schema function that throws, like one that rejects', async () => {
+			const error = vi.spyOn(console, 'error').mockImplementation(noop);
+
+			registerAgentTool({
+				name: 'add-item',
+				description: 'Adds an item',
+				inputSchema: () => {
+					throw new Error('no schema');
+				},
+				execute: noop,
+			});
+			await vi.waitFor(() => expect(error).toHaveBeenCalled());
+
+			expect(modelContext.registrations).toEqual([]);
+		});
+
+		it('never starts loading without document.modelContext', () => {
+			uninstallFakeModelContext();
+			const load = vi.fn(() => Promise.resolve(schema));
+
+			registerAgentTool({ name: 'add-item', description: 'Adds an item', inputSchema: load, execute: noop });
+
+			expect(load).not.toHaveBeenCalled();
+		});
+
+		it('still registers a synchronous config at once', () => {
+			registerAgentTool({
+				name: 'add-item',
+				description: 'Adds an item',
+				inputSchema: () => schema,
+				execute: noop,
+			});
+
+			expect(modelContext.names).toEqual(['add-item']);
+		});
+	});
 });

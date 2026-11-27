@@ -285,4 +285,237 @@ describe('agent tools on a RadiantElement', () => {
 		expect(CartController).toBeDefined();
 		stopControllers();
 	});
+
+	describe('a config read when the tool is registered', () => {
+		const schema = { type: 'object', properties: { sku: { type: 'string' } } };
+		const registeredSchema = (name: string) =>
+			(modelContext.tools.get(name) as { inputSchema?: unknown })?.inputSchema;
+
+		it('never reads an inputSchema getter in a browser without document.modelContext', async () => {
+			uninstallFakeModelContext();
+			const reads = vi.fn();
+
+			@customElement('agent-tool-lazy-without-context')
+			class Cart extends RadiantElement {
+				@agentTool({
+					name: 'add-lazy-item',
+					description: 'Adds an item',
+					get inputSchema() {
+						reads();
+						return schema;
+					},
+				})
+				addItem() {}
+			}
+
+			document.body.appendChild(document.createElement('agent-tool-lazy-without-context') as Cart);
+			await settle();
+
+			expect(reads).not.toHaveBeenCalled();
+		});
+
+		it('reads the getter when the tool is registered, not when the element is constructed', async () => {
+			const reads = vi.fn();
+
+			@customElement('agent-tool-lazy-with-context')
+			class Cart extends RadiantElement {
+				@agentTool({
+					name: 'add-lazy-item',
+					description: 'Adds an item',
+					get inputSchema() {
+						reads();
+						return schema;
+					},
+				})
+				addItem() {}
+			}
+
+			const cart = document.createElement('agent-tool-lazy-with-context') as Cart;
+			expect(reads).not.toHaveBeenCalled();
+
+			document.body.appendChild(cart);
+			await settle();
+
+			expect(reads).toHaveBeenCalledTimes(1);
+			expect(registeredSchema('add-lazy-item')).toEqual(schema);
+		});
+
+		it('reads the getter again for each registration, once per connect', async () => {
+			const reads = vi.fn();
+
+			@customElement('agent-tool-lazy-reconnect')
+			class Cart extends RadiantElement {
+				@agentTool({
+					name: 'add-lazy-item',
+					description: 'Adds an item',
+					get inputSchema() {
+						reads();
+						return schema;
+					},
+				})
+				addItem() {}
+			}
+
+			const cart = document.createElement('agent-tool-lazy-reconnect') as Cart;
+			document.body.appendChild(cart);
+			await settle();
+			cart.remove();
+			document.body.appendChild(cart);
+			await settle();
+
+			expect(reads).toHaveBeenCalledTimes(2);
+		});
+
+		it('builds a parse getter only for a registered tool and validates with it', async () => {
+			uninstallFakeModelContext();
+			const builds = vi.fn();
+
+			@customElement('agent-tool-lazy-parse-without-context')
+			class Idle extends RadiantElement {
+				@agentTool({
+					name: 'add-idle-item',
+					description: 'Adds an item',
+					get parse() {
+						builds();
+						return (input: unknown) => input as string;
+					},
+				})
+				addItem(_sku: string) {}
+			}
+			document.body.appendChild(document.createElement('agent-tool-lazy-parse-without-context') as Idle);
+			await settle();
+			expect(builds).not.toHaveBeenCalled();
+
+			modelContext = installFakeModelContext();
+
+			@customElement('agent-tool-lazy-parse')
+			class Cart extends RadiantElement {
+				received: unknown;
+
+				@agentTool({
+					name: 'add-parsed-lazy-item',
+					description: 'Adds an item',
+					get parse() {
+						builds();
+						return (input: unknown) => String((input as { sku: unknown }).sku);
+					},
+				})
+				addItem(sku: string) {
+					this.received = sku;
+				}
+			}
+			const cart = document.createElement('agent-tool-lazy-parse') as Cart;
+			document.body.appendChild(cart);
+			await settle();
+			await modelContext.tools
+				.get('add-parsed-lazy-item')
+				?.execute({ sku: 7 }, { signal: new AbortController().signal });
+
+			expect(builds).toHaveBeenCalledTimes(1);
+			expect(cart.received).toBe('7');
+		});
+
+		it('calls a function inputSchema when the tool is registered', async () => {
+			const build = vi.fn(() => schema);
+
+			@customElement('agent-tool-lazy-function')
+			class Cart extends RadiantElement {
+				@agentTool({ name: 'add-fn-item', description: 'Adds an item', inputSchema: build })
+				addItem() {}
+			}
+
+			const cart = document.createElement('agent-tool-lazy-function') as Cart;
+			expect(build).not.toHaveBeenCalled();
+
+			document.body.appendChild(cart);
+			await settle();
+
+			expect(build).toHaveBeenCalledTimes(1);
+			expect(registeredSchema('add-fn-item')).toEqual(schema);
+		});
+
+		it('registers a decorated method after an asynchronous schema resolves, and not when the host left first', async () => {
+			let resolve!: (value: typeof schema) => void;
+			const loading = new Promise<typeof schema>((resolvePromise) => {
+				resolve = resolvePromise;
+			});
+
+			@customElement('agent-tool-async-schema')
+			class Cart extends RadiantElement {
+				@agentTool({ name: 'add-async-item', description: 'Adds an item', inputSchema: () => loading })
+				addItem() {}
+			}
+
+			const cart = document.createElement('agent-tool-async-schema') as Cart;
+			document.body.appendChild(cart);
+			await settle();
+			expect(modelContext.names).toEqual([]);
+
+			resolve(schema);
+			await vi.waitFor(() => expect(modelContext.names).toEqual(['add-async-item']));
+			expect(registeredSchema('add-async-item')).toEqual(schema);
+
+			cart.remove();
+			expect(modelContext.names).toEqual([]);
+		});
+
+		it('registers nothing for a host that disconnects before its asynchronous schema arrives', async () => {
+			let resolve!: (value: typeof schema) => void;
+			const loading = new Promise<typeof schema>((resolvePromise) => {
+				resolve = resolvePromise;
+			});
+
+			@customElement('agent-tool-async-gone')
+			class Cart extends RadiantElement {
+				@agentTool({ name: 'add-gone-item', description: 'Adds an item', inputSchema: () => loading })
+				addItem() {}
+			}
+
+			const cart = document.createElement('agent-tool-async-gone') as Cart;
+			document.body.appendChild(cart);
+			await settle();
+			cart.remove();
+			resolve(schema);
+			await settle();
+
+			expect(modelContext.registrations).toEqual([]);
+		});
+
+		it('registers a frozen config', async () => {
+			const frozen = Object.freeze({
+				name: 'add-frozen-item',
+				description: 'Adds an item',
+				getEnabled: () => true,
+				inputSchema: schema,
+				execute: () => undefined,
+			});
+
+			@customElement('agent-tool-frozen-config')
+			class Cart extends RadiantElement {
+				constructor() {
+					super();
+					createAgentTool(this, frozen);
+				}
+			}
+
+			document.body.appendChild(document.createElement('agent-tool-frozen-config') as Cart);
+			await settle();
+
+			expect(modelContext.names).toEqual(['add-frozen-item']);
+			expect(Object.keys(modelContext.registrations[0] ?? {})).not.toContain('getEnabled');
+		});
+
+		it('keeps a plain inputSchema object working', async () => {
+			@customElement('agent-tool-eager-schema')
+			class Cart extends RadiantElement {
+				@agentTool({ name: 'add-eager-item', description: 'Adds an item', inputSchema: schema })
+				addItem() {}
+			}
+
+			document.body.appendChild(document.createElement('agent-tool-eager-schema') as Cart);
+			await settle();
+
+			expect(registeredSchema('add-eager-item')).toEqual(schema);
+		});
+	});
 });

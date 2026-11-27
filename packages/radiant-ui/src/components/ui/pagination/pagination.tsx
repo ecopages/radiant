@@ -45,17 +45,41 @@ export type RuiPaginationLabels = {
 	statusLabel?: (page: number, pageCount: number) => string;
 };
 
+/** Address of a page, for the link mode of `RuiPagination`. */
+export type RuiPaginationGetHref = (page: number) => string;
+
 export type RuiPaginationNavProps = RuiPaginationLabels & {
 	label: string;
 	page: number;
 	pageCount: number;
 	disabled?: boolean;
 	siblingCount?: number;
+	/** Renders each available page control as a link to `getHref(page)` instead of a button. */
+	getHref?: RuiPaginationGetHref;
 };
+
+/**
+ * The props that point a control at `target`: its `href` in link mode, otherwise whether it is disabled.
+ *
+ * @remarks A link cannot be disabled, so a control stays a disabled button while the pagination is disabled or
+ * `target` is outside the page range.
+ */
+function controlTarget(
+	getHref: RuiPaginationGetHref | undefined,
+	target: number,
+	pageCount: number,
+	disabled: boolean,
+): { href: string } | { disabled: boolean } {
+	const available = !disabled && target >= 1 && target <= pageCount;
+	return getHref && available ? { href: getHref(target) } : { disabled: !available };
+}
 
 /**
  * Default previous / page / next chrome for `RuiPagination`. Stamps `[data-pagination-page]`
  * on each navigable control.
+ *
+ * @remarks With `getHref` each available control is an `<a href>`, which works without JavaScript. A control that
+ * has no page to go to, or any control while `disabled`, stays a disabled `<button>`.
  */
 export function RuiPaginationNav({
 	label,
@@ -63,6 +87,7 @@ export function RuiPaginationNav({
 	pageCount,
 	disabled = false,
 	siblingCount = 1,
+	getHref,
 	previousText = 'Previous',
 	previousLabel = 'Go to previous page',
 	nextText = 'Next',
@@ -85,7 +110,7 @@ export function RuiPaginationNav({
 						class="rui-pagination__link rui-pagination__link--previous"
 						data-pagination-page={resolvedPage - 1}
 						aria-label={previousLabel}
-						disabled={disabled || resolvedPage <= 1}
+						{...controlTarget(getHref, resolvedPage - 1, resolvedPageCount, disabled)}
 					>
 						<RuiIconChevronLeft />
 						<span>{previousText}</span>
@@ -105,7 +130,7 @@ export function RuiPaginationNav({
 								data-pagination-page={item}
 								aria-label={pageLabel(item)}
 								aria-current={item === resolvedPage ? 'page' : undefined}
-								disabled={disabled}
+								{...controlTarget(getHref, item, resolvedPageCount, disabled)}
 							>
 								{item}
 							</RuiButton>
@@ -126,7 +151,7 @@ export function RuiPaginationNav({
 						class="rui-pagination__link rui-pagination__link--next"
 						data-pagination-page={resolvedPage + 1}
 						aria-label={nextLabel}
-						disabled={disabled || resolvedPage >= resolvedPageCount}
+						{...controlTarget(getHref, resolvedPage + 1, resolvedPageCount, disabled)}
 					>
 						<span>{nextText}</span>
 						<RuiIconChevronRight />
@@ -145,6 +170,10 @@ export function RuiPaginationNav({
  * `rui-pagination` event contract. `RuiPaginationLabels` props localize the default
  * chrome; they are view-only and never reach the host element.
  *
+ * Pass `getHref` for a listing that pages by URL: each page control becomes a link to `getHref(page)`, with
+ * `aria-current="page"` on the current page, and navigation works without JavaScript or through a router. A click on
+ * a link is left to the browser and emits no `rui-page-change`. `getHref` is view-only, and ignored when `children` replace the chrome.
+ *
  * @cssclass rui-pagination - Navigation root on the host.
  * @cssclass rui-pagination__page - Page-number item; `__page--current` marks the active page.
  * @cssclass rui-pagination--compact - Force the narrow chrome used below `40rem`: icon-only previous / next around the page position.
@@ -159,6 +188,7 @@ export function RuiPagination({
 	pageCount = 1,
 	disabled = false,
 	siblingCount = 1,
+	getHref,
 	previousText,
 	previousLabel,
 	nextText,
@@ -170,6 +200,8 @@ export function RuiPagination({
 }: JsxCustomElementAttributes<RuiPaginationElement, RuiPaginationProps> &
 	RuiPaginationLabels & {
 		children?: JsxRenderable;
+		/** Renders each available page control as a link to `getHref(page)` instead of a button. */
+		getHref?: RuiPaginationGetHref;
 	}) {
 	const resolvedPageCount = Math.max(1, Math.floor(pageCount) || 1);
 	const resolvedPage = clampPage(page, resolvedPageCount);
@@ -192,6 +224,7 @@ export function RuiPagination({
 					pageCount={resolvedPageCount}
 					disabled={disabled}
 					siblingCount={resolvedSiblingCount}
+					getHref={getHref}
 					previousText={previousText}
 					previousLabel={previousLabel}
 					nextText={nextText}

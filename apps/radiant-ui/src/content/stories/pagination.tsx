@@ -24,3 +24,15 @@ export const meta = {
 type Story = DocsStory<PaginationArgs>;
 
 export const Default: Story = docsStory(meta, { parameters: { docs: { id: 'pagination/default' } } });
+
+export const Links: Story = docsStory(meta, {
+	parameters: { docs: { id: 'pagination/links' } },
+	render: (args) => (
+		<RuiPagination
+			label={args.label}
+			page={args.page}
+			pageCount={args.pageCount}
+			getHref={(target) => `/list/page/${target}`}
+		/>
+	),
+});

@@ -644,6 +644,29 @@ export function wireFieldControlName(
 	}
 }
 
+/** The native members a control host names on the client, by host tag, which the server markup must name too. */
+const NAMED_MEMBER_SELECTORS: Readonly<Record<string, string>> = {
+	'rui-radio-group': 'input[type="radio"]',
+	'rui-number-field': '[data-number-field-input]',
+};
+
+/**
+ * Writes `name` onto the native members a control host would name itself, in server markup.
+ *
+ * @remarks
+ * A host serializes with its own name, so it names its members then. A field supplies its name only after the host
+ * is serialized, and calls this to name them in the markup a form posts before the host connects.
+ */
+export function nameControlMembersForServer(controlHost: HTMLElement, name: string): void {
+	const selector = NAMED_MEMBER_SELECTORS[controlHost.localName];
+	if (!selector) {
+		return;
+	}
+	for (const member of controlHost.querySelectorAll(selector)) {
+		member.setAttribute('name', name);
+	}
+}
+
 /**
  * Whether a radio is selected, in the browser and under the minimal SSR DOM.
  *

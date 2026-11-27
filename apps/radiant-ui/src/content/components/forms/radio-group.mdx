@@ -29,7 +29,7 @@ export const config = {
 
 ## Usage
 
-Set `value` for the selected option and provide radio inputs as children. Wrap in `RuiField` for form integration. Set `name` on the group (or the field) to list inner radios on native `FormData`.
+Set `value` for the selected option and provide radio inputs as children. Wrap in `RuiField` for form integration. Set `name` on the group (or the field) to list inner radios on native `FormData`. The server markup carries the group's `name` on every radio and `checked` on the one that matches `value`, so a form posted before the script loads, or with JavaScript off, submits the selected value. The name can come from the group or from a surrounding `RuiField`, which names the radios in the server markup too, so two field-named groups in one form stay separate before the script loads.
 
 ```tsx
 import { RuiRadio, RuiRadioGroup, RuiRadioGroupControl } from '@ecopages/radiant-ui/radio-group';
