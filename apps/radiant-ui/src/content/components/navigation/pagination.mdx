@@ -3,7 +3,7 @@ title: Pagination
 description: Pagination provides accessible page navigation for controlled collections.
 ---
 
-import { meta as PaginationMeta, Default } from '@/content/stories/pagination';
+import { meta as PaginationMeta, Default, Links } from '@/content/stories/pagination';
 import Canvas from '@/components/component-docs/canvas';
 import Demo from '@/components/component-docs/demo';
 
@@ -62,6 +62,23 @@ The default chrome copy is English. Pass the label view props to localize it:
 />
 ```
 
+## Links
+
+A listing that pages by URL needs links: they work without JavaScript, a router can prefetch them, and each page has an address to share. Pass `getHref` and each page control becomes an `<a>` to `getHref(page)`, with `aria-current="page"` on the current page.
+
+```tsx
+<RuiPagination
+  label="Search result pages"
+  page={page}
+  pageCount={pageCount}
+  getHref={(target) => `/list/page/${target}`}
+/>
+```
+
+<Canvas of={Links} meta={PaginationMeta} />
+
+The browser, or your router, handles a click on a link: `rui-page-change` is not emitted for it. A previous or next control with no page to go to, and every control while `disabled`, stays a disabled button, because a link cannot be disabled.
+
 ## Custom markup
 
 `<rui-pagination>` coordinates any light-DOM tree that matches its query contract. The `Rui*` helpers stamp these targets; they are not required.
@@ -119,12 +136,13 @@ These props configure the default `RuiPaginationNav` chrome rendered by `RuiPagi
 | `nextLabel` | `string` | `Go to next page` | Accessible name of the next control. |
 | `pageLabel` | `(page: number) => string` | `Go to page n` | Accessible name of each page-number control. |
 | `statusLabel` | `(page: number, pageCount: number) => string` | `Page n of m` | Page position announced (`aria-live="polite"`) in compact chrome. |
+| `getHref` | `(page: number) => string` | | Renders each available page control as a link to `getHref(page)` instead of a button. Ignored when `children` replace the chrome. |
 
 ### Light-DOM contract
 
 | Target | Required | Host writes | Author owns |
 | --- | --- | --- | --- |
-| `[data-pagination-page]` | yes (per control) | — | `data-pagination-page` (one-based page number) |
+| `[data-pagination-page]` | yes (per control) | — | `data-pagination-page` (one-based page number); an `<a href>` control navigates on its own and emits no `rui-page-change` |
 
 Nested hosts: none.
 
@@ -132,7 +150,7 @@ Nested hosts: none.
 
 | Event | Detail | Description |
 | --- | --- | --- |
-| `rui-page-change` | `{ page: number }` | Emitted when a page control is activated. |
+| `rui-page-change` | `{ page: number }` | Emitted when a button page control is activated. A link control, an `<a href>` such as the ones `getHref` renders, navigates on its own and emits nothing. |
 
 ### View helpers
 

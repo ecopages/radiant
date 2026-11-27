@@ -76,3 +76,32 @@ export const Compact: Story = {
 		});
 	},
 };
+
+/**
+ * Each page control is a link to its address: it works without JavaScript and a router can prefetch it.
+ */
+export const Links: Story = {
+	render: () => (
+		<RuiPagination
+			label="Search result pages"
+			page={2}
+			pageCount={5}
+			getHref={(target) => `/list/page/${target}`}
+		/>
+	),
+	play: async ({ canvasElement, step }) => {
+		await step('renders each page control as a link to its page', async () => {
+			const links = Array.from(canvasElement.querySelectorAll<HTMLAnchorElement>('a[data-pagination-page]'));
+			await expect(links.map((link) => link.getAttribute('href'))).toEqual([
+				'/list/page/1',
+				'/list/page/1',
+				'/list/page/2',
+				'/list/page/3',
+				'/list/page/4',
+				'/list/page/5',
+				'/list/page/3',
+			]);
+			await expect(canvasElement.querySelector('[aria-current="page"]')).toHaveAttribute('href', '/list/page/2');
+		});
+	},
+};
