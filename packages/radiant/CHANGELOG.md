@@ -1,5 +1,18 @@
 # @ecopages/radiant
 
+## 0.13.0
+
+### Minor Changes
+
+- [#811](https://github.com/ecopages/radiant/pull/811) [`39b5191`](https://github.com/ecopages/radiant/commit/39b5191155d345f86dc7d99c89785d12134b12cd) Thanks [@andeeplus](https://github.com/andeeplus)! - Read an agent tool's config when the tool is registered, not when the element is constructed, and not at all in a browser without `document.modelContext`. `inputSchema` and `outputSchema` accept a function that returns the schema, and a getter on any property but `name` and `getEnabled` (such as `parse`) is called once per registration. Each of them may also return a promise, such as `inputSchema: () => import('./schema').then((m) => m.json)` or `get parse() { return import('./schema').then((m) => m.parse); }`, so an app loads its schema library only for a visitor whose browser can use it: the tool registers once every promise has settled, never if it was unregistered first, and a promise that rejects is reported with `console.error`. A plain object and a plain `parse` work as before.
+
+### Patch Changes
+
+- [#811](https://github.com/ecopages/radiant/pull/811) [`9cf7186`](https://github.com/ecopages/radiant/commit/9cf718630efb33b311e7a28c7294b90ff151fb37) Thanks [@andeeplus](https://github.com/andeeplus)! - Render `checked` on the radio that matches a `RuiRadioGroup` value in the server markup, so a form posted without JavaScript submits the selected value when the group, or a surrounding `RuiField`, has a `name`. `RuiField` now names a radio group's radios and a number field's input in the server markup. The server shim now reads an `input` value from its `value` attribute until it is assigned, and a `radio` or `checkbox` without one reads `on`. Assigning `input.value` on a `radio`, `checkbox`, `hidden`, `submit`, `reset`, `button` or `image` input writes the `value` attribute, as in a browser.
+- Updated dependencies []:
+    - @ecopages/jsx@0.13.0
+    - @ecopages/signals@0.13.0
+
 ## 0.12.0
 
 ### Minor Changes
