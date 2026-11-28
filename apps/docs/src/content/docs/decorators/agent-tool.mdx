@@ -57,7 +57,7 @@ class RadCart extends RadiantElement {
 | `createAgentTool(host, config)` | The same lifecycle for a tool that is not one method, such as a controller or a field. Returns a function that stops managing the tool.   |
 | `registerAgentTool(config)`     | A tool outside any host, such as a store or a page script. Returns its unregister function.                                               |
 
-The helpers come from `@ecopages/radiant/helpers/create-agent-tool` and `@ecopages/radiant/helpers/register-agent-tool`. `withConfig`, which copies a config, comes from `@ecopages/radiant/helpers/agent-tool-config`.
+The helpers come from `@ecopages/radiant/helpers/create-agent-tool` and `@ecopages/radiant/helpers/register-agent-tool`.
 
 ## Config
 
@@ -68,23 +68,6 @@ The config is the WebMCP tool dictionary passed through (`name`, `description`, 
 - `name` may be a function of the host. Both it and `getEnabled` are read after the host's attributes have caught up and again when a signal they read changes, which registers the tool again. Annotate the host parameter (`(host: RadCart) => ...`), because the decorator's config is written before TypeScript knows the class.
 - Everything but `name` and `getEnabled` is read each time the tool is registered, not when the element is constructed, and not at all in a browser without `document.modelContext`. Defer the work of building a schema with a function for `inputSchema` or `outputSchema`, and a getter for `parse` (a function there is the parser itself): they run once per registration, and only for a browser that registers the tool. A plain object and a plain `parse` keep working.
 - Each of those may return a promise, so the library that builds the schema loads only where the tool registers: `inputSchema: () => import('./add-item').then((m) => m.addItemJsonSchema)` and `get parse() { return import('./add-item').then((m) => m.parseAddItem); }`. The browser gets the tool once every promise has settled. A tool unregistered first, such as one whose element is removed meanwhile, is never registered, and a promise that rejects is reported with `console.error` naming the tool. A config without a promise registers at once.
-
-## Overriding a field of a shared config
-
-An app that registers several tools from one lazy config cannot spread it to change one field, such as `getEnabled`: `{ ...config, getEnabled }` calls every getter on `config`, so a `parse` getter loads its schema library at once, even in a browser that never registers the tool. `withConfig(config, overrides, omit?)` copies the property descriptors instead, so a getter stays a getter and is not read, and a schema is built only when the tool registers, or never without `document.modelContext`. `omit` lists keys of `config` to leave out of the copy. A frozen config can be copied.
-
-```ts
-import { createAgentTool } from '@ecopages/radiant/helpers/create-agent-tool';
-import { withConfig } from '@ecopages/radiant/helpers/agent-tool-config';
-
-// sharedCartTool is a lazy config, such as one with a `parse` getter, used by several tools.
-class RadCart extends RadiantElement {
-	constructor() {
-		super();
-		createAgentTool(this, withConfig(sharedCartTool, { getEnabled: () => shopIsOpen() }));
-	}
-}
-```
 
 ## Rules
 

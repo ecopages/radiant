@@ -4,4 +4,3 @@ export * from './create-event-listener';
 export * from './debounce';
 export * from './create-agent-tool';
 export * from './register-agent-tool';
-export * from './agent-tool-config';
