@@ -40,3 +40,4 @@ export {
 	RUI_FIELD_WARNING_ATTR,
 } from '@/lib/form/control-protocol';
 export type { FieldControlAdapter } from '@/lib/form/control-protocol';
+export { registerSubmissionForSsr, submissionContext, type SubmissionContextValue } from '@/lib/form/submission';

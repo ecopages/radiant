@@ -1,7 +1,12 @@
+import '@ecopages/radiant/server/install-ssr-runtime';
 import { renderToString } from '@ecopages/jsx/server';
+import { RadiantElement, bindTo, customElement, prop } from '@ecopages/radiant';
 import { withRadiantServerCustomElementRenderBridge } from '@ecopages/radiant/server/radiant-element-ssr';
 import { describe, expect, it } from 'vitest';
+import { registerSubmissionForSsr } from '@/lib/form/submission';
+import { nonEmpty } from '@/lib/non-empty';
 import { RuiField } from './field';
+import { RuiFieldElement } from './index';
 import { RuiNumberField } from '../number-field';
 import { RuiRadio, RuiRadioGroup, RuiRadioGroupControl } from '../radio-group';
 import { RuiCheckboxGroup } from '../checkbox-group';
@@ -13,6 +18,22 @@ import { RuiKnob } from '../knob';
 import { RuiDateInput } from '../date-input';
 import { RuiDateField } from '../date-field';
 import { RuiDateRangePicker } from '../date-range-picker';
+
+@customElement('test-registered-control')
+class TestRegisteredControl extends RadiantElement {
+	@prop({ type: String, defaultValue: '' })
+	@bindTo({ selector: 'input', attr: 'name', map: nonEmpty })
+	name: string;
+
+	@prop({ type: Boolean, defaultValue: false })
+	@bindTo({ selector: 'input', prop: 'disabled' })
+	disabled: boolean;
+
+	constructor() {
+		super();
+		registerSubmissionForSsr(this);
+	}
+}
 
 const render = (node: Parameters<typeof renderToString>[0]) =>
 	withRadiantServerCustomElementRenderBridge(() => renderToString(node));
@@ -209,5 +230,43 @@ describe('RuiField name in server markup', () => {
 
 		expect(html).toMatch(/<rui-date-input[^>]*\sname="arrival"[^>]*\sdata-range-start/);
 		expect(html).toMatch(/<rui-date-input[^>]*\sname="departure"[^>]*\sdata-range-end/);
+	});
+
+	it('names the input of a control host that registers itself, as the catalog hosts do', () => {
+		const html = render(
+			<RuiField name="custom">
+				<TestRegisteredControl>
+					<input data-rui-control type="text" />
+				</TestRegisteredControl>
+			</RuiField>,
+		);
+
+		expect(html.match(/<input[^>]*>/)?.[0]).toMatch(/\sname="custom"/);
+	});
+
+	it('names the input of an outer headless field that follows a nested field', () => {
+		const html = render(
+			<RuiFieldElement name="outer">
+				<RuiField name="inner">
+					<RuiInput />
+				</RuiField>
+				<div>
+					<input data-rui-control type="text" />
+				</div>
+			</RuiFieldElement>,
+		);
+
+		const names = (html.match(/<input[^>]*>/g) ?? []).map((input) => input.match(/\sname="([^"]*)"/)?.[1]);
+		expect(names).toEqual(['inner', 'outer']);
+	});
+
+	it('leaves the inputs of a date range picker unnamed by the field', () => {
+		const html = render(
+			<RuiField name="trip">
+				<RuiDateRangePicker />
+			</RuiField>,
+		);
+
+		expect(html.match(/<rui-date-input[^>]*>/g)?.some((tag) => tag.includes('name="trip"'))).toBe(false);
 	});
 });

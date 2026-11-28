@@ -1,5 +1,7 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
 import { RadiantElement, bindTo, customElement, onEvent, onUpdated, prop, state } from '@ecopages/radiant';
+import { provideContext } from '@ecopages/radiant/context';
+import type { ContextProvider } from '@ecopages/radiant/context';
 import { emitValueEvents, stopInnerValueEvents } from '@/lib/form/value-events';
 import { isIsoInRange, normalizeRange, parseIsoRange, serializeIsoRange } from '@/lib/intl-date';
 import type { RuiCalendarChangeDetail } from '../calendar/calendar.script';
@@ -12,7 +14,7 @@ import {
 } from '../shared/portal-container';
 import { effectiveVisibleMonths } from '@/lib/viewport/mobile-layout';
 import { announceControlConnect } from '@/lib/form/control-protocol';
-import { registerFieldNameForSsr } from '../field/field-context';
+import { submissionContext } from '@/lib/form/submission';
 
 export type RuiDateRangePickerProps = {
 	value?: string;
@@ -139,9 +141,12 @@ export class RuiDateRangePicker extends RadiantElement {
 	@bindTo({ selector: '[data-range-trigger]', attr: 'aria-expanded' })
 	open = false;
 
+	/** Stops the surrounding name from reaching the two date inputs, which take `start-name` and `end-name`. */
+	@provideContext({ context: submissionContext, initialValue: { name: '', disabled: false } })
+	submissionProvider: ContextProvider<typeof submissionContext>;
+
 	constructor() {
 		super();
-		registerFieldNameForSsr(this);
 		stopInnerValueEvents(this);
 	}
 

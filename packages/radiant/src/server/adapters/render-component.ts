@@ -273,6 +273,7 @@ async function renderResolvedComponent<TComponent extends ServerRenderableCompon
 				const component = new Component();
 				alignMinimalDomHostTagName(component, tagName);
 				ensureLegacyHostReady(component, 'ssr');
+				runSsrPreparationCallbacks(component, 'beforeAuthoredChildren');
 				prepareRenderedComponentHost(
 					environment,
 					component,

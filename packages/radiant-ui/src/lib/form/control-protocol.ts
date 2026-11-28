@@ -195,6 +195,16 @@ const CONTROL_VALUE_ADAPTERS = new Map<string, FieldControlAdapter>([
 	['rui-number-field', { ...numberValueAdapter, submission: 'host' }],
 ]);
 
+/** The presentation column of this field, not of a field nested inside it. */
+function findOwnFieldColumn(root: HTMLElement): HTMLElement | null {
+	for (const column of root.querySelectorAll<HTMLElement>(FIELD_COLUMN_SELECTOR)) {
+		if (column.closest('rui-field') === root) {
+			return column;
+		}
+	}
+	return null;
+}
+
 /** Search authored field content, including nodes Radiant has moved for hydration. */
 function forEachFieldContentNode(root: HTMLElement, visit: (node: Element) => void): void {
 	const slotHost = root as FieldSlotHost;
@@ -211,7 +221,7 @@ function forEachFieldContentNode(root: HTMLElement, visit: (node: Element) => vo
 		safeVisit(node);
 	}
 
-	const renderRoot = root.querySelector(FIELD_COLUMN_SELECTOR) ?? root;
+	const renderRoot = findOwnFieldColumn(root) ?? root;
 	for (const child of Array.from(renderRoot.children)) {
 		safeVisit(child);
 	}
@@ -274,8 +284,8 @@ function collectFieldControls(root: HTMLElement): HTMLElement[] {
 }
 
 function listFieldControlsInRenderTree(root: HTMLElement): HTMLElement[] {
-	const renderRoot = root.querySelector(FIELD_COLUMN_SELECTOR);
-	if (!(renderRoot instanceof HTMLElement)) {
+	const renderRoot = findOwnFieldColumn(root);
+	if (!renderRoot) {
 		return [];
 	}
 	return Array.from(renderRoot.querySelectorAll<HTMLElement>(fieldControlSelector())).filter((el) =>
@@ -600,8 +610,8 @@ export function findControlledFieldErrors(root: HTMLElement): HTMLElement[] {
 }
 
 function collectFieldErrorRegions(root: HTMLElement): HTMLElement[] {
-	const renderRoot = root.querySelector(FIELD_COLUMN_SELECTOR);
-	if (renderRoot instanceof HTMLElement) {
+	const renderRoot = findOwnFieldColumn(root);
+	if (renderRoot) {
 		const inRender = Array.from(renderRoot.querySelectorAll<HTMLElement>(`[${RUI_FIELD_ERROR_ATTR}]`));
 		if (inRender.length > 0) {
 			return inRender;

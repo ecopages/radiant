@@ -32,6 +32,7 @@ import {
 	wireFieldControlName,
 } from '@/lib/form/control-protocol';
 import { formContext, type FormContextValue } from '@/lib/form/form-context';
+import { submissionContext } from '@/lib/form/submission';
 import { fieldContext, type FieldContextValue } from './field-context';
 import type { FieldRegistration, FieldRegistrationHandle, FieldRules } from '@/lib/form/types';
 import { bindVisibleLabel } from '../shared/field-label';
@@ -72,7 +73,7 @@ export type RuiFieldProps = {
  * applies presentation (errors, ARIA) from the form-published `fields` map.
  * It is not a listed form control. Native `FormData` comes from the child: `name` on
  * a form-associated host (`rui-date-input`, `rui-number-field`, `rui-slider`,
- * `rui-knob`) or on an inner native input. Catalog control hosts read the field's name from context
+ * `rui-knob`) or on an inner native input. Catalog control hosts take the field's name from `submissionContext`
  * during SSR. The field names directly authored inputs and keeps the name in sync on the client.
  *
  * ## Light-DOM contract
@@ -169,6 +170,10 @@ export class RuiField extends RadiantElement {
 	})
 	fieldProvider: ContextProvider<typeof fieldContext>;
 
+	/** Names the controls in server markup: each reads its submission name from here while it serializes. */
+	@provideContext({ context: submissionContext, initialValue: { name: '', disabled: false } })
+	private submissionProvider: ContextProvider<typeof submissionContext>;
+
 	@consumeContext(formContext)
 	private formContextProvider?: ContextProvider<typeof formContext>;
 
@@ -206,7 +211,7 @@ export class RuiField extends RadiantElement {
 		super();
 		registerSsrPreparationCallback(
 			this,
-			() => this.fieldProvider.setContext({ name: this.resolveFieldName() }),
+			() => this.submissionProvider.setContext({ name: this.resolveFieldName(), disabled: false }),
 			'beforeAuthoredChildren',
 		);
 		registerSsrPreparationCallback(this, () => {

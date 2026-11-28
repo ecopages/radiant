@@ -1,11 +1,9 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
-import { RadiantElement, bindTo, customElement, prop, registerSsrPreparationCallback } from '@ecopages/radiant';
-import { resolveSsrContextValue } from '@ecopages/radiant/context';
+import { RadiantElement, bindTo, customElement, prop } from '@ecopages/radiant';
 import { createEventListenerController } from '../../../controllers/event-listener-controller';
 import { nonEmpty } from '@/lib/non-empty';
 import { announceControlConnect } from '@/lib/form/control-protocol';
-import { registerFieldNameForSsr } from '../field/field-context';
-import { checkboxGroupContext } from './checkbox-group-context';
+import { registerSubmissionForSsr } from '@/lib/form/submission';
 
 export type RuiCheckboxProps = {
 	/** Whether the checkbox is checked. Default: `false`. */
@@ -123,20 +121,7 @@ export class RuiCheckbox extends RadiantElement {
 	/** Syncs the host from its input before any bubble listener runs. */
 	constructor() {
 		super();
-		registerFieldNameForSsr(this);
-		registerSsrPreparationCallback(
-			this,
-			() => {
-				const group = resolveSsrContextValue(checkboxGroupContext);
-				if (group?.name) {
-					this.name = group.name;
-				}
-				if (group?.disabled) {
-					this.disabled = true;
-				}
-			},
-			'beforeOnUpdated',
-		);
+		registerSubmissionForSsr(this);
 		createEventListenerController(this, {
 			getTarget: () => this,
 			type: ['input', 'change'],

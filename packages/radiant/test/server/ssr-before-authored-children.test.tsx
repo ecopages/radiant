@@ -8,6 +8,7 @@ import { registerSsrPreparationCallback } from '../../src/core/ssr-preparation';
 import { customElement } from '../../src/decorators/custom-element';
 import { prop } from '../../src/decorators/prop';
 import { withRadiantServerCustomElementRenderBridge } from '../../src/server/element-ssr/radiant-element-ssr-bridge';
+import { renderComponentToString } from '../../src/server/render-component';
 
 const labelContext = createContext<{ early: string; late: string }>(Symbol('before-authored-children-label'));
 
@@ -43,6 +44,18 @@ class BeforeAuthoredChildrenReader extends RadiantElement {
 	}
 }
 
+@customElement('before-authored-children-root')
+class BeforeAuthoredChildrenRoot extends RadiantElement {
+	constructor() {
+		super();
+		registerSsrPreparationCallback(
+			this,
+			() => this.setAttribute('data-content-at-phase', this.innerHTML === '' ? 'empty' : 'filled'),
+			'beforeAuthoredChildren',
+		);
+	}
+}
+
 describe('registerSsrPreparationCallback with beforeAuthoredChildren', () => {
 	it('lets a child read context published from host props, but not context a default callback sets', () => {
 		expect([BeforeAuthoredChildrenProvider, BeforeAuthoredChildrenReader]).toBeDefined();
@@ -71,5 +84,15 @@ describe('registerSsrPreparationCallback with beforeAuthoredChildren', () => {
 			const html = withRadiantServerCustomElementRenderBridge(() => renderToString(page));
 			expect(html).toContain('data-early="again"');
 		}
+	});
+
+	it('runs for a host rendered with renderComponent, before its authored content is applied', async () => {
+		const html = await renderComponentToString(BeforeAuthoredChildrenRoot, {
+			authoredContent: '<p>Authored</p>',
+			renderOptions: { mode: 'plain' },
+		});
+
+		expect(html).toContain('data-content-at-phase="empty"');
+		expect(html).toContain('<p>Authored</p>');
 	});
 });

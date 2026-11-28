@@ -11,7 +11,7 @@ import {
 import { createEventListenerController } from '../../../controllers/event-listener-controller';
 import { nonEmpty } from '@/lib/non-empty';
 import { announceControlConnect } from '@/lib/form/control-protocol';
-import { registerFieldNameForSsr } from '../field/field-context';
+import { registerSubmissionForSsr } from '@/lib/form/submission';
 
 export type RuiRadioGroupProps = {
 	/** Currently selected value. Reflects to markup. */
@@ -104,7 +104,7 @@ export class RuiRadioGroup extends RadiantElement {
 
 	constructor() {
 		super();
-		registerFieldNameForSsr(this);
+		registerSubmissionForSsr(this);
 		registerSsrPreparationCallback(this, () => this.reflectCheckedForServer());
 		createEventListenerController(this, {
 			getTarget: () => this,

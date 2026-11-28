@@ -21,7 +21,7 @@ import {
 import { uniqueId } from '@/lib/unique-id';
 import { syncFieldLabel } from '../shared/field-label';
 import { announceControlConnect } from '@/lib/form/control-protocol';
-import { registerFieldNameForSsr } from '../field/field-context';
+import { registerSubmissionForSsr } from '@/lib/form/submission';
 import { emitValueEvents, stopInnerValueEvents } from '@/lib/form/value-events';
 
 export type RuiNumberFieldCommitBehavior = 'snap' | 'validate';
@@ -156,7 +156,7 @@ export class RuiNumberField extends FormAssociatedElement {
 
 	constructor() {
 		super();
-		registerFieldNameForSsr(this);
+		registerSubmissionForSsr(this);
 		stopInnerValueEvents(this);
 		registerSsrPreparationCallback(this, () => this.prepareServerInput());
 	}

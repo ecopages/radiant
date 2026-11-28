@@ -3,7 +3,7 @@ import { RadiantElement, bindTo, customElement, prop } from '@ecopages/radiant';
 import { createEventListenerController } from '../../../controllers/event-listener-controller';
 import { nonEmpty } from '@/lib/non-empty';
 import { announceControlConnect } from '@/lib/form/control-protocol';
-import { registerFieldNameForSsr } from '../field/field-context';
+import { registerSubmissionForSsr } from '@/lib/form/submission';
 
 export type RuiSwitchProps = {
 	/** Whether the switch is on. Reflects to markup. Default: `false`. */
@@ -96,7 +96,7 @@ export class RuiSwitch extends RadiantElement {
 	/** Syncs the host from its input before any bubble listener runs. */
 	constructor() {
 		super();
-		registerFieldNameForSsr(this);
+		registerSubmissionForSsr(this);
 		createEventListenerController(this, {
 			getTarget: () => this,
 			type: ['input', 'change'],
