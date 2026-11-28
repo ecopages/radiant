@@ -1,11 +1,21 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
-import { RadiantElement, bindTo, customElement, onUpdated, prop } from '@ecopages/radiant';
+import {
+	RadiantElement,
+	bindTo,
+	customElement,
+	onUpdated,
+	prop,
+	registerSsrPreparationCallback,
+} from '@ecopages/radiant';
+import { provideContext, resolveSsrContextValue } from '@ecopages/radiant/context';
+import type { ContextProvider } from '@ecopages/radiant/context';
 import { createEventListenerController } from '../../../controllers/event-listener-controller';
 import { nonEmpty } from '@/lib/non-empty';
 import { RuiCheckbox } from '../checkbox/checkbox.script';
 import { multiValuePropOptions, type ViewMultiValue } from '@/lib/multi-value';
 import { announceControlConnect } from '@/lib/form/control-protocol';
-import { registerFieldNameForSsr } from '../field/field-context';
+import { checkboxGroupContext } from '../checkbox/checkbox-group-context';
+import { fieldContext, registerFieldNameForSsr } from '../field/field-context';
 
 export type RuiCheckboxGroupOrientation = 'horizontal' | 'vertical';
 
@@ -103,9 +113,24 @@ export class RuiCheckboxGroup extends RadiantElement {
 	@bindTo({ selector: '[data-checkbox-group-root]', attr: 'data-orientation' })
 	orientation: RuiCheckboxGroupOrientation;
 
+	/**
+	 * Hands the group's name to the checkboxes it renders on the server, where a checkbox serializes before the
+	 * group can name it.
+	 */
+	@provideContext({ context: checkboxGroupContext, initialValue: { name: '' } })
+	private groupProvider: ContextProvider<typeof checkboxGroupContext>;
+
 	constructor() {
 		super();
 		registerFieldNameForSsr(this);
+		registerSsrPreparationCallback(
+			this,
+			() => {
+				const name = resolveSsrContextValue(fieldContext)?.name || this.name || this.getAttribute('name') || '';
+				this.groupProvider.setContext({ name });
+			},
+			'beforeAuthoredChildren',
+		);
 		createEventListenerController(this, {
 			getTarget: () => this,
 			type: ['input', 'change'],

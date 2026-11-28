@@ -48,4 +48,50 @@ describe('RuiCheckboxGroup SSR', () => {
 
 		expect(html).toMatch(/<rui-checkbox[^>]*value="travel"[^>]*\sdata-disabled(="")?[\s>]/);
 	});
+
+	it('names each checkbox after a group that stands outside a field', () => {
+		const html = withRadiantServerCustomElementRenderBridge(() =>
+			renderToString(
+				<form method="get">
+					<RuiCheckboxGroup
+						name="topics"
+						value="news"
+						options={[
+							{ value: 'news', label: 'News' },
+							{ value: 'travel', label: 'Travel' },
+						]}
+					/>
+				</form>,
+			),
+		);
+
+		const inputs = html.match(/<input[^>]*type="checkbox"[^>]*>/g) ?? [];
+		expect(inputs).toHaveLength(2);
+		for (const input of inputs) {
+			expect(input).toMatch(/\sname="topics"/);
+		}
+		expect(inputs[0]).toMatch(/\schecked(?=[\s=>])/);
+	});
+
+	it('names composed checkboxes after the group', () => {
+		const html = withRadiantServerCustomElementRenderBridge(() =>
+			renderToString(
+				<RuiCheckboxGroup name="topics" value="travel">
+					<RuiCheckboxGroupControl>
+						<RuiCheckbox value="news">News</RuiCheckbox>
+						<RuiCheckbox value="travel">Travel</RuiCheckbox>
+					</RuiCheckboxGroupControl>
+				</RuiCheckboxGroup>,
+			),
+		);
+
+		const inputs = html.match(/<input[^>]*type="checkbox"[^>]*>/g) ?? [];
+		expect(inputs.map((input) => input.match(/\sname="([^"]*)"/)?.[1])).toEqual(['topics', 'topics']);
+	});
+
+	it('leaves a checkbox outside a group unnamed', () => {
+		const html = withRadiantServerCustomElementRenderBridge(() => renderToString(<RuiCheckbox value="a" />));
+
+		expect(html).not.toMatch(/<input[^>]*\sname=/);
+	});
 });

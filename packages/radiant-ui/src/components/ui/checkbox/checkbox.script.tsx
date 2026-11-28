@@ -1,9 +1,11 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
-import { RadiantElement, bindTo, customElement, prop } from '@ecopages/radiant';
+import { RadiantElement, bindTo, customElement, prop, registerSsrPreparationCallback } from '@ecopages/radiant';
+import { resolveSsrContextValue } from '@ecopages/radiant/context';
 import { createEventListenerController } from '../../../controllers/event-listener-controller';
 import { nonEmpty } from '@/lib/non-empty';
 import { announceControlConnect } from '@/lib/form/control-protocol';
 import { registerFieldNameForSsr } from '../field/field-context';
+import { checkboxGroupContext } from './checkbox-group-context';
 
 export type RuiCheckboxProps = {
 	/** Whether the checkbox is checked. Default: `false`. */
@@ -122,6 +124,16 @@ export class RuiCheckbox extends RadiantElement {
 	constructor() {
 		super();
 		registerFieldNameForSsr(this);
+		registerSsrPreparationCallback(
+			this,
+			() => {
+				const name = resolveSsrContextValue(checkboxGroupContext)?.name;
+				if (name) {
+					this.name = name;
+				}
+			},
+			true,
+		);
 		createEventListenerController(this, {
 			getTarget: () => this,
 			type: ['input', 'change'],
