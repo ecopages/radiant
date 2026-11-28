@@ -12,6 +12,8 @@ export type { DateMaskPattern } from './date-mask';
 export {
 	applyInputMask,
 	extractMaskInput,
+	extractUnmaskedValue,
+	formatUnmaskedValue,
 	formatWithMask,
 	maskInputSlotCount,
 	maskToPlaceholder,
