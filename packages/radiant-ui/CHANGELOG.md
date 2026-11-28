@@ -1,5 +1,13 @@
 # @ecopages/radiant-ui
 
+## 0.7.1
+
+### Patch Changes
+
+- [#815](https://github.com/ecopages/radiant/pull/815) [`bc68696`](https://github.com/ecopages/radiant/commit/bc68696af7803602263ec15895870b5c99b55c68) Thanks [@andeeplus](https://github.com/andeeplus)! - Keep the number a visitor typed into a server-rendered `RuiNumberField` before its script loaded. The host used to rewrite the input from its `value` or `defaultValue` when it connected, so the edit was lost and a form posted the initial value. It now adopts the typed text as the value, parsed in the field's locale and snapped or validated as a blur would; text the field rejects, or an input emptied before the upgrade, leaves the server value, and an input nobody touched keeps it.
+
+- [#815](https://github.com/ecopages/radiant/pull/815) [`6c2e7b7`](https://github.com/ecopages/radiant/commit/6c2e7b73d9951622c7591a3a020f44c6e4ad269f) Thanks [@andeeplus](https://github.com/andeeplus)! - Fix `RuiNumberField` changing its value when the locale groups with a dot, as de-DE does. Focusing the input wrote the raw number (`1234.5`), and the blur that followed read it back in the locale as 12345. Focus now shows the number in the locale without grouping (`1234,5`), which reads back to the same number, and text typed into the server-rendered input before the script loads is read as written when it has the raw shape the server wrote (`1234.57`) and in the locale otherwise. The server markup still writes the raw number, so a form posted without JavaScript submits a number the server can parse.
+
 ## 0.7.0
 
 ### Minor Changes
