@@ -61,14 +61,16 @@ import '@ecopages/radiant-ui/number-field';
 
 <rui-number-field name="quantity" value={3} min-value={0} max-value={10}>
   <div class="rui-number-field__group" data-number-field-group>
-    <input type="text" data-number-field-input data-rui-control data-rui-control-type="number" class="rui-number-field__input" />
+    <input type="number" data-number-field-input data-rui-control data-rui-control-type="number" class="rui-number-field__input" />
     <button type="button" data-number-field-action="decrement" class="rui-number-field__stepper">−</button>
     <button type="button" data-number-field-action="increment" class="rui-number-field__stepper">+</button>
   </div>
 </rui-number-field>
 ```
 
-BEM classes are presentation-only. The host owns formatted input `value` and spinbutton `aria-*`. Set `name` on the host to submit the raw number with a native form (not the formatted display string). The server markup also names the inner input and gives it the raw `value`, so a form posted before the script loads, or with JavaScript off, still submits the number. The name can come from the field or from a surrounding `RuiField`. The server also writes `min`, `max` and `step` on the input, where a text input ignores them. The host removes all of these when it connects, so the form holds the value once. A number the visitor typed into the server-rendered input before the script loaded becomes the value, read as written when it has the raw shape the server wrote (`1234.57`) and in the field's locale otherwise, and snapped or validated as a blur would; text the field rejects, or an input emptied before the upgrade, leaves the server value. An input nobody touched keeps the server value.
+BEM classes are presentation-only. The server renders a native number input with the raw `value`, `min`, `max`, `step`, and the `name` from the host or a surrounding `RuiField`. The native input applies those constraints and submits a raw number when a form posts before the script loads or with JavaScript off.
+
+When the host connects, it adopts an edited number and snaps or validates it as on blur. Untouched, cleared, invalid, read-only, and disabled inputs keep the server value. The input then displays locale-formatted text and the host takes over submission of the raw number.
 
 ## Step and commit behavior
 
@@ -120,7 +122,7 @@ Geometry shares control tokens (`--size-control-sm`, `--space-control-*`, `--rad
 
 | Target | Required | Host writes | Author owns |
 | --- | --- | --- | --- |
-| `[data-number-field-input]` | yes | `id`, `role`, `inputmode`, `data-disabled`, `data-readonly`, `aria-valuemin`, `aria-valuemax`, `aria-valuenow`, formatted `value`; on the server only, `name`, raw `value`, `min`, `max`, `step` (removed on connect) | text input; stamp `data-rui-control` for field wiring |
+| `[data-number-field-input]` | yes | `type="number"`, `name`, raw `value`, `min`, `max`, `step` in server output. After connection, `type="text"`, `id`, `role`, `inputmode="decimal"`, `data-disabled`, `data-readonly`, `aria-valuemin`, `aria-valuemax`, `aria-valuenow` and formatted `value`. | Stamp `data-rui-control` on the input for field wiring. |
 | `[data-number-field-action="decrement"]` | no | `disabled`, `aria-label` | decrement button |
 | `[data-number-field-action="increment"]` | no | `disabled`, `aria-label` | increment button |
 | `[data-number-field-group]` | no | — | presentation wrapper only |

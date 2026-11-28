@@ -28,8 +28,7 @@ export type RuiNumberFieldInputProps = NativeInputProps & {
 };
 
 /**
- * Text input for the number field. Stamps `[data-number-field-input]`.
- * Formatting is handled by `<rui-number-field>`.
+ * Stamps `[data-number-field-input]`. The host sets the input type for server output and locale editing.
  *
  * @cssclass rui-number-field__input - Borderless text input inside the group.
  */

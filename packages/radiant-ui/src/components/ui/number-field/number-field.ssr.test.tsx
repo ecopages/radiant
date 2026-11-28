@@ -35,12 +35,14 @@ describe('RuiNumberField SSR', () => {
 		expect(input).toContain('value="2"');
 	});
 
-	it('writes the raw number, not the locale formatted display, so the posted value parses', () => {
+	it('renders a native number input with the raw value for a localized field', () => {
 		const html = withRadiantServerCustomElementRenderBridge(() =>
 			renderToString(<RuiNumberField name="price" value={1234.5} locale="de-DE" />),
 		);
 
-		expect(innerInput(html)).toContain('value="1234.5"');
+		const input = innerInput(html);
+		expect(input).toMatch(/\stype="number"/);
+		expect(input).toContain('value="1234.5"');
 	});
 
 	it('carries min, max and step to the inner input', () => {

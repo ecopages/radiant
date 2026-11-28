@@ -161,3 +161,19 @@ export const AsField: Story = {
 		</RuiForm>
 	),
 };
+
+export const GermanDecimal: Story = {
+	args: { value: 1234.5, maxValue: 2000, step: 0.01, locale: 'de-DE' },
+	play: async ({ canvasElement }) => {
+		const input = getInput(canvasElement);
+		const host = canvasElement.querySelector('rui-number-field');
+
+		await expect(input).toHaveAttribute('type', 'text');
+		await expect(input).toHaveValue('1.234,5');
+		await userEvent.click(input);
+		await expect(input).toHaveValue('1234,5');
+		await userEvent.tab();
+		await expect(input).toHaveValue('1.234,5');
+		await expect(host).toHaveAttribute('value', '1234.5');
+	},
+};
