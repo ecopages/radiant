@@ -20,7 +20,6 @@ import {
 } from '@/lib/intl-number';
 import { uniqueId } from '@/lib/unique-id';
 import { syncFieldLabel } from '../shared/field-label';
-import { createMutationController } from '../../../controllers/mutation-controller';
 import { announceControlConnect } from '@/lib/form/control-protocol';
 import { registerSubmissionForSsr } from '@/lib/form/submission';
 import { emitValueEvents, stopInnerValueEvents } from '@/lib/form/value-events';
@@ -160,31 +159,6 @@ export class RuiNumberField extends FormAssociatedElement {
 		registerSubmissionForSsr(this);
 		stopInnerValueEvents(this);
 		registerSsrPreparationCallback(this, () => this.prepareServerInput());
-		createMutationController(this, {
-			getTarget: () => this.getInput(),
-			options: { attributes: true, attributeFilter: ['type'] },
-			onMutate: () => this.retakeInputType(),
-		});
-	}
-
-	/**
-	 * Takes the input back to locale text when something writes its `type` again after the host connected.
-	 *
-	 * @remarks The view stamps `type="number"`, and a parent rerender writes it again, which clears the displayed
-	 * text, or the draft being typed. The host owns `type` once it has connected, so it restores the text type and the
-	 * display or draft.
-	 */
-	private retakeInputType(): void {
-		const input = this.getInput();
-		if (!this.initialized || !input || input.type === 'text') {
-			return;
-		}
-		if (this.editing) {
-			input.type = 'text';
-			input.value = this.draftValue;
-			return;
-		}
-		this.syncInput();
 	}
 
 	private editing = false;

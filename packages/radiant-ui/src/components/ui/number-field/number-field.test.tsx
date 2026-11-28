@@ -196,30 +196,6 @@ describe('RuiNumberField read-only state', () => {
 	});
 });
 
-describe('RuiNumberField input type', () => {
-	it('keeps the connected input a text input when the type is written back', async () => {
-		document.body.innerHTML = `
-			<rui-number-field name="price" value="1234.5" locale="de-DE">
-				<input data-number-field-input type="number" />
-			</rui-number-field>
-		`;
-
-		await customElements.whenDefined('rui-number-field');
-		await settled();
-
-		const host = document.querySelector('rui-number-field') as RuiNumberFieldElement;
-		const input = host.querySelector<HTMLInputElement>('[data-number-field-input]') as HTMLInputElement;
-		expect(input.type).toBe('text');
-
-		input.setAttribute('type', 'number');
-		host.maxValue = 5000;
-		await settled();
-
-		expect(input.type).toBe('text');
-		expect(input.value).toBe('1.234,5');
-	});
-});
-
 describe('RuiNumberField after a parent rerender', () => {
 	it('keeps the localized text and the text type of a connected field', async () => {
 		const container = document.createElement('div');
@@ -246,30 +222,6 @@ describe('RuiNumberField after a parent rerender', () => {
 		expect(input.type).toBe('text');
 		expect(input.value).toBe('1.234,5');
 		root.unmount();
-	});
-});
-
-describe('RuiNumberField type while editing', () => {
-	it('keeps the draft the visitor is typing when the type is written back', async () => {
-		document.body.innerHTML = `
-			<rui-number-field name="price" value="1234.5" locale="de-DE">
-				<input data-number-field-input type="number" />
-			</rui-number-field>
-		`;
-
-		await customElements.whenDefined('rui-number-field');
-		await settled();
-
-		const input = document.querySelector<HTMLInputElement>('[data-number-field-input]') as HTMLInputElement;
-		input.focus();
-		input.value = '1234,57';
-		input.dispatchEvent(new Event('input', { bubbles: true }));
-
-		input.setAttribute('type', 'number');
-		await settled();
-
-		expect(input.type).toBe('text');
-		expect(input.value).toBe('1234,57');
 	});
 });
 
