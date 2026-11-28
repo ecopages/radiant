@@ -164,6 +164,8 @@ The helper uses random UUIDs in secure contexts and random bytes on HTTP origins
 
 With `trigger-kind="focus"`, `rui-select` and `rui-combobox` open the listbox only when focus arrives from outside the host (`relatedTarget` is not a descendant). Focus the host moves back itself after select, clear, toggle, or tag remove never reopens it. Select trigger and toggle clicks prevent pointer focus and open through the click handler.
 
+Combobox observes options added to its listbox and applies the current filter. A matching option opens the listbox when a focused query was waiting for results.
+
 `rui-meter` keeps a native `<meter>` for range semantics and renders its visual track and fill from the derived percent. This avoids browser-specific meter pseudo-elements.
 `rui-sidebar-trigger` mirrors its controlled sidebar's state, mobile mode, and collapse mode onto the trigger host through one `MutationObserver`, attached in `onConnected()`. An explicit `controls` id must resolve to a `rui-sidebar`; only a trigger without `controls` uses its closest sidebar. Placement and glyph CSS read only those host attributes and the reflected `placement` attribute, so an attached trigger follows the sidebar's `mobileBreakpoint`, not the viewport. Until a trigger attaches (no `data-sidebar-mobile`), CSS guesses mobile from a 768px viewport and reads the SSR attributes of the sidebar whose pane holds the trigger, else of the only sidebar of its nearest provider (child combinators keep nested providers independent); other triggers stay visible until they attach. Detached, the trigger reports the SSR placement guess (`inset` collapsed, otherwise expanded).
 

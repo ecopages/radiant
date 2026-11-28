@@ -140,7 +140,7 @@ When the script loads after the page, for example on first interaction, the elem
 
 ## Suggestions that load later
 
-A typeahead renders its options after the `input` event that opens the listbox. When typing left a query with nothing to show, options added to the popup open the listbox once one of them matches the typed text, while the input has focus and unless `triggerKind` is `manual`. The filter runs again for every option that arrives. A list the visitor selected from or dismissed with Escape stays closed, and a list that is cleared and refilled does not close in between. Call `refreshOptions()` on the host to open it for the current options regardless, or after the popup itself was replaced.
+A typeahead renders its options after the `input` event that opens the listbox. When typing left a query with nothing to show, options added to the popup open the listbox once one of them matches the typed text, while the input has focus and unless `triggerKind` is `manual`. The filter runs again for every option that arrives. A list the visitor selected from or dismissed with Escape stays closed, and a list that is cleared and refilled does not close in between.
 
 ## Portal
 
@@ -193,12 +193,6 @@ Icon swaps are Composition Helper children, not CSS variables.
 | `[data-combobox-value]` | no | — | chip region before input |
 
 Nested hosts: `rui-listbox` (`embedded`), `rui-tag-group` in `[data-combobox-value]`, optional `rui-autocomplete`.
-
-### Methods
-
-| Method | Description |
-| --- | --- |
-| `refreshOptions()` | Gives the options their ids and selection state, applies the filter for the typed text, and opens the listbox when the input has focus and text and an option matches. It attaches the host to a replaced popup and never closes the listbox, and `manual` stays closed. |
 
 ### Events
 

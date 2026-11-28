@@ -103,7 +103,7 @@ export type RuiComboboxProps = {
  * > `rui-listbox[embedded]` > `[role="option"]`. BEM classes live on the view helpers.
  * With `portal` the popup leaves the host while it is open, so the host reads it from its popover controller, which finds it while it is portaled, and listens on it
  * directly instead of through the host.
- * Options added to the popup after the visitor typed, such as typeahead suggestions that arrive from a fetch, open the listbox when typing had left nothing to show; `refreshOptions()` re-evaluates it on demand.
+ * Options added to the popup after the visitor typed, such as typeahead suggestions that arrive from a fetch, open the listbox when typing had left nothing to show.
  * Text typed before the script loads stays in the input, and the host filters and opens the listbox for it when the input has focus.
  * Not form-associated: wrap in `rui-field` and read `RuiForm` `onSubmit`.
  * Typed filter text is not a form value and is not listed in native `FormData`.
@@ -512,25 +512,6 @@ export class RuiCombobox extends RadiantElement {
 			this.setOpen(true);
 			this.setVisualFocusCombobox();
 		}
-	}
-
-	/**
-	 * Re-evaluates the listbox after its options changed: wires the new options, applies the filter for the typed
-	 * text, and opens the listbox when the input has focus and text and an option matches.
-	 *
-	 * @remarks
-	 * Options added to the popup are wired and filtered by the host itself, and open the listbox only when typing
-	 * had left nothing to show, so a list the visitor selected from or dismissed stays closed. This method opens it
-	 * regardless, for a consumer that knows its results are current, and attaches the host to a popup that was
-	 * replaced. It never closes the listbox, so a list that is cleared and refilled does not flicker, and
-	 * `trigger-kind="manual"` still waits for the trigger button or an arrow key.
-	 */
-	refreshOptions(): void {
-		this.popupListener.attach();
-		this.optionsObserver.attach();
-		this.ensureOptionIds();
-		this.collection.syncOptionSelection();
-		this.openForTypedText(true);
 	}
 
 	protected override onConnected(): void {
