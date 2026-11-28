@@ -3,6 +3,7 @@ import { RadiantElement, bindTo, customElement, prop } from '@ecopages/radiant';
 import { createEventListenerController } from '../../../controllers/event-listener-controller';
 import { nonEmpty } from '@/lib/non-empty';
 import { announceControlConnect } from '@/lib/form/control-protocol';
+import { registerFieldNameForSsr } from '../field/field-context';
 
 export type RuiCheckboxProps = {
 	/** Whether the checkbox is checked. Default: `false`. */
@@ -120,6 +121,7 @@ export class RuiCheckbox extends RadiantElement {
 	/** Syncs the host from its input before any bubble listener runs. */
 	constructor() {
 		super();
+		registerFieldNameForSsr(this);
 		createEventListenerController(this, {
 			getTarget: () => this,
 			type: ['input', 'change'],

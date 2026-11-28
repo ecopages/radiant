@@ -246,8 +246,11 @@ function queryFieldContent(root: HTMLElement, selector: string): HTMLElement | n
 	return found;
 }
 
-function pickPrimaryFieldControl(candidates: HTMLElement[]): HTMLElement | null {
-	const eligibleCandidates = candidates.filter((candidate) => !isEmbeddedListbox(candidate));
+function pickPrimaryFieldControl(root: HTMLElement, candidates: HTMLElement[]): HTMLElement | null {
+	const field = root.closest('rui-field');
+	const eligibleCandidates = candidates.filter(
+		(candidate) => candidate.closest('rui-field') === field && !isEmbeddedListbox(candidate),
+	);
 	if (eligibleCandidates.length === 0) {
 		return null;
 	}
@@ -286,12 +289,12 @@ function listFieldControlsInRenderTree(root: HTMLElement): HTMLElement[] {
  * markers and nested hosts.
  */
 export function findFieldControl(root: HTMLElement): HTMLElement | null {
-	const fromRenderTree = pickPrimaryFieldControl(listFieldControlsInRenderTree(root));
+	const fromRenderTree = pickPrimaryFieldControl(root, listFieldControlsInRenderTree(root));
 	if (fromRenderTree) {
 		return fromRenderTree;
 	}
 
-	return pickPrimaryFieldControl(collectFieldControls(root));
+	return pickPrimaryFieldControl(root, collectFieldControls(root));
 }
 
 /** Tags registered through {@link registerFieldControl}, as opposed to the catalog hosts built into the protocol. */
@@ -641,29 +644,6 @@ export function wireFieldControlName(
 		Reflect.set(controlHost, 'name', name);
 		if (name) controlHost.setAttribute('name', name);
 		else controlHost.removeAttribute('name');
-	}
-}
-
-/** The native members a control host names on the client, by host tag, which the server markup must name too. */
-const NAMED_MEMBER_SELECTORS: Readonly<Record<string, string>> = {
-	'rui-radio-group': 'input[type="radio"]',
-	'rui-number-field': '[data-number-field-input]',
-};
-
-/**
- * Writes `name` onto the native members a control host would name itself, in server markup.
- *
- * @remarks
- * A host serializes with its own name, so it names its members then. A field supplies its name only after the host
- * is serialized, and calls this to name them in the markup a form posts before the host connects.
- */
-export function nameControlMembersForServer(controlHost: HTMLElement, name: string): void {
-	const selector = NAMED_MEMBER_SELECTORS[controlHost.localName];
-	if (!selector) {
-		return;
-	}
-	for (const member of controlHost.querySelectorAll(selector)) {
-		member.setAttribute('name', name);
 	}
 }
 

@@ -33,7 +33,8 @@ import {
 	type RenderedComponentAsset,
 } from '../../src/server/render-component';
 import { renderController, renderControllerToPayload } from '../../src/server/render-controller';
-import { resolveSsrContextValue, runWithSsrProviderStack, withSsrContextProviders } from '../../src/server/context-ssr';
+import { resolveSsrContextValue } from '../../src/context';
+import { runWithSsrProviderStack, withSsrContextProviders } from '../../src/server/context-ssr';
 import { getOrCreateRadiantElementSsrRuntime } from '../../src/server/radiant-element-ssr';
 
 declare const __LEGACY_ENVIRONMENT__: boolean;

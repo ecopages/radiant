@@ -1,5 +1,5 @@
 import type { SsrSerializableContextProvider } from './context-provider';
-import type { UnknownContext } from './types';
+import type { ContextType, UnknownContext } from './types';
 
 type SsrContextProviderResolver = (context: UnknownContext) => SsrSerializableContextProvider | undefined;
 
@@ -21,4 +21,9 @@ export function installSsrContextProviderResolver(resolver: SsrContextProviderRe
  */
 export function resolveAmbientSsrContextProvider(context: UnknownContext): SsrSerializableContextProvider | undefined {
 	return ssrContextProviderResolver?.(context);
+}
+
+/** Reads the nearest provider during SSR preparation. Returns undefined outside an active SSR provider scope. */
+export function resolveSsrContextValue<T extends UnknownContext>(context: T): ContextType<T> | undefined {
+	return resolveAmbientSsrContextProvider(context)?.getContext() as ContextType<T> | undefined;
 }

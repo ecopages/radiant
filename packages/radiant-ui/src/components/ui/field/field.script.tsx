@@ -29,7 +29,6 @@ import {
 	RUI_FIELD_DEFAULT_VALUE_ATTR,
 	RUI_FIELD_MANAGED_ATTR,
 	writeControlValue,
-	nameControlMembersForServer,
 	wireFieldControlName,
 } from '@/lib/form/control-protocol';
 import { formContext, type FormContextValue } from '@/lib/form/form-context';
@@ -73,7 +72,8 @@ export type RuiFieldProps = {
  * applies presentation (errors, ARIA) from the form-published `fields` map.
  * It is not a listed form control. Native `FormData` comes from the child: `name` on
  * a form-associated host (`rui-date-input`, `rui-number-field`, `rui-slider`,
- * `rui-knob`) or on an inner native input. The field copies its `name` onto that child.
+ * `rui-knob`) or on an inner native input. Named control hosts read the field's name from context
+ * during SSR. The field names directly authored inputs and keeps the name in sync on the client.
  *
  * ## Light-DOM contract
  *
@@ -176,23 +176,6 @@ export class RuiField extends RadiantElement {
 	/** The `id` this field assigned to each target, as opposed to an authored one. */
 	private readonly assignedIds = new WeakMap<HTMLElement, string>();
 	/** Resolved field name from property or `name` attribute (Storybook can hydrate props after connect). */
-	/**
-	 * Gives the control the field's name in the server markup, as `syncField` does on the client, so a form posted
-	 * before hydration submits it under that name and two field-named groups do not share a fallback name.
-	 *
-	 * @remarks
-	 * A control host nested in the field is already serialized markup by now, so its own server preparation cannot
-	 * see the name: the field writes it onto the host and onto the members the host would have named.
-	 */
-	private nameControlForServer(): void {
-		const controlHost = findFieldControl(this);
-		const fieldName = this.resolveFieldName();
-		if (controlHost && fieldName) {
-			wireFieldControlName(controlHost, getAriaControlTargets(controlHost)[0] ?? null, fieldName);
-			nameControlMembersForServer(controlHost, fieldName);
-		}
-	}
-
 	private resolveFieldName(): string {
 		return (this.name || this.getAttribute('name') || '').trim();
 	}
@@ -221,9 +204,18 @@ export class RuiField extends RadiantElement {
 	 */
 	constructor() {
 		super();
+		registerSsrPreparationCallback(
+			this,
+			() => this.fieldProvider.setContext({ name: this.resolveFieldName() }),
+			'beforeAuthoredChildren',
+		);
 		registerSsrPreparationCallback(this, () => {
 			this.fieldProvider.setContext({ rules: this.readFieldRules() });
-			this.nameControlForServer();
+			const control = findFieldControl(this);
+			const name = this.resolveFieldName();
+			if (control && isNativeTextControl(control) && name) {
+				control.name = name;
+			}
 		});
 		createEventListenerController(this, {
 			getTarget: () => this,
@@ -460,7 +452,9 @@ export class RuiField extends RadiantElement {
 		const required = this.isRequired();
 
 		const fieldName = this.resolveFieldName();
-		wireFieldControlName(controlHost, ariaTarget, fieldName);
+		if (this.isConnected) {
+			wireFieldControlName(controlHost, ariaTarget, fieldName);
+		}
 
 		const describedBy = this.syncDescriptions(descriptionId, errorId, errorMessage);
 		if (paintedByHost) {

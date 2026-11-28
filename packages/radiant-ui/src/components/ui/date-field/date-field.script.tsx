@@ -13,6 +13,7 @@ import {
 } from '../shared/portal-container';
 import { syncFieldLabel } from '../shared/field-label';
 import { announceControlConnect } from '@/lib/form/control-protocol';
+import { registerFieldNameForSsr } from '../field/field-context';
 
 export type RuiDateFieldProps = {
 	value?: string;
@@ -122,6 +123,7 @@ export class RuiDateField extends RadiantElement {
 
 	constructor() {
 		super();
+		registerFieldNameForSsr(this);
 		stopInnerValueEvents(this);
 	}
 

@@ -23,3 +23,5 @@ The element side stays in [`src/components/ui/form`](../../components/ui/form) (
 - The control protocol is shared by field, label, input, textarea and form, so it lives here, not under any one component. Module state like the `registerFieldControl` registry must stay on one copy: the library build emits shared modules once into `dist/chunks/`.
 
 Behavior is documented where users read it, in the [form docs page](../../../../../apps/radiant-ui/src/content/components/forms/form.mdx) and the catalog [README](../../components/ui/README.md).
+
+Named catalog hosts read the nearest field's `fieldContext.name` during their own server preparation. A field names a directly authored native text control while preparing its light DOM.

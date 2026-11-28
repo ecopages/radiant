@@ -12,6 +12,7 @@ import { composeHostContent } from './host-script-composition';
 import { resolveHostAttributes, stringifyHostAttributes } from './host-attribute-serialization';
 import { toInternalRadiantSsrHost } from './radiant-element-ssr-extractor';
 import type { InternalRadiantSsrHost } from '../../core/radiant-element-ssr-host';
+import { runSsrPreparationCallbacks } from '../../core/ssr-preparation';
 
 export type RadiantElementViewRenderer = (
 	host: InternalRadiantSsrHost,
@@ -48,11 +49,11 @@ export class RadiantElementSsrService {
 	 * Applies the host's JSX children as light DOM inside its context providers, before preparation.
 	 *
 	 * @remarks Consumers among the children resolve context while they serialize, so they see provider values
-	 * set by construction or decorators. Values a provider only sets during `prepareForSsr` are not visible to
-	 * them; preparation runs after so it still sees the children.
+	 * set by construction, decorators, or `beforeAuthoredChildren` callbacks.
 	 */
 	public applyLightDom(apply: () => void): void {
 		this.ensureProvidersReady();
+		runSsrPreparationCallbacks(this.component, 'beforeAuthoredChildren');
 		withSsrContextProviders(this.host.getContextProviders(), apply);
 	}
 

@@ -12,6 +12,7 @@ import {
 } from '../shared/portal-container';
 import { effectiveVisibleMonths } from '@/lib/viewport/mobile-layout';
 import { announceControlConnect } from '@/lib/form/control-protocol';
+import { registerFieldNameForSsr } from '../field/field-context';
 
 export type RuiDateRangePickerProps = {
 	value?: string;
@@ -140,6 +141,7 @@ export class RuiDateRangePicker extends RadiantElement {
 
 	constructor() {
 		super();
+		registerFieldNameForSsr(this);
 		stopInnerValueEvents(this);
 	}
 

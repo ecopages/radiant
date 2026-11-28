@@ -1,4 +1,5 @@
-import { createContext } from '@ecopages/radiant/context';
+import { registerSsrPreparationCallback } from '@ecopages/radiant';
+import { createContext, resolveSsrContextValue } from '@ecopages/radiant/context';
 import type { FieldRules } from '@/lib/form/types';
 
 export type FieldContextValue = {
@@ -24,3 +25,21 @@ export type FieldContextValue = {
 };
 
 export const fieldContext = createContext<FieldContextValue>(Symbol.for('rui-field-context'));
+
+/**
+ * @remarks Sets the name before server bindings and native form fallbacks run. Composed controls with their
+ * own submission names can identify those parts with `exclude`.
+ */
+export function registerFieldNameForSsr(control: HTMLElement & { name: string }, exclude?: string): void {
+	registerSsrPreparationCallback(
+		control,
+		() => {
+			const name = resolveSsrContextValue(fieldContext)?.name;
+			if (name && !(exclude && control.matches(exclude))) {
+				control.name = name;
+				control.setAttribute('name', name);
+			}
+		},
+		true,
+	);
+}

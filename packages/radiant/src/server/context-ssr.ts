@@ -1,7 +1,7 @@
 import { getActiveSsrScopeValue, withActiveSsrScopeValue } from '@ecopages/jsx/server';
 import type { SsrSerializableContextProvider } from '../context/context-provider';
 import { installSsrContextProviderResolver } from '../context/context-ssr-bridge';
-import type { ContextType, UnknownContext } from '../context/types';
+import type { UnknownContext } from '../context/types';
 
 type ProviderFrame = Map<UnknownContext, SsrSerializableContextProvider>;
 type ProviderStack = readonly ProviderFrame[];
@@ -65,17 +65,6 @@ export function resolveSsrContextProvider<T extends UnknownContext>(
 	}
 
 	return undefined;
-}
-
-/** Resolves the current SSR-visible value for a context token. */
-export function resolveSsrContextValue<T extends UnknownContext>(context: T): ContextType<T> | undefined {
-	const provider = resolveSsrContextProvider(context);
-
-	if (!provider) {
-		return undefined;
-	}
-
-	return provider.getContext() as ContextType<T>;
 }
 
 installSsrContextProviderResolver((context) => resolveSsrContextProvider(context));

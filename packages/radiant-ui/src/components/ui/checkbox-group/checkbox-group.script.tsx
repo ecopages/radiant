@@ -5,6 +5,7 @@ import { nonEmpty } from '@/lib/non-empty';
 import { RuiCheckbox } from '../checkbox/checkbox.script';
 import { multiValuePropOptions, type ViewMultiValue } from '@/lib/multi-value';
 import { announceControlConnect } from '@/lib/form/control-protocol';
+import { registerFieldNameForSsr } from '../field/field-context';
 
 export type RuiCheckboxGroupOrientation = 'horizontal' | 'vertical';
 
@@ -104,6 +105,7 @@ export class RuiCheckboxGroup extends RadiantElement {
 
 	constructor() {
 		super();
+		registerFieldNameForSsr(this);
 		createEventListenerController(this, {
 			getTarget: () => this,
 			type: ['input', 'change'],
