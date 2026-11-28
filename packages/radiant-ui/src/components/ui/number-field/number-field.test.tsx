@@ -1,5 +1,7 @@
+import { createRoot } from '@ecopages/jsx';
 import { afterEach, describe, expect, it } from 'vitest';
 import { RuiField as RuiFieldElement } from '../field/field.script';
+import { RuiNumberField } from './number-field';
 import { RuiNumberField as RuiNumberFieldElement } from './number-field.script';
 void RuiFieldElement;
 
@@ -215,6 +217,35 @@ describe('RuiNumberField input type', () => {
 
 		expect(input.type).toBe('text');
 		expect(input.value).toBe('1.234,5');
+	});
+});
+
+describe('RuiNumberField after a parent rerender', () => {
+	it('keeps the localized text and the text type of a connected field', async () => {
+		const container = document.createElement('div');
+		document.body.appendChild(container);
+		const root = createRoot(container);
+		const view = (tick: number) => (
+			<div>
+				<span>{tick}</span>
+				<RuiNumberField name="price" value={1234.5} locale="de-DE" label="Price" />
+			</div>
+		);
+		root.render(view(1));
+
+		await customElements.whenDefined('rui-number-field');
+		await settled();
+
+		const input = container.querySelector<HTMLInputElement>('[data-number-field-input]') as HTMLInputElement;
+		expect(input.type).toBe('text');
+		expect(input.value).toBe('1.234,5');
+
+		root.render(view(2));
+		await settled();
+
+		expect(input.type).toBe('text');
+		expect(input.value).toBe('1.234,5');
+		root.unmount();
 	});
 });
 
