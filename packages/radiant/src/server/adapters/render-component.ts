@@ -273,13 +273,14 @@ async function renderResolvedComponent<TComponent extends ServerRenderableCompon
 				const component = new Component();
 				alignMinimalDomHostTagName(component, tagName);
 				ensureLegacyHostReady(component, 'ssr');
+				runSsrPreparationCallbacks(component, 'beforeAuthoredChildren');
 				prepareRenderedComponentHost(
 					environment,
 					component,
 					normalizedOptions.authoredContent,
 					normalizedOptions.prepareHost,
 				);
-				runSsrPreparationCallbacks(component, true);
+				runSsrPreparationCallbacks(component, 'beforeOnUpdated');
 				normalizedOptions.initialize?.(component);
 
 				const markup = requireRegisteredRadiantElementMarkup(component, renderOptions);

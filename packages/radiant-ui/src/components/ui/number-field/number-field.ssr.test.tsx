@@ -35,23 +35,25 @@ describe('RuiNumberField SSR', () => {
 		expect(input).toContain('value="2"');
 	});
 
-	it('writes the raw number, not the locale formatted display, so the posted value parses', () => {
+	it('renders a native number input with the raw value for a localized field', () => {
 		const html = withRadiantServerCustomElementRenderBridge(() =>
 			renderToString(<RuiNumberField name="price" value={1234.5} locale="de-DE" />),
 		);
 
-		expect(innerInput(html)).toContain('value="1234.5"');
+		const input = innerInput(html);
+		expect(input).toMatch(/\stype="number"/);
+		expect(input).toContain('value="1234.5"');
 	});
 
-	it('carries min, max and step to the inner input', () => {
+	it('carries min and max to the inner input and leaves the step to the host', () => {
 		const html = withRadiantServerCustomElementRenderBridge(() =>
-			renderToString(<RuiNumberField name="quantity" value={2} minValue={1} maxValue={9} step={2} />),
+			renderToString(<RuiNumberField name="quantity" value={10} minValue={0} maxValue={10} step={3} />),
 		);
 
 		const input = innerInput(html);
-		expect(input).toContain('min="1"');
-		expect(input).toContain('max="9"');
-		expect(input).toContain('step="2"');
+		expect(input).toContain('min="0"');
+		expect(input).toContain('max="10"');
+		expect(input).toContain('step="any"');
 	});
 
 	it('leaves out value for an empty field, name for an unnamed one and the unbounded limits', () => {
@@ -62,6 +64,24 @@ describe('RuiNumberField SSR', () => {
 		expect(input).not.toMatch(/\svalue=/);
 		expect(input).not.toMatch(/\s(min|max)=/);
 		expect(input).not.toContain('Infinity');
+	});
+
+	it('marks the inner input natively read-only for a read-only field', () => {
+		const html = withRadiantServerCustomElementRenderBridge(() =>
+			renderToString(<RuiNumberField name="quantity" value={2} readOnly />),
+		);
+
+		const input = innerInput(html);
+		expect(input).toMatch(/\sreadonly(?=[\s=>])/);
+		expect(input).toMatch(/\sdata-readonly(?=[\s=>])/);
+	});
+
+	it('leaves the inner input editable for a field that is not read-only', () => {
+		const html = withRadiantServerCustomElementRenderBridge(() =>
+			renderToString(<RuiNumberField name="quantity" value={2} />),
+		);
+
+		expect(innerInput(html)).not.toMatch(/\sreadonly/);
 	});
 
 	it('starts from defaultValue when the field has no value', () => {

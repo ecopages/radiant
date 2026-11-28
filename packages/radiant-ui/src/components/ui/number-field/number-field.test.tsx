@@ -1,5 +1,7 @@
+import { createRoot } from '@ecopages/jsx';
 import { afterEach, describe, expect, it } from 'vitest';
 import { RuiField as RuiFieldElement } from '../field/field.script';
+import { RuiNumberField } from './number-field';
 import { RuiNumberField as RuiNumberFieldElement } from './number-field.script';
 void RuiFieldElement;
 
@@ -171,6 +173,58 @@ describe('RuiNumberField commit', () => {
 	});
 });
 
+describe('RuiNumberField read-only state', () => {
+	it('mirrors the host read-only state onto the native input', async () => {
+		document.body.innerHTML = `
+			<rui-number-field name="quantity" value="3" read-only>
+				<input data-number-field-input />
+			</rui-number-field>
+		`;
+
+		await customElements.whenDefined('rui-number-field');
+		await settled();
+
+		const host = document.querySelector('rui-number-field') as RuiNumberFieldElement;
+		const input = host.querySelector<HTMLInputElement>('[data-number-field-input]') as HTMLInputElement;
+		expect(input.readOnly).toBe(true);
+
+		host.readOnly = false;
+		await settled();
+
+		expect(input.readOnly).toBe(false);
+		expect(input.hasAttribute('data-readonly')).toBe(false);
+	});
+});
+
+describe('RuiNumberField after a parent rerender', () => {
+	it('keeps the localized text and the text type of a connected field', async () => {
+		const container = document.createElement('div');
+		document.body.appendChild(container);
+		const root = createRoot(container);
+		const view = (tick: number) => (
+			<div>
+				<span>{tick}</span>
+				<RuiNumberField name="price" value={1234.5} locale="de-DE" label="Price" />
+			</div>
+		);
+		root.render(view(1));
+
+		await customElements.whenDefined('rui-number-field');
+		await settled();
+
+		const input = container.querySelector<HTMLInputElement>('[data-number-field-input]') as HTMLInputElement;
+		expect(input.type).toBe('text');
+		expect(input.value).toBe('1.234,5');
+
+		root.render(view(2));
+		await settled();
+
+		expect(input.type).toBe('text');
+		expect(input.value).toBe('1.234,5');
+		root.unmount();
+	});
+});
+
 describe('RuiNumberField editing text in the field locale', () => {
 	async function mountLocale(attrs: string): Promise<{
 		host: RuiNumberFieldElement;
@@ -263,7 +317,7 @@ describe('RuiNumberField taking over server markup', () => {
 		document.body.innerHTML = `
 			<form>
 				<rui-number-field name="quantity" value="2" min-value="1" max-value="9" step="1">
-					<input data-number-field-input name="quantity" value="2" min="1" max="9" step="1" type="text" />
+					<input data-number-field-input name="quantity" value="2" min="1" max="9" step="1" type="number" />
 				</rui-number-field>
 			</form>
 		`;
@@ -301,7 +355,7 @@ describe('RuiNumberField taking over server markup', () => {
 			<form>
 				<rui-field name="quantity">
 					<rui-number-field name="quantity" value="2">
-						<input data-number-field-input name="quantity" value="2" type="text" />
+						<input data-number-field-input name="quantity" value="2" type="number" />
 					</rui-number-field>
 				</rui-field>
 			</form>
@@ -328,13 +382,18 @@ describe('RuiNumberField text typed before the script loads', () => {
 		attributes?: string;
 		inputAttributes?: string;
 		typed?: string;
-	}): Promise<{ host: RuiNumberFieldElement; input: HTMLInputElement; form: HTMLFormElement }> {
+	}): Promise<{
+		host: RuiNumberFieldElement;
+		input: HTMLInputElement;
+		form: HTMLFormElement;
+		beforeUpgrade: FormData;
+	}> {
 		lateTags += 1;
 		const tag = `rui-number-field-late-${lateTags}`;
 		document.body.innerHTML = `
-			<form>
+			<form method="post">
 				<${tag} ${options.attributes ?? ''}>
-					<input data-number-field-input type="text" ${options.inputAttributes ?? ''} />
+					<input data-number-field-input type="number" ${options.inputAttributes ?? ''} />
 				</${tag}>
 			</form>
 		`;
@@ -344,13 +403,14 @@ describe('RuiNumberField text typed before the script loads', () => {
 			input.value = options.typed;
 		}
 		expect(form.querySelector(tag)).not.toBeInstanceOf(RuiNumberFieldElement);
+		const beforeUpgrade = new FormData(form);
 
 		customElements.define(tag, class extends RuiNumberFieldElement {});
 		await settled();
 
 		const host = form.querySelector(tag) as RuiNumberFieldElement;
 		expect(host).toBeInstanceOf(RuiNumberFieldElement);
-		return { host, input, form };
+		return { host, input, form, beforeUpgrade };
 	}
 
 	const server = {
@@ -376,25 +436,28 @@ describe('RuiNumberField text typed before the script loads', () => {
 	});
 
 	it('keeps the server value of an untouched field whose display differs from the raw number', async () => {
-		const { host, input } = await upgradeAfterTyping({
+		const { host, input, beforeUpgrade } = await upgradeAfterTyping({
 			attributes: 'name="price" value="1234.5" locale="de-DE"',
 			inputAttributes: 'name="price" value="1234.5" step="1"',
 		});
 
+		expect([...beforeUpgrade]).toEqual([['price', '1234.5']]);
 		expect(host.value).toBe(1234.5);
+		expect(input.type).toBe('text');
+		expect(input.inputMode).toBe('decimal');
 		expect(input.value).toBe('1.234,5');
 	});
 
-	it('parses text typed before the upgrade in the field locale', async () => {
+	it('adopts 1500 from the number input before upgrading to de-DE text', async () => {
 		const { host, input, form } = await upgradeAfterTyping({
-			attributes: 'name="price" value="1234.5" locale="de-DE" step="0.25"',
-			inputAttributes: 'name="price" value="1234.5" step="0.25"',
-			typed: '2.000,25',
+			attributes: 'name="price" value="1234.5" locale="de-DE" step="0.5"',
+			inputAttributes: 'name="price" value="1234.5" step="0.5"',
+			typed: '1500',
 		});
 
-		expect(host.value).toBe(2000.25);
-		expect(input.value).toBe('2.000,25');
-		expect(new FormData(form).getAll('price')).toEqual(['2000.25']);
+		expect(host.value).toBe(1500);
+		expect(input.value).toBe('1.500');
+		expect(new FormData(form).getAll('price')).toEqual(['1500']);
 	});
 
 	it('keeps a number typed into an empty field', async () => {
@@ -426,14 +489,6 @@ describe('RuiNumberField text typed before the script loads', () => {
 
 		expect(host.value).toBe(1);
 		expect(input.value).toBe('1');
-	});
-
-	it('keeps the server value when the text typed before the upgrade is not a number', async () => {
-		const { host, input, form } = await upgradeAfterTyping({ ...server, typed: 'abc' });
-
-		expect(host.value).toBe(1);
-		expect(input.value).toBe('1');
-		expect(new FormData(form).getAll('quantity')).toEqual(['1']);
 	});
 
 	it('keeps the server value when the input was cleared before the upgrade', async () => {
@@ -471,14 +526,14 @@ describe('RuiNumberField text typed before the script loads', () => {
 		expect(new FormData(form).getAll('price')).toEqual(['1234.57']);
 	});
 
-	it('reads text with a locale separator as the locale writes it when it is not a raw number', async () => {
+	it('adopts exponent notation accepted by the native number input', async () => {
 		const { host } = await upgradeAfterTyping({
 			attributes: 'name="price" value="1234.5" locale="de-DE" step="0.01"',
 			inputAttributes: 'name="price" value="1234.5" step="0.01"',
-			typed: '1.234,57',
+			typed: '1.5e3',
 		});
 
-		expect(host.value).toBe(1234.57);
+		expect(host.value).toBe(1500);
 	});
 
 	it('keeps a typed 0, which is a value and not an empty field', async () => {
@@ -529,7 +584,7 @@ describe('RuiNumberField text typed before the script loads', () => {
 	it('keeps the server value of a read-only field, which the visitor could not edit after the upgrade', async () => {
 		const { host, input } = await upgradeAfterTyping({
 			attributes: `${server.attributes} read-only`,
-			inputAttributes: server.inputAttributes,
+			inputAttributes: `${server.inputAttributes} readonly`,
 			typed: '3',
 		});
 

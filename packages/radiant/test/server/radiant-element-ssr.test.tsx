@@ -12,7 +12,7 @@ import { signal } from '../../src/decorators/signal';
 import { state } from '../../src/decorators/state';
 import { createResource } from '../../src/signals/host-resource';
 import type { WritableSignal } from '@ecopages/signals';
-import { resolveSsrContextValue } from '../../src/server/context-ssr';
+import { resolveSsrContextValue } from '../../src/context';
 import {
 	getRadiantElementHostSsrAttributes,
 	renderRadiantElementHostToString,

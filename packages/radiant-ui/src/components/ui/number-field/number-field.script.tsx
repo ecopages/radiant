@@ -21,9 +21,8 @@ import {
 import { uniqueId } from '@/lib/unique-id';
 import { syncFieldLabel } from '../shared/field-label';
 import { announceControlConnect } from '@/lib/form/control-protocol';
+import { registerSubmissionForSsr } from '@/lib/form/submission';
 import { emitValueEvents, stopInnerValueEvents } from '@/lib/form/value-events';
-
-const RAW_NUMBER = /^-?\d+(\.\d+)?$/;
 
 export type RuiNumberFieldCommitBehavior = 'snap' | 'validate';
 
@@ -64,9 +63,9 @@ export type RuiNumberFieldProps = {
  * ## Light-DOM contract
  *
  * Required:
- * - `[data-number-field-input]` — text input. Host sets `id`, `role="spinbutton"`,
- *   `inputmode`, `data-disabled`, `data-readonly`, `aria-valuemin`, `aria-valuemax`,
- *   `aria-valuenow`, and formatted `value` when not editing.
+ * - `[data-number-field-input]` — author `type="number"`; the host turns it into a locale text input when it connects.
+ *   Host sets `type="text"`, `id`, `role="spinbutton"`, `inputmode`, `data-disabled`, `data-readonly`, `readonly`,
+ *   `aria-valuemin`, `aria-valuemax`, `aria-valuenow`, and formatted `value` when not editing.
  *
  * Optional:
  * - `[data-number-field-action="decrement"]` — stepper button. Host sets `disabled` and `aria-label`.
@@ -75,7 +74,7 @@ export type RuiNumberFieldProps = {
  *
  * Do not set spinbutton `aria-valuenow` or formatted `value` while the host is driving
  * display — it owns those. Author `disabled` / `readOnly` on the host; the host mirrors
- * them to `data-disabled` / `data-readonly` on the input.
+ * them to `data-disabled` / `data-readonly` on the input; `readOnly` also sets the native `readonly`, in server markup too.
  *
  * Nested hosts: none.
  *
@@ -104,9 +103,8 @@ export type RuiNumberFieldProps = {
  *   text box's own `input` and `change` are stopped at the host.
  *
  * @remarks
- * Text the visitor typed into a server-rendered input before the script loaded becomes the value when the host connects,
- * parsed as a number or in the locale, and snapped or validated as a blur would; text the field rejects leaves the server value, and a read-only or
- * disabled field keeps it.
+ * A number entered before the host connects is snapped or validated as on blur. Untouched, cleared, invalid,
+ * read-only, and disabled inputs retain the server value.
  *
  * Minimum tree: `[data-number-field-input]` with optional `[data-number-field-action]` buttons. BEM classes live on the view; the host
  * never queries them.
@@ -137,7 +135,10 @@ export class RuiNumberField extends FormAssociatedElement {
 	@prop({ type: Number, defaultValue: 1 }) step: number;
 
 	@prop({ type: Boolean, attribute: 'read-only', reflect: true, defaultValue: false })
-	@bindTo({ selector: '[data-number-field-input]', bool: 'data-readonly' })
+	@bindTo([
+		{ selector: '[data-number-field-input]', bool: 'data-readonly' },
+		{ selector: '[data-number-field-input]', bool: 'readonly' },
+	])
 	readOnly: boolean;
 
 	@prop({ type: String, defaultValue: '' }) label: string;
@@ -155,6 +156,7 @@ export class RuiNumberField extends FormAssociatedElement {
 
 	constructor() {
 		super();
+		registerSubmissionForSsr(this);
 		stopInnerValueEvents(this);
 		registerSsrPreparationCallback(this, () => this.prepareServerInput());
 	}
@@ -237,6 +239,7 @@ export class RuiNumberField extends FormAssociatedElement {
 		}
 
 		if (!this.editing && this.initialized) {
+			input.type = 'text';
 			input.value =
 				committed == null ? '' : formatNumber(committed, this.resolvedLocale, this.resolvedFormatOptions);
 		}
@@ -271,27 +274,12 @@ export class RuiNumberField extends FormAssociatedElement {
 			: next;
 	}
 
-	/**
-	 * The number that typed text commits, or `undefined` when the field rejects it: text that is not a number, or,
-	 * when the field validates, a number out of range.
-	 *
-	 * @remarks
-	 * With `rawFirst`, text in the raw shape of a number, `1234.5` with an optional minus sign and no group
-	 * separator, is read as written. The server input shows the raw number, which a locale that groups with a dot
-	 * would read as a grouped integer. Other text is parsed in the locale.
-	 */
-	private parseDraft(text: string, rawFirst = false): number | undefined {
-		const raw = rawFirst ? text.trim() : '';
-		const parsed = RAW_NUMBER.test(raw)
-			? Number(raw)
-			: parseNumber(text, this.resolvedLocale, this.resolvedFormatOptions);
-		if (parsed == null) {
-			return undefined;
-		}
-		if (this.commitBehavior === 'validate' && (parsed < this.minValue || parsed > this.maxValue)) {
-			return undefined;
-		}
-		return parsed;
+	private canCommit(value: number | null): value is number {
+		return (
+			value !== null &&
+			Number.isFinite(value) &&
+			(this.commitBehavior !== 'validate' || (value >= this.minValue && value <= this.maxValue))
+		);
 	}
 
 	/**
@@ -317,8 +305,8 @@ export class RuiNumberField extends FormAssociatedElement {
 	}
 
 	private commitDraft(): void {
-		const parsed = this.parseDraft(this.draftValue);
-		if (parsed === undefined) {
+		const parsed = parseNumber(this.draftValue, this.resolvedLocale, this.resolvedFormatOptions);
+		if (!this.canCommit(parsed)) {
 			this.editing = false;
 			this.syncInput();
 			return;
@@ -339,14 +327,10 @@ export class RuiNumberField extends FormAssociatedElement {
 	}
 
 	/**
-	 * Gives the inner input the `name`, raw `value`, `min`, `max` and `step` of the field in the server markup, so a
-	 * form posted before the script loads, or with JavaScript off, submits the number.
-	 *
 	 * @remarks
-	 * The value is the raw number, not the locale display, which a server cannot post back as a number. The host
-	 * connects with the display and `releaseServerInput` removes these attributes, so the form-associated host is the
-	 * only entry in `FormData` and nothing goes stale. `min`, `max` and `step` have no effect on a text input: only
-	 * `name` and `value` decide what a no-JavaScript form posts.
+	 * The native number input submits a raw value and applies `min` and `max` before the host connects. Its `step` is
+	 * `any`: the host snaps to its own step after it connects, and a native step would reject a bound that is off the
+	 * step, such as a `max` of 10 with a `step` of 3.
 	 */
 	private prepareServerInput(): void {
 		this.seedDefaultValue();
@@ -360,7 +344,7 @@ export class RuiNumberField extends FormAssociatedElement {
 			['value', this.hasCommittedValue() ? String(this.value) : undefined],
 			['min', Number.isFinite(this.minValue) ? String(this.minValue) : undefined],
 			['max', Number.isFinite(this.maxValue) ? String(this.maxValue) : undefined],
-			['step', String(this.step)],
+			['step', 'any'],
 		];
 		for (const [attribute, value] of attributes) {
 			if (value === undefined) {
@@ -372,33 +356,21 @@ export class RuiNumberField extends FormAssociatedElement {
 	}
 
 	/**
-	 * Takes the text the visitor typed into the server-rendered input before the host connected as the value.
-	 *
 	 * @remarks
-	 * The baseline is the `value` attribute `prepareServerInput` wrote: an input whose value still equals it was not
-	 * edited, and the server value stands, which also keeps a raw number the locale would format differently from
-	 * being parsed as typed text. An input whose `value` property a view set to something else counts as edited.
-	 * Edited text goes through the rules of a blur after the upgrade, snapped or validated, and text the field
-	 * rejects, an emptied input included, leaves the server value. It is parsed raw-first, unlike a focus after the
-	 * upgrade, which shows locale text and parses it in the locale: the visitor saw and edited the raw form the server
-	 * wrote, so `1234.57` is read as written, and text that is not a raw number, such as `1.234,57`, in the locale. A read-only or
-	 * disabled field keeps its value, as the upgraded field would not let the visitor edit it.
-	 *
-	 * The form reset value is captured first, so a reset returns to the server value, not to the typed number.
-	 * Nothing is emitted: the visitor's native `input` and `change` already bubbled to the page while typing, and the
-	 * value is set before `announceControlConnect`, so a surrounding `RuiField` reads it when the control connects.
+	 * Read before switching the input to text. Capture the server value for form reset before adopting the edit.
+	 * The native input already emitted its events, and the field reads the adopted value on control connection.
 	 */
 	private adoptTypedValue(): void {
 		const input = this.getInput();
 		if (!input || this.readOnly || this.effectiveDisabled) {
 			return;
 		}
-		if (input.value === (input.getAttribute('value') ?? '')) {
+		if (input.value === input.defaultValue) {
 			return;
 		}
 
-		const parsed = this.parseDraft(input.value, true);
-		if (parsed !== undefined) {
+		const parsed = input.valueAsNumber;
+		if (this.canCommit(parsed)) {
 			this.syncFormValue();
 			this.value = this.resolveCommit(parsed);
 		}

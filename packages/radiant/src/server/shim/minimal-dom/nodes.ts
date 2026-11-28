@@ -660,7 +660,6 @@ export class MinimalElement extends MinimalNode {
 			return;
 		}
 		this.setAttribute('type', value);
-		this.adoptAssignedInputValue();
 	}
 
 	/**
@@ -730,7 +729,6 @@ export class MinimalElement extends MinimalNode {
 	get value(): string {
 		const tag = this.localName;
 		if (!VALUE_TAGS.has(tag)) {
-			this.adoptAssignedInputValue();
 			if (tag === 'input' && (this.reflectsInputValue() || !this.#plainProps.has('value'))) {
 				return this.inputDefaultValue();
 			}
@@ -740,13 +738,16 @@ export class MinimalElement extends MinimalNode {
 	}
 
 	/**
-	 * Moves a value assigned while the input was a text input to the `value` attribute once its type reflects it, as a
-	 * browser does when the type changes. `setAttribute('type')` does not call this, so a read does.
+	 * @remarks A type change into a reflected mode copies a nonempty live value to the attribute. A cleared live
+	 * value leaves the existing default in place.
 	 */
-	private adoptAssignedInputValue(): void {
+	private reflectAssignedInputValue(): void {
 		if (this.reflectsInputValue() && this.#plainProps.has('value')) {
-			this.setAttribute('value', this.#plainProps.get('value') as string);
+			const value = this.#plainProps.get('value');
 			this.#plainProps.delete('value');
+			if (value !== '') {
+				this.setAttribute('value', value);
+			}
 		}
 	}
 
@@ -857,8 +858,12 @@ export class MinimalElement extends MinimalNode {
 	}
 
 	setAttribute(name: string, value: unknown): void {
-		this.#attributeStore.set(canonicalAttributeName(name), String(value));
+		const attribute = canonicalAttributeName(name);
+		this.#attributeStore.set(attribute, String(value));
 		this.invalidateOpenTag();
+		if (attribute === 'type') {
+			this.reflectAssignedInputValue();
+		}
 	}
 
 	toggleAttribute(name: string, force?: boolean): boolean {

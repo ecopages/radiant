@@ -195,6 +195,16 @@ const CONTROL_VALUE_ADAPTERS = new Map<string, FieldControlAdapter>([
 	['rui-number-field', { ...numberValueAdapter, submission: 'host' }],
 ]);
 
+/** The presentation column of this field, not of a field nested inside it. */
+function findOwnFieldColumn(root: HTMLElement): HTMLElement | null {
+	for (const column of root.querySelectorAll<HTMLElement>(FIELD_COLUMN_SELECTOR)) {
+		if (column.closest('rui-field') === root) {
+			return column;
+		}
+	}
+	return null;
+}
+
 /** Search authored field content, including nodes Radiant has moved for hydration. */
 function forEachFieldContentNode(root: HTMLElement, visit: (node: Element) => void): void {
 	const slotHost = root as FieldSlotHost;
@@ -211,7 +221,7 @@ function forEachFieldContentNode(root: HTMLElement, visit: (node: Element) => vo
 		safeVisit(node);
 	}
 
-	const renderRoot = root.querySelector(FIELD_COLUMN_SELECTOR) ?? root;
+	const renderRoot = findOwnFieldColumn(root) ?? root;
 	for (const child of Array.from(renderRoot.children)) {
 		safeVisit(child);
 	}
@@ -246,8 +256,11 @@ function queryFieldContent(root: HTMLElement, selector: string): HTMLElement | n
 	return found;
 }
 
-function pickPrimaryFieldControl(candidates: HTMLElement[]): HTMLElement | null {
-	const eligibleCandidates = candidates.filter((candidate) => !isEmbeddedListbox(candidate));
+function pickPrimaryFieldControl(root: HTMLElement, candidates: HTMLElement[]): HTMLElement | null {
+	const field = root.closest('rui-field');
+	const eligibleCandidates = candidates.filter(
+		(candidate) => candidate.closest('rui-field') === field && !isEmbeddedListbox(candidate),
+	);
 	if (eligibleCandidates.length === 0) {
 		return null;
 	}
@@ -271,8 +284,8 @@ function collectFieldControls(root: HTMLElement): HTMLElement[] {
 }
 
 function listFieldControlsInRenderTree(root: HTMLElement): HTMLElement[] {
-	const renderRoot = root.querySelector(FIELD_COLUMN_SELECTOR);
-	if (!(renderRoot instanceof HTMLElement)) {
+	const renderRoot = findOwnFieldColumn(root);
+	if (!renderRoot) {
 		return [];
 	}
 	return Array.from(renderRoot.querySelectorAll<HTMLElement>(fieldControlSelector())).filter((el) =>
@@ -286,12 +299,12 @@ function listFieldControlsInRenderTree(root: HTMLElement): HTMLElement[] {
  * markers and nested hosts.
  */
 export function findFieldControl(root: HTMLElement): HTMLElement | null {
-	const fromRenderTree = pickPrimaryFieldControl(listFieldControlsInRenderTree(root));
+	const fromRenderTree = pickPrimaryFieldControl(root, listFieldControlsInRenderTree(root));
 	if (fromRenderTree) {
 		return fromRenderTree;
 	}
 
-	return pickPrimaryFieldControl(collectFieldControls(root));
+	return pickPrimaryFieldControl(root, collectFieldControls(root));
 }
 
 /** Tags registered through {@link registerFieldControl}, as opposed to the catalog hosts built into the protocol. */
@@ -597,19 +610,23 @@ export function findControlledFieldErrors(root: HTMLElement): HTMLElement[] {
 }
 
 function collectFieldErrorRegions(root: HTMLElement): HTMLElement[] {
-	const renderRoot = root.querySelector(FIELD_COLUMN_SELECTOR);
-	if (renderRoot instanceof HTMLElement) {
-		const inRender = Array.from(renderRoot.querySelectorAll<HTMLElement>(`[${RUI_FIELD_ERROR_ATTR}]`));
+	const selector = `[${RUI_FIELD_ERROR_ATTR}]`;
+	const ownRegions = (parent: ParentNode) =>
+		Array.from(parent.querySelectorAll<HTMLElement>(selector)).filter((el) => el.closest('rui-field') === root);
+
+	const renderRoot = findOwnFieldColumn(root);
+	if (renderRoot) {
+		const inRender = ownRegions(renderRoot);
 		if (inRender.length > 0) {
 			return inRender;
 		}
 	}
-	const fromDom = Array.from(root.querySelectorAll<HTMLElement>(`[${RUI_FIELD_ERROR_ATTR}]`));
+	const fromDom = ownRegions(root);
 	if (fromDom.length > 0) {
 		return fromDom;
 	}
-	const single = queryFieldContent(root, `[${RUI_FIELD_ERROR_ATTR}]`);
-	return single ? [single] : [];
+	const single = queryFieldContent(root, selector);
+	return single?.closest('rui-field') === root ? [single] : [];
 }
 
 /**
@@ -641,29 +658,6 @@ export function wireFieldControlName(
 		Reflect.set(controlHost, 'name', name);
 		if (name) controlHost.setAttribute('name', name);
 		else controlHost.removeAttribute('name');
-	}
-}
-
-/** The native members a control host names on the client, by host tag, which the server markup must name too. */
-const NAMED_MEMBER_SELECTORS: Readonly<Record<string, string>> = {
-	'rui-radio-group': 'input[type="radio"]',
-	'rui-number-field': '[data-number-field-input]',
-};
-
-/**
- * Writes `name` onto the native members a control host would name itself, in server markup.
- *
- * @remarks
- * A host serializes with its own name, so it names its members then. A field supplies its name only after the host
- * is serialized, and calls this to name them in the markup a form posts before the host connects.
- */
-export function nameControlMembersForServer(controlHost: HTMLElement, name: string): void {
-	const selector = NAMED_MEMBER_SELECTORS[controlHost.localName];
-	if (!selector) {
-		return;
-	}
-	for (const member of controlHost.querySelectorAll(selector)) {
-		member.setAttribute('name', name);
 	}
 }
 

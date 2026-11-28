@@ -1,9 +1,41 @@
+import '@ecopages/radiant/server/install-ssr-runtime';
 import { renderToString } from '@ecopages/jsx/server';
+import { RadiantElement, bindTo, customElement, prop } from '@ecopages/radiant';
 import { withRadiantServerCustomElementRenderBridge } from '@ecopages/radiant/server/radiant-element-ssr';
 import { describe, expect, it } from 'vitest';
+import { registerSubmissionForSsr } from '@/lib/form/submission';
+import { nonEmpty } from '@/lib/non-empty';
 import { RuiField } from './field';
+import { RuiFieldElement } from './index';
+import { RuiFieldError } from './field-error';
+import { renderComponentToString } from '@ecopages/radiant/server/render-component';
 import { RuiNumberField } from '../number-field';
 import { RuiRadio, RuiRadioGroup, RuiRadioGroupControl } from '../radio-group';
+import { RuiCheckboxGroup } from '../checkbox-group';
+import { RuiInput } from '../input';
+import { RuiSwitch } from '../switch';
+import { RuiCheckbox } from '../checkbox';
+import { RuiSlider } from '../slider';
+import { RuiKnob } from '../knob';
+import { RuiDateInput } from '../date-input';
+import { RuiDateField } from '../date-field';
+import { RuiDateRangePicker } from '../date-range-picker';
+
+@customElement('test-registered-control')
+class TestRegisteredControl extends RadiantElement {
+	@prop({ type: String, defaultValue: '' })
+	@bindTo({ selector: 'input', attr: 'name', map: nonEmpty })
+	name: string;
+
+	@prop({ type: Boolean, defaultValue: false })
+	@bindTo({ selector: 'input', prop: 'disabled' })
+	disabled: boolean;
+
+	constructor() {
+		super();
+		registerSubmissionForSsr(this);
+	}
+}
 
 const render = (node: Parameters<typeof renderToString>[0]) =>
 	withRadiantServerCustomElementRenderBridge(() => renderToString(node));
@@ -108,5 +140,291 @@ describe('RuiField name in server markup', () => {
 		);
 
 		expect(html.match(/<input[^>]*data-number-field-input[^>]*>/)?.[0]).toContain('name="outer"');
+	});
+
+	it('names a number field by the nearest of two nested fields', () => {
+		const html = render(
+			<RuiField name="outer">
+				<RuiField name="quantity">
+					<RuiNumberField name="explicit" value={2} />
+				</RuiField>
+			</RuiField>,
+		);
+
+		const input = html.match(/<input[^>]*data-number-field-input[^>]*>/)?.[0] ?? '';
+		expect(input).toContain('name="quantity"');
+	});
+
+	it('names a native input by the nearest of two nested fields', () => {
+		const html = render(
+			<RuiField name="outer">
+				<RuiField name="email">
+					<RuiInput />
+				</RuiField>
+			</RuiField>,
+		);
+
+		expect(html.match(/<input[^>]*\sname="([^"]*)"/g)).toEqual([expect.stringContaining('name="email"')]);
+	});
+
+	it('names the checkboxes of a group by the field, not by the group name', () => {
+		const html = render(
+			<RuiField name="topics">
+				<RuiCheckboxGroup
+					name="other"
+					options={[
+						{ value: 'news', label: 'News' },
+						{ value: 'travel', label: 'Travel' },
+					]}
+				/>
+			</RuiField>,
+		);
+
+		const inputs = html.match(/<input[^>]*\stype="checkbox"[^>]*>/g) ?? [];
+		expect(inputs.map((input) => input.match(/\sname="([^"]*)"/)?.[1])).toEqual(['topics', 'topics']);
+	});
+
+	it.each([
+		['switch', <RuiSwitch />, /<input[^>]*\stype="checkbox"[^>]*>/],
+		['checkbox', <RuiCheckbox value="a" />, /<input[^>]*\stype="checkbox"[^>]*>/],
+		['slider', <RuiSlider value={3} />, /<rui-slider[^>]*>/],
+		['knob', <RuiKnob value={3} />, /<rui-knob[^>]*>/],
+		['date input', <RuiDateInput />, /<rui-date-input[^>]*>/],
+		['date field', <RuiDateField />, /<rui-date-field[^>]*>/],
+	])('names a %s by the field in server markup', (_label, control, submitter) => {
+		const html = render(<RuiField name="topic">{control}</RuiField>);
+
+		expect(html.match(submitter)?.[0]).toMatch(/\sname="topic"/);
+	});
+
+	it('names every native checkbox in a field-wrapped checkbox group', () => {
+		const html = render(
+			<RuiField name="topics">
+				<RuiCheckboxGroup
+					options={[
+						{ value: 'news', label: 'News' },
+						{ value: 'travel', label: 'Travel' },
+					]}
+				/>
+			</RuiField>,
+		);
+
+		const inputs = html.match(/<input[^>]*\stype="checkbox"[^>]*>/g) ?? [];
+		expect(inputs.map((input) => input.match(/\sname="([^"]*)"/)?.[1])).toEqual(['topics', 'topics']);
+	});
+
+	it('names a directly authored native input before the field serializes', () => {
+		const html = render(
+			<RuiField name="email">
+				<RuiInput />
+			</RuiField>,
+		);
+
+		expect(html).toMatch(/<input[^>]*\sname="email"/);
+	});
+
+	it('preserves the names of each input in a field-wrapped date range', () => {
+		const html = render(
+			<RuiField name="trip">
+				<RuiDateRangePicker startName="arrival" endName="departure" />
+			</RuiField>,
+		);
+
+		expect(html).toMatch(/<rui-date-input[^>]*\sname="arrival"[^>]*\sdata-range-start/);
+		expect(html).toMatch(/<rui-date-input[^>]*\sname="departure"[^>]*\sdata-range-end/);
+	});
+
+	it('names the input of a control host that registers itself, as the catalog hosts do', () => {
+		const html = render(
+			<RuiField name="custom">
+				<TestRegisteredControl>
+					<input type="text" />
+				</TestRegisteredControl>
+			</RuiField>,
+		);
+
+		expect(html.match(/<test-registered-control[^>]*>/)?.[0]).toMatch(/\sname="custom"/);
+		expect(html.match(/<input[^>]*>/)?.[0]).toMatch(/\sname="custom"/);
+	});
+
+	it('names the input of an outer headless field that follows a nested field', () => {
+		const html = render(
+			<RuiFieldElement name="outer">
+				<RuiField name="inner">
+					<RuiInput />
+				</RuiField>
+				<div>
+					<input data-rui-control type="text" />
+				</div>
+			</RuiFieldElement>,
+		);
+
+		const names = (html.match(/<input[^>]*>/g) ?? []).map((input) => input.match(/\sname="([^"]*)"/)?.[1]);
+		expect(names).toEqual(['inner', 'outer']);
+	});
+
+	it('leaves the inputs of a date range picker without start-name and end-name unnamed by the field', () => {
+		const html = render(
+			<RuiField name="trip">
+				<RuiDateRangePicker />
+			</RuiField>,
+		);
+
+		const inputs = html.match(/<rui-date-input[^>]*>/g) ?? [];
+		expect(inputs).toHaveLength(2);
+		expect(inputs.some((tag) => /\sname="trip"/.test(tag))).toBe(false);
+	});
+
+	it('keeps a checked checkbox checked outside a group, alone and in a field', () => {
+		const html = render(
+			<form>
+				<RuiCheckbox value="a" checked />
+				<RuiField name="agree">
+					<RuiCheckbox value="b" checked />
+				</RuiField>
+			</form>,
+		);
+
+		const inputs = html.match(/<input[^>]*type="checkbox"[^>]*>/g) ?? [];
+		expect(inputs).toHaveLength(2);
+		for (const input of inputs) {
+			expect(input).toMatch(/\schecked(?=[\s=>])/);
+		}
+	});
+
+	it.each([
+		['native input', <RuiInput />, /<input[^>]*>/],
+		['switch', <RuiSwitch />, /<input[^>]*\stype="checkbox"[^>]*>/],
+		['checkbox', <RuiCheckbox value="a" />, /<input[^>]*\stype="checkbox"[^>]*>/],
+		['number field', <RuiNumberField value={2} />, /<input[^>]*data-number-field-input[^>]*>/],
+		['slider', <RuiSlider value={3} />, /<rui-slider[^>]*>/],
+		['knob', <RuiKnob value={3} />, /<rui-knob[^>]*>/],
+		['date input', <RuiDateInput />, /<rui-date-input[^>]*>/],
+	])('disables a %s of a disabled field in server markup', (_label, control, submitter) => {
+		const html = render(
+			<RuiField name="topic" disabled>
+				{control}
+			</RuiField>,
+		);
+
+		expect(html.match(submitter)?.[0]).toMatch(/\sdisabled(?=[\s=>])/);
+	});
+
+	it('leaves the controls of a field that is not disabled enabled', () => {
+		const html = render(
+			<RuiField name="topic">
+				<RuiNumberField value={2} />
+			</RuiField>,
+		);
+
+		expect(html.match(/<input[^>]*data-number-field-input[^>]*>/)?.[0]).not.toMatch(/\sdisabled/);
+	});
+
+	it('keeps the error regions of a nested field out of the description of an outer headless field', () => {
+		const html = render(
+			<RuiFieldElement name="outer">
+				<RuiField name="inner">
+					<RuiInput />
+					<RuiFieldError error="Inner problem" />
+				</RuiField>
+				<div>
+					<input data-rui-control type="text" />
+				</div>
+			</RuiFieldElement>,
+		);
+
+		const [inner, outer] = html.match(/<input[^>]*>/g) ?? [];
+		expect(inner).toMatch(/aria-describedby="[^"]*controlled-error/);
+		expect(outer).not.toMatch(/aria-describedby="[^"]*controlled-error/);
+	});
+
+	it('keeps the name of the field around an unnamed nested field', () => {
+		const html = render(
+			<RuiField name="outer">
+				<RuiField name="">
+					<RuiNumberField value={2} />
+				</RuiField>
+			</RuiField>,
+		);
+
+		expect(html.match(/<input[^>]*data-number-field-input[^>]*>/)?.[0]).toContain('name="outer"');
+	});
+
+	it('keeps the name of a checkbox group for a checkbox in an unnamed field', () => {
+		const html = render(
+			<RuiCheckboxGroup name="topics">
+				<RuiField name="">
+					<RuiCheckbox value="news" />
+				</RuiField>
+			</RuiCheckboxGroup>,
+		);
+
+		expect(html.match(/<input[^>]*\stype="checkbox"[^>]*>/)?.[0]).toContain('name="topics"');
+	});
+
+	it('leaves the name of a control that is not a checkbox alone inside a named checkbox group', () => {
+		const html = render(
+			<RuiCheckboxGroup name="topics">
+				<RuiSwitch name="notify" />
+				<RuiField name="volume">
+					<RuiSlider value={3} />
+				</RuiField>
+			</RuiCheckboxGroup>,
+		);
+
+		expect(html.match(/<input[^>]*\stype="checkbox"[^>]*>/)?.[0]).toContain('name="notify"');
+		expect(html.match(/<rui-slider[^>]*>/)?.[0]).toContain('name="volume"');
+	});
+
+	it('names and disables a native input in an unnamed field by the field around it', () => {
+		const html = render(
+			<RuiField name="account" disabled>
+				<RuiField name="">
+					<RuiInput name="alias" value="abc" />
+				</RuiField>
+			</RuiField>,
+		);
+
+		const input = html.match(/<input[^>]*>/)?.[0] ?? '';
+		expect(input).toContain('name="account"');
+		expect(input).toMatch(/\sdisabled(?=[\s=>])/);
+	});
+
+	it('names only the checkboxes of a checkbox group by the field around the group', () => {
+		const html = render(
+			<RuiField name="topics">
+				<RuiCheckboxGroup>
+					<RuiCheckbox value="news" />
+					<RuiSwitch name="notify" />
+				</RuiCheckboxGroup>
+			</RuiField>,
+		);
+
+		const inputs = html.match(/<input[^>]*\stype="checkbox"[^>]*>/g) ?? [];
+		expect(inputs.map((input) => input.match(/\sname="([^"]*)"/)?.[1])).toEqual(['topics', 'notify']);
+	});
+
+	it('names a checkbox by a field nested in its group, not by the group', () => {
+		const html = render(
+			<RuiCheckboxGroup name="topics">
+				<RuiField name="alerts">
+					<RuiCheckbox value="news" />
+				</RuiField>
+			</RuiCheckboxGroup>,
+		);
+
+		expect(html.match(/<input[^>]*\stype="checkbox"[^>]*>/)?.[0]).toContain('name="alerts"');
+	});
+
+	it('names a directly authored input by the name the field has after initialize', async () => {
+		const html = await renderComponentToString(RuiFieldElement, {
+			authoredContent: '<input data-rui-control type="text" name="alias" />',
+			initialize: (field) => {
+				field.name = 'account';
+			},
+			renderOptions: { mode: 'plain' },
+		});
+
+		expect(html.match(/<input[^>]*>/)?.[0]).toContain('name="account"');
 	});
 });

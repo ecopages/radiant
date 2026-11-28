@@ -1,8 +1,11 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
-import { RadiantElement, bindTo, customElement, prop } from '@ecopages/radiant';
+import { RadiantElement, bindTo, customElement, prop, registerSsrPreparationCallback } from '@ecopages/radiant';
+import { resolveSsrContextValue } from '@ecopages/radiant/context';
 import { createEventListenerController } from '../../../controllers/event-listener-controller';
 import { nonEmpty } from '@/lib/non-empty';
 import { announceControlConnect } from '@/lib/form/control-protocol';
+import { applySubmissionName, registerSubmissionForSsr, submissionContext } from '@/lib/form/submission';
+import { checkboxGroupContext } from './checkbox-group-context';
 
 export type RuiCheckboxProps = {
 	/** Whether the checkbox is checked. Default: `false`. */
@@ -120,6 +123,8 @@ export class RuiCheckbox extends RadiantElement {
 	/** Syncs the host from its input before any bubble listener runs. */
 	constructor() {
 		super();
+		registerSubmissionForSsr(this);
+		registerSsrPreparationCallback(this, () => this.takeGroupStateForServer(), 'beforeOnUpdated');
 		createEventListenerController(this, {
 			getTarget: () => this,
 			type: ['input', 'change'],
@@ -132,6 +137,28 @@ export class RuiCheckbox extends RadiantElement {
 				}
 			},
 		});
+	}
+
+	/**
+	 * Takes the name, checked and disabled state of a surrounding group in server markup, as the group does on the
+	 * client. A box the group does not hold is unchecked, whatever its own `checked` says.
+	 *
+	 * @remarks The view stamps `checked` on the input from the authored prop, and the property the host sets does not
+	 * reflect to an attribute, so the attribute is written as well.
+	 */
+	private takeGroupStateForServer(): void {
+		const group = resolveSsrContextValue(checkboxGroupContext);
+		if (!group) {
+			return;
+		}
+		if (group.name && !resolveSsrContextValue(submissionContext)?.name) {
+			applySubmissionName(this, group.name);
+		}
+		this.checked = group.selected.includes(this.value);
+		this.getRef<HTMLInputElement>('input')?.toggleAttribute('checked', this.checked);
+		if (group.disabled || this.hasAttribute('data-disabled')) {
+			this.disabled = true;
+		}
 	}
 
 	protected override onConnected(): void {

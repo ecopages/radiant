@@ -19,6 +19,7 @@ import { resolveLocale } from '@/lib/intl/locale';
 import { uniqueId } from '@/lib/unique-id';
 import { getSegmentDomProps } from './date-input-segment-dom';
 import { announceControlConnect } from '@/lib/form/control-protocol';
+import { registerSubmissionForSsr } from '@/lib/form/submission';
 import { emitValueEvents, stopInnerValueEvents } from '@/lib/form/value-events';
 import { forwardHostLabels } from '../shared/field-label';
 
@@ -141,6 +142,7 @@ export class RuiDateInput extends FormAssociatedElement {
 
 	constructor() {
 		super();
+		registerSubmissionForSsr(this);
 		registerSsrPreparationCallback(this, () => this.syncSegmentsFromValue());
 		stopInnerValueEvents(this);
 	}

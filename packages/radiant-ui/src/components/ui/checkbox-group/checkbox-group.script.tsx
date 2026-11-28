@@ -1,10 +1,21 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
-import { RadiantElement, bindTo, customElement, onUpdated, prop } from '@ecopages/radiant';
+import {
+	RadiantElement,
+	bindTo,
+	customElement,
+	onUpdated,
+	prop,
+	registerSsrPreparationCallback,
+} from '@ecopages/radiant';
+import { provideContext, resolveSsrContextValue } from '@ecopages/radiant/context';
+import type { ContextProvider } from '@ecopages/radiant/context';
 import { createEventListenerController } from '../../../controllers/event-listener-controller';
 import { nonEmpty } from '@/lib/non-empty';
 import { RuiCheckbox } from '../checkbox/checkbox.script';
 import { multiValuePropOptions, type ViewMultiValue } from '@/lib/multi-value';
 import { announceControlConnect } from '@/lib/form/control-protocol';
+import { applySubmissionName, submissionContext } from '@/lib/form/submission';
+import { checkboxGroupContext } from '../checkbox/checkbox-group-context';
 
 export type RuiCheckboxGroupOrientation = 'horizontal' | 'vertical';
 
@@ -41,7 +52,7 @@ export type RuiCheckboxGroupProps = {
  * - `data-disabled` — per-item disabled flag preserved when the group is enabled.
  *
  * Do not set `checked`, `disabled`, or `name` on `rui-checkbox` children — the host owns those.
- * After connect, group `value` wins over per-item `checked`.
+ * In server markup and after connect, group `value` wins over per-item `checked`.
  * Group `value` follows user toggles only: a programmatic `checked` write on a child does not update it, and the next sync overwrites that write; set the group `value` instead.
  *
  * Nested hosts: `rui-checkbox`, which dispatches nothing itself.
@@ -102,8 +113,32 @@ export class RuiCheckboxGroup extends RadiantElement {
 	@bindTo({ selector: '[data-checkbox-group-root]', attr: 'data-orientation' })
 	orientation: RuiCheckboxGroupOrientation;
 
+	/**
+	 * Ends the surrounding field's naming at the group: the group names its checkboxes, and other controls inside it
+	 * keep their own name. A field around the group still disables them.
+	 */
+	@provideContext({ context: submissionContext, initialValue: { name: '', disabled: false } })
+	private submissionProvider: ContextProvider<typeof submissionContext>;
+
+	/** Hands the group's name, value and disabled state to its checkboxes, which serialize before the group can. */
+	@provideContext({ context: checkboxGroupContext, initialValue: { name: '', selected: [], disabled: false } })
+	private groupProvider: ContextProvider<typeof checkboxGroupContext>;
+
 	constructor() {
 		super();
+		registerSsrPreparationCallback(
+			this,
+			() => {
+				const outer = resolveSsrContextValue(submissionContext);
+				const name = outer?.name || this.name;
+				if (name) {
+					applySubmissionName(this, name);
+				}
+				this.submissionProvider.setContext({ name: '', disabled: outer?.disabled === true });
+				this.groupProvider.setContext({ name, selected: this.value, disabled: this.disabled });
+			},
+			'beforeAuthoredChildren',
+		);
 		createEventListenerController(this, {
 			getTarget: () => this,
 			type: ['input', 'change'],
@@ -131,10 +166,16 @@ export class RuiCheckboxGroup extends RadiantElement {
 		for (const checkbox of this.getCheckboxes()) {
 			checkbox.checked = selected.has(checkbox.value);
 			checkbox.disabled = this.disabled || checkbox.hasAttribute('data-disabled');
-			if (groupName) {
+			if (groupName && !this.isNamedByNestedField(checkbox)) {
 				checkbox.name = groupName;
 			}
 		}
+	}
+
+	/** A named `rui-field` between the group and the checkbox names it, as it does outside a group. */
+	private isNamedByNestedField(checkbox: RuiCheckbox): boolean {
+		const field = checkbox.closest('rui-field');
+		return field !== null && this.contains(field) && (field.getAttribute('name') ?? '') !== '';
 	}
 
 	private getCheckboxes(): RuiCheckbox[] {

@@ -7,7 +7,7 @@ import {
 	prop,
 	registerSsrPreparationCallback,
 } from '@ecopages/radiant';
-import { consumeContext, onContextUpdate, provideContext } from '@ecopages/radiant/context';
+import { consumeContext, onContextUpdate, provideContext, resolveSsrContextValue } from '@ecopages/radiant/context';
 import type { ContextProvider } from '@ecopages/radiant/context';
 import {
 	findFieldControl,
@@ -29,10 +29,10 @@ import {
 	RUI_FIELD_DEFAULT_VALUE_ATTR,
 	RUI_FIELD_MANAGED_ATTR,
 	writeControlValue,
-	nameControlMembersForServer,
 	wireFieldControlName,
 } from '@/lib/form/control-protocol';
 import { formContext, type FormContextValue } from '@/lib/form/form-context';
+import { submissionContext, type SubmissionContextValue } from '@/lib/form/submission';
 import { fieldContext, type FieldContextValue } from './field-context';
 import type { FieldRegistration, FieldRegistrationHandle, FieldRules } from '@/lib/form/types';
 import { bindVisibleLabel } from '../shared/field-label';
@@ -73,7 +73,8 @@ export type RuiFieldProps = {
  * applies presentation (errors, ARIA) from the form-published `fields` map.
  * It is not a listed form control. Native `FormData` comes from the child: `name` on
  * a form-associated host (`rui-date-input`, `rui-number-field`, `rui-slider`,
- * `rui-knob`) or on an inner native input. The field copies its `name` onto that child.
+ * `rui-knob`) or on an inner native input. Catalog control hosts take the field's name from `submissionContext`
+ * during SSR. The field names directly authored inputs and keeps the name in sync on the client.
  *
  * ## Light-DOM contract
  *
@@ -169,6 +170,10 @@ export class RuiField extends RadiantElement {
 	})
 	fieldProvider: ContextProvider<typeof fieldContext>;
 
+	/** Names the controls in server markup: each reads its submission name from here while it serializes. */
+	@provideContext({ context: submissionContext, initialValue: { name: '', disabled: false } })
+	private submissionProvider: ContextProvider<typeof submissionContext>;
+
 	@consumeContext(formContext)
 	private formContextProvider?: ContextProvider<typeof formContext>;
 
@@ -177,24 +182,41 @@ export class RuiField extends RadiantElement {
 	private readonly assignedIds = new WeakMap<HTMLElement, string>();
 	/** Resolved field name from property or `name` attribute (Storybook can hydrate props after connect). */
 	/**
-	 * Gives the control the field's name in the server markup, as `syncField` does on the client, so a form posted
-	 * before hydration submits it under that name and two field-named groups do not share a fallback name.
-	 *
-	 * @remarks
-	 * A control host nested in the field is already serialized markup by now, so its own server preparation cannot
-	 * see the name: the field writes it onto the host and onto the members the host would have named.
+	 * Copies the field's name onto its control once connected. An unnamed field leaves the name that a named
+	 * checkbox group gives its checkbox, instead of clearing it. Server markup is named while the controls serialize.
 	 */
-	private nameControlForServer(): void {
-		const controlHost = findFieldControl(this);
-		const fieldName = this.resolveFieldName();
-		if (controlHost && fieldName) {
-			wireFieldControlName(controlHost, getAriaControlTargets(controlHost)[0] ?? null, fieldName);
-			nameControlMembersForServer(controlHost, fieldName);
+	private wireName(controlHost: HTMLElement | null, ariaTarget: HTMLElement | null, fieldName: string): void {
+		const group = controlHost?.closest('rui-checkbox-group');
+		const namedByGroup = fieldName === '' && group != null && Boolean(Reflect.get(group, 'name'));
+		if (this.isConnected && !namedByGroup) {
+			wireFieldControlName(controlHost, ariaTarget, fieldName);
 		}
 	}
 
 	private resolveFieldName(): string {
 		return (this.name || this.getAttribute('name') || '').trim();
+	}
+
+	private outerSubmission?: SubmissionContextValue;
+
+	/**
+	 * Publishes the name and disabled state the controls in this field take in server markup: its own, else those of
+	 * the field around it.
+	 *
+	 * @remarks It runs again after construction settles, because props set by `initialize` land after the first run.
+	 * The outer value is read only before the Authored Children are built, while this field's own provider is not
+	 * yet on the context stack, and again on each serialization.
+	 */
+	private publishSubmission(readOuter: boolean): SubmissionContextValue {
+		if (readOuter) {
+			this.outerSubmission = resolveSsrContextValue(submissionContext);
+		}
+		const submission = {
+			name: this.resolveFieldName() || this.outerSubmission?.name || '',
+			disabled: this.disabled || this.outerSubmission?.disabled === true,
+		};
+		this.submissionProvider.setContext(submission);
+		return submission;
 	}
 
 	private registration?: FieldRegistrationHandle;
@@ -221,9 +243,19 @@ export class RuiField extends RadiantElement {
 	 */
 	constructor() {
 		super();
+		registerSsrPreparationCallback(this, () => this.publishSubmission(true), 'beforeAuthoredChildren');
 		registerSsrPreparationCallback(this, () => {
 			this.fieldProvider.setContext({ rules: this.readFieldRules() });
-			this.nameControlForServer();
+			const { name, disabled } = this.publishSubmission(false);
+			const control = findFieldControl(this);
+			if (control && isNativeTextControl(control)) {
+				if (name) {
+					control.name = name;
+				}
+				if (disabled) {
+					control.disabled = true;
+				}
+			}
 		});
 		createEventListenerController(this, {
 			getTarget: () => this,
@@ -460,7 +492,7 @@ export class RuiField extends RadiantElement {
 		const required = this.isRequired();
 
 		const fieldName = this.resolveFieldName();
-		wireFieldControlName(controlHost, ariaTarget, fieldName);
+		this.wireName(controlHost, ariaTarget, fieldName);
 
 		const describedBy = this.syncDescriptions(descriptionId, errorId, errorMessage);
 		if (paintedByHost) {

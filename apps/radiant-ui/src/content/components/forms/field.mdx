@@ -64,7 +64,7 @@ import '@ecopages/radiant-ui/input';
 
 The field wires `aria-describedby`, `aria-invalid`, and error text on the control. Use a library control host or `[data-rui-control]` — bare native inputs without the marker are ignored.
 
-Set `name` on the field (or on a form-associated host) so a native `<form>` can submit. `RuiInput` / `RuiTextarea` / checkbox / switch / radio / checkbox-group / radio-group submit through their inner input. `rui-date-input`, `rui-number-field`, `rui-slider`, and `rui-knob` submit through `name` on the host. `RuiDateField` is not listed; it copies `name` onto the nested `rui-date-input`. `RuiDateRangePicker` is not listed; `start-name` / `end-name` land on the nested `rui-date-input` hosts. `RuiSelect` and similar hosts are not form-associated; their values are available to `RuiForm` `onSubmit`, not to `new FormData(form)`.
+Set `name` on the field (or on a form-associated host) so a native `<form>` can submit. During server rendering, named controls read their name from the nearest `RuiField`. `RuiInput` / `RuiTextarea` / checkbox / switch / radio / checkbox-group / radio-group submit through their inner input. `rui-date-input`, `rui-number-field`, `rui-slider`, and `rui-knob` submit through `name` on the host. `RuiDateField` is not listed; it copies `name` onto the nested `rui-date-input`. `RuiDateRangePicker` is not listed; `start-name` / `end-name` land on the nested `rui-date-input` hosts. `RuiSelect` and similar hosts are not form-associated; their values are available to `RuiForm` `onSubmit`, not to `new FormData(form)`.
 
 ## Use Radiant controls
 
@@ -174,6 +174,8 @@ The nested control keeps its own control tokens (`--size-control-*`, `--radius-c
 Nested hosts: registered control hosts inside the field (`rui-switch`, `rui-slider`, …).
 
 ### Custom control hosts
+
+In server markup the field names a directly authored native text control, and the catalog hosts take the field's name from `submissionContext` while they serialize. A control host registered with `registerFieldControl` that submits natively does the same by calling `registerSubmissionForSsr(this)` from `@ecopages/radiant-ui/form` in its constructor. The host needs a `name` property, bound to the input it submits through. A custom store-only host that wraps a control which submits natively provides a blank `submissionContext` (`{ name: '', disabled: false }`), so the field does not name or disable that control.
 
 A host registered with `registerFieldControl` that declares `data-rui-aria-target` or `data-rui-aria-targets` renders its target on its own schedule, often after the field connected. The field therefore writes no `id`, `data-rui-field-managed` or `aria-*` for it. It publishes the state on `fieldContext` (`controlId`, `labelId`, `describedBy`, `invalid`, `required`, `disabled`) and the host binds it onto its target declaratively. Read the context into a `@state` field with `@contextSelector`, then:
 

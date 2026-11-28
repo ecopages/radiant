@@ -2,6 +2,7 @@ export * from './types';
 export * from './events';
 export * from './create-context';
 export * from './context-provider';
+export { resolveSsrContextValue } from './context-ssr-bridge';
 export * from './decorators/consume-context';
 export * from './decorators/context-selector';
 export * from './decorators/on-context-update';

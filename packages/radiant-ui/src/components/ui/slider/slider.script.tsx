@@ -16,6 +16,7 @@ import {
 	valuesAlignOnStep,
 } from '@/lib/numeric-range';
 import { announceControlConnect } from '@/lib/form/control-protocol';
+import { registerSubmissionForSsr } from '@/lib/form/submission';
 import { emitChange, emitInput } from '@/lib/form/value-events';
 import { forwardHostLabels } from '../shared/field-label';
 
@@ -348,6 +349,7 @@ export class RuiSlider extends FormAssociatedElement {
 
 	constructor() {
 		super();
+		registerSubmissionForSsr(this);
 		createPointerDragController(this, {
 			getTarget: (): HTMLElement => this,
 			getHandle: () => this.rangeTrack,

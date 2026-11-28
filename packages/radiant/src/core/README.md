@@ -130,7 +130,7 @@ SSR works like this:
 2. Server code sets props, fields, or attributes exactly as client code would.
 3. When authored light DOM is needed, a server render environment applies it through `prepareHost` / `authoredContent` before serialization.
 4. Prefer `@ecopages/radiant/server/render-component` for adapters and fragment responses.
-5. Each host serialization runs `prepareForSsr` once, renders the view, then reads attributes and hydration payloads from that state.
+5. For a host the SSR bridge claims or `renderComponent` renders, it runs `beforeAuthoredChildren` callbacks before building the host's light DOM, so descendant hosts can read its context. Each host serialization then runs `prepareForSsr` once, renders the view, and reads attributes and hydration payloads from that state.
 6. When hydration is requested, the view may include hydration markers and the host tag is stamped with `data-radiant-ssr`.
 7. The browser receives `<my-element ...>...</my-element>` markup.
 8. On first connect, the same component instance logic decides whether to hydrate or do a fresh render.

@@ -384,6 +384,26 @@ describe('minimal DOM property setters match Chromium', () => {
 		},
 	);
 
+	test.each(['edited', ''])('input type transitions with live value %j match Chromium', (value) => {
+		const minimal = new MinimalHTMLElement('input', null);
+		const expected = document.createElement('input');
+
+		for (const input of [minimal, expected]) {
+			input.setAttribute('value', 'default');
+			input.value = value;
+			input.setAttribute('type', 'checkbox');
+		}
+		const markup = minimal.outerHTML;
+		expect(minimal.value).toBe(expected.value);
+		expect(minimal.outerHTML).toBe(markup);
+		expect(attributesOf(minimal)).toEqual(attributesOf(expected));
+
+		for (const input of [minimal, expected]) {
+			input.removeAttribute('type');
+		}
+		expect(minimal.value).toBe(expected.value);
+	});
+
 	test('option value falls back to its text', () => {
 		const minimal = new MinimalHTMLElement('option', null) as unknown as { value: string; textContent: string };
 		const expected = document.createElement('option');

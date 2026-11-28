@@ -27,7 +27,7 @@ export function bootstrapSsrConsumedContext(
 		() => {
 			initializeConsumedContext(host, context, assign);
 		},
-		true,
+		'beforeOnUpdated',
 	);
 }
 
@@ -56,7 +56,7 @@ export function bootstrapSsrContextSelection<TContext extends UnknownContext, Se
 				callback: callback as (value: ContextType<TContext>) => void,
 			});
 		},
-		true,
+		'beforeOnUpdated',
 	);
 }
 

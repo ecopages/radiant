@@ -1,4 +1,5 @@
 import type { JsxCustomElementAttributes, JsxElementProps } from '@ecopages/jsx';
+import { isServer } from '@ecopages/radiant/is-server';
 import { withDefaultAriaLabel } from '@/lib/aria';
 import { cx } from '@/lib/cx';
 import { RuiIconMinus } from '@/lib/icons/minus';
@@ -28,16 +29,20 @@ export type RuiNumberFieldInputProps = NativeInputProps & {
 };
 
 /**
- * Text input for the number field. Stamps `[data-number-field-input]`.
- * Formatting is handled by `<rui-number-field>`.
+ * Stamps `[data-number-field-input]`. Server markup is a number input, so a form posted before the script loads
+ * submits a raw number; the host turns it into a locale text input when it connects.
  *
- * @cssclass rui-number-field__input - Borderless text input inside the group.
+ * @remarks The browser render sets no `type`, so a rerender never writes one over the host's text input.
+ *
+ * @remarks The host owns `readonly`: it mirrors its own `readOnly` onto the input, so set `readOnly` on the host.
+ *
+ * @cssclass rui-number-field__input - Borderless input inside the group.
  */
 export function RuiNumberFieldInput({ class: className, disabled, readOnly, ...props }: RuiNumberFieldInputProps) {
 	return (
 		<input
 			{...props}
-			type="text"
+			type={isServer ? 'number' : undefined}
 			data-number-field-input
 			data-rui-control
 			data-rui-control-type="number"

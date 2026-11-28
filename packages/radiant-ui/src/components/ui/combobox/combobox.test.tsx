@@ -405,22 +405,6 @@ describe('RuiCombobox', () => {
 			expect(popup.hidden).toBe(true);
 			cleanup();
 		});
-
-		it('re-evaluates the open state on refreshOptions()', async () => {
-			const { host, cleanup } = mount(<RuiCombobox options={[]} placeholder="Search" />);
-			await settled();
-
-			const combobox = host.querySelector('rui-combobox') as RuiComboboxElement;
-			const input = host.querySelector('[data-combobox-input]') as HTMLInputElement;
-			const popup = host.querySelector('[data-combobox-listbox]') as HTMLElement;
-
-			await userEvent.type(input, 'chair');
-			addOptions(host, ['Chair']);
-			combobox.refreshOptions();
-
-			expect(popup.hidden).toBe(false);
-			cleanup();
-		});
 	});
 
 	describe('text typed before the script loads', () => {

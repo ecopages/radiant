@@ -272,8 +272,21 @@ describe('minimal DOM reflected properties', () => {
 		const input = el('input') as unknown as { value: string } & MinimalHTMLElement;
 		input.value = 'new';
 		input.setAttribute('type', 'checkbox');
+		const markup = input.outerHTML;
 		expect(input.value).toBe('new');
+		expect(input.outerHTML).toBe(markup);
 		expect(input.getAttribute('value')).toBe('new');
+	});
+
+	test('a cleared input keeps its authored default when changing to a radio', () => {
+		const input = el('input') as unknown as { value: string; type: string } & MinimalHTMLElement;
+		input.setAttribute('value', 'default');
+		input.value = '';
+		input.type = 'radio';
+		expect(input.value).toBe('default');
+
+		input.removeAttribute('type');
+		expect(input.value).toBe('default');
 	});
 
 	test('a value assigned after the type became a checkbox is not replaced by an earlier one', () => {

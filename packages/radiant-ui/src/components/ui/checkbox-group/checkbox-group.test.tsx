@@ -1,10 +1,13 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { createRoot } from '@ecopages/jsx';
 import { userEvent } from 'storybook/test';
+import { RuiField } from '../field';
 import { RuiCheckbox } from '../checkbox';
 import { RuiCheckbox as RuiCheckboxElement } from '../checkbox/checkbox.script';
 import { RuiCheckboxGroup, RuiCheckboxGroupControl } from './checkbox-group';
 import { RuiCheckboxGroup as RuiCheckboxGroupElement } from './checkbox-group.script';
+import { RuiField as RuiFieldElement } from '../field/field.script';
+void RuiFieldElement;
 void RuiCheckboxElement;
 void RuiCheckboxGroupElement;
 
@@ -14,6 +17,54 @@ async function settled(): Promise<void> {
 	await new Promise((resolve) => setTimeout(resolve, 0));
 	await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve(undefined))));
 }
+
+describe('RuiCheckboxGroup with a nested field', () => {
+	afterEach(() => {
+		document.body.innerHTML = '';
+	});
+
+	it('leaves the name of a checkbox that a field nested in the group names', async () => {
+		const host = document.createElement('div');
+		document.body.append(host);
+		createRoot(host).render(
+			<RuiCheckboxGroup name="topics" label="Topics">
+				<RuiCheckboxGroupControl>
+					<RuiField name="alerts">
+						<RuiCheckbox value="news">News</RuiCheckbox>
+					</RuiField>
+				</RuiCheckboxGroupControl>
+			</RuiCheckboxGroup>,
+		);
+		await settled();
+
+		const group = host.querySelector('rui-checkbox-group') as RuiCheckboxGroupElement;
+		const input = host.querySelector('input[type="checkbox"]') as HTMLInputElement;
+		expect(input.name).toBe('alerts');
+
+		group.value = ['news'];
+		await settled();
+
+		expect(input.name).toBe('alerts');
+	});
+
+	it('names a checkbox in an unnamed nested field after the group', async () => {
+		const host = document.createElement('div');
+		document.body.append(host);
+		createRoot(host).render(
+			<RuiCheckboxGroup name="topics" label="Topics" value={['news']}>
+				<RuiCheckboxGroupControl>
+					<RuiField name="">
+						<RuiCheckbox value="news">News</RuiCheckbox>
+					</RuiField>
+				</RuiCheckboxGroupControl>
+			</RuiCheckboxGroup>,
+		);
+		await settled();
+
+		const input = host.querySelector('input[type="checkbox"]') as HTMLInputElement;
+		expect(input.name).toBe('topics');
+	});
+});
 
 describe('RuiCheckboxGroup programmatic writes', () => {
 	afterEach(() => {
