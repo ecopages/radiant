@@ -47,6 +47,7 @@ Use `llms.txt` for a compact map, then the full docs for API details.
 | `setDevWarningsEnabled`                                                                       | `@ecopages/jsx/jsx-dev-runtime`                                                                |
 | `@agentTool` (experimental)                                                                   | `@ecopages/radiant/decorators/agent-tool`                                                      |
 | `createAgentTool`, `registerAgentTool` (experimental)                                         | `@ecopages/radiant/helpers/create-agent-tool`, `@ecopages/radiant/helpers/register-agent-tool` |
+| `withConfig` (experimental)                                                                   | `@ecopages/radiant/helpers/agent-tool-config`                                                  |
 
 ## Host choice
 
@@ -94,7 +95,7 @@ Read only the modules relevant to the task. Each file is one level deep from thi
 | [reference/ssr.md](reference/ssr.md)                       | Server entrypoints, hydrate modes, nested and page-level hydration, render scope                                                                   |
 | [reference/authoring.md](reference/authoring.md)           | Authoring rules, development warnings, review checklist, output shape                                                                              |
 | [reference/jsx-signals.md](reference/jsx-signals.md)       | `@ecopages/jsx` with `createRoot` and signals, no host: render once, computed keyed lists, signals in attributes, `ref` callbacks, external stores |
-| [reference/agent-tools.md](reference/agent-tools.md)       | Experimental WebMCP tools: `@agentTool`, `createAgentTool`, `registerAgentTool`, unique names, `parse`, annotations, security                      |
+| [reference/agent-tools.md](reference/agent-tools.md)       | Experimental WebMCP tools: `@agentTool`, `createAgentTool`, `registerAgentTool`, `withConfig`, unique names, `parse`, annotations, security        |
 
 ## Critical rules
 

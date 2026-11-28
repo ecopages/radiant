@@ -93,6 +93,21 @@ The config is the WebMCP tool dictionary passed through (`name`, `description`, 
 
     The browser gets the tool once every promise has settled. A tool that is unregistered first, such as one whose element is removed meanwhile, is never registered, and a rejected promise is reported with `console.error` naming the tool. A config without a promise registers at once, and plain objects and a plain `parse` still work. The method's argument type comes from `parse`, which may be a promise of the parser.
 
+To override one field of a lazy config shared by several tools, use `withConfig(config, overrides, omit?)` from `@ecopages/radiant/helpers/agent-tool-config`. Spreading the config (`{ ...config, getEnabled }`) calls its getters, so a `parse` getter loads its schema at once; `withConfig` copies the property descriptors, so a getter stays a getter and is not read, and a schema is built only when the tool registers, or never without `document.modelContext`. `omit` lists keys of `config` to leave out.
+
+```ts
+import { createAgentTool } from '@ecopages/radiant/helpers/create-agent-tool';
+import { withConfig } from '@ecopages/radiant/helpers/agent-tool-config';
+
+// sharedCartTool is a lazy config, such as one with a `parse` getter, used by several tools.
+class RadCart extends RadiantElement {
+	constructor() {
+		super();
+		createAgentTool(this, withConfig(sharedCartTool, { getEnabled: () => shopIsOpen() }));
+	}
+}
+```
+
 ## Rules
 
 - Tool names are unique per page. A second registration under the same name is rejected, and Radiant reports it with `console.error` naming the tool, and the element for a host-bound tool. A rejection that arrives after the registration was already unregistered is not reported. A component that can appear twice builds its name from an instance value such as `id`, or one owner registers a shared capability once.
