@@ -110,7 +110,7 @@ Store-only (not in `FormData`): `RuiSelect`, `RuiCombobox`, `RuiListbox`, `RuiTa
 
 ### Custom form-associated hosts
 
-`RuiField` connects a control to the `RuiForm` store. Native forms use a separate channel: the browser lists a control in `FormData` only when a native form control has a name or a form-associated custom element supplies a value through `ElementInternals`. Register a third-party host before its field connects. Registration supplies store value access and name wiring; it does not make the host form-associated.
+`RuiField` connects a control to the `RuiForm` store. Native forms use a separate channel: the browser lists a control in `FormData` only when a native form control has a name or a form-associated custom element supplies a value through `ElementInternals`. Register a third-party host before its field connects. Registration supplies store value access and, in the browser, name wiring (server markup takes its name through `registerSubmissionForSsr`, see the field docs); it does not make the host form-associated.
 
 ```ts
 import { customElement, prop } from '@ecopages/radiant';

@@ -2,42 +2,38 @@ import { registerSsrPreparationCallback } from '@ecopages/radiant';
 import { createContext, resolveSsrContextValue } from '@ecopages/radiant/context';
 
 export type SubmissionContextValue = {
-	/** Name the control and its members submit under. Empty when nothing names them. */
+	/** Name the controls inside the provider submit under. Empty when nothing names them. */
 	name: string;
-	/** Whether the surrounding group is disabled, which its members render disabled. */
-	disabled: boolean;
-	/** The values a checkbox group holds, which its checkboxes render as checked. Absent outside a group. */
-	selected?: readonly string[];
 };
 
 /**
- * What a control submits under in server markup, published by the nearest `RuiField`, checkbox group or other host
- * that owns the submission of its descendants.
+ * The name a control submits under in server markup, published by the nearest `RuiField` or checkbox group.
  *
- * @remarks A provider with an empty `name` stops a surrounding name from reaching its descendants, as a date range
- * picker does for its two date inputs, which take `start-name` and `end-name` instead.
+ * @remarks A host that owns the submission of its descendants provides it, and a control takes the nearest value
+ * through {@link registerSubmissionForSsr}.
  */
 export const submissionContext = createContext<SubmissionContextValue>(Symbol.for('rui-submission-context'));
 
+/** Gives the control the name, as a property and as an attribute, so the server markup carries it. */
+export function applySubmissionName(control: HTMLElement & { name: string }, name: string): void {
+	control.name = name;
+	control.setAttribute('name', name);
+}
+
 /**
- * Takes the control's name and disabled state from the nearest {@link submissionContext} while the control is
- * prepared on the server.
+ * Takes the control's name from the nearest {@link submissionContext} while the control is prepared on the server.
  *
- * @remarks Call it in the constructor of a host that submits natively, or whose inner input does, so a form posted
+ * @remarks Call it in the constructor of a host whose inner input submits, or that submits itself, so a form posted
  * before the script loads submits under the right name. Catalog hosts do this themselves; a host registered with
- * `registerFieldControl` calls it too. The host's `name` prop must be bound to the input it submits through.
+ * `registerFieldControl` calls it too. Bind the host's `name` prop to the input it submits through.
  */
-export function registerSubmissionForSsr(control: HTMLElement & { name: string; disabled: boolean }): void {
+export function registerSubmissionForSsr(control: HTMLElement & { name: string }): void {
 	registerSsrPreparationCallback(
 		control,
 		() => {
-			const submission = resolveSsrContextValue(submissionContext);
-			if (submission?.name) {
-				control.name = submission.name;
-				control.setAttribute('name', submission.name);
-			}
-			if (submission?.disabled) {
-				control.disabled = true;
+			const name = resolveSsrContextValue(submissionContext)?.name;
+			if (name) {
+				applySubmissionName(control, name);
 			}
 		},
 		'beforeOnUpdated',

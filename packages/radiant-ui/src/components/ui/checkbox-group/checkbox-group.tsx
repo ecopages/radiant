@@ -63,10 +63,7 @@ export function RuiCheckboxGroup({
 			) : (
 				<RuiCheckboxGroupControl orientation={orientation}>
 					{options.map((option) => (
-						<RuiCheckbox
-							value={option.value}
-							disabled={option.disabled}
-						>
+						<RuiCheckbox value={option.value} disabled={option.disabled}>
 							{option.label}
 						</RuiCheckbox>
 					))}

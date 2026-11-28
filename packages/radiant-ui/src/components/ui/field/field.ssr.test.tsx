@@ -236,11 +236,12 @@ describe('RuiField name in server markup', () => {
 		const html = render(
 			<RuiField name="custom">
 				<TestRegisteredControl>
-					<input data-rui-control type="text" />
+					<input type="text" />
 				</TestRegisteredControl>
 			</RuiField>,
 		);
 
+		expect(html.match(/<test-registered-control[^>]*>/)?.[0]).toMatch(/\sname="custom"/);
 		expect(html.match(/<input[^>]*>/)?.[0]).toMatch(/\sname="custom"/);
 	});
 
@@ -260,13 +261,32 @@ describe('RuiField name in server markup', () => {
 		expect(names).toEqual(['inner', 'outer']);
 	});
 
-	it('leaves the inputs of a date range picker unnamed by the field', () => {
+	it('leaves the inputs of a date range picker without start-name and end-name unnamed by the field', () => {
 		const html = render(
 			<RuiField name="trip">
 				<RuiDateRangePicker />
 			</RuiField>,
 		);
 
-		expect(html.match(/<rui-date-input[^>]*>/g)?.some((tag) => tag.includes('name="trip"'))).toBe(false);
+		const inputs = html.match(/<rui-date-input[^>]*>/g) ?? [];
+		expect(inputs).toHaveLength(2);
+		expect(inputs.some((tag) => /\sname="trip"/.test(tag))).toBe(false);
+	});
+
+	it('keeps a checked checkbox checked outside a group, alone and in a field', () => {
+		const html = render(
+			<form>
+				<RuiCheckbox value="a" checked />
+				<RuiField name="agree">
+					<RuiCheckbox value="b" checked />
+				</RuiField>
+			</form>,
+		);
+
+		const inputs = html.match(/<input[^>]*type="checkbox"[^>]*>/g) ?? [];
+		expect(inputs).toHaveLength(2);
+		for (const input of inputs) {
+			expect(input).toMatch(/\schecked(?=[\s=>])/);
+		}
 	});
 });

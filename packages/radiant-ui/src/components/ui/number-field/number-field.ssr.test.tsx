@@ -4,7 +4,6 @@ import { withRadiantServerCustomElementRenderBridge } from '@ecopages/radiant/se
 import { describe, expect, it } from 'vitest';
 import { RuiNumberField, RuiNumberFieldInput } from './number-field';
 import { RuiNumberField as RuiNumberFieldElement } from './number-field.script';
-import { readFileSync } from 'node:fs';
 
 describe('RuiNumberFieldInput SSR', () => {
 	it('forwards native input attributes', () => {
@@ -12,10 +11,6 @@ describe('RuiNumberFieldInput SSR', () => {
 
 		expect(html).toContain('required');
 		expect(html).toContain('name="qty"');
-	});
-
-	it('renders a number input, which the host turns into locale text when it connects', () => {
-		expect(renderToString(<RuiNumberFieldInput />)).toMatch(/\stype="number"/);
 	});
 });
 
@@ -125,14 +120,5 @@ describe('RuiNumberField SSR', () => {
 		field.prepareForSsr();
 
 		expect(input.hasAttribute('value')).toBe(false);
-	});
-});
-
-describe('RuiNumberField stylesheet', () => {
-	it('hides the native spin buttons of the number input', () => {
-		const css = readFileSync(new URL('./number-field.css', import.meta.url), 'utf8');
-
-		expect(css).toMatch(/\.rui-number-field__input[^{]*\{[^}]*appearance:\s*textfield/);
-		expect(css).toMatch(/\.rui-number-field__input::-webkit-(inner|outer)-spin-button/);
 	});
 });

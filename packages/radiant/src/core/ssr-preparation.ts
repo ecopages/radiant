@@ -4,8 +4,8 @@ type SsrPreparationCallback = () => void;
  * When a preparation callback runs, in the order the phases occur for one host:
  *
  * - `beforeAuthoredChildren`: before the host's Authored Children are built, so descendants can read context
- *   published from host props. Only the SSR bridge's `applyLightDom` runs it, for a host the bridge claims, and it
- *   runs before the host's `@consumeContext` fields resolve.
+ *   published from host props. Only the SSR bridge's `applyLightDom`, for a host the bridge claims, and
+ *   `renderComponent` run it, and it runs before the host's `@consumeContext` fields resolve.
  * - `beforeOnUpdated`: context bootstrap, before the first `@onUpdated` flush.
  * - `afterOnUpdated`: after that flush. This is the default.
  */

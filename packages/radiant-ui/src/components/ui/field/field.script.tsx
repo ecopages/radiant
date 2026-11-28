@@ -171,7 +171,7 @@ export class RuiField extends RadiantElement {
 	fieldProvider: ContextProvider<typeof fieldContext>;
 
 	/** Names the controls in server markup: each reads its submission name from here while it serializes. */
-	@provideContext({ context: submissionContext, initialValue: { name: '', disabled: false } })
+	@provideContext({ context: submissionContext, initialValue: { name: '' } })
 	private submissionProvider: ContextProvider<typeof submissionContext>;
 
 	@consumeContext(formContext)
@@ -211,7 +211,7 @@ export class RuiField extends RadiantElement {
 		super();
 		registerSsrPreparationCallback(
 			this,
-			() => this.submissionProvider.setContext({ name: this.resolveFieldName(), disabled: false }),
+			() => this.submissionProvider.setContext({ name: this.resolveFieldName() }),
 			'beforeAuthoredChildren',
 		);
 		registerSsrPreparationCallback(this, () => {

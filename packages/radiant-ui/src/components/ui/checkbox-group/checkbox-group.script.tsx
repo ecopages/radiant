@@ -14,7 +14,8 @@ import { nonEmpty } from '@/lib/non-empty';
 import { RuiCheckbox } from '../checkbox/checkbox.script';
 import { multiValuePropOptions, type ViewMultiValue } from '@/lib/multi-value';
 import { announceControlConnect } from '@/lib/form/control-protocol';
-import { submissionContext } from '@/lib/form/submission';
+import { applySubmissionName, submissionContext } from '@/lib/form/submission';
+import { checkboxGroupContext } from '../checkbox/checkbox-group-context';
 
 export type RuiCheckboxGroupOrientation = 'horizontal' | 'vertical';
 
@@ -51,7 +52,7 @@ export type RuiCheckboxGroupProps = {
  * - `data-disabled` — per-item disabled flag preserved when the group is enabled.
  *
  * Do not set `checked`, `disabled`, or `name` on `rui-checkbox` children — the host owns those.
- * After connect, group `value` wins over per-item `checked`.
+ * In server markup and after connect, group `value` wins over per-item `checked`.
  * Group `value` follows user toggles only: a programmatic `checked` write on a child does not update it, and the next sync overwrites that write; set the group `value` instead.
  *
  * Nested hosts: `rui-checkbox`, which dispatches nothing itself.
@@ -112,9 +113,13 @@ export class RuiCheckboxGroup extends RadiantElement {
 	@bindTo({ selector: '[data-checkbox-group-root]', attr: 'data-orientation' })
 	orientation: RuiCheckboxGroupOrientation;
 
-	/** Hands the group's name, disabled state and value to its checkboxes, which serialize before the group can name them. */
-	@provideContext({ context: submissionContext, initialValue: { name: '', disabled: false } })
+	/** Hands the group's name to its checkboxes, which serialize before the group can name them. */
+	@provideContext({ context: submissionContext, initialValue: { name: '' } })
 	private submissionProvider: ContextProvider<typeof submissionContext>;
+
+	/** Hands the group's value and disabled state to its checkboxes for the same reason. */
+	@provideContext({ context: checkboxGroupContext, initialValue: { selected: [], disabled: false } })
+	private membershipProvider: ContextProvider<typeof checkboxGroupContext>;
 
 	constructor() {
 		super();
@@ -123,10 +128,10 @@ export class RuiCheckboxGroup extends RadiantElement {
 			() => {
 				const name = resolveSsrContextValue(submissionContext)?.name || this.name;
 				if (name) {
-					this.name = name;
-					this.setAttribute('name', name);
+					applySubmissionName(this, name);
 				}
-				this.submissionProvider.setContext({ name, disabled: this.disabled, selected: this.value });
+				this.submissionProvider.setContext({ name });
+				this.membershipProvider.setContext({ selected: this.value, disabled: this.disabled });
 			},
 			'beforeAuthoredChildren',
 		);

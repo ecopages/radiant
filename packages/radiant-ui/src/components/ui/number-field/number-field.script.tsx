@@ -63,7 +63,7 @@ export type RuiNumberFieldProps = {
  * ## Light-DOM contract
  *
  * Required:
- * - `[data-number-field-input]` — `type="number"` until the host connects, then a locale text input.
+ * - `[data-number-field-input]` — author `type="number"`; the host turns it into a locale text input when it connects.
  *   Host sets `type="text"`, `id`, `role="spinbutton"`, `inputmode`, `data-disabled`, `data-readonly`, `readonly`,
  *   `aria-valuemin`, `aria-valuemax`, `aria-valuenow`, and formatted `value` when not editing.
  *

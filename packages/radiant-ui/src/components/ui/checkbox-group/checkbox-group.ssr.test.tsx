@@ -129,7 +129,9 @@ describe('RuiCheckboxGroup SSR', () => {
 		);
 
 		const inputs = html.match(/<input[^>]*type="checkbox"[^>]*>/g) ?? [];
-		expect(inputs.map((input) => [input.match(/\svalue="([^"]*)"/)?.[1], /\schecked(?=[\s=>])/.test(input)])).toEqual([
+		expect(
+			inputs.map((input) => [input.match(/\svalue="([^"]*)"/)?.[1], /\schecked(?=[\s=>])/.test(input)]),
+		).toEqual([
 			['news', true],
 			['travel', true],
 			['sport', false],
