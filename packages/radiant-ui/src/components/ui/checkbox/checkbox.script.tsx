@@ -135,7 +135,7 @@ export class RuiCheckbox extends RadiantElement {
 					this.disabled = true;
 				}
 			},
-			true,
+			'beforeOnUpdated',
 		);
 		createEventListenerController(this, {
 			getTarget: () => this,

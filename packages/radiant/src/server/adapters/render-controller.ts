@@ -163,7 +163,7 @@ async function renderResolvedController<TController extends RadiantController>(
 			ensureLegacyHostReady(controller, 'ssr');
 
 			try {
-				controller.runWithSsrLifecycle(() => runSsrPreparationCallbacks(controller, true));
+				controller.runWithSsrLifecycle(() => runSsrPreparationCallbacks(controller, 'beforeOnUpdated'));
 				options.initialize?.(controller);
 				controller.runWithSsrLifecycle(() => controller.connect());
 				const markup = renderRenderedControllerHost(controller, tagName, renderOptions);

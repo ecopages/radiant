@@ -1,9 +1,19 @@
 type SsrPreparationCallback = () => void;
-type SsrPreparationPhase = boolean | 'beforeAuthoredChildren';
+
+/**
+ * When a preparation callback runs, in the order the phases occur for one host:
+ *
+ * - `beforeAuthoredChildren`: before the host's Authored Children are built, so descendants can read context
+ *   published from host props. Only the SSR bridge's `applyLightDom` runs it, for a host the bridge claims, and it
+ *   runs before the host's `@consumeContext` fields resolve.
+ * - `beforeOnUpdated`: context bootstrap, before the first `@onUpdated` flush.
+ * - `afterOnUpdated`: after that flush. This is the default.
+ */
+export type SsrPreparationPhase = 'beforeAuthoredChildren' | 'beforeOnUpdated' | 'afterOnUpdated';
 
 const SSR_PREPARATION_CALLBACKS = Symbol.for('@ecopages/radiant.ssr-preparation-callbacks');
 
-type SsrCallbackLists = Record<string, SsrPreparationCallback[]>;
+type SsrCallbackLists = Partial<Record<SsrPreparationPhase, SsrPreparationCallback[]>>;
 
 /**
  * Registers instance-local SSR preparation work that should run immediately
@@ -12,30 +22,26 @@ type SsrCallbackLists = Record<string, SsrPreparationCallback[]>;
  * Decorators use this to defer SSR-only setup until after class fields,
  * reactive props, and authored host content have all been applied.
  *
- * @remarks Pass `true` for context bootstrap before the first `@onUpdated` flush.
- * `beforeAuthoredChildren` is the exception to the above: it runs before the host's Authored Children are built, so
- * descendants can read context published from host props. Only the SSR bridge's `applyLightDom` runs it, for a host
- * the bridge claims, and it runs before the host's `@consumeContext` fields resolve.
+ * @remarks `beforeAuthoredChildren` is the exception to the above: it runs before the host's Authored Children
+ * exist. See {@link SsrPreparationPhase}.
  */
 export function registerSsrPreparationCallback(
 	host: object,
 	callback: SsrPreparationCallback,
-	phase: SsrPreparationPhase = false,
+	phase: SsrPreparationPhase = 'afterOnUpdated',
 ): void {
 	const lists = getCallbackLists(host) ?? createCallbackLists(host);
-	(lists[String(phase)] ??= []).push(callback);
+	(lists[phase] ??= []).push(callback);
 }
 
 /**
- * Runs registered SSR preparation callbacks for the provided host.
+ * Runs the callbacks registered for one phase of the provided host.
  *
  * The callbacks are intentionally retained so repeated SSR serializations stay
  * deterministic after later host mutations.
- *
- * @remarks The default phase runs after the first `@onUpdated` flush.
  */
-export function runSsrPreparationCallbacks(host: object, phase: SsrPreparationPhase = false): void {
-	const callbacks = getCallbackLists(host)?.[String(phase)];
+export function runSsrPreparationCallbacks(host: object, phase: SsrPreparationPhase = 'afterOnUpdated'): void {
+	const callbacks = getCallbackLists(host)?.[phase];
 
 	if (!callbacks) {
 		return;

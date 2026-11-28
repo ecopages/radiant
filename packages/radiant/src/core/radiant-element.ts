@@ -597,7 +597,7 @@ export class RadiantElement<Bindings extends object = {}> extends HTMLElement im
 
 		try {
 			applyHostAttributes(this);
-			runSsrPreparationCallbacks(this, true);
+			runSsrPreparationCallbacks(this, 'beforeOnUpdated');
 			this.updateCycle.runCallbacks();
 			runSsrPreparationCallbacks(this);
 			this.updateCycle.runCallbacks();

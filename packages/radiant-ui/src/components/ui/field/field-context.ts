@@ -40,6 +40,6 @@ export function registerFieldNameForSsr(control: HTMLElement & { name: string },
 				control.setAttribute('name', name);
 			}
 		},
-		true,
+		'beforeOnUpdated',
 	);
 }

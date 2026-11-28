@@ -279,7 +279,7 @@ async function renderResolvedComponent<TComponent extends ServerRenderableCompon
 					normalizedOptions.authoredContent,
 					normalizedOptions.prepareHost,
 				);
-				runSsrPreparationCallbacks(component, true);
+				runSsrPreparationCallbacks(component, 'beforeOnUpdated');
 				normalizedOptions.initialize?.(component);
 
 				const markup = requireRegisteredRadiantElementMarkup(component, renderOptions);

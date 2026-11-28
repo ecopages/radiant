@@ -1,6 +1,10 @@
 export * from './core/radiant-element';
 export * from './core/radiant-controller';
-export { registerSsrPreparationCallback, runSsrPreparationCallbacks } from './core/ssr-preparation';
+export {
+	registerSsrPreparationCallback,
+	runSsrPreparationCallbacks,
+	type SsrPreparationPhase,
+} from './core/ssr-preparation';
 export * from './controller-registry';
 export * from './decorators/attr';
 export * from './decorators/bind-to';
