@@ -88,7 +88,7 @@ Checkbox group layout uses the group surface only; checkbox chrome comes from `R
 | Attribute | Type | Default | Description |
 | --- | --- | --- | --- |
 | `value` | `string` | omitted | Comma-separated selected tokens. Empty selection removes the attribute. The JS property is `string[]`. |
-| `name` | `string` | `''` | Form field name shared by all checkboxes in the group. The server markup names each checkbox. |
+| `name` | `string` | `''` | Form field name shared by all checkboxes in the group. The server markup names each checkbox and checks the ones whose value the group holds. |
 | `label` | `string` | `''` | Accessible name when no visible legend is composed in the view. |
 | `disabled` | `boolean` | `false` | Disables every checkbox in the group. |
 | `orientation` | `'horizontal' \| 'vertical'` | `'vertical'` | Layout axis for checkbox items. |

@@ -6,6 +6,8 @@ export type SubmissionContextValue = {
 	name: string;
 	/** Whether the surrounding group is disabled, which its members render disabled. */
 	disabled: boolean;
+	/** The values a checkbox group holds, which its checkboxes render as checked. Absent outside a group. */
+	selected?: readonly string[];
 };
 
 /**

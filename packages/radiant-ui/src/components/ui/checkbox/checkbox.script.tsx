@@ -1,9 +1,10 @@
 import type { JSX_PROPS } from '@ecopages/jsx';
-import { RadiantElement, bindTo, customElement, prop } from '@ecopages/radiant';
+import { RadiantElement, bindTo, customElement, prop, registerSsrPreparationCallback } from '@ecopages/radiant';
+import { resolveSsrContextValue } from '@ecopages/radiant/context';
 import { createEventListenerController } from '../../../controllers/event-listener-controller';
 import { nonEmpty } from '@/lib/non-empty';
 import { announceControlConnect } from '@/lib/form/control-protocol';
-import { registerSubmissionForSsr } from '@/lib/form/submission';
+import { registerSubmissionForSsr, submissionContext } from '@/lib/form/submission';
 
 export type RuiCheckboxProps = {
 	/** Whether the checkbox is checked. Default: `false`. */
@@ -122,6 +123,7 @@ export class RuiCheckbox extends RadiantElement {
 	constructor() {
 		super();
 		registerSubmissionForSsr(this);
+		registerSsrPreparationCallback(this, () => this.checkForServer(), 'beforeOnUpdated');
 		createEventListenerController(this, {
 			getTarget: () => this,
 			type: ['input', 'change'],
@@ -134,6 +136,21 @@ export class RuiCheckbox extends RadiantElement {
 				}
 			},
 		});
+	}
+
+	/**
+	 * Checks the box in server markup when a surrounding group holds its value, as the group does on the client.
+	 *
+	 * @remarks The inner `input` serializes before the host is prepared and the `checked` property does not
+	 * reflect to an attribute, so the attribute is written as well.
+	 */
+	private checkForServer(): void {
+		const selected = resolveSsrContextValue(submissionContext)?.selected;
+		if (!selected) {
+			return;
+		}
+		this.checked = selected.includes(this.value);
+		this.querySelector('input')?.toggleAttribute('checked', this.checked);
 	}
 
 	protected override onConnected(): void {

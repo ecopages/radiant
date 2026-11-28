@@ -55,7 +55,6 @@ export function RuiCheckboxGroup({
 	...props
 }: JsxCustomElementAttributes<RuiCheckboxGroupElement, RuiCheckboxGroupProps & { options?: RuiCheckboxOption[] }>) {
 	const selectedValues = parseViewValue(value);
-	const selected = new Set(selectedValues);
 
 	return (
 		<RuiCheckboxGroupElement {...props} value={selectedValues} orientation={orientation}>
@@ -67,7 +66,6 @@ export function RuiCheckboxGroup({
 						<RuiCheckbox
 							value={option.value}
 							disabled={option.disabled}
-							checked={selected.has(option.value)}
 						>
 							{option.label}
 						</RuiCheckbox>

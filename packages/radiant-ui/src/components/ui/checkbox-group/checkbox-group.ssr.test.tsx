@@ -111,6 +111,31 @@ describe('RuiCheckboxGroup SSR', () => {
 		}
 	});
 
+	it('checks the composed checkboxes whose value the group holds, as the client does', () => {
+		const html = withRadiantServerCustomElementRenderBridge(() =>
+			renderToString(
+				<RuiCheckboxGroup name="topics" value="travel,news">
+					<RuiCheckboxGroupControl>
+						<RuiCheckbox value="news">News</RuiCheckbox>
+						<RuiCheckbox value="travel" checked={false}>
+							Travel
+						</RuiCheckbox>
+						<RuiCheckbox value="sport" checked>
+							Sport
+						</RuiCheckbox>
+					</RuiCheckboxGroupControl>
+				</RuiCheckboxGroup>,
+			),
+		);
+
+		const inputs = html.match(/<input[^>]*type="checkbox"[^>]*>/g) ?? [];
+		expect(inputs.map((input) => [input.match(/\svalue="([^"]*)"/)?.[1], /\schecked(?=[\s=>])/.test(input)])).toEqual([
+			['news', true],
+			['travel', true],
+			['sport', false],
+		]);
+	});
+
 	it('leaves a checkbox outside a group unnamed', () => {
 		const html = withRadiantServerCustomElementRenderBridge(() => renderToString(<RuiCheckbox value="a" />));
 
