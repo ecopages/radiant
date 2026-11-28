@@ -14,9 +14,10 @@ export type { AgentToolConfig, AgentToolHost };
  *
  * @remarks
  * The method stays an ordinary method, so the UI can call it with the same typed argument the agent's
- * input becomes. Pass `parse` (a schema library's `schema.parse`) to validate the agent's input before the
- * method runs; under standard decorators it also types the method's argument. Without `parse` the method
- * receives the agent's input unchecked, so its argument type is a promise the browser does not enforce.
+ * input becomes. Pass `parse` to validate the agent's input before the method runs; under standard decorators
+ * it also types the method's argument. A schema library's `schema.parse` works and ships that library to the
+ * browser. Without `parse` the method receives the agent's input unchecked, so its argument type is an assumption
+ * the browser does not enforce.
  * The method may take `{ signal }` as a second argument; UI callers omit it.
  *
  * Like `@onEvent`, the decorator binds the method it decorates, so a subclass override is not what the agent

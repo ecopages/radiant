@@ -2,7 +2,6 @@ import { Computed, subtle } from '@ecopages/signals';
 import { REACTIVE_HOST, type ReactiveHostInternals } from '../core/reactive-host';
 import { RADIANT_ELEMENT_BRAND } from '../core/radiant-element-brand';
 import { resolveHostElementOrNull } from './resolve-host-element';
-import { withConfig } from './agent-tool-config';
 import { registerAgentTool, type AgentToolExecuteOptions, type RegisterAgentToolConfig } from './register-agent-tool';
 
 /** A host whose lifecycle a tool follows: a `RadiantElement` or a controller host. */
@@ -16,12 +15,6 @@ export type AgentToolHost = {
  * Configuration for `createAgentTool` and `@agentTool`.
  *
  * @remarks
- * Everything but `name` and `getEnabled` is read each time the tool is registered, never at construction, and not at
- * all in a browser without `document.modelContext`. A getter, or a function for `inputSchema` or `outputSchema`,
- * therefore builds a schema only for a tool that is registered, once per registration. Use a getter for `parse`,
- * because a function there is the parser itself. Each may return a promise, so the library that builds the schema
- * is imported only where the tool registers; see `RegisterAgentToolConfig`.
- *
  * `name` and `getEnabled` are read on connect and again whenever a signal they read changes, which
  * unregisters the old tool and registers the new one. Use a function of the host for a name that
  * includes an instance value, since two tools cannot share a name.
@@ -68,7 +61,7 @@ export function createAgentTool<Host extends AgentToolHost, Input = unknown>(
 	host: Host,
 	config: AgentToolConfig<Host, Input>,
 ): () => void {
-	const { name, getEnabled } = config;
+	const { name, getEnabled, ...tool } = config;
 	const label = describeHost(host);
 	const state = new Computed(() => ({
 		name: typeof name === 'function' ? name(host) : name,
@@ -98,7 +91,7 @@ export function createAgentTool<Host extends AgentToolHost, Input = unknown>(
 		if (enabled && unregister && registeredName === nextName) return;
 		release();
 		if (!enabled) return;
-		unregister = registerAgentTool(withConfig(config, { name: nextName }, ['getEnabled']), { label });
+		unregister = registerAgentTool({ ...tool, name: nextName }, { label });
 		registeredName = nextName;
 	};
 

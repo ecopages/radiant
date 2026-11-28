@@ -286,21 +286,20 @@ The decorator and its helpers are imported from their own subpaths and are not p
 ```ts
 import { RadiantElement, customElement } from '@ecopages/radiant';
 import { agentTool } from '@ecopages/radiant/decorators/agent-tool';
+import type { AddItem } from './add-item';
+import addItemSchema from './add-item.schema.json';
 
 @customElement('rad-cart')
 class RadCart extends RadiantElement {
-	items: { sku: string }[] = [];
-
 	@agentTool({
 		name: (host: RadCart) => `add-item-${host.id}`,
 		description: 'Adds a product to the cart',
 		annotations: { consequentialHint: false },
-		inputSchema: { type: 'object', properties: { sku: { type: 'string' } }, required: ['sku'] },
-		parse: (input) => parseAddItem(input),
+		inputSchema: addItemSchema,
 	})
-	addItem(item: { sku: string }) {
-		this.items = [...this.items, item];
-		return { count: this.items.length };
+	async addItem(item: AddItem) {
+		const response = await fetch('/api/cart', { method: 'POST', body: JSON.stringify(item) });
+		if (!response.ok) throw new Error(`The cart rejected the item: ${response.status}`);
 	}
 }
 ```
@@ -313,10 +312,10 @@ class RadCart extends RadiantElement {
 
 The config is the WebMCP tool dictionary passed through (`name`, `description`, `title`, `inputSchema`, `outputSchema`, `annotations`, `exposedTo`), so fields the spec adds need no Radiant release, plus:
 
-- `parse(input: unknown)`: validates the agent's input before the method runs and throws to reject the call. Pass a schema library's `schema.parse`. Under standard decorators it also types the method's argument. Without it the input arrives unchecked, so its type is a promise the browser does not enforce. `inputSchema` is plain JSON Schema and is advisory; Radiant ships no schema library.
+- `parse(input: unknown)`: validates the agent's input before the method runs and throws to reject the call. A schema library's `schema.parse` works, and puts that library in the browser. Under standard decorators it also types the method's argument. Without it the input arrives unchecked, so its type is an assumption the browser does not enforce. `inputSchema` is plain JSON Schema and is advisory; Radiant ships no schema library.
 - `getEnabled(host)`: registers the tool only while it returns `true`. `name` may also be a function of the host. Both are read after the host's attributes have caught up and again when a signal they read changes, which registers the tool again; the host's native `id` is not a signal, so a later change of it does not. Annotate the host parameter (`(host: RadCart) => ...`), because the decorator's config is written before TypeScript knows the class.
-- Everything but `name` and `getEnabled` is read each time the tool is registered, not at construction, and not at all in a browser without `document.modelContext`. `inputSchema` and `outputSchema` may be a function that returns the schema, and `parse` a getter (a function there is the parser itself), so building a schema is deferred until a tool registers, once per registration.
-- Each of those may return a promise, such as `inputSchema: () => import('./add-item').then((m) => m.addItemJsonSchema)` or `get parse() { return import('./add-item').then((m) => m.parseAddItem); }`, so the library that builds the schema loads only where the tool registers. The browser gets the tool once every promise has settled; a tool unregistered first is never registered, a rejected promise is reported with `console.error`, and a config without a promise registers at once.
+
+`inputSchema`, `outputSchema` and `parse` are read as given: JSON Schema objects and a synchronous function, so a spread copy of a config, such as `{ ...shared, getEnabled }`, runs nothing. Prefer static JSON Schema generated at build time, for example with `z.toJSONSchema`, and validation on the server the tool calls, so no schema library loads in the browser. Coming from 0.13: a schema function becomes the schema object; a getter or promise `parse` becomes a plain function or server-side validation; a getter on any other field now runs when the element is constructed.
 
 Rules worth knowing:
 
@@ -333,7 +332,7 @@ Rules worth knowing:
 - **Ask for the least.** A schema that asks for age, location or history lets an agent pull personal context out of the person. Ask only for what the action needs.
 - **Say what it changes.** Set `readOnlyHint` for a tool that changes nothing and `consequentialHint` for a high-stakes or irreversible one, so the agent or browser can ask a person first. Annotations are optional, and in development a tool with neither hint logs a warning once. Set `untrustedContentHint` when the output carries text a user or another site wrote, because an agent may treat tool output as trusted, so it can carry a prompt injection.
 - **Confirm in your own UI.** The current WebMCP spec has no confirmation API. For a consequential tool, await the app's own dialog inside `execute` and close it when `signal` aborts.
-- **Validate in code, authorize on the server.** `inputSchema` is advisory and the agent can skip the validation the UI does, so check the input with `parse` and check permission on the server, not only in the browser. Bind a consequential call to an id or version so a stale call is rejected.
+- **Validate in code, authorize on the server.** `inputSchema` is advisory and the agent can skip the validation the UI does, so check the input on the server the tool calls, and check permission there too, not only in the browser. Bind a consequential call to an id or version so a stale call is rejected.
 - **Keep descriptions honest.** The name and description are read by the agent as instructions, so name side effects (a tool that finalizes a purchase is not called `finalize-cart` if it also charges a card) and keep them short.
 - **Keep `exposedTo` closed.** A tool is visible only to the page's own origin unless `exposedTo` lists secure origins, and other origins then call it with arguments you cannot trust. In development a tool that sets `exposedTo` logs a warning once. A cross-origin iframe needs `allow="tools"`, and `Permissions-Policy: tools=()` turns WebMCP off for a page and its frames, which suits account and payment pages.
 - **Mind the combination.** Do not put a tool that returns private data on the same page as a tool that sends data out, such as a share, a message or a form post, unless the sending one needs confirmation. This is our reasoning, not a rule from the spec.

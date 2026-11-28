@@ -1,8 +1,6 @@
 import { registerAgentTool } from '@ecopages/radiant/helpers/register-agent-tool';
-import { z } from 'zod';
 import { mountExample } from '../../../components/primitive-example/mount-example';
-
-const AddItem = z.object({ sku: z.string().min(1).describe('The product to add, by its SKU') });
+import { addItemSchema, parseAddItem, type AddItem } from './agent-tools.data';
 
 export function mount(root: HTMLElement): () => void {
 	const form = root.querySelector('form')!;
@@ -10,7 +8,7 @@ export function mount(root: HTMLElement): () => void {
 	const list = root.querySelector('ul')!;
 	const status = root.querySelector('[data-status]')!;
 
-	const addItem = ({ sku }: z.infer<typeof AddItem>) => {
+	const addItem = ({ sku }: AddItem) => {
 		const item = document.createElement('li');
 		item.textContent = sku;
 		list.append(item);
@@ -23,8 +21,8 @@ export function mount(root: HTMLElement): () => void {
 		name: 'add_to_cart',
 		description: 'Adds a product to the cart by its SKU.',
 		annotations: { consequentialHint: false },
-		inputSchema: z.toJSONSchema(AddItem),
-		parse: (value) => AddItem.parse(value),
+		inputSchema: addItemSchema,
+		parse: parseAddItem,
 		execute: addItem,
 	});
 

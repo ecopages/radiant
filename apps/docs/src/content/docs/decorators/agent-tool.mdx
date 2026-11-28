@@ -30,21 +30,20 @@ The decorator is imported from its own subpath, not the root entry, so a page th
 ```ts
 import { RadiantElement, customElement } from '@ecopages/radiant';
 import { agentTool } from '@ecopages/radiant/decorators/agent-tool';
+import type { AddItem } from './add-item';
+import addItemSchema from './add-item.schema.json';
 
 @customElement('rad-cart')
 class RadCart extends RadiantElement {
-	items: { sku: string }[] = [];
-
 	@agentTool({
 		name: (host: RadCart) => `add-item-${host.id}`,
 		description: 'Adds a product to the cart',
 		annotations: { consequentialHint: false },
-		inputSchema: { type: 'object', properties: { sku: { type: 'string' } }, required: ['sku'] },
-		parse: (input) => parseAddItem(input),
+		inputSchema: addItemSchema,
 	})
-	addItem(item: { sku: string }) {
-		this.items = [...this.items, item];
-		return { count: this.items.length };
+	async addItem(item: AddItem) {
+		const response = await fetch('/api/cart', { method: 'POST', body: JSON.stringify(item) });
+		if (!response.ok) throw new Error(`The cart rejected the item: ${response.status}`);
 	}
 }
 ```
@@ -63,11 +62,24 @@ The helpers come from `@ecopages/radiant/helpers/create-agent-tool` and `@ecopag
 
 The config is the WebMCP tool dictionary passed through (`name`, `description`, `title`, `inputSchema`, `outputSchema`, `annotations`, `exposedTo`), so fields the spec adds need no Radiant release, plus:
 
-- `parse(input: unknown)` validates the agent's input before the method runs and throws to reject the call. Pass a schema library's `schema.parse`. Under standard decorators it also types the method's argument. Without it the input arrives unchecked. `inputSchema` is plain JSON Schema and is advisory, and Radiant ships no schema library.
+- `parse(input: unknown)` validates the agent's input before the method runs and throws to reject the call. A schema library's `schema.parse` works, and puts that library in the browser. Under standard decorators it also types the method's argument. Without it the input arrives unchecked. `inputSchema` is plain JSON Schema and is advisory, and Radiant ships no schema library.
 - `getEnabled(host)` registers the tool only while it returns `true`.
 - `name` may be a function of the host. Both it and `getEnabled` are read after the host's attributes have caught up and again when a signal they read changes, which registers the tool again. Annotate the host parameter (`(host: RadCart) => ...`), because the decorator's config is written before TypeScript knows the class.
-- Everything but `name` and `getEnabled` is read each time the tool is registered, not when the element is constructed, and not at all in a browser without `document.modelContext`. Defer the work of building a schema with a function for `inputSchema` or `outputSchema`, and a getter for `parse` (a function there is the parser itself): they run once per registration, and only for a browser that registers the tool. A plain object and a plain `parse` keep working.
-- Each of those may return a promise, so the library that builds the schema loads only where the tool registers: `inputSchema: () => import('./add-item').then((m) => m.addItemJsonSchema)` and `get parse() { return import('./add-item').then((m) => m.parseAddItem); }`. The browser gets the tool once every promise has settled. A tool unregistered first, such as one whose element is removed meanwhile, is never registered, and a promise that rejects is reported with `console.error` naming the tool. A config without a promise registers at once.
+
+`inputSchema`, `outputSchema` and `parse` are read as given: JSON Schema objects and a synchronous function. A spread copy of a config, such as `{ ...shared, getEnabled }`, runs nothing.
+
+## Recommended pattern
+
+Ship static JSON Schema to the browser and validate on the server the tool calls. `add-item.ts` defines the schema once, for example with Zod, and exports `type AddItem = z.infer<typeof AddItem>`. A build step writes `z.toJSONSchema(AddItem)` to `add-item.schema.json`, and the endpoint runs `AddItem.parse`. The browser then loads the schema as data and no schema library, and the type-only import costs nothing. Add `parse` only when the browser must reject a call before the method runs, and keep it a hand-written check, since a schema library's `parse` ships that library.
+
+## Migrating from 0.13
+
+0.14 removes the lazy forms of 0.13, so a config is read as it is:
+
+- A function for `inputSchema` or `outputSchema` becomes the schema object, generated at build time and imported as JSON.
+- A getter or a promise for `parse` becomes a plain `parse` function, or moves to the server, where the tool's endpoint validates the input.
+- A getter on any other field now runs when the element is constructed, in every browser. Replace it with the value.
+- Registration no longer waits for a promise.
 
 ## Rules
 
@@ -88,4 +100,4 @@ A tool runs page code on behalf of an agent, with the page's cookies and DOM, an
 
 In development, a tool with a missing annotation, text over the sizes Chrome recommends, an `exposedTo` list, or output over 1,500 characters logs a warning once. Nothing the agent sends or the tool returns is ever logged by Radiant.
 
-See the [Agent tools recipe](https://radiant-ui.ecopages.app/docs/recipes/agent-tools) for a cart that the form and the agent both add to, with validation through Zod.
+See the [Agent tools recipe](https://radiant-ui.ecopages.app/docs/recipes/agent-tools) for a cart that the form and the agent both add to, with a static JSON Schema kept in step with a Zod schema by a test.
