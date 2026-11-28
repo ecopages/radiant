@@ -289,4 +289,32 @@ describe('RuiField name in server markup', () => {
 			expect(input).toMatch(/\schecked(?=[\s=>])/);
 		}
 	});
+
+	it.each([
+		['native input', <RuiInput />, /<input[^>]*>/],
+		['switch', <RuiSwitch />, /<input[^>]*\stype="checkbox"[^>]*>/],
+		['checkbox', <RuiCheckbox value="a" />, /<input[^>]*\stype="checkbox"[^>]*>/],
+		['number field', <RuiNumberField value={2} />, /<input[^>]*data-number-field-input[^>]*>/],
+		['slider', <RuiSlider value={3} />, /<rui-slider[^>]*>/],
+		['knob', <RuiKnob value={3} />, /<rui-knob[^>]*>/],
+		['date input', <RuiDateInput />, /<rui-date-input[^>]*>/],
+	])('disables a %s of a disabled field in server markup', (_label, control, submitter) => {
+		const html = render(
+			<RuiField name="topic" disabled>
+				{control}
+			</RuiField>,
+		);
+
+		expect(html.match(submitter)?.[0]).toMatch(/\sdisabled(?=[\s=>])/);
+	});
+
+	it('leaves the controls of a field that is not disabled enabled', () => {
+		const html = render(
+			<RuiField name="topic">
+				<RuiNumberField value={2} />
+			</RuiField>,
+		);
+
+		expect(html.match(/<input[^>]*data-number-field-input[^>]*>/)?.[0]).not.toMatch(/\sdisabled/);
+	});
 });

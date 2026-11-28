@@ -7,7 +7,7 @@ import {
 	prop,
 	registerSsrPreparationCallback,
 } from '@ecopages/radiant';
-import { consumeContext, onContextUpdate, provideContext } from '@ecopages/radiant/context';
+import { consumeContext, onContextUpdate, provideContext, resolveSsrContextValue } from '@ecopages/radiant/context';
 import type { ContextProvider } from '@ecopages/radiant/context';
 import {
 	findFieldControl,
@@ -171,7 +171,7 @@ export class RuiField extends RadiantElement {
 	fieldProvider: ContextProvider<typeof fieldContext>;
 
 	/** Names the controls in server markup: each reads its submission name from here while it serializes. */
-	@provideContext({ context: submissionContext, initialValue: { name: '' } })
+	@provideContext({ context: submissionContext, initialValue: { name: '', disabled: false } })
 	private submissionProvider: ContextProvider<typeof submissionContext>;
 
 	@consumeContext(formContext)
@@ -211,15 +211,26 @@ export class RuiField extends RadiantElement {
 		super();
 		registerSsrPreparationCallback(
 			this,
-			() => this.submissionProvider.setContext({ name: this.resolveFieldName() }),
+			() => {
+				const outer = resolveSsrContextValue(submissionContext);
+				this.submissionProvider.setContext({
+					name: this.resolveFieldName() || outer?.name || '',
+					disabled: this.disabled || outer?.disabled === true,
+				});
+			},
 			'beforeAuthoredChildren',
 		);
 		registerSsrPreparationCallback(this, () => {
 			this.fieldProvider.setContext({ rules: this.readFieldRules() });
 			const control = findFieldControl(this);
 			const name = this.resolveFieldName();
-			if (control && isNativeTextControl(control) && name) {
-				control.name = name;
+			if (control && isNativeTextControl(control)) {
+				if (name) {
+					control.name = name;
+				}
+				if (this.disabled) {
+					control.disabled = true;
+				}
 			}
 		});
 		createEventListenerController(this, {

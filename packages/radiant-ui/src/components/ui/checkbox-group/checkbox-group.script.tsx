@@ -114,7 +114,7 @@ export class RuiCheckboxGroup extends RadiantElement {
 	orientation: RuiCheckboxGroupOrientation;
 
 	/** Hands the group's name to its checkboxes, which serialize before the group can name them. */
-	@provideContext({ context: submissionContext, initialValue: { name: '' } })
+	@provideContext({ context: submissionContext, initialValue: { name: '', disabled: false } })
 	private submissionProvider: ContextProvider<typeof submissionContext>;
 
 	/** Hands the group's value and disabled state to its checkboxes for the same reason. */
@@ -130,7 +130,7 @@ export class RuiCheckboxGroup extends RadiantElement {
 				if (name) {
 					applySubmissionName(this, name);
 				}
-				this.submissionProvider.setContext({ name });
+				this.submissionProvider.setContext({ name, disabled: false });
 				this.membershipProvider.setContext({ selected: this.value, disabled: this.disabled });
 			},
 			'beforeAuthoredChildren',
