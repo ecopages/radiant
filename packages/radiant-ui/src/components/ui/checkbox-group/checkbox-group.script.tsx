@@ -166,10 +166,16 @@ export class RuiCheckboxGroup extends RadiantElement {
 		for (const checkbox of this.getCheckboxes()) {
 			checkbox.checked = selected.has(checkbox.value);
 			checkbox.disabled = this.disabled || checkbox.hasAttribute('data-disabled');
-			if (groupName) {
+			if (groupName && !this.isNamedByNestedField(checkbox)) {
 				checkbox.name = groupName;
 			}
 		}
+	}
+
+	/** A `rui-field` between the group and the checkbox names it, as it does outside a group. */
+	private isNamedByNestedField(checkbox: RuiCheckbox): boolean {
+		const field = checkbox.closest('rui-field');
+		return field !== null && this.contains(field);
 	}
 
 	private getCheckboxes(): RuiCheckbox[] {

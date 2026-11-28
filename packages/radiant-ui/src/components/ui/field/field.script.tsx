@@ -32,7 +32,7 @@ import {
 	wireFieldControlName,
 } from '@/lib/form/control-protocol';
 import { formContext, type FormContextValue } from '@/lib/form/form-context';
-import { submissionContext } from '@/lib/form/submission';
+import { submissionContext, type SubmissionContextValue } from '@/lib/form/submission';
 import { fieldContext, type FieldContextValue } from './field-context';
 import type { FieldRegistration, FieldRegistrationHandle, FieldRules } from '@/lib/form/types';
 import { bindVisibleLabel } from '../shared/field-label';
@@ -185,6 +185,29 @@ export class RuiField extends RadiantElement {
 		return (this.name || this.getAttribute('name') || '').trim();
 	}
 
+	private outerSubmission?: SubmissionContextValue;
+	private outerSubmissionRead = false;
+
+	/**
+	 * Publishes the name and disabled state the controls in this field take in server markup: its own, else those of
+	 * the field around it.
+	 *
+	 * @remarks It runs again after construction settles, because props set by `initialize` land after the first run.
+	 * The outer value is read once, before this field's own provider joins the context stack.
+	 */
+	private publishSubmission(): SubmissionContextValue {
+		if (!this.outerSubmissionRead) {
+			this.outerSubmission = resolveSsrContextValue(submissionContext);
+			this.outerSubmissionRead = true;
+		}
+		const submission = {
+			name: this.resolveFieldName() || this.outerSubmission?.name || '',
+			disabled: this.disabled || this.outerSubmission?.disabled === true,
+		};
+		this.submissionProvider.setContext(submission);
+		return submission;
+	}
+
 	private registration?: FieldRegistrationHandle;
 	private unregisterPresentation?: () => void;
 	private registeredWithForm = false;
@@ -209,21 +232,11 @@ export class RuiField extends RadiantElement {
 	 */
 	constructor() {
 		super();
-		registerSsrPreparationCallback(
-			this,
-			() => {
-				const outer = resolveSsrContextValue(submissionContext);
-				this.submissionProvider.setContext({
-					name: this.resolveFieldName() || outer?.name || '',
-					disabled: this.disabled || outer?.disabled === true,
-				});
-			},
-			'beforeAuthoredChildren',
-		);
+		registerSsrPreparationCallback(this, () => this.publishSubmission(), 'beforeAuthoredChildren');
 		registerSsrPreparationCallback(this, () => {
 			this.fieldProvider.setContext({ rules: this.readFieldRules() });
+			const { name, disabled } = this.publishSubmission();
 			const control = findFieldControl(this);
-			const { name, disabled } = this.submissionProvider.getContext();
 			if (control && isNativeTextControl(control)) {
 				if (name) {
 					control.name = name;

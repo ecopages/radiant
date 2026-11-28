@@ -8,6 +8,7 @@ import { nonEmpty } from '@/lib/non-empty';
 import { RuiField } from './field';
 import { RuiFieldElement } from './index';
 import { RuiFieldError } from './field-error';
+import { renderComponentToString } from '@ecopages/radiant/server/render-component';
 import { RuiNumberField } from '../number-field';
 import { RuiRadio, RuiRadioGroup, RuiRadioGroupControl } from '../radio-group';
 import { RuiCheckboxGroup } from '../checkbox-group';
@@ -413,5 +414,17 @@ describe('RuiField name in server markup', () => {
 		);
 
 		expect(html.match(/<input[^>]*\stype="checkbox"[^>]*>/)?.[0]).toContain('name="alerts"');
+	});
+
+	it('names a directly authored input by the name the field has after initialize', async () => {
+		const html = await renderComponentToString(RuiFieldElement, {
+			authoredContent: '<input data-rui-control type="text" name="alias" />',
+			initialize: (field) => {
+				field.name = 'account';
+			},
+			renderOptions: { mode: 'plain' },
+		});
+
+		expect(html.match(/<input[^>]*>/)?.[0]).toContain('name="account"');
 	});
 });
