@@ -89,6 +89,28 @@ describe('RuiCheckboxGroup SSR', () => {
 		expect(inputs.map((input) => input.match(/\sname="([^"]*)"/)?.[1])).toEqual(['topics', 'topics']);
 	});
 
+	it('disables the server-rendered checkboxes of a disabled group, so the form does not submit them', () => {
+		const html = withRadiantServerCustomElementRenderBridge(() =>
+			renderToString(
+				<RuiCheckboxGroup
+					name="topics"
+					value="news"
+					disabled
+					options={[
+						{ value: 'news', label: 'News' },
+						{ value: 'travel', label: 'Travel' },
+					]}
+				/>,
+			),
+		);
+
+		const inputs = html.match(/<input[^>]*type="checkbox"[^>]*>/g) ?? [];
+		expect(inputs).toHaveLength(2);
+		for (const input of inputs) {
+			expect(input).toMatch(/\sdisabled(?=[\s=>])/);
+		}
+	});
+
 	it('leaves a checkbox outside a group unnamed', () => {
 		const html = withRadiantServerCustomElementRenderBridge(() => renderToString(<RuiCheckbox value="a" />));
 

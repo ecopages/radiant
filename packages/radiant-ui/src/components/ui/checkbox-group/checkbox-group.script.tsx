@@ -117,7 +117,7 @@ export class RuiCheckboxGroup extends RadiantElement {
 	 * Hands the group's name to the checkboxes it renders on the server, where a checkbox serializes before the
 	 * group can name it.
 	 */
-	@provideContext({ context: checkboxGroupContext, initialValue: { name: '' } })
+	@provideContext({ context: checkboxGroupContext, initialValue: { name: '', disabled: false } })
 	private groupProvider: ContextProvider<typeof checkboxGroupContext>;
 
 	constructor() {
@@ -130,7 +130,7 @@ export class RuiCheckboxGroup extends RadiantElement {
 					this.name = name;
 					this.setAttribute('name', name);
 				}
-				this.groupProvider.setContext({ name });
+				this.groupProvider.setContext({ name, disabled: this.disabled });
 			},
 			'beforeAuthoredChildren',
 		);

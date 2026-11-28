@@ -127,9 +127,12 @@ export class RuiCheckbox extends RadiantElement {
 		registerSsrPreparationCallback(
 			this,
 			() => {
-				const name = resolveSsrContextValue(checkboxGroupContext)?.name;
-				if (name) {
-					this.name = name;
+				const group = resolveSsrContextValue(checkboxGroupContext);
+				if (group?.name) {
+					this.name = group.name;
+				}
+				if (group?.disabled) {
+					this.disabled = true;
 				}
 			},
 			true,
