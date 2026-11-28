@@ -218,10 +218,6 @@
 			"types": "./dist/helpers/register-agent-tool.d.ts",
 			"import": "./dist/helpers/register-agent-tool.js"
 		},
-		"./helpers/agent-tool-config": {
-			"types": "./dist/helpers/agent-tool-config.d.ts",
-			"import": "./dist/helpers/agent-tool-config.js"
-		},
 		"./decorators/agent-tool": {
 			"types": "./dist/decorators/agent-tool.d.ts",
 			"import": "./dist/decorators/agent-tool.js"
