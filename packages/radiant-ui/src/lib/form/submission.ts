@@ -14,7 +14,7 @@ export type SubmissionContextValue = {
  *
  * @remarks A control takes the nearest value through {@link registerSubmissionForSsr}. A custom host that is
  * store-only, and wraps a control that submits natively, provides a blank value (`{ name: '', disabled: false }`)
- * so the surrounding field does not name or disable that control.
+ * so the surrounding field does not name that control; a checkbox group does this for the controls inside it.
  */
 export const submissionContext = createContext<SubmissionContextValue>(Symbol.for('rui-submission-context'));
 

@@ -249,6 +249,30 @@ describe('RuiNumberField after a parent rerender', () => {
 	});
 });
 
+describe('RuiNumberField type while editing', () => {
+	it('keeps the draft the visitor is typing when the type is written back', async () => {
+		document.body.innerHTML = `
+			<rui-number-field name="price" value="1234.5" locale="de-DE">
+				<input data-number-field-input type="number" />
+			</rui-number-field>
+		`;
+
+		await customElements.whenDefined('rui-number-field');
+		await settled();
+
+		const input = document.querySelector<HTMLInputElement>('[data-number-field-input]') as HTMLInputElement;
+		input.focus();
+		input.value = '1234,57';
+		input.dispatchEvent(new Event('input', { bubbles: true }));
+
+		input.setAttribute('type', 'number');
+		await settled();
+
+		expect(input.type).toBe('text');
+		expect(input.value).toBe('1234,57');
+	});
+});
+
 describe('RuiNumberField editing text in the field locale', () => {
 	async function mountLocale(attrs: string): Promise<{
 		host: RuiNumberFieldElement;

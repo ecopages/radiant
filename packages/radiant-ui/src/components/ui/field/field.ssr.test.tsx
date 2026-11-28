@@ -374,4 +374,44 @@ describe('RuiField name in server markup', () => {
 		expect(html.match(/<input[^>]*\stype="checkbox"[^>]*>/)?.[0]).toContain('name="notify"');
 		expect(html.match(/<rui-slider[^>]*>/)?.[0]).toContain('name="volume"');
 	});
+
+	it('names and disables a native input in an unnamed field by the field around it', () => {
+		const html = render(
+			<RuiField name="account" disabled>
+				<RuiField name="">
+					<RuiInput name="alias" value="abc" />
+				</RuiField>
+			</RuiField>,
+		);
+
+		const input = html.match(/<input[^>]*>/)?.[0] ?? '';
+		expect(input).toContain('name="account"');
+		expect(input).toMatch(/\sdisabled(?=[\s=>])/);
+	});
+
+	it('names only the checkboxes of a checkbox group by the field around the group', () => {
+		const html = render(
+			<RuiField name="topics">
+				<RuiCheckboxGroup>
+					<RuiCheckbox value="news" />
+					<RuiSwitch name="notify" />
+				</RuiCheckboxGroup>
+			</RuiField>,
+		);
+
+		const inputs = html.match(/<input[^>]*\stype="checkbox"[^>]*>/g) ?? [];
+		expect(inputs.map((input) => input.match(/\sname="([^"]*)"/)?.[1])).toEqual(['topics', 'notify']);
+	});
+
+	it('names a checkbox by a field nested in its group, not by the group', () => {
+		const html = render(
+			<RuiCheckboxGroup name="topics">
+				<RuiField name="alerts">
+					<RuiCheckbox value="news" />
+				</RuiField>
+			</RuiCheckboxGroup>,
+		);
+
+		expect(html.match(/<input[^>]*\stype="checkbox"[^>]*>/)?.[0]).toContain('name="alerts"');
+	});
 });

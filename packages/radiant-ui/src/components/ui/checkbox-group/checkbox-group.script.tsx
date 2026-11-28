@@ -113,6 +113,13 @@ export class RuiCheckboxGroup extends RadiantElement {
 	@bindTo({ selector: '[data-checkbox-group-root]', attr: 'data-orientation' })
 	orientation: RuiCheckboxGroupOrientation;
 
+	/**
+	 * Ends the surrounding field's naming at the group: the group names its checkboxes, and other controls inside it
+	 * keep their own name. A field around the group still disables them.
+	 */
+	@provideContext({ context: submissionContext, initialValue: { name: '', disabled: false } })
+	private submissionProvider: ContextProvider<typeof submissionContext>;
+
 	/** Hands the group's name, value and disabled state to its checkboxes, which serialize before the group can. */
 	@provideContext({ context: checkboxGroupContext, initialValue: { name: '', selected: [], disabled: false } })
 	private groupProvider: ContextProvider<typeof checkboxGroupContext>;
@@ -122,10 +129,12 @@ export class RuiCheckboxGroup extends RadiantElement {
 		registerSsrPreparationCallback(
 			this,
 			() => {
-				const name = resolveSsrContextValue(submissionContext)?.name || this.name;
+				const outer = resolveSsrContextValue(submissionContext);
+				const name = outer?.name || this.name;
 				if (name) {
 					applySubmissionName(this, name);
 				}
+				this.submissionProvider.setContext({ name: '', disabled: outer?.disabled === true });
 				this.groupProvider.setContext({ name, selected: this.value, disabled: this.disabled });
 			},
 			'beforeAuthoredChildren',

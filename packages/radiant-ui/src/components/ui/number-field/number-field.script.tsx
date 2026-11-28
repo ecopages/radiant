@@ -171,12 +171,20 @@ export class RuiNumberField extends FormAssociatedElement {
 	 * Takes the input back to locale text when something writes its `type` again after the host connected.
 	 *
 	 * @remarks The view stamps `type="number"`, and a parent rerender writes it again, which clears the displayed
-	 * text. The host owns `type` once it has connected, so it restores the text type and the display.
+	 * text, or the draft being typed. The host owns `type` once it has connected, so it restores the text type and the
+	 * display or draft.
 	 */
 	private retakeInputType(): void {
-		if (this.initialized && this.getInput()?.type !== 'text') {
-			this.syncInput();
+		const input = this.getInput();
+		if (!this.initialized || !input || input.type === 'text') {
+			return;
 		}
+		if (this.editing) {
+			input.type = 'text';
+			input.value = this.draftValue;
+			return;
+		}
+		this.syncInput();
 	}
 
 	private editing = false;

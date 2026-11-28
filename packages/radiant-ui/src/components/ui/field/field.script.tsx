@@ -223,12 +223,12 @@ export class RuiField extends RadiantElement {
 		registerSsrPreparationCallback(this, () => {
 			this.fieldProvider.setContext({ rules: this.readFieldRules() });
 			const control = findFieldControl(this);
-			const name = this.resolveFieldName();
+			const { name, disabled } = this.submissionProvider.getContext();
 			if (control && isNativeTextControl(control)) {
 				if (name) {
 					control.name = name;
 				}
-				if (this.disabled) {
+				if (disabled) {
 					control.disabled = true;
 				}
 			}
