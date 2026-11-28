@@ -46,6 +46,24 @@ describe('RuiCheckboxGroup with a nested field', () => {
 
 		expect(input.name).toBe('alerts');
 	});
+
+	it('names a checkbox in an unnamed nested field after the group', async () => {
+		const host = document.createElement('div');
+		document.body.append(host);
+		createRoot(host).render(
+			<RuiCheckboxGroup name="topics" label="Topics" value={['news']}>
+				<RuiCheckboxGroupControl>
+					<RuiField name="">
+						<RuiCheckbox value="news">News</RuiCheckbox>
+					</RuiField>
+				</RuiCheckboxGroupControl>
+			</RuiCheckboxGroup>,
+		);
+		await settled();
+
+		const input = host.querySelector('input[type="checkbox"]') as HTMLInputElement;
+		expect(input.name).toBe('topics');
+	});
 });
 
 describe('RuiCheckboxGroup programmatic writes', () => {

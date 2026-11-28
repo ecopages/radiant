@@ -181,24 +181,35 @@ export class RuiField extends RadiantElement {
 	/** The `id` this field assigned to each target, as opposed to an authored one. */
 	private readonly assignedIds = new WeakMap<HTMLElement, string>();
 	/** Resolved field name from property or `name` attribute (Storybook can hydrate props after connect). */
+	/**
+	 * Copies the field's name onto its control once connected. An unnamed field leaves the name that a named
+	 * checkbox group gives its checkbox, instead of clearing it. Server markup is named while the controls serialize.
+	 */
+	private wireName(controlHost: HTMLElement | null, ariaTarget: HTMLElement | null, fieldName: string): void {
+		const group = controlHost?.closest('rui-checkbox-group');
+		const namedByGroup = fieldName === '' && group != null && Boolean(Reflect.get(group, 'name'));
+		if (this.isConnected && !namedByGroup) {
+			wireFieldControlName(controlHost, ariaTarget, fieldName);
+		}
+	}
+
 	private resolveFieldName(): string {
 		return (this.name || this.getAttribute('name') || '').trim();
 	}
 
 	private outerSubmission?: SubmissionContextValue;
-	private outerSubmissionRead = false;
 
 	/**
 	 * Publishes the name and disabled state the controls in this field take in server markup: its own, else those of
 	 * the field around it.
 	 *
 	 * @remarks It runs again after construction settles, because props set by `initialize` land after the first run.
-	 * The outer value is read once, before this field's own provider joins the context stack.
+	 * The outer value is read only before the Authored Children are built, while this field's own provider is not
+	 * yet on the context stack, and again on each serialization.
 	 */
-	private publishSubmission(): SubmissionContextValue {
-		if (!this.outerSubmissionRead) {
+	private publishSubmission(readOuter: boolean): SubmissionContextValue {
+		if (readOuter) {
 			this.outerSubmission = resolveSsrContextValue(submissionContext);
-			this.outerSubmissionRead = true;
 		}
 		const submission = {
 			name: this.resolveFieldName() || this.outerSubmission?.name || '',
@@ -232,10 +243,10 @@ export class RuiField extends RadiantElement {
 	 */
 	constructor() {
 		super();
-		registerSsrPreparationCallback(this, () => this.publishSubmission(), 'beforeAuthoredChildren');
+		registerSsrPreparationCallback(this, () => this.publishSubmission(true), 'beforeAuthoredChildren');
 		registerSsrPreparationCallback(this, () => {
 			this.fieldProvider.setContext({ rules: this.readFieldRules() });
-			const { name, disabled } = this.publishSubmission();
+			const { name, disabled } = this.publishSubmission(false);
 			const control = findFieldControl(this);
 			if (control && isNativeTextControl(control)) {
 				if (name) {
@@ -481,9 +492,7 @@ export class RuiField extends RadiantElement {
 		const required = this.isRequired();
 
 		const fieldName = this.resolveFieldName();
-		if (this.isConnected) {
-			wireFieldControlName(controlHost, ariaTarget, fieldName);
-		}
+		this.wireName(controlHost, ariaTarget, fieldName);
 
 		const describedBy = this.syncDescriptions(descriptionId, errorId, errorMessage);
 		if (paintedByHost) {
