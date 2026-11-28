@@ -100,4 +100,4 @@ A tool runs page code on behalf of an agent, with the page's cookies and DOM, an
 
 In development, a tool with a missing annotation, text over the sizes Chrome recommends, an `exposedTo` list, or output over 1,500 characters logs a warning once. Nothing the agent sends or the tool returns is ever logged by Radiant.
 
-See the [Agent tools recipe](https://radiant-ui.ecopages.app/docs/recipes/agent-tools) for a cart that the form and the agent both add to, which keeps Zod in the browser so a bad input is rejected there. The pattern above keeps it out of the bundle.
+See the [Agent tools recipe](https://radiant-ui.ecopages.app/docs/recipes/agent-tools) for a cart that the form and the agent both add to, with a static JSON Schema kept in step with a Zod schema by a test.

@@ -1,8 +1,6 @@
 import { RadiantElement, customElement, onEvent, query } from '@ecopages/radiant';
 import { agentTool } from '@ecopages/radiant/decorators/agent-tool';
-import { z } from 'zod';
-
-const AddItem = z.object({ sku: z.string().min(1).describe('The product to add, by its SKU') });
+import { addItemSchema, parseAddItem, type AddItem } from './agent-tools.data';
 
 @customElement('agent-tools-element')
 export class AgentToolsElement extends RadiantElement {
@@ -20,10 +18,10 @@ export class AgentToolsElement extends RadiantElement {
 		name: 'add_to_cart',
 		description: 'Adds a product to the cart by its SKU.',
 		annotations: { consequentialHint: false },
-		inputSchema: z.toJSONSchema(AddItem),
-		parse: (input) => AddItem.parse(input),
+		inputSchema: addItemSchema,
+		parse: parseAddItem,
 	})
-	addItem({ sku }: z.infer<typeof AddItem>) {
+	addItem({ sku }: AddItem) {
 		const item = document.createElement('li');
 		item.textContent = sku;
 		this.list.append(item);

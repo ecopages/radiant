@@ -35,12 +35,11 @@ const isSiblingOf = (file: string, specifier: string) => {
 const isRadiantCore = (specifier: string) =>
 	specifier === '@ecopages/radiant' || specifier.startsWith('@ecopages/radiant/');
 /**
- * The schema library the agent-tools recipe shows, and the core helper its plain form registers with. They are
- * allowed there because the recipe is about them, and nowhere else.
+ * The core helper the agent-tools recipe's plain form registers with. It is allowed there because the recipe is
+ * about it, and nowhere else.
  */
 const isAgentToolsRecipeEntry = (file: string, specifier: string) =>
-	file.startsWith('agent-tools.') &&
-	(specifier === 'zod' || specifier === '@ecopages/radiant/helpers/register-agent-tool');
+	file.startsWith('agent-tools.') && specifier === '@ecopages/radiant/helpers/register-agent-tool';
 const isSignals = (specifier: string) =>
 	specifier === '@ecopages/signals' || specifier.startsWith('@ecopages/signals/');
 
