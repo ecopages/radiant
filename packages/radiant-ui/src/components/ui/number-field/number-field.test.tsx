@@ -171,6 +171,29 @@ describe('RuiNumberField commit', () => {
 	});
 });
 
+describe('RuiNumberField read-only state', () => {
+	it('mirrors the host read-only state onto the native input', async () => {
+		document.body.innerHTML = `
+			<rui-number-field name="quantity" value="3" read-only>
+				<input data-number-field-input />
+			</rui-number-field>
+		`;
+
+		await customElements.whenDefined('rui-number-field');
+		await settled();
+
+		const host = document.querySelector('rui-number-field') as RuiNumberFieldElement;
+		const input = host.querySelector<HTMLInputElement>('[data-number-field-input]') as HTMLInputElement;
+		expect(input.readOnly).toBe(true);
+
+		host.readOnly = false;
+		await settled();
+
+		expect(input.readOnly).toBe(false);
+		expect(input.hasAttribute('data-readonly')).toBe(false);
+	});
+});
+
 describe('RuiNumberField editing text in the field locale', () => {
 	async function mountLocale(attrs: string): Promise<{
 		host: RuiNumberFieldElement;

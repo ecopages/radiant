@@ -64,7 +64,7 @@ export type RuiNumberFieldProps = {
  *
  * Required:
  * - `[data-number-field-input]` — native number input on the server, locale text input after connection.
- *   Host sets `type`, `id`, `role="spinbutton"`, `inputmode`, `data-disabled`, `data-readonly`,
+ *   Host sets `type`, `id`, `role="spinbutton"`, `inputmode`, `data-disabled`, `data-readonly`, `readonly`,
  *   `aria-valuemin`, `aria-valuemax`, `aria-valuenow`, and formatted `value` when not editing.
  *
  * Optional:
@@ -74,7 +74,7 @@ export type RuiNumberFieldProps = {
  *
  * Do not set spinbutton `aria-valuenow` or formatted `value` while the host is driving
  * display — it owns those. Author `disabled` / `readOnly` on the host; the host mirrors
- * them to `data-disabled` / `data-readonly` on the input.
+ * them to `data-disabled` / `data-readonly` on the input; `readOnly` also sets the native `readonly`, in server markup too.
  *
  * Nested hosts: none.
  *
@@ -135,7 +135,10 @@ export class RuiNumberField extends FormAssociatedElement {
 	@prop({ type: Number, defaultValue: 1 }) step: number;
 
 	@prop({ type: Boolean, attribute: 'read-only', reflect: true, defaultValue: false })
-	@bindTo({ selector: '[data-number-field-input]', bool: 'data-readonly' })
+	@bindTo([
+		{ selector: '[data-number-field-input]', bool: 'data-readonly' },
+		{ selector: '[data-number-field-input]', bool: 'readonly' },
+	])
 	readOnly: boolean;
 
 	@prop({ type: String, defaultValue: '' }) label: string;

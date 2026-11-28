@@ -66,6 +66,24 @@ describe('RuiNumberField SSR', () => {
 		expect(input).not.toContain('Infinity');
 	});
 
+	it('marks the inner input natively read-only for a read-only field', () => {
+		const html = withRadiantServerCustomElementRenderBridge(() =>
+			renderToString(<RuiNumberField name="quantity" value={2} readOnly />),
+		);
+
+		const input = innerInput(html);
+		expect(input).toMatch(/\sreadonly(?=[\s=>])/);
+		expect(input).toMatch(/\sdata-readonly(?=[\s=>])/);
+	});
+
+	it('leaves the inner input editable for a field that is not read-only', () => {
+		const html = withRadiantServerCustomElementRenderBridge(() =>
+			renderToString(<RuiNumberField name="quantity" value={2} />),
+		);
+
+		expect(innerInput(html)).not.toMatch(/\sreadonly/);
+	});
+
 	it('starts from defaultValue when the field has no value', () => {
 		const html = withRadiantServerCustomElementRenderBridge(() =>
 			renderToString(<RuiNumberField name="quantity" defaultValue={3} />),
