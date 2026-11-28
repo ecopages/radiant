@@ -171,6 +171,93 @@ describe('RuiNumberField commit', () => {
 	});
 });
 
+describe('RuiNumberField editing text in the field locale', () => {
+	async function mountLocale(attrs: string): Promise<{
+		host: RuiNumberFieldElement;
+		input: HTMLInputElement;
+		changes: number[];
+	}> {
+		document.body.innerHTML = `
+			<rui-number-field ${attrs}>
+				<input data-number-field-input />
+			</rui-number-field>
+		`;
+		await customElements.whenDefined('rui-number-field');
+		await settled();
+		const host = document.querySelector('rui-number-field') as RuiNumberFieldElement;
+		const input = host.querySelector<HTMLInputElement>('[data-number-field-input]') as HTMLInputElement;
+		const changes: number[] = [];
+		host.addEventListener('change', () => changes.push(host.value as number));
+		return { host, input, changes };
+	}
+
+	async function edit(input: HTMLInputElement, text?: string): Promise<void> {
+		input.focus();
+		if (text !== undefined) {
+			input.value = text;
+			input.dispatchEvent(new Event('input', { bubbles: true }));
+		}
+		input.blur();
+		await settled();
+	}
+
+	it('keeps the value of an untouched field that groups with a dot, after focus and blur', async () => {
+		const { host, input, changes } = await mountLocale('locale="de-DE" value="1234.5" step="0.01"');
+
+		await edit(input);
+
+		expect(host.value).toBe(1234.5);
+		expect(input.value).toBe('1.234,5');
+		expect(changes).toEqual([]);
+	});
+
+	it('shows the value without grouping, in the locale, on focus, and reads an edit of it back', async () => {
+		const { host, input } = await mountLocale('locale="de-DE" value="1234.5" step="0.01"');
+
+		input.focus();
+		expect(input.value).toBe('1234,5');
+
+		input.value = '1234,57';
+		input.dispatchEvent(new Event('input', { bubbles: true }));
+		input.blur();
+		await settled();
+
+		expect(host.value).toBe(1234.57);
+		expect(input.value).toBe('1.234,57');
+	});
+
+	it('keeps an integer and a negative number readable on focus', async () => {
+		const { host, input } = await mountLocale('locale="de-DE" value="-1234" step="0.01"');
+
+		await edit(input);
+
+		expect(host.value).toBe(-1234);
+	});
+
+	it('is unchanged for a locale that groups with a comma and has a dot decimal', async () => {
+		const { host, input } = await mountLocale('locale="en-US" value="1234.5" step="0.01"');
+
+		input.focus();
+		expect(input.value).toBe('1234.5');
+		input.blur();
+		await settled();
+
+		expect(host.value).toBe(1234.5);
+		expect(input.value).toBe('1,234.5');
+
+		await edit(input, '9,876.25');
+		expect(host.value).toBe(9876.25);
+	});
+
+	it('reads the focus text back for a locale with a dot decimal and a different grouping, such as de-CH', async () => {
+		const { host, input } = await mountLocale('locale="de-CH" value="1234.5" step="0.01"');
+
+		await edit(input);
+
+		expect(host.value).toBe(1234.5);
+	});
+});
+
 describe('RuiNumberField taking over server markup', () => {
 	it('submits the number once, from the host, after the script connects a named server input', async () => {
 		document.body.innerHTML = `
@@ -370,6 +457,28 @@ describe('RuiNumberField text typed before the script loads', () => {
 		} finally {
 			listeners.abort();
 		}
+	});
+
+	it('reads a raw number edited before the upgrade as typed, in a locale that groups with a dot', async () => {
+		const { host, input, form } = await upgradeAfterTyping({
+			attributes: 'name="price" value="1234.5" locale="de-DE" step="0.01"',
+			inputAttributes: 'name="price" value="1234.5" step="0.01"',
+			typed: '1234.57',
+		});
+
+		expect(host.value).toBe(1234.57);
+		expect(input.value).toBe('1.234,57');
+		expect(new FormData(form).getAll('price')).toEqual(['1234.57']);
+	});
+
+	it('reads text with a locale separator as the locale writes it when it is not a raw number', async () => {
+		const { host } = await upgradeAfterTyping({
+			attributes: 'name="price" value="1234.5" locale="de-DE" step="0.01"',
+			inputAttributes: 'name="price" value="1234.5" step="0.01"',
+			typed: '1.234,57',
+		});
+
+		expect(host.value).toBe(1234.57);
 	});
 
 	it('keeps a typed 0, which is a value and not an empty field', async () => {

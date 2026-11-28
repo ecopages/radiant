@@ -21,6 +21,53 @@ export function formatNumber(value: number, locale?: string | string[], options?
 }
 
 /**
+ * The separators and signs a locale and format options write around a number, read from the formatter itself.
+ *
+ * @remarks
+ * `formatEditableNumber` and `parseNumber` both read the decimal separator here, so they always agree. Options such
+ * as `maximumSignificantDigits: 3` round the probe numbers to integers and leave no decimal separator to find; the
+ * plain formatter of the locale gives it then, because a `.` there would be read back as a group separator in a
+ * locale that groups with a dot.
+ */
+function readNumberSymbols(locale?: string | string[], options?: NumberFormatOptions) {
+	const formatter = getNumberFormatter(locale, options);
+	const parts = [...formatter.formatToParts(-1234.5), ...formatter.formatToParts(1)];
+	const decimal =
+		parts.find((part) => part.type === 'decimal')?.value ??
+		getNumberFormatter(locale)
+			.formatToParts(1.5)
+			.find((part) => part.type === 'decimal')?.value ??
+		'.';
+	return {
+		parts,
+		decimal,
+		group: parts.find((part) => part.type === 'group')?.value,
+		minusSign: parts.find((part) => part.type === 'minusSign')?.value ?? '-',
+	};
+}
+
+/**
+ * Writes a number as text to edit: its digits without grouping and with the decimal separator of the locale, which
+ * `parseNumber` reads back to the same number. `''` for a value that is not finite.
+ *
+ * @remarks
+ * `String(value)` is not read back in a locale that groups with a dot: `parseNumber('1234.5', 'de-DE')` drops the
+ * dot as a group separator and returns 12345. The digits stay ASCII, as `parseNumber` expects, and only the decimal
+ * separator is the locale's, taken from the same formatter `parseNumber` uses.
+ *
+ * @example
+ * ```ts
+ * formatEditableNumber(1234.5, 'de-DE'); // '1234,5'
+ * ```
+ */
+export function formatEditableNumber(value: number, locale?: string | string[], options?: NumberFormatOptions): string {
+	if (!Number.isFinite(value)) {
+		return '';
+	}
+	return String(value).replace('.', readNumberSymbols(locale, options).decimal);
+}
+
+/**
  * Parses a locale-aware number string. Returns `null` when the input is empty or is not a number.
  *
  * @remarks
@@ -41,11 +88,7 @@ export function parseNumber(input: string, locale?: string | string[], options?:
 		return null;
 	}
 
-	const formatter = getNumberFormatter(locale, options);
-	const parts = [...formatter.formatToParts(-1234.5), ...formatter.formatToParts(1)];
-	const decimal = parts.find((part) => part.type === 'decimal')?.value ?? '.';
-	const group = parts.find((part) => part.type === 'group')?.value;
-	const minusSign = parts.find((part) => part.type === 'minusSign')?.value ?? '-';
+	const { parts, decimal, group, minusSign } = readNumberSymbols(locale, options);
 	const symbols = new Set(
 		parts
 			.filter((part) => ['currency', 'percentSign', 'unit', 'literal'].includes(part.type))

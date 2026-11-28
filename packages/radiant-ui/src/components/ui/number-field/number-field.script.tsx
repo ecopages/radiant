@@ -10,6 +10,7 @@ import {
 } from '@ecopages/radiant';
 import { FormAssociatedElement, type FormValue } from '@ecopages/radiant/form-associated-element';
 import {
+	formatEditableNumber,
 	formatNumber,
 	parseFormatOptions,
 	parseNumber,
@@ -21,6 +22,8 @@ import { uniqueId } from '@/lib/unique-id';
 import { syncFieldLabel } from '../shared/field-label';
 import { announceControlConnect } from '@/lib/form/control-protocol';
 import { emitValueEvents, stopInnerValueEvents } from '@/lib/form/value-events';
+
+const RAW_NUMBER = /^-?\d+(\.\d+)?$/;
 
 export type RuiNumberFieldCommitBehavior = 'snap' | 'validate';
 
@@ -102,7 +105,7 @@ export type RuiNumberFieldProps = {
  *
  * @remarks
  * Text the visitor typed into a server-rendered input before the script loaded becomes the value when the host connects,
- * parsed and snapped or validated as a blur would; text the field rejects leaves the server value, and a read-only or
+ * parsed as a number or in the locale, and snapped or validated as a blur would; text the field rejects leaves the server value, and a read-only or
  * disabled field keeps it.
  *
  * Minimum tree: `[data-number-field-input]` with optional `[data-number-field-action]` buttons. BEM classes live on the view; the host
@@ -271,9 +274,17 @@ export class RuiNumberField extends FormAssociatedElement {
 	/**
 	 * The number that typed text commits, or `undefined` when the field rejects it: text that is not a number, or,
 	 * when the field validates, a number out of range.
+	 *
+	 * @remarks
+	 * With `rawFirst`, text in the raw shape of a number, `1234.5` with an optional minus sign and no group
+	 * separator, is read as written. The server input shows the raw number, which a locale that groups with a dot
+	 * would read as a grouped integer. Other text is parsed in the locale.
 	 */
-	private parseDraft(text: string): number | undefined {
-		const parsed = parseNumber(text, this.resolvedLocale, this.resolvedFormatOptions);
+	private parseDraft(text: string, rawFirst = false): number | undefined {
+		const raw = rawFirst ? text.trim() : '';
+		const parsed = RAW_NUMBER.test(raw)
+			? Number(raw)
+			: parseNumber(text, this.resolvedLocale, this.resolvedFormatOptions);
 		if (parsed == null) {
 			return undefined;
 		}
@@ -367,8 +378,10 @@ export class RuiNumberField extends FormAssociatedElement {
 	 * The baseline is the `value` attribute `prepareServerInput` wrote: an input whose value still equals it was not
 	 * edited, and the server value stands, which also keeps a raw number the locale would format differently from
 	 * being parsed as typed text. An input whose `value` property a view set to something else counts as edited.
-	 * Edited text goes through the rules of a blur after the upgrade: it is parsed in the field locale, snapped or
-	 * validated, and text the field rejects, an emptied input included, leaves the server value. A read-only or
+	 * Edited text goes through the rules of a blur after the upgrade, snapped or validated, and text the field
+	 * rejects, an emptied input included, leaves the server value. It is parsed raw-first, unlike a focus after the
+	 * upgrade, which shows locale text and parses it in the locale: the visitor saw and edited the raw form the server
+	 * wrote, so `1234.57` is read as written, and text that is not a raw number, such as `1.234,57`, in the locale. A read-only or
 	 * disabled field keeps its value, as the upgraded field would not let the visitor edit it.
 	 *
 	 * The form reset value is captured first, so a reset returns to the server value, not to the typed number.
@@ -384,7 +397,7 @@ export class RuiNumberField extends FormAssociatedElement {
 			return;
 		}
 
-		const parsed = this.parseDraft(input.value);
+		const parsed = this.parseDraft(input.value, true);
 		if (parsed !== undefined) {
 			this.syncFormValue();
 			this.value = this.resolveCommit(parsed);
@@ -492,7 +505,8 @@ export class RuiNumberField extends FormAssociatedElement {
 
 		const input = event.target as HTMLInputElement;
 		this.editing = true;
-		this.draftValue = this.value == null ? '' : String(this.value);
+		this.draftValue =
+			this.value == null ? '' : formatEditableNumber(this.value, this.resolvedLocale, this.resolvedFormatOptions);
 		input.value = this.draftValue;
 		input.select();
 	}
