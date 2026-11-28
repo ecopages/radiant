@@ -200,7 +200,7 @@ Other useful server helpers:
 - `ssrContext` injects ambient context values for standalone `renderComponent` renders. Both `renderComponent` and `renderController` resolve consumed contexts before `initialize`; controllers inherit the active provider context. Preparation and `connect()` resolve them again, but a host gets one `connectedContextCallback`, mounted event and context update callback per provider and context value, so a selector returning a fresh object still runs once.
 - `assets` and `resolveAssets(...)` describe runtime scripts, styles, and preload hints through a transport-agnostic metadata model.
 - `prepareHost(...)` is the dedicated host-preparation hook when SSR needs authored light-DOM nodes as slotted content, not just an HTML string.
-- `renderComponent` runs the host's `beforeAuthoredChildren` callbacks before it applies `authoredContent` or `prepareHost`. Custom elements inside an `authoredContent` string are inert markup: they are never constructed or prepared, so they take no context from the host.
+- `renderComponent` runs the host's `beforeAuthoredChildren` callbacks before it applies `authoredContent` or `prepareHost`, and before `initialize`, so they see the host as constructed, not as `initialize` leaves it. Custom elements inside an `authoredContent` string are inert markup: they are never constructed or prepared, so they take no context from the host.
 - `clientModuleSrc` and `resolveClientModuleSrc(...)` are focused shorthands for one hydration module.
 
 Controller-specific server helpers live on `@ecopages/radiant/server/render-controller`:

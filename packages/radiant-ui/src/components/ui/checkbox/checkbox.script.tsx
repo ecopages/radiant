@@ -153,7 +153,7 @@ export class RuiCheckbox extends RadiantElement {
 		}
 		this.checked = group.selected.includes(this.value);
 		this.getRef<HTMLInputElement>('input')?.toggleAttribute('checked', this.checked);
-		if (group.disabled) {
+		if (group.disabled || this.hasAttribute('data-disabled')) {
 			this.disabled = true;
 		}
 	}

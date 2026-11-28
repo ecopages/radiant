@@ -239,6 +239,7 @@ export class RuiNumberField extends FormAssociatedElement {
 		}
 
 		if (!this.editing && this.initialized) {
+			input.type = 'text';
 			input.value =
 				committed == null ? '' : formatNumber(committed, this.resolvedLocale, this.resolvedFormatOptions);
 		}
@@ -393,7 +394,6 @@ export class RuiNumberField extends FormAssociatedElement {
 
 		this.seedDefaultValue();
 		this.adoptTypedValue();
-		this.getInput()?.setAttribute('type', 'text');
 		this.releaseServerInput();
 		this.syncLabel();
 		this.syncInput();

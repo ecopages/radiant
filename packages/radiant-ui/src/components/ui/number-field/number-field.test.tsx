@@ -194,6 +194,30 @@ describe('RuiNumberField read-only state', () => {
 	});
 });
 
+describe('RuiNumberField input type', () => {
+	it('keeps the connected input a text input when the type is written back', async () => {
+		document.body.innerHTML = `
+			<rui-number-field name="price" value="1234.5" locale="de-DE">
+				<input data-number-field-input type="number" />
+			</rui-number-field>
+		`;
+
+		await customElements.whenDefined('rui-number-field');
+		await settled();
+
+		const host = document.querySelector('rui-number-field') as RuiNumberFieldElement;
+		const input = host.querySelector<HTMLInputElement>('[data-number-field-input]') as HTMLInputElement;
+		expect(input.type).toBe('text');
+
+		input.setAttribute('type', 'number');
+		host.maxValue = 5000;
+		await settled();
+
+		expect(input.type).toBe('text');
+		expect(input.value).toBe('1.234,5');
+	});
+});
+
 describe('RuiNumberField editing text in the field locale', () => {
 	async function mountLocale(attrs: string): Promise<{
 		host: RuiNumberFieldElement;

@@ -2,7 +2,7 @@ import { renderToString } from '@ecopages/jsx/server';
 import { withRadiantServerCustomElementRenderBridge } from '@ecopages/radiant/server/radiant-element-ssr';
 import { describe, expect, it } from 'vitest';
 import { RuiAlert } from '../alert/alert';
-import { RuiCheckbox } from '../checkbox';
+import { RuiCheckbox, RuiCheckboxElement } from '../checkbox';
 import { RuiCheckboxGroup, RuiCheckboxGroupControl } from './checkbox-group';
 
 describe('RuiCheckboxGroup SSR', () => {
@@ -136,6 +136,39 @@ describe('RuiCheckboxGroup SSR', () => {
 			['travel', true],
 			['sport', false],
 		]);
+	});
+
+	it('keeps the checked option checked when the view renders without the Radiant bridge', () => {
+		const html = renderToString(
+			<RuiCheckboxGroup
+				value="news"
+				options={[
+					{ value: 'news', label: 'News' },
+					{ value: 'travel', label: 'Travel' },
+				]}
+			/>,
+		);
+
+		const inputs = html.match(/<input[^>]*type="checkbox"[^>]*>/g) ?? [];
+		expect(inputs.map((input) => /\schecked(?=[\s=>])/.test(input))).toEqual([true, false]);
+	});
+
+	it('disables a headless checkbox the author marked data-disabled, as the group does after it connects', () => {
+		const html = withRadiantServerCustomElementRenderBridge(() =>
+			renderToString(
+				<RuiCheckboxGroup name="topics" value="news">
+					<RuiCheckboxElement value="news" data-disabled>
+						<input type="checkbox" data-ref="input" />
+					</RuiCheckboxElement>
+					<RuiCheckboxElement value="travel">
+						<input type="checkbox" data-ref="input" />
+					</RuiCheckboxElement>
+				</RuiCheckboxGroup>,
+			),
+		);
+
+		const inputs = html.match(/<input[^>]*type="checkbox"[^>]*>/g) ?? [];
+		expect(inputs.map((input) => /\sdisabled(?=[\s=>])/.test(input))).toEqual([true, false]);
 	});
 
 	it('leaves a checkbox outside a group unnamed', () => {
