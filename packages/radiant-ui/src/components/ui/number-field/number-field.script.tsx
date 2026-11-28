@@ -330,7 +330,9 @@ export class RuiNumberField extends FormAssociatedElement {
 
 	/**
 	 * @remarks
-	 * The native number input submits a raw value and applies the field's constraints before the host connects.
+	 * The native number input submits a raw value and applies `min` and `max` before the host connects. Its `step` is
+	 * `any`: the host snaps to its own step after it connects, and a native step would reject a bound that is off the
+	 * step, such as a `max` of 10 with a `step` of 3.
 	 */
 	private prepareServerInput(): void {
 		this.seedDefaultValue();
@@ -345,7 +347,7 @@ export class RuiNumberField extends FormAssociatedElement {
 			['value', this.hasCommittedValue() ? String(this.value) : undefined],
 			['min', Number.isFinite(this.minValue) ? String(this.minValue) : undefined],
 			['max', Number.isFinite(this.maxValue) ? String(this.maxValue) : undefined],
-			['step', String(this.step)],
+			['step', 'any'],
 		];
 		for (const [attribute, value] of attributes) {
 			if (value === undefined) {

@@ -4,6 +4,7 @@ import { withRadiantServerCustomElementRenderBridge } from '@ecopages/radiant/se
 import { describe, expect, it } from 'vitest';
 import { RuiNumberField, RuiNumberFieldInput } from './number-field';
 import { RuiNumberField as RuiNumberFieldElement } from './number-field.script';
+import { readFileSync } from 'node:fs';
 
 describe('RuiNumberFieldInput SSR', () => {
 	it('forwards native input attributes', () => {
@@ -45,15 +46,15 @@ describe('RuiNumberField SSR', () => {
 		expect(input).toContain('value="1234.5"');
 	});
 
-	it('carries min, max and step to the inner input', () => {
+	it('carries min and max to the inner input and leaves the step to the host', () => {
 		const html = withRadiantServerCustomElementRenderBridge(() =>
-			renderToString(<RuiNumberField name="quantity" value={2} minValue={1} maxValue={9} step={2} />),
+			renderToString(<RuiNumberField name="quantity" value={10} minValue={0} maxValue={10} step={3} />),
 		);
 
 		const input = innerInput(html);
-		expect(input).toContain('min="1"');
-		expect(input).toContain('max="9"');
-		expect(input).toContain('step="2"');
+		expect(input).toContain('min="0"');
+		expect(input).toContain('max="10"');
+		expect(input).toContain('step="any"');
 	});
 
 	it('leaves out value for an empty field, name for an unnamed one and the unbounded limits', () => {
@@ -120,5 +121,14 @@ describe('RuiNumberField SSR', () => {
 		field.prepareForSsr();
 
 		expect(input.hasAttribute('value')).toBe(false);
+	});
+});
+
+describe('RuiNumberField stylesheet', () => {
+	it('hides the native spin buttons of the number input', () => {
+		const css = readFileSync(new URL('./number-field.css', import.meta.url), 'utf8');
+
+		expect(css).toMatch(/\.rui-number-field__input[^{]*\{[^}]*appearance:\s*textfield/);
+		expect(css).toMatch(/\.rui-number-field__input::-webkit-(inner|outer)-spin-button/);
 	});
 });

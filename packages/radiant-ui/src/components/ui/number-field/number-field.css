@@ -41,6 +41,17 @@ rui-number-field {
 		font-variant-numeric: tabular-nums;
 	}
 
+	.rui-number-field__input {
+		-moz-appearance: textfield;
+		appearance: textfield;
+	}
+
+	.rui-number-field__input::-webkit-inner-spin-button,
+	.rui-number-field__input::-webkit-outer-spin-button {
+		-webkit-appearance: none;
+		margin: 0;
+	}
+
 	.rui-number-field__input[data-readonly],
 	.rui-number-field__input:read-only {
 		@apply cursor-default;
