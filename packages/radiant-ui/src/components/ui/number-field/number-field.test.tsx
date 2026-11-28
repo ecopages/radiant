@@ -229,3 +229,225 @@ describe('RuiNumberField taking over server markup', () => {
 		expect(new FormData(form).getAll('quantity')).toEqual(['2']);
 	});
 });
+
+describe('RuiNumberField text typed before the script loads', () => {
+	let lateTags = 0;
+
+	/**
+	 * Renders the server markup under a tag the script has not defined yet, lets the visitor type into the
+	 * input, then defines the tag so the host upgrades in place.
+	 */
+	async function upgradeAfterTyping(options: {
+		attributes?: string;
+		inputAttributes?: string;
+		typed?: string;
+	}): Promise<{ host: RuiNumberFieldElement; input: HTMLInputElement; form: HTMLFormElement }> {
+		lateTags += 1;
+		const tag = `rui-number-field-late-${lateTags}`;
+		document.body.innerHTML = `
+			<form>
+				<${tag} ${options.attributes ?? ''}>
+					<input data-number-field-input type="text" ${options.inputAttributes ?? ''} />
+				</${tag}>
+			</form>
+		`;
+		const form = document.querySelector('form') as HTMLFormElement;
+		const input = form.querySelector<HTMLInputElement>('[data-number-field-input]') as HTMLInputElement;
+		if (options.typed !== undefined) {
+			input.value = options.typed;
+		}
+		expect(form.querySelector(tag)).not.toBeInstanceOf(RuiNumberFieldElement);
+
+		customElements.define(tag, class extends RuiNumberFieldElement {});
+		await settled();
+
+		const host = form.querySelector(tag) as RuiNumberFieldElement;
+		expect(host).toBeInstanceOf(RuiNumberFieldElement);
+		return { host, input, form };
+	}
+
+	const server = {
+		attributes: 'name="quantity" default-value="1" min-value="1" max-value="9"',
+		inputAttributes: 'name="quantity" value="1" min="1" max="9" step="1"',
+	};
+
+	it('keeps a number typed before the upgrade and submits it', async () => {
+		const { host, input, form } = await upgradeAfterTyping({ ...server, typed: '3' });
+
+		expect(host.value).toBe(3);
+		expect(input.value).toBe('3');
+		expect(input.getAttribute('aria-valuenow')).toBe('3');
+		expect(new FormData(form).getAll('quantity')).toEqual(['3']);
+	});
+
+	it('keeps the server value of a field nobody touched', async () => {
+		const { host, input, form } = await upgradeAfterTyping(server);
+
+		expect(host.value).toBe(1);
+		expect(input.value).toBe('1');
+		expect(new FormData(form).getAll('quantity')).toEqual(['1']);
+	});
+
+	it('keeps the server value of an untouched field whose display differs from the raw number', async () => {
+		const { host, input } = await upgradeAfterTyping({
+			attributes: 'name="price" value="1234.5" locale="de-DE"',
+			inputAttributes: 'name="price" value="1234.5" step="1"',
+		});
+
+		expect(host.value).toBe(1234.5);
+		expect(input.value).toBe('1.234,5');
+	});
+
+	it('parses text typed before the upgrade in the field locale', async () => {
+		const { host, input, form } = await upgradeAfterTyping({
+			attributes: 'name="price" value="1234.5" locale="de-DE" step="0.25"',
+			inputAttributes: 'name="price" value="1234.5" step="0.25"',
+			typed: '2.000,25',
+		});
+
+		expect(host.value).toBe(2000.25);
+		expect(input.value).toBe('2.000,25');
+		expect(new FormData(form).getAll('price')).toEqual(['2000.25']);
+	});
+
+	it('keeps a number typed into an empty field', async () => {
+		const { host, input, form } = await upgradeAfterTyping({
+			attributes: 'name="quantity"',
+			inputAttributes: 'name="quantity" step="1"',
+			typed: '4',
+		});
+
+		expect(host.value).toBe(4);
+		expect(input.value).toBe('4');
+		expect(new FormData(form).getAll('quantity')).toEqual(['4']);
+	});
+
+	it('snaps a number typed before the upgrade to the bounds, as a blur after the upgrade does', async () => {
+		const { host, input, form } = await upgradeAfterTyping({ ...server, typed: '20' });
+
+		expect(host.value).toBe(9);
+		expect(input.value).toBe('9');
+		expect(new FormData(form).getAll('quantity')).toEqual(['9']);
+	});
+
+	it('keeps the server value when a validating field gets a number out of range', async () => {
+		const { host, input } = await upgradeAfterTyping({
+			attributes: `${server.attributes} commit-behavior="validate"`,
+			inputAttributes: server.inputAttributes,
+			typed: '20',
+		});
+
+		expect(host.value).toBe(1);
+		expect(input.value).toBe('1');
+	});
+
+	it('keeps the server value when the text typed before the upgrade is not a number', async () => {
+		const { host, input, form } = await upgradeAfterTyping({ ...server, typed: 'abc' });
+
+		expect(host.value).toBe(1);
+		expect(input.value).toBe('1');
+		expect(new FormData(form).getAll('quantity')).toEqual(['1']);
+	});
+
+	it('keeps the server value when the input was cleared before the upgrade', async () => {
+		const { host, input } = await upgradeAfterTyping({ ...server, typed: '' });
+
+		expect(host.value).toBe(1);
+		expect(input.value).toBe('1');
+	});
+
+	it('does not emit for the value it adopts', async () => {
+		const events: string[] = [];
+		const listeners = new AbortController();
+		for (const type of ['input', 'change']) {
+			document.addEventListener(type, () => events.push(type), { signal: listeners.signal });
+		}
+		try {
+			const { host } = await upgradeAfterTyping({ ...server, typed: '3' });
+
+			expect(host.value).toBe(3);
+			expect(events).toEqual([]);
+		} finally {
+			listeners.abort();
+		}
+	});
+
+	it('keeps a typed 0, which is a value and not an empty field', async () => {
+		const empty = await upgradeAfterTyping({
+			attributes: 'name="quantity"',
+			inputAttributes: 'name="quantity" step="1"',
+			typed: '0',
+		});
+		expect(empty.host.value).toBe(0);
+		expect(new FormData(empty.form).getAll('quantity')).toEqual(['0']);
+
+		const filled = await upgradeAfterTyping({
+			attributes: 'name="quantity" default-value="1"',
+			inputAttributes: 'name="quantity" value="1" step="1"',
+			typed: '0',
+		});
+		expect(filled.host.value).toBe(0);
+		expect(new FormData(filled.form).getAll('quantity')).toEqual(['0']);
+	});
+
+	it('snaps a number typed below the minimum up to it', async () => {
+		const { host } = await upgradeAfterTyping({ ...server, typed: '0' });
+
+		expect(host.value).toBe(1);
+	});
+
+	it('snaps a number typed before the upgrade to the step', async () => {
+		const { host } = await upgradeAfterTyping({
+			attributes: 'name="quantity" value="5" step="5"',
+			inputAttributes: 'name="quantity" value="5" step="5"',
+			typed: '12',
+		});
+
+		expect(host.value).toBe(10);
+	});
+
+	it('keeps an in-range number off the step as typed when the field only validates', async () => {
+		const { host, input } = await upgradeAfterTyping({
+			attributes: 'name="quantity" value="5" step="5" commit-behavior="validate"',
+			inputAttributes: 'name="quantity" value="5" step="5"',
+			typed: '7',
+		});
+
+		expect(host.value).toBe(7);
+		expect(input.value).toBe('7');
+	});
+
+	it('keeps the server value of a read-only field, which the visitor could not edit after the upgrade', async () => {
+		const { host, input } = await upgradeAfterTyping({
+			attributes: `${server.attributes} read-only`,
+			inputAttributes: server.inputAttributes,
+			typed: '3',
+		});
+
+		expect(host.value).toBe(1);
+		expect(input.value).toBe('1');
+	});
+
+	it('keeps the server value of a disabled field', async () => {
+		const { host, input } = await upgradeAfterTyping({
+			attributes: `${server.attributes} disabled`,
+			inputAttributes: server.inputAttributes,
+			typed: '3',
+		});
+
+		expect(host.value).toBe(1);
+		expect(input.value).toBe('1');
+	});
+
+	it('resets to the server value, not to the number typed before the upgrade', async () => {
+		const { host, input, form } = await upgradeAfterTyping({ ...server, typed: '3' });
+		expect(host.value).toBe(3);
+
+		form.reset();
+		await settled();
+
+		expect(host.value).toBe(1);
+		expect(input.value).toBe('1');
+		expect(new FormData(form).getAll('quantity')).toEqual(['1']);
+	});
+});

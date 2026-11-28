@@ -68,7 +68,7 @@ import '@ecopages/radiant-ui/number-field';
 </rui-number-field>
 ```
 
-BEM classes are presentation-only. The host owns formatted input `value` and spinbutton `aria-*`. Set `name` on the host to submit the raw number with a native form (not the formatted display string). The server markup also names the inner input and gives it the raw `value`, so a form posted before the script loads, or with JavaScript off, still submits the number. The name can come from the field or from a surrounding `RuiField`. The server also writes `min`, `max` and `step` on the input, where a text input ignores them. The host removes all of these when it connects, so the form holds the value once.
+BEM classes are presentation-only. The host owns formatted input `value` and spinbutton `aria-*`. Set `name` on the host to submit the raw number with a native form (not the formatted display string). The server markup also names the inner input and gives it the raw `value`, so a form posted before the script loads, or with JavaScript off, still submits the number. The name can come from the field or from a surrounding `RuiField`. The server also writes `min`, `max` and `step` on the input, where a text input ignores them. The host removes all of these when it connects, so the form holds the value once. A number the visitor typed into the server-rendered input before the script loaded becomes the value, parsed in the field's locale and snapped or validated as a blur would; text the field rejects, or an input emptied before the upgrade, leaves the server value. An input nobody touched keeps the server value.
 
 ## Step and commit behavior
 
