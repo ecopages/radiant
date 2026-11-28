@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { applyInputMask, formatWithMask, maskToPlaceholder, parseMaskPattern } from './input-mask';
+import {
+	applyInputMask,
+	extractMaskInput,
+	extractUnmaskedValue,
+	formatUnmaskedValue,
+	formatWithMask,
+	maskToPlaceholder,
+	parseMaskPattern,
+} from './input-mask';
 
 describe('parseMaskPattern', () => {
 	it('parses fixed segments and digit slots', () => {
@@ -52,5 +60,54 @@ describe('formatWithMask', () => {
 	it('formats IMask digit slots', () => {
 		const tokens = parseMaskPattern('00/00/0000');
 		expect(formatWithMask('08212002', tokens)).toBe('08/21/2002');
+	});
+});
+
+describe('extractMaskInput', () => {
+	it('returns the slot characters only, so the fixed text of an infix mask is not part of it', () => {
+		const tokens = parseMaskPattern('0{5}0');
+		expect(extractMaskInput('152', tokens)).toBe('12');
+		expect(formatWithMask('152', tokens)).toBe('155');
+	});
+});
+
+describe('extractUnmaskedValue and formatUnmaskedValue', () => {
+	it.each([
+		{ name: 'fixed prefix', mask: '+{7} 000', display: '+7 123', unmasked: '7123' },
+		{ name: 'fixed prefix, partial', mask: '+{7} 000', display: '+7 1', unmasked: '71' },
+		{ name: 'infix fixed text', mask: '0{5}0', display: '152', unmasked: '152' },
+		{ name: 'fixed text before a literal', mask: '{AB}-00', display: 'AB-12', unmasked: 'AB12' },
+		{ name: 'empty', mask: '{AB}-00', display: '', unmasked: '' },
+		{ name: 'optional section absent', mask: '000[-00]', display: '123', unmasked: '123' },
+		{ name: 'optional section present', mask: '000[-00]', display: '123-45', unmasked: '12345' },
+	])('round-trips $name: $mask, "$display" and "$unmasked"', ({ mask, display, unmasked }) => {
+		const tokens = parseMaskPattern(mask);
+		expect(extractUnmaskedValue(display, tokens)).toBe(unmasked);
+		expect(formatUnmaskedValue(unmasked, tokens)).toBe(display);
+		expect(formatUnmaskedValue(extractUnmaskedValue(display, tokens), tokens)).toBe(display);
+	});
+
+	it('shows the fixed text of a value that does not carry it', () => {
+		expect(formatUnmaskedValue('123', parseMaskPattern('+{7} 000'))).toBe('+7 123');
+	});
+});
+
+describe('applyInputMask', () => {
+	it('keeps every slot character when one is inserted in the middle', () => {
+		expect(applyInputMask('(5595) 123-4567', '(000) 000-0000')).toBe('(559) 512-3456');
+	});
+
+	it('skips characters that fit no slot instead of stopping at them', () => {
+		expect(applyInputMask('555-123-4567', '(000) 000-0000')).toBe('(555) 123-4567');
+		expect(applyInputMask('5551234567999', '(000) 000-0000')).toBe('(555) 123-4567');
+	});
+
+	it('takes the definitions it is given', () => {
+		expect(applyInputMask('G1A2B34', 'XX-00', { X: /[A-F]/ })).toBe('AB-34');
+	});
+
+	it('shows an optional literal only when the optional section is entered', () => {
+		expect(applyInputMask('123', '000[-00]')).toBe('123');
+		expect(applyInputMask('1234', '000[-00]')).toBe('123-4');
 	});
 });

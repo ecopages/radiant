@@ -115,9 +115,10 @@ Geometry comes from control tokens: `--size-control-md` height, `--radius-contro
 | `name` | `string` | | Form field name. |
 | `id` | `string` | | Input id (auto-wired by `RuiField`). |
 | `aria-label` | `string` | | Accessible name when there is no visible label. |
-| `mask` | `string` | | [IMask](https://imask.js.org/guide.html#masked-pattern) pattern; `0` digit, `a` letter, `*` any char, `{text}` fixed. |
+| `mask` | `string` | | Pattern; `0` digit, `a` letter, `*` any char, `{text}` fixed text, `[...]` optional section, `\` escape. The text the user types or pastes is read with the mask, so no character that fits is lost and the caret stays after the character typed. See [Masks](/docs/helpers/mask). |
+| `definitions` | `Record<string, 'digit' \| 'letter' \| 'any' \| RegExp>` | | Extra slot characters for `mask`, for example `{ X: /[A-F]/ }`. |
 | `on:input` / `on:change` / `on:blur` | `(e: Event) => void` | | Event handlers. |
-| Native `<input>` attributes | | | `required`, `autocomplete`, `pattern`, `min`, `max`, `readonly`, and other unprefixed native attributes type-check and render, except `mask` (peeled) and `inputmode` (the view sets `numeric` when `mask` is set, and omits it otherwise). |
+| Native `<input>` attributes | | | `required`, `autocomplete`, `pattern`, `min`, `max`, `readonly`, and other unprefixed native attributes type-check and render, except `mask` and `definitions` (peeled). `inputmode` is yours when you set it; without it, a `mask` whose slots are all digits sets `numeric`. An authored `placeholder` wins over the one the mask gives. |
 
 ### CSS classes
 

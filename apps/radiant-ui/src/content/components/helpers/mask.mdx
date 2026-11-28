@@ -10,6 +10,8 @@ import {
 	parseMaskPattern,
 	formatWithMask,
 	extractMaskInput,
+	extractUnmaskedValue,
+	formatUnmaskedValue,
 	maskToPlaceholder,
 	buildDateMaskPattern,
 	applyDateMask,
@@ -32,6 +34,8 @@ import {
 	parseMaskPattern,
 	formatWithMask,
 	extractMaskInput,
+	extractUnmaskedValue,
+	formatUnmaskedValue,
 	maskToPlaceholder,
 	maskInputSlotCount,
 	buildDateMaskPattern,
@@ -44,7 +48,9 @@ import {
 
 ## Pattern masks
 
-In a pattern `0` is a digit slot, `a` a letter and `*` any character; `{text}` is fixed text that counts as input, `[...]` an optional section and `\` escapes the next character. Other characters are literals. `parseMaskPattern` turns a pattern into tokens that `formatWithMask` and `extractMaskInput` use.
+In a pattern `0` is a digit slot, `a` a letter and `*` any character; `{text}` is fixed text, `[...]` an optional section and `\` escapes the next character. Other characters are literals. `parseMaskPattern` turns a pattern into tokens that the other helpers use.
+
+Two reads, two writes. `extractMaskInput` and `formatWithMask` work on the characters typed into the slots only. `extractUnmaskedValue` and `formatUnmaskedValue` work on the unmasked value, which also holds the `{text}`, so a mask `+{7} 000` shows `+7 123` for the unmasked `7123`. `applyInputMask` reads raw text that the user typed or pasted: it keeps the characters that fit the slots, in order, and skips the rest.
 
 <HelperResults
 	rows={[
@@ -60,6 +66,14 @@ In a pattern `0` is a digit slot, `a` a letter and `*` any character; `{text}` i
 		{
 			code: "extractMaskInput('+12 345', parseMaskPattern('+00 000'))",
 			result: extractMaskInput('+12 345', parseMaskPattern('+00 000')),
+		},
+		{
+			code: "extractUnmaskedValue('+7 123', parseMaskPattern('+{7} 000'))",
+			result: extractUnmaskedValue('+7 123', parseMaskPattern('+{7} 000')),
+		},
+		{
+			code: "formatUnmaskedValue('7123', parseMaskPattern('+{7} 000'))",
+			result: formatUnmaskedValue('7123', parseMaskPattern('+{7} 000')),
 		},
 	]}
 />

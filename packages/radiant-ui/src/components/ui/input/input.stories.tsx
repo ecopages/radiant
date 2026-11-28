@@ -21,6 +21,7 @@ export const Default: Story = {};
 export const Masked: Story = {
 	args: {
 		mask: '+{7}(000)000-00-00',
+		placeholder: undefined,
 		'aria-label': 'Phone number',
 	},
 	play: async ({ canvasElement, step }) => {
