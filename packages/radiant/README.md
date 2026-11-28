@@ -311,6 +311,8 @@ class RadCart extends RadiantElement {
 | `createAgentTool(host, config)` | The same lifecycle for a tool that is not one method, such as a controller or a field. Returns a function that stops managing the tool.   |
 | `registerAgentTool(config)`     | A tool outside any host, such as a store or a page script. Returns its unregister function.                                               |
 
+To override one field of a lazy config shared by several tools, such as `getEnabled`, copy it with `withConfig(config, overrides, omit?)` from `@ecopages/radiant/helpers/agent-tool-config` instead of spreading it: a spread reads every getter, and `withConfig` reads none.
+
 The config is the WebMCP tool dictionary passed through (`name`, `description`, `title`, `inputSchema`, `outputSchema`, `annotations`, `exposedTo`), so fields the spec adds need no Radiant release, plus:
 
 - `parse(input: unknown)`: validates the agent's input before the method runs and throws to reject the call. Pass a schema library's `schema.parse`. Under standard decorators it also types the method's argument. Without it the input arrives unchecked, so its type is a promise the browser does not enforce. `inputSchema` is plain JSON Schema and is advisory; Radiant ships no schema library.
@@ -399,6 +401,7 @@ These are the documented public import paths exposed by the package.
 | `@ecopages/radiant/helpers/create-event-listener` | Low-level DOM event-listener helper                                                                                                                                                 |
 | `@ecopages/radiant/helpers/create-agent-tool`     | `createAgentTool(host, ...)`: a WebMCP tool that follows a host's lifecycle (experimental)                                                                                          |
 | `@ecopages/radiant/helpers/register-agent-tool`   | `registerAgentTool(...)`: registers a WebMCP tool and returns its unregister function, without a host (experimental)                                                                |
+| `@ecopages/radiant/helpers/agent-tool-config`     | `withConfig(config, overrides, omit?)`: copies an agent tool config with fields overridden, keeping its lazy getters lazy (experimental)                                            |
 | `@ecopages/radiant/helpers/debounce`              | Debounce helper without the decorator surface                                                                                                                                       |
 | `@ecopages/radiant/is-server`                     | Boolean flag (`isServer`) for branching between server and browser environments                                                                                                     |
 | `@ecopages/radiant/client/hydrator`               | Explicit client hydrator installer and status helpers for SSR pages                                                                                                                 |

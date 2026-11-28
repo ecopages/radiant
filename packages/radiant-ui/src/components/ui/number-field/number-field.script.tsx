@@ -10,6 +10,7 @@ import {
 } from '@ecopages/radiant';
 import { FormAssociatedElement, type FormValue } from '@ecopages/radiant/form-associated-element';
 import {
+	formatEditableNumber,
 	formatNumber,
 	parseFormatOptions,
 	parseNumber,
@@ -21,6 +22,8 @@ import { uniqueId } from '@/lib/unique-id';
 import { syncFieldLabel } from '../shared/field-label';
 import { announceControlConnect } from '@/lib/form/control-protocol';
 import { emitValueEvents, stopInnerValueEvents } from '@/lib/form/value-events';
+
+const RAW_NUMBER = /^-?\d+(\.\d+)?$/;
 
 export type RuiNumberFieldCommitBehavior = 'snap' | 'validate';
 
@@ -101,6 +104,10 @@ export type RuiNumberFieldProps = {
  *   text box's own `input` and `change` are stopped at the host.
  *
  * @remarks
+ * Text the visitor typed into a server-rendered input before the script loaded becomes the value when the host connects,
+ * parsed as a number or in the locale, and snapped or validated as a blur would; text the field rejects leaves the server value, and a read-only or
+ * disabled field keeps it.
+ *
  * Minimum tree: `[data-number-field-input]` with optional `[data-number-field-action]` buttons. BEM classes live on the view; the host
  * never queries them.
  */
@@ -202,6 +209,11 @@ export class RuiNumberField extends FormAssociatedElement {
 		});
 	}
 
+	/**
+	 * @remarks
+	 * The display is written only once the host has initialized: attribute changes during the upgrade call this
+	 * before `adoptTypedValue` reads the text the visitor typed, which a write would replace.
+	 */
 	private syncInput(): void {
 		const input = this.getInput();
 		if (!input) {
@@ -224,7 +236,7 @@ export class RuiNumberField extends FormAssociatedElement {
 			input.setAttribute('aria-valuenow', String(committed));
 		}
 
-		if (!this.editing) {
+		if (!this.editing && this.initialized) {
 			input.value =
 				committed == null ? '' : formatNumber(committed, this.resolvedLocale, this.resolvedFormatOptions);
 		}
@@ -252,17 +264,43 @@ export class RuiNumberField extends FormAssociatedElement {
 		}
 	}
 
+	/** The value a commit of `next` stores: snapped to the bounds and step, unless the field only validates and `force` is not set. */
+	private resolveCommit(next: number, force = false): number {
+		return this.commitBehavior === 'snap' || force
+			? snapToStep(next, this.minValue, this.maxValue, this.step)
+			: next;
+	}
+
+	/**
+	 * The number that typed text commits, or `undefined` when the field rejects it: text that is not a number, or,
+	 * when the field validates, a number out of range.
+	 *
+	 * @remarks
+	 * With `rawFirst`, text in the raw shape of a number, `1234.5` with an optional minus sign and no group
+	 * separator, is read as written. The server input shows the raw number, which a locale that groups with a dot
+	 * would read as a grouped integer. Other text is parsed in the locale.
+	 */
+	private parseDraft(text: string, rawFirst = false): number | undefined {
+		const raw = rawFirst ? text.trim() : '';
+		const parsed = RAW_NUMBER.test(raw)
+			? Number(raw)
+			: parseNumber(text, this.resolvedLocale, this.resolvedFormatOptions);
+		if (parsed == null) {
+			return undefined;
+		}
+		if (this.commitBehavior === 'validate' && (parsed < this.minValue || parsed > this.maxValue)) {
+			return undefined;
+		}
+		return parsed;
+	}
+
 	/**
 	 * @remarks
 	 * The no-op check compares against the committed `value`, not `getNumericValue()`, which falls back to
 	 * `defaultValue` or `0` for display. Comparing against the fallback swallowed a typed `0` on an empty field.
 	 */
 	private commitValue(next: number, force = false): void {
-		let resolved = next;
-
-		if (this.commitBehavior === 'snap' || force) {
-			resolved = snapToStep(next, this.minValue, this.maxValue, this.step);
-		}
+		const resolved = this.resolveCommit(next, force);
 
 		if (resolved === this.value) {
 			this.editing = false;
@@ -279,19 +317,11 @@ export class RuiNumberField extends FormAssociatedElement {
 	}
 
 	private commitDraft(): void {
-		const parsed = parseNumber(this.draftValue, this.resolvedLocale, this.resolvedFormatOptions);
-		if (parsed == null) {
+		const parsed = this.parseDraft(this.draftValue);
+		if (parsed === undefined) {
 			this.editing = false;
 			this.syncInput();
 			return;
-		}
-
-		if (this.commitBehavior === 'validate') {
-			if (parsed < this.minValue || parsed > this.maxValue) {
-				this.editing = false;
-				this.syncInput();
-				return;
-			}
 		}
 
 		this.commitValue(parsed);
@@ -341,6 +371,39 @@ export class RuiNumberField extends FormAssociatedElement {
 		}
 	}
 
+	/**
+	 * Takes the text the visitor typed into the server-rendered input before the host connected as the value.
+	 *
+	 * @remarks
+	 * The baseline is the `value` attribute `prepareServerInput` wrote: an input whose value still equals it was not
+	 * edited, and the server value stands, which also keeps a raw number the locale would format differently from
+	 * being parsed as typed text. An input whose `value` property a view set to something else counts as edited.
+	 * Edited text goes through the rules of a blur after the upgrade, snapped or validated, and text the field
+	 * rejects, an emptied input included, leaves the server value. It is parsed raw-first, unlike a focus after the
+	 * upgrade, which shows locale text and parses it in the locale: the visitor saw and edited the raw form the server
+	 * wrote, so `1234.57` is read as written, and text that is not a raw number, such as `1.234,57`, in the locale. A read-only or
+	 * disabled field keeps its value, as the upgraded field would not let the visitor edit it.
+	 *
+	 * The form reset value is captured first, so a reset returns to the server value, not to the typed number.
+	 * Nothing is emitted: the visitor's native `input` and `change` already bubbled to the page while typing, and the
+	 * value is set before `announceControlConnect`, so a surrounding `RuiField` reads it when the control connects.
+	 */
+	private adoptTypedValue(): void {
+		const input = this.getInput();
+		if (!input || this.readOnly || this.effectiveDisabled) {
+			return;
+		}
+		if (input.value === (input.getAttribute('value') ?? '')) {
+			return;
+		}
+
+		const parsed = this.parseDraft(input.value, true);
+		if (parsed !== undefined) {
+			this.syncFormValue();
+			this.value = this.resolveCommit(parsed);
+		}
+	}
+
 	/** Takes the host over from `prepareServerInput`: the host submits the value, so the attributes it wrote go. */
 	private releaseServerInput(): void {
 		const input = this.getInput();
@@ -358,6 +421,7 @@ export class RuiNumberField extends FormAssociatedElement {
 		this.initialized = true;
 
 		this.seedDefaultValue();
+		this.adoptTypedValue();
 		this.releaseServerInput();
 		this.syncLabel();
 		this.syncInput();
@@ -441,7 +505,8 @@ export class RuiNumberField extends FormAssociatedElement {
 
 		const input = event.target as HTMLInputElement;
 		this.editing = true;
-		this.draftValue = this.value == null ? '' : String(this.value);
+		this.draftValue =
+			this.value == null ? '' : formatEditableNumber(this.value, this.resolvedLocale, this.resolvedFormatOptions);
 		input.value = this.draftValue;
 		input.select();
 	}
