@@ -30,7 +30,9 @@ export type RuiNumberFieldInputProps = NativeInputProps & {
 /**
  * Stamps `[data-number-field-input]`. The host sets the input type for server output and locale editing.
  *
- * @cssclass rui-number-field__input - Borderless text input inside the group.
+ * @remarks The host owns `readonly`: it mirrors its own `readOnly` onto the input, so set `readOnly` on the host.
+ *
+ * @cssclass rui-number-field__input - Borderless input inside the group.
  */
 export function RuiNumberFieldInput({ class: className, disabled, readOnly, ...props }: RuiNumberFieldInputProps) {
 	return (

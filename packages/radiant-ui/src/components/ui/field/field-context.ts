@@ -27,8 +27,8 @@ export type FieldContextValue = {
 export const fieldContext = createContext<FieldContextValue>(Symbol.for('rui-field-context'));
 
 /**
- * @remarks Sets the name before server bindings and native form fallbacks run. Composed controls with their
- * own submission names can identify those parts with `exclude`.
+ * @remarks Sets the name before server bindings and native form fallbacks run. A control that matches the
+ * `exclude` selector keeps its own name, as the date inputs of a range picker do.
  */
 export function registerFieldNameForSsr(control: HTMLElement & { name: string }, exclude?: string): void {
 	registerSsrPreparationCallback(

@@ -23,7 +23,7 @@ export function resolveAmbientSsrContextProvider(context: UnknownContext): SsrSe
 	return ssrContextProviderResolver?.(context);
 }
 
-/** Reads the nearest provider during SSR preparation. Returns undefined outside an active SSR provider scope. */
+/** Returns the value of the nearest SSR provider of `context`, or `undefined` when none is in scope or outside SSR. */
 export function resolveSsrContextValue<T extends UnknownContext>(context: T): ContextType<T> | undefined {
 	return resolveAmbientSsrContextProvider(context)?.getContext() as ContextType<T> | undefined;
 }

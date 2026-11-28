@@ -68,7 +68,7 @@ import '@ecopages/radiant-ui/number-field';
 </rui-number-field>
 ```
 
-BEM classes are presentation-only. The server renders a native number input with the raw `value`, `min`, `max`, `step`, and the `name` from the host or a surrounding `RuiField`. The native input applies those constraints and submits a raw number when a form posts before the script loads or with JavaScript off.
+BEM classes are presentation-only. The server renders a native number input with the raw `value`, `min`, `max`, `step`, and the `name` from the host or a surrounding `RuiField`. With JavaScript off, or before the script loads, the browser enforces `min`, `max` and `step` on submission and the form posts a raw number.
 
 When the host connects, it adopts an edited number and snaps or validates it as on blur. Untouched, cleared, invalid, read-only, and disabled inputs keep the server value. The input then displays locale-formatted text and the host takes over submission of the raw number.
 
@@ -157,7 +157,7 @@ Public BEM classes (documented via `@cssclass`):
 | --- | --- |
 | `.rui-number-field` | Root field wrapper. |
 | `.rui-number-field__group` | Control-height bordered row. |
-| `.rui-number-field__input` | Borderless text input. |
+| `.rui-number-field__input` | Borderless input. |
 | `.rui-number-field__steppers` | Trailing stepper column. |
 | `.rui-number-field__stepper` | Icon button cell (`+` / `−`). |
 

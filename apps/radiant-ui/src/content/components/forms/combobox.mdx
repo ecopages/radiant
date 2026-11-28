@@ -140,7 +140,7 @@ When the script loads after the page, for example on first interaction, the elem
 
 ## Suggestions that load later
 
-A typeahead renders its options after the `input` event that opens the listbox. When typing left a query with nothing to show, options added to the popup open the listbox once one of them matches the typed text, while the input has focus and unless `triggerKind` is `manual`. The filter runs again for every option that arrives. A list the visitor selected from or dismissed with Escape stays closed, and a list that is cleared and refilled does not close in between.
+A typeahead renders its options after the `input` event that opens the listbox. When typing left a query with nothing to show, options added to the popup open the listbox once one of them matches the typed text, while the input has focus and unless `triggerKind` is `manual`. The filter runs again for every option that arrives. A list the visitor selected from or dismissed with Escape stays closed, and a list that is cleared and refilled does not close in between. Add late options to the existing listbox: options in a replaced popup are not observed.
 
 ## Portal
 

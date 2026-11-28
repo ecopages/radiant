@@ -13,7 +13,9 @@ type SsrCallbackLists = Record<string, SsrPreparationCallback[]>;
  * reactive props, and authored host content have all been applied.
  *
  * @remarks Pass `true` for context bootstrap before the first `@onUpdated` flush.
- * Use `beforeAuthoredChildren` to publish context from host props before the SSR bridge builds its light DOM.
+ * `beforeAuthoredChildren` is the exception to the above: it runs before the host's Authored Children are built, so
+ * descendants can read context published from host props. Only the SSR bridge's `applyLightDom` runs it, for a host
+ * the bridge claims, and it runs before the host's `@consumeContext` fields resolve.
  */
 export function registerSsrPreparationCallback(
 	host: object,

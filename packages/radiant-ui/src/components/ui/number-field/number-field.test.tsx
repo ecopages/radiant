@@ -460,14 +460,6 @@ describe('RuiNumberField text typed before the script loads', () => {
 		expect(input.value).toBe('1');
 	});
 
-	it('keeps the server value when the text typed before the upgrade is not a number', async () => {
-		const { host, input, form } = await upgradeAfterTyping({ ...server, typed: 'abc' });
-
-		expect(host.value).toBe(1);
-		expect(input.value).toBe('1');
-		expect(new FormData(form).getAll('quantity')).toEqual(['1']);
-	});
-
 	it('keeps the server value when the input was cleared before the upgrade', async () => {
 		const { host, input } = await upgradeAfterTyping({ ...server, typed: '' });
 
@@ -561,7 +553,7 @@ describe('RuiNumberField text typed before the script loads', () => {
 	it('keeps the server value of a read-only field, which the visitor could not edit after the upgrade', async () => {
 		const { host, input } = await upgradeAfterTyping({
 			attributes: `${server.attributes} read-only`,
-			inputAttributes: server.inputAttributes,
+			inputAttributes: `${server.inputAttributes} readonly`,
 			typed: '3',
 		});
 

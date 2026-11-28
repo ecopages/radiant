@@ -1,23 +1,18 @@
-import '@ecopages/radiant/server/install-ssr-runtime';
 import { renderToString } from '@ecopages/jsx/server';
-import { customElement } from '@ecopages/radiant';
 import { withRadiantServerCustomElementRenderBridge } from '@ecopages/radiant/server/radiant-element-ssr';
 import { describe, expect, it } from 'vitest';
 import { RuiField } from './field';
-import { RuiNumberField, RuiNumberFieldElement } from '../number-field';
+import { RuiNumberField } from '../number-field';
 import { RuiRadio, RuiRadioGroup, RuiRadioGroupControl } from '../radio-group';
 import { RuiCheckboxGroup } from '../checkbox-group';
 import { RuiInput } from '../input';
+import { RuiSwitch } from '../switch';
+import { RuiCheckbox } from '../checkbox';
+import { RuiSlider } from '../slider';
+import { RuiKnob } from '../knob';
+import { RuiDateInput } from '../date-input';
+import { RuiDateField } from '../date-field';
 import { RuiDateRangePicker } from '../date-range-picker';
-
-@customElement('test-field-number-name')
-class TestFieldNumberName extends RuiNumberFieldElement {
-	override prepareForSsr(): void {
-		super.prepareForSsr();
-		const input = this.querySelector('input');
-		this.setAttribute('data-prepared-name', input?.name ?? '');
-	}
-}
 
 const render = (node: Parameters<typeof renderToString>[0]) =>
 	withRadiantServerCustomElementRenderBridge(() => renderToString(node));
@@ -124,19 +119,59 @@ describe('RuiField name in server markup', () => {
 		expect(html.match(/<input[^>]*data-number-field-input[^>]*>/)?.[0]).toContain('name="outer"');
 	});
 
-	it('resolves the nearest field name during the control’s own server preparation', () => {
+	it('names a number field by the nearest of two nested fields', () => {
 		const html = render(
 			<RuiField name="outer">
 				<RuiField name="quantity">
-					<TestFieldNumberName name="explicit" value={2}>
-						<input data-number-field-input />
-					</TestFieldNumberName>
+					<RuiNumberField name="explicit" value={2} />
 				</RuiField>
 			</RuiField>,
 		);
 
-		expect(html).toContain('data-prepared-name="quantity"');
-		expect(html).toMatch(/<input[^>]*\sname="quantity"/);
+		const input = html.match(/<input[^>]*data-number-field-input[^>]*>/)?.[0] ?? '';
+		expect(input).toContain('name="quantity"');
+	});
+
+	it('names a native input by the nearest of two nested fields', () => {
+		const html = render(
+			<RuiField name="outer">
+				<RuiField name="email">
+					<RuiInput />
+				</RuiField>
+			</RuiField>,
+		);
+
+		expect(html.match(/<input[^>]*\sname="([^"]*)"/g)).toEqual([expect.stringContaining('name="email"')]);
+	});
+
+	it('names the checkboxes of a group by the field, not by the group name', () => {
+		const html = render(
+			<RuiField name="topics">
+				<RuiCheckboxGroup
+					name="other"
+					options={[
+						{ value: 'news', label: 'News' },
+						{ value: 'travel', label: 'Travel' },
+					]}
+				/>
+			</RuiField>,
+		);
+
+		const inputs = html.match(/<input[^>]*\stype="checkbox"[^>]*>/g) ?? [];
+		expect(inputs.map((input) => input.match(/\sname="([^"]*)"/)?.[1])).toEqual(['topics', 'topics']);
+	});
+
+	it.each([
+		['switch', <RuiSwitch />, /<input[^>]*\stype="checkbox"[^>]*>/],
+		['checkbox', <RuiCheckbox value="a" />, /<input[^>]*\stype="checkbox"[^>]*>/],
+		['slider', <RuiSlider value={3} />, /<rui-slider[^>]*>/],
+		['knob', <RuiKnob value={3} />, /<rui-knob[^>]*>/],
+		['date input', <RuiDateInput />, /<rui-date-input[^>]*>/],
+		['date field', <RuiDateField />, /<rui-date-field[^>]*>/],
+	])('names a %s by the field in server markup', (_label, control, submitter) => {
+		const html = render(<RuiField name="topic">{control}</RuiField>);
+
+		expect(html.match(submitter)?.[0]).toMatch(/\sname="topic"/);
 	});
 
 	it('names every native checkbox in a field-wrapped checkbox group', () => {

@@ -15,7 +15,7 @@ import { RuiCheckbox } from '../checkbox/checkbox.script';
 import { multiValuePropOptions, type ViewMultiValue } from '@/lib/multi-value';
 import { announceControlConnect } from '@/lib/form/control-protocol';
 import { checkboxGroupContext } from '../checkbox/checkbox-group-context';
-import { fieldContext, registerFieldNameForSsr } from '../field/field-context';
+import { fieldContext } from '../field/field-context';
 
 export type RuiCheckboxGroupOrientation = 'horizontal' | 'vertical';
 
@@ -122,11 +122,14 @@ export class RuiCheckboxGroup extends RadiantElement {
 
 	constructor() {
 		super();
-		registerFieldNameForSsr(this);
 		registerSsrPreparationCallback(
 			this,
 			() => {
-				const name = resolveSsrContextValue(fieldContext)?.name || this.name || this.getAttribute('name') || '';
+				const name = resolveSsrContextValue(fieldContext)?.name || this.name;
+				if (name) {
+					this.name = name;
+					this.setAttribute('name', name);
+				}
 				this.groupProvider.setContext({ name });
 			},
 			'beforeAuthoredChildren',
