@@ -13,6 +13,10 @@ describe('RuiNumberFieldInput SSR', () => {
 		expect(html).toContain('required');
 		expect(html).toContain('name="qty"');
 	});
+
+	it('renders a number input, which the host turns into locale text when it connects', () => {
+		expect(renderToString(<RuiNumberFieldInput />)).toMatch(/\stype="number"/);
+	});
 });
 
 function innerInput(html: string): string {

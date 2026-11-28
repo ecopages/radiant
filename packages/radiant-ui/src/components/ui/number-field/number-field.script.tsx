@@ -63,8 +63,8 @@ export type RuiNumberFieldProps = {
  * ## Light-DOM contract
  *
  * Required:
- * - `[data-number-field-input]` — native number input on the server, locale text input after connection.
- *   Host sets `type`, `id`, `role="spinbutton"`, `inputmode`, `data-disabled`, `data-readonly`, `readonly`,
+ * - `[data-number-field-input]` — `type="number"` until the host connects, then a locale text input.
+ *   Host sets `type="text"`, `id`, `role="spinbutton"`, `inputmode`, `data-disabled`, `data-readonly`, `readonly`,
  *   `aria-valuemin`, `aria-valuemax`, `aria-valuenow`, and formatted `value` when not editing.
  *
  * Optional:
@@ -239,9 +239,6 @@ export class RuiNumberField extends FormAssociatedElement {
 		}
 
 		if (!this.editing && this.initialized) {
-			if (input.type !== 'text') {
-				input.type = 'text';
-			}
 			input.value =
 				committed == null ? '' : formatNumber(committed, this.resolvedLocale, this.resolvedFormatOptions);
 		}
@@ -341,7 +338,6 @@ export class RuiNumberField extends FormAssociatedElement {
 			return;
 		}
 
-		input.type = 'number';
 		const attributes: [string, string | undefined][] = [
 			['name', this.name || undefined],
 			['value', this.hasCommittedValue() ? String(this.value) : undefined],
@@ -397,6 +393,7 @@ export class RuiNumberField extends FormAssociatedElement {
 
 		this.seedDefaultValue();
 		this.adoptTypedValue();
+		this.getInput()?.setAttribute('type', 'text');
 		this.releaseServerInput();
 		this.syncLabel();
 		this.syncInput();

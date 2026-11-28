@@ -122,7 +122,7 @@ Geometry shares control tokens (`--size-control-sm`, `--space-control-*`, `--rad
 
 | Target | Required | Host writes | Author owns |
 | --- | --- | --- | --- |
-| `[data-number-field-input]` | yes | `type="number"`, `name`, raw `value`, `min`, `max`, `step="any"` and, for a read-only host, `readonly` in server output. After connection, `type="text"`, `id`, `role`, `inputmode="decimal"`, `data-disabled`, `data-readonly`, `readonly`, `aria-valuemin`, `aria-valuemax`, `aria-valuenow` and formatted `value`. | Stamp `data-rui-control` on the input for field wiring. |
+| `[data-number-field-input]` | yes | `name`, raw `value`, `min`, `max`, `step="any"` and, for a read-only host, `readonly` in server output; author `type="number"`. After connection, `type="text"`, `id`, `role`, `inputmode="decimal"`, `data-disabled`, `data-readonly`, `readonly`, `aria-valuemin`, `aria-valuemax`, `aria-valuenow` and formatted `value`. | Stamp `data-rui-control` on the input for field wiring. |
 | `[data-number-field-action="decrement"]` | no | `disabled`, `aria-label` | decrement button |
 | `[data-number-field-action="increment"]` | no | `disabled`, `aria-label` | increment button |
 | `[data-number-field-group]` | no | — | presentation wrapper only |

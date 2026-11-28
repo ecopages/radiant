@@ -28,7 +28,7 @@ export type RuiNumberFieldInputProps = NativeInputProps & {
 };
 
 /**
- * Stamps `[data-number-field-input]`. The host sets the input type for server output and locale editing.
+ * Stamps `[data-number-field-input]` as a number input. The host turns it into a locale text input when it connects.
  *
  * @remarks The host owns `readonly`: it mirrors its own `readOnly` onto the input, so set `readOnly` on the host.
  *
@@ -38,7 +38,7 @@ export function RuiNumberFieldInput({ class: className, disabled, readOnly, ...p
 	return (
 		<input
 			{...props}
-			type="text"
+			type="number"
 			data-number-field-input
 			data-rui-control
 			data-rui-control-type="number"

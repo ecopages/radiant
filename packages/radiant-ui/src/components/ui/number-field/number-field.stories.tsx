@@ -168,6 +168,7 @@ export const GermanDecimal: Story = {
 		const input = getInput(canvasElement);
 		const host = canvasElement.querySelector('rui-number-field');
 
+		await expect(input).toHaveAttribute('type', 'text');
 		await expect(input).toHaveValue('1.234,5');
 		await userEvent.click(input);
 		await expect(input).toHaveValue('1234,5');
