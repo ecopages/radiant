@@ -336,4 +336,42 @@ describe('RuiField name in server markup', () => {
 		expect(inner).toMatch(/aria-describedby="[^"]*controlled-error/);
 		expect(outer).not.toMatch(/aria-describedby="[^"]*controlled-error/);
 	});
+
+	it('keeps the name of the field around an unnamed nested field', () => {
+		const html = render(
+			<RuiField name="outer">
+				<RuiField name="">
+					<RuiNumberField value={2} />
+				</RuiField>
+			</RuiField>,
+		);
+
+		expect(html.match(/<input[^>]*data-number-field-input[^>]*>/)?.[0]).toContain('name="outer"');
+	});
+
+	it('keeps the name of a checkbox group for a checkbox in an unnamed field', () => {
+		const html = render(
+			<RuiCheckboxGroup name="topics">
+				<RuiField name="">
+					<RuiCheckbox value="news" />
+				</RuiField>
+			</RuiCheckboxGroup>,
+		);
+
+		expect(html.match(/<input[^>]*\stype="checkbox"[^>]*>/)?.[0]).toContain('name="topics"');
+	});
+
+	it('leaves the name of a control that is not a checkbox alone inside a named checkbox group', () => {
+		const html = render(
+			<RuiCheckboxGroup name="topics">
+				<RuiSwitch name="notify" />
+				<RuiField name="volume">
+					<RuiSlider value={3} />
+				</RuiField>
+			</RuiCheckboxGroup>,
+		);
+
+		expect(html.match(/<input[^>]*\stype="checkbox"[^>]*>/)?.[0]).toContain('name="notify"');
+		expect(html.match(/<rui-slider[^>]*>/)?.[0]).toContain('name="volume"');
+	});
 });

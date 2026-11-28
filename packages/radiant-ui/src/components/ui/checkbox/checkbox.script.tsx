@@ -4,7 +4,7 @@ import { resolveSsrContextValue } from '@ecopages/radiant/context';
 import { createEventListenerController } from '../../../controllers/event-listener-controller';
 import { nonEmpty } from '@/lib/non-empty';
 import { announceControlConnect } from '@/lib/form/control-protocol';
-import { registerSubmissionForSsr } from '@/lib/form/submission';
+import { applySubmissionName, registerSubmissionForSsr } from '@/lib/form/submission';
 import { checkboxGroupContext } from './checkbox-group-context';
 
 export type RuiCheckboxProps = {
@@ -140,8 +140,8 @@ export class RuiCheckbox extends RadiantElement {
 	}
 
 	/**
-	 * Takes the checked and disabled state of a surrounding group in server markup, as the group does on the client.
-	 * A box the group does not hold is unchecked, whatever its own `checked` says.
+	 * Takes the name, checked and disabled state of a surrounding group in server markup, as the group does on the
+	 * client. A box the group does not hold is unchecked, whatever its own `checked` says.
 	 *
 	 * @remarks The view stamps `checked` on the input from the authored prop, and the property the host sets does not
 	 * reflect to an attribute, so the attribute is written as well.
@@ -150,6 +150,9 @@ export class RuiCheckbox extends RadiantElement {
 		const group = resolveSsrContextValue(checkboxGroupContext);
 		if (!group) {
 			return;
+		}
+		if (group.name) {
+			applySubmissionName(this, group.name);
 		}
 		this.checked = group.selected.includes(this.value);
 		this.getRef<HTMLInputElement>('input')?.toggleAttribute('checked', this.checked);

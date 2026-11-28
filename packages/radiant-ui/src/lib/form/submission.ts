@@ -12,8 +12,9 @@ export type SubmissionContextValue = {
  * The name a control submits under, and whether it is disabled, in server markup, published by the nearest
  * `RuiField`.
  *
- * @remarks A host that owns the submission of its descendants provides it, and a control takes the nearest value
- * through {@link registerSubmissionForSsr}.
+ * @remarks A control takes the nearest value through {@link registerSubmissionForSsr}. A custom host that is
+ * store-only, and wraps a control that submits natively, provides a blank value (`{ name: '', disabled: false }`)
+ * so the surrounding field does not name or disable that control.
  */
 export const submissionContext = createContext<SubmissionContextValue>(Symbol.for('rui-submission-context'));
 

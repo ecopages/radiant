@@ -175,7 +175,7 @@ Nested hosts: registered control hosts inside the field (`rui-switch`, `rui-slid
 
 ### Custom control hosts
 
-In server markup the field names a directly authored native text control, and the catalog hosts take the field's name from `submissionContext` while they serialize. A control host registered with `registerFieldControl` that submits natively does the same by calling `registerSubmissionForSsr(this)` from `@ecopages/radiant-ui/form` in its constructor. The host needs a `name` property, bound to the input it submits through.
+In server markup the field names a directly authored native text control, and the catalog hosts take the field's name from `submissionContext` while they serialize. A control host registered with `registerFieldControl` that submits natively does the same by calling `registerSubmissionForSsr(this)` from `@ecopages/radiant-ui/form` in its constructor. The host needs a `name` property, bound to the input it submits through. A custom store-only host that wraps a control which submits natively provides a blank `submissionContext` (`{ name: '', disabled: false }`), so the field does not name or disable that control.
 
 A host registered with `registerFieldControl` that declares `data-rui-aria-target` or `data-rui-aria-targets` renders its target on its own schedule, often after the field connected. The field therefore writes no `id`, `data-rui-field-managed` or `aria-*` for it. It publishes the state on `fieldContext` (`controlId`, `labelId`, `describedBy`, `invalid`, `required`, `disabled`) and the host binds it onto its target declaratively. Read the context into a `@state` field with `@contextSelector`, then:
 
