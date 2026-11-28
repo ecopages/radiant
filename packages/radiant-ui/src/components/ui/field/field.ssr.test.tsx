@@ -7,6 +7,7 @@ import { registerSubmissionForSsr } from '@/lib/form/submission';
 import { nonEmpty } from '@/lib/non-empty';
 import { RuiField } from './field';
 import { RuiFieldElement } from './index';
+import { RuiFieldError } from './field-error';
 import { RuiNumberField } from '../number-field';
 import { RuiRadio, RuiRadioGroup, RuiRadioGroupControl } from '../radio-group';
 import { RuiCheckboxGroup } from '../checkbox-group';
@@ -316,5 +317,23 @@ describe('RuiField name in server markup', () => {
 		);
 
 		expect(html.match(/<input[^>]*data-number-field-input[^>]*>/)?.[0]).not.toMatch(/\sdisabled/);
+	});
+
+	it('keeps the error regions of a nested field out of the description of an outer headless field', () => {
+		const html = render(
+			<RuiFieldElement name="outer">
+				<RuiField name="inner">
+					<RuiInput />
+					<RuiFieldError error="Inner problem" />
+				</RuiField>
+				<div>
+					<input data-rui-control type="text" />
+				</div>
+			</RuiFieldElement>,
+		);
+
+		const [inner, outer] = html.match(/<input[^>]*>/g) ?? [];
+		expect(inner).toMatch(/aria-describedby="[^"]*controlled-error/);
+		expect(outer).not.toMatch(/aria-describedby="[^"]*controlled-error/);
 	});
 });

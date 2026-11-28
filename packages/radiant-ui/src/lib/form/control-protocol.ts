@@ -610,19 +610,23 @@ export function findControlledFieldErrors(root: HTMLElement): HTMLElement[] {
 }
 
 function collectFieldErrorRegions(root: HTMLElement): HTMLElement[] {
+	const selector = `[${RUI_FIELD_ERROR_ATTR}]`;
+	const ownRegions = (parent: ParentNode) =>
+		Array.from(parent.querySelectorAll<HTMLElement>(selector)).filter((el) => el.closest('rui-field') === root);
+
 	const renderRoot = findOwnFieldColumn(root);
 	if (renderRoot) {
-		const inRender = Array.from(renderRoot.querySelectorAll<HTMLElement>(`[${RUI_FIELD_ERROR_ATTR}]`));
+		const inRender = ownRegions(renderRoot);
 		if (inRender.length > 0) {
 			return inRender;
 		}
 	}
-	const fromDom = Array.from(root.querySelectorAll<HTMLElement>(`[${RUI_FIELD_ERROR_ATTR}]`));
+	const fromDom = ownRegions(root);
 	if (fromDom.length > 0) {
 		return fromDom;
 	}
-	const single = queryFieldContent(root, `[${RUI_FIELD_ERROR_ATTR}]`);
-	return single ? [single] : [];
+	const single = queryFieldContent(root, selector);
+	return single?.closest('rui-field') === root ? [single] : [];
 }
 
 /**
